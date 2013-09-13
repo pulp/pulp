@@ -25,9 +25,9 @@ class TestSerialization(TestCase):
     @patch('pulp.server.webservices.serialization.db.scrub_mongo_fields',
            wraps=db.scrub_mongo_fields)
     def test_serialization(self, mock):
-        last_updated = 1351054800.0
+        last_updated = 1351092000.0
         unit = {'_last_updated': last_updated}
         serialized = content.content_unit_obj(unit)
         mock.assert_called_once_with(unit)
         self.assertTrue(LAST_UPDATED in serialized)
-        self.assertEqual(serialized[LAST_UPDATED], '2012-10-24T05:00:00Z')
+        self.assertEqual(serialized[LAST_UPDATED], '2012-10-24T10:20:00Z')

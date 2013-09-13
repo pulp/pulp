@@ -41,7 +41,7 @@ def content_unit_obj(content_unit):
     """
     serial = db.scrub_mongo_fields(content_unit)
     last_updated = content_unit['_last_updated']
-    content_unit['_last_updated'] = dateutils.format_iso8601_timestamp(last_updated)
+    content_unit['_last_updated'] = dateutils.format_iso8601_utc_timestamp(last_updated)
     return serial
 
 # utility functions ------------------------------------------------------------

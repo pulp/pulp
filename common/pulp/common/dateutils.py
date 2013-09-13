@@ -293,7 +293,7 @@ def format_iso8601_interval(interval, start_time=None, recurrences=None):
     return '/'.join(parts)
 
 
-def format_iso8601_timestamp(timestamp):
+def format_iso8601_utc_timestamp(timestamp):
     """
     Format a UNIX timestamp as an iso8601 string.
     @type timestamp: A UNIX timestamp.
@@ -301,7 +301,7 @@ def format_iso8601_timestamp(timestamp):
     @rtype: str
     @return: iso8601 representation of the passed in timestamp
     """
-    dt = datetime.datetime.fromtimestamp(timestamp)
+    dt = datetime.datetime.fromtimestamp(timestamp).replace(tzinfo=utc_tz())
     return format_iso8601_datetime(dt)
 
 # timestamp functions ----------------------------------------------------------

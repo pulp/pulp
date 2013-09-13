@@ -157,11 +157,11 @@ class TestParseDatetimeOrDate(unittest.TestCase):
 
 class TestFormatting(unittest.TestCase):
 
-    def test_formatting_timestamp(self):
-        dt = datetime.datetime(2012, 10, 24, 10, 20, tzinfo=None)
-        ts = time.mktime(dt.timetuple())
-        formatted = dateutils.format_iso8601_timestamp(ts)
-        self.assertEqual(formatted, '2012-10-24T10:20:00')
+    def test_formatting_utc_timestamp(self):
+        dt = datetime.datetime(2012, 10, 24, 10, 20, tzinfo=dateutils.utc_tz())
+        ts = dateutils.datetime_to_utc_timestamp(dt)
+        formatted = dateutils.format_iso8601_utc_timestamp(ts)
+        self.assertEqual(formatted, '2012-10-24T10:20:00Z')
 
 
 class DatetimeMathTests(unittest.TestCase):
