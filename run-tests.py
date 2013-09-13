@@ -66,9 +66,7 @@ if not arguments.disable_coverage:
 
 
 # don't run the server tests in RHEL5.
-if sys.version_info < (2, 6):
-    args.extend(['-e', 'server'])
-else:
+if sys.version_info >= (2, 6):
     args.extend(TESTS_NON_RHEL5)
 
 args.extend(TESTS_ALL_PLATFORMS)
