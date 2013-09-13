@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.10.alpha%{?dist}
+Release: 0.11.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -468,6 +468,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.11.alpha
+- Pulp rebuild
+
 * Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.10.alpha
 - 1005898 - Remove unnecessary dependency on gofer in pulp-nodes.spec file
   (bcourt@redhat.com)
