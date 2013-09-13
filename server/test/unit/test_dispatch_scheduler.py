@@ -119,30 +119,23 @@ class SchedulerCallControlTests(SchedulerTests):
         scheduled_call_request = CallRequest(itinerary_call)
         schedule_id = self.scheduler.add(scheduled_call_request, SCHEDULE_3_RUNS)
 
-        run_call_request = scheduled_call_request.call()[0]
-        run_call_report = CallReport.from_call_request(run_call_request)
-        run_call_report.schedule_id = schedule_id
-        run_call_report.state = dispatch_constants.CALL_FINISHED_STATE
-
-        scheduler_complete_callback(run_call_request, run_call_report)
+        self.scheduler.call_group_call_completed(schedule_id, dispatch_constants.CALL_FINISHED_STATE)
 
         scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
 
-        self.assertTrue(dispatch_constants.CALL_FINISHED_STATE in scheduled_call['call_exit_states'])
+        self.assertEqual(scheduled_call['call_count'], -1)
+        self.assertTrue(dispatch_constants.CALL_FINISHED_STATE in scheduled_call['call_exit_states'],
+                        str(scheduled_call['call_exit_states']))
         self.assertEqual(scheduled_call['remaining_runs'], 2)
 
     def test_complete_callback_missing_schedule(self):
         scheduled_call_request = CallRequest(itinerary_call)
         schedule_id = self.scheduler.add(scheduled_call_request, SCHEDULE_3_RUNS)
 
-        run_call_request = scheduled_call_request.call()[0]
-        run_call_report = CallReport.from_call_request(run_call_request)
-        run_call_report.schedule_id = schedule_id
-
         self.scheduled_call_collection.remove({'_id': ObjectId(schedule_id)}, safe=True)
 
         try:
-            scheduler_complete_callback(run_call_request, run_call_report)
+            self.scheduler.call_group_call_completed(schedule_id, dispatch_constants.CALL_FINISHED_STATE)
         except:
             self.fail()
 
@@ -152,15 +145,13 @@ class SchedulerSchedulingTests(SchedulerTests):
 
     def test_update_last_run(self):
         call_request = CallRequest(itinerary_call)
-        call_report = CallReport(state=dispatch_constants.CALL_FINISHED_STATE)
 
         schedule_id = self.scheduler.add(call_request, DISPATCH_SCHEDULE)
         scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
 
         self.assertTrue(scheduled_call['last_run'] is None)
-        self.assertTrue(scheduled_call['remaining_runs'] == 2)
 
-        self.scheduler.update_last_run(scheduled_call, call_report)
+        self.scheduler.update_last_run(scheduled_call)
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
 
         # relies on schedule's 0 length interval
@@ -270,9 +261,9 @@ class SchedulerSchedulingTests(SchedulerTests):
 
     def test_updated_scheduled_next_run(self):
         call_request = CallRequest(itinerary_call)
-        old_interval = datetime.timedelta(minutes=2)
+        interval = datetime.timedelta(minutes=2)
         now = datetime.datetime.now(tz=dateutils.utc_tz())
-        old_schedule = dateutils.format_iso8601_interval(old_interval, now)
+        old_schedule = dateutils.format_iso8601_interval(interval, now)
 
         scheduled_id = self.scheduler.add(call_request, old_schedule)
 
@@ -282,19 +273,24 @@ class SchedulerSchedulingTests(SchedulerTests):
 
         self.assertNotEqual(scheduled_call, None)
 
-        self.assertEqual(scheduled_call['last_run'], None)
-        self.assertEqual(scheduled_call['first_run'], now + old_interval)
-        self.assertEqual(scheduled_call['next_run'], now + old_interval)
+        old_interval, start_time = dateutils.parse_iso8601_interval(old_schedule)[:2]
+        start_time = dateutils.to_naive_utc_datetime(start_time)
 
-        new_interval = datetime.timedelta(minutes=1)
-        new_schedule = dateutils.format_iso8601_interval(new_interval, now)
+        self.assertEqual(scheduled_call['last_run'], None)
+        self.assertEqual(scheduled_call['first_run'], start_time + old_interval)
+        self.assertEqual(scheduled_call['next_run'], start_time + old_interval)
+
+        interval = datetime.timedelta(minutes=1)
+        new_schedule = dateutils.format_iso8601_interval(interval, now)
 
         self.scheduler.update(scheduled_id, schedule=new_schedule)
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
 
+        new_interval = dateutils.parse_iso8601_interval(new_schedule)[0]
+
         self.assertEqual(updated_scheduled_call['last_run'], None)
-        self.assertEqual(updated_scheduled_call['first_run'], now + old_interval)
-        self.assertEqual(updated_scheduled_call['next_run'], now + new_interval)
+        self.assertEqual(updated_scheduled_call['first_run'], start_time + old_interval)
+        self.assertEqual(updated_scheduled_call['next_run'], start_time + new_interval)
 
 # query tests ------------------------------------------------------------------
 
