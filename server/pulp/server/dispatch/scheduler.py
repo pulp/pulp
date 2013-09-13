@@ -269,7 +269,7 @@ class Scheduler(object):
         now = datetime.datetime.utcnow()
         interval, start = dateutils.parse_iso8601_interval(schedule)[0:2]
 
-        first_run = start or now
+        first_run = dateutils.to_naive_utc_datetime(start) if start else now
 
         # the "zero time" handles the really off case where the schedule is a
         # start time and a single run instead of something recurring
@@ -557,7 +557,7 @@ class Scheduler(object):
 
         # update and return the updated scheduled_call
         # returns None if the scheduled_call doesn't exist
-        scheduled_call = self.scheduled_call_collection.find_and_modify({'id': schedule_id}, update, new=True)
+        scheduled_call = self.scheduled_call_collection.find_and_modify({'_id': schedule_id}, update, new=True)
 
         # schedule was deleted while call was running
         if scheduled_call is None:
