@@ -31,37 +31,47 @@ PACKAGES = [
     'pulp_tasks',
 ]
 
-TESTS = [
-    'nodes/test/unit',
-    'server/test/unit',
+TESTS_ALL_PLATFORMS = [
     'agent/test/unit',
     'bindings/test/unit',
     'client_admin/test/unit',
     'client_consumer/test/unit',
     'client_lib/test/unit',
     'common/test/unit',
-    'devel/test/unit',
+    'devel/test/unit'
 ]
 
-args = [
-    'nosetests',
-    '--with-coverage',
-    '--cover-html',
-    '--cover-erase',
-    '--cover-package',
-    ','.join(PACKAGES),
+TESTS_NON_RHEL5 = [
+    'nodes/test/unit',
+    'server/test/unit'
 ]
-args.extend(TESTS)
-
-# don't run the server tests in RHEL5.
-if sys.version_info < (2, 6):
-    args.extend(['-e', 'server'])
 
 #add ability to specify nosetest options
 parser = argparse.ArgumentParser()
 parser.add_argument('--xunit-file')
 parser.add_argument('--with-xunit', action='store_true')
+parser.add_argument('--disable-coverage', action='store_true')
 arguments = parser.parse_args()
+
+args = [
+    'nosetests',
+]
+
+if not arguments.disable_coverage:
+    args.extend(['--with-coverage',
+    '--cover-html',
+    '--cover-erase',
+    '--cover-package',
+    ','.join(PACKAGES)])
+
+
+# don't run the server tests in RHEL5.
+if sys.version_info < (2, 6):
+    args.extend(['-e', 'server'])
+else:
+    args.extend(TESTS_NON_RHEL5)
+
+args.extend(TESTS_ALL_PLATFORMS)
 
 if arguments.with_xunit:
     args.extend(['--with-xunit', '--process-timeout=360'])
