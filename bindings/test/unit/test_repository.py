@@ -17,7 +17,8 @@ import mock
 
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.repository import (RepositorySearchAPI, RepositoryUnitAPI,
-                                      RepositoryDistributorAPI)
+                                      RepositoryDistributorAPI, RepositoryHistoryAPI)
+from pulp.common import constants
 
 
 class TestRepoSearchAPI(unittest.TestCase):
@@ -124,3 +125,77 @@ class TestRepositoryDistributorAPI(unittest.TestCase):
         result = self.api.update('test-repo', 'test-distributor', {'key': 'value'}, {'auto_publish': True})
         self.api.server.PUT.assert_called_once_with(expected_path, expected_body)
         self.assertEqual(result, self.api.server.PUT.return_value)
+
+
+class TestRespositoryHistoryAPI(unittest.TestCase):
+    """
+    Tests for the RepositoryHistoryAPI binding. Tests that the query is constructed correctly and
+    the correct path is used
+    """
+    def setUp(self):
+        self.api = RepositoryHistoryAPI(mock.MagicMock(spec=PulpConnection))
+
+    def test_sync_history_no_queries(self):
+        """
+        Test sync_history without using any queries
+        """
+        # Setup
+        expected_path = self.api.base_path % 'test_repo' + '/sync/'
+        expected_query = {}
+
+        # Test
+        result = self.api.sync_history('test_repo')
+        self.api.server.GET.assert_called_once_with(expected_path, expected_query)
+        self.assertEqual(result, self.api.server.GET.return_value)
+
+    def test_sync_history_queries(self):
+        """
+        Test sync_history using all the available queries
+        """
+        # Setup
+        expected_path = self.api.base_path % 'test_repo' + '/sync/'
+        expected_query = {
+            constants.REPO_HISTORY_FILTER_LIMIT: 3,
+            constants.REPO_HISTORY_FILTER_SORT: 'ascending',
+            constants.REPO_HISTORY_FILTER_START_DATE: '2013-01-01T00:00:00Z',
+            constants.REPO_HISTORY_FILTER_END_DATE: '2013-01-01T00:00:00Z'
+        }
+
+        # Test
+        result = self.api.sync_history('test_repo', limit=3, sort='ascending', start_date='2013-01-01T00:00:00Z',
+                                       end_date='2013-01-01T00:00:00Z')
+        self.api.server.GET.assert_called_once_with(expected_path, expected_query)
+        self.assertEqual(result, self.api.server.GET.return_value)
+
+    def test_publish_history_no_queries(self):
+        """
+        Test publish_history without using any queries
+        """
+        # Setup
+        expected_path = self.api.base_path % 'test_repo' + '/publish/test_distributor/'
+        expected_query = {}
+
+        # Test
+        result = self.api.publish_history('test_repo', 'test_distributor')
+        self.api.server.GET.assert_called_once_with(expected_path, expected_query)
+        self.assertEqual(result, self.api.server.GET.return_value)
+
+    def test_publish_history_queries(self):
+        """
+        Test publish_history using all the available queries
+        """
+        # Setup
+        expected_path = self.api.base_path % 'test_repo' + '/publish/test_distributor/'
+        expected_query = {
+            constants.REPO_HISTORY_FILTER_LIMIT: 3,
+            constants.REPO_HISTORY_FILTER_SORT: 'ascending',
+            constants.REPO_HISTORY_FILTER_START_DATE: '2013-01-01T00:00:00Z',
+            constants.REPO_HISTORY_FILTER_END_DATE: '2013-01-01T00:00:00Z'
+        }
+
+        # Test
+        result = self.api.publish_history('test_repo', 'test_distributor',limit=3, sort='ascending',
+                                          start_date='2013-01-01T00:00:00Z', end_date='2013-01-01T00:00:00Z')
+        self.api.server.GET.assert_called_once_with(expected_path, expected_query)
+        self.assertEqual(result, self.api.server.GET.return_value)
+
