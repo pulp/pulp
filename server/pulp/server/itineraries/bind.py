@@ -173,8 +173,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
 
-    # agent did not participating in the bind/unbind which
-    # is the same as doing a forced unbind.
+    # agent not participating in the bind/unbind - always want a forced unbind.
     if not binding['notify_agent']:
         return forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options)
 
