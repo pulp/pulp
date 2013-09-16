@@ -218,13 +218,16 @@ class BindTest(base.PulpWebserviceTests):
     def test_unbind(self, mock_itinerary):
         # Setup
         self.populate()
+        manager = managers.consumer_bind_manager()
+        for consumer_id in CONSUMER_IDS:
+            manager.bind(consumer_id, REPO_ID, DISTRIBUTOR_ID, NOTIFY_AGENT, BINDING_CONFIG)
         # Test
-        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_TYPE_ID)
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
         status, body = self.delete(path)
         # Verify
         self.assertEquals(status, 202)
         self.assertEqual(len(body), len(CONSUMER_IDS) * 3)
-        mock_itinerary.assert_called_with(GROUP_ID, REPO_ID, DISTRIBUTOR_TYPE_ID, {})
+        mock_itinerary.assert_called_with(GROUP_ID, REPO_ID, DISTRIBUTOR_ID, {})
 
     @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
     def test_bindings_get_auth(self, mock_headers):

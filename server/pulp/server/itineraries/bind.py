@@ -171,7 +171,12 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
     bind_manager = managers.consumer_bind_manager()
-    agent_manager = managers.consumer_agent_manager()
+    binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
+
+    # agent did not participating in the bind/unbind which
+    # is the same as doing a forced unbind.
+    if not binding['notify_agent']:
+        return forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options)
 
     # unbind
 
@@ -211,6 +216,8 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         options,
     ]
 
+    agent_manager = managers.consumer_agent_manager()
+
     agent_request = CallRequest(
         agent_manager.unbind,
         args,
@@ -246,13 +253,9 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         distributor_id
     ]
 
-    delete_request = CallRequest(
-        bind_manager.delete,
-        args=args,
-        tags=tags)
+    delete_request = CallRequest(bind_manager.delete, args=args, tags=tags)
     unbind_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
     call_requests.append(delete_request)
-
     delete_request.depends_on(agent_request.id)
 
     return call_requests
@@ -282,7 +285,7 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     call_requests = []
     bind_manager = managers.consumer_bind_manager()
-    agent_manager = managers.consumer_agent_manager()
+    binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
 
     # unbind
 
@@ -300,42 +303,39 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         True,
     ]
 
-    delete_request = CallRequest(
-        bind_manager.delete,
-        args=args,
-        tags=tags)
-
+    delete_request = CallRequest(bind_manager.delete, args=args, tags=tags)
     delete_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
     call_requests.append(delete_request)
 
-    # notify agent
+    # notify agent conditionally
 
-    tags = [
-        resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-        resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-        action_tag(ACTION_AGENT_UNBIND)
-    ]
+    if binding['notify_agent']:
 
-    args = [
-        consumer_id,
-        repo_id,
-        distributor_id,
-        options,
-    ]
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag(ACTION_AGENT_UNBIND)
+        ]
 
-    agent_request = CallRequest(
-        agent_manager.unbind,
-        args,
-        weight=0,
-        asynchronous=True,
-        archive=True,
-        tags=tags)
+        args = [
+            consumer_id,
+            repo_id,
+            distributor_id,
+            options,
+        ]
 
+        agent_manager = managers.consumer_agent_manager()
 
-    call_requests.append(agent_request)
+        agent_request = CallRequest(
+            agent_manager.unbind,
+            args,
+            weight=0,
+            asynchronous=True,
+            archive=True,
+            tags=tags)
 
-    agent_request.depends_on(delete_request.id)
+        call_requests.append(agent_request)
+        agent_request.depends_on(delete_request.id)
 
     return call_requests
