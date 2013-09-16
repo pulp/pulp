@@ -6,15 +6,14 @@
 echo "Cleaning up after the build"
 set -x
 cd $WORKSPACE
+
+pip list | grep pulp | cut -f1 -d" " | while read line
+do
+  sudo pip-python uninstall -y $line
+done
+sudo pip-python uninstall -y nectar
+
 sudo pip-python uninstall -y Pulp-Platform
-sudo pip-python uninstall -y pulp-devel
-sudo pip-python uninstall -y pulp-rpm
-sudo pip-python uninstall -y pulp-rpm-plugins
-sudo pip-python uninstall -y pulp-puppet-common
-sudo pip-python uninstall -y pulp-puppet-extensions-admin
-sudo pip-python uninstall -y pulp-puppet-extensions-consumer
-sudo pip-python uninstall -y pulp-puppet-handlers
-sudo pip-python uninstall -y pulp-puppet-plugins
 sudo pip-python uninstall -y nectar
 
 sudo python pulp/pulp-dev.py -U
