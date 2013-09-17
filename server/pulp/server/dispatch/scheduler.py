@@ -454,7 +454,7 @@ class Scheduler(object):
         if isinstance(call_request, call.CallRequest):
             updated_schedule_options['serialized_call_request'] = call_request.serialize()
 
-        schedule = updated_schedule_options.pop('schedule', None)
+        schedule = updated_schedule_options.get('schedule', None)
 
         if schedule is not None:
             runs = dateutils.parse_iso8601_interval(schedule)[2]
