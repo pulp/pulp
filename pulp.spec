@@ -274,6 +274,7 @@ A collection of components that are common between the pulp server and client.
 Summary: Pulp REST bindings for python
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: m2crypto
 
 %description -n python-pulp-bindings
