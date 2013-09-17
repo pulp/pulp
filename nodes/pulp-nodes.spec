@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.8.alpha%{?dist}
+Release: 0.12.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -125,7 +125,7 @@ Summary: Pulp nodes common modules
 Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
-Requires: gofer >= 0.74
+Requires: python-pulp-bindings = %{pulp_version}
 
 %description common
 Pulp nodes common modules.
@@ -140,6 +140,16 @@ Pulp nodes common modules.
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
 %doc
+
+%post common
+# Generate the certificate used to access the local server.
+pulp-gen-nodes-certificate
+
+%postun common
+# clean up the nodes certificate.
+if [ $1 -eq 0 ]; then
+  rm -rf /etc/pki/pulp/nodes
+fi
 
 
 # ---- Parent Nodes ----------------------------------------------------------
@@ -174,7 +184,6 @@ Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
-Requires: gofer >= 0.74
 Requires: python-nectar >= 1.1.1
 
 %description child
@@ -229,20 +238,23 @@ Pulp nodes consumer client extensions.
 
 # ----------------------------------------------------------------------------
 
-%post common
-# Generate the certificate used to access the local server.
-pulp-gen-nodes-certificate
-
-%postun
-# clean up the nodes certificate.
-if [ $1 -eq 0 ]; then
-  rm -rf /etc/pki/pulp/nodes
-fi
-
-# ----------------------------------------------------------------------------
-
 
 %changelog
+* Fri Sep 13 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.12.alpha
+- Pulp rebuild
+
+* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.11.alpha
+- Pulp rebuild
+
+* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.10.alpha
+- 1005898 - Remove unnecessary dependency on gofer in pulp-nodes.spec file
+  (bcourt@redhat.com)
+- 1003285 - fixed an attribute access for an attribute that doesn't exist in
+  python 2.6. (mhrivnak@redhat.com)
+
+* Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.9.alpha
+- Pulp rebuild
+
 * Fri Sep 06 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.8.alpha
 - 915330 - Fix performance degradation of importer and distributor
   configuration validation as the number of repositories increased
