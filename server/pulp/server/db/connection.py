@@ -18,7 +18,7 @@ from gettext import gettext as _
 import pymongo
 from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect
-from pymongo.son_manipulator import AutoReference, NamespaceInjector
+from pymongo.son_manipulator import NamespaceInjector
 
 from pulp.server import config
 from pulp.server.compat import wraps
@@ -62,7 +62,7 @@ def initialize(name=None, seeds=None, max_pool_size=None):
 
         _DATABASE = getattr(_CONNECTION, name)
         _DATABASE.add_son_manipulator(NamespaceInjector())
-        _DATABASE.add_son_manipulator(AutoReference(_DATABASE))
+        # _DATABASE.add_son_manipulator(AutoReference(_DATABASE))
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
