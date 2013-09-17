@@ -44,7 +44,6 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'crontabs',
     'genisoimage',
     'gofer', #  >= 0.76
-    'grinder', # >= 0.1.16
     'm2crypto', # >= 0.21.1.pulp-7
     'mod_ssl',
     'mod_wsgi', # >= 3.4-1.pulp
