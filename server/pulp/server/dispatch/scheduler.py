@@ -317,12 +317,7 @@ class Scheduler(object):
 
         # use the old next_run as the last_run to prevent schedule drift
         update = {'$set': {'last_run': scheduled_call['next_run']}}
-
-        if scheduled_call['remaining_runs'] is not None:
-            update['$inc'] = {'remaining_runs': -1}
-
-        schedule_id = scheduled_call['_id']
-        self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
+        self.scheduled_call_collection.update({'_id': scheduled_call['_id']}, update, safe=True)
 
     def update_next_run(self, scheduled_call):
         """
