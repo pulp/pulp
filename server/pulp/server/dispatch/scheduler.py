@@ -289,7 +289,7 @@ class Scheduler(object):
         :rtype:  datetime.datetime
         """
 
-        if scheduled_call['remaining_runs'] == 0:
+        if scheduled_call['remaining_runs'] <= 0:
             return None
 
         last_run = scheduled_call['last_run']
@@ -557,7 +557,8 @@ class Scheduler(object):
 
         # update and return the updated scheduled_call
         # returns None if the scheduled_call doesn't exist
-        scheduled_call = self.scheduled_call_collection.find_and_modify({'_id': schedule_id}, update, new=True)
+        scheduled_call = self.scheduled_call_collection.find_and_modify({'_id': schedule_id}, update,
+                                                                        new=True, safe=True)
 
         # schedule was deleted while call was running
         if scheduled_call is None:
