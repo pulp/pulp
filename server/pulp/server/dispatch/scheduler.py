@@ -141,7 +141,7 @@ class Scheduler(object):
             # scheduler from trying to run the call again if it takes longer
             # than self.dispatch_interval to run
             # NOTE: these are order sensitive!
-            self.update_last_run(scheduled_call)
+            self.update_last_run_and_remaining_runs(scheduled_call)
             self.update_next_run(scheduled_call)
 
             call_request_group = self._execute_itinerary(scheduled_call)
@@ -289,9 +289,6 @@ class Scheduler(object):
         :rtype:  datetime.datetime
         """
 
-        if scheduled_call['remaining_runs'] <= 0:
-            return None
-
         last_run = scheduled_call['last_run']
 
         if last_run is None:
@@ -307,9 +304,13 @@ class Scheduler(object):
 
         return next_run
 
-    def update_last_run(self, scheduled_call):
+    def update_last_run_and_remaining_runs(self, scheduled_call):
         """
-        Set the time the scheduled call was last run
+        Set the time the scheduled call was last run, and decrement the remaining
+        runs, if they are being tracked.
+
+        If there are no more remaining runs for the scheduled call, the scheduled
+        call is disabled.
 
         :param scheduled_call: scheduled call
         :type  scheduled_call: bson.BSON
@@ -317,33 +318,33 @@ class Scheduler(object):
 
         # use the old next_run as the last_run to prevent schedule drift
         update = {'$set': {'last_run': scheduled_call['next_run']}}
-        self.scheduled_call_collection.update({'_id': scheduled_call['_id']}, update, safe=True)
+
+        if scheduled_call['remaining_runs'] is not None:
+            update['$inc'] = {'remaining_runs': -1}
+
+        scheduled_call = self.scheduled_call_collection.find_and_modify({'_id': scheduled_call['_id']}, update,
+                                                                        new=True, safe=True)
+
+        if scheduled_call['remaining_runs'] == 0:
+            update = {'$set': {'enabled': False}}
+            self.scheduled_call_collection.update({'_id': scheduled_call['_id']}, update, safe=True)
 
     def update_next_run(self, scheduled_call):
         """
         Calculate and set the time of the scheduled call's next run.
 
-        If there are no more remaining runs for the scheduled call, the scheduled
-        call is removed.
-
         :param scheduled_call: scheduled call
         :type  scheduled_call: bson.BSON
         """
 
-        schedule_id = scheduled_call['_id']
         next_run = self.calculate_next_run(scheduled_call)
+        update = {'$set': {'next_run': next_run}}
+        self.scheduled_call_collection.update({'_id': scheduled_call['_id']}, update, safe=True)
 
-        if next_run is None:
-            self.scheduled_call_collection.remove({'_id': schedule_id}, safe=True)
-
-        else:
-            update = {'$set': {'next_run': next_run}}
-            self.scheduled_call_collection.update({'_id': schedule_id}, update, safe=True)
-
-    def update_consecutive_failures_and_runs(self, scheduled_call):
+    def update_consecutive_failures(self, scheduled_call):
         """
         Using the metadata to track the scheduled call's progress, update the
-        consecutive failures and remaining runs for the scheduled call.
+        consecutive failures for the scheduled call.
 
         :param scheduled_call: scheduled call
         :type  scheduled_call: bson.BSON
@@ -370,11 +371,6 @@ class Scheduler(object):
         elif all(s == dispatch_constants.CALL_FINISHED_STATE for s in scheduled_call['call_exit_states']):
             delta = update.setdefault('$set', {})
             delta['consecutive_failures'] = 0
-
-        # decrement the remaining runs, if they're being tracked
-        if scheduled_call['remaining_runs'] is not None:
-            inc = update.setdefault('$inc', {})
-            inc['remaining_runs'] = -1
 
         self.scheduled_call_collection.update({'_id': scheduled_call['_id']}, update, safe=True)
 
@@ -404,13 +400,8 @@ class Scheduler(object):
         validate_initial_schedule_options(schedule, schedule_options)
 
         scheduled_call = ScheduledCall(itinerary_call_request, schedule, **schedule_options)
-
         scheduled_call['first_run'] = self.calculate_first_run(schedule)
         scheduled_call['next_run'] = self.calculate_next_run(scheduled_call)
-
-        # schedule was "valid", but results in the scheduled call never being run
-        if scheduled_call['next_run'] is None:
-            return None
 
         self.scheduled_call_collection.insert(scheduled_call, safe=True)
 
@@ -563,7 +554,7 @@ class Scheduler(object):
         if scheduled_call['call_count'] > 0:
             return
 
-        self.update_consecutive_failures_and_runs(scheduled_call)
+        self.update_consecutive_failures(scheduled_call)
 
 # -- scheduler call request lifecycle callbacks --------------------------------
 
@@ -579,7 +570,14 @@ def scheduler_complete_callback(call_request, call_report):
     """
 
     scheduler = dispatch_factory.scheduler()
-    scheduler.call_group_call_completed(call_request.schedule_id, call_report.state)
+    task_queue = dispatch_factory._task_queue()
+
+    # only allow one task at a time to report their completion
+    task_queue.lock()
+    try:
+        scheduler.call_group_call_completed(call_request.schedule_id, call_report.state)
+    finally:
+        task_queue.unlock()
 
 # -- schedule validation methods -----------------------------------------------
 
@@ -681,9 +679,12 @@ def _is_valid_schedule(schedule):
         return False
 
     try:
-        dateutils.parse_iso8601_interval(schedule)
+        interval, start_time, runs = dateutils.parse_iso8601_interval(schedule)
 
     except isodate.ISO8601Error:
+        return False
+
+    if runs is not None and runs <= 0:
         return False
 
     return True

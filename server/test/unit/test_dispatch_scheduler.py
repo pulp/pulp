@@ -151,7 +151,7 @@ class SchedulerSchedulingTests(SchedulerTests):
 
         self.assertTrue(scheduled_call['last_run'] is None)
 
-        self.scheduler.update_last_run(scheduled_call)
+        self.scheduler.update_last_run_and_remaining_runs(scheduled_call)
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
 
         # relies on schedule's 0 length interval
@@ -188,7 +188,7 @@ class SchedulerSchedulingTests(SchedulerTests):
         self.assertFalse(next_run is None)
         self.assertTrue(next_run == scheduled_call['first_run'])
 
-        self.scheduler.update_last_run(scheduled_call)
+        self.scheduler.update_last_run_and_remaining_runs(scheduled_call)
 
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(scheduled_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
@@ -209,7 +209,7 @@ class SchedulerSchedulingTests(SchedulerTests):
         self.assertFalse(next_run is None)
         self.assertTrue(next_run == scheduled_call['first_run'])
 
-        self.scheduler.update_last_run(scheduled_call)
+        self.scheduler.update_last_run_and_remaining_runs(scheduled_call)
 
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
         updated_next_run = self.scheduler.calculate_next_run(updated_scheduled_call)
