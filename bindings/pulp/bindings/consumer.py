@@ -159,7 +159,7 @@ class BindingsAPI(PulpAPI):
             'repo_id' :repo_id,
             'distributor_id' :distributor_id,
             'notify_agent': notify_agent,
-            'binding_config': binding_config
+            'binding_config': binding_config or {}
         }
         return self.server.POST(path, data)
     

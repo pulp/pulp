@@ -62,6 +62,23 @@ CONSUMERS_AND_NODES = [
     {'notes': {constants.NODE_NOTE_KEY: True}}
 ]
 
+NODES_WITH_BINDINGS = [
+    {'notes': {constants.NODE_NOTE_KEY: True},
+     'bindings': [
+         {'repo_id': 'r1',
+          'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}}
+     ]},
+    {'notes': {constants.NODE_NOTE_KEY: True},
+     'bindings': [
+         {'repo_id': 'r2',
+          'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}},
+         {'repo_id': 'r3',
+          'binding_config': None},  # not node binding
+         {'repo_id': 'r4',
+          'binding_config': None},  # not node binding
+     ]},
+]
+
 ALL_REPOSITORIES = [{'id': REPOSITORY_ID}, ]
 
 NON_NODES_DISTRIBUTORS_ONLY = [
@@ -103,7 +120,7 @@ class TestListCommands(ClientTests):
         self.assertTrue('Child Nodes' in lines[1])
 
     @patch(CONSUMER_LIST_API, return_value=Response(200, CONSUMERS_AND_NODES))
-    def test_list_nodes_with_node(self, mock_binding):
+    def test_list_nodes(self, mock_binding):
         # Test
         command = NodeListCommand(self.context)
         command.run(fields=None)
@@ -111,6 +128,17 @@ class TestListCommands(ClientTests):
         mock_binding.assert_called_with(bindings=False, details=False)
         lines = self.recorder.lines
         self.assertEqual(len(lines), 9)
+        self.assertTrue(NODE_LIST_TITLE in lines[1])
+
+    @patch(CONSUMER_LIST_API, return_value=Response(200, NODES_WITH_BINDINGS))
+    def test_list_nodes_with_bindings(self, mock_binding):
+        # Test
+        command = NodeListCommand(self.context)
+        command.run(fields=None)
+        # Verify
+        mock_binding.assert_called_with(bindings=False, details=False)
+        lines = self.recorder.lines
+        self.assertEqual(len(lines), 16)
         self.assertTrue(NODE_LIST_TITLE in lines[1])
 
     @patch(REPO_LIST_API, return_value=Response(200, ALL_REPOSITORIES))
