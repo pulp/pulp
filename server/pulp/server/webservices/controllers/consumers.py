@@ -30,6 +30,7 @@ from pulp.server.itineraries.consumer import (
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.managers.consumer.applicability import retrieve_consumer_applicability
+from pulp.server import tasks
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -37,9 +38,8 @@ from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 import pulp.server.managers.factory as managers
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def expand_consumers(options, consumers):
@@ -672,15 +672,8 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise InvalidValue('consumer_criteria')
 
-        manager = managers.applicability_regeneration_manager()
-        regeneration_tag = action_tag('applicability_regeneration')
-        call_request = CallRequest(manager.regenerate_applicability_for_consumers,
-                                   [consumer_criteria],
-                                   tags=[regeneration_tag])
-        # allow only one applicability regeneration task at a time
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-                                      dispatch_constants.RESOURCE_ANY_ID)
-        return execution.execute_async(self, call_request)
+        async_result = tasks.regenerate_applicability_for_consumers.apply_async(
+            (consumer_criteria.as_dict(),))
 
 
 class UnitInstallScheduleCollection(JSONController):

@@ -41,6 +41,7 @@ class ApplicabilityRegenerationManager(object):
         :param consumer_criteria: The consumer selection criteria
         :type consumer_criteria: pulp.server.db.model.criteria.Criteria
         """
+        consumer_criteria = Criteria.from_client_input(consumer_criteria)
         consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
         consumer_profile_manager = managers.consumer_profile_manager()
