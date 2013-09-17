@@ -26,6 +26,7 @@ from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch import pickling
 from pulp.server.dispatch.call import CallReport, CallRequest
 from pulp.server.dispatch.scheduler import Scheduler, scheduler_complete_callback
+from pulp.server.exceptions import InvalidValue
 
 import base
 
@@ -103,10 +104,7 @@ class SchedulerCallControlTests(SchedulerTests):
 
     def test_add_no_runs(self):
         call_request = CallRequest(itinerary_call)
-        schedule_id = self.scheduler.add(call_request, SCHEDULE_0_RUNS)
-        self.assertTrue(schedule_id is None)
-        cursor = self.scheduled_call_collection.find()
-        self.assertTrue(cursor.count() == 0)
+        self.assertRaises(InvalidValue, self.scheduler.add, call_request, SCHEDULE_0_RUNS)
 
     def test_remove(self):
         call_request = CallRequest(itinerary_call)
@@ -126,7 +124,6 @@ class SchedulerCallControlTests(SchedulerTests):
         self.assertEqual(scheduled_call['call_count'], -1)
         self.assertTrue(dispatch_constants.CALL_FINISHED_STATE in scheduled_call['call_exit_states'],
                         str(scheduled_call['call_exit_states']))
-        self.assertEqual(scheduled_call['remaining_runs'], 2)
 
     def test_complete_callback_missing_schedule(self):
         scheduled_call_request = CallRequest(itinerary_call)
@@ -168,7 +165,7 @@ class SchedulerSchedulingTests(SchedulerTests):
 
         scheduled_call['call_exit_states'].append(dispatch_constants.CALL_ERROR_STATE)
 
-        self.scheduler.update_consecutive_failures_and_runs(scheduled_call)
+        self.scheduler.update_consecutive_failures(scheduled_call)
         updated_scheduled_call = self.scheduled_call_collection.find_one({'_id': ObjectId(schedule_id)})
 
         self.assertTrue(updated_scheduled_call['consecutive_failures'] == 1)
