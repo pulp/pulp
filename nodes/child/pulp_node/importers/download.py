@@ -69,6 +69,7 @@ class UnitDownloadManager(AggregatingEventListener):
     def create_request(unit_URL, destination, unit, unit_ref):
         """
         Create a nectar download request compatible with the listener.
+        The destination directory is created was needed.
         :param unit_URL: The download URL.
         :type unit_URL: str
         :param destination: The absolute path to where the file is to be downloaded.
@@ -84,6 +85,8 @@ class UnitDownloadManager(AggregatingEventListener):
             STORAGE_PATH: unit[constants.STORAGE_PATH],
             UNIT_REF: unit_ref
         }
+        dir_path = os.path.dirname(destination)
+        pathlib.mkdir(dir_path)
         return DownloadRequest(unit_URL, destination, data=data)
 
     def __init__(self, strategy, request):
@@ -100,17 +103,12 @@ class UnitDownloadManager(AggregatingEventListener):
     def download_started(self, report):
         """
         A specific download (request) has started.
-          1. Check to see if the node sync request has been cancelled and cancel
-             the downloader as needed.
-          2. Create the destination directory structure as needed.
+        Use this as an opportunity to handle cancellation.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport.
         """
         super(self.__class__, self).download_started(report)
-        if not self.request.cancelled():
-            dir_path = os.path.dirname(report.destination)
-            pathlib.mkdir(dir_path)
-        else:
+        if self.request.cancelled():
             self.request.downloader.cancel()
 
     def download_succeeded(self, report):
