@@ -22,7 +22,7 @@ from copy import deepcopy
 from mock import Mock, patch
 from base import WebTest
 
-from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.downloaders.local import LocalFileDownloader
 from nectar.request import DownloadRequest
 from nectar.config import DownloaderConfig
 
@@ -59,6 +59,7 @@ from pulp_node.handlers.strategies import Mirror, Additive
 from pulp_node.handlers.reports import RepositoryReport
 from pulp_node import error
 from pulp_node import constants
+from pulp_node import pathlib
 
 
 FAKE_DISTRIBUTOR = 'test_distributor'
@@ -478,9 +479,9 @@ class TestDistributor(PluginTestBase):
         dist.publish_repo(repo, conduit, self.dist_conf())
         # Verify
         conf = DownloaderConfig()
-        downloader = HTTPSCurlDownloader(conf)
+        downloader = LocalFileDownloader(conf)
         pub = dist.publisher(repo, self.dist_conf())
-        url = '/'.join((pub.base_url, pub.manifest_path()))
+        url = pathlib.url_join(pub.base_url, pub.manifest_path())
         working_dir = self.childfs
         manifest = RemoteManifest(url, downloader, working_dir)
         manifest.fetch()
@@ -559,6 +560,7 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
     def test_import(self, *mocks):
@@ -571,12 +573,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        cfg = {
-            'protocol':'file',
-            'http':{'alias':self.alias},
-            'https':{'alias':self.alias},
-            'file':{'alias':self.alias},
-        }
+        cfg = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
@@ -587,7 +584,7 @@ class ImporterTest(PluginTestBase):
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
-        manifest_url = 'file://' + publisher.manifest_path()
+        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
         configuration = {
             constants.MANIFEST_URL_KEYWORD: manifest_url,
             constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
@@ -608,8 +605,9 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
-    def test_import_cached_manifest_matched(self, mock_fetch):
+    def test_import_cached_manifest_matched(self, mock_fetch, *unused):
         # Setup
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.parentfs)
@@ -617,12 +615,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        configuration = {
-            'protocol': 'file',
-            'http': {'alias': self.alias},
-            'https': {'alias': self.alias},
-            'file': {'alias': self.alias},
-        }
+        configuration = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, configuration)
         Repo.get_collection().remove()
@@ -639,7 +632,7 @@ class ImporterTest(PluginTestBase):
         shutil.copy(units_path, os.path.join(working_dir, UNITS_FILE_NAME))
         # Test
         importer = NodesHttpImporter()
-        manifest_url = 'file://' + manifest_path
+        manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
         configuration = {
             constants.MANIFEST_URL_KEYWORD: manifest_url,
             constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
@@ -657,7 +650,8 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
         self.assertFalse(mock_fetch.called)
 
-    def test_import_cached_manifest_missing_units(self):
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
+    def test_import_cached_manifest_missing_units(self, *unused):
         # Setup
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.parentfs)
@@ -665,12 +659,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        configuration = {
-            'protocol': 'file',
-            'http': {'alias': self.alias},
-            'https': {'alias': self.alias},
-            'file': {'alias': self.alias},
-        }
+        configuration = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, configuration)
         Repo.get_collection().remove()
@@ -685,8 +674,11 @@ class ImporterTest(PluginTestBase):
         shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
         # Test
         importer = NodesHttpImporter()
-        manifest_url = 'file://' + manifest_path
-        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+        }
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
@@ -699,7 +691,8 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
-    def test_import_cached_manifest_units_invalid(self):
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
+    def test_import_cached_manifest_units_invalid(self, *unused):
         # Setup
         self.populate()
         pulp_conf.set('server', 'storage_dir', self.parentfs)
@@ -707,12 +700,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        configuration = {
-            'protocol': 'file',
-            'http': {'alias': self.alias},
-            'https': {'alias': self.alias},
-            'file': {'alias': self.alias},
-        }
+        configuration = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, configuration)
         Repo.get_collection().remove()
@@ -729,8 +717,11 @@ class ImporterTest(PluginTestBase):
             fp.write('invalid-units')
         # Test
         importer = NodesHttpImporter()
-        manifest_url = 'file://' + manifest_path
-        configuration = dict(manifest_url=manifest_url, strategy=constants.MIRROR_STRATEGY)
+        manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
+        configuration = {
+            constants.MANIFEST_URL_KEYWORD: manifest_url,
+            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+        }
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
@@ -743,6 +734,7 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
     def test_import_unit_files_already_exist(self, *mocks):
@@ -753,12 +745,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        cfg = {
-            'protocol': 'file',
-            'http': {'alias': self.alias},
-            'https': {'alias': self.alias},
-            'file': {'alias': self.alias},
-        }
+        cfg = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
@@ -772,7 +759,7 @@ class ImporterTest(PluginTestBase):
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
-        manifest_url = 'file://' + publisher.manifest_path()
+        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
         configuration = {
             constants.MANIFEST_URL_KEYWORD: manifest_url,
             constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
@@ -791,6 +778,7 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
     def test_import_unit_files_already_exist_size_mismatch(self, *mocks):
@@ -801,12 +789,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        cfg = {
-            'protocol': 'file',
-            'http': {'alias': self.alias},
-            'https': {'alias': self.alias},
-            'file': {'alias': self.alias},
-        }
+        cfg = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         Repo.get_collection().remove()
@@ -826,7 +809,7 @@ class ImporterTest(PluginTestBase):
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
-        manifest_url = 'file://' + publisher.manifest_path()
+        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
         configuration = {
             constants.MANIFEST_URL_KEYWORD: manifest_url,
             constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
@@ -845,6 +828,7 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
+    @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
     def test_import_modified_units(self, *mocks):
@@ -857,12 +841,7 @@ class ImporterTest(PluginTestBase):
         working_dir = os.path.join(self.childfs, 'working_dir')
         os.makedirs(working_dir)
         repo = Repository(self.REPO_ID, working_dir)
-        cfg = {
-            'protocol': 'file',
-            'http': {'alias': self.alias},
-            'https': {'alias': self.alias},
-            'file': {'alias': self.alias},
-        }
+        cfg = self.dist_conf()
         conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
         dist.publish_repo(repo, conduit, cfg)
         # make the published unit have a newer _last_updated.
@@ -874,7 +853,7 @@ class ImporterTest(PluginTestBase):
         # Test
         importer = NodesHttpImporter()
         publisher = dist.publisher(repo, cfg)
-        manifest_url = 'file://' + publisher.manifest_path()
+        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
         configuration = {
             constants.MANIFEST_URL_KEYWORD: manifest_url,
             constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
@@ -1055,6 +1034,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1105,6 +1085,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         @patch('pulp.agent.lib.conduit.Conduit.cancelled', return_value=True)
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1204,6 +1185,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=AdditiveTestStrategy(self, extra_repos=self.EXTRA_REPO_IDS))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
@@ -1258,6 +1240,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=AdditiveTestStrategy(self, extra_repos=self.EXTRA_REPO_IDS))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1311,6 +1294,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, units=True))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1358,6 +1342,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, units=True, dist_config={'A': 1}))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1409,6 +1394,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, extra_units=self.NUM_EXTRA_UNITS))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1457,6 +1443,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy',
                return_value=MirrorTestStrategy(self, repo=False, units=True, extra_repos=self.EXTRA_REPO_IDS))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1514,6 +1501,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
@@ -1563,6 +1551,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
@@ -1609,18 +1598,14 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
             pulp_conf.set('server', 'storage_dir', self.parentfs)
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
-            cfg = {
-                'protocol':'file',
-                'http':{'alias':self.alias},
-                'https':{'alias':self.alias},
-                'file':{'alias':self.alias},
-            }
+            cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
             units = []
@@ -1663,6 +1648,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self, plugins=True))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.MIRROR_STRATEGY)
@@ -1714,6 +1700,7 @@ class TestEndToEnd(PluginTestBase):
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
+        @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish
             self.populate(constants.ADDITIVE_STRATEGY)
