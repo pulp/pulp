@@ -69,7 +69,7 @@ class UnitDownloadManager(AggregatingEventListener):
     def create_request(unit_URL, destination, unit, unit_ref):
         """
         Create a nectar download request compatible with the listener.
-        The destination directory is created was needed.
+        The destination directory is created as needed.
         :param unit_URL: The download URL.
         :type unit_URL: str
         :param destination: The absolute path to where the file is to be downloaded.
