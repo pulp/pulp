@@ -291,12 +291,12 @@ class Repository(Entity):
             constants.MAX_DOWNLOAD_CONCURRENCY_KEYWORD,
             constants.DEFAULT_DOWNLOAD_CONCURRENCY)
         node_certificate = options[constants.PARENT_SETTINGS][constants.NODE_CERTIFICATE]
-        node_key, node_certificate = Bundle.split(node_certificate)
+        key, certificate = Bundle.split(node_certificate)
         configuration = {
             importer_constants.KEY_MAX_DOWNLOADS: max_download,
             importer_constants.KEY_MAX_SPEED: options.get(constants.MAX_DOWNLOAD_BANDWIDTH_KEYWORD),
-            importer_constants.KEY_SSL_CLIENT_KEY: node_key,
-            importer_constants.KEY_SSL_CLIENT_CERT: node_certificate,
+            importer_constants.KEY_SSL_CLIENT_KEY: key,
+            importer_constants.KEY_SSL_CLIENT_CERT: certificate,
             importer_constants.KEY_SSL_VALIDATION: False,
         }
         http = bindings.repo_actions.sync(self.repo_id, configuration)
