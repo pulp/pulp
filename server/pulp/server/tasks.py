@@ -12,11 +12,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from celery import Celery, task, Task as CeleryTask
 
-from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
+from pulp.server.config import config
 from pulp.server import initialization
+from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
 
 
-celery = Celery('tasks', broker='amqp://user:password@grapefruit.rdu.redhat.com:5673/myvhost')
+broker_url = config.get('tasks', 'broker_url')
+celery = Celery('tasks', broker=broker_url)
 initialization.initialize()
 
 
