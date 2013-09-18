@@ -240,9 +240,12 @@ class Bindings(JSONController):
         body = self.params()
         repo_id = body.get('repo_id')
         distributor_id = body.get('distributor_id')
-        binding_config = body.get('binding_config', None)
+        binding_config = body.get('binding_config', {})
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
+
+        if not isinstance(binding_config, dict):
+            raise BadRequest()
 
         managers.repo_query_manager().get_repository(repo_id)
         managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
