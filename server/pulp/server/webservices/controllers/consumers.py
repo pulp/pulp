@@ -23,7 +23,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue
+from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, OperationPostponed
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
@@ -674,6 +674,8 @@ class ContentApplicabilityRegeneration(JSONController):
 
         async_result = tasks.regenerate_applicability_for_consumers.apply_async(
             (consumer_criteria.as_dict(),))
+        call_report = CallReport(call_request_id=async_result.id)
+        raise OperationPostponed(call_report)
 
 
 class UnitInstallScheduleCollection(JSONController):
