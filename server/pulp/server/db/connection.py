@@ -62,7 +62,6 @@ def initialize(name=None, seeds=None, max_pool_size=None):
 
         _DATABASE = getattr(_CONNECTION, name)
         _DATABASE.add_son_manipulator(NamespaceInjector())
-        # _DATABASE.add_son_manipulator(AutoReference(_DATABASE))
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
