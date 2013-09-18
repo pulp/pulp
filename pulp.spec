@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.12.alpha%{?dist}
+Release: 0.13.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -469,6 +469,21 @@ exit 0
 %endif
 
 %changelog
+* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.13.alpha
+- 965751 - migrate nodes to use threaded downloader. (jortel@redhat.com)
+- 1009118 - bindings require python-oauth. (jortel@redhat.com)
+- 1004346 - deal with bindings w (None) as binding_config. (jortel@redhat.com)
+- 995528 - Remove legacy usage of AutoReference as it has a significant
+  performance impact on queries of larger repositories and is no longer being
+  used. (bcourt@redhat.com)
+- 1004790 - Remove legacy dependency on Grinder that is no longer required.
+  (bcourt@redhat.com)
+- 993424 - forced unbind when bindings have notify_agent=False
+  (jortel@redhat.com)
+- 959031 - 968524 - rewritten scheduler that fixes bug in subsequent schedule
+  runs and allows next_run to be updated when upating the schedule of a
+  scheduled_call (jason.connor@gmail.com)
+
 * Fri Sep 13 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.12.alpha
 - Pulp rebuild
 
