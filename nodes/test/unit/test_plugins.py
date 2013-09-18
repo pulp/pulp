@@ -66,6 +66,14 @@ FAKE_DISTRIBUTOR = 'test_distributor'
 FAKE_ID = 'fake_plugin_id'
 FAKE_DISTRIBUTOR_CONFIG = {'A': 0}
 
+NODE_CERTIFICATE = """
+    -----BEGIN RSA PRIVATE KEY-----
+    PULPROCKSPULPROCKSPULPROCKS
+    -----END RSA PRIVATE KEY-----
+    -----BEGIN CERTIFICATE-----
+    PULPROCKSPULPROCKSPULPROCKS
+    -----END CERTIFICATE-----
+"""
 
 # --- testing mock classes ---------------------------------------------------
 
@@ -140,7 +148,6 @@ class AgentConduit(Conduit):
         return self.node_id
 
 
-
 # --- testing base classes ---------------------------------------------------
 
 
@@ -155,7 +162,6 @@ class PluginTestBase(WebTest):
     NUM_UNITS = 10
     NUM_EXTRA_UNITS = 5
     EXTRA_REPO_IDS = ('extra_1', 'extra_2')
-    NODE_CERTIFICATE = 'KEY-AND-CERTIFICATE'
 
     PARENT_SETTINGS = {
         constants.HOST: 'pulp.redhat.com',
@@ -165,8 +171,8 @@ class PluginTestBase(WebTest):
 
     @classmethod
     def tmpdir(cls, role):
-        dir = tempfile.mkdtemp(dir=cls.TMP_ROOT, prefix=role)
-        return dir
+        tmp_dir = tempfile.mkdtemp(dir=cls.TMP_ROOT, prefix=role)
+        return tmp_dir
 
     def setUp(self):
         WebTest.setUp(self)
@@ -218,7 +224,7 @@ class PluginTestBase(WebTest):
     def node_configuration(self):
         path = os.path.join(self.parentfs, 'node.crt')
         with open(path, 'w+') as fp:
-            fp.write(self.NODE_CERTIFICATE)
+            fp.write(NODE_CERTIFICATE)
         node_conf = Config({'main': {constants.NODE_CERTIFICATE: path}})
         return node_conf.graph()
 
@@ -327,7 +333,7 @@ class TestProfiler(PluginTestBase):
         settings = options[constants.PARENT_SETTINGS]
         self.assertEqual(settings[constants.HOST], host)
         self.assertEqual(settings[constants.PORT], port)
-        self.assertEqual(settings[constants.NODE_CERTIFICATE], self.NODE_CERTIFICATE)
+        self.assertEqual(settings[constants.NODE_CERTIFICATE], NODE_CERTIFICATE)
         self.assertEqual(units, _units)
 
 

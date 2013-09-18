@@ -14,6 +14,7 @@ import httplib
 from mock import patch, Mock
 
 from pulp.common.plugins import importer_constants
+from pulp.common.bundle import Bundle
 
 from base import WebTest, Response, Task
 from pulp_node.handlers.model import Repository
@@ -24,9 +25,17 @@ PULP_ID = 'pulp_1'
 REPO_ID = 'repo_1'
 MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
-SSL_CERT = 98765
 
-PARENT_SETTINGS = {constants.NODE_CERTIFICATE: SSL_CERT}
+NODE_CERTIFICATE = """
+    -----BEGIN RSA PRIVATE KEY-----
+    PULPROCKSPULPROCKSPULPROCKS
+    -----END RSA PRIVATE KEY-----
+    -----BEGIN CERTIFICATE-----
+    PULPROCKSPULPROCKSPULPROCKS
+    -----END CERTIFICATE-----
+"""
+
+PARENT_SETTINGS = {constants.NODE_CERTIFICATE: NODE_CERTIFICATE}
 
 
 class TestModel(WebTest):
@@ -53,11 +62,13 @@ class TestModel(WebTest):
         }
         repository.run_synchronization(progress, cancelled, options)
         binding = mocks[1]
+        key, certificate = Bundle.split(NODE_CERTIFICATE)
         expected_conf = {
             importer_constants.KEY_SSL_VALIDATION: False,
             importer_constants.KEY_MAX_DOWNLOADS: MAX_CONCURRENCY,
             importer_constants.KEY_MAX_SPEED: MAX_BANDWIDTH,
-            importer_constants.KEY_SSL_CLIENT_CERT: SSL_CERT,
+            importer_constants.KEY_SSL_CLIENT_KEY: key,
+            importer_constants.KEY_SSL_CLIENT_CERT: certificate,
         }
         # Verify
         binding.assert_called_with(REPO_ID, expected_conf)
