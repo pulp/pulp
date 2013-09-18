@@ -449,7 +449,8 @@ class RepoResourceTests(RepoControllersTests):
             _id='bind_1',
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
+            distributor_id=distributor_id,
+            notify_agent=True)
 
         mock_get.return_value = bind
         mock_find.return_value = [bind]
@@ -949,7 +950,8 @@ class RepoDistributorTests(RepoPluginsTests):
             _id='bind_1',
             consumer_id=consumer_id,
             repo_id=repo_id,
-            distributor_id=distributor_id)
+            distributor_id=distributor_id,
+            notify_agent=True)
 
         mock_find.return_value = [bind]
         mock_get.return_value = bind

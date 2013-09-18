@@ -299,12 +299,10 @@ class Binding(JSONController):
         body = self.params()
         # validate resources
         manager = managers.consumer_bind_manager()
-        binding = manager.get_bind(consumer_id, repo_id, distributor_id)
-        notify_agent = binding['notify_agent']
         # delete (unbind)
         forced = body.get('force', False)
         options = body.get('options', {})
-        if forced or not notify_agent:
+        if forced:
             call_requests = forced_unbind_itinerary(
                 consumer_id,
                 repo_id,

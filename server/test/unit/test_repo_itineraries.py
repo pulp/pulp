@@ -24,7 +24,6 @@ class TestDeletes(PulpItineraryTests):
     CONSUMER_ID = 'test-consumer'
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
-    NOTIFY_AGENT = True
     BINDING_CONFIG = {'d' : 'd'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
@@ -46,7 +45,7 @@ class TestDeletes(PulpItineraryTests):
         Bind.get_collection().remove()
         mock_plugins.reset()
 
-    def populate(self):
+    def populate(self, notify_agent=True):
         manager = factory.repo_manager()
         manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
@@ -56,7 +55,7 @@ class TestDeletes(PulpItineraryTests):
         manager.register(self.CONSUMER_ID)
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+                     notify_agent, self.BINDING_CONFIG)
 
     def test_repo_delete(self):
 
@@ -81,6 +80,29 @@ class TestDeletes(PulpItineraryTests):
         repo = Repo.get_collection().find_one({'id' : self.REPO_ID})
         self.assertTrue(repo is None)
 
+    def test_repo_delete_agent_not_notified(self):
+
+        # Setup
+        self.populate(notify_agent=False)
+
+        # Test
+
+        itinerary = repo_delete_itinerary(self.REPO_ID)
+        call_reports = self.coordinator.execute_multiple_calls(itinerary)
+
+        # Verify
+
+        self.assertEqual(len(call_reports), 2)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # run task #1: repo delete
+        self.run_next()
+
+        # verify repo deleted
+        repo = Repo.get_collection().find_one({'id' : self.REPO_ID})
+        self.assertTrue(repo is None)
+
     def test_distributor_delete(self):
 
         # Setup
@@ -94,6 +116,29 @@ class TestDeletes(PulpItineraryTests):
         # Verify
 
         self.assertEqual(len(call_reports), 4)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # run task #1: distributor delete
+        self.run_next()
+
+        # verify distributor deleted
+        dist = RepoDistributor.get_collection().find_one({'repo_id' : self.REPO_ID})
+        self.assertTrue(dist is None)
+
+    def test_distributor_delete_agent_not_notified(self):
+
+        # Setup
+        self.populate(notify_agent=False)
+
+        # Test
+
+        itinerary = distributor_delete_itinerary(self.REPO_ID, self.DISTRIBUTOR_ID)
+        call_reports = self.coordinator.execute_multiple_calls(itinerary)
+
+        # Verify
+
+        self.assertEqual(len(call_reports), 2)
         for call in call_reports:
             self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
