@@ -14,7 +14,7 @@
 from logging import getLogger
 from gettext import gettext as _
 
-from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.downloaders.threaded import HTTPThreadedDownloader as Downloader
 
 from pulp.server.compat import json
 from pulp.plugins.importer import Importer
@@ -165,5 +165,5 @@ class NodesHttpImporter(Importer):
         :rtype: nectar.downloaders.base.Downloader
         """
         configuration = importer_config_to_nectar_config(config.flatten())
-        downloader = HTTPSCurlDownloader(configuration)
+        downloader = Downloader(configuration)
         return downloader
