@@ -73,9 +73,9 @@ NODES_WITH_BINDINGS = [
          {'repo_id': 'r2',
           'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}},
          {'repo_id': 'r3',
-          'binding_config': None},  # not node binding
+          'binding_config': {}},  # not node binding
          {'repo_id': 'r4',
-          'binding_config': None},  # not node binding
+          'binding_config': {}},  # not node binding
      ]},
 ]
 

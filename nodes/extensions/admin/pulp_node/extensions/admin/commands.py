@@ -179,10 +179,7 @@ class NodeListCommand(ConsumerListCommand):
         key = 'bindings'
         for b in consumer.get(key, []):
             repo_id = b['repo_id']
-            cfg = b['binding_config']
-            if not isinstance(cfg, dict):
-                continue
-            strategy = cfg.get('strategy', constants.DEFAULT_STRATEGY)
+            strategy = b['binding_config'].get('strategy', constants.DEFAULT_STRATEGY)
             repo_ids = formatted.get(strategy)
             if repo_ids is None:
                 repo_ids = []
