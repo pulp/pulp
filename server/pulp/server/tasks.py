@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from celery import Celery, task, Task as CeleryTask
+from celery.app import control
 
 from pulp.server.config import config
 from pulp.server import initialization
@@ -19,6 +20,7 @@ from pulp.server.managers.consumer.applicability import ApplicabilityRegeneratio
 
 broker_url = config.get('tasks', 'broker_url')
 celery = Celery('tasks', broker=broker_url)
+controller = control.Control(app=celery)
 initialization.initialize()
 
 
@@ -27,6 +29,16 @@ initialization.initialize()
 class Task(CeleryTask):
     def apply_async_with_reservation(self, resource_id, *args, **kwargs):
         self.apply_async(*args, **kwargs)
+
+
+def cancel(task_id):
+    """
+    Cancel the task that is represented by the given task_id.
+
+    :param task_id: The ID of the task you wish to cancel
+    :type  task_id: basestring
+    """
+    controller.revoke(task_id, terminate=True)
 
 
 @task(base=Task)
