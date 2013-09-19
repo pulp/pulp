@@ -315,7 +315,7 @@ class RepositoryHistoryAPI(PulpAPI):
         path = self.base_path % repo_id + "/publish/" + "%s/" % distributor_id
         queries = {}
         if limit:
-            queries[constants.REPO_HISTORY_LIMIT] = limit
+            queries[constants.REPO_HISTORY_FILTER_LIMIT] = limit
         if sort:
             queries[constants.REPO_HISTORY_FILTER_SORT] = sort
         if start_date:
