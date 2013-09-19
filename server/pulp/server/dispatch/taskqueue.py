@@ -288,7 +288,9 @@ class TaskQueue(object):
         """
         self.__lock.acquire()
         try:
-            self.__running_weight -= task.call_request.weight
+            # only decrement the running weight if the task was running
+            if task in self.__running_tasks:
+                self.__running_weight -= task.call_request.weight
             self.dequeue(task)
             self.__completed_tasks.append(task)
         finally:
