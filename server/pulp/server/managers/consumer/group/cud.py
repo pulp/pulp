@@ -22,30 +22,30 @@ from pulp.server.db.model.consumer import Consumer, ConsumerGroup
 from pulp.server.exceptions import InvalidValue
 from pulp.server.managers import factory as manager_factory
 
-# -- constants ----------------------------------------------------------------
 
 _CONSUMER_GROUP_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 _LOG = logging.getLogger(__name__)
 
 
 class ConsumerGroupManager(object):
-
-    # cud operations -----------------------------------------------------------
-
-    def create_consumer_group(self, group_id, display_name=None, description=None, consumer_ids=None, notes=None):
+    @staticmethod
+    def create_consumer_group(group_id, display_name=None, description=None, consumer_ids=None,
+                              notes=None):
         """
         Create a new consumer group.
-        @param group_id: unique id of the consumer group
-        @param display_name: display name of the consumer group
-        @type  display_name: str or None
-        @param description: description of the consumer group
-        @type  description: str or None
-        @param consumer_ids: list of ids for consumers initially belonging to the consumer group
-        @type  consumer_ids: list or None
-        @param notes: notes for the consumer group
-        @type  notes: dict or None
-        @return: SON representation of the consumer group
-        @rtype:  L{bson.SON}
+
+        :param group_id:     unique id of the consumer group
+        :type  group_id:     basestring
+        :param display_name: display name of the consumer group
+        :type  display_name: str or None
+        :param description:  description of the consumer group
+        :type  description:  str or None
+        :param consumer_ids: list of ids for consumers initially belonging to the consumer group
+        :type  consumer_ids: list or None
+        :param notes:        notes for the consumer group
+        :type  notes:        dict or None
+        :return:             SON representation of the consumer group
+        :rtype:              bson.SON
         """
         if group_id is None or _CONSUMER_GROUP_ID_REGEX.match(group_id) is None:
             raise InvalidValue(['group_id'])

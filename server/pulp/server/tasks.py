@@ -59,14 +59,4 @@ def cancel(task_id):
     controller.revoke(task_id, terminate=True)
 
 
-@task(base=Task)
-def regenerate_applicability_for_consumers(*args, **kwargs):
-    """
-    This function is a wrapper around the
-    ApplicabilityRegenerationManager.regenerate_applicability_for_consumers() method. It provides a
-    Task interface to it for asynchronous operation.
-
-    :param args:   The positional arguments you wish to pass to the wrapped method.
-    :param kwargs: The keyword arguments you wish to pass to the wrapped method.
-    """
-    return ApplicabilityRegenerationManager.regenerate_applicability_for_consumers(*args, **kwargs)
+regenerate_applicability_for_consumers = task(ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task)
