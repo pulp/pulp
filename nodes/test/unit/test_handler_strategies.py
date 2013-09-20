@@ -55,7 +55,15 @@ class TestRepo:
 REPO_ID = 'foo'
 TYPE_ID = 'random_importer'
 TASK_ID = 'test_task'
-NODE_CERTIFICATE = 'POAOISFDX'
+
+NODE_CERTIFICATE = """
+    -----BEGIN RSA PRIVATE KEY-----
+    PULPROCKSPULPROCKSPULPROCKS
+    -----END RSA PRIVATE KEY-----
+    -----BEGIN CERTIFICATE-----
+    PULPROCKSPULPROCKSPULPROCKS
+    -----END CERTIFICATE-----
+"""
 
 PARENT_SETTINGS = {
     constants.HOST: 'pulp.redhat.com',

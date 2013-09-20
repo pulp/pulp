@@ -21,8 +21,7 @@ def connect(db_name='pulp_database'):
     _connection = pymongo.Connection()
     _db = getattr(_connection, db_name)
     _db.add_son_manipulator(NamespaceInjector())
-    _db.add_son_manipulator(AutoReference(_db))
-    
+
 
 def clean():
     """

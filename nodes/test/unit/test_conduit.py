@@ -18,6 +18,7 @@ from pulp.server.managers import factory as managers
 from pulp.plugins.types import database as unit_db
 from pulp.server.db.model.repository import Repo
 from pulp.server.db.model.repository import RepoContentUnit
+from pulp.server.db.model.content import ContentType
 
 from pulp_node import constants
 from pulp_node.importers.http.importer import NodesHttpImporter
@@ -90,9 +91,7 @@ class QueryTests(ServerTests):
         Repo.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
-        for type_id in ALL_TYPES:
-            unit_db.type_definition = Mock(return_value=dict(id=type_id, unit_key=UNIT_METADATA))
-        unit_db.type_units_unit_key = Mock(return_value=['A', 'B', 'C', 'N'])
+        self.define_plugins()
         plugin_api._create_manager()
         plugin_api._MANAGER.importers.add_plugin(constants.HTTP_IMPORTER, NodesHttpImporter, {})
 
@@ -101,6 +100,11 @@ class QueryTests(ServerTests):
         Repo.get_collection().remove()
         RepoContentUnit.get_collection().remove()
         unit_db.clean()
+
+    def define_plugins(self):
+        collection = ContentType.get_collection()
+        for type_id in ALL_TYPES:
+            collection.save(dict(id=type_id, unit_key=UNIT_METADATA.keys()), safe=True)
 
     def test_query(self):
         num_units = 5

@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.10.alpha%{?dist}
+Release: 0.14.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -274,6 +274,7 @@ A collection of components that are common between the pulp server and client.
 Summary: Pulp REST bindings for python
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+Requires: python-oauth2 >= 1.5.170-2.pulp
 Requires: m2crypto
 
 %description -n python-pulp-bindings
@@ -468,6 +469,30 @@ exit 0
 %endif
 
 %changelog
+* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.14.alpha
+- Pulp rebuild
+
+* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.13.alpha
+- 965751 - migrate nodes to use threaded downloader. (jortel@redhat.com)
+- 1009118 - bindings require python-oauth. (jortel@redhat.com)
+- 1004346 - deal with bindings w (None) as binding_config. (jortel@redhat.com)
+- 995528 - Remove legacy usage of AutoReference as it has a significant
+  performance impact on queries of larger repositories and is no longer being
+  used. (bcourt@redhat.com)
+- 1004790 - Remove legacy dependency on Grinder that is no longer required.
+  (bcourt@redhat.com)
+- 993424 - forced unbind when bindings have notify_agent=False
+  (jortel@redhat.com)
+- 959031 - 968524 - rewritten scheduler that fixes bug in subsequent schedule
+  runs and allows next_run to be updated when upating the schedule of a
+  scheduled_call (jason.connor@gmail.com)
+
+* Fri Sep 13 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.12.alpha
+- Pulp rebuild
+
+* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.11.alpha
+- Pulp rebuild
+
 * Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.10.alpha
 - 1005898 - Remove unnecessary dependency on gofer in pulp-nodes.spec file
   (bcourt@redhat.com)

@@ -35,8 +35,10 @@ def join(base, *paths):
 
 
 def url_join(base, *paths):
+    base = base.split('://', 1)
+    base = '://'.join((base[0], base[1].rstrip('/')))
     path = os.path.join(*[p.lstrip('/') for p in paths])
-    return '/'.join((base.rstrip('/'), path))
+    return '/'.join((base, path))
 
 
 def quote(path):

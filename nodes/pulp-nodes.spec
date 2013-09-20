@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.10.alpha%{?dist}
+Release: 0.14.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -240,6 +240,19 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.14.alpha
+- Pulp rebuild
+
+* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.13.alpha
+- 965751 - migrate nodes to use threaded downloader. (jortel@redhat.com)
+- 1004346 - deal with bindings w (None) as binding_config. (jortel@redhat.com)
+
+* Fri Sep 13 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.12.alpha
+- Pulp rebuild
+
+* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.11.alpha
+- Pulp rebuild
+
 * Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.10.alpha
 - 1005898 - Remove unnecessary dependency on gofer in pulp-nodes.spec file
   (bcourt@redhat.com)

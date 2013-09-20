@@ -172,7 +172,7 @@ Each *applicability report* is an object:
                        array of applicable unit ids
 
 | :method:`post`
-| :path:`/v2/consumers/actions/content/applicability/`
+| :path:`/v2/consumers/content/applicability/`
 | :permission:`read`
 | :param_list:`post`
 

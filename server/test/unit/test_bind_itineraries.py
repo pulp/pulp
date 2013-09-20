@@ -24,6 +24,7 @@ from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.agent.lib.report import DispatchReport
 
+
 class TestBind(PulpItineraryTests):
 
     CONSUMER_ID = 'test-consumer'
@@ -387,6 +388,41 @@ class TestBind(PulpItineraryTests):
         bind = collection.find_one(self.QUERY)
         self.assertTrue(bind is None)
 
+    def test_unbind_agent_not_notified(self):
+
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                            False, self.BINDING_CONFIG)
+
+        # Test
+        options = {}
+        itinerary = unbind_itinerary(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            options)
+
+        call_reports = self.coordinator.execute_multiple_calls(itinerary)
+
+        # Verify
+        self.assertEqual(len(call_reports), 1)
+        self.assertEqual(call_reports[0].call_request_tags, self.UNBIND_TAGS)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # run task #1 (actual delete)
+        self.run_next()
+
+        # verify bind deleted
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind is None)
+
+        # verify agent notified
+        self.assertFalse(mock_agent.Consumer.unbind.called)
+
     def test_forced_unbind(self):
 
         # Setup
@@ -424,6 +460,41 @@ class TestBind(PulpItineraryTests):
 
         # verify agent notified
         self.assertTrue(mock_agent.Consumer.unbind.called)
+
+    def test_forced_unbind_agent_not_notified(self):
+
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                            False, self.BINDING_CONFIG)
+
+        # Test
+        options = {}
+        itinerary = forced_unbind_itinerary(
+            self.CONSUMER_ID,
+            self.REPO_ID,
+            self.DISTRIBUTOR_ID,
+            options)
+
+        call_reports = self.coordinator.execute_multiple_calls(itinerary)
+
+        # Verify
+        self.assertEqual(len(call_reports), 1)
+        self.assertEqual(call_reports[0].call_request_tags, self.UNBIND_TAGS)
+        for call in call_reports:
+            self.assertNotEqual(call.state, dispatch_constants.CALL_REJECTED_RESPONSE)
+
+        # run task #1 (actual delete)
+        self.run_next()
+
+        # verify bind deleted
+        collection = Bind.get_collection()
+        bind = collection.find_one(self.QUERY)
+        self.assertTrue(bind is None)
+
+        # verify agent notified
+        self.assertFalse(mock_agent.Consumer.unbind.called)
 
     @patch('pulp.server.managers.consumer.bind.BindManager.unbind', side_effect=Exception())
     def test_unbind_failed(self, mock_bind):

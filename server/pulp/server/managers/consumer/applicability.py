@@ -489,7 +489,7 @@ def _add_profiles_to_consumer_map_and_get_hashes(consumer_ids, consumer_map):
         fields=['consumer_id', 'profile_hash'])
     profile_hashes = set()
     for p in profiles:
-        consumer_map[p['consumer_id']]['profiles'].append(p.to_dict())
+        consumer_map[p['consumer_id']]['profiles'].append(p)
         profile_hashes.add(p['profile_hash'])
     # Let's return a list of all the unique profile_hashes for the query we will do a
     # bit later for applicability data
