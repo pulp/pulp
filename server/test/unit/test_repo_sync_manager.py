@@ -23,7 +23,7 @@ from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
 from pulp.plugins.model import SyncReport
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
-from pulp.server.exceptions import PulpExecutionException, InvalidValue
+from pulp.server.exceptions import PulpExecutionException, InvalidValue, MissingValue
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as repo_importer_manager
@@ -94,7 +94,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman', 'feed' : 'test_feed'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
@@ -145,7 +145,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
     def test_sync_with_graceful_fail(self):
         # Setup
-        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman', 'feed' : 'test_feed'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
@@ -173,7 +173,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         """
 
         # Setup
-        importer_config = {'thor' : 'thor'}
+        importer_config = {'thor' : 'thor', 'feed' : 'test_feed'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', importer_config)
 
@@ -197,6 +197,15 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertEqual({}, sync_args[2].plugin_config)
         self.assertEqual(importer_config, sync_args[2].repo_plugin_config)
         self.assertEqual(sync_config_override, sync_args[2].override_config)
+
+    def test_sync_missing_repo_feed(self):
+        # Setup
+        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        self.repo_manager.create_repo('repo-1')
+        self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
+
+        # Test
+        self.assertRaises(MissingValue, self.sync_manager.sync, 'repo-1')
 
     def test_sync_missing_repo(self):
         """
@@ -277,7 +286,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = FakePluginException(error_msg)
 
         self.repo_manager.create_repo('gonna-bail')
-        self.importer_manager.set_importer('gonna-bail', 'mock-importer', {})
+        self.importer_manager.set_importer('gonna-bail', 'mock-importer', {'feed' : 'test_feed'})
 
         # Test
         try:
@@ -362,7 +371,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         # Setup
         self.repo_manager.create_repo('repo-1')
-        self.importer_manager.set_importer('repo-1', 'mock-importer', {})
+        self.importer_manager.set_importer('repo-1', 'mock-importer', {'feed':'test_feed'})
 
         mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None # sloppy plugin
 
