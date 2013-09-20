@@ -673,7 +673,8 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise InvalidValue('consumer_criteria')
 
-        async_result = tasks.regenerate_applicability_for_consumers.apply_async(
+        async_result = tasks.regenerate_applicability_for_consumers.apply_async_with_reservation(
+            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
             (consumer_criteria.as_dict(),))
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
