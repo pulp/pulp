@@ -35,7 +35,7 @@ from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
+from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue, MissingValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
@@ -96,6 +96,10 @@ class RepoSyncManager(object):
 
         importer_manager = manager_factory.repo_importer_manager()
         repo_importer = importer_manager.get_importer(repo_id)
+
+        # Make sure repo feed is set before trying to run a sync
+        if 'feed' not in repo_importer['config']:
+            raise MissingValue('feed')
 
         # Assemble the data needed for the sync
         conduit = RepoSyncConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_IMPORTER, repo_importer['id'])
