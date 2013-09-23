@@ -21,7 +21,6 @@ import pymongo
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.base import Model
 
-# criteria model ---------------------------------------------------------------
 
 class Criteria(Model):
 
