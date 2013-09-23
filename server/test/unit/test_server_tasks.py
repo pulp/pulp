@@ -37,3 +37,16 @@ class TestTask(unittest.TestCase):
         task.apply_async_with_reservation(resource_id, *some_args, **some_kwargs)
 
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
+
+
+class TestCancel(unittest.TestCase):
+    """
+    Test the tasks.cancel() function.
+    """
+    @mock.patch('pulp.server.tasks.controller.revoke', autospec=True)
+    def test_cancel(self, revoke):
+        task_id = '1234abcd'
+
+        tasks.cancel(task_id)
+
+        revoke.assert_called_once_with(task_id, terminate=True)
