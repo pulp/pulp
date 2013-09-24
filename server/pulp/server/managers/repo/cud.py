@@ -31,6 +31,8 @@ from pulp.server.dispatch import factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException
+from pulp.server.itineraries.repository import distributor_update_itinerary
+from pulp.server.webservices import execution
 
 # -- constants ----------------------------------------------------------------
 
@@ -381,10 +383,13 @@ class RepoManager(object):
         exception is immediately raised. Any updates that have already taken
         place are not rolled back.
 
-        This call will call out to RepoImporterManager.update_importer_config
-        and RepoDistributorManager.update_distributor_config. Documentation for
-        those methods, especially possible exceptions, should be consulted for
-        more information.
+        This call will call out to RepoImporterManager.update_importer_config.
+        Documentation for that method, especially possible exceptions, should be
+        consulted for more information.
+
+        Distributor updates will happen asynchronously as there could be a
+        very large number of consumers to update and the repo update call
+        is usually made synchronously.
 
         :param repo_id: unique identifier for the repo
         :type  repo_id: str
@@ -416,9 +421,9 @@ class RepoManager(object):
 
         # Distributor Update
         if distributor_configs is not None:
-            distributor_manager = manager_factory.repo_distributor_manager()
             for dist_id, dist_config in distributor_configs.items():
-                distributor_manager.update_distributor_config(repo_id, dist_id, dist_config)
+                call_requests = distributor_update_itinerary(repo_id, dist_id, dist_config)
+                execution.execute_multiple(call_requests)
 
         return repo
 
