@@ -18,6 +18,8 @@ Contains content applicability management classes
 from gettext import gettext as _
 from logging import getLogger
 
+from celery import task
+
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
@@ -27,12 +29,13 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
+from pulp.server.async.tasks import Task
 
-_LOG = getLogger(__name__)
+
+logger = getLogger(__name__)
 
 
 class ApplicabilityRegenerationManager(object):
-
     @staticmethod
     def regenerate_applicability_for_consumers(consumer_criteria):
         """
@@ -52,8 +55,8 @@ class ApplicabilityRegenerationManager(object):
 
         # Following logic of checking existing applicability and getting required data
         # to generate applicability is a bit more complicated than what it could be 'by design'.
-        # It is to optimize the number of db queries and improving applicability generation 
-        # performance. Please consider the implications for applicability generation time 
+        # It is to optimize the number of db queries and improving applicability generation
+        # performance. Please consider the implications for applicability generation time
         # when making any modifications to this code.
 
         # Get all unit profiles associated with given consumers
@@ -61,7 +64,7 @@ class ApplicabilityRegenerationManager(object):
                                          fields=['consumer_id','profile_hash','content_type','id'])
         all_unit_profiles = consumer_profile_manager.find_by_criteria(unit_profile_criteria)
 
-        # Create a consumer-profile map with consumer id as the key and list of tuples 
+        # Create a consumer-profile map with consumer id as the key and list of tuples
         # with profile details as the value
         consumer_unit_profiles_map = {}
         # Also create a map of profile_id keyed by profile_hash for profile lookup.
@@ -98,15 +101,15 @@ class ApplicabilityRegenerationManager(object):
                 for unit_profile_tuple in consumer_unit_profiles_map[consumer_id]:
                     repo_profile_hashes.add((repo_id, unit_profile_tuple))
 
-        # Iterate through each tuple in repo_profile_hashes set and regenerate applicability, 
-        # if it doesn't exist. These are all guaranteed to be unique tuples because of the logic 
-        # used to create maps and sets above, eliminating multiple unnecessary queries 
+        # Iterate through each tuple in repo_profile_hashes set and regenerate applicability,
+        # if it doesn't exist. These are all guaranteed to be unique tuples because of the logic
+        # used to create maps and sets above, eliminating multiple unnecessary queries
         # to check for existing applicability for same profiles.
         for repo_id, (profile_hash, content_type) in repo_profile_hashes:
             # Check if applicability for given profile_hash and repo_id already exists
             if ApplicabilityRegenerationManager._is_existing_applicability(repo_id, profile_hash):
                 continue
-            # If applicability does not exist, generate applicability data for given profile 
+            # If applicability does not exist, generate applicability data for given profile
             # and repo id.
             profile_id = profile_hash_profile_id_map[profile_hash]
             ApplicabilityRegenerationManager.regenerate_applicability(profile_hash,
@@ -145,7 +148,7 @@ class ApplicabilityRegenerationManager(object):
                                                                           existing_applicability)
 
     @staticmethod
-    def regenerate_applicability(profile_hash, content_type, profile_id, 
+    def regenerate_applicability(profile_hash, content_type, profile_id,
                                  bound_repo_id, existing_applicability=None):
         """
         Regenerate and save applicability data for given profile and bound repo id.
@@ -173,7 +176,7 @@ class ApplicabilityRegenerationManager(object):
 
         # Check if the profiler supports applicability, else return
         if profiler.calculate_applicable_units == Profiler.calculate_applicable_units:
-            # If base class calculate_applicable_units method is called, 
+            # If base class calculate_applicable_units method is called,
             # skip applicability regeneration
             return
 
@@ -197,7 +200,7 @@ class ApplicabilityRegenerationManager(object):
                                                                     call_config,
                                                                     profiler_conduit)
             except NotImplementedError:
-                _LOG.debug("Profiler for content type [%s] does not support applicability" 
+                logger.debug("Profiler for content type [%s] does not support applicability"
                            % content_type)
                 return
 
@@ -234,7 +237,7 @@ class ApplicabilityRegenerationManager(object):
     def _is_existing_applicability(repo_id, profile_hash):
         """
         Check if applicability for given repo and profle hash is already calculated.
-        
+
         :param repo_id:      repo id
         :type repo_id:       basestring
         :param profile_hash: unit profile hash
@@ -265,6 +268,9 @@ class ApplicabilityRegenerationManager(object):
             plugin = Profiler()
             cfg = {}
         return plugin, cfg
+regenerate_applicability_for_consumers = task(
+    ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task,
+    ignore_result=True)
 
 
 class DoesNotExist(Exception):

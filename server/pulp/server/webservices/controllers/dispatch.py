@@ -17,7 +17,7 @@ from gettext import gettext as _
 
 import web
 
-from pulp.server import tasks
+from pulp.server.async import tasks
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory

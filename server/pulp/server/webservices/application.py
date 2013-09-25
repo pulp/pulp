@@ -39,7 +39,9 @@ logs.start_logging()
 from pulp.server import initialization
 
 from pulp.server.agent.direct.services import Services as AgentServices
-
+# Even though this import does not get used anywhere, we must import it for the Celery application
+# to be initialized
+from pulp.server.async import app
 from pulp.server.db import reaper
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory

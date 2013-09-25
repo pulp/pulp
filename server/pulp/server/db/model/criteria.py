@@ -21,14 +21,8 @@ import pymongo
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.base import Model
 
-# criteria model ---------------------------------------------------------------
 
 class Criteria(Model):
-
-    # XXX currently commented out so that we can get indexing right *before*
-    # storing them in the db - jconnor (2012-07-23)
-    #collection_name = 'criteria'
-
     def __init__(self, filters=None, sort=None, limit=None, skip=None, fields=None):
         super(Criteria, self).__init__()
 

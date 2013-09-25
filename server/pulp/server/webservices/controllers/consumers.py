@@ -29,8 +29,8 @@ from pulp.server.itineraries.consumer import (
     consumer_content_update_itinerary)
 from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
-from pulp.server.managers.consumer.applicability import retrieve_consumer_applicability
-from pulp.server import tasks
+from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
+                                                         retrieve_consumer_applicability)
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -673,7 +673,7 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise InvalidValue('consumer_criteria')
 
-        async_result = tasks.regenerate_applicability_for_consumers.apply_async_with_reservation(
+        async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
             (consumer_criteria.as_dict(),))
         call_report = CallReport(call_request_id=async_result.id)
