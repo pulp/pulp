@@ -275,3 +275,39 @@ class TestConfigValidator(unittest.TestCase):
         fp = StringIO(s)
         cfg = Config(fp, filter=filter)
         return cfg
+
+from mock import patch
+
+
+class TestReadJsonConfig(unittest.TestCase):
+    """
+    Class to package up all the tests for the generic code to read
+    json configurations from a file
+    """
+
+    @patch('os.path.exists', autospec=True)
+    @patch('__builtin__.open', autospec=True)
+    def test_read_json_config(self, mock_open, exists):
+        exists.return_value = True
+        mock_open.return_value.read.return_value = '{"foo":"bar"}'
+
+        config = read_json_config("server/foo")
+        mock_open.assert_called_once_with('/etc/pulp/server/foo', 'r')
+
+        self.assertDictEqual(config, {'foo': 'bar'})
+
+
+    @patch('os.path.exists', autospec=True)
+    @patch('__builtin__.open', autospec=True)
+    def test_read_json_config_prepended_slash_in_path(self, mock_open, exists):
+        exists.return_value = True
+        mock_open.return_value.read.return_value = '{"foo":"bar"}'
+        read_json_config("/server/foo")
+        mock_open.assert_called_once_with('/etc/pulp/server/foo', 'r')
+
+    def test_read_json_config_non_existent_file(self):
+        config = read_json_config("bad/file/name")
+        self.assertDictEqual(config, {})
+
+
+
