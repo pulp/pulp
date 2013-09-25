@@ -254,6 +254,10 @@ Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
+# RHEL5 ONLY
+%if 0%{?rhel} == 5
+Requires: python-simplejson
+%endif
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
