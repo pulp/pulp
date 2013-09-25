@@ -193,6 +193,9 @@ def install(opts):
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/lib/pulp')
 
+    # Update for certs
+    os.system('chown -R apache:apache /etc/pki/pulp')
+
     # Generate certificates
     print 'generating certificates'
     os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))

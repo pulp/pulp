@@ -26,34 +26,6 @@ sn = SerialNumber()
 sn.reset()
 
 
-# The following certificate was signed by the pulp CA
-# (<code root>/etc/pki/pulp/ca.crt)
-VALID_CERT = '''
------BEGIN CERTIFICATE-----
-MIID2jCCAsICAQEwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0
-MB4XDTEwMDgyNTEyNTkzNVoXDTExMDgyNTEyNTkzNVowUjELMAkGA1UEBhMCVVMx
-CzAJBgNVBAgMAk5DMRAwDgYDVQQHDAdSYWxlaWdoMRAwDgYDVQQKDAdSZWQgSGF0
-MRIwEAYDVQQDDAlsb2NhbGhvc3QwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
-AoICAQChxWk1A/0zpGOctuo7XDbTsguEYEnmbw2dcr9EmZ0ntUYr0Jr5nsbpIL0l
-fyTrgKySqr8ebDc6srnkbjl4kXi7nBC58CTonqVHlqtxGFHScnoK2OAsR4K+xGEP
-3zJ/ciJ4XRH9++p5PH3oNIFMru8+NONyL8BuoydI8t4afpTIIFwGP2mGRn4o8LAS
-Mq8yQCAa8toriZ/0BK3lA0Sa+A4a5EF67v6vGnVcCDKSWIeB3SpSMCmv5CiYZjrN
-PRMjfK+d9lHVGLv9AW8TAbfALfjLnw4oBT0yOkgr4LzdJLAO/6iNqE39aivQzZDO
-loCZBVDllztgkUYqlzwzu7fMdcMktXi9wMp4eLiMmIA89AqQA6EeEMHM8xNx64Ij
-nYfIctoQDJBbHOeuhAbTkWhkDDAEvmLRlqVZz20qNvkWytHY3GYOU8JdHVUGgXic
-V0FRFXZ2FO9UN51lQdUVpPjh6Txoqwht2ep3NlU2LhYol2YSlOk4K5tXGZGXf/qL
-jQZnAEmMV37v3yYXlh3ig1u3/nTz77SJQf1KEPGmAA+f2P5kkTaD+BGdizB2m0ho
-+gRPQTouNNMnSQdnqD39VPBUNpHrZgA17HOB5oZGF/6x8FAzbF4k2ExES5zrp5KY
-7LxSbwQgJrQxkts4yMQFPpNXKd6u1xLxKz4MGVfspZbRaB407wIDAQABMA0GCSqG
-SIb3DQEBBQUAA4IBAQBRx1bHvaZqcakHIP70M3hquCdaP3zO5AMX3ZFhcEIUIIbq
-92TcOvCq0ZUDyjh+hxiCxwPSbbRO7QEiCup0UGRBmQPesk76E+nw1z7jxYom/42h
-dIjK01IpgdRf25im4NttngtoMEO6qWQfc6cKmBL7Sqxsg9oiHSVcRk7CahGqWMwT
-12q+CZB9GHbGwqDGXgd3LgQ0Mi1vXW3tAhX58msTV13FPH+pEs2suWLAeRc8O9RI
-kFRZNej7n3qrj/ObW9a9pa+uo9Su6+EryFJjG7+rp2YXbA+4jT4u+DCV8C62fvZH
-sCE6nMbER6n0eQzlND2hUHB97ZK5PUT+t42SMOaf
------END CERTIFICATE-----
-'''
-
 # The following cert was signed by a non-pulp CA
 INVALID_CERT = '''
 -----BEGIN CERTIFICATE-----
@@ -119,8 +91,10 @@ class TestCertGeneration(unittest.TestCase):
         self.assertEqual(cid, consumer_cert_uid)
 
     def test_verify(self):
+        # Setup
+        key, certificate = self.cert_gen_manager.make_cert('elvis', 7)
         # Test
-        valid_result = self.cert_gen_manager.verify_cert(VALID_CERT)
+        valid_result = self.cert_gen_manager.verify_cert(certificate)
         self.assertTrue(valid_result)
 
         invalid_result = self.cert_gen_manager.verify_cert(INVALID_CERT)

@@ -54,10 +54,10 @@ openssl x509 \
 # install
 cp $TMP/ca.key $CA_KEY
 cp $TMP/ca.crt $CA_CRT
-chown root:root $CA_KEY
-chown root:root $CA_CRT
-chmod 644 $CA_KEY
-chmod 644 $CA_CRT
+chown root:apache $CA_KEY
+chown root:apache $CA_CRT
+chmod 640 $CA_KEY
+chmod 640 $CA_CRT
 
 # clean
 rm -rf $TMP
