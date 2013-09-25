@@ -101,7 +101,6 @@ class TaskResource(JSONController):
 
     @auth_required(authorization.DELETE)
     def DELETE(self, call_request_id):
-        logger.info('DELETE: %s'%call_request_id)
         coordinator = dispatch_factory.coordinator()
         result = coordinator.cancel_call(call_request_id)
         if result is None:
