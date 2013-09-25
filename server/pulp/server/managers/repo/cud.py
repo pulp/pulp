@@ -30,7 +30,8 @@ from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter,
 from pulp.server.dispatch import factory as dispatch_factory
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, PulpExecutionException
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, \
+    PulpExecutionException, MultipleOperationsPostponed
 from pulp.server.itineraries.repository import distributor_update_itinerary
 from pulp.server.webservices import execution
 
@@ -421,9 +422,21 @@ class RepoManager(object):
 
         # Distributor Update
         if distributor_configs is not None:
+            distributor_manager = manager_factory.repo_distributor_manager()
             for dist_id, dist_config in distributor_configs.items():
+                # Update the distributor config to ensure that errors are reported immediately
+                distributor_manager.update_distributor_config(repo_id, dist_id, dist_config)
+                # Use the itinerary to update the bindings on the consumers.
+                # This will duplicate the distributor update command.
+                # The duplication should be removed once we have a tasking system that
+                # supports a better method of tracking grouped tasks
                 call_requests = distributor_update_itinerary(repo_id, dist_id, dist_config)
-                execution.execute_multiple(call_requests)
+                # The requests may not run immediately which is fine.  Since we have
+                # no overall tracking of these requests we  have to eat the exception.
+                try:
+                    execution.execute_multiple(call_requests)
+                except MultipleOperationsPostponed:
+                    pass
 
         return repo
 
