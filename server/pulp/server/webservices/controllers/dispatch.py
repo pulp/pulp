@@ -17,20 +17,19 @@ from gettext import gettext as _
 
 import web
 
+from pulp.server import tasks
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import QueuedCall
-from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-# globals ----------------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# exceptions -------------------------------------------------------------------
 
 class TaskNotFound(MissingResource):
 
@@ -105,11 +104,16 @@ class TaskResource(JSONController):
         coordinator = dispatch_factory.coordinator()
         result = coordinator.cancel_call(call_request_id)
         if result is None:
-            raise MissingResource(call_request_id)
-        if result is False:
+            # The coordinator doesn't know about the task, but Celery might. Let's tell Celery to
+            # cancel it
+            tasks.cancel(call_request_id)
+            call_report = call.CallReport(call_request_id=call_request_id,
+                                          state=dispatch_constants.CALL_CANCELED_STATE)
+        elif result is False:
             raise TaskCancelNotImplemented(call_request_id)
-        # if we've gotten here, the call request *should* exist
-        call_report = coordinator.find_call_reports(call_request_id=call_request_id)[0]
+        else:
+            # if we've gotten here, the call request *should* exist
+            call_report = coordinator.find_call_reports(call_request_id=call_request_id)[0]
         serialized_call_report = call_report.serialize()
         serialized_call_report.update(serialization.link.current_link_obj())
         return self.accepted(serialized_call_report)
@@ -237,4 +241,3 @@ TASK_GROUP_URLS = (
 )
 
 task_group_application = web.application(TASK_GROUP_URLS, globals())
-

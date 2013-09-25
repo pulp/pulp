@@ -30,7 +30,7 @@ def title(p, text):
 
 def content_applicability1():
     consumer_criteria = { "sort": [["id", "ascending"]],
-                 "filters": {"id": {"$in": ["sunflower", "voyager"]}}}
+                 "filters": {"id": {"$in": ["grapefruit", "sunflower", "voyager"]}}}
 
     options = {"consumer_criteria":consumer_criteria,
               }

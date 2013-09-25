@@ -42,11 +42,9 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 
-# -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
-# -- functions ----------------------------------------------------------------
 
 def _merge_related_objects(name, manager, repos):
     """
