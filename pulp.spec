@@ -125,9 +125,6 @@ cp server/etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 # Pulp Web Services
 cp -R server/srv %{buildroot}
 
-# PKI
-cp server/etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
-
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
@@ -139,6 +136,8 @@ cp server/bin/* %{buildroot}/%{_bindir}
 
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
 
 # Cron
 cp -R server/etc/cron.monthly %{buildroot}/%{_sysconfdir}
@@ -216,8 +215,11 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
+%{_bindir}/pulp-gen-ca-certificate
 %defattr(700,root,root,-)
 %config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
+%ghost %{_sysconfdir}/pki/%{name}/ca.key
+%ghost %{_sysconfdir}/pki/%{name}/ca.crt
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
@@ -228,12 +230,11 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
 %{_usr}/lib/%{name}/plugins/types
-%{_sysconfdir}/pki/%{name}/ca.key
-%{_sysconfdir}/pki/%{name}/ca.crt
 /srv/%{name}/webservices.wsgi
 %doc
 
 %post server
+# OAuth credentials
 SECTION="oauth"
 MATCH_SECTION="/^\[$SECTION\]$/"
 KEY="oauth_key:"
@@ -244,6 +245,12 @@ function generate() {
 sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
     -e "$MATCH_SECTION,/^$/s/^$SECRET$/$SECRET $(generate)/" \
     -i %{_sysconfdir}/%{name}/server.conf
+
+# CA certificate
+if [ "$1" == "1"];  # not an upgrade
+then
+  pulp-gen-ca-certificate
+fi
 
 
 # ---- Common ------------------------------------------------------------------

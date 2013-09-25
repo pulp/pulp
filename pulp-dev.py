@@ -83,8 +83,6 @@ DIR_PLUGINS = '/usr/lib/pulp/plugins'
 LINKS = (
     # Server Configuration
     ('agent/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
-    ('server/etc/pki/pulp/ca.key', '/etc/pki/pulp/ca.key'),
-    ('server/etc/pki/pulp/ca.crt', '/etc/pki/pulp/ca.crt'),
     ('server/etc/pulp/server.conf', '/etc/pulp/server.conf'),
     ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
     ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
@@ -195,8 +193,10 @@ def install(opts):
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/lib/pulp')
 
-    # Update for certs
-    os.system('chown -R apache:apache /etc/pki/pulp')
+    # Generate certificates
+    print 'generating certificates'
+    os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+    os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"
@@ -220,6 +220,10 @@ def uninstall(opts):
     # Old link between pulp and apache, make sure it's cleaned up
     if os.path.exists('/var/www/html/pub'):
         os.unlink('/var/www/html/pub')
+
+    # Remove generated certificates
+    print 'removing certificates'
+    os.system('rm -rf /etc/pki/pulp/*')
 
     return os.EX_OK
 
