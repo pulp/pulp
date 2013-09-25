@@ -20,13 +20,9 @@ import oauth2 as oauth
 from types import NoneType
 from M2Crypto import SSL, httpslib
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 from pulp.bindings import exceptions
 from pulp.bindings.responses import Response, Task
+from pulp.common.compat import json
 from pulp.common.util import ensure_utf_8, encode_unicode
 
 

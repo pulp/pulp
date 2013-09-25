@@ -12,16 +12,13 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-try:
-    import json
-except ImportError:
-    import simplejson as json
 
 from okaara.cli import CommandUsage, OptionGroup
 
 from pulp.client import parsers
 from pulp.client import validators
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.common.compat import json
 
 
 _LIMIT_DESCRIPTION = _('max number of items to return')
