@@ -218,6 +218,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-gen-ca-certificate
 %defattr(700,root,root,-)
 %config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
+%ghost %{_sysconfdir}/pki/%{name}/ca.key
+%ghost %{_sysconfdir}/pki/%{name}/ca.crt
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
@@ -229,8 +231,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_usr}/lib/%{name}/plugins/profilers
 %{_usr}/lib/%{name}/plugins/types
 /srv/%{name}/webservices.wsgi
-%ghost %{_sysconfdir}/pki/%{name}/ca.key
-%ghost %{_sysconfdir}/pki/%{name}/ca.crt
 %doc
 
 %post server

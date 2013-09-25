@@ -54,8 +54,8 @@ openssl x509 \
 # install
 cp $TMP/ca.key $CA_KEY
 cp $TMP/ca.crt $CA_CRT
-chown apache:apache $CA_KEY
-chown apache:apache $CA_CRT
+chown root:root $CA_KEY
+chown root:root $CA_CRT
 
 # clean
 rm -rf $TMP
