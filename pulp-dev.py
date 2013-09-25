@@ -195,8 +195,8 @@ def install(opts):
 
     # Generate certificates
     print 'generating certificates'
-    os.system('server/bin/pulp-gen-ca-certificate')
-    os.system('nodes/common/bin/pulp-gen-nodes-certificate')
+    os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+    os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"
