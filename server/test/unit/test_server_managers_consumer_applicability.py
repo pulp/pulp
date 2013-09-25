@@ -38,7 +38,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
     CONSUMER_IDS = ['consumer-1', 'consumer-2']
     FILTER = {'id':{'$in':CONSUMER_IDS}}
     SORT = [{'id':1}]
-    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
+    CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT).as_dict()
     PROFILE1 = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
     PROFILE2 = [{'name':'zsh', 'version':'2.0'}, {'name':'ksh', 'version':'2.0'}]
     REPO_IDS = ['repo-1','repo-2']

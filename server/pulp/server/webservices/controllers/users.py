@@ -11,33 +11,27 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
 import logging
 
-# 3rd Party
 import web
 
-# Pulp
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
-import pulp.server.managers.factory as managers
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
-from pulp.server.webservices import execution
 from pulp.server.db.model.auth import Permission
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
+from pulp.server.webservices import execution
 from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices import serialization
 import pulp.server.exceptions as exceptions
+import pulp.server.managers.factory as managers
 
-
-# -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
-# -- controllers --------------------------------------------------------------
 
 class UsersCollection(JSONController):
 
@@ -202,15 +196,9 @@ class UserSearch(SearchController):
         return self.ok(users)
 
 
-
-
-# -- web.py application -------------------------------------------------------
-
-
 urls = (
     '/$', 'UsersCollection',
     '/search/$', 'UserSearch',
     '/([^/]+)/$', 'UserResource',
 )
-
 application = web.application(urls, globals())
