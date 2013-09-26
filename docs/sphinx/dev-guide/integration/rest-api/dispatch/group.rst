@@ -10,7 +10,7 @@ managed through the following API.
 Polling Task Group Progress
 ---------------------------
 
-Polling a task group will return a list of :ref:`call_report` instances. Each
+Polling a task group will return an array of :ref:`call_report` instances. Each
 call report related to an individual task in the group.
 
 | :method:`get`
@@ -22,7 +22,7 @@ call report related to an individual task in the group.
 * :response_code:`200, if the task group is found`
 * :response_code:`404, if the task group is not found`
 
-| :return:`list of call reports representing the states of each task in the task group`
+| :return:`array of call reports representing the states of each task in the task group`
 
 :sample_response:`200` ::
 
@@ -86,7 +86,7 @@ Listing Task Groups
 All currently active tasks groups (task groups that have at least one task in
 the *waiting* or *running* state) may be listed. Unlike it's analog in the tasks
 collection, this call does not return :ref:`call_report` instances. Instead, it
-return a list of links to individual task group resources (see Polling Task
+return an array of links to individual task group resources (see Polling Task
 Group Progress above).
 
 | :method:`get`
@@ -97,7 +97,7 @@ Group Progress above).
 
 * :response_code:`200`
 
-| :return:`(possibly empty) list of task group links`
+| :return:`(possibly empty) array of task group links`
 
 :sample_response:`200` ::
 

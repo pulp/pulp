@@ -6,7 +6,7 @@ Retrieve Permissions
 --------------------
 
 Returns information on permissions for all resources. If a resource is specified, 
-permissions for the particular resource are returned. In this case list will contain a single item.   
+permissions for the particular resource are returned. In this case the array will contain a single item.
 
 | :method:`get`
 | :path:`/v2/permissions/`
@@ -17,9 +17,9 @@ permissions for the particular resource are returned. In this case list will con
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of permissions`
+* :response_code:`200,containing the array of permissions`
 
-| :return:`list of database representation of permissions`
+| :return:`array of database representation of permissions`
 
 :sample_response:`200` ::
 

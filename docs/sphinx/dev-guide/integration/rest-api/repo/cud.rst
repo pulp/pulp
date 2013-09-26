@@ -23,7 +23,7 @@ Repository IDs must be unique across all repositories in the server.
 * :param:`?notes,object,key-value pairs to programmatically tag the repository`
 * :param:`?importer_type_id,string,type id of importer being associated with the repository`
 * :param:`?importer_config,object,configuration the repository will use to drive the behavior of the importer`
-* :param:`?distributors,list,list of dictionaries containing values of distributor_type_id, repo_plugin_config, auto_publish, and distributor_id`
+* :param:`?distributors,array,array of objects containing values of distributor_type_id, repo_plugin_config, auto_publish, and distributor_id`
 
 | :response_list:`_`
 
@@ -85,7 +85,7 @@ is centered around updating only that metadata.
 | :param_list:`post` The body of the request is a JSON document with a root element
   called "delta". The contents of delta are the values to update. Only changed
   parameters need be specified. The following keys are allowed in the delta
-  dictionary. Descriptions for each parameter can be found under the create
+  object. Descriptions for each parameter can be found under the create
   repository API:
 
 * :param:`display_name,,`
@@ -281,7 +281,7 @@ repository. This performs the following actions:
 
 Any distributor configuration value that is not specified remains unchanged.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
 However, each :ref:`bind` is itself performed in multiple steps.  The total number of returned
 call_requests depends on how many consumers are bound to the repository.
 
@@ -355,7 +355,7 @@ Disassociating a distributor performs the following actions:
 1. Remove the association between the distributor and the repository.
 2. Unbind all bound consumers.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
 However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
 call_requests depends on how many consumers are bound to the repository.
 
@@ -385,7 +385,7 @@ Deleting a repository is performed in the following major steps:
  1. Delete the repository.
  2. Unbind all bound consumers.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
 However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
 call_requests depends on how many consumers are bound to the repository.
 

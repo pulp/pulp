@@ -7,7 +7,7 @@ Create a Consumer Group
 -----------------------
 
 Creates a new consumer group. Group IDs must be unique across all consumer
-groups defined on the server. A group can be initialized with a list of
+groups defined on the server. A group can be initialized with an array of
 consumers by passing their IDs to the create call. Consumers can be added or
 removed at anytime using the :doc:`membership calls<membership>`.
 
@@ -19,7 +19,7 @@ removed at anytime using the :doc:`membership calls<membership>`.
 * :param:`id,string,unique identifier of the consumer group`
 * :param:`?display_name,string,display-friendly name for the consumer group`
 * :param:`?description,string,description of the consumer group`
-* :param:`?consumer_ids,array,list of consumer ids initially associated with the group`
+* :param:`?consumer_ids,array,array of consumer ids initially associated with the group`
 * :param:`?notes,object,key-value pairs associated with the consumer group`
 
 | :response_list:`_`

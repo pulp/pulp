@@ -58,12 +58,12 @@ The update user call is used to change the details of an existing consumer.
 | :param_list:`put` The body of the request is a JSON document with a root element
   called ``delta``. The contents of delta are the values to update. Only changed
   parameters need be specified. The following keys are allowed in the delta
-  dictionary. Descriptions for each parameter can be found under the create
+  object. Descriptions for each parameter can be found under the create
   user API:
 
 * :param:`password,,`
 * :param:`name,,`
-* :param:`?roles,list,list of roles to update the user to. In this case, relevant permissions for the user will be updated as well.`
+* :param:`?roles,array,array of roles to update the user to. In this case, relevant permissions for the user will be updated as well.`
 
 | :response_list:`_`
 

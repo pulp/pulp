@@ -139,7 +139,7 @@ Run
 ^^^
 
 An immediate synchronization of a child node can be initiated using the
-:ref:`content update API<content_update>`. In the POST body, a list of (1) unit with ``type_id`` of
+:ref:`content update API<content_update>`. In the POST body, an array of (1) unit with ``type_id`` of
 ``node`` and ``unit_key`` of ``null`` is specified.
 
 Sample POST body:

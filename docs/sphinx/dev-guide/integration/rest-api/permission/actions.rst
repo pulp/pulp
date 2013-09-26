@@ -13,7 +13,7 @@ Grants permissions to a user.
 
 * :param:`login,string,login of existing user`
 * :param:`resource,string,resource URI`
-* :param:`operations,list,list of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
+* :param:`operations,array,array of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
 
 | :response_list:`_`
 
@@ -44,7 +44,7 @@ Revokes permissions from a user.
 
 * :param:`login,string,login of existing user`
 * :param:`resource,string,resource URI`
-* :param:`operations,list,list of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
+* :param:`operations,array,array of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
 
 | :response_list:`_`
 
@@ -76,7 +76,7 @@ Note that users added to the role after granting permissions will inherit these 
 
 * :param:`role_id,string,id of an existing role`
 * :param:`resource,string,resource URI`
-* :param:`operations,list,list of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
+* :param:`operations,array,array of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
 
 | :response_list:`_`
 
@@ -108,7 +108,7 @@ granted by other roles as well.
 
 * :param:`role_id,string,id of an existing role`
 * :param:`resource,string,resource URI`
-* :param:`operations,list,list of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
+* :param:`operations,array,array of operation strings;valid operations:'CREATE','READ','UPDATE','DELETE','EXECUTE'`
 
 | :response_list:`_`
 
