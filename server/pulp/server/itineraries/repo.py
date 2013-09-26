@@ -58,12 +58,14 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
 
     for distributor in auto_distributors:
         distributor_id = distributor['id']
+        # rbarlow_TODO: Convert this into a Celery call
         publish_call_request = CallRequest(repo_publish_manager.publish,
                                            [repo_id, distributor_id],
                                            tags=auto_publish_tags,
                                            archive=True)
         publish_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
+        publish_call_request.depends_on(sync_call_request.id,
+                                        [dispatch_constants.CALL_FINISHED_STATE])
 
         call_requests.append(publish_call_request)
 
