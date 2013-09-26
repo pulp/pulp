@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.1.1
+Version:        1.1.2
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -46,6 +46,21 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Thu Sep 26 2013 Jason L Connor <jason.connor@gmail.com> 1.1.2-1
+- added warnings about incomplete proxy support for the revent and threaded
+  downloader (jason.connor@gmail.com)
+- 1009078 - correctly set the proxies to supported protocols
+  (jason.connor@gmail.com)
+- always use http:// for proxy url (lars.sjostrom@svenskaspel.se)
+
+* Tue Sep 03 2013 Jason L Connor <jason.connor@gmail.com> 1.1.1-1
+- removed progress reporter thread due to race condition in the .join() with this queue and substituted it with thread-safe event firing and join()s on the worker threads (jason.connor@gmail.com)
+- removed race condition between feeder thread and worker threads daemonized all spawned threads (jason.connor@gmail.com)
+
+* Fri Aug 23 2013 Jason L Connor <jason.connor@gmail.com> 1.1.0-1
+- new threaded downloader and unit tests (jason.connor@gmail.com)
+- bumped nectar version to 1.1 (jason.connor@gmail.com)
+
 * Wed Jul 31 2013 Jeff Ortel <jortel@redhat.com> 1.0.0-1
 - got rid of fancy eventlet concurrency, regular os operations are faster;
   fixed bug where the report state was never started (jason.connor@gmail.com)
@@ -53,7 +68,6 @@ rm -rf $RPM_BUILD_ROOT
   provided (jason.connor@gmail.com)
 - initial attempt at implementing an eventlet-based local file downloader
   (jason.connor@gmail.com)
-
 * Wed Jul 03 2013 Jeff Ortel <jortel@redhat.com> 0.99-2
 - 979582 - nectar now compensates for servers that send an incorrect content-
   encoding header for files that are gzipped. (mhrivnak@redhat.com)
