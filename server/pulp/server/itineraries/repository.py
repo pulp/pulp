@@ -42,6 +42,7 @@ def repo_delete_itinerary(repo_id):
         action_tag('delete')
     ]
 
+    # rbarlow_TODO: Convert this call into a Celery task
     delete_request = CallRequest(
         manager.delete_repo,
         [repo_id],

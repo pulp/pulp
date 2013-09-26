@@ -90,6 +90,7 @@ def publish_itinerary(repo_id, distributor_id, overrides=None):
     tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('publish')]
 
+    # rbarlow_TODO: Convert this into a Celery call
     call_request = CallRequest(repo_publish_manager.publish,
                                [repo_id, distributor_id],
                                {'publish_config_override': overrides},
