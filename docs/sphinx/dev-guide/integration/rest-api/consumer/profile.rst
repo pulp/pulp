@@ -151,7 +151,7 @@ a :term:`consumer`.
 * :response_code:`200,regardless of whether any profiles exist`
 * :response_code:`404,if the consumer does not exist`
 
-| :return:`a list of unit profile objects or an empty list if none exist`
+| :return:`an array of unit profile objects or an empty array if none exist`
 
 :sample_response:`200` ::
 

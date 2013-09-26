@@ -68,8 +68,8 @@ must have support for the cancel.
 Listing Tasks
 -------------
 
-All currently running and waiting tasks may be listed. This returns a list of
-:ref:`call_report` instances. The list can be filtered by tags.
+All currently running and waiting tasks may be listed. This returns an array of
+:ref:`call_report` instances. the array can be filtered by tags.
 
 | :method:`get`
 | :path:`/v2/tasks/`
@@ -80,7 +80,7 @@ All currently running and waiting tasks may be listed. This returns a list of
 
 | :response_list:`_`
 
-* :response_code:`200,containing a list of tasks`
+* :response_code:`200,containing an array of tasks`
 
-| :return:`list of call reports (see Polling Task Progress above for example)`
+| :return:`array of call reports (see Polling Task Progress above for example)`
 

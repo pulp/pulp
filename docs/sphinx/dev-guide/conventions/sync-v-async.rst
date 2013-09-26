@@ -77,7 +77,7 @@ Example Call Report::
  }
 
 
-.. _call_report_list:
+.. _call_report_array:
 
 Call Report List
 ----------------

@@ -13,7 +13,7 @@ in the following steps:
  1. Create the :term:`binding` on server.
  2. Send a request to the consumer to create the binding.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
 
 The distributor may support configuration options that it may use for that particular
 binding. These options would be used when generating the payload that is sent to consumers
@@ -37,7 +37,7 @@ more information on the format.
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 
-| :return:`A` :ref:`call_report_list`
+| :return:`A` :ref:`call_report_array`
 
 :sample_request:`_` ::
 
@@ -66,7 +66,7 @@ The steps for a forced unbind are as follows:
  2. Send a request to the consumer to remove the binding.  The result of the consumer
     request discarded.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_list`.
+Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
 
 | :method:`delete`
 | :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>`
@@ -83,7 +83,7 @@ Each step is represented by a :ref:`call_report` in the returned :ref:`call_repo
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the binding does not exist`
 
-| :return:`A` :ref:`call_report_list`
+| :return:`A` :ref:`call_report_array`
 
 
 
@@ -130,7 +130,7 @@ Retrieves information on all bindings for the specified consumer.
 
 * :response_code:`200,if the consumer exists`
 
-| :return:`a list of database representations of the matching binds`
+| :return:`an array of database representations of the matching binds`
 
 :sample_response:`200` ::
 
