@@ -147,7 +147,7 @@ All of the scheduled publishes for a given distributor may be listed.
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/`
 | :permission:`read`
-| :return:`list of schedule reports for all scheduled publishes defined (see sample response of Scheduling a Publish for details)`
+| :return:`array of schedule reports for all scheduled publishes defined (see sample response of Scheduling a Publish for details)`
 
 
 Listing a Single Scheduled Publish

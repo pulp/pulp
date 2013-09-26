@@ -24,7 +24,7 @@ Listing Schedules
 * :response_code:`200, if the consumer exists`
 * :response_code:`404, if the consumer does not exist`
 
-| :return:`(possibly empty) list of schedule resources`
+| :return:`(possibly empty) array of schedule resources`
 
 :sample_response:`200` ::
 
@@ -60,7 +60,7 @@ Creating a Schedule
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
 * :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
 * :param:`?options,object,key - value options to pass to the install agent`
-* :param:`units,array,list of units to install`
+* :param:`units,array,array of units to install`
 
 | :response_list:`_`
 
@@ -139,7 +139,7 @@ Updating a Schedule
 * :param:`?remaining_runs,integer,number of remaining runs for schedule`
 * :param:`?enabled,boolean,whether or not the schedule is enabled`
 * :param:`?options,object,key - value options to pass to the install agent`
-* :param:`?units,array,list of units to install`
+* :param:`?units,array,array of units to install`
 
 | :response_list:`_`
 
@@ -208,7 +208,7 @@ Listing Schedules
 * :response_code:`200, if the consumer exists`
 * :response_code:`404, if the consumer does not exist`
 
-| :return:`(possibly empty) list of schedule resources`
+| :return:`(possibly empty) array of schedule resources`
 
 :sample_response:`200` ::
 
@@ -244,7 +244,7 @@ Creating a Schedule
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
 * :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
 * :param:`?options,object,key - value options to pass to the update agent`
-* :param:`units,array,list of units to update`
+* :param:`units,array,array of units to update`
 
 | :response_list:`_`
 
@@ -323,7 +323,7 @@ Updating a Schedule
 * :param:`?remaining_runs,integer,number of remaining runs for schedule`
 * :param:`?enabled,boolean,whether or not the schedule is enabled`
 * :param:`?options,object,key - value options to pass to the update agent`
-* :param:`?units,array,list of units to update`
+* :param:`?units,array,array of units to update`
 
 | :response_list:`_`
 
@@ -392,7 +392,7 @@ Listing Schedules
 * :response_code:`200, if the consumer exists`
 * :response_code:`404, if the consumer does not exist`
 
-| :return:`(possibly empty) list of schedule resources`
+| :return:`(possibly empty) array of schedule resources`
 
 :sample_response:`200` ::
 
@@ -428,7 +428,7 @@ Creating a Schedule
 * :param:`?failure_threshold,integer,number of consecutive failures allowed before automatically disabling`
 * :param:`?enabled,boolean,whether or not the schedule is enabled (enabled by default)`
 * :param:`?options,object,key - value options to pass to the uninstall agent`
-* :param:`units,array,list of units to uninstall`
+* :param:`units,array,array of units to uninstall`
 
 | :response_list:`_`
 
@@ -507,7 +507,7 @@ Updating a Schedule
 * :param:`?remaining_runs,integer,number of remaining runs for schedule`
 * :param:`?enabled,boolean,whether or not the schedule is enabled`
 * :param:`?options,object,key - value options to pass to the uninstall agent`
-* :param:`?units,array,list of units to uninstall`
+* :param:`?units,array,array of units to uninstall`
 
 | :response_list:`_`
 

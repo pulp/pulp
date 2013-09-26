@@ -6,7 +6,7 @@ Sync a Repository
 
 Syncs content into a repository from a feed source using the repository's
 :term:`importer`. This call always executes asynchronously and will return a
-:ref:`call_report_list`.
+:ref:`call_report_array`.
 
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/sync/`
@@ -159,7 +159,7 @@ All of the scheduled syncs for a given importer may be listed.
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/`
 | :permission:`read`
-| :return:`list of schedule reports for all scheduled syncs defined (see sample response of Scheduling a Sync for details)`
+| :return:`array of schedule reports for all scheduled syncs defined (see sample response of Scheduling a Sync for details)`
 
 
 Listing a Single Scheduled Sync

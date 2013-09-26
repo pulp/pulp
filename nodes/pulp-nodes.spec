@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.14.alpha%{?dist}
+Release: 0.16.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -184,7 +184,7 @@ Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
-Requires: python-nectar >= 1.1.1
+Requires: python-nectar >= 1.1.2
 
 %description child
 Pulp child nodes support.
@@ -240,6 +240,12 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.16.alpha
+- Pulp rebuild
+
+* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.15.alpha
+- Pulp rebuild
+
 * Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.14.alpha
 - Pulp rebuild
 

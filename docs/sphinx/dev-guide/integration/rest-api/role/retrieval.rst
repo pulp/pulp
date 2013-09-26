@@ -49,7 +49,7 @@ general role details.
 Retrieve All Roles
 ----------------------
 
-Returns information on all the roles. An empty list is returned in the case
+Returns information on all the roles. An empty array is returned in the case
 where there are no roles.
 
 | :method:`get`
@@ -59,9 +59,9 @@ where there are no roles.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of roles`
+* :response_code:`200,containing the array of roles`
 
-| :return:`the same format as retrieving a single role, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single role, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 

@@ -107,11 +107,12 @@ def param_role(name, rawtext, text, lineno, inliner, options={}, content=[]):
     if param_type != '':
         # Safety net in case the python types are specified
         type_translations = {
-            'str' : 'string',
-            'int' : 'number',
-            'dict' : 'object',
-            'list' : 'array',
-            'bool' : 'boolean',
+            'str': 'string',
+            'int': 'number',
+            'dict': 'object',
+            'dictionary': 'object',
+            'list': 'array',
+            'bool': 'boolean',
         }
         param_type = type_translations.get(param_type, param_type)
         role_nodes.append(nodes.inline(text=' (%s) - ' % param_type))

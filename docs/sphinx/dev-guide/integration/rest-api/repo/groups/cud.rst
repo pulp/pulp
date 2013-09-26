@@ -7,7 +7,7 @@ Create a Repository Group
 -------------------------
 
 Creates a new repository group. Group IDs must be unique across all repository
-groups in the server. The group can be initialized with a list of repositories
+groups in the server. The group can be initialized with an array of repositories
 by passing in their IDs during the create call. Repositories can later be added
 or removed from the group using the :doc:`membership calls<members>`.
 
@@ -19,7 +19,7 @@ or removed from the group using the :doc:`membership calls<members>`.
 * :param:`id,string,unique identifier for the group`
 * :param:`?display_name,string,user-friendly name for the repository group`
 * :param:`?description,string,user-friendly text describing the group's purpose`
-* :param:`?repo_ids,object,list of repositories to add to the group`
+* :param:`?repo_ids,array,array of repositories to add to the group`
 * :param:`?notes,object,key-value pairs to programmatically tag the group`
 
 | :response_list:`_`

@@ -107,7 +107,7 @@ are desired, the caller should delete the upload request from the server.
 List All Upload Requests
 ------------------------
 
-Returns a list of IDs for all upload requests currently in the server.
+Returns an array of IDs for all upload requests currently in the server.
 
 | :method:`get`
 | :path:`/v2/content/uploads/`
@@ -117,7 +117,7 @@ Returns a list of IDs for all upload requests currently in the server.
 
 * :response_code:`200,for a successful lookup`
 
-| :return:`list of IDs for all upload requests on the server; empty list if there are none`
+| :return:`array of IDs for all upload requests on the server; empty array if there are none`
 
 :sample_response:`200` ::
 
