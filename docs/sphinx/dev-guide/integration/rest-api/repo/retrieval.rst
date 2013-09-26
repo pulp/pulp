@@ -277,7 +277,7 @@ filter expressions may not be serializable as query parameters.
 Retrieve Importers Associated with a Repository
 -----------------------------------------------
 
-Retrieves the :term:`importer` (if any) associated with a repository. the array
+Retrieves the :term:`importer` (if any) associated with a repository. The array
 will either be empty (no importer configured) or contain a single entry.
 
 | :method:`get`
