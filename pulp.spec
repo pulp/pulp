@@ -247,7 +247,7 @@ sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
     -i %{_sysconfdir}/%{name}/server.conf
 
 # CA certificate
-if [ "$1" == "1"];  # not an upgrade
+if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
 fi
