@@ -428,7 +428,4 @@ def _validate_importers():
             if type_ in supported_types:
                 continue
             msg = _('Importer %(i)s: no type definition found for %(t)s')
-            print msg % {'i': plugin_id, 't': type_}
             raise loader_exceptions.InvalidImporter(msg % {'i': plugin_id, 't': type_})
-
-
