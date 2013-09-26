@@ -666,6 +666,8 @@ def read_json_config(file_path):
     if os.path.exists(config_filename):
         # Let the exception bubble up so it ends up in pulp.log
         f = open(config_filename, 'r')
-        config = json.load(f)
-        f.close()
+        try:
+            config = json.load(f)
+        finally:
+            f.close()
     return config
