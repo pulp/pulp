@@ -22,7 +22,7 @@ class TestTaskResource(base.PulpWebserviceTests):
     """
     Test the TaskResource class.
     """
-    @mock.patch('pulp.server.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     def test_DELETE_celery_task(self, revoke):
         """
         Test the DELETE() method with a UUID that does not correspond to a UUID that the

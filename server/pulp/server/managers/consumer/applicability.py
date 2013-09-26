@@ -44,7 +44,7 @@ class ApplicabilityRegenerationManager(object):
         :param consumer_criteria: The consumer selection criteria
         :type consumer_criteria: pulp.server.db.model.criteria.Criteria
         """
-        consumer_criteria = Criteria.from_client_input(consumer_criteria)
+        consumer_criteria = Criteria.from_dict(consumer_criteria)
         consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
         consumer_profile_manager = managers.consumer_profile_manager()
@@ -79,8 +79,8 @@ class ApplicabilityRegenerationManager(object):
             # Add this tuple to the list of profile tuples for a consumer
             consumer_unit_profiles_map.setdefault(consumer_id, []).append(profile_tuple)
 
-            # We need just one profile_id per profile_hash to be used in regenerate_applicability method
-            # to get the actual profile corresponding to given profile_hash.
+            # We need just one profile_id per profile_hash to be used in regenerate_applicability
+            # method to get the actual profile corresponding to given profile_hash.
             if profile_hash not in profile_hash_profile_id_map:
                 profile_hash_profile_id_map[profile_hash] = profile_id
 

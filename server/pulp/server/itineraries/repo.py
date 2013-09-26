@@ -40,6 +40,7 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
     sync_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                  action_tag('sync')]
 
+    # rbarlow_TODO: Convert this to use the Celeryified task, and possibly eliminate this itenerary
     sync_call_request = CallRequest(repo_sync_manager.sync,
                                     [repo_id],
                                     {'sync_config_override': overrides},

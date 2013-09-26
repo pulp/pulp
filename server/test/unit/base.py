@@ -21,7 +21,8 @@ from paste.fixture import TestApp
 import web
 
 from pulp.common.compat import json
-from pulp.server import config, tasks
+from pulp.server import config
+from pulp.server.async import celery_instance
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
@@ -69,7 +70,7 @@ class PulpServerTests(unittest.TestCase):
         connection.initialize()
         manager_factory.initialize()
         # This will make Celery tasks run synchronously
-        tasks.celery.conf.CELERY_ALWAYS_EAGER = True
+        celery_instance.celery.conf.CELERY_ALWAYS_EAGER = True
 
     def setUp(self):
         super(PulpServerTests, self).setUp()

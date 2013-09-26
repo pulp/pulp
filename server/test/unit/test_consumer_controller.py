@@ -1343,17 +1343,15 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
     def test_regenerate_applicability(self):
-        # Setup
         self.populate()
         self.populate_bindings()
-        # Test
         request_body = dict(consumer_criteria={'filters':self.FILTER})
+
         status, body = self.post(self.PATH, request_body)
-        # Verify
+
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        self.assertTrue('pulp:action:applicability_regeneration' in body['tags'])
 
     def test_regenerate_applicability_no_consumers(self):
         # Test
