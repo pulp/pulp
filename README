@@ -1,8 +1,6 @@
-Pulp is a content management system for collecting software packages,
-organizing them into repositories, and assisting with the distribution of that
-content to target systems and other destinations.
+Pulp is a platform for managing repositories of content, such as software
+packages, and pushing that content out to large numbers of consumers.
 
 For more information, check out the project website:
 
 http://www.pulpproject.org
-
