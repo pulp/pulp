@@ -24,7 +24,7 @@ of the group, no changes are made and no error is raised.
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the group does not exist`
 
-| :return:`list of consumer IDs for all consumers in the group`
+| :return:`array of consumer IDs for all consumers in the group`
 
 :sample_request:`_` ::
 
@@ -67,7 +67,7 @@ of the group, no changes are made and no error is raised.
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the group does not exist`
 
-| :return:`list of consumer IDs for all consumers in the group`
+| :return:`array of consumer IDs for all consumers in the group`
 
 :sample_request:`_` ::
 

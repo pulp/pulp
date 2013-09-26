@@ -8,7 +8,7 @@ Create an Event Listener
 
 Creates a new listener in the server that will be notified of any events of
 the configured event types. Each listener must specify a notifier type to handle
-the event and any configuration necessary for that notifier type. A list of
+the event and any configuration necessary for that notifier type. An array of
 event types is also specified; the newly created listener is only notified
 when events of the given types are fired.
 
@@ -19,7 +19,7 @@ when events of the given types are fired.
 
 * :param:`notifier_type_id,str,one of the supported notifier type IDs`
 * :param:`notifier_config,object,configuration values the notifier will use when it handles an event`
-* :param:`event_types,list,list of event type IDs that this listener will handle. "*" matches all types`
+* :param:`event_types,array,array of event type IDs that this listener will handle. "*" matches all types`
 
 | :response_list:`_`
 
@@ -59,7 +59,7 @@ when events of the given types are fired.
 Retrieve All Event Listeners
 ----------------------------
 
-Returns a list of all event listeners in the server.
+Returns an array of all event listeners in the server.
 
 | :method:`get`
 | :path:`/v2/events/`
@@ -67,7 +67,7 @@ Returns a list of all event listeners in the server.
 
 | :response_list:`_`
 
-* :response_code:`200,list of event listeners, empty list if there are none`
+* :response_code:`200,array of event listeners, empty array if there are none`
 
 | :return:`database representation of each event listener`
 
@@ -125,8 +125,8 @@ If the notifier configuration is updated, the following rules apply:
 * Any configuration keys with non-none values are saved in the configuration,
   overwriting the previous value for the key if one existed.
 
-Updating the event types is simpler; if present, the provided event types list
-becomes the new list of event types for the listener. The previous list is
+Updating the event types is simpler; if present, the provided event types array
+becomes the new array of event types for the listener. The previous array is
 overwritten.
 
 | :method:`put`
@@ -135,7 +135,7 @@ overwritten.
 | :param_list:`put`
 
 * :param:`?notifier_config,object,dictates changes to the configuration as described above`
-* :param:`?event_types,list,list of new event types for the listener to listen for. "*" matches all types.`
+* :param:`?event_types,array,array of new event types for the listener to listen for. "*" matches all types.`
 
 | :response_list:`_`
 

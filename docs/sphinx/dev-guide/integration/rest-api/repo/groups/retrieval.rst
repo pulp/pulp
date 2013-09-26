@@ -39,7 +39,7 @@ Retrieve All Repository Groups
 ------------------------------
 
 Retrieves information on all repository groups in the Pulp server. This call
-will never return a 404; an empty list is returned in the event there are
+will never return a 404; an empty array is returned in the event there are
 no groups defined.
 
 This call supports the search query parameters as described in
@@ -51,9 +51,9 @@ This call supports the search query parameters as described in
 | :param_list:`get`
 | :response_list:`_`
 
-* :response_code:`200,containing the list of repository groups`
+* :response_code:`200,containing the array of repository groups`
 
-| :return:`list of groups in the same format as retrieving a single group; empty list if there are none defined`
+| :return:`array of groups in the same format as retrieving a single group; empty array if there are none defined`
 
 :sample_response:`200` ::
 

@@ -52,7 +52,7 @@ List all the orphaned content of a particular content type.
 * :response_code:`200,even if no orphaned content is found`
 * :response_code:`404,if the content type does not exist`
 
-| :return:`(possibly empty) list of content units`
+| :return:`(possibly empty) array of content units`
 
 :sample_response:`200` ::
 
@@ -184,7 +184,7 @@ Remove and individual orphaned content unit by content type and content id.
 Remove Orphaned Content Units by Type and Id
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Individual content units across types may be deleted by this call. The body of
-the call consists of a list of JSON objects with the fields:
+the call consists of an array of JSON objects with the fields:
 
 * content_type_id: also known as the content_type_id
 * unit_id: also known as the content_unit_id

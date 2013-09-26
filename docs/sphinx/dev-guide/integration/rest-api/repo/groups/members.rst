@@ -25,7 +25,7 @@ changes are made and no error is raised.
 * :response_code:`400,if the criteria document is invalid`
 * :response_code:`404,if the group cannot be found`
 
-| :return:`list of repository IDs for all repositories in the group`
+| :return:`array of repository IDs for all repositories in the group`
 
 :sample_request:`_` ::
 
@@ -64,7 +64,7 @@ association to the given group.
 * :response_code:`400,if the criteria document is invalid`
 * :response_code:`404,if the group cannot be found`
 
-| :return:`list of repository IDs for all repositories in the group`
+| :return:`array of repository IDs for all repositories in the group`
 
 :sample_request:`_` ::
 

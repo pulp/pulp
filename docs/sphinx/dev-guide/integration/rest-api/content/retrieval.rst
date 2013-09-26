@@ -8,7 +8,7 @@ Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on content units in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no content units. This is even the
+array is returned in the case where there are no content units. This is even the
 case when the content type specified in the URL does not exist.
 
 | :method:`post`
@@ -21,9 +21,9 @@ case when the content type specified in the URL does not exist.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of content units`
+* :response_code:`200,containing the array of content units`
 
-| :return:`the same format as retrieving a single content unit, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single content unit, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
@@ -48,7 +48,7 @@ case when the content type specified in the URL does not exist.
 
 Returns information on content units in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no content units. This is even the
+array is returned in the case where there are no content units. This is even the
 case when the content type specified in the URL does not exist.
 
 This method is slightly more limiting than the POST alternative, because some
@@ -65,9 +65,9 @@ filter expressions may not be serializable as query parameters.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of content units`
+* :response_code:`200,containing the array of content units`
 
-| :return:`the same format as retrieving a single content unit, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single content unit, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 

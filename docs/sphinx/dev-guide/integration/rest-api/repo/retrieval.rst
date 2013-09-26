@@ -73,7 +73,7 @@ Retrieve All Repositories
 -------------------------
 
 Returns information on all repositories in the Pulp server. It is worth noting
-that this call will never return a 404; an empty list is returned in the case
+that this call will never return a 404; an empty array is returned in the case
 where there are no repositories.
 
 | :method:`get`
@@ -87,9 +87,9 @@ where there are no repositories.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of repositories`
+* :response_code:`200,containing the array of repositories`
 
-| :return:`the same format as retrieving a single repository, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single repository, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
@@ -143,7 +143,7 @@ Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on repositories in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no repositories.
+array is returned in the case where there are no repositories.
 
 | :method:`post`
 | :path:`/v2/repositories/search/`
@@ -155,9 +155,9 @@ list is returned in the case where there are no repositories.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of repositories`
+* :response_code:`200,containing the array of repositories`
 
-| :return:`the same format as retrieving a single repository, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single repository, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
@@ -206,7 +206,7 @@ list is returned in the case where there are no repositories.
 
 Returns information on repositories in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no repositories.
+array is returned in the case where there are no repositories.
 
 This method is slightly more limiting than the POST alternative, because some
 filter expressions may not be serializable as query parameters.
@@ -225,9 +225,9 @@ filter expressions may not be serializable as query parameters.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of repositories`
+* :response_code:`200,containing the array of repositories`
 
-| :return:`the same format as retrieving a single repository, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single repository, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
@@ -277,7 +277,7 @@ filter expressions may not be serializable as query parameters.
 Retrieve Importers Associated with a Repository
 -----------------------------------------------
 
-Retrieves the :term:`importer` (if any) associated with a repository. The list
+Retrieves the :term:`importer` (if any) associated with a repository. the array
 will either be empty (no importer configured) or contain a single entry.
 
 | :method:`get`
@@ -286,7 +286,7 @@ will either be empty (no importer configured) or contain a single entry.
 | :param_list:`get` None
 | :response_list:`_`
 
-* :response_code:`200,containing a list of importers`
+* :response_code:`200,containing an array of importers`
 * :response_code:`404,if there is no repository with the given ID; this will not occur if the repository exists but has no associated importers`
 
 | :return:`database representation of the repository's importer or an empty list`
@@ -314,7 +314,7 @@ Retrieve Distributors Associated with a Repository
 --------------------------------------------------
 
 Retrieves all :term:`distributors <distributor>` associated with a repository.
-If the repository has no associated distributors, an empty list is returned.
+If the repository has no associated distributors, an empty array is returned.
 
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/distributors/`
@@ -322,7 +322,7 @@ If the repository has no associated distributors, an empty list is returned.
 | :param_list:`get` None
 | :response_list:`_`
 
-* :response_code:`200,containing a list of distributors`
+* :response_code:`200,containing an array of distributors`
 * :response_code:`404,if there is no repository with the given ID; this will not occur if the repository exists but has no associated distributors`
 
 | :return:`database representations of all distributors on the repository`

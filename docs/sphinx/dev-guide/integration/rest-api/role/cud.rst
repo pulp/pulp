@@ -58,7 +58,7 @@ The update role call is used to change the details of an existing role.
 | :param_list:`put` The body of the request is a JSON document with a root element
   called ``delta``. The contents of delta are the values to update. Only changed
   parameters need be specified. The following keys are allowed in the delta
-  dictionary. Descriptions for each parameter can be found under the create
+  object. Descriptions for each parameter can be found under the create
   user API:
 
 * :param:`display_name,,`
