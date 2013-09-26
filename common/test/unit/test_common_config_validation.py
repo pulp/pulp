@@ -15,6 +15,7 @@
 import re
 from StringIO import StringIO
 import unittest
+from mock import patch
 
 from pulp.common.config import *
 
@@ -275,8 +276,6 @@ class TestConfigValidator(unittest.TestCase):
         fp = StringIO(s)
         cfg = Config(fp, filter=filter)
         return cfg
-
-from mock import patch
 
 
 class TestReadJsonConfig(unittest.TestCase):
