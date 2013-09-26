@@ -294,7 +294,7 @@ class TestReadJsonConfig(unittest.TestCase):
         config = read_json_config("server/foo")
         mock_open.assert_called_once_with('/etc/pulp/server/foo', 'r')
 
-        self.assertDictEqual(config, {'foo': 'bar'})
+        self.assertEqual(config, {'foo': 'bar'})
 
 
     @patch('os.path.exists', autospec=True)
@@ -307,7 +307,7 @@ class TestReadJsonConfig(unittest.TestCase):
 
     def test_read_json_config_non_existent_file(self):
         config = read_json_config("bad/file/name")
-        self.assertDictEqual(config, {})
+        self.assertEqual(config, {})
 
 
 
