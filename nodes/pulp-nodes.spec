@@ -184,7 +184,7 @@ Group: Development/Languages
 Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-agent-lib = %{pulp_version}
-Requires: python-nectar >= 1.1.1
+Requires: python-nectar >= 1.1.2
 
 %description child
 Pulp child nodes support.
