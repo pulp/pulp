@@ -8,7 +8,7 @@ Install Content on a Consumer Group
 
 Install one or more content units on each consumer in the group.  This operation is asynchronous.
 
-The units to be installed are specified in a list.  Each unit in the list of *units* is an
+The units to be installed are specified in an array.  Each unit in the array of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
 that defines the unit's content type.  The value is unrestricted by the Pulp server but
 must match a type mapped to a content :term:`handler` in the agent.  The second is the
@@ -24,7 +24,7 @@ content are handler specific.  The options drive how the handler performs the op
 | :permission:`create`
 | :param_list:`post`
 
-* :param:`units,list,list of content units to install`
+* :param:`units,array,array of content units to install`
 * :param:`options,object,install options`
 
 | :response_list:`_`
@@ -33,7 +33,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_list`
+| :return:`A` :ref:`call_report_array`
 
 :sample_request:`_` ::
 
@@ -56,7 +56,7 @@ Update Content on a Consumer Group
 
 Update one or more content units on each consumer in the group.  This operation is asynchronous.
 
-The units to be updated are specified in a list.  Each unit in the list of *units* is an
+The units to be updated are specified in an array.  Each unit in the array of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
 that defines the unit's content type.  The value is unrestricted by the Pulp server but
 must match a type mapped to a content :term:`handler` in the agent.  The second is the
@@ -71,7 +71,7 @@ content are handler specific.  The options drive how the handler performs the op
 | :permission:`create`
 | :param_list:`post`
 
-* :param:`units,list,list of content units to update`
+* :param:`units,array,array of content units to update`
 * :param:`options,object,update options`
 
 | :response_list:`_`
@@ -81,7 +81,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`404,if the consumer group does not exist`
 
 
-| :return:`A` :ref:`call_report_list`
+| :return:`A` :ref:`call_report_array`
 
 :sample_request:`_` ::
 
@@ -105,7 +105,7 @@ Uninstall Content on a Consumer Group
 Uninstall one or more content units on each consumer in the group.  This operation is asynchronous.
 If dependencies are automatically removed, it is reflected in the uninstall report.
 
-The units to be uninstalled are specified in a list.  Each unit in the list of *units* is an
+The units to be uninstalled are specified in an array.  Each unit in the array of *units* is an
 object containing two required attributes.  The first is the **type_id** which a string
 that defines the unit's content type.  The value is unrestricted by the Pulp server but
 must match a type mapped to a content :term:`handler` in the agent.  The second is the
@@ -120,7 +120,7 @@ content are handler specific.  The options drive how the handler performs the op
 | :permission:`create`
 | :param_list:`post`
 
-* :param:`units,list,list of content units to uninstall`
+* :param:`units,array,array of content units to uninstall`
 * :param:`options,object,uninstall options`
 
 | :response_list:`_`
@@ -129,7 +129,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_list`
+| :return:`A` :ref:`call_report_array`
 
 :sample_request:`_` ::
 

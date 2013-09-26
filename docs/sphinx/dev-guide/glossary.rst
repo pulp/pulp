@@ -6,7 +6,7 @@ Glossary
 .. glossary::
 
   applicability data
-    Applicability data for a consumer consists of lists of applicable :term:`content unit` ids, 
+    Applicability data for a consumer consists of arrays of applicable :term:`content unit` ids,
     keyed by a content unit type. The definition of applicability itself defers for each content type. 
     For example, in case of an rpm, a content unit is considered applicable to a consumer 
     when an older version of the content unit installed on that consumer can be updated 
@@ -85,6 +85,6 @@ Glossary
     multiple invocations. Each scratchpad is scoped to an individual plugin on a repository.
 
   unit profile
-    A list of :term:`content unit` installed on a :term:`consumer`.  The
+    An arrayt of :term:`content unit` installed on a :term:`consumer`.  The
     structure and content of each item in the profile varies based on the
     unit type.

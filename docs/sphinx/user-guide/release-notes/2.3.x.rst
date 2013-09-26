@@ -23,6 +23,15 @@ New Features
    servers that are functioning as child *Nodes* will need to update a new *Nodes* configuration
    file as specified in :doc:`../nodes` section of the user guide.
 
+#. The CA (Certificate Authority) used by Pulp to sign and validate user login is generated
+   during installation. Previously, the SSL private key and certificate were installed from the
+   git repository. This means that each installation had the same key and certificate
+   installed. In 2.3, the CA key stored at ``/etc/pki/pulp/ca.key`` and certificate stored
+   at ``/etc/pki/pulp/ca.crt`` will be uniquely generated for each install. The key and certificate
+   are **not** updated during RPM upgrade. Users upgrading to 2.3 are encouraged to generate
+   a new (unique) CA key and certificate by running: `pulp-gen-ca-certificate` as root. Then,
+   restart httpd. pulp-admin users will need to login again.
+
 Client Changes
 --------------
 

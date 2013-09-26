@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.14.alpha%{?dist}
+Release: 0.16.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -125,9 +125,6 @@ cp server/etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 # Pulp Web Services
 cp -R server/srv %{buildroot}
 
-# PKI
-cp server/etc/pki/pulp/* %{buildroot}/%{_sysconfdir}/pki/%{name}
-
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
@@ -139,6 +136,8 @@ cp server/bin/* %{buildroot}/%{_bindir}
 
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
 
 # Cron
 cp -R server/etc/cron.monthly %{buildroot}/%{_sysconfdir}
@@ -177,7 +176,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.1
+Requires: python-nectar >= 1.1.2
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -216,8 +215,11 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
+%{_bindir}/pulp-gen-ca-certificate
 %defattr(700,root,root,-)
 %config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
+%ghost %{_sysconfdir}/pki/%{name}/ca.key
+%ghost %{_sysconfdir}/pki/%{name}/ca.crt
 # apache
 %defattr(-,apache,apache,-)
 %dir /srv/%{name}
@@ -228,12 +230,11 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
 %{_usr}/lib/%{name}/plugins/types
-%{_sysconfdir}/pki/%{name}/ca.key
-%{_sysconfdir}/pki/%{name}/ca.crt
 /srv/%{name}/webservices.wsgi
 %doc
 
 %post server
+# OAuth credentials
 SECTION="oauth"
 MATCH_SECTION="/^\[$SECTION\]$/"
 KEY="oauth_key:"
@@ -245,6 +246,12 @@ sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
     -e "$MATCH_SECTION,/^$/s/^$SECRET$/$SECRET $(generate)/" \
     -i %{_sysconfdir}/%{name}/server.conf
 
+# CA certificate
+if [ $1 -eq 1 ]; # not an upgrade
+then
+  pulp-gen-ca-certificate
+fi
+
 
 # ---- Common ------------------------------------------------------------------
 
@@ -254,6 +261,10 @@ Group: Development/Languages
 Obsoletes: pulp-common
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-iniparse
+# RHEL5 ONLY
+%if 0%{?rhel} == 5
+Requires: python-simplejson
+%endif
 
 %description -n python-pulp-common
 A collection of components that are common between the pulp server and client.
@@ -469,6 +480,26 @@ exit 0
 %endif
 
 %changelog
+* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.16.alpha
+- 1012636 - fix post script. (jortel@redhat.com)
+- 976435 - load puppet importer config from a file using a common method.
+  (bcourt@redhat.com)
+
+* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.15.alpha
+- 1004559 - python-simplejson is now required by pulp-common on rhel5. this
+  also removes any direct imports of simplejson from outside the pulp-common
+  package. (mhrivnak@redhat.com)
+- 1011728 - encode unicode values in oauth header. (jortel@redhat.com)
+- 975980 - When a repository is updated, push an udpate to all of the
+  distributors that depend on the repo. (bcourt@redhat.com)
+- 1009912 - removing pymongo dependency for consumers by using actual constants
+  instead of importing pymongo in common/constants.py (skarmark@redhat.com)
+- 1003326 - generate pulp CA on initial install. (jortel@redhat.com)
+- 906039 - do not allow the running weigt to drop below 0
+  (jason.connor@gmail.com)
+- 1009617 - Fixed the limit option in 'pulp-admin repo history publish'
+  (einecline@gmail.com)
+
 * Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.14.alpha
 - Pulp rebuild
 

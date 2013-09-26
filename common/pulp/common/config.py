@@ -58,8 +58,11 @@ cfg.validate(schema)
 
 import re
 import collections
+import os
 from threading import RLock
 from iniparse import INIConfig
+
+from pulp.common.compat import json
 
 # -- constants ----------------------------------------------------------------
 
@@ -646,3 +649,25 @@ class GraphSection:
             return self.__dict[name]
         else:
             return self.__dict.get(name)
+
+
+def read_json_config(file_path):
+    """
+    Read a set of configuration values from a file to a dictionary
+    If the file does not exist on disk it will return an empty dictionary
+
+    @param file_path: the inside of /etc/pulp to find the file.
+    @return: dictionary containing the configuration values contained in the file
+    @rtype: dict
+    """
+
+    config_filename = '/etc/pulp/' + file_path.lstrip('/')
+    config = {}
+    if os.path.exists(config_filename):
+        # Let the exception bubble up so it ends up in pulp.log
+        f = open(config_filename, 'r')
+        try:
+            config = json.load(f)
+        finally:
+            f.close()
+    return config

@@ -109,7 +109,7 @@ to serialize for use in a URL.
 
 Returns items from the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no items in the database.
+array is returned in the case where there are no items in the database.
 
 | :method:`post`
 | :path:`/v2/<resource type>/search/`
@@ -139,6 +139,6 @@ For example::
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of items`
+* :response_code:`200,containing the array of items`
 
-| :return:`the same format as retrieving a single item, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single item, except the base of the return value is an array of them`

@@ -4,7 +4,7 @@ Consumer History
 Retrieve Consumer Event History
 -------------------------------
 
-Retrieves the history of events that occurred on a consumer. The list can be
+Retrieves the history of events that occurred on a consumer. The array can be
 filtered by a number of fields including the event type and event timestamp data.
 Pagination support in the form of limits and skips is also provided.
 
@@ -36,7 +36,7 @@ Valid values for the event type filtering are as follows:
 * :response_code:`200,for the successful retrieval of consumer history`
 * :response_code:`404,if the given consumer is not found`
 
-| :return:`list of event history objects`
+| :return:`array of event history objects`
 
 :sample_request:`_` ::
 

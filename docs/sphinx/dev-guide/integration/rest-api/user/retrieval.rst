@@ -40,7 +40,7 @@ general user details.
 Retrieve All Users
 ----------------------
 
-Returns information on all users in the Pulp server. An empty list is returned in the case
+Returns information on all users in the Pulp server. An empty array is returned in the case
 where there are no users.
 
 | :method:`get`
@@ -50,9 +50,9 @@ where there are no users.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of users`
+* :response_code:`200,containing the array of users`
 
-| :return:`the same format as retrieving a single user, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single user, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 

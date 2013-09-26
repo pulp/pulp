@@ -20,14 +20,10 @@ import oauth2 as oauth
 from types import NoneType
 from M2Crypto import SSL, httpslib
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
-
 from pulp.bindings import exceptions
 from pulp.bindings.responses import Response, Task
-from pulp.common.util import ensure_utf_8
+from pulp.common.compat import json
+from pulp.common.util import ensure_utf_8, encode_unicode
 
 
 # -- server connection --------------------------------------------------------
@@ -281,7 +277,11 @@ class HTTPSServerWrapper(object):
                 http_method=method,
                 http_url='https://%s:%d%s' % (self.pulp_connection.host, self.pulp_connection.port, url))
             oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), oauth_consumer, None)
-            headers.update(oauth_request.to_header())
+            oauth_header = oauth_request.to_header()
+            # unicode header values causes m2crypto to do odd things.
+            for k, v in oauth_header.items():
+                oauth_header[k] = encode_unicode(v)
+            headers.update(oauth_header)
             headers['pulp-user'] = self.pulp_connection.oauth_user
 
         # Can't pass in None, so need to decide between two signatures (also lame)

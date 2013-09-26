@@ -45,7 +45,7 @@ Retrieve All Consumers
 
 Returns information on all consumers in the Pulp server. Eventually this call
 will support query parameters to limit the results and provide searching capabilities.
-This call will never return a 404; an empty list is returned in the case
+This call will never return a 404; an empty array is returned in the case
 where there are no consumers.
 
 | :method:`get`
@@ -58,9 +58,9 @@ where there are no consumers.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of consumers`
+* :response_code:`200,containing the array of consumers`
 
-| :return:`the same format as retrieving a single consumer, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single consumer, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
@@ -102,7 +102,7 @@ Please see :ref:`search_api` for more details on how to perform these searches.
 
 Returns information on consumers in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no consumers.
+array is returned in the case where there are no consumers.
 
 | :method:`post`
 | :path:`/v2/consumers/search/`
@@ -118,9 +118,9 @@ list is returned in the case where there are no consumers.
 
 | :response_list:`_`
 
-* :response_code:`200,containing the list of consumers`
+* :response_code:`200,containing the array of consumers`
 
-| :return:`the same format as retrieving a single consumer, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single consumer, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
@@ -157,7 +157,7 @@ list is returned in the case where there are no consumers.
 
 Returns information on consumers in the Pulp server that match your search
 parameters. It is worth noting that this call will never return a 404; an empty
-list is returned in the case where there are no consumers.
+array is returned in the case where there are no consumers.
 
 This method is slightly more limiting than the POST alternative, because some
 filter expressions may not be serializable as query parameters.
@@ -169,12 +169,12 @@ filter expressions may not be serializable as query parameters.
  object as defined in :ref:`search_criteria`.
  For example: /v2/consumers/search/?field=id&field=display_name&limit=20'
  Include the key 'bindings' to have the 'bindings' attribute,
-  a list of related bindings, added to each returned consumer.
+  an array of related bindings, added to each returned consumer.
 | :response_list:`_`
 
-* :response_code:`200,containing the list of consumers`
+* :response_code:`200,containing the array of consumers`
 
-| :return:`the same format as retrieving a single consumer, except the base of the return value is a list of them`
+| :return:`the same format as retrieving a single consumer, except the base of the return value is an array of them`
 
 :sample_response:`200` ::
 
