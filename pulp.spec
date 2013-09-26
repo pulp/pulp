@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.15.alpha%{?dist}
+Release: 0.16.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -480,6 +480,11 @@ exit 0
 %endif
 
 %changelog
+* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.16.alpha
+- 1012636 - fix post script. (jortel@redhat.com)
+- 976435 - load puppet importer config from a file using a common method.
+  (bcourt@redhat.com)
+
 * Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.15.alpha
 - 1004559 - python-simplejson is now required by pulp-common on rhel5. this
   also removes any direct imports of simplejson from outside the pulp-common
