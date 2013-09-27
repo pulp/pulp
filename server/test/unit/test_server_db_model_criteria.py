@@ -11,12 +11,18 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+"""
+Test the pulp.server.db.model.criteria module.
+"""
+
 import unittest
 
-from pulp.server.db.model import criteria
 from pulp.server import exceptions
+from pulp.server.db.model import criteria
+
 
 FIELDS = set(('sort', 'skip', 'limit', 'filters', 'fields'))
+
 
 class TestAsDict(unittest.TestCase):
     def test_empty(self):
@@ -66,6 +72,48 @@ class TestClientInputValidation(unittest.TestCase):
     def test_as_list(self):
         self.assertRaises(exceptions.InvalidValue,
             criteria.Criteria.from_client_input, [])
+
+
+class TestFromDict(unittest.TestCase):
+    """
+    Test the Criteria.from_dict() method.
+    """
+    def test_from_dict(self):
+        filters = {'some': 'filters'}
+        sort = ['sort_item']
+        limit = 42
+        skip = 64
+        fields = ['a_field']
+        a_dict = {'filters': filters, 'sort': sort, 'limit': limit, 'skip': skip, 'fields': fields}
+
+        new_criteria = criteria.Criteria.from_dict(a_dict)
+
+        self.assertTrue(isinstance(new_criteria, criteria.Criteria))
+        self.assertEqual(new_criteria.filters, filters)
+        self.assertEqual(new_criteria.sort, sort)
+        self.assertEqual(new_criteria.limit, limit)
+        self.assertEqual(new_criteria.skip, skip)
+        self.assertEqual(new_criteria.fields, fields)
+
+    def test_from_dict_accepts_as_dict_as_input(self):
+        """
+        Verify that from_dict() accepts the output of as_dict() as input.
+        """
+        filters = {'some': 'filters'}
+        sort = ['sort_item']
+        limit = 42
+        skip = 64
+        fields = ['a_field']
+        criteria_1 = criteria.Criteria(filters, sort, limit, skip, fields)
+
+        criteria_2 = criteria.Criteria.from_dict(criteria_1.as_dict())
+
+        self.assertTrue(isinstance(criteria_2, criteria.Criteria))
+        self.assertEqual(criteria_2.filters, criteria_1.filters)
+        self.assertEqual(criteria_2.sort, criteria_1.sort)
+        self.assertEqual(criteria_2.limit, criteria_1.limit)
+        self.assertEqual(criteria_2.skip, criteria_1.skip)
+        self.assertEqual(criteria_2.fields, criteria_1.fields)
 
 
 class TestValidateFilters(unittest.TestCase):
