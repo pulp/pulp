@@ -52,7 +52,7 @@ class ConsumerScheduleManager(object):
         kwargs = {'units': units,
                   'options': options.get('options', {})}
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id), action_tag(action_name)]
-        call_request = CallRequest(itinerary_method, args, kwargs, weight=0, tags=tags)
+        call_request = CallRequest(itinerary_method, args, kwargs, weight=0, tags=tags) # rbarlow_converted
 
         scheduler = dispatch_factory.scheduler()
         schedule_id = scheduler.add(call_request, **schedule_data)
