@@ -35,6 +35,22 @@ class VerificationTests(unittest.TestCase):
         # Test
         self.assertRaises(verification.VerificationException, verification.verify_size, test_file, 1)
 
+    def test_checksum_sha1(self):
+        # Setup
+        test_file = StringIO('Test Data')
+        expected_checksum = 'cae99c6102aa3596ff9b86c73881154e340c2ea8'
+
+        # Test - Should not raise an exception
+        verification.verify_checksum(test_file, verification.TYPE_SHA1, expected_checksum)
+
+    def test_checksum_sha(self):
+        # Setup (sha is an alias for sha1)
+        test_file = StringIO('Test Data')
+        expected_checksum = 'cae99c6102aa3596ff9b86c73881154e340c2ea8'
+
+        # Test - Should not raise an exception
+        verification.verify_checksum(test_file, verification.TYPE_SHA, expected_checksum)
+
     def test_checksum_sha256(self):
         # Setup
         test_file = StringIO('Test data')
@@ -56,7 +72,8 @@ class VerificationTests(unittest.TestCase):
                           StringIO(), 'fake-type', 'irrelevant')
 
     def test_checksum_algorithm_mappings(self):
-        self.assertEqual(3, len(verification.CHECKSUM_FUNCTIONS))
+        self.assertEqual(4, len(verification.CHECKSUM_FUNCTIONS))
         self.assertEqual(verification.CHECKSUM_FUNCTIONS[verification.TYPE_MD5], hashlib.md5)
         self.assertEqual(verification.CHECKSUM_FUNCTIONS[verification.TYPE_SHA1], hashlib.sha1)
+        self.assertEqual(verification.CHECKSUM_FUNCTIONS[verification.TYPE_SHA], hashlib.sha1)
         self.assertEqual(verification.CHECKSUM_FUNCTIONS[verification.TYPE_SHA256], hashlib.sha256)
