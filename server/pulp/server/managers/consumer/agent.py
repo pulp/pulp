@@ -52,7 +52,8 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.consumer.unregistered()
 
-    def bind(self, consumer_id, repo_id, distributor_id, options):
+    @staticmethod
+    def bind(consumer_id, repo_id, distributor_id, options):
         """
         Request the agent to perform the specified bind. This method will be called
         after the server-side representation of the binding has been created.
@@ -73,7 +74,7 @@ class AgentManager(object):
         consumer = consumer_manager.get_consumer(consumer_id)
         binding = binding_manager.get_bind(consumer_id, repo_id, distributor_id)
 
-        agent_bindings = self.__bindings([binding])
+        agent_bindings = AgentManager._bindings([binding])
         agent = PulpAgent(consumer)
         agent.consumer.bind(agent_bindings, options)
 
@@ -268,7 +269,8 @@ class AgentManager(object):
             profiles[typeid] = profile
         return ProfiledConsumer(consumer_id, profiles)
 
-    def __bindings(self, bindings):
+    @staticmethod
+    def _bindings(bindings):
         """
         Build the bindings needed by the agent. The returned bindings will be
         the payload created by the appropriate distributor.
@@ -323,6 +325,7 @@ class AgentManager(object):
         return agent_bindings
 
 
+bind = task(AgentManager.bind, base=Task, ignore_result=True)
 install_content = task(AgentManager.install_content, base=Task, ignore_result=True)
 update_content = task(AgentManager.update_content, base=Task, ignore_result=True)
 unbind = task(AgentManager.unbind, base=Task, ignore_result=True)
