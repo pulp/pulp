@@ -5,7 +5,7 @@ default_tagger = tito.tagger.VersionTagger
 
 [pulp-nightly-rhel5]
 disttag = .el5pulp
-blacklist=
+blacklist= pulp-server
 
 [pulp-nightly-rhel6]
 disttag = .el6pulp
