@@ -87,7 +87,8 @@ class AgentManager(object):
             Bind.Action.BIND,
             action_id)
 
-    def unbind(self, consumer_id, repo_id, distributor_id, options):
+    @staticmethod
+    def unbind(consumer_id, repo_id, distributor_id, options):
         """
         Request the agent to perform the specified unbind.
         :param consumer_id: The consumer ID.
@@ -103,7 +104,7 @@ class AgentManager(object):
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
         binding = dict(repo_id=repo_id, distributor_id=distributor_id)
-        bindings = self.__unbindings([binding])
+        bindings = AgentManager._unbindings([binding])
         agent = PulpAgent(consumer)
         agent.consumer.unbind(bindings, options)
         # request tracking
@@ -294,7 +295,8 @@ class AgentManager(object):
             agent_bindings.append(agent_binding)
         return agent_bindings
 
-    def __unbindings(self, bindings):
+    @staticmethod
+    def _unbindings(bindings):
         """
         Build the (un)bindings needed by the agent.
         :param bindings: A list of binding IDs.
@@ -323,6 +325,7 @@ class AgentManager(object):
 
 install_content = task(AgentManager.install_content, base=Task, ignore_result=True)
 update_content = task(AgentManager.update_content, base=Task, ignore_result=True)
+unbind = task(AgentManager.unbind, base=Task, ignore_result=True)
 uninstall_content = task(AgentManager.uninstall_content, base=Task, ignore_result=True)
 
 
