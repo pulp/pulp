@@ -21,14 +21,8 @@ import pymongo
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.base import Model
 
-# criteria model ---------------------------------------------------------------
 
 class Criteria(Model):
-
-    # XXX currently commented out so that we can get indexing right *before*
-    # storing them in the db - jconnor (2012-07-23)
-    #collection_name = 'criteria'
-
     def __init__(self, filters=None, sort=None, limit=None, skip=None, fields=None):
         super(Criteria, self).__init__()
 
@@ -48,7 +42,7 @@ class Criteria(Model):
         """
         @return:    the Criteria as a dict, suitable for serialization by
                     something like JSON, and compatible as input to the
-                    from_client_input method.
+                    from_dict method.
         @rtype:     dict
         """
         return {
@@ -85,6 +79,21 @@ class Criteria(Model):
         if doc:
             raise pulp_exceptions.InvalidValue(doc.keys())
         return cls(filters, sort, limit, skip, fields)
+
+    @classmethod
+    def from_dict(cls, input_dictionary):
+        """
+        Convert a dictionary representation of the Criteria into a new Criteria object. The output
+        of as_dict() is suitable as input to this method.
+
+        :param input_dictionary: The dictionary representation of a Criteria object that will be
+                                 used to construct one.
+        :type  input_dictionary: dict
+        :return:                 A new Criteria object
+        :rtype:                  Criteria
+        """
+        return cls(input_dictionary['filters'], input_dictionary['sort'], input_dictionary['limit'],
+                   input_dictionary['skip'], input_dictionary['fields'])
 
     @property
     def spec(self):
