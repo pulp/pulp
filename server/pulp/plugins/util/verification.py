@@ -22,11 +22,13 @@ VALIDATION_CHUNK_SIZE = 32 * 1024 * 1024
 
 # Constants to pass in as the checksum type in verify_checksum
 TYPE_MD5    = 'md5'
+TYPE_SHA    = 'sha'
 TYPE_SHA1   = 'sha1'
 TYPE_SHA256 = 'sha256'
 
 CHECKSUM_FUNCTIONS = {
     TYPE_MD5    : hashlib.md5,
+    TYPE_SHA    : hashlib.sha1,
     TYPE_SHA1   : hashlib.sha1,
     TYPE_SHA256 : hashlib.sha256,
 }
