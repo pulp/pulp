@@ -1,7 +1,4 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2012 Red Hat, Inc.
-#
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -12,32 +9,29 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
 """
 Contains agent management classes
 """
 
+from logging import getLogger
 import sys
 
-from logging import getLogger
+from celery import task
 
-from pulp.server.dispatch import factory
-from pulp.server.managers import factory as managers
-from pulp.server.db.model.consumer import Bind
+from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
-from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
-from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.model import Consumer as ProfiledConsumer
-from pulp.server.exceptions import (
-    MissingResource,
-    PulpExecutionException,
-    PulpDataException
-)
+from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
+from pulp.server.async.tasks import Task
+from pulp.server.db.model.consumer import Bind
+from pulp.server.dispatch import factory
+from pulp.server.exceptions import (MissingResource, PulpExecutionException, PulpDataException)
+from pulp.server.managers import factory as managers
 
 
-_LOG = getLogger(__name__)
+logger = getLogger(__name__)
 
 
 class AgentManager(object):
@@ -122,7 +116,8 @@ class AgentManager(object):
             Bind.Action.UNBIND,
             action_id)
 
-    def install_content(self, consumer_id, units, options):
+    @staticmethod
+    def install_content(consumer_id, units, options):
         """
         Install content units on a consumer.
         :param consumer_id: The consumer ID.
@@ -138,9 +133,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
-            pc = self.__profiled_consumer(consumer_id)
-            profiler, cfg = self.__profiler(typeid)
-            units = self.__invoke_plugin(
+            pc = AgentManager._profiled_consumer(consumer_id)
+            profiler, cfg = AgentManager._profiler(typeid)
+            units = AgentManager._invoke_plugin(
                 profiler.install_units,
                 pc,
                 units,
@@ -152,7 +147,8 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.content.install(units, options)
 
-    def update_content(self, consumer_id, units, options):
+    @staticmethod
+    def update_content(consumer_id, units, options):
         """
         Update content units on a consumer.
         :param consumer_id: The consumer ID.
@@ -168,9 +164,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
-            pc = self.__profiled_consumer(consumer_id)
-            profiler, cfg = self.__profiler(typeid)
-            units = self.__invoke_plugin(
+            pc = AgentManager._profiled_consumer(consumer_id)
+            profiler, cfg = AgentManager._profiler(typeid)
+            units = AgentManager._invoke_plugin(
                 profiler.update_units,
                 pc,
                 units,
@@ -182,7 +178,8 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.content.update(units, options)
 
-    def uninstall_content(self, consumer_id, units, options):
+    @staticmethod
+    def uninstall_content(consumer_id, units, options):
         """
         Uninstall content units on a consumer.
         :param consumer_id: The consumer ID.
@@ -198,9 +195,9 @@ class AgentManager(object):
         conduit = ProfilerConduit()
         collated = Units(units)
         for typeid, units in collated.items():
-            pc = self.__profiled_consumer(consumer_id)
-            profiler, cfg = self.__profiler(typeid)
-            units = self.__invoke_plugin(
+            pc = AgentManager._profiled_consumer(consumer_id)
+            profiler, cfg = AgentManager._profiler(typeid)
+            units = AgentManager._invoke_plugin(
                 profiler.uninstall_units,
                 pc,
                 units,
@@ -225,7 +222,8 @@ class AgentManager(object):
         agent = PulpAgent(consumer)
         agent.cancel(task_id)
 
-    def __invoke_plugin(self, call, *args, **kwargs):
+    @staticmethod
+    def _invoke_plugin(call, *args, **kwargs):
         try:
             return call(*args, **kwargs)
         except InvalidUnitsRequested, e:
@@ -234,7 +232,8 @@ class AgentManager(object):
         except Exception:
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
-    def __profiler(self, typeid):
+    @staticmethod
+    def _profiler(typeid):
         """
         Find the profiler.
         Returns the Profiler base class when not matched.
@@ -250,13 +249,15 @@ class AgentManager(object):
             cfg = {}
         return plugin, cfg
 
-    def __profiled_consumer(self, consumer_id):
+    @staticmethod
+    def _profiled_consumer(consumer_id):
         """
         Get a profiler consumer model object.
+
         :param id: A consumer ID.
-        :type id: str
-        :return: A populated profiler consumer model object.
-        :rtype: L{ProfiledConsumer}
+        :type  id: str
+        :return:   A populated profiler consumer model object.
+        :rtype:    pulp.plugins.model.Consumer
         """
         profiles = {}
         manager = managers.consumer_profile_manager()
@@ -318,6 +319,11 @@ class AgentManager(object):
             agent_binding = dict(type_id=type_id, repo_id=binding['repo_id'])
             agent_bindings.append(agent_binding)
         return agent_bindings
+
+
+install_content = task(AgentManager.install_content, base=Task, ignore_result=True)
+update_content = task(AgentManager.update_content, base=Task, ignore_result=True)
+uninstall_content = task(AgentManager.uninstall_content, base=Task, ignore_result=True)
 
 
 class Units(dict):
