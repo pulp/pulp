@@ -483,6 +483,8 @@ class RepoDistributorManager(object):
         if distributor is None:
             raise MissingResource(repo=repo_id, distributor=distributor_id)
         return distributor['scheduled_publishes']
+
+
 remove_distributor = task(RepoDistributorManager.remove_distributor, base=Task, ignore_result=True)
 update_distributor_config = task(RepoDistributorManager.update_distributor_config, base=Task,
                                  ignore_result=True)

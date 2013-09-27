@@ -268,6 +268,8 @@ class ApplicabilityRegenerationManager(object):
             plugin = Profiler()
             cfg = {}
         return plugin, cfg
+
+
 regenerate_applicability_for_consumers = task(
     ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task,
     ignore_result=True)

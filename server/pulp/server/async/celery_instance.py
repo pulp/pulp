@@ -15,7 +15,7 @@ Due to our factory, we cannot put the instantiation of the Celery application in
 module, as it will lead to circular dependencies since tasks.py also need to import this object, and
 the factory ends up importing tasks.py when it imports all the managers.
 
-Hopefully we will eliminate the factory in the future, but until this this workaround is necessary.
+Hopefully we will eliminate the factory in the future, but until then this workaround is necessary.
 """
 from celery import Celery
 

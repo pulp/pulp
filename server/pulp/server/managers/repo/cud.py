@@ -278,8 +278,8 @@ class RepoManager(object):
             # Remove all associations from the repo
             RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
         except Exception, e:
-            msg = _('Error updating one or more database collections while removing repo [%s]')
-            msg = msg % repo_id
+            msg = _('Error updating one or more database collections while removing repo [%(r)s]')
+            msg = msg % {'r': repo_id}
             logger.exception(msg)
             error_tuples.append( (_('Database Removal Error'), e.args))
 
@@ -544,6 +544,8 @@ class RepoManager(object):
                 spec = {'repo_id': repo_id, 'unit_type_id': type_id}
                 counts[type_id] = association_collection.find(spec).count()
             repo_collection.update({'id': repo_id}, {'$set':{'content_unit_counts': counts}}, safe=True)
+
+
 delete_repo = task(RepoManager.delete_repo, base=Task, ignore_result=True)
 
 

@@ -357,6 +357,8 @@ class RepoPublishManager(object):
         dist_coll = RepoDistributor.get_collection()
         auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
         return auto_distributors
+
+
 publish = task(RepoPublishManager.publish, base=Task, ignore_result=True)
 
 

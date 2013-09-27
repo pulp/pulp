@@ -320,6 +320,8 @@ class RepoSyncManager(object):
             os.makedirs(dir)
 
         return dir
+
+
 sync = task(RepoSyncManager.sync, base=Task)
 
 
