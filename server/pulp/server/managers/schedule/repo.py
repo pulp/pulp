@@ -51,6 +51,7 @@ class RepoSyncScheduleManager(object):
         # build the sync call request
         args = [repo_id]
         kwargs = {'overrides': sync_options['override_config']}
+        # rbarlow_TODO: Convert this into a Celery call
         call_request = CallRequest(sync_with_auto_publish_itinerary, args, kwargs, weight=0)
 
         # schedule the sync
@@ -140,6 +141,7 @@ class RepoPublishScheduleManager(object):
         # build the publish call
         args = [repo_id, distributor_id]
         kwargs = {'overrides': publish_options['override_config']}
+        # rbarlow_TODO: Convert this into a Celery call
         call_request = CallRequest(publish_itinerary, args, kwargs, weight=0)
 
         # schedule the publish

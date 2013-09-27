@@ -10,25 +10,15 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-import logging
-
-from celery import Celery, task, Task as CeleryTask
+from celery import Task as CeleryTask
 from celery.app import control
 
-from pulp.server.config import config
-from pulp.server import initialization
-from pulp.server.managers.consumer.applicability import ApplicabilityRegenerationManager
+from pulp.server.async.celery_instance import celery
 
 
-broker_url = config.get('tasks', 'broker_url')
-celery = Celery('tasks', broker=broker_url)
 controller = control.Control(app=celery)
-initialization.initialize()
-logger = logging.getLogger(__name__)
 
 
-# This will be our custom task that adds the ability to reserve resources. For now, it is simply
-# the Celery task.
 class Task(CeleryTask):
     """
     This is a custom Pulp subclass of the Celery Task object. It allows us to inject some custom
@@ -57,16 +47,3 @@ def cancel(task_id):
     :type  task_id: basestring
     """
     controller.revoke(task_id, terminate=True)
-
-
-@task(base=Task)
-def regenerate_applicability_for_consumers(*args, **kwargs):
-    """
-    This function is a wrapper around the
-    ApplicabilityRegenerationManager.regenerate_applicability_for_consumers() method. It provides a
-    Task interface to it for asynchronous operation.
-
-    :param args:   The positional arguments you wish to pass to the wrapped method.
-    :param kwargs: The keyword arguments you wish to pass to the wrapped method.
-    """
-    return ApplicabilityRegenerationManager.regenerate_applicability_for_consumers(*args, **kwargs)

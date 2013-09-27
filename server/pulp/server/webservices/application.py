@@ -39,7 +39,6 @@ logs.start_logging()
 from pulp.server import initialization
 
 from pulp.server.agent.direct.services import Services as AgentServices
-
 from pulp.server.db import reaper
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
@@ -89,7 +88,12 @@ def _initialize_pulp():
     global _IS_INITIALIZED, STACK_TRACER
     if _IS_INITIALIZED:
         return
-    initialization.initialize()
+
+    # Even though this import does not get used anywhere, we must import it for the Celery
+    # application to be initialized. Also, this import cannot happen in the usual PEP-8 location,
+    # as it calls initialization code at the module level. Calling that code at the module level
+    # is necessary for the Celery application to initialize.
+    from pulp.server.async import app
 
     # Verify the database has been migrated to the correct version. This is
     # very likely a reason the server will fail to start.

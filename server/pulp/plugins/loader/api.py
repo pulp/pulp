@@ -56,8 +56,9 @@ def initialize(validate=True):
     """
 
     global _MANAGER
-    # pre-initialization validation
-    assert not _is_initialized()
+    # No need to do this twice, so if we're already initialized we just return
+    if _is_initialized():
+        return
 
     _create_manager()
     # add plugins here in the form (path, base class, manager map)
@@ -428,5 +429,3 @@ def _validate_importers():
                 continue
             msg = _('Importer %(i)s: no type definition found for %(t)s')
             raise loader_exceptions.InvalidImporter(msg % {'i': plugin_id, 't': type_})
-
-

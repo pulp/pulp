@@ -17,14 +17,14 @@ import unittest
 
 import mock
 
-from pulp.server import tasks
+from pulp.server.async import tasks
 
 
 class TestTask(unittest.TestCase):
     """
     Test the pulp.server.tasks.Task class.
     """
-    @mock.patch('pulp.server.tasks.Task.apply_async', autospec=True)
+    @mock.patch('pulp.server.async.tasks.Task.apply_async', autospec=True)
     def test_apply_async_with_reservation_calls_apply_async(self, apply_async):
         """
         Assert that apply_async_with_reservation() calls Celery's apply_async.
@@ -43,7 +43,7 @@ class TestCancel(unittest.TestCase):
     """
     Test the tasks.cancel() function.
     """
-    @mock.patch('pulp.server.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     def test_cancel(self, revoke):
         task_id = '1234abcd'
 

@@ -2,7 +2,6 @@
 #
 # Copyright (c) 2011 Red Hat, Inc.
 #
-#
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
 # 2 of the License (GPLv2) or (at your option) any later version.
@@ -30,7 +29,6 @@ import pulp.server.managers.repo.importer as repo_importer_manager
 import pulp.server.managers.repo.publish as repo_publish_manager
 import pulp.server.managers.repo.sync as repo_sync_manager
 
-# -- mocks --------------------------------------------------------------------
 
 class MockRepoPublishManager:
 
@@ -56,7 +54,6 @@ class MockRepoPublishManager:
         MockRepoPublishManager.repo_id = None
         MockRepoPublishManager.raise_error = False
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
@@ -385,8 +382,10 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(-1, history[0]['updated_count'])
         self.assertEqual(-1, history[0]['removed_count'])
 
-        self.assertEqual('Unknown', history[0]['summary'])
-        self.assertEqual('Unknown', history[0]['details'])
+        expected_message = ('Plugin type [mock-importer] on repo [repo-1] did not return a valid '
+                            'sync report')
+        self.assertEqual(expected_message, history[0]['summary'])
+        self.assertEqual(expected_message, history[0]['details'])
 
         self.assertTrue(history[0]['error_message'] is None)
         self.assertTrue(history[0]['exception'] is None)

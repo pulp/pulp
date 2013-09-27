@@ -69,7 +69,7 @@ class ConsumerGroupCollection(JSONController):
         group.update(serialization.link.child_link_obj(group['id']))
         return self.created(group['_href'], group)
 
-    
+
 class ConsumerGroupSearch(SearchController):
     def __init__(self):
         super(ConsumerGroupSearch, self).__init__(

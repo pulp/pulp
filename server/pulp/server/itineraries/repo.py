@@ -40,6 +40,7 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
     sync_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                  action_tag('sync')]
 
+    # rbarlow_TODO: Convert this to use the Celeryified task, and possibly eliminate this itenerary
     sync_call_request = CallRequest(repo_sync_manager.sync,
                                     [repo_id],
                                     {'sync_config_override': overrides},
@@ -57,12 +58,14 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
 
     for distributor in auto_distributors:
         distributor_id = distributor['id']
+        # rbarlow_TODO: Convert this into a Celery call
         publish_call_request = CallRequest(repo_publish_manager.publish,
                                            [repo_id, distributor_id],
                                            tags=auto_publish_tags,
                                            archive=True)
         publish_call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        publish_call_request.depends_on(sync_call_request.id, [dispatch_constants.CALL_FINISHED_STATE])
+        publish_call_request.depends_on(sync_call_request.id,
+                                        [dispatch_constants.CALL_FINISHED_STATE])
 
         call_requests.append(publish_call_request)
 
@@ -87,6 +90,7 @@ def publish_itinerary(repo_id, distributor_id, overrides=None):
     tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('publish')]
 
+    # rbarlow_TODO: Convert this into a Celery call
     call_request = CallRequest(repo_publish_manager.publish,
                                [repo_id, distributor_id],
                                {'publish_config_override': overrides},
