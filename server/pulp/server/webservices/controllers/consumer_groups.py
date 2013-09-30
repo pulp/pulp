@@ -61,7 +61,7 @@ class ConsumerGroupCollection(JSONController):
         manager = managers_factory.consumer_group_manager()
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, group_id)]
-        call_request = CallRequest(manager.create_consumer_group,
+        call_request = CallRequest(manager.create_consumer_group, # rbarlow_converted
            [group_id, display_name, description, consumer_ids, notes],
            weight=weight, tags=tags)
         call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, group_id)
@@ -87,8 +87,6 @@ class ConsumerGroupSearch(SearchController):
             item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
-# consumer group resource ----------------------------------------------------------
-
 class ConsumerGroupResource(JSONController):
 
     @auth_required(authorization.READ)
@@ -104,7 +102,7 @@ class ConsumerGroupResource(JSONController):
     def DELETE(self, consumer_group_id):
         manager = managers_factory.consumer_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)]
-        call_request = CallRequest(manager.delete_consumer_group,
+        call_request = CallRequest(manager.delete_consumer_group, # rbarlow_converted
                                    [consumer_group_id],
                                    tags=tags)
         call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
@@ -116,7 +114,7 @@ class ConsumerGroupResource(JSONController):
         update_data = self.params()
         manager = managers_factory.consumer_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)]
-        call_request = CallRequest(manager.update_consumer_group,
+        call_request = CallRequest(manager.update_consumer_group, # rbarlow_converted
                                    args=[consumer_group_id],
                                    kwargs=update_data,
                                    tags=tags)
@@ -124,8 +122,6 @@ class ConsumerGroupResource(JSONController):
         group = execution.execute(call_request)
         group.update(serialization.link.current_link_obj())
         return self.ok(group)
-
-# consumer group membership -------------------------------------------------------
 
 class ConsumerGroupAssociateAction(JSONController):
 
@@ -135,7 +131,7 @@ class ConsumerGroupAssociateAction(JSONController):
         manager = managers_factory.consumer_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id),
                 action_tag('consumer_group_associate')]
-        call_request = CallRequest(manager.associate,
+        call_request = CallRequest(manager.associate, # rbarlow_converted
                                    [consumer_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
@@ -152,7 +148,7 @@ class ConsumerGroupUnassociateAction(JSONController):
         manager = managers_factory.consumer_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id),
                 action_tag('consumer_group_unassociate')]
-        call_request = CallRequest(manager.unassociate,
+        call_request = CallRequest(manager.unassociate, # rbarlow_converted
                                    [consumer_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
