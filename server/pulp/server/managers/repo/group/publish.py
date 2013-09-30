@@ -16,23 +16,24 @@ import logging
 import sys
 import datetime
 
+from celery import task
+
 from pulp.common import dateutils
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import PublishReport
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
 
 class RepoGroupPublishManager(object):
 
@@ -69,8 +70,8 @@ class RepoGroupPublishManager(object):
         distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
         return distributor, distributor_instance, plugin_config
 
-    def publish(self,
-                group_id,
+    @staticmethod
+    def publish(group_id,
                 distributor_id,
                 distributor=None,
                 distributor_instance=None,
@@ -79,25 +80,18 @@ class RepoGroupPublishManager(object):
         """
         Requests the given distributor publish the repository group.
 
-        @param group_id: identifies the repo group
-        @type  group_id: str
-
-        @param distributor_id: identifies the group's distributor
-        @type  distributor_id: str
-
-        @param distributor: distributor metadata as associate with the repo group
-        @type distributor: dict
-
-        @param distributor_instance: instance of group's distributor to be used
-                                     for publishing
-        @type distributor_instance: GroupDistributor
-
-        @param plugin_config: general configuration for the distributor instance
-        @type plugin_config: dict or None
-
-        @param publish_config_override: values to pass the plugin for this
-               publish call alone
-        @type  publish_config_override: dict
+        :param group_id:                identifies the repo group
+        :type  group_id:                str
+        :param distributor_id:          identifies the group's distributor
+        :type  distributor_id:          str
+        :param distributor:             distributor metadata as associate with the repo group
+        :type distributor:              dict
+        :param distributor_instance:    instance of group's distributor to be used for publishing
+        :type distributor_instance:     GroupDistributor
+        :param plugin_config:           general configuration for the distributor instance
+        :type plugin_config:            dict or None
+        :param publish_config_override: values to pass the plugin for this publish call alone
+        :type  publish_config_override: dict
         """
         if None in (distributor, distributor_instance):
             raise MissingResource(repo_group=group_id, group_distributor=distributor_id)
@@ -111,14 +105,18 @@ class RepoGroupPublishManager(object):
         # Assemble the data needed for publish
         conduit = RepoGroupPublishConduit(group_id, distributor_id)
 
-        call_config = PluginCallConfiguration(plugin_config, distributor['config'], publish_config_override)
+        call_config = PluginCallConfiguration(plugin_config, distributor['config'],
+                                              publish_config_override)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id, group_id)
+        transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id,
+                                                                                group_id)
 
         # TODO: Add events for group publish start/complete
-        self._do_publish(transfer_group, distributor_id, distributor_instance, conduit, call_config)
+        RepoGroupPublishManager._do_publish(transfer_group, distributor_id, distributor_instance,
+                                            conduit, call_config)
 
-    def _do_publish(self, group, distributor_id, distributor_instance, conduit, call_config):
+    @staticmethod
+    def _do_publish(group, distributor_id, distributor_instance, conduit, call_config):
 
         distributor_coll = RepoGroupDistributor.get_collection()
         publish_result_coll = RepoGroupPublishResult.get_collection()
@@ -142,7 +140,7 @@ class RepoGroupPublishManager(object):
                      publish_end_timestamp, e, sys.exc_info()[2])
             publish_result_coll.save(result, safe=True)
 
-            _LOG.exception('Exception caught from plugin during publish call for group [%s]' % group_id)
+            logger.exception('Exception caught from plugin during publish call for group [%s]' % group_id)
             raise PulpExecutionException(e), None, sys.exc_info()[2]
 
         publish_end_timestamp = _now_timestamp()
@@ -165,7 +163,9 @@ class RepoGroupPublishManager(object):
                          distributor['distributor_type_id'], publish_start_timestamp,
                          publish_end_timestamp, summary, details)
         else:
-            _LOG.warn('Plugin type [%s] did not return a valid publish report' % distributor['distributor_type_id'])
+            msg = _('Plugin type [%(t)s] did not return a valid publish report')
+            msg = msg % {'t': distributor['distributor_type_id']}
+            logger.warn(msg)
 
             summary = details = _('Unknown')
             result = RepoGroupPublishResult.expected_result(group_id, distributor_id,
@@ -198,6 +198,10 @@ class RepoGroupPublishManager(object):
             date = dateutils.parse_iso8601_datetime(date)
 
         return date
+
+
+publish = task(RepoGroupPublishManager.publish, base=Task, ignore_result=True)
+
 
 def _now_timestamp():
     """
