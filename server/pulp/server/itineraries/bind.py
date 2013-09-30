@@ -95,8 +95,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_c
         binding_config,
     ]
 
-    # rbarlow_TODO: Convert this CallRequest into a Celery Task call
-    bind_request = CallRequest(
+    bind_request = CallRequest( # rbarlow_converted
         bind_manager.bind,
         args,
         weight=0,
@@ -125,8 +124,7 @@ def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_c
             agent_options
         ]
 
-        # rbarlow_TODO: Convert this CallRequest into a Celery Task call
-        agent_request = CallRequest(
+        agent_request = CallRequest( # rbarlow_converted
             agent_manager.bind,
             args,
             weight=0,
@@ -191,8 +189,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         distributor_id,
     ]
 
-    # rbarlow_TODO: Convert this CallRequest into a Celery Task call.
-    unbind_request = CallRequest(
+    unbind_request = CallRequest( # rbarlow_converted
         bind_manager.unbind,
         args=args,
         tags=tags)
@@ -217,8 +214,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     agent_manager = managers.consumer_agent_manager()
 
-    # rbarlow_TODO: Convert this CallRequest into a Celery Task call
-    agent_request = CallRequest(
+    agent_request = CallRequest( # rbarlow_converted
         agent_manager.unbind,
         args,
         weight=0,
@@ -253,8 +249,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         distributor_id
     ]
 
-    # rbarlow_TODO: Convert this CallRequest into a Celery Task call
-    delete_request = CallRequest(bind_manager.delete, args=args, tags=tags)
+    delete_request = CallRequest(bind_manager.delete, args=args, tags=tags) # rbarlow_converted
     unbind_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
     call_requests.append(delete_request)
     delete_request.depends_on(agent_request.id)
@@ -304,8 +299,7 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
         True,
     ]
 
-    # rbarlow_TODO: Convert this CallRequest into a Celery Task call
-    delete_request = CallRequest(bind_manager.delete, args=args, tags=tags)
+    delete_request = CallRequest(bind_manager.delete, args=args, tags=tags) # rbarlow_converted
     delete_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
     call_requests.append(delete_request)
 
@@ -329,8 +323,7 @@ def forced_unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
         agent_manager = managers.consumer_agent_manager()
 
-        # rbarlow_TODO: Convert this CallRequest into a Celery Task call
-        agent_request = CallRequest(
+        agent_request = CallRequest( # rbarlow_converted
             agent_manager.unbind,
             args,
             weight=0,

@@ -85,7 +85,7 @@ class UsersCollection(JSONController):
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('create')]
-        call_request = CallRequest(manager.create_user,
+        call_request = CallRequest(manager.create_user, # rbarlow_converted
                                    args,
                                    kwargs,
                                    weight=weight,
@@ -129,7 +129,7 @@ class UserResource(JSONController):
 
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('delete')]
-        call_request = CallRequest(manager.delete_user,
+        call_request = CallRequest(manager.delete_user, # rbarlow_converted
                                    [login],
                                    tags=tags)
         call_request.deletes_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
@@ -154,7 +154,7 @@ class UserResource(JSONController):
         manager = managers.user_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('update')]
-        call_request = CallRequest(manager.update_user,
+        call_request = CallRequest(manager.update_user, # rbarlow_converted
                                    [login, delta],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
