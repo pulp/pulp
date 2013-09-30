@@ -18,10 +18,8 @@ from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers
 
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-
-# -- task callbacks ----------------------------------------------------------------------
 
 def bind_succeeded(call_request, call_report):
     """
@@ -37,6 +35,7 @@ def bind_succeeded(call_request, call_report):
     else:
         manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
 
+
 def bind_failed(call_request, call_report):
     """
     The task failed callback.
@@ -47,13 +46,11 @@ def bind_failed(call_request, call_report):
     consumer_id, repo_id, distributor_id, options = call_request.args
     manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
 
+
 # just mapped to bind functions because the behavior is the same
 # but want to use these names in the unbind itinerary for clarity.
 unbind_succeeded = bind_succeeded
 unbind_failed = bind_failed
-
-
-# -- itineraries -------------------------------------------------------------------------
 
 
 def bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
@@ -217,6 +214,7 @@ def unbind_itinerary(consumer_id, repo_id, distributor_id, options):
 
     agent_manager = managers.consumer_agent_manager()
 
+    # rbarlow_TODO: Convert this CallRequest into a Celery Task call
     agent_request = CallRequest(
         agent_manager.unbind,
         args,
