@@ -17,19 +17,19 @@ import re
 import shutil
 from gettext import gettext as _
 
+from celery import task
+
 from pulp.plugins.types import database as content_types_db
-from pulp.server import config as pulp_config
-from pulp.server import exceptions as pulp_exceptions
+from pulp.server import config as pulp_config, exceptions as pulp_exceptions
+from pulp.server.async.tasks import Task
 from pulp.server.db import connection as db_connection
 from pulp.server.db.model.repository import RepoContentUnit
 
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class OrphanManager(object):
-
-    # summary api --------------------------------------------------------------
 
     def orphans_summary(self):
         """
@@ -54,11 +54,9 @@ class OrphanManager(object):
         :rtype: int
         """
         count = 0
-        for unit in self.generate_orphans_by_type(content_type_id):
+        for unit in OrphanManager.generate_orphans_by_type(content_type_id):
             count += 1
         return count
-
-    # generator-based api ------------------------------------------------------
 
     def generate_all_orphans(self, fields=None):
         """
@@ -73,7 +71,7 @@ class OrphanManager(object):
         """
 
         for content_type_id in content_types_db.all_type_ids():
-            for content_unit in self.generate_orphans_by_type(content_type_id, fields):
+            for content_unit in OrphanManager.generate_orphans_by_type(content_type_id, fields):
                 yield content_unit
 
     def generate_all_orphans_with_unit_keys(self):
@@ -88,10 +86,12 @@ class OrphanManager(object):
         """
 
         for content_type_id in content_types_db.all_type_ids():
-            for content_unit in self.generate_orphans_by_type_with_unit_keys(content_type_id):
+            for content_unit in OrphanManager.generate_orphans_by_type_with_unit_keys(
+                    content_type_id):
                 yield content_unit
 
-    def generate_orphans_by_type(self, content_type_id, fields=None):
+    @staticmethod
+    def generate_orphans_by_type(content_type_id, fields=None):
         """
         Return an generator of all orphaned content units of the given content type.
 
@@ -111,14 +111,16 @@ class OrphanManager(object):
 
         for content_unit in content_units_collection.find({}, fields=fields):
 
-            repo_content_units_cursor = repo_content_units_collection.find({'unit_id': content_unit['_id']})
+            repo_content_units_cursor = repo_content_units_collection.find(
+                {'unit_id': content_unit['_id']})
 
             if repo_content_units_cursor.count() > 0:
                 continue
 
             yield content_unit
 
-    def generate_orphans_by_type_with_unit_keys(self, content_type_id):
+    @staticmethod
+    def generate_orphans_by_type_with_unit_keys(content_type_id):
         """
         Return an generator of all orphaned content units of the given content type.
 
@@ -134,7 +136,7 @@ class OrphanManager(object):
         fields = ['_id', '_content_type_id']
         fields.extend(content_type_definition['unit_key'])
 
-        for content_unit in self.generate_orphans_by_type(content_type_id, fields):
+        for content_unit in OrphanManager.generate_orphans_by_type(content_type_id, fields):
             yield  content_unit
 
     def get_orphan(self, content_type_id, content_unit_id):
@@ -151,16 +153,18 @@ class OrphanManager(object):
                                  given content type and unit id
         """
 
-        for content_unit in self.generate_orphans_by_type(content_type_id):
+        for content_unit in OrphanManager.generate_orphans_by_type(content_type_id):
 
             if content_unit['_id'] != content_unit_id:
                 continue
 
             return content_unit
 
-        raise pulp_exceptions.MissingResource(content_type=content_type_id, content_unit=content_unit_id)
+        raise pulp_exceptions.MissingResource(content_type=content_type_id,
+                                              content_unit=content_unit_id)
 
-    def delete_all_orphans(self, flush=True):
+    @staticmethod
+    def delete_all_orphans(flush=True):
         """
         Delete all orphaned content units.
 
@@ -171,12 +175,13 @@ class OrphanManager(object):
         """
 
         for content_type_id in content_types_db.all_type_ids():
-            self.delete_orphans_by_type(content_type_id, flush=False)
+            OrphanManager.delete_orphans_by_type(content_type_id, flush=False)
 
         if flush:
             db_connection.flush_database()
 
-    def delete_orphans_by_id(self, content_unit_list, flush=True):
+    @staticmethod
+    def delete_orphans_by_id(content_unit_list, flush=True):
         """
         Delete the given orphaned content units.
 
@@ -197,16 +202,18 @@ class OrphanManager(object):
             if 'content_type_id' not in content_unit or 'unit_id' not in content_unit:
                 raise pulp_exceptions.InvalidValue(['content_type_id', 'unit_id'])
 
-            content_unit_id_list = content_units_by_content_type.setdefault(content_unit['content_type_id'], [])
+            content_unit_id_list = content_units_by_content_type.setdefault(
+                content_unit['content_type_id'], [])
             content_unit_id_list.append(content_unit['unit_id'])
 
         for content_type_id, content_unit_id_list in content_units_by_content_type.items():
-            self.delete_orphans_by_type(content_type_id, content_unit_id_list, flush=False)
+            OrphanManager.delete_orphans_by_type(content_type_id, content_unit_id_list, flush=False)
 
         if flush:
             db_connection.flush_database()
 
-    def delete_orphans_by_type(self, content_type_id, content_unit_ids=None, flush=True):
+    @staticmethod
+    def delete_orphans_by_type(content_type_id, content_unit_ids=None, flush=True):
         """
         Delete the orphaned content units for the given content type.
 
@@ -226,7 +233,8 @@ class OrphanManager(object):
 
         content_units_collection = content_types_db.type_units_collection(content_type_id)
 
-        for content_unit in self.generate_orphans_by_type(content_type_id, fields=['_id', '_storage_path']):
+        for content_unit in OrphanManager.generate_orphans_by_type(content_type_id,
+                                                                   fields=['_id', '_storage_path']):
 
             if content_unit_ids is not None and content_unit['_id'] not in content_unit_ids:
                 continue
@@ -235,16 +243,15 @@ class OrphanManager(object):
 
             storage_path = content_unit.get('_storage_path', None)
             if storage_path is not None:
-                self.delete_orphaned_file(storage_path)
+                OrphanManager.delete_orphaned_file(storage_path)
 
         # this forces the database to flush any cached changes to the disk
         # in the background; for example: the unsafe deletes in the loop above
         if flush:
             db_connection.flush_database()
 
-    # physical bits utility ----------------------------------------------------
-
-    def delete_orphaned_file(self, path):
+    @staticmethod
+    def delete_orphaned_file(path):
         """
         Delete an orphaned file and any parent directories that become empty.
         @param path: absolute path to the file to delete
@@ -252,14 +259,15 @@ class OrphanManager(object):
         """
         assert os.path.isabs(path)
 
-        _LOG.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
+        logger.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
 
         if not os.path.exists(path):
-            _LOG.warn(_('Cannot delete orphaned file: %(p)s, No such file') % {'p': path})
+            logger.warn(_('Cannot delete orphaned file: %(p)s, No such file') % {'p': path})
             return
 
         if not os.access(path, os.W_OK):
-            _LOG.warn(_('Cannot delete orphaned file: %(p)s, Insufficient permissions') % {'p': path})
+            logger.warn(
+                _('Cannot delete orphaned file: %(p)s, Insufficient permissions') % {'p': path})
             return
 
         if os.path.isfile(path) or os.path.islink(path):
@@ -281,3 +289,7 @@ class OrphanManager(object):
                 break
             os.rmdir(path)
 
+
+delete_all_orphans = task(OrphanManager.delete_all_orphans, base=Task, ignore_result=True)
+delete_orphans_by_id = task(OrphanManager.delete_orphans_by_id, base=Task, ignore_result=True)
+delete_orphans_by_type = task(OrphanManager.delete_orphans_by_type, base=Task, ignore_result=True)
