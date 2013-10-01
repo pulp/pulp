@@ -27,6 +27,7 @@ from pulp.server.db.model.auth import User
 from pulp.server.exceptions import (PulpDataException, DuplicateResource, InvalidValue,
                                     MissingResource)
 from pulp.server.managers import factory
+from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 
 
 _USER_LOGIN_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -200,7 +201,7 @@ class UserManager(object):
         user_query_manager = factory.user_query_manager()
         role_manager = factory.role_manager()
 
-        super_users = user_query_manager.find_users_belonging_to_role(role_manager.super_user_role)
+        super_users = user_query_manager.find_users_belonging_to_role(SUPER_USER_ROLE)
         if super_users:
             return
 
@@ -209,9 +210,10 @@ class UserManager(object):
         admin = User.get_collection().find_one({'login' : default_login})
         if admin is None:
             default_password = config.config.get('server', 'default_password')
-            admin = factory.user_manager().create_user(login=default_login, password=default_password)
+            admin = factory.user_manager().create_user(login=default_login,
+                                                       password=default_password)
 
-        role_manager.add_user_to_role(role_manager.super_user_role, default_login)
+        role_manager.add_user_to_role(SUPER_USER_ROLE, default_login)
 
 
 create_user = task(UserManager.create_user, base=Task)

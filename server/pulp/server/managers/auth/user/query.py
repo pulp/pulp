@@ -10,24 +10,16 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains users query classes
 """
 
 from gettext import gettext as _
-from logging import getLogger
 
 from pulp.server.db.model.auth import User, Permission, Role
 from pulp.server.exceptions import PulpDataException, MissingResource
 from pulp.server.managers import factory
-
-
-# -- constants ----------------------------------------------------------------
-
-_LOG = getLogger(__name__)
-
-# -- manager ------------------------------------------------------------------
+from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 
 
 class UserQueryManager(object):
@@ -116,7 +108,7 @@ class UserQueryManager(object):
             raise MissingResource(login)
 
         role_manager = factory.role_manager()
-        return role_manager.super_user_role in user['roles']
+        return SUPER_USER_ROLE in user['roles']
 
 
     def is_authorized(self, resource, login, operation):
@@ -169,10 +161,10 @@ class UserQueryManager(object):
         """
         user = User.get_collection().find_one({'login' : login})
         role_manager = factory.role_manager()
-        if role_manager.super_user_role not in user['roles']:
+        if SUPER_USER_ROLE not in user['roles']:
             return False
 
-        users = self.find_users_belonging_to_role(role_manager.super_user_role)
+        users = self.find_users_belonging_to_role(SUPER_USER_ROLE)
         if not users:
             raise PulpDataException(_('no super users defined'))
 

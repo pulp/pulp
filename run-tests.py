@@ -51,6 +51,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--xunit-file')
 parser.add_argument('--with-xunit', action='store_true')
 parser.add_argument('--disable-coverage', action='store_true')
+parser.add_argument('-x', '--failfast', action='store_true')
 arguments = parser.parse_args()
 
 args = [
@@ -71,6 +72,8 @@ if sys.version_info >= (2, 6):
 
 args.extend(TESTS_ALL_PLATFORMS)
 
+if arguments.failfast:
+    args.extend(['-x'])
 if arguments.with_xunit:
     args.extend(['--with-xunit', '--process-timeout=360'])
 if arguments.xunit_file:
