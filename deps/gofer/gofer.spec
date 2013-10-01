@@ -248,6 +248,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Tue Oct 01 2013 Jeff Ortel <jortel@redhat.com> 0.77-1
+- 1010016 - messaging logged at DEBUG. (jortel@redhat.com)
+
 * Mon Sep 30 2013 Jeff Ortel <jortel@redhat.com> 0.77-1
 - Reduce logging do DEBUG on frequent messaging and RMI processing events.
   (jortel@redhat.com)
