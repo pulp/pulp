@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.76
+Version: 0.77
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -248,9 +248,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 0.76-1
-- bump gofer 0.76 in deps/ (jortel@redhat.com)
-
+* Mon Sep 30 2013 Jeff Ortel <jortel@redhat.com> 0.77-1
+- Reduce logging do DEBUG on frequent messaging and RMI processing events.
+  (jortel@redhat.com)
 * Wed Mar 06 2013 Jeff Ortel <jortel@redhat.com> 0.76-1
 - Add support for cancelling RMI; thread pool rewrite; RMI class restructure.
   (jortel@redhat.com)
