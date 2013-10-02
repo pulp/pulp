@@ -10,23 +10,25 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from gettext import gettext as _
 import logging
 import sys
 
-from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.db.model.dispatch import ScheduledCall
+from celery import task
+
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.server.async.tasks import Task
+from pulp.server.db.model.repository import Repo, RepoImporter
+from pulp.server.db.model.dispatch import ScheduledCall
+from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
+                                    PulpDataException)
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
 
 class RepoImporterManager(object):
 
@@ -85,12 +87,14 @@ class RepoImporterManager(object):
         for importer in importers:
             scheduled_sync_ids = importer.get('scheduled_syncs', None)
             if scheduled_sync_ids is not None:
-                scheduled_sync_details = list(ScheduledCall.get_collection().find({"id": {"$in": scheduled_sync_ids}}))
+                scheduled_sync_details = list(
+                    ScheduledCall.get_collection().find({"id": {"$in": scheduled_sync_ids}}))
                 importer['scheduled_syncs'] = [s["schedule"] for s in scheduled_sync_details]
 
         return importers
 
-    def set_importer(self, repo_id, importer_type_id, repo_plugin_config):
+    @staticmethod
+    def set_importer(repo_id, importer_type_id, repo_plugin_config):
         """
         Configures an importer to be used for the given repository.
 
@@ -98,19 +102,16 @@ class RepoImporterManager(object):
         The domain model technically supports multiple importers, but this
         call is what enforces the single importer behavior.
 
-        @param repo_id: identifies the repo
-        @type  repo_id; str
-
-        @param importer_type_id: identifies the type of importer being added;
-                                 must correspond to an importer loaded at server startup
-        @type  importer_type_id: str
-
-        @param repo_plugin_config: configuration values for the importer; may be None
-        @type  repo_plugin_config: dict
-
-        @raise MissingResource: if repo_id does not represent a valid repo
-        @raise InvalidImporterConfiguration: if the importer cannot be
-               initialized for the given repo
+        :param repo_id:                      identifies the repo
+        :type  repo_id:                      str
+        :param importer_type_id:             identifies the type of importer being added;
+                                             must correspond to an importer loaded at server startup
+        :type  importer_type_id:             str
+        :param repo_plugin_config:           configuration values for the importer; may be None
+        :type  repo_plugin_config:           dict
+        :raise MissingResource:              if repo_id does not represent a valid repo
+        :raise InvalidImporterConfiguration: if the importer cannot be initialized for the given
+                                             repo
         """
 
         repo_coll = Repo.get_collection()
@@ -149,7 +150,8 @@ class RepoImporterManager(object):
                 valid_config, message = result
 
         except Exception, e:
-            _LOG.exception('Exception received from importer [%s] while validating config' % importer_type_id)
+            logger.exception(
+                'Exception received from importer [%s] while validating config' % importer_type_id)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
@@ -157,7 +159,7 @@ class RepoImporterManager(object):
 
         # Remove old importer if one exists
         try:
-            self.remove_importer(repo_id)
+            RepoImporterManager.remove_importer(repo_id)
         except MissingResource:
             pass # it didn't exist, so no harm done
 
@@ -165,7 +167,8 @@ class RepoImporterManager(object):
         try:
             importer_instance.importer_added(transfer_repo, call_config)
         except Exception:
-            _LOG.exception('Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo_id))
+            logger.exception(
+                'Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo_id))
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Database Update
@@ -176,15 +179,15 @@ class RepoImporterManager(object):
 
         return importer
 
-    def remove_importer(self, repo_id):
+    @staticmethod
+    def remove_importer(repo_id):
         """
         Removes an importer from a repository.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @raise MissingResource: if the given repo does not exist
-        @raise MissingResource: if the given repo does not have an importer
+        :param repo_id:         identifies the repo
+        :type  repo_id:         str
+        :raise MissingResource: if the given repo does not exist
+        :raise MissingResource: if the given repo does not have an importer
         """
 
         repo_coll = Repo.get_collection()
@@ -214,23 +217,21 @@ class RepoImporterManager(object):
         # Update the database to reflect the removal
         importer_coll.remove({'repo_id' : repo_id}, safe=True)
 
-    def update_importer_config(self, repo_id, importer_config):
+    @staticmethod
+    def update_importer_config(repo_id, importer_config):
         """
         Attempts to update the saved configuration for the given repo's importer.
         The importer will be asked if the new configuration is valid. If not,
         this method will raise an error and the existing configuration will
         remain unchanged.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @param importer_config: new configuration values to use for this repo
-        @type  importer_config: dict
-
-        @raise MissingResource: if the given repo does not exist
-        @raise MissingResource: if the given repo does not have an importer
-        @raise InvalidConfiguration: if the plugin indicates the given
-                configuration is invalid
+        :param repo_id:              identifies the repo
+        :type  repo_id:              str
+        :param importer_config:      new configuration values to use for this repo
+        :type  importer_config:      dict
+        :raise MissingResource:      if the given repo does not exist
+        :raise MissingResource:      if the given repo does not have an importer
+        :raise InvalidConfiguration: if the plugin indicates the given configuration is invalid
         """
 
         repo_coll = Repo.get_collection()
@@ -279,7 +280,10 @@ class RepoImporterManager(object):
             else:
                 valid_config, message = result
         except Exception, e:
-            _LOG.exception('Exception received from importer [%s] while validating config for repo [%s]' % (importer_type_id, repo_id))
+            msg = _('Exception received from importer [%(i)s] while validating config for repo '
+                    '[%(r)s]')
+            msg = msg % {'i': importer_type_id, 'r': repo_id}
+            logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
@@ -386,3 +390,6 @@ class RepoImporterManager(object):
         return importer['scheduled_syncs']
 
 
+remove_importer = task(RepoImporterManager.remove_importer, base=Task, ignore_result=True)
+set_importer = task(RepoImporterManager.set_importer, base=Task)
+update_importer_config = task(RepoImporterManager.update_importer_config, base=Task)
