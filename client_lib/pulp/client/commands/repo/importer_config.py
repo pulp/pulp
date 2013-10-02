@@ -47,7 +47,7 @@ class OptionsBundle(object):
         d = _('if "true", the size and checksum of each synchronized file will be verified against '
               'the repo metadata')
         self.opt_validate = PulpCliOption('--validate', d, required=False,
-                                          parse_func=parsers.parse_optional_boolean)
+                                          parse_func=parsers.pulp_parse_optional_boolean)
 
         # -- proxy options ------------------------------------------------------------
 
@@ -56,7 +56,7 @@ class OptionsBundle(object):
 
         d = _('port on the proxy server to make requests')
         self.opt_proxy_port = PulpCliOption('--proxy-port', d, required=False,
-                                            parse_func=parsers.parse_optional_positive_int)
+                                            parse_func=parsers.pulp_parse_optional_positive_int)
 
         d = _('username used to authenticate with the proxy server')
         self.opt_proxy_user = PulpCliOption('--proxy-user', d, required=False)
@@ -69,11 +69,11 @@ class OptionsBundle(object):
         d = _('maximum bandwidth used per download thread, in bytes/sec, when '
               'synchronizing the repo')
         self.opt_max_speed = PulpCliOption('--max-speed', d, required=False,
-                                           parse_func=parsers.parse_optional_positive_int)
+                                           parse_func=parsers.pulp_parse_optional_positive_int)
 
         d = _('maximum number of downloads that will run concurrently')
         self.opt_max_downloads = PulpCliOption('--max-downloads', d, required=False,
-                                               parse_func=parsers.parse_optional_positive_int)
+                                               parse_func=parsers.pulp_parse_optional_positive_int)
 
         # -- ssl options --------------------------------------------------------------
 
@@ -84,7 +84,7 @@ class OptionsBundle(object):
         d = _('if "true", the feed\'s SSL certificate will be verified against the '
               'feed_ca_cert')
         self.opt_verify_feed_ssl = PulpCliOption('--verify-feed-ssl', d, required=False,
-                                                 parse_func=parsers.parse_optional_boolean)
+                                                 parse_func=parsers.pulp_parse_optional_boolean)
 
         d = _('full path to the certificate to use for authorization when accessing the external feed')
         self.opt_feed_cert = PulpCliOption('--feed-cert', d, required=False)
@@ -97,11 +97,11 @@ class OptionsBundle(object):
         d = _('if "true", units that were previously in the external feed but are no longer '
               'found will be removed from the repository')
         self.opt_remove_missing = PulpCliOption('--remove-missing', d, required=False,
-                                                parse_func=parsers.parse_optional_boolean)
+                                                parse_func=parsers.pulp_parse_optional_boolean)
 
         d = _('count indicating how many non-latest versions of a unit to keep in a repository')
         self.opt_retain_old_count = PulpCliOption('--retain-old-count', d, required=False,
-                                                  parse_func=parsers.parse_optional_nonnegative_int)
+                                                  parse_func=parsers.pulp_parse_optional_nonnegative_int)
 
 
 class ImporterConfigMixin(object):
