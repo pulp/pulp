@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.16.alpha%{?dist}
+Release: 0.17.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -480,6 +480,19 @@ exit 0
 %endif
 
 %changelog
+* Wed Oct 02 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.17.beta
+- 1009926 - Fix Exception thrown on applicability generation
+  (bcourt@redhat.com)
+- 1013097 - permit (.) in node IDs. (jortel@redhat.com)
+- 1011268 - Add support for SHA hash which is an alias for SHA1
+  (bcourt@redhat.com)
+- 721314 - including the README and LICENSE files in all platform packages.
+  Also tweaked the README. (mhrivnak@redhat.com)
+- 988119 - Convert Python types (list,dict) to JSON types (array, object) in
+  api documentation (bcourt@redhat.com)
+- 1011053 - Add a from_dict() method to the Criteria model.
+  (rbarlow@redhat.com)
+
 * Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.16.alpha
 - 1012636 - fix post script. (jortel@redhat.com)
 - 976435 - load puppet importer config from a file using a common method.
