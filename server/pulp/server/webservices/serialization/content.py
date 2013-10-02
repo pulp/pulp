@@ -40,8 +40,9 @@ def content_unit_obj(content_unit):
     Serialize a content unit.
     """
     serial = db.scrub_mongo_fields(content_unit)
-    last_updated = content_unit['_last_updated']
-    content_unit['_last_updated'] = dateutils.format_iso8601_utc_timestamp(last_updated)
+    last_updated = content_unit.get('_last_updated')
+    if last_updated:
+        content_unit['_last_updated'] = dateutils.format_iso8601_utc_timestamp(last_updated)
     return serial
 
 # utility functions ------------------------------------------------------------
