@@ -76,8 +76,6 @@ def expand_consumers(options, consumers):
     return consumers
 
 
-# -- controllers --------------------------------------------------------------
-
 class Consumers(JSONController):
 
     @auth_required(READ)
@@ -104,7 +102,7 @@ class Consumers(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
                 action_tag('create')]
 
-        call_request = CallRequest(manager.register,
+        call_request = CallRequest(manager.register, # rbarlow_converted
                                    args,
                                    weight=weight,
                                    tags=tags)
@@ -136,7 +134,7 @@ class Consumer(JSONController):
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
             action_tag('delete'),
         ]
-        call_request = CallRequest(
+        call_request = CallRequest( # rbarlow_converted
             manager.unregister,
             [id],
             tags=tags)
@@ -152,7 +150,7 @@ class Consumer(JSONController):
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
             action_tag('update')
         ]
-        call_request = CallRequest(
+        call_request = CallRequest( # rbarlow_converted
             manager.update,
             [id, delta],
             tags=tags)
@@ -477,7 +475,7 @@ class Profiles(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
                 action_tag('profile_create')]
 
-        call_request = CallRequest(manager.create,
+        call_request = CallRequest(manager.create, # rbarlow_converted
                                    [consumer_id, content_type],
                                    {'profile': profile},
                                    tags=tags,
@@ -533,7 +531,7 @@ class Profile(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
                 action_tag('profile_update')]
 
-        call_request = CallRequest(manager.update,
+        call_request = CallRequest(manager.update, # rbarlow_converted
                                    [consumer_id, content_type],
                                    {'profile': profile},
                                    tags=tags,
@@ -572,7 +570,7 @@ class Profile(JSONController):
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
         ]
-        call_request = CallRequest(manager.delete,
+        call_request = CallRequest(manager.delete, # rbarlow_converted
                                    args=args,
                                    tags=tags)
         call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
@@ -718,7 +716,7 @@ class UnitInstallScheduleCollection(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('create_unit_install_schedule')]
 
-        call_request = CallRequest(schedule_manager.create_unit_install_schedule,
+        call_request = CallRequest(schedule_manager.create_unit_install_schedule, # rbarlow_converted
                                    [consumer_id, units, install_options, schedule_data],
                                    weight=weight,
                                    tags=tags,
@@ -770,7 +768,7 @@ class UnitInstallScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('update_unit_install_schedule')]
 
-        call_request = CallRequest(schedule_manager.update_unit_install_schedule,
+        call_request = CallRequest(schedule_manager.update_unit_install_schedule, # rbarlow_converted
                                    [consumer_id, schedule_id, units, install_options, schedule_data],
                                    tags=tags,
                                    archive=True)
@@ -797,7 +795,7 @@ class UnitInstallScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('delete_unit_install_schedule')]
 
-        call_request = CallRequest(schedule_manager.delete_unit_install_schedule,
+        call_request = CallRequest(schedule_manager.delete_unit_install_schedule, # rbarlow_converted
                                    [consumer_id, schedule_id],
                                    tags=tags,
                                    archive=True)
@@ -846,7 +844,7 @@ class UnitUpdateScheduleCollection(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('create_unit_update_schedule')]
 
-        call_request = CallRequest(schedule_manager.create_unit_update_schedule,
+        call_request = CallRequest(schedule_manager.create_unit_update_schedule, # rbarlow_converted
                                    [consumer_id, units, update_options, schedule_data],
                                    weight=weight,
                                    tags=tags,
@@ -898,7 +896,7 @@ class UnitUpdateScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('update_unit_update_schedule')]
 
-        call_request = CallRequest(schedule_manager.update_unit_update_schedule,
+        call_request = CallRequest(schedule_manager.update_unit_update_schedule, # rbarlow_converted
                                    [consumer_id, schedule_id, units, install_options, schedule_data],
                                    tags=tags,
                                    archive=True)
@@ -925,7 +923,7 @@ class UnitUpdateScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('delete_unit_update_schedule')]
 
-        call_request = CallRequest(schedule_manager.delete_unit_update_schedule,
+        call_request = CallRequest(schedule_manager.delete_unit_update_schedule, # rbarlow_converted
                                    [consumer_id, schedule_id],
                                    tags=tags,
                                    archive=True)
@@ -973,7 +971,7 @@ class UnitUninstallScheduleCollection(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
                 action_tag('create_unit_uninstall_schedule')]
 
-        call_request = CallRequest(schedule_manager.create_unit_uninstall_schedule,
+        call_request = CallRequest(schedule_manager.create_unit_uninstall_schedule, # rbarlow_converted
                                    [consumer_id, units, uninstall_options, schedule_data],
                                    weight=weight,
                                    tags=tags,
@@ -1025,7 +1023,7 @@ class UnitUninstallScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('update_unit_uninstall_schedule')]
 
-        call_request = CallRequest(schedule_manager.update_unit_uninstall_schedule,
+        call_request = CallRequest(schedule_manager.update_unit_uninstall_schedule, # rbarlow_converted
                                    [consumer_id, schedule_id, units, install_options, schedule_data],
                                    tags=tags,
                                    archive=True)
@@ -1052,7 +1050,7 @@ class UnitUninstallScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('delete_unit_uninstall_schedule')]
 
-        call_request = CallRequest(schedule_manager.delete_unit_uninstall_schedule,
+        call_request = CallRequest(schedule_manager.delete_unit_uninstall_schedule, # rbarlow_converted
                                    [consumer_id, schedule_id],
                                    tags=tags,
                                    archive=True)
