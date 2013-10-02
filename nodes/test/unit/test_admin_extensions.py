@@ -27,7 +27,7 @@ from pulp_node.handlers.reports import SummaryReport
 
 # --- IDs --------------------------------------------------------------------
 
-NODE_ID = 'test_node'
+NODE_ID = 'test.redhat.com'
 REPOSITORY_ID = 'test_repository'
 MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
