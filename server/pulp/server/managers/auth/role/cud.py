@@ -37,23 +37,20 @@ class RoleManager(object):
     """
     Performs role related functions relating to CRUD operations.
     """
-    def create_role(self, role_id, display_name=None, description=None):
+    @staticmethod
+    def create_role(role_id, display_name=None, description=None):
         """
         Creates a new Pulp role.
 
-        @param role_id: unique identifier for the role
-        @type  role_id: str
-
-        @param display_name: user-readable name of the role
-        @type display_name: str
-
-        @param description: free form text used to describe the role
-        @type description: str
-
-        @raise DuplicateResource: if there is already a role with the requested name
-        @raise InvalidValue: if any of the fields are unacceptable
+        :param role_id:           unique identifier for the role
+        :type  role_id:           str
+        :param display_name:      user-readable name of the role
+        :type  display_name:      str
+        :param description:       free form text used to describe the role
+        :type  description:       str
+        :raise DuplicateResource: if there is already a role with the requested name
+        :raise InvalidValue:      if any of the fields are unacceptable
         """
-
         existing_role = Role.get_collection().find_one({'id' : role_id})
         if existing_role is not None:
             raise DuplicateResource(role_id)
@@ -73,21 +70,19 @@ class RoleManager(object):
 
         return created
 
-    def update_role(self, role_id, delta):
+    @staticmethod
+    def update_role(role_id, delta):
         """
         Updates a role object.
 
-        @param role_id: The role identifier.
-        @type role_id: str
-
-        @param delta: A dict containing update keywords.
-        @type delta: dict
-
-        @return: The updated object
-        @rtype: dict
-        
-        @raise MissingResource: if the given role does not exist
-        @raise PulpDataException: if update keyword  is not supported
+        :param role_id:           The role identifier.
+        :type  role_id:           str
+        :param delta:             A dict containing update keywords.
+        :type  delta:             dict
+        :return:                  The updated object
+        :rtype:                   dict
+        :raise MissingResource:   if the given role does not exist
+        :raise PulpDataException: if update keyword  is not supported
         """
         delta.pop('id', None)
 
@@ -110,17 +105,17 @@ class RoleManager(object):
         updated = Role.get_collection().find_one({'id' : role_id})
         return updated
 
-    def delete_role(self, role_id):
+    @staticmethod
+    def delete_role(role_id):
         """
         Deletes the given role. This has the side-effect of revoking any permissions granted
         to the role from the users in the role, unless those permissions are also granted 
         through another role the user is a memeber of.
 
-        @param role_id: identifies the role being deleted
-        @type  role_id: str
-
-        @raise InvalidValue: if any of the fields are unacceptable
-        @raise MissingResource: if the given role does not exist
+        :param role_id:         identifies the role being deleted
+        :type  role_id:         str
+        :raise InvalidValue:    if any of the fields are unacceptable
+        :raise MissingResource: if the given role does not exist
         """
         # Raise exception if role id is invalid
         if role_id is None or not isinstance(role_id, basestring):
@@ -223,21 +218,19 @@ class RoleManager(object):
 
         Role.get_collection().save(role, safe=True)
 
-    def add_user_to_role(self, role_id, login):
+    @staticmethod
+    def add_user_to_role(role_id, login):
         """
         Add a user to a role. This has the side-effect of granting all the
         permissions granted to the role to the user.
         
-        @type role_id: str
-        @param role_id: role identifier
-        
-        @type login: str
-        @param login: login of user
-        
-        @rtype: bool
-        @return: True on success
-        
-        @raise MissingResource: if the given role or user does not exist
+        :param role_id:         role identifier
+        :type  role_id:         str
+        :param login:           login of user
+        :type  login:           str
+        :return:                True on success
+        :rtype:                 bool
+        :raise MissingResource: if the given role or user does not exist
         """
         role = Role.get_collection().find_one({'id' : role_id})
         if role is None:
@@ -256,22 +249,20 @@ class RoleManager(object):
         for resource, operations in role['permissions'].items():
             factory.permission_manager().grant(resource, login, operations)
 
-    def remove_user_from_role(self, role_id, login):
+    @staticmethod
+    def remove_user_from_role(role_id, login):
         """
         Remove a user from a role. This has the side-effect of revoking all the
         permissions granted to the role from the user, unless the permissions are
         also granted by another role.
         
-        @type role_id: str
-        @param role_id: role identifier
-    
-        @type login: str
-        @param login: name of user
-        
-        @rtype: bool
-        @return: True on success
-                        
-        @raise MissingResource: if the given role or user does not exist
+        :param role_id:         role identifier
+        :type  role_id:         str
+        :param login:           name of user
+        :type  login:           str
+        :return:                True on success
+        :rtype:                 bool
+        :raise MissingResource: if the given role or user does not exist
         """
         role = Role.get_collection().find_one({'id' : role_id})
         if role is None:
@@ -312,5 +303,10 @@ class RoleManager(object):
 
 
 add_permissions_to_role = task(RoleManager.add_permissions_to_role, base=Task, ignore_result=True)
+add_user_to_role = task(RoleManager.add_user_to_role, base=Task, ignore_result=True)
+create_role = task(RoleManager.create_role, base=Task)
+delete_role = task(RoleManager.delete_role, base=Task, ignore_result=True)
 remove_permissions_from_role = task(RoleManager.remove_permissions_from_role, base=Task,
                                     ignore_result=True)
+remove_user_from_role = task(RoleManager.remove_user_from_role, base=Task, ignore_result=True)
+update_role = task(RoleManager.update_role, base=Task)
