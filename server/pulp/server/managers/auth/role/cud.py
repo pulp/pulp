@@ -154,13 +154,13 @@ class RoleManager(object):
         """
         Add permissions to a role. 
 
-        @param role_id:         role identifier
-        @type  role_id:         str
-        @param resource:        resource path to grant permissions to
-        @type  resource:        str
-        @param operations:      list or tuple
-        @type  operations:      list of allowed operations being granted
-        @raise MissingResource: if the given role does not exist
+        :param role_id:         role identifier
+        :type  role_id:         str
+        :param resource:        resource path to grant permissions to
+        :type  resource:        str
+        :param operations:      list or tuple
+        :type  operations:      list of allowed operations being granted
+        :raise MissingResource: if the given role does not exist
         """
         if role_id == SUPER_USER_ROLE:
             raise PulpDataException(_('super-users role cannot be changed'))
