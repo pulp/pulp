@@ -116,6 +116,23 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             for repo_id in self.REPO_IDS:
                 bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
 
+    # Applicability regeneration for consumers with no unit profiles associated with them
+    def test_regenerate_applicability_for_consumers_with_no_profiles(self):
+        # Setup
+        manager = factory.consumer_manager()
+        for consumer_id in self.CONSUMER_IDS:
+            manager.register(consumer_id)
+        # Test without bindings
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 0)
+        # Test with bindings
+        self.populate_bindings()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 0)
+
     # Applicability regeneration with consumer criteria
     def test_regenerate_applicability_for_consumers_with_different_profiles(self):
         # Setup
