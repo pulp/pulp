@@ -117,9 +117,9 @@ cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir
 
 # Apache Configuration
 %if 0%{?fedora} >= 18
-cp server/etc/httpd/conf.d/pulp_f18.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
+cp server/etc/httpd/conf.d/pulp_apache_24.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %else
-cp server/etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %endif
 
 # Pulp Web Services

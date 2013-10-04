@@ -14,6 +14,8 @@
 
 import optparse
 import os
+import re
+import subprocess
 import sys
 
 WARNING_COLOR = '\033[31m'
@@ -162,14 +164,19 @@ def getlinks():
             dst = os.path.join('/', l)
         links.append((src, dst))
     
-    # Get links for httpd conf files according to distro
-    pre_f18_apache_conf = ('server/etc/httpd/conf.d/pulp.conf', '/etc/httpd/conf.d/pulp.conf')
-    f18_apache_conf = ('server/etc/httpd/conf.d/pulp_f18.conf', '/etc/httpd/conf.d/pulp.conf')
-    s, n, r, v, m = os.uname()
-    if 'fc18' in r:
-        src, dst = f18_apache_conf
+    # Get links for httpd conf files according to apache version, since things
+    # changed substantially between apache 2.2 and 2.4.
+    apache_22_conf = ('server/etc/httpd/conf.d/pulp_apache_22.conf', '/etc/httpd/conf.d/pulp.conf')
+    apache_24_conf = ('server/etc/httpd/conf.d/pulp_apache_24.conf', '/etc/httpd/conf.d/pulp.conf')
+
+    apachectl_output = subprocess.Popen(['apachectl', '-v'], stdout=subprocess.PIPE).communicate()[0]
+    search_result = re.search(r'Apache\/([0-9]+)\.([0-9]+)\.([0-9]+)', apachectl_output)
+    apache_version = tuple(map(int, search_result.groups()))
+    if apache_version >= (2, 4, 0):
+        src, dst = apache_24_conf
     else:
-        src, dst = pre_f18_apache_conf
+        src, dst = apache_22_conf
+
     links.append((src, dst))
     
     return links
