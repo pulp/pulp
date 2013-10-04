@@ -47,6 +47,7 @@ def pulp_parse_optional_positive_int(value):
         return_value = ''
     return return_value
 
+
 def pulp_parse_optional_boolean(value):
     """
     Returns an boolean representation of the user entered value. This call does not raise an
@@ -62,6 +63,7 @@ def pulp_parse_optional_boolean(value):
         return_value = ''
     return return_value
 
+
 def pulp_parse_optional_nonnegative_int(value):
     """
     Returns a positive int representation of the user entered value. This call does not raise an
@@ -76,6 +78,7 @@ def pulp_parse_optional_nonnegative_int(value):
     if return_value is None:
         return_value = ''
     return return_value
+
 
 def parse_notes(value):
     """
