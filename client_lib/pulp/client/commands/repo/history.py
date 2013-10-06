@@ -29,7 +29,8 @@ DESC_DETAILS = _('if specified, all history information is displayed')
 DESC_DISTRIBUTOR_ID = _('the distributor id to display history entries for')
 DESC_END_DATE = _('only return entries that occur on or before the given date in iso8601 format'
                   ' (yyyy-mm-ddThh:mm:ssZ)')
-DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero)')
+DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero); the default'
+               ' is %d' % constants.REPO_HISTORY_LIMIT)
 DESC_PUBLISH_HISTORY = _('displays the history of publish operations on a repository')
 DESC_SORT = _('indicates the sort direction ("ascending" or "descending") based on the timestamp')
 DESC_SYNC_HISTORY = _('displays the history of sync operations on a repository')
