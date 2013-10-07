@@ -343,6 +343,9 @@ Disassociate an Importer from a Repository
 * :response_code:`202,if the request was accepted by the server to disassociate when the repository is available`
 * :response_code:`404,if there is no repository or importer with the specified IDs`
 
+| :return:`An empty body if the delete was executed immediately.  If the delete could not be executed
+    immediately the details of the task created to execute the delete will be returned.`
+
 
 Update a Distributor Associated with a Repository
 -------------------------------------------------
