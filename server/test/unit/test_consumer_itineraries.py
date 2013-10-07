@@ -50,6 +50,8 @@ class TestContent(PulpItineraryTests):
         call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
 
         # Verify
+        self.assertEqual(len(itinerary), 1)
+        self.assertTrue('options' in itinerary[0].kwarg_blacklist)
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual install)
@@ -105,6 +107,8 @@ class TestContent(PulpItineraryTests):
         call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
 
         # Verify
+        self.assertEqual(len(itinerary), 1)
+        self.assertTrue('options' in itinerary[0].kwarg_blacklist)
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual update)
@@ -160,6 +164,8 @@ class TestContent(PulpItineraryTests):
         call_report = self.coordinator.execute_call_asynchronously(itinerary[0])
 
         # Verify
+        self.assertEqual(len(itinerary), 1)
+        self.assertTrue('options' in itinerary[0].kwarg_blacklist)
         self.assertNotEqual(call_report.state, dispatch_constants.CALL_REJECTED_RESPONSE)
 
         # run task #1 (actual uninstall)
