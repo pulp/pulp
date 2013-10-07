@@ -32,6 +32,53 @@ csv = parse_csv_string
 
 
 # -- pulp custom parsers ------------------------------------------------------
+def pulp_parse_optional_positive_int(value):
+    """
+    Returns an int representation of the user entered value. This call does not raise an
+    exception in the event the specified value is None.
+
+    :param value: user entered value
+    :type  value: str, None
+    :return: integer if a value could be parsed or an empty string if no value was provided
+    :rtype: int, str
+    """
+    return_value = parse_optional_positive_int(value)
+    if return_value is None:
+        return_value = ''
+    return return_value
+
+
+def pulp_parse_optional_boolean(value):
+    """
+    Returns an boolean representation of the user entered value. This call does not raise an
+    exception in the event the specified value is None.
+
+    :param value: user entered value
+    :type  value: bool, None
+    :return: bool if a value could be parsed or an empty string if no value was provided
+    :rtype: bool, str
+    """
+    return_value = parse_optional_boolean(value)
+    if return_value is None:
+        return_value = ''
+    return return_value
+
+
+def pulp_parse_optional_nonnegative_int(value):
+    """
+    Returns a positive int representation of the user entered value. This call does not raise an
+    exception in the event the specified value is None.
+
+    :param value: user entered value
+    :type  value: str, None
+    :return: integer if a value could be parsed or an empty string if no value was provided
+    :rtype: int, str
+    """
+    return_value = parse_optional_nonnegative_int(value)
+    if return_value is None:
+        return_value = ''
+    return return_value
+
 
 def parse_notes(value):
     """
