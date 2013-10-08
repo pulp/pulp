@@ -8,7 +8,7 @@ Summary:        HTTP library, written in Python, for human beings
 Group:          Development/Tools
 License:        ASL 2.0
 URL:            http://pypi.python.org/pypi/requests
-Source0:        requests-%{version}.tar.gz
+Source0:        http://pypi.python.org/packages/source/r/requests/requests-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildArch:      noarch
