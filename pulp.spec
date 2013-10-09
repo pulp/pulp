@@ -441,8 +441,11 @@ Obsoletes: pulp-selinux-server
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
 %endif
+%if 0%{?fedora} == 19
+Requires(post): policycoreutils-python >= 3.12.1-74
+%else
 Requires(post): policycoreutils-python
-Requires(post): selinux-policy-targeted
+%endif
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
 Requires(postun): /usr/sbin/semodule
 
