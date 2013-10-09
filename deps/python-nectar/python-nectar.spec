@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.1.1
+Version:        1.1.4
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -46,6 +46,28 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Wed Oct 09 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.4-1
+- adding dependency to python-requests >= 2.0.0 to support proxy with https
+  (skarmark@redhat.com)
+
+* Wed Oct 09 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.3-1
+- updating revent downloader with the latest change in threaded downloader
+  since it is generally maintained in lock-step with the threaded downloader
+  (skarmark@redhat.com)
+- we need to set both the 'http' and 'https' protocols to '://'.join((protocol,
+  url)) (skarmark@redhat.com)
+- removed workaround for no https proxy support, since we now carry python-
+  requests-2.0.0 which includes updated urlllib3 and provides the https proxy
+  support (skarmark@redhat.com)
+- bumped docs version to match latest tag (jason.connor@gmail.com)
+
+* Thu Sep 26 2013 Jason L Connor <jason.connor@gmail.com> 1.1.2-1
+- added warnings about incomplete proxy support for the revent and threaded
+  downloader (jason.connor@gmail.com)
+- 1009078 - correctly set the proxies to supported protocols
+  (jason.connor@gmail.com)
+- always use http:// for proxy url (lars.sjostrom@svenskaspel.se)
+
 * Tue Sep 03 2013 Jason L Connor <jason.connor@gmail.com> 1.1.1-1
 - removed progress reporter thread due to race condition in the .join() with this queue and substituted it with thread-safe event firing and join()s on the worker threads (jason.connor@gmail.com)
 - removed race condition between feeder thread and worker threads daemonized all spawned threads (jason.connor@gmail.com)
