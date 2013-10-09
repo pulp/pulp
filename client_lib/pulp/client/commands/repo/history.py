@@ -24,12 +24,16 @@ from pulp.client import validators
 
 # -- constants ----------------------------------------------------------------
 
+# The default limit on the number of history entries to display
+REPO_HISTORY_LIMIT = 5
+
 # Descriptions
 DESC_DETAILS = _('if specified, all history information is displayed')
 DESC_DISTRIBUTOR_ID = _('the distributor id to display history entries for')
 DESC_END_DATE = _('only return entries that occur on or before the given date in iso8601 format'
                   ' (yyyy-mm-ddThh:mm:ssZ)')
-DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero)')
+DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero); the default'
+               ' is %(limit)s' % {'limit': REPO_HISTORY_LIMIT})
 DESC_PUBLISH_HISTORY = _('displays the history of publish operations on a repository')
 DESC_SORT = _('indicates the sort direction ("ascending" or "descending") based on the timestamp')
 DESC_SYNC_HISTORY = _('displays the history of sync operations on a repository')
@@ -97,7 +101,7 @@ class SyncHistoryCommand(PulpCliCommand):
         if user_input[OPTION_LIMIT.keyword] is not None:
             limit = int(user_input[OPTION_LIMIT.keyword])
         else:
-            limit = constants.REPO_HISTORY_LIMIT
+            limit = REPO_HISTORY_LIMIT
         start_date = user_input[OPTION_START_DATE.keyword]
         end_date = user_input[OPTION_END_DATE.keyword]
         sort = user_input[OPTION_SORT.keyword]
@@ -166,7 +170,7 @@ class PublishHistoryCommand(PulpCliCommand):
         if user_input[OPTION_LIMIT.keyword] is not None:
             limit = int(user_input[OPTION_LIMIT.keyword])
         else:
-            limit = constants.REPO_HISTORY_LIMIT
+            limit = REPO_HISTORY_LIMIT
         start_date = user_input[OPTION_START_DATE.keyword]
         end_date = user_input[OPTION_END_DATE.keyword]
         sort = user_input[OPTION_SORT.keyword]

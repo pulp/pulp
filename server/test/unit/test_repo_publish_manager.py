@@ -391,19 +391,17 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Setup
         self.repo_manager.create_repo('foo')
         self.distributor_manager.add_distributor('foo', 'mock-distributor', {}, True, distributor_id='dist-1')
-        for i in range(1, 6):
+        for i in range(1, 9):
             add_result('foo', 'dist-1', i)
 
         # Test
         entries = self.publish_manager.publish_history('foo', 'dist-1')
 
-        # Verify. The returned entries should be limited to the constant defined in common.constants.
-        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(entries))
-
-        #   Verify the default sort direction is descending order
-        for i in range(0, 4):
-            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
-            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+        # Verify 8 entries were returned and that the sort direction is descending
+        self.assertEqual(8, len(entries))
+        for entry in entries:
+            first = dateutils.parse_iso8601_datetime(entry['started'])
+            second = dateutils.parse_iso8601_datetime(entry['started'])
             self.assertTrue(first >= second)
 
     def test_publish_history_with_limit(self):
@@ -420,6 +418,10 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Test a valid limit
         entries = self.publish_manager.publish_history('dragon', 'fire', limit=3)
         self.assertEqual(3, len(entries))
+        for entry in entries:
+            first = dateutils.parse_iso8601_datetime(entry['started'])
+            second = dateutils.parse_iso8601_datetime(entry['started'])
+            self.assertTrue(first >= second)
 
     def test_publish_history_invalid_limit(self):
         """
