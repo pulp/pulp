@@ -25,9 +25,6 @@ SORT_DIRECTION = {
     SORT_DESCENDING: -1,
 }
 
-# The default limit on the number of history entries to return
-REPO_HISTORY_LIMIT = 5
-
 # Strings for repository history filters
 REPO_HISTORY_FILTER_LIMIT = 'limit'
 REPO_HISTORY_FILTER_SORT = 'sort'
