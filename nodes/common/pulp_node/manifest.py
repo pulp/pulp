@@ -117,13 +117,17 @@ class Manifest(object):
         with open(self.path, 'w+') as fp:
             json.dump(state, fp, indent=2)
 
-    def read(self):
+    def read(self, migration=None):
         """
         Read the manifest file at the specified path.
         The manifest is updated using the contents of the read json document.
+        :param migration: Migration function used to migrate the document.
+        :type migration: callable
         :raise IOError: on I/O errors.
         :raise ValueError: on json decoding errors
         """
+        if migration:
+            migration(self.path)
         with open(self.path) as fp:
             d = json.load(fp)
             self.__dict__.update(d)
@@ -249,9 +253,11 @@ class RemoteManifest(Manifest):
         self.downloader = downloader
         self.destination = destination
 
-    def fetch(self):
+    def fetch(self, migration=None):
         """
         Fetch the manifest file using the specified URL.
+        :param migration: Migration function used to migrate the document.
+        :type migration: callable
         :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
         :raise ValueError: on json decoding errors
@@ -263,7 +269,7 @@ class RemoteManifest(Manifest):
         if listener.failed_reports:
             report = listener.failed_reports[0]
             raise ManifestDownloadError(self.url, report.error_msg)
-        self.read()
+        self.read(migration)
 
     def fetch_units(self):
         """
