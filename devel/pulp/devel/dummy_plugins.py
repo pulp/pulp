@@ -23,7 +23,6 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import SyncReport, PublishReport
 
-# dummy base class -------------------------------------------------------------
 
 class DummyObject(object):
 
@@ -48,7 +47,6 @@ class DummyObject(object):
         self.args = []
         self.kwargs = {}
 
-# dummy plugins ----------------------------------------------------------------
 
 class DummyPlugin(DummyObject):
 
@@ -64,6 +62,9 @@ class DummyImporter(DummyPlugin):
 
     def sync_repo(self, *args, **kwargs):
         return SyncReport(True, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
+
+    def upload_unit(self, *args, **kwargs):
+        return {'success_flag': True, 'summary': 'Upload summary', 'details': 'Upload details'}
 
 
 class DummyDistributor(DummyPlugin):

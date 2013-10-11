@@ -12,41 +12,34 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from datetime import timedelta
+from gettext import gettext as _
 import logging
 import sys
-from gettext import gettext as _
 
 import web
 
-import pulp.server.exceptions as exceptions
-import pulp.server.managers.factory as manager_factory
-from pulp.server.itineraries.repository import (
-    repo_delete_itinerary,
-    distributor_delete_itinerary,
-    distributor_update_itinerary,
-)
+from pulp.server.itineraries.repository import (repo_delete_itinerary, distributor_delete_itinerary,
+                                                distributor_update_itinerary)
 from pulp.common.tags import action_tag, resource_tag
 from pulp.common import constants
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
-from pulp.server.itineraries.repo import (
-    sync_with_auto_publish_itinerary, publish_itinerary)
+from pulp.server.itineraries.repo import (sync_with_auto_publish_itinerary, publish_itinerary)
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
+import pulp.server.exceptions as exceptions
+import pulp.server.managers.factory as manager_factory
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- functions ----------------------------------------------------------------
 
 def _merge_related_objects(name, manager, repos):
     """
@@ -138,7 +131,7 @@ class RepoCollection(JSONController):
         'distributors'.
         """
         query_params = web.input()
-        all_repos = list(Repo.get_collection().find(projection = {'scratchpad' : 0}))
+        all_repos = list(Repo.get_collection().find(projection={'scratchpad' : 0}))
 
         if query_params.get('details', False):
             query_params['importers'] = True
@@ -270,7 +263,7 @@ class RepoResource(JSONController):
         manager_factory.repo_query_manager().get_repository(id)
         # delete
         call_requests = repo_delete_itinerary(id)
-        _LOG.info('Itinerary: %s', [r.id for r in call_requests])
+        logger.info('Itinerary: %s', [r.id for r in call_requests])
         execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
@@ -320,7 +313,7 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_type is None:
-            _LOG.error('Missing importer type adding importer to repository [%s]' % repo_id)
+            logger.error('Missing importer type adding importer to repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_type'])
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
@@ -384,7 +377,7 @@ class RepoImporter(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_config is None:
-            _LOG.error('Missing configuration updating importer for repository [%s]' % repo_id)
+            logger.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -422,7 +415,7 @@ class SyncScheduleCollection(JSONController):
                 schedule = scheduler.get(schedule_id)
             except exceptions.MissingResource:
                 msg = _('Repository %(r)s; Importer %(i)s: scheduled sync does not exist: %(s)s')
-                _LOG.warn(msg % {'r': repo_id, 'i': importer_id, 's': schedule_id})
+                logger.warn(msg % {'r': repo_id, 'i': importer_id, 's': schedule_id})
             else:
                 obj = serialization.dispatch.scheduled_sync_obj(schedule)
                 obj.update(serialization.link.child_link_obj(schedule_id))
@@ -623,7 +616,7 @@ class RepoDistributor(JSONController):
         manager.get_distributor(repo_id, distributor_id)
         config = params.get('distributor_config')
         if config is None:
-            _LOG.error(
+            logger.error(
                 'Missing configuration when updating distributor [%s] on repository [%s]',
                 distributor_id,
                 repo_id)
@@ -650,7 +643,7 @@ class PublishScheduleCollection(JSONController):
                 scheduled_call = scheduler.get(schedule_id)
             except exceptions.MissingResource:
                 msg = _('Repository %(r)s; Distributor %(d)s: scheduled publish does not exist: %(s)s')
-                _LOG.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
+                logger.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
             else:
                 obj = serialization.dispatch.scheduled_publish_obj(scheduled_call)
                 obj.update(serialization.link.child_link_obj(schedule_id))
@@ -783,7 +776,7 @@ class RepoSyncHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.error('Invalid limit specified [%s]' % limit)
+                logger.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
         # Error checking is done on these options in the sync manager before the database is queried
         if sort is None:
@@ -821,7 +814,7 @@ class RepoPublishHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.error('Invalid limit specified [%s]' % limit)
+                logger.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
         if sort is None:
             sort = constants.SORT_DESCENDING
@@ -836,8 +829,6 @@ class RepoPublishHistory(JSONController):
         entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit, sort=sort,
                                                   start_date=start_date, end_date=end_date)
         return self.ok(entries)
-
-# -- action controllers -------------------------------------------------------
 
 
 class RepoSync(JSONController):
@@ -920,7 +911,7 @@ class RepoAssociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.error('Error parsing association criteria [%s]' % criteria)
+                logger.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -953,7 +944,7 @@ class RepoUnassociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.error('Error parsing unassociation criteria [%s]' % criteria)
+                logger.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
@@ -973,7 +964,16 @@ class RepoImportUpload(JSONController):
 
     @auth_required(UPDATE)
     def POST(self, repo_id):
+        """
+        Import an uploaded unit into the given repository.
 
+        :param repo_id: The id of the repository the upload should be imported into
+        :type  repo_id: basestring
+        :return:        A json serialized dictionary with two keys. 'success_flag' indexes a boolean
+                        value that indicates whether the import was successful, and 'summary' will
+                        contain the summary as reported by the Importer.
+        :rtype:         basestring
+        """
         # Collect user input
         params = self.params()
         upload_id = params['upload_id']
@@ -991,8 +991,9 @@ class RepoImportUpload(JSONController):
             tags=tags, archive=True)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
 
-        execution.execute(call_request)
-        return self.ok(None)
+        report = execution.execute(call_request)
+        return self.ok(report)
+
 
 class RepoResolveDependencies(JSONController):
 
@@ -1010,7 +1011,7 @@ class RepoResolveDependencies(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.error('Error parsing association criteria [%s]' % query)
+            logger.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         try:
@@ -1051,7 +1052,7 @@ class RepoUnitAdvancedSearch(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.error('Error parsing association criteria [%s]' % query)
+            logger.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # Data lookup
@@ -1063,7 +1064,7 @@ class RepoUnitAdvancedSearch(JSONController):
             units = manager.get_units_across_types(repo_id, criteria=criteria)
 
         return self.ok(units)
-    
+
 class ContentApplicabilityRegeneration(JSONController):
     """
     Content applicability regeneration for updated repositories.
@@ -1090,7 +1091,7 @@ class ContentApplicabilityRegeneration(JSONController):
         regeneration_tag = action_tag('applicability_regeneration')
         call_request = CallRequest(manager.regenerate_applicability_for_repos,
                                    [repo_criteria],
-                                   tags = [regeneration_tag])
+                                   tags=[regeneration_tag])
         # allow only one applicability regeneration task at a time
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
                                       dispatch_constants.RESOURCE_ANY_ID)
@@ -1100,32 +1101,32 @@ class ContentApplicabilityRegeneration(JSONController):
 
 # These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
-    '/', 'RepoCollection', # collection
-    '/search/$', 'RepoSearch', # resource search
+    '/', 'RepoCollection',  # collection
+    '/search/$', 'RepoSearch',  # resource search
     '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
-    '/([^/]+)/$', 'RepoResource', # resource
+    '/([^/]+)/$', 'RepoResource',  # resource
 
-    '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
-    '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
+    '/([^/]+)/importers/$', 'RepoImporters',  # sub-collection
+    '/([^/]+)/importers/([^/]+)/$', 'RepoImporter',  # exclusive sub-resource
     '/([^/]+)/importers/([^/]+)/schedules/sync/$', 'SyncScheduleCollection',
     '/([^/]+)/importers/([^/]+)/schedules/sync/([^/]+)/$', 'SyncScheduleResource',
 
-    '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
-    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
+    '/([^/]+)/distributors/$', 'RepoDistributors',  # sub-collection
+    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor',  # exclusive sub-resource
     '/([^/]+)/distributors/([^/]+)/schedules/publish/$', 'PublishScheduleCollection',
     '/([^/]+)/distributors/([^/]+)/schedules/publish/([^/]+)/$', 'PublishScheduleResource',
 
-    '/([^/]+)/history/sync/$', 'RepoSyncHistory', # sub-collection
-    '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory', # sub-collection
+    '/([^/]+)/history/sync/$', 'RepoSyncHistory',  # sub-collection
+    '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory',  # sub-collection
 
-    '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
-    '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
-    '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
-    '/([^/]+)/actions/unassociate/$', 'RepoUnassociate', # resource action
-    '/([^/]+)/actions/import_upload/$', 'RepoImportUpload', # resource action
-    '/([^/]+)/actions/resolve_dependencies/$', 'RepoResolveDependencies', # resource action
+    '/([^/]+)/actions/sync/$', 'RepoSync',  # resource action
+    '/([^/]+)/actions/publish/$', 'RepoPublish',  # resource action
+    '/([^/]+)/actions/associate/$', 'RepoAssociate',  # resource action
+    '/([^/]+)/actions/unassociate/$', 'RepoUnassociate',  # resource action
+    '/([^/]+)/actions/import_upload/$', 'RepoImportUpload',  # resource action
+    '/([^/]+)/actions/resolve_dependencies/$', 'RepoResolveDependencies',  # resource action
 
-    '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
+    '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch',  # resource search
 )
 
 application = web.application(urls, globals())

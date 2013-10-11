@@ -122,8 +122,6 @@ class Importer(object):
         """
         pass
 
-    # -- actions --------------------------------------------------------------
-
     def upload_unit(self, repo, type_id, unit_key, metadata, file_path, conduit, config):
         """
         Handles a user request to upload a unit into a repository. This call
@@ -152,31 +150,28 @@ class Importer(object):
         multiple units within Pulp. It is also possible that this call will
         create one or more relationships between existing units.
 
-        :param repo: metadata describing the repository
-        :type  repo: pulp.plugins.model.Repository
-
-        :param type_id: type of unit being uploaded
-        :type  type_id: str
-
-        :param unit_key: identifier for the unit, specified by the user
-        :type  unit_key: dict
-
-        :param metadata: any user-specified metadata for the unit
-        :type  metadata: dict
-
-        :param file_path: path on the Pulp server's filesystem to the temporary
-               location of the uploaded file; may be None in the event that a
-               unit is comprised entirely of metadata and has no bits associated
+        :param repo:      metadata describing the repository
+        :type  repo:      pulp.plugins.model.Repository
+        :param type_id:   type of unit being uploaded
+        :type  type_id:   str
+        :param unit_key:  identifier for the unit, specified by the user
+        :type  unit_key:  dict
+        :param metadata:  any user-specified metadata for the unit
+        :type  metadata:  dict
+        :param file_path: path on the Pulp server's filesystem to the temporary location of the
+                          uploaded file; may be None in the event that a unit is comprised entirely
+                          of metadata and has no bits associated
         :type  file_path: str
-
-        :param conduit: provides access to relevant Pulp functionality
-        :type  conduit: pulp.plugins.conduits.unit_add.UnitAddConduit
-
-        :param config: plugin configuration for the repository
-        :type  config: pulp.plugins.config.PluginCallConfiguration
-
-        :return: report of the details of the sync
-        :rtype:  pulp.plugins.model.SyncReport
+        :param conduit:   provides access to relevant Pulp functionality
+        :type  conduit:   pulp.plugins.conduits.unit_add.UnitAddConduit
+        :param config:    plugin configuration for the repository
+        :type  config:    pulp.plugins.config.PluginCallConfiguration
+        :return:          A dictionary describing the success or failure of the upload. It must
+                          contain the following keys:
+                            'success_flag': bool. Indicates whether the upload was successful
+                            'summary':      json-serializable object, providing summary
+                            'details':      json-serializable object, providing details
+        :rtype:           dict
         """
         raise NotImplementedError()
 

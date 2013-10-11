@@ -200,28 +200,22 @@ class SyncReport(object):
     Returned to the Pulp server at the end of a sync call. This is used by the
     plugin to describe what took place during the sync.
 
-    @ivar success_flag: if true, the sync was successful; false indicates a
-          gracefully handled failure
-    @type success_flag: bool
-
-    @ivar added_count: number of new units added during the sync
-    @type added_count: int
-
-    @ivar updated_count: number of units updated during the sync
-    @type updated_count: int
-
-    @ivar removed_count: number of units unassociated from the repo during the sync
-    @type removed_count: int
-
-    @ivar summary: arbitrary value that will be returned by default as the log
-                   for the sync (should be short)
-    @type summary: just about any serializable object (likely str or dict)
-
-    @ivar details: potentially longer log that will have to be specifically
-                   retrieved through the Pulp REST APIs
-    @type details: just about any serializable object (likely str or dict)
+    :ivar success_flag:  if true, the sync was successful; false indicates a gracefully handled
+                         failure
+    :type success_flag:  bool
+    :ivar added_count:   number of new units added during the sync
+    :type added_count:   int
+    :ivar updated_count: number of units updated during the sync
+    :type updated_count: int
+    :ivar removed_count: number of units unassociated from the repo during the sync
+    :type removed_count: int
+    :ivar summary:       arbitrary value that will be returned by default as the log for the sync
+                         (should be short)
+    :type summary:       just about any serializable object (likely str or dict)
+    :ivar details:       potentially longer log that will have to be specifically retrieved through
+                         the Pulp REST APIs
+    :type details:       just about any serializable object (likely str or dict)
     """
-
     def __init__(self, success_flag, added_count, updated_count, removed_count, summary, details):
         self.success_flag = success_flag
         self.canceled_flag = False

@@ -51,11 +51,9 @@ from pulp.plugins.model import SyncReport
 import pulp.server.managers.factory as manager_factory
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
-# -- constants ---------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- classes -----------------------------------------------------------------
 
 class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin,
                       SingleRepoUnitsMixin, StatusMixin, SearchUnitsMixin):
@@ -113,7 +111,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
             self._association_manager.unassociate_unit_by_id(self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.association_owner_id)
             self._removed_count += 1
         except Exception, e:
-            _LOG.exception(_('Content unit unassociation failed'))
+            logger.exception(_('Content unit unassociation failed'))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def build_success_report(self, summary, details):
