@@ -26,6 +26,7 @@ from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
 from pulp_node import pathlib
+from pulp_node import migration
 from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
@@ -186,6 +187,7 @@ class ImporterStrategy(object):
             url = request.config.get(constants.MANIFEST_URL_KEYWORD)
             manifest = Manifest(request.working_dir)
             try:
+                migration.migrate(manifest.path)
                 manifest.read()
             except IOError, e:
                 if e.errno == errno.ENOENT:
