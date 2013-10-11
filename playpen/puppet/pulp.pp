@@ -37,7 +37,10 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'qpid-cpp-server',
     'qpid-cpp-client',
     'qpid-cpp-client-ssl',
-    'qpid-cpp-client-rdma']
+    'qpid-cpp-client-rdma',
+    'rabbitmq-server'
+  ]
+
   $pulp_server_packages = [
     'acl',
     'createrepo', # >= 0.9.9-21

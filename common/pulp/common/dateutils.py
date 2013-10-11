@@ -301,7 +301,7 @@ def format_iso8601_utc_timestamp(timestamp):
     @rtype: str
     @return: iso8601 representation of the passed in timestamp
     """
-    dt = datetime.datetime.fromtimestamp(timestamp).replace(tzinfo=utc_tz())
+    dt = datetime.datetime.utcfromtimestamp(timestamp).replace(tzinfo=utc_tz())
     return format_iso8601_datetime(dt)
 
 # timestamp functions ----------------------------------------------------------
