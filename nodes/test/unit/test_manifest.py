@@ -72,9 +72,9 @@ class TestManifest(TestCase):
         with open(manifest_path) as fp:
             manifest_in = json.load(fp)
         self.assertEqual(manifest.id, manifest_in['id'])
-        self.assertEqual(manifest.total_units, manifest_in['total_units'])
-        self.assertEqual(manifest.total_units, writer.total_units)
-        self.assertEqual(manifest.total_units, len(units))
+        self.assertEqual(manifest.units[UNITS_TOTAL], manifest_in['units'][UNITS_TOTAL])
+        self.assertEqual(manifest.units[UNITS_TOTAL], writer.total_units)
+        self.assertEqual(manifest.units[UNITS_TOTAL], len(units))
         self.assertTrue(os.path.exists(manifest_path))
         self.assertTrue(os.path.exists(units_path))
         units_in = []
@@ -116,6 +116,16 @@ class TestManifest(TestCase):
         # Verify
         self.assertTrue(manifest.is_valid())
         self.assertTrue(manifest.has_valid_units())
+        units_in = []
+        for unit, ref in manifest.get_units():
+            units_in.append(unit)
+            _unit = ref.fetch()
+            self.assertEqual(unit, _unit)
+        self.verify(units, units_in)
+        # should already be unzipped
+        self.assertTrue(manifest.is_valid())
+        self.assertTrue(manifest.has_valid_units())
+        self.assertFalse(manifest.units_path().endswith('.gz'))
         units_in = []
         for unit, ref in manifest.get_units():
             units_in.append(unit)
