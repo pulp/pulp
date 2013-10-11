@@ -117,9 +117,9 @@ cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir
 
 # Apache Configuration
 %if 0%{?fedora} >= 18
-cp server/etc/httpd/conf.d/pulp_f18.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
+cp server/etc/httpd/conf.d/pulp_apache_24.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %else
-cp server/etc/httpd/conf.d/pulp.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %endif
 
 # Pulp Web Services
@@ -176,13 +176,13 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.2
+Requires: python-nectar >= 1.1.4
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 0.76
+Requires: python-gofer >= 0.77
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -410,7 +410,7 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: gofer >= 0.76
+Requires: gofer >= 0.77
 
 %description agent
 The pulp agent, used to provide remote command & control and
@@ -441,8 +441,11 @@ Obsoletes: pulp-selinux-server
 %if "%{selinux_policyver}" != ""
 Requires: selinux-policy >= %{selinux_policyver}
 %endif
+%if 0%{?fedora} == 19
+Requires(post): policycoreutils-python >= 3.12.1-74
+%else
 Requires(post): policycoreutils-python
-Requires(post): selinux-policy-targeted
+%endif
 Requires(post): /usr/sbin/semodule, /sbin/fixfiles, /usr/sbin/semanage
 Requires(postun): /usr/sbin/semodule
 

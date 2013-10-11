@@ -132,8 +132,8 @@ To install *Nodes* child support, follow the instructions below.
 
  [oauth]
  enabled: true
- oauth_key: 3KIEJD78
- oauth_secret: L7JSUWJ9
+ oauth_key: AI93L0D8
+ oauth_secret: WA8JKWL0
 
 3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
    ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match a
@@ -148,6 +148,18 @@ To install *Nodes* child support, follow the instructions below.
  key:      <EDIT: matching value from parent /etc/pulp/server.conf>
  secret:   <EDIT: matching value from parent /etc/pulp/server.conf>
  user_id:  <admin user on parent node>
+ 
+Example:
+
+::
+
+ [oauth]
+ user_id: admin
+
+ [parent_oauth]
+ key: 3KIEJD78
+ secret: L7JSUWJ9
+ user_id: admin
 
 4. Restart Apache.
 

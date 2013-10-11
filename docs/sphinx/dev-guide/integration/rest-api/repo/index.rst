@@ -8,3 +8,4 @@ Repository APIs
    retrieval
    sync
    publish
+   content
