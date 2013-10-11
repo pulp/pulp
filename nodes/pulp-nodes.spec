@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.18.beta%{?dist}
+Release: 0.19.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -240,6 +240,10 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Fri Oct 11 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.19.beta
+- 1017924 - unzip the units.json instead of reading/seeking using gzip.
+  (jortel@redhat.com)
+
 * Thu Oct 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.18.beta
 - Pulp rebuild
 
