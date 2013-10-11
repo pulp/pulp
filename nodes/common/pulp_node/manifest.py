@@ -49,7 +49,7 @@ UNITS_SIZE = 'size'
 
 def unzip(path, destination, bfrlen=65535):
     """
-    Unzip the file as the specified path.
+    Unzip the file at the specified path.
     :param path: The path to the file to be unzipped.
     :type path: str
     :param destination: The destination path.
