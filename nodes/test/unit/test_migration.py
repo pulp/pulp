@@ -12,6 +12,7 @@
 import os
 import json
 import shutil
+import time
 
 from mock import patch
 from unittest import TestCase
@@ -58,6 +59,8 @@ class TestManifestMigration(TestCase):
         path = os.path.join(self.tmp_dir, _manifest.MANIFEST_FILE_NAME)
         with open(path, 'w+') as fp:
             json.dump(manifest_1, fp)
+        last_modified = os.path.getmtime(path)
+        time.sleep(1)  # getmtime() is to the second.
         migrate(path)
         manifest = _manifest.Manifest(path, manifest_id=MANIFEST_ID)
         manifest.read()
@@ -65,6 +68,23 @@ class TestManifestMigration(TestCase):
         self.assertEqual(manifest.version, _manifest.MANIFEST_VERSION)
         self.assertEqual(manifest.units, manifest_2[UNITS])
         self.assertEqual(manifest.path, path)
+        self.assertNotEqual(last_modified, os.path.getmtime(path))
+
+    def test_migrate_unwritten(self):
+        path = os.path.join(self.tmp_dir, _manifest.MANIFEST_FILE_NAME)
+        with open(path, 'w+') as fp:
+            json.dump(manifest_1, fp)
+        migrate(path)
+        manifest = _manifest.Manifest(path, manifest_id=MANIFEST_ID)
+        manifest.read()
+        self.assertEqual(manifest.id, MANIFEST_ID)
+        self.assertEqual(manifest.version, _manifest.MANIFEST_VERSION)
+        self.assertEqual(manifest.units, manifest_2[UNITS])
+        self.assertEqual(manifest.path, path)
+        last_modified = os.path.getmtime(path)
+        time.sleep(1)  # getmtime() is to the second.
+        migrate(path)
+        self.assertEqual(last_modified, os.path.getmtime(path))
 
     @patch('pulp_node.migration.migration_1')
     def test_nothing_migrated(self, mocked_migration):

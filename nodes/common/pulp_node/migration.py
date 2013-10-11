@@ -52,11 +52,11 @@ def migrate(path):
     """
     with open(path) as fp:
         manifest = json.load(fp)
-    version = manifest[VERSION]
-    for version in range(version, _manifest.MANIFEST_VERSION):
+    version_in = manifest[VERSION]
+    for version in range(version_in, _manifest.MANIFEST_VERSION):
         migration = MIGRATIONS[version]
         manifest = migration(manifest)
         manifest[VERSION] = version + 1
-    if version < manifest[VERSION]:
+    if version_in < manifest[VERSION]:
         with open(path, 'w+') as fp:
             json.dump(manifest, fp)
