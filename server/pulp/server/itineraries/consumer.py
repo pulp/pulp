@@ -54,7 +54,15 @@ def consumer_content_install_itinerary(consumer_id, units, options):
     weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
     tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag('unit_install')]
-    call_request = CallRequest(manager.install_content, args, kwargs, weight=weight, tags=tags, archive=True, asynchronous=True) # rbarlow_converted
+    call_request = CallRequest(
+        manager.install_content,
+        args,
+        kwargs,
+        weight=weight,
+        tags=tags,
+        archive=True,
+        asynchronous=True,
+        kwarg_blacklist=['options'])
     call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, cancel_agent_request)
     call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
     return [call_request]
@@ -78,7 +86,15 @@ def consumer_content_update_itinerary(consumer_id, units, options):
     weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
     tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag('unit_update')]
-    call_request = CallRequest(manager.update_content, args, kwargs, weight=weight, tags=tags, archive=True, asynchronous=True) # rbarlow_converted
+    call_request = CallRequest(
+        manager.update_content,
+        args,
+        kwargs,
+        weight=weight,
+        tags=tags,
+        archive=True,
+        asynchronous=True,
+        kwarg_blacklist=['options'])
     call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, cancel_agent_request)
     call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
     return [call_request]
@@ -102,8 +118,15 @@ def consumer_content_uninstall_itinerary(consumer_id, units, options):
     weight = pulp_config.config.getint('tasks', 'consumer_content_weight')
     tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag('unit_uninstall')]
-    call_request = CallRequest(manager.uninstall_content, args, kwargs, weight=weight, tags=tags, archive=True, asynchronous=True) # rbarlow_converted
+    call_request = CallRequest(
+        manager.uninstall_content,
+        args,
+        kwargs,
+        weight=weight,
+        tags=tags,
+        archive=True,
+        asynchronous=True,
+        kwarg_blacklist=['options'])
     call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK, cancel_agent_request)
     call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
     return [call_request]
-

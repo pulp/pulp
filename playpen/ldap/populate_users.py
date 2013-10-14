@@ -12,6 +12,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from logging import INFO, basicConfig
+from pulp.server.auth.ldap_connection import LDAPConnection
+from pulp.server.db import connection
+from pulp.server.managers import factory
 from pulp.server.auth import ldap_connection
 
 basicConfig(filename='/tmp/populate.log', level=INFO)
@@ -52,7 +55,7 @@ class LDAPAttribute:
         self.dn = dn
 
     def setOU(self, ou):
-	self.ou = ou
+        self.ou = ou
 
     def buildBody(self):
         attrs = {}
@@ -72,9 +75,13 @@ def main():
     Populate ldap server with some test data
     """
     print("See populate.log for descriptive output.")
-    ldapserv = ldap_connection('cn=Directory Manager', \
-                              'redhat',
-                              'ldap://localhost')
+    factory.initialize()
+    connection.initialize()
+    ldapserv = LDAPConnection(admin='cn=Directory Manager',
+                              password='password',
+                              server='ldap://ldap-server-hostname:389',
+                              tls=False)
+
     ldapserv.connect()
     for id in range(1,100):
         userid = 'pulpuser%s' % id

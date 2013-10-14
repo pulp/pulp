@@ -107,3 +107,33 @@ class TestKeyValueMultiple(unittest.TestCase):
     def test_none(self):
         ret = parsers.key_value_multiple(None)
         self.assertEqual(ret, [])
+
+
+class ParserEmptyStringTests(unittest.TestCase):
+
+    def test_parse_positive_int(self):
+        self.assertEquals(5, parsers.pulp_parse_optional_positive_int('5'))
+
+    def test_parse_positive_int_empty(self):
+        self.assertEquals('', parsers.pulp_parse_optional_positive_int(''))
+
+    def test_parse_positive_int_none(self):
+        self.assertEquals('', parsers.pulp_parse_optional_positive_int(None))
+
+    def test_parse_optional_boolean(self):
+        self.assertEquals(True, parsers.pulp_parse_optional_boolean('true'))
+
+    def test_parse_optional_boolean_empty(self):
+        self.assertEquals('', parsers.pulp_parse_optional_boolean(''))
+
+    def test_parse_optional_boolean_none(self):
+        self.assertEquals('', parsers.pulp_parse_optional_boolean(None))
+
+    def test_parse_optional_nonnegative_int(self):
+        self.assertEquals(0, parsers.pulp_parse_optional_nonnegative_int('0'))
+
+    def test_parse_optional_nonnegative_int_empty(self):
+        self.assertEquals('', parsers.pulp_parse_optional_nonnegative_int(''))
+
+    def test_parse_optional_nonnegative_int_none(self):
+        self.assertEquals('', parsers.pulp_parse_optional_nonnegative_int(None))

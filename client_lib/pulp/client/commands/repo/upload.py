@@ -151,7 +151,7 @@ class UploadCommand(PulpCliCommand):
         if self.upload_files:
             for i, file_bundle in enumerate(orig_file_bundles):
                 filename = file_bundle.filename
-                bar.render(i+1, len(orig_file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
+                bar.render(i + 1, len(orig_file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
 
                 try:
                     unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename, **kwargs)
@@ -226,7 +226,7 @@ class UploadCommand(PulpCliCommand):
             else:
                 msg = _('Initializing upload')
 
-            bar.render(i+1, len(file_bundles), message=msg)
+            bar.render(i + 1, len(file_bundles), message=msg)
             upload_id = self.upload_manager.initialize_upload(filename, repo_id, file_bundle.type_id,
                                                               file_bundle.unit_key, file_bundle.metadata)
             upload_ids.append(upload_id)
@@ -614,8 +614,13 @@ def perform_upload(context, upload_manager, upload_ids):
                 # Do not delete the upload here; we need it lying around for
                 # when the import is completed
             else:
-                context.prompt.write(_('... completed'))
-                context.prompt.render_spacer()
+                if response.response_body['success_flag']:
+                    context.prompt.write(_('... completed'), tag='import_upload_success')
+                    context.prompt.render_spacer()
+                else:
+                    msg = _('... failed: %(e)s')
+                    msg = msg % {'e': response.response_body['summary']}
+                    context.prompt.render_failure_message(msg)
 
                 # Delete the request
                 context.prompt.write(_('Deleting the upload request...'))

@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import logging
 import web
 
 from pulp.common.util import decode_unicode
@@ -21,11 +20,6 @@ from pulp.server.webservices.serialization import link
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-# -- constants ----------------------------------------------------------------
-
-_LOG = logging.getLogger(__name__)
-
-# -- controllers --------------------------------------------------------------
 
 class EventCollection(JSONController):
 
@@ -76,7 +70,7 @@ class EventResource(JSONController):
 
         event_listener_id = decode_unicode(event_listener_id)
 
-        listener = manager.get(event_listener_id) # will raise MissingResource
+        listener = manager.get(event_listener_id)  # will raise MissingResource
         href = link.current_link_obj()
         listener.update(href)
 
@@ -86,7 +80,7 @@ class EventResource(JSONController):
     def DELETE(self, event_listener_id):
         manager = manager_factory.event_listener_manager()
 
-        manager.delete(event_listener_id) # will raise MissingResource
+        manager.delete(event_listener_id)  # will raise MissingResource
 
         return self.ok(None)
 
@@ -111,8 +105,8 @@ class EventResource(JSONController):
 
 # These are defined under /v2/event_listeners/ (see application.py to double-check)
 URLS = (
-    '/', 'EventCollection', # collection
-    '/([^/]+)/$', 'EventResource', # resource
+    '/', 'EventCollection',  # collection
+    '/([^/]+)/$', 'EventResource',  # resource
 )
 
 application = web.application(URLS, globals())

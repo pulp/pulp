@@ -219,27 +219,23 @@ class RepoSyncManager(object):
         Returns sync history entries for the given repo, sorted from most recent
         to oldest. If there are no entries, an empty list is returned.
 
-        :param repo_id: identifies the repo
-        :type  repo_id: str
-
-        :param limit: if specified, the query will only return up to this amount of
-                      entries; default is to limit the entries returned to five.
-        :type limit: int
-
-        :param sort: Indicates the sort direction of the results, which are sorted by start date. Options
-                     are "ascending" and "descending". Descending is the default.
-        :type sort: str
-
-        :param start_date: if specified, no events prior to this date will be returned. Expected to be an
-                           iso8601 datetime string.
-        :type start_date: str
-
-        :param end_date: if specified, no events after this date will be returned. Expected to be an
-                         iso8601 datetime string.
-        :type end_date: str
+        :param repo_id:     identifies the repo
+        :type  repo_id:     str
+        :param limit:       if specified, the query will only return up to this amount of
+                            entries; default is to return the entire sync history
+        :type  limit:       int
+        :param sort:        Indicates the sort direction of the results, which are sorted by start date. Options
+                            are "ascending" and "descending". Descending is the default.
+        :type  sort:        str
+        :param start_date:  if specified, no events prior to this date will be returned. Expected to be an
+                            iso8601 datetime string.
+        :type  start_date:  str
+        :param end_date:    if specified, no events after this date will be returned. Expected to be an
+                            iso8601 datetime string.
+        :type end_date:     str
 
         :return: list of sync history result instances
-        :rtype: list
+        :rtype:  list
 
         :raise MissingResource: if repo_id does not reference a valid repo
         :raise InvalidValue: if one or more options are invalid
@@ -290,15 +286,13 @@ class RepoSyncManager(object):
             date_range['$lte'] = end_date
         if len(date_range) > 0:
             search_params['started'] = date_range
-        if limit is None:
-            # If a limit is not specified, limit the entries to the default value
-            limit = constants.REPO_HISTORY_LIMIT
 
         # Retrieve the entries
         cursor = RepoSyncResult.get_collection().find(search_params)
         # Sort the results on the 'started' field. By default, descending order is used
         cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
-        cursor.limit(limit)
+        if limit is not None:
+            cursor.limit(limit)
 
         return list(cursor)
 

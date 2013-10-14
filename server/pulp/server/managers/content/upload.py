@@ -26,11 +26,9 @@ from pulp.server.exceptions import PulpDataException, MissingResource, PulpExecu
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as repo_common_utils
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
 
 class ContentUploadManager(object):
 
@@ -141,8 +139,6 @@ class ContentUploadManager(object):
         upload_ids = os.listdir(upload_dir)
         return upload_ids
 
-    # -- import functionality -------------------------------------------------
-
     def is_valid_upload(self, repo_id, unit_type_id):
         """
         Checks that the repository is configured to handle an upload request
@@ -183,20 +179,18 @@ class ContentUploadManager(object):
         destination repository. See that method's documentation for exception
         possibilities.
 
-        @param repo_id: identifies the repository into which the unit is uploaded
-        @type  repo_id: str
-
-        @param unit_type_id: type of unit being uploaded
-        @type  unit_type_id: str
-
-        @param unit_key: unique identifier for the unit (user-specified)
-        @type  unit_key: dict
-
-        @param unit_metadata: any user-specified information about the unit
-        @type  unit_metadata: dict
-
-        @param upload_id: upload being imported
-        @type  upload_id: str
+        :param repo_id:       identifies the repository into which the unit is uploaded
+        :type  repo_id:       str
+        :param unit_type_id:  type of unit being uploaded
+        :type  unit_type_id:  str
+        :param unit_key:      unique identifier for the unit (user-specified)
+        :type  unit_key:      dict
+        :param unit_metadata: any user-specified information about the unit
+        :type  unit_metadata: dict
+        :param upload_id:     upload being imported
+        :type  upload_id:     str
+        :return:              A SyncReport indicating the success or failure of the upload
+        :rtype:               pulp.plugins.model.SyncReport
         """
 
         # If it doesn't raise an exception, it's good to go
@@ -209,32 +203,38 @@ class ContentUploadManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         try:
-            importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+            importer_instance, plugin_config = plugin_api.get_importer_by_id(
+                repo_importer['importer_type_id'])
         except plugin_exceptions.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the import
-        conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, manager_factory.principal_manager().get_principal()['login'])
+        conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER,
+                                manager_factory.principal_manager().get_principal()['login'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = repo_common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = repo_common_utils.importer_working_dir(
+            repo_importer['importer_type_id'], repo_id, mkdir=True)
 
         file_path = self._upload_file_path(upload_id)
 
         # Invoke the importer
         try:
-            importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key, unit_metadata, file_path, conduit, call_config)
+            return importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key,
+                                                 unit_metadata, file_path, conduit, call_config)
         except PulpException:
-            _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
+            msg = 'Error from the importer while importing uploaded unit to repository [%(r)s]'
+            msg = msg % {'r': repo_id}
+            logger.exception(msg)
             raise
         except Exception, e:
-            _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
+            msg = 'Error from the importer while importing uploaded unit to repository [%(r)s]'
+            msg = msg % {'r': repo_id}
+            logger.exception(msg)
             raise PulpExecutionException(e), None, sys.exc_info()[2]
 
         # TODO: Add support for tracking the report as a history entry on the repo
-
-    # -- utilities ------------------------------------------------------------
 
     def _upload_file_path(self, upload_id):
         """

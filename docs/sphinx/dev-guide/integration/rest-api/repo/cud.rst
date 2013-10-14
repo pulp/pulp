@@ -82,15 +82,12 @@ is centered around updating only that metadata.
 | :method:`put`
 | :path:`/v2/repositories/<repo_id>/`
 | :permission:`update`
-| :param_list:`post` The body of the request is a JSON document with a root element
-  called "delta". The contents of delta are the values to update. Only changed
-  parameters need be specified. The following keys are allowed in the delta
-  object. Descriptions for each parameter can be found under the create
-  repository API:
+| :param_list:`put` The body of the request is a JSON document with three
+  possible root elements:
 
-* :param:`display_name,,`
-* :param:`description,,`
-* :param:`notes,,`
+* :param:`delta,object,object containing keys with values that should be updated on the repository`
+* :param:`?importer_config,object,object containing keys with values that should be updated on the repository's importer config`
+* :param:`?distributor_configs,object,object containing keys that are distributor ids, and values that are objects containing keys with values that should be updated on the specified distributor's config`
 
 | :response_list:`_`
 
@@ -104,7 +101,17 @@ is centered around updating only that metadata.
 :sample_request:`_` ::
 
  {
-  "delta": {"display_name" : "Updated"},
+  "delta": {
+   "display_name" : "Updated"
+  },
+  "importer_config": {
+   "demo_key": "demo_value"
+  }, 
+  "distributor_configs": {
+   "demo_distributor": {
+     "demo_key": "demo_value"
+   }
+  }
  }
 
 :sample_response:`200` ::
@@ -268,6 +275,76 @@ The details of the added distributor are returned from the call.
   },
   "id": "dist_1"
  }
+
+
+Update an Importer Associated with a Repository
+-------------------------------------------------
+
+Update the configuration for an :term:`importer` that has already been associated with a
+repository.
+
+Any importer configuration value that is not specified remains unchanged.
+
+| :method:`put`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/`
+| :permission:`update`
+| :param_list:`put`
+
+* :param:`importer_config,object,object containing keys with values that should be updated on the importer`
+
+| :response_list:`_`
+
+* :response_code:`200,if the update was executed`
+* :response_code:`202,if the request was accepted by the server to update the importer
+  when the repository is available`
+* :response_code:`404,if there is no repository or importer with the specified IDs`
+* :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
+  in the future`
+
+| :return:`A call report list`
+
+:sample_request:`_` ::
+
+ {
+  "importer_config": {
+    "demo_key": "demo_value"
+  }
+ }
+
+:sample_response:`200` ::
+
+  {
+    "scratchpad": null, 
+    "_ns": "repo_importers", 
+    "importer_type_id": "demo_importer", 
+    "last_sync": "2013-10-03T14:08:35-04:00", 
+    "scheduled_syncs": [], 
+    "repo_id": "demo_repo", 
+    "_id": {
+      "$oid": "524db282dd01fb194283e53f"
+    }, 
+    "config": {
+      "demo_key": "demo_value"
+    }, 
+    "id": "demo_importer"
+  }
+
+
+Disassociate an Importer from a Repository
+--------------------------------------------
+
+| :method:`delete`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/`
+| :permission:`delete`
+
+| :response_list:`_`
+
+* :response_code:`200,if the delete was executed`
+* :response_code:`202,if the request was accepted by the server to disassociate when the repository is available`
+* :response_code:`404,if there is no repository or importer with the specified IDs`
+
+| :return:`An empty body if the delete was executed immediately.  If the delete could not be executed
+    immediately the details of the task created to execute the delete will be returned.`
 
 
 Update a Distributor Associated with a Repository

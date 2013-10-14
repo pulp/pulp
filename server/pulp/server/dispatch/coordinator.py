@@ -31,7 +31,7 @@ from pulp.server.exceptions import OperationTimedOut
 from pulp.server.util import subdict, TopologicalSortError, topological_sort
 
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 _VALID_SEARCH_CRITERIA = frozenset(('call_request_id', 'call_request_group_id',
                                     'call_request_id_list', 'schedule_id',
@@ -91,7 +91,7 @@ class Coordinator(object):
                 self.execute_multiple_calls(call_request_group)
             except TopologicalSortError, e:
                 log_msg = _('Cannot execute call request group: %(g)s' % {'g': call_request.group_id})
-                _LOG.warn('\n'.join((log_msg, str(e))))
+                logger.warn('\n'.join((log_msg, str(e))))
 
     # execution methods --------------------------------------------------------
 

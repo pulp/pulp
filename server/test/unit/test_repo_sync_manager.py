@@ -404,13 +404,11 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Test
         entries = self.sync_manager.sync_history('creeper')
 
-        # Verify. The returned entries should be limited to the constant defined in common.constants.
-        self.assertEqual(constants.REPO_HISTORY_LIMIT, len(entries))
-
-        # Verify descending order.
-        for i in range(0, 4):
-            first = dateutils.parse_iso8601_datetime(entries[i]['started'])
-            second = dateutils.parse_iso8601_datetime(entries[i + 1]['started'])
+        # Verify there are 9 entries and they are in descending order
+        self.assertEqual(9, len(entries))
+        for entry in entries:
+            first = dateutils.parse_iso8601_datetime(entry['started'])
+            second = dateutils.parse_iso8601_datetime(entry['started'])
             self.assertTrue(first >= second)
 
     def test_sync_history_with_limit(self):
@@ -426,6 +424,11 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Test with a valid limit
         entries = self.sync_manager.sync_history('zombie', limit=3)
         self.assertEqual(3, len(entries))
+        # Verify descending order.
+        for entry in entries:
+            first = dateutils.parse_iso8601_datetime(entry['started'])
+            second = dateutils.parse_iso8601_datetime(entry['started'])
+            self.assertTrue(first >= second)
 
     def test_sync_history_invalid_limit(self):
         """

@@ -160,8 +160,14 @@ class RepoPublishManager(object):
             summary = publish_report.summary
             details = publish_report.details
             if publish_report.success_flag:
+                _LOG.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
+                           repo_id, distributor_id))
                 result_code = RepoPublishResult.RESULT_SUCCESS
             else:
+                _LOG.info('publish failed for repo [%s] with distributor ID [%s]' % (
+                           repo_id, distributor_id))
+                _LOG.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
+                           repo_id, distributor_id, summary))
                 result_code = RepoPublishResult.RESULT_FAILED
         else:
             msg = _('Plugin type [%(type)s] on repo [%(repo)s] did not return a valid publish '
@@ -261,30 +267,25 @@ class RepoPublishManager(object):
         Returns publish history entries for the give repo, sorted from most
         recent to oldest. If there are no entries, an empty list is returned.
 
-        :param repo_id: identifies the repo
-        :type  repo_id: str
-
-        :param distributor_id: identifies the distributor to retrieve history for
-        :type  distributor_id: str
-
-        :param limit: if specified, the query will only return up to this amount of
-                      entries; default is to limit the entries returned to five.
-        :type limit: int
-
-        :param sort: Indicates the sort direction of the results, which are sorted by start date. Options
-                     are "ascending" and "descending". Descending is the default.
-        :type sort: str
-
-        :param start_date: if specified, no events prior to this date will be returned. Expected to be an
-                           iso8601 datetime string.
-        :type start_date: str
-
-        :param end_date: if specified, no events after this date will be returned. Expected to be an
-                         iso8601 datetime string.
-        :type end_date: str
+        :param repo_id:         identifies the repo
+        :type  repo_id:         str
+        :param distributor_id:  identifies the distributor to retrieve history for
+        :type  distributor_id:  str
+        :param limit:           if specified, the query will only return up to this amount of entries;
+                                default is to return the entire publish history
+        :type  limit:           int
+        :param sort:            Indicates the sort direction of the results, which are sorted by start date. Options
+                                are "ascending" and "descending". Descending is the default.
+        :type  sort: str
+        :param start_date:      if specified, no events prior to this date will be returned. Expected to be an
+                                iso8601 datetime string.
+        :type  start_date:      str
+        :param end_date:        if specified, no events after this date will be returned. Expected to be an
+                                iso8601 datetime string.
+        :type  end_date:        str
 
         :return: list of publish history result instances
-        :rtype: list
+        :rtype:  list
 
         :raise MissingResource: if repo_id does not reference a valid repo
         :raise InvalidValue: if one or more of the options have invalid values
@@ -337,15 +338,13 @@ class RepoPublishManager(object):
             date_range['$lte'] = end_date
         if len(date_range) > 0:
             search_params['started'] = date_range
-        if limit is None:
-            # If a limit is not specified, limit the entries to the default values
-            limit = constants.REPO_HISTORY_LIMIT
 
         # Retrieve the entries
         cursor = RepoPublishResult.get_collection().find(search_params)
         # Sort the results on the 'started' field. By default, descending order is used
         cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
-        cursor.limit(limit)
+        if limit is not None:
+            cursor.limit(limit)
 
         return list(cursor)
 

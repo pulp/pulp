@@ -170,3 +170,43 @@ Each scheduled sync may be inspected.
 | :permission:`read`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/<schedule_id>/`
 | :return:`a schedule report for the scheduled sync (see sample response of Scheduling a Sync for details)`
+
+
+Retrieving Sync History
+-----------------------
+Retrieve sync history for a repository. Each sync performed on a repository creates a history entry.
+
+| :method:`get`
+| :permission:`read`
+| :path:`/v2/repositories/<repo_id>/history/sync/`
+
+| :param_list:`get`
+
+* :param:`?limit,integer,the maximum number of history entries to return; if not specified, the entire
+  history is returned`
+* :param:`?sort,string,options are 'ascending' and 'descending'; the array is sorted by the sync timestamp`
+* :param:`?start_date,iso8601 datetime,any entries with a timestamp prior to the given date are not returned`
+* :param:`?end_date,iso8601 datetime,any entries with a timestamp after the given date are not returned`
+
+| :response_list:`_`
+
+* :response_code:`200,if the history was successfully retrieved`
+* :response_code:`404,if the repository id given does not exist`
+
+| :return:`an array of sync history entries`
+
+:sample_response:`200` ::
+
+ [
+  {
+   "result": "success",
+   "importer_id": "my_demo_importer",
+   "exception": null,
+   "repo_id": "demo_repo",
+   "traceback": null,
+   "started": "1970:00:00T00:00:00Z",
+   "completed": "1970:00:00T00:00:01Z",
+   "importer_type_id": "demo_importer",
+   "error_message": null,
+  }
+ ]
