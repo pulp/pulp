@@ -19,13 +19,11 @@ from datetime import datetime
 import unittest
 
 import mock
+from pulp.plugins.model import PublishReport
+from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 
 from pulp.common.dateutils import format_iso8601_datetime
 from pulp.common.plugins import progress
-
-
-from pulp.plugins.model import PublishReport, Unit
-from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 
 
 class TestProgressReport(unittest.TestCase):
