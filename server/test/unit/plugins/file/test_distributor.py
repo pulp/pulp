@@ -124,8 +124,8 @@ class FileDistributorTest(unittest.TestCase):
         self.assertEqual(report.summary['error_message'], 'Rawr!')
         self.assertTrue('Rawr!' in report.summary['traceback'])
 
-        # The publish_conduit should have had two set_progress calls. One to start the IN_PROGRESS state, and
-        # the second to mark it as failed
+        # The publish_conduit should have had two set_progress calls. One to start the IN_PROGRESS
+        # state, and the second to mark it as failed
         self.assertEqual(self.publish_conduit.set_progress.call_count, 2)
         self.assertEqual(self.publish_conduit.set_progress.mock_calls[0][1][0]['state'],
                          FilePublishProgressReport.STATE_IN_PROGRESS)
@@ -161,7 +161,13 @@ class FileDistributorTest(unittest.TestCase):
         # Ensure the old rpm is no longer included
         self.assertFalse(os.path.islink(target_file))
 
-    def test_distributor_removed(self):
+    def test_distributor_removed_calls_unpublish(self):
+        distributor = self.create_distributor_with_mocked_api_calls()
+        distributor.unpublish_repo = Mock()
+        distributor.distributor_removed(self.repo, {})
+        self.assertTrue(distributor.unpublish_repo.called)
+
+    def test_unpublish_repo(self):
         distributor = self.create_distributor_with_mocked_api_calls()
         distributor.publish_repo(self.repo, self.publish_conduit, {})
         self.assertTrue(os.path.exists(self.target_dir))
@@ -231,7 +237,8 @@ class FileDistributorTest(unittest.TestCase):
         self.assertEqual(symlink.call_count, 0)
         expected_symlink_path = os.path.join(build_dir, self.unit.unit_key['name'])
         self.assertTrue(os.path.islink(expected_symlink_path))
-        self.assertEqual(os.path.realpath(expected_symlink_path), os.path.realpath(expected_symlink_destination))
+        self.assertEqual(os.path.realpath(expected_symlink_path),
+                         os.path.realpath(expected_symlink_destination))
 
     @patch('os.readlink')
     def test__symlink_units_os_error(self, readlink):
@@ -276,7 +283,6 @@ class FileDistributorTest(unittest.TestCase):
         build_dir = os.path.join(self.temp_dir, BUILD_DIRNAME)
         os.makedirs(build_dir)
 
-        expected_symlink_destination = os.path.join(DATA_DIR, self.unit.unit_key['name'])
         original_link = os.path.join(build_dir, self.unit.unit_key['name'])
         old_target = os.path.join(DATA_DIR, SAMPLE_FILE)
         os.symlink(old_target, original_link)

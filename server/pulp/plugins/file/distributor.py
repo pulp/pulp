@@ -62,9 +62,7 @@ class FileDistributor(Distributor):
         :param config: plugin configuration
         :type  config: pulp.plugins.config.PluginCallConfiguration
         """
-        hosting_locations = self.get_hosting_locations(repo, config)
-        for location in hosting_locations:
-            self._rmtree_if_exists(location)
+        self.unpublish_repo(repo, config)
 
     def publish_repo(self, repo, publish_conduit, config):
         """
@@ -107,7 +105,7 @@ class FileDistributor(Distributor):
                 self.finalize_metadata()
 
             # Let's unpublish, and then republish
-            self.distributor_removed(repo, config)
+            self.unpublish_repo(repo, config)
 
             hosting_locations = self.get_hosting_locations(repo, config)
             for location in hosting_locations:
@@ -128,6 +126,22 @@ class FileDistributor(Distributor):
             progress_report.state = progress_report.STATE_FAILED
             report = progress_report.build_final_report()
             return report
+
+    def unpublish_repo(self, repo, config):
+        """
+        Delete the published files from our filesystem
+
+        Please also see the superclass method definition for more documentation on this method.
+
+        :param repo: metadata describing the repository
+        :type  repo: pulp.plugins.model.Repository
+
+        :param config: plugin configuration
+        :type  config: pulp.plugins.config.PluginCallConfiguration
+        """
+        hosting_locations = self.get_hosting_locations(repo, config)
+        for location in hosting_locations:
+            self._rmtree_if_exists(location)
 
     def validate_config(self, repo, config, config_conduit):
         raise NotImplementedError()
@@ -179,6 +193,8 @@ class FileDistributor(Distributor):
         :type repo: pulp.plugins.model.Repository
         :param config:    plugin configuration
         :type  config:    pulp.plugins.config.PluginConfiguration
+        :return : list of paths on the filesystem where the build directory should be copied
+        :rtype list of str
         """
         return []
 
