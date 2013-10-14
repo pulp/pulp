@@ -36,23 +36,23 @@ class FileDistributor(Distributor):
 
     def __init__(self):
         super(FileDistributor, self).__init__()
-        # Initialize class variables used for writing out the metadata
+        # Initialize instance variables used for writing out the metadata
         self.metadata_file = None
         self.metadata_csv_writer = None
 
     @classmethod
     def metadata(cls):
         """
-        Advertise the capabilities of the mighty ISODistributor.
+        Advertise the capabilities of the mighty FileDistributor.
 
-        :return: The description of the impressive ISODistributor's capabilities.
+        :return: The description of the impressive FileDistributor's capabilities.
         :rtype:  dict
         """
         raise NotImplementedError()
 
     def distributor_removed(self, repo, config):
         """
-        Delete the published files from our filesystem, and remove any repository protection.
+        Delete the published files from our filesystem
 
         Please also see the superclass method definition for more documentation on this method.
 
@@ -68,7 +68,7 @@ class FileDistributor(Distributor):
 
     def publish_repo(self, repo, publish_conduit, config):
         """
-        Publish the ISO repository.
+        Publish the repository.
 
         :param repo:            metadata describing the repo
         :type  repo:            pulp.plugins.model.Repository
@@ -144,7 +144,7 @@ class FileDistributor(Distributor):
 
     def publish_metadata_for_unit(self, unit):
         """
-        Publish the metadata about for a single unit.
+        Publish the metadata for a single unit.
         This should be writing to open file handles from the initialize_metadata call
 
         :param unit: the unit for which metadata needs to be generated
@@ -164,10 +164,10 @@ class FileDistributor(Distributor):
         """
         Get the paths within a target directory where this unit should be linked to
 
-        :param unit:
+        :param unit: The unit for which we want to return target paths
         :type unit: pulp.plugins.model.AssociatedUnit
-        :return:
-        :rtype: list of paths the unit should be linked to
+        :return: a list of paths the unit should be linked to
+        :rtype: list of str
         """
         return [unit.unit_key['name'], ]
 
@@ -198,8 +198,8 @@ class FileDistributor(Distributor):
         """
         For each unit, put a symlink in the build dir that points to its canonical location on disk.
 
-        :param build_dir: The path on the local filesystem that we want to symlink the units into. This
-                          path should already exist.
+        :param build_dir: The path on the local filesystem that we want to symlink the units into.
+                          This path should already exist.
         :type  build_dir: basestring
         :param unit:     The unit to be symlinked
         :type  unit:     pulp.plugins.model.AssociatedUnit
@@ -210,26 +210,26 @@ class FileDistributor(Distributor):
             #symlink_filename = os.path.join(build_dir, unit.unit_key['name'])
             symlink_filename = os.path.join(build_dir, target_path)
             if os.path.exists(symlink_filename) or os.path.islink(symlink_filename):
-                # There's already something there with the desired symlink filename. Let's try and see
-                # if it points at the right thing. If it does, we don't need to do anything. If it does
-                # not, we should remove what's there and add the correct symlink.
+                # There's already something there with the desired symlink filename. Let's try and
+                # see if it points at the right thing. If it does, we don't need to do anything. If
+                # it does not, we should remove what's there and add the correct symlink.
                 try:
                     existing_link_path = os.readlink(symlink_filename)
                     if existing_link_path == unit.storage_path:
-                        # We don't need to do anything more for this unit, so move on to the next one
+                        # We don't need to do anything more for this unit, move on to the next one
                         continue
                     # The existing symlink is incorrect, so let's remove it
                     os.remove(symlink_filename)
                 except OSError, e:
-                    # This will happen if we attempt to call readlink() on a file that wasn't a symlink.
-                    # We should remove the file and add the symlink. There error code should be EINVAL.
-                    # If it isn't, something else is wrong and we should raise.
+                    # This will happen if we attempt to call readlink() on a file that wasn't a
+                    # symlink.  We should remove the file and add the symlink. There error code
+                    # should be EINVAL.  If it isn't, something else is wrong and we should raise.
                     if e.errno != errno.EINVAL:
                         raise e
                     # Remove the file that's at the symlink_filename path
                     os.remove(symlink_filename)
-            # If we've gotten here, we've removed any existing file at the symlink_filename path, so now
-            # we should recreate it.
+            # If we've gotten here, we've removed any existing file at the symlink_filename path,
+            # so now we should recreate it.
             os.symlink(unit.storage_path, symlink_filename)
 
     def _rmtree_if_exists(self, path):

@@ -118,7 +118,7 @@ class TestProgressReport(unittest.TestCase):
         cancelled, we should report it as a success
         """
         report = progress.ProgressReport(self.conduit,
-                                            state=progress.ProgressReport.STATE_CANCELLED)
+                                            state=progress.ProgressReport.STATE_CANCELED)
 
         conduit_report = report.build_final_report()
 

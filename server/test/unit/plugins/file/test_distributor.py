@@ -1,6 +1,6 @@
-#!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright (c) 2011 Red Hat, Inc.
+# Copyright © 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -21,9 +21,9 @@ import csv
 import copy
 
 from mock import Mock, MagicMock, patch
+
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
 from pulp.devel.mock_distributor import get_publish_conduit
-
 from pulp.plugins.file.distributor import FileDistributor, FilePublishProgressReport, BUILD_DIRNAME
 from pulp.plugins.model import Repository, Unit
 
@@ -68,7 +68,7 @@ class FileDistributorTest(unittest.TestCase):
     def test_get_hosting_locations_not_implemented(self):
         distributor = FileDistributor()
         host_locations = distributor.get_hosting_locations(None, None)
-        self.assertListEqual([], host_locations)
+        self.assertEquals(0, len(host_locations))
 
     def test_post_repo_publish_not_implemented(self):
         distributor = FileDistributor()
@@ -106,9 +106,9 @@ class FileDistributorTest(unittest.TestCase):
         with open(os.path.join(self.target_dir, MANIFEST_FILENAME), 'rb') as f:
             reader = csv.reader(f)
             row = reader.next()
-            self.assertListEqual(row, [self.unit.unit_key['name'],
-                                       self.unit.unit_key['checksum'],
-                                       str(self.unit.unit_key['size'])])
+            self.assertEquals(row[0], self.unit.unit_key['name'])
+            self.assertEquals(row[1], self.unit.unit_key['checksum'])
+            self.assertEquals(row[2], str(self.unit.unit_key['size']))
 
     def test_repo_publish_handles_errors(self):
         """

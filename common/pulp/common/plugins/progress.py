@@ -22,42 +22,42 @@ from pulp.common.dateutils import format_iso8601_datetime, parse_iso8601_datetim
 
 class ProgressReport(object):
     """
-    This class is not meant to be instantiated directly, but has some common methods that are used by the Sync
-    and Progress report objects.
+    This class is not meant to be instantiated directly, but has some common methods that are
+    used by the Sync and Progress report objects.
     """
     # The following states can be set using the state() property
     # This is the starting state, before the sync or publish begins
-    STATE_NOT_STARTED =          'not_started'
+    STATE_NOT_STARTED = 'not_started'
     # When everything is done
-    STATE_COMPLETE =             'complete'
-    # If an error occurs outside of the manifest or isos in progress states, this general failed state can be
-    # set
-    STATE_FAILED =               'failed'
+    STATE_COMPLETE = 'complete'
+    # If an error occurs outside in progress states, this general failed state can be set
+    STATE_FAILED = 'failed'
     # When the user has cancelled a sync
-    STATE_CANCELLED =            'cancelled'
+    STATE_CANCELED = 'cancelled'
 
     def __init__(self, conduit=None, state=None, state_times=None, error_message=None,
                  traceback=None):
         """
-        Initialize the ISOProgressReport. All parameters except conduit can be ignored if you are
-        instantiating the report for use from an importer or distributor. The other parameters are used when
-        instantiating the report from a serialized report in the client.
+        Initialize the ProgressReport. All parameters except conduit can be ignored if you are
+        instantiating the report for use from an importer or distributor. The other parameters
+        are used when instantiating the report from a serialized report in the client.
 
-        :param conduit:            A sync or publish conduit that should be used to report progress to the
-                                   client.
+        :param conduit:            A sync or publish conduit that should be used to report progress
+                                   to the client.
         :type  conduit:            pulp.plugins.conduits.repo_sync.RepoSyncConduit or
                                    pulp.plugins.conduits.repo_publish.RepoPublishConduit
-        :param state:              The state the ProgressReport should be initialized to. See the STATE_*
-                                   class variables for valid states.
+        :param state:              The state the ProgressReport should be initialized to. See the
+                                   STATE_* class variables for valid states.
         :type  state:              basestring
-        :param state_times:        A dictionary mapping state names to the time the report entered that state
-        :type  state_times:        dict
-        :param error_message:      A general error message. This is used when the error encountered was not
-                                   specific to any particular content unit
+        :param state_times:        A dictionary mapping state names to the time the report entered
+                                   that state
+        :type  state_times:        dict of states to utc datetime values
+        :param error_message:      A general error message. This is used when the error encountered
+                                   was not specific to any particular content unit
         :type  error_message:      basestring
-        :param traceback:          If there was a traceback associated with an error_message, it should be
-                                   included here
-        :type  traceback:          basestring--delete--delete
+        :param traceback:          If there was a traceback associated with an error_message, it
+                                   should be included here
+        :type  traceback:          basestring
         """
         self.conduit = conduit
 
@@ -87,7 +87,7 @@ class ProgressReport(object):
         summary = self.build_progress_report()
         details = None
 
-        if self.state in (self.STATE_COMPLETE, self.STATE_CANCELLED):
+        if self.state in (self.STATE_COMPLETE, self.STATE_CANCELED):
             report = self.conduit.build_success_report(summary, details)
         else:
             report = self.conduit.build_failure_report(summary, details)
@@ -128,7 +128,7 @@ class ProgressReport(object):
         :param report: progress report retrieved from the server's task
         :type  report: dict
         :return:       instance populated with the state in the report
-        :rtype:        ISOProgressReport
+        :rtype:        ProgressReport
         """
         # Restore the state transition times to datetime objects
         for key, value in report['state_times'].items():
@@ -146,15 +146,17 @@ class ProgressReport(object):
     def _get_state(self):
         """
         This is used to provide the state property, and returns the current _state attribute.
+        :return : The string representation of the current state
+        :rtype : str
         """
         return self._state
 
     def _set_state(self, new_state):
         """
-        This method allows users to set a new state to the ISOProgressReport. It enforces state
+        This method allows users to set a new state to the ProgressReport. It enforces state
         transitions to only happen in a certain fashion.
 
-        :param new_state: The new state that the caller wishes the ISOProgressReport to be set to
+        :param new_state: The new state that the caller wishes the ProgressReport to be set to
         :type  new_state: basestring
         """
         if new_state == self._state:
