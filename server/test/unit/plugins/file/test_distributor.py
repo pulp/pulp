@@ -171,7 +171,7 @@ class FileDistributorTest(unittest.TestCase):
         distributor = self.create_distributor_with_mocked_api_calls()
         distributor.publish_repo(self.repo, self.publish_conduit, {})
         self.assertTrue(os.path.exists(self.target_dir))
-        distributor.distributor_removed(self.repo, {})
+        distributor.unpublish_repo(self.repo, {})
         self.assertFalse(os.path.exists(self.target_dir))
 
     def test__rmtree_if_exists(self):
