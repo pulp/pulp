@@ -175,18 +175,6 @@ class RepoUnitAssociationManager(object):
                 repo_id, unit_type_id, unique_count)
 
     def associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None, import_config_override=None):
-        import cProfile
-        profile = cProfile.Profile()
-        profile.enable(True, False)
-        return_value = profile.runcall(self.profile_associate_from_repo,  source_repo_id, dest_repo_id, criteria, import_config_override)
-        profile.create_stats()
-        profile.disable()
-
-        profile.dump_stats('/tmp/create_configure_parameters_2.profile')
-
-        return return_value
-
-    def profile_associate_from_repo(self, source_repo_id, dest_repo_id, criteria=None, import_config_override=None):
         """
         Creates associations in a repository based on the contents of a source
         repository. Units from the source repository can be filtered by
@@ -255,7 +243,6 @@ class RepoUnitAssociationManager(object):
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units
         associated_unit_type_ids = calculate_associated_type_ids(source_repo_id, associate_us)
-        ######## Get the list of unit_types_id values that match the units in the criteria and use that instead
         unsupported_types = [t for t in associated_unit_type_ids if t not in supported_type_ids]
 
         if len(unsupported_types) > 0:
