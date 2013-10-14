@@ -10,32 +10,27 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from gettext import gettext as _
+from uuid import uuid4
 import logging
 import os
 import sys
-from uuid import uuid4
 
 from pulp.plugins.conduits.upload import UploadConduit
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.server import config as pulp_config
 from pulp.server.db.model.repository import RepoContentUnit
-from pulp.server.exceptions import PulpDataException, MissingResource, PulpExecutionException, PulpException
+from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
+                                    PulpException)
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as repo_common_utils
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
 
 class ContentUploadManager(object):
-
-    # -- uploading bits functionality -----------------------------------------
-
     def initialize_upload(self):
         """
         Informs the Pulp server that a new file is about to be uploaded, allowing
@@ -58,7 +53,7 @@ class ContentUploadManager(object):
         # Initialize the file, the main benefit being that if the server cannot
         # write to the file path we will find out now and bomb on the initialize
         # before attempting to write bits.
-        file_path = self._upload_file_path(upload_id)
+        file_path = ContentUploadManager._upload_file_path(upload_id)
         f = open(file_path, 'w')
         f.close()
 
@@ -81,7 +76,7 @@ class ContentUploadManager(object):
         @type  data: str
         """
 
-        file_path = self._upload_file_path(upload_id)
+        file_path = ContentUploadManager._upload_file_path(upload_id)
 
         # Make sure the upload was initialized first and hasn't been deleted
         if not os.path.exists(file_path):
@@ -102,7 +97,7 @@ class ContentUploadManager(object):
         @type  upload_id: str
         """
 
-        file_path = self._upload_file_path(upload_id)
+        file_path = ContentUploadManager._upload_file_path(upload_id)
         if os.path.exists(file_path):
             os.remove(file_path)
 
@@ -123,7 +118,7 @@ class ContentUploadManager(object):
         @rtype:  str
         """
 
-        file_path = self._upload_file_path(upload_id)
+        file_path = ContentUploadManager._upload_file_path(upload_id)
         f = open(file_path)
         contents = f.read()
         f.close()
@@ -137,25 +132,22 @@ class ContentUploadManager(object):
         @return: list of IDs
         @rtype:  list
         """
-        upload_dir = self._upload_storage_dir()
+        upload_dir = ContentUploadManager._upload_storage_dir()
         upload_ids = os.listdir(upload_dir)
         return upload_ids
 
-    # -- import functionality -------------------------------------------------
-
-    def is_valid_upload(self, repo_id, unit_type_id):
+    @staticmethod
+    def is_valid_upload(repo_id, unit_type_id):
         """
         Checks that the repository is configured to handle an upload request
         for the given unit type ID. This should be called prior to beginning
         the upload to prevent a wasted effort in the bits uploading.
 
-        @param repo_id: identifies the repo into which the unit is being uploaded
-        @param unit_type_id: type of unit being uploaded
-
-        @return: true if the repository can attempt to handle the unit
-        @rtype:  bool
-
-        @raise MissingResource: if the repository or its importer do not exist
+        :param repo_id:         identifies the repo into which the unit is being uploaded
+        :param unit_type_id:    type of unit being uploaded
+        :return:                true if the repository can attempt to handle the unit
+        :rtype:                 bool
+        :raise MissingResource: if the repository or its importer do not exist
         """
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -171,7 +163,8 @@ class ContentUploadManager(object):
 
         return True
 
-    def import_uploaded_unit(self, repo_id, unit_type_id, unit_key, unit_metadata, upload_id):
+    @staticmethod
+    def import_uploaded_unit(repo_id, unit_type_id, unit_key, unit_metadata, upload_id):
         """
         Called to trigger the importer's handling of an uploaded unit. This
         should not be called until the bits have finished uploading. The
@@ -183,24 +176,21 @@ class ContentUploadManager(object):
         destination repository. See that method's documentation for exception
         possibilities.
 
-        @param repo_id: identifies the repository into which the unit is uploaded
-        @type  repo_id: str
-
-        @param unit_type_id: type of unit being uploaded
-        @type  unit_type_id: str
-
-        @param unit_key: unique identifier for the unit (user-specified)
-        @type  unit_key: dict
-
-        @param unit_metadata: any user-specified information about the unit
-        @type  unit_metadata: dict
-
-        @param upload_id: upload being imported
-        @type  upload_id: str
+        :param repo_id:       identifies the repository into which the unit is uploaded
+        :type  repo_id:       str
+        :param unit_type_id:  type of unit being uploaded
+        :type  unit_type_id:  str
+        :param unit_key:      unique identifier for the unit (user-specified)
+        :type  unit_key:      dict
+        :param unit_metadata: any user-specified information about the unit
+        :type  unit_metadata: dict
+        :param upload_id:     upload being imported
+        :type  upload_id:     str
+        :return:              A SyncReport indicating the success or failure of the upload
+        :rtype:               pulp.plugins.model.SyncReport
         """
-
         # If it doesn't raise an exception, it's good to go
-        self.is_valid_upload(repo_id, unit_type_id)
+        ContentUploadManager.is_valid_upload(repo_id, unit_type_id)
 
         repo_query_manager = manager_factory.repo_query_manager()
         importer_manager = manager_factory.repo_importer_manager()
@@ -209,48 +199,55 @@ class ContentUploadManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         try:
-            importer_instance, plugin_config = plugin_api.get_importer_by_id(repo_importer['importer_type_id'])
+            importer_instance, plugin_config = plugin_api.get_importer_by_id(
+                repo_importer['importer_type_id'])
         except plugin_exceptions.PluginNotFound:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
         # Assemble the data needed for the import
-        conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER, manager_factory.principal_manager().get_principal()['login'])
+        conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER,
+                                manager_factory.principal_manager().get_principal()['login'])
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = repo_common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = repo_common_utils.importer_working_dir(
+            repo_importer['importer_type_id'], repo_id, mkdir=True)
 
-        file_path = self._upload_file_path(upload_id)
+        file_path = ContentUploadManager._upload_file_path(upload_id)
 
         # Invoke the importer
         try:
-            importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key, unit_metadata, file_path, conduit, call_config)
+            return importer_instance.upload_unit(transfer_repo, unit_type_id, unit_key,
+                                                 unit_metadata, file_path, conduit, call_config)
         except PulpException:
-            _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
+            msg = _('Error from the importer while importing uploaded unit to repository [%(r)s]')
+            msg = msg % {'r': repo_id}
+            logger.exception(msg)
             raise
         except Exception, e:
-            _LOG.exception('Error from the importer while importing uploaded unit to repository [%s]' % repo_id)
+            msg = _('Error from the importer while importing uploaded unit to repository [%(r)s]')
+            msg = msg % {'r': repo_id}
+            logger.exception(msg)
             raise PulpExecutionException(e), None, sys.exc_info()[2]
 
         # TODO: Add support for tracking the report as a history entry on the repo
 
-    # -- utilities ------------------------------------------------------------
-
-    def _upload_file_path(self, upload_id):
+    @staticmethod
+    def _upload_file_path(upload_id):
         """
         Returns the full path to the file backing the given upload.
 
-        @param upload_id: identifies the upload in question
-        @type  upload_id: str
-
-        @return: full path on the server's filesystem
-        @rtype:  str
+        :param upload_id: identifies the upload in question
+        :type  upload_id: str
+        :return:          full path on the server's filesystem
+        :rtype:           str
         """
-        upload_storage_dir = self._upload_storage_dir()
+        upload_storage_dir = ContentUploadManager._upload_storage_dir()
         path = os.path.join(upload_storage_dir, upload_id)
         return path
 
-    def _upload_storage_dir(self):
+    @staticmethod
+    def _upload_storage_dir():
         """
         Calculates the location of the directory into which to store uploaded
         files. This is necessary as a dynamic call so unit tests have the
@@ -258,7 +255,7 @@ class ContentUploadManager(object):
 
         This call will create the directory if it doesn't exist.
 
-        @return: full path to the upload directory
+        :return: full path to the upload directory
         """
         storage_dir = pulp_config.config.get('server', 'storage_dir')
         upload_storage_dir = os.path.join(storage_dir, 'uploads')

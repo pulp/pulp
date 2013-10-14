@@ -271,6 +271,9 @@ class ApplicabilityRegenerationManager(object):
 regenerate_applicability_for_consumers = task(
     ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task,
     ignore_result=True)
+regenerate_applicability_for_repos = task(
+    ApplicabilityRegenerationManager.regenerate_applicability_for_repos, base=Task,
+    ignore_result=True)
 
 
 class DoesNotExist(Exception):

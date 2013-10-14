@@ -53,7 +53,8 @@ class RepoDistributorManager(object):
                distributor with the given ID
         """
 
-        distributor = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        distributor = RepoDistributor.get_collection().find_one(
+            {'repo_id' : repo_id, 'id' : distributor_id})
 
         if distributor is None:
             raise MissingResource(distributor=distributor_id)
@@ -98,7 +99,8 @@ class RepoDistributorManager(object):
         projection = {'scratchpad' : 0}
         return list(RepoDistributor.get_collection().find(spec, projection))
 
-    def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
+    @staticmethod
+    def add_distributor(repo_id, distributor_type_id, repo_plugin_config,
                         auto_publish, distributor_id=None):
         """
         Adds an association from the given repository to a distributor. The
@@ -108,29 +110,25 @@ class RepoDistributorManager(object):
         the given ID, the existing one will be removed and replaced with the
         newly configured one.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @param distributor_type_id: identifies the distributor; must correspond
-                                    to a distributor loaded at server startup
-        @type  distributor_type_id: str
-
-        @param repo_plugin_config: configuration the repo will use with this distributor; may be None
-        @type  repo_plugin_config: dict
-
-        @param auto_publish: if true, this distributor will be invoked at
-                             the end of every sync
-        @type  auto_publish: bool
-
-        @param distributor_id: unique ID to refer to this distributor for this repo
-        @type  distributor_id: str
-
-        @return: ID assigned to the distributor (only valid in conjunction with the repo)
-
-        @raise MissingResource: if the given repo_id does not refer to a valid repo
-        @raise InvalidValue: if the distributor ID is provided and unacceptable
-        @raise InvalidDistributorConfiguration: if the distributor plugin does not
-               accept the given configuration
+        :param repo_id:                         identifies the repo
+        :type  repo_id:                         str
+        :param distributor_type_id:             identifies the distributor; must correspond to a
+                                                distributor loaded at server startup
+        :type  distributor_type_id:             str
+        :param repo_plugin_config:              configuration the repo will use with this
+                                                distributor; may be None
+        :type  repo_plugin_config:              dict
+        :param auto_publish:                    if true, this distributor will be invoked at the end
+                                                of every sync
+        :type  auto_publish:                    bool
+        :param distributor_id:                  unique ID to refer to this distributor for this repo
+        :type  distributor_id:                  str
+        :return:                                ID assigned to the distributor (only valid in
+                                                conjunction with the repo)
+        :raise MissingResource:                 if the given repo_id does not refer to a valid repo
+        :raise InvalidValue:                    if the distributor ID is provided and unacceptable
+        :raise InvalidDistributorConfiguration: if the distributor plugin does not accept the given
+                                                configuration
         """
 
         repo_coll = Repo.get_collection()
@@ -186,7 +184,7 @@ class RepoDistributorManager(object):
 
         # Remove the old distributor if it exists
         try:
-            self.remove_distributor(repo_id, distributor_id)
+            RepoDistributorManager.remove_distributor(repo_id, distributor_id)
         except MissingResource:
             pass # if it didn't exist, no problem
 
@@ -485,6 +483,7 @@ class RepoDistributorManager(object):
         return distributor['scheduled_publishes']
 
 
+add_distributor = task(RepoDistributorManager.add_distributor, base=Task)
 remove_distributor = task(RepoDistributorManager.remove_distributor, base=Task, ignore_result=True)
 update_distributor_config = task(RepoDistributorManager.update_distributor_config, base=Task,
                                  ignore_result=True)

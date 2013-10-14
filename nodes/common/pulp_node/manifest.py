@@ -36,9 +36,39 @@ log = getLogger(__name__)
 
 # --- constants -------------------------------------------------------------------------
 
-MANIFEST_VERSION = 1
+MANIFEST_VERSION = 2
 MANIFEST_FILE_NAME = 'manifest.json'
 UNITS_FILE_NAME = 'units.json.gz'
+
+UNITS_PATH = 'path'
+UNITS_TOTAL = 'total'
+UNITS_SIZE = 'size'
+
+
+# --- utils -----------------------------------------------------------------------------
+
+def unzip(path, destination, bfrlen=65535):
+    """
+    Unzip the file at the specified path.
+    :param path: The path to the file to be unzipped.
+    :type path: str
+    :param destination: The destination path.
+    :type destination: str
+    :param bfrlen: The buffer size in bytes.
+    :type bfrlen: int
+    :raise IOError: on any i/o error.
+    """
+    fp_in = gzip.open(path)
+    try:
+        with open(destination, 'w+') as fp_out:
+            while True:
+                bfr = fp_in.read(bfrlen)
+                if bfr:
+                    fp_out.write(bfr)
+                else:
+                    break
+    finally:
+        fp_in.close()
 
 
 # --- manifest --------------------------------------------------------------------------
@@ -67,8 +97,7 @@ class Manifest(object):
         """
         self.id = manifest_id
         self.version = MANIFEST_VERSION
-        self.total_units = 0
-        self.units_size = 0
+        self.units = {UNITS_PATH: None, UNITS_TOTAL: 0, UNITS_SIZE: 0}
         self.publishing_details = {}
         if os.path.isdir(path):
             path = pathlib.join(path, MANIFEST_FILE_NAME)
@@ -83,19 +112,22 @@ class Manifest(object):
         state = dict(
             id=self.id,
             version=self.version,
-            total_units=self.total_units,
-            units_size=self.units_size,
+            units=self.units,
             publishing_details=self.publishing_details)
         with open(self.path, 'w+') as fp:
             json.dump(state, fp, indent=2)
 
-    def read(self):
+    def read(self, migration=None):
         """
         Read the manifest file at the specified path.
         The manifest is updated using the contents of the read json document.
+        :param migration: Migration function used to migrate the document.
+        :type migration: callable
         :raise IOError: on I/O errors.
         :raise ValueError: on json decoding errors
         """
+        if migration:
+            migration(self.path)
         with open(self.path) as fp:
             d = json.load(fp)
             self.__dict__.update(d)
@@ -108,9 +140,11 @@ class Manifest(object):
         :raise IOError: on I/O errors.
         :raise ValueError: json decoding errors
         """
-        if self.total_units:
-            path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
-            return UnitIterator(path, self.total_units)
+        total = self.units[UNITS_TOTAL]
+        if total:
+            path = self.units_path()
+            path = self.unzip_units(path)
+            return UnitIterator(path, total)
         else:
             return []
 
@@ -120,8 +154,8 @@ class Manifest(object):
         :param unit_writer: A writer used to publish the units.
         :type unit_writer: UnitWriter
         """
-        self.total_units = unit_writer.total_units
-        self.units_size = unit_writer.bytes_written
+        self.units[UNITS_TOTAL] = unit_writer.total_units
+        self.units[UNITS_SIZE] = unit_writer.bytes_written
 
     def published(self, details):
         """
@@ -151,13 +185,42 @@ class Manifest(object):
         :rtype: bool
         """
         try:
-            path = pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
+            path = self.units_path()
             size = os.path.getsize(path)
-            return size == self.units_size
+            return size == self.units[UNITS_SIZE]
         except OSError, e:
             if e.errno != errno.ENOENT:
                 raise
         return False
+
+    def unzip_units(self, path):
+        """
+        Uncompress the unit file at the specified path and update
+        the path and size stored in the manifest.
+        :param path: The path to a units file.
+        :type path: str
+        :return: The path to the unzipped file.
+        :rtype:str
+        :raise IOError: on any i/o error.
+        """
+        if not path.endswith('.gz'):
+            return path
+        if not self.has_valid_units():
+            return path
+        destination = path[:-3]
+        unzip(path, destination)
+        self.units[UNITS_PATH] = destination
+        self.units[UNITS_SIZE] = os.path.getsize(destination)
+        os.unlink(path)
+        self.write()
+        return destination
+
+    def units_path(self):
+        """
+        Get the absolute path to the associated units file.
+        The path is
+        """
+        return self.units[UNITS_PATH] or pathlib.join(os.path.dirname(self.path), UNITS_FILE_NAME)
 
     def __eq__(self, other):
         if isinstance(other, Manifest):
@@ -190,9 +253,11 @@ class RemoteManifest(Manifest):
         self.downloader = downloader
         self.destination = destination
 
-    def fetch(self):
+    def fetch(self, migration=None):
         """
         Fetch the manifest file using the specified URL.
+        :param migration: Migration function used to migrate the document.
+        :type migration: callable
         :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
         :raise ValueError: on json decoding errors
@@ -204,7 +269,7 @@ class RemoteManifest(Manifest):
         if listener.failed_reports:
             report = listener.failed_reports[0]
             raise ManifestDownloadError(self.url, report.error_msg)
-        self.read()
+        self.read(migration)
 
     def fetch_units(self):
         """
@@ -314,8 +379,7 @@ class UnitIterator:
 
     @staticmethod
     def get_units(path):
-        fp = gzip.open(path)
-        try:
+        with open(path) as fp:
             while True:
                 begin = fp.tell()
                 json_unit = fp.readline()
@@ -327,8 +391,6 @@ class UnitIterator:
                     yield (unit, ref)
                 else:
                     break
-        finally:
-            fp.close()
 
     def __init__(self, path, total_units):
         """
@@ -382,10 +444,7 @@ class UnitRef(object):
         :raise IOError: on I/O errors.
         :raise ValueError: json decoding errors
         """
-        fp = gzip.open(self.path)
-        try:
+        with open(self.path) as fp:
             fp.seek(self.offset)
             json_unit = fp.read(self.length)
             return json.loads(json_unit)
-        finally:
-            fp.close()

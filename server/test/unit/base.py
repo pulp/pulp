@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -16,8 +14,8 @@ import base64
 import os
 import unittest
 
-import mock
 from paste.fixture import TestApp
+import mock
 import web
 
 from pulp.common.compat import json
@@ -28,13 +26,13 @@ from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
-from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
+from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 from pulp.server.webservices import http
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
-# test configuration -----------------------------------------------------------
 
 SerialNumber.PATH = '/tmp/sn.dat'
 
@@ -43,8 +41,10 @@ def load_test_config():
     if not os.path.exists('/tmp/pulp'):
         os.makedirs('/tmp/pulp')
 
-    override_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data', 'test-override-pulp.conf')
-    override_repo_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data', 'test-override-repoauth.conf')
+    override_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data',
+                                 'test-override-pulp.conf')
+    override_repo_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data',
+                                      'test-override-repoauth.conf')
     stop_logging()
     try:
         config.add_config_file(override_file)
@@ -169,7 +169,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         # test runs, so we can't just create the user in the class level setup.
         user_manager = manager_factory.user_manager()
         roles = []
-        roles.append(manager_factory.role_manager().super_user_role)
+        roles.append(SUPER_USER_ROLE)
         user_manager.create_user(login='ws-user', password='ws-user', roles=roles)
 
     def tearDown(self):
@@ -186,7 +186,8 @@ class PulpWebserviceTests(PulpAsyncServerTests):
         return self._do_request('delete', uri, params, additional_headers)
 
     def put(self, uri, params=None, additional_headers=None, serialize_json=True):
-        return self._do_request('put', uri, params, additional_headers, serialize_json=serialize_json)
+        return self._do_request('put', uri, params, additional_headers,
+                                serialize_json=serialize_json)
 
     def _do_request(self, request_type, uri, params, additional_headers, serialize_json=True):
         """

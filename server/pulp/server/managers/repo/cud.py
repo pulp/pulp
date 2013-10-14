@@ -51,8 +51,8 @@ class RepoManager(object):
     Performs repository related functions relating to both CRUD operations and
     actions performed on or by repositories.
     """
-
-    def create_repo(self, repo_id, display_name=None, description=None, notes=None):
+    @staticmethod
+    def create_repo(repo_id, display_name=None, description=None, notes=None):
         """
         Creates a new Pulp repository that is not associated with any importers
         or distributors (those are added later through separate calls).
@@ -95,7 +95,8 @@ class RepoManager(object):
 
         return created
 
-    def create_and_configure_repo(self, repo_id, display_name=None, description=None,
+    @staticmethod
+    def create_and_configure_repo(repo_id, display_name=None, description=None,
                                   notes=None, importer_type_id=None,
                                   importer_repo_plugin_config=None, distributor_list=()):
         """
@@ -145,17 +146,20 @@ class RepoManager(object):
 
         # Let any exceptions out of this call simply bubble up, there's nothing
         # special about this step.
-        repo = self.create_repo(repo_id, display_name=display_name, description=description, notes=notes)
+        repo = RepoManager.create_repo(repo_id, display_name=display_name, description=description,
+                                       notes=notes)
 
         # Add the importer if it's specified. If that fails, delete the repository
         # before re-raising the exception.
         if importer_type_id is not None:
             importer_manager = manager_factory.repo_importer_manager()
             try:
-                importer_manager.set_importer(repo_id, importer_type_id, importer_repo_plugin_config)
+                importer_manager.set_importer(repo_id, importer_type_id,
+                                              importer_repo_plugin_config)
             except Exception, e:
-                logger.exception('Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
-                self.delete_repo(repo_id)
+                logger.exception(
+                    'Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
+                RepoManager.delete_repo(repo_id)
                 raise e, None, sys.exc_info()[2]
 
         # Regardless of how many distributors are successfully added, or if an
@@ -164,12 +168,12 @@ class RepoManager(object):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         if distributor_list is not None and not isinstance(distributor_list, (list, tuple)):
-            self.delete_repo(repo_id)
+            RepoManager.delete_repo(repo_id)
             raise InvalidValue(['distributor_list'])
 
         for distributor in distributor_list or []:
             if not isinstance(distributor, dict):
-                self.delete_repo(repo_id)
+                RepoManager.delete_repo(repo_id)
                 raise InvalidValue(['distributor_list'])
 
             try:
@@ -179,10 +183,11 @@ class RepoManager(object):
                 auto_publish = distributor.get('auto_publish', False)
                 distributor_id = distributor.get('distributor_id')
 
-                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
+                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish,
+                                                    distributor_id)
             except Exception, e:
                 logger.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
-                self.delete_repo(repo_id)
+                RepoManager.delete_repo(repo_id)
                 raise e, None, sys.exc_info()[2]
 
         return repo
@@ -290,7 +295,8 @@ class RepoManager(object):
         if len(error_tuples) > 0:
             raise PulpExecutionException(error_tuples)
 
-    def update_repo(self, repo_id, delta):
+    @staticmethod
+    def update_repo(repo_id, delta):
         """
         Updates metadata about the given repository. Only the following
         fields may be updated through this call:
@@ -375,7 +381,8 @@ class RepoManager(object):
                 message = 'There was a problem updating repository %s' % repo_id
                 raise PulpExecutionException(message), None, sys.exc_info()[2]
 
-    def update_repo_and_plugins(self, repo_id, repo_delta, importer_config,
+    @staticmethod
+    def update_repo_and_plugins(repo_id, repo_delta, importer_config,
                                 distributor_configs):
         """
         Aggregate method that will update one or more of the following:
@@ -422,7 +429,7 @@ class RepoManager(object):
         # Repo Update
         if repo_delta is None:
             repo_delta = {}
-        repo = self.update_repo(repo_id, repo_delta)
+        repo = RepoManager.update_repo(repo_id, repo_delta)
 
         # Importer Update
         if importer_config is not None:
@@ -546,7 +553,9 @@ class RepoManager(object):
             repo_collection.update({'id': repo_id}, {'$set':{'content_unit_counts': counts}}, safe=True)
 
 
+create_and_configure_repo = task(RepoManager.create_and_configure_repo, base=Task)
 delete_repo = task(RepoManager.delete_repo, base=Task, ignore_result=True)
+update_repo_and_plugins = task(RepoManager.update_repo_and_plugins, base=Task)
 
 
 def is_repo_id_valid(repo_id):

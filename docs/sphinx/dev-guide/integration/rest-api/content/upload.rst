@@ -85,7 +85,7 @@ the repository itself and the URL reflects this accordingly.
 * :response_code:`200,if the import completed successfully`
 * :response_code:`202,if the request for the import was accepted but postponed until later`
 
-| :return:`None`
+| :return:`object with three attributes: success_flag, summary, and details. success_flag will be a boolean, and summary and details will be the values as returned by the Importer.`
 
 Delete an Upload Request
 ------------------------

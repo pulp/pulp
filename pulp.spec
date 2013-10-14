@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.17.beta%{?dist}
+Release: 0.20.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -483,6 +483,38 @@ exit 0
 %endif
 
 %changelog
+* Mon Oct 14 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.20.beta
+- Pulp rebuild
+
+* Fri Oct 11 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.19.beta
+- 1017924 - unzip the units.json instead of reading/seeking using gzip.
+  (jortel@redhat.com)
+
+* Thu Oct 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.18.beta
+- 1017815 - Added logging about publish success and failure
+  (mhrivnak@redhat.com)
+- 965283 - Document the response for a repo importer delete (bcourt@redhat.com)
+- 1014368 - added python-requests-2.0.0 package to pulp dependencies in order
+  to support proxy with https (skarmark@redhat.com)
+- 1009617 - limit options for repo sync and publish history now states the
+  default limit is 5 (einecline@gmail.com)
+- 965283 - updating the REST API docs for repo updates as they pertain to
+  importers and distributors (mhrivnak@redhat.com)
+- 1004805 - pulp-dev.py now looks at the apache version instead of the linux
+  distribution version when deciding which config file to install, since the
+  apache version is really what matters. (mhrivnak@redhat.com)
+- 1014660 - Add command line parsers for numerics & booleans that return empty
+  strings for empty values because None is interpreted by the rest api as
+  having the value not specified (bcourt@redhat.com)
+- 999129 - removing loading of tracker files at the time of initializing upload
+  manager and adding it when listing remaining uploads (skarmark@redhat.com)
+- 1010292 - serialize _last_modified only when it exists. (jortel@redhat.com)
+- 1010016 - blacklist options; require gofer 0.77 which logs messages at DEBUG.
+  (jortel@redhat.com)
+- 1011972 - fixed in nectar 1.1.2. (jortel@redhat.com)
+- 952748 - adding documentation about how to use a UnitAssociationCriteria with
+  the REST API. (mhrivnak@redhat.com)
+
 * Wed Oct 02 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.17.beta
 - 1009926 - Fix Exception thrown on applicability generation
   (bcourt@redhat.com)

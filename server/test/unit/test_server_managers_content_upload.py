@@ -1,7 +1,4 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
-#
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -22,9 +19,11 @@ from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.model import Repository
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.exceptions import MissingResource, PulpDataException, PulpExecutionException, InvalidValue
-import pulp.server.managers.factory as manager_factory
+from pulp.server.exceptions import (MissingResource, PulpDataException, PulpExecutionException,
+                                    InvalidValue)
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
+import pulp.server.managers.factory as manager_factory
+
 
 class ContentUploadManagerTests(base.PulpServerTests):
 
@@ -168,7 +167,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u', 'fake-type')
 
     def test_import_uploaded_unit(self):
-        # Setup
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
 
@@ -184,10 +182,12 @@ class ContentUploadManagerTests(base.PulpServerTests):
         fake_user = User('import-user', '')
         manager_factory.principal_manager().set_principal(principal=fake_user)
 
-        # Test
-        self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata, upload_id)
+        response = self.upload_manager.import_uploaded_unit('repo-u', 'mock-type', key, metadata,
+                                                            upload_id)
 
-        # Verify
+        # import_uploaded_unit() should have returned our importer_return_report
+        self.assertTrue(response is importer_return_report)
+
         call_args = mock_plugins.MOCK_IMPORTER.upload_unit.call_args[0]
         self.assertTrue(isinstance(call_args[0], Repository))
         self.assertEqual(call_args[1], 'mock-type')

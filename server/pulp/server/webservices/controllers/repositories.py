@@ -12,38 +12,35 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from datetime import timedelta
+from gettext import gettext as _
 import logging
 import sys
-from gettext import gettext as _
 
+from celery import task
 import web
 
-import pulp.server.exceptions as exceptions
-import pulp.server.managers.factory as manager_factory
-from pulp.server.itineraries.repository import (
-    repo_delete_itinerary,
-    distributor_delete_itinerary,
-    distributor_update_itinerary,
-)
-from pulp.common.tags import action_tag, resource_tag
 from pulp.common import constants
+from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
+from pulp.server.async.tasks import Task
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
-from pulp.server.itineraries.repo import (
-    sync_with_auto_publish_itinerary, publish_itinerary)
+from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publish_itinerary
+from pulp.server.itineraries.repository import (repo_delete_itinerary, distributor_delete_itinerary,
+                                                distributor_update_itinerary)
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
+import pulp.server.exceptions as exceptions
+import pulp.server.managers.factory as manager_factory
 
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def _merge_related_objects(name, manager, repos):
@@ -136,7 +133,7 @@ class RepoCollection(JSONController):
         'distributors'.
         """
         query_params = web.input()
-        all_repos = list(Repo.get_collection().find(projection = {'scratchpad' : 0}))
+        all_repos = list(Repo.get_collection().find(projection={'scratchpad' : 0}))
 
         if query_params.get('details', False):
             query_params['importers'] = True
@@ -177,7 +174,7 @@ class RepoCollection(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
                 action_tag('create')]
 
-        call_request = CallRequest(repo_manager.create_and_configure_repo,
+        call_request = CallRequest(repo_manager.create_and_configure_repo, # rbarlow_converted
                                    args,
                                    kwargs,
                                    weight=weight,
@@ -256,9 +253,11 @@ class RepoResource(JSONController):
             query_params['distributors'] = True
 
         if query_params.get('importers', False):
-            repo = _merge_related_objects('importers', manager_factory.repo_importer_manager(), (repo,))[0]
+            repo = _merge_related_objects(
+                'importers', manager_factory.repo_importer_manager(), (repo,))[0]
         if query_params.get('distributors', False):
-            repo = _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), (repo,))[0]
+            repo = _merge_related_objects(
+                'distributors', manager_factory.repo_distributor_manager(), (repo,))[0]
 
         return self.ok(repo)
 
@@ -268,7 +267,6 @@ class RepoResource(JSONController):
         manager_factory.repo_query_manager().get_repository(id)
         # delete
         call_requests = repo_delete_itinerary(id)
-        _LOG.info('Itinerary: %s', [r.id for r in call_requests])
         execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
@@ -282,7 +280,7 @@ class RepoResource(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
                 action_tag('update')]
 
-        call_request = CallRequest(repo_manager.update_repo_and_plugins,
+        call_request = CallRequest(repo_manager.update_repo_and_plugins, # rbarlow_converted
                                    [id, delta],
                                    {'importer_config': importer_config,
                                     'distributor_configs': distributor_configs},
@@ -294,7 +292,6 @@ class RepoResource(JSONController):
         repo.update(serialization.link.current_link_obj())
         return self.ok(repo)
 
-# -- importer controllers -----------------------------------------------------
 
 class RepoImporters(JSONController):
 
@@ -318,7 +315,7 @@ class RepoImporters(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_type is None:
-            _LOG.error('Missing importer type adding importer to repository [%s]' % repo_id)
+            logger.error('Missing importer type adding importer to repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_type'])
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
@@ -330,7 +327,7 @@ class RepoImporters(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('add_importer')]
 
-        call_request = CallRequest(importer_manager.set_importer,
+        call_request = CallRequest(importer_manager.set_importer, # rbarlow_converted
                                    [repo_id, importer_type],
                                    {'repo_plugin_config': importer_config},
                                    weight=weight,
@@ -365,12 +362,13 @@ class RepoImporter(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('delete_importer')]
-        call_request = CallRequest(importer_manager.remove_importer,
+        call_request = CallRequest(importer_manager.remove_importer, # rbarlow_converted
                                    [repo_id],
                                    tags=tags,
                                    archive=True)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)
+        call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE,
+                                      importer_id)
         result = execution.execute(call_request)
         return self.ok(result)
 
@@ -382,14 +380,14 @@ class RepoImporter(JSONController):
         importer_config = params.get('importer_config', None)
 
         if importer_config is None:
-            _LOG.error('Missing configuration updating importer for repository [%s]' % repo_id)
+            logger.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
         importer_manager = manager_factory.repo_importer_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('update_importer')]
-        call_request = CallRequest(importer_manager.update_importer_config,
+        call_request = CallRequest(importer_manager.update_importer_config, # rbarlow_converted
                                    [repo_id],
                                    {'importer_config': importer_config},
                                    tags=tags,
@@ -420,7 +418,7 @@ class SyncScheduleCollection(JSONController):
                 schedule = scheduler.get(schedule_id)
             except exceptions.MissingResource:
                 msg = _('Repository %(r)s; Importer %(i)s: scheduled sync does not exist: %(s)s')
-                _LOG.warn(msg % {'r': repo_id, 'i': importer_id, 's': schedule_id})
+                logger.warn(msg % {'r': repo_id, 'i': importer_id, 's': schedule_id})
             else:
                 obj = serialization.dispatch.scheduled_sync_obj(schedule)
                 obj.update(serialization.link.child_link_obj(schedule_id))
@@ -442,13 +440,14 @@ class SyncScheduleCollection(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('create_sync_schedule')]
-        call_request = CallRequest(schedule_manager.create_sync_schedule,
+        call_request = CallRequest(schedule_manager.create_sync_schedule, # rbarlow_converted
                                    [repo_id, importer_id, sync_options, schedule_options],
                                    weight=weight,
                                    tags=tags,
                                    archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE,
+                                      importer_id)
         schedule_id = execution.execute_sync(call_request)
 
         scheduler = dispatch_factory.scheduler()
@@ -470,14 +469,15 @@ class SyncScheduleResource(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         schedule_list = importer_manager.list_sync_schedules(repo_id)
         if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+            raise exceptions.MissingResource(repo=repo_id, importer=importer_id,
+                                             publish_schedule=schedule_id)
 
         schedule_manager = manager_factory.schedule_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('delete_sync_schedule')]
-        call_request = CallRequest(schedule_manager.delete_sync_schedule,
+        call_request = CallRequest(schedule_manager.delete_sync_schedule, # rbarlow_converted
                                    [repo_id, importer_id, schedule_id],
                                    tags=tags,
                                    archive=True)
@@ -492,7 +492,8 @@ class SyncScheduleResource(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         schedule_list = importer_manager.list_sync_schedules(repo_id)
         if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+            raise exceptions.MissingResource(repo=repo_id, importer=importer_id,
+                                             publish_schedule=schedule_id)
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
         obj = serialization.dispatch.scheduled_sync_obj(schedule)
@@ -504,7 +505,8 @@ class SyncScheduleResource(JSONController):
         importer_manager = manager_factory.repo_importer_manager()
         schedule_list = importer_manager.list_sync_schedules(repo_id)
         if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, importer=importer_id, publish_schedule=schedule_id)
+            raise exceptions.MissingResource(repo=repo_id, importer=importer_id,
+                                             publish_schedule=schedule_id)
 
         sync_updates = {}
         schedule_updates = self.params()
@@ -516,12 +518,13 @@ class SyncScheduleResource(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('update_sync_schedule')]
-        call_request = CallRequest(schedule_manager.update_sync_schedule,
-                                   [repo_id, importer_id, schedule_id, sync_updates, schedule_updates],
-                                   tags=tags,
-                                   archive=True)
+        call_request = CallRequest( # rbarlow_converted
+            schedule_manager.update_sync_schedule,
+            [repo_id, importer_id, schedule_id, sync_updates, schedule_updates], tags=tags,
+            archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE,
+                                    importer_id)
         call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
         execution.execute(call_request)
 
@@ -531,7 +534,6 @@ class SyncScheduleResource(JSONController):
         obj.update(serialization.link.current_link_obj())
         return self.ok(obj)
 
-# -- distributor controllers --------------------------------------------------
 
 class RepoDistributors(JSONController):
 
@@ -563,17 +565,20 @@ class RepoDistributors(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('add_distributor')]
         if distributor_id is not None:
-            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id))
-        call_request = CallRequest(distributor_manager.add_distributor,
+            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                                     distributor_id))
+        call_request = CallRequest(distributor_manager.add_distributor, # rbarlow_converted
                                    [repo_id, distributor_type],
-                                   {'repo_plugin_config': distributor_config, 'auto_publish': auto_publish,
+                                   {'repo_plugin_config': distributor_config,
+                                    'auto_publish': auto_publish,
                                     'distributor_id': distributor_id},
                                    weight=weight,
                                    tags=tags,
                                    kwarg_blacklist=['repo_plugin_config'])
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
         if distributor_id is not None:
-            call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
+            call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                                          distributor_id)
         return execution.execute_created(self, call_request, distributor_id)
 
 
@@ -621,7 +626,7 @@ class RepoDistributor(JSONController):
         manager.get_distributor(repo_id, distributor_id)
         config = params.get('distributor_config')
         if config is None:
-            _LOG.error(
+            logger.error(
                 'Missing configuration when updating distributor [%s] on repository [%s]',
                 distributor_id,
                 repo_id)
@@ -647,8 +652,9 @@ class PublishScheduleCollection(JSONController):
             try:
                 scheduled_call = scheduler.get(schedule_id)
             except exceptions.MissingResource:
-                msg = _('Repository %(r)s; Distributor %(d)s: scheduled publish does not exist: %(s)s')
-                _LOG.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
+                msg = _('Repository %(r)s; Distributor %(d)s: scheduled publish does not exist: '
+                        '%(s)s')
+                logger.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
             else:
                 obj = serialization.dispatch.scheduled_publish_obj(scheduled_call)
                 obj.update(serialization.link.child_link_obj(schedule_id))
@@ -666,15 +672,17 @@ class PublishScheduleCollection(JSONController):
         schedule_manager = manager_factory.schedule_manager()
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                             distributor_id),
                 action_tag('create_publish_schedule')]
-        call_request = CallRequest(schedule_manager.create_publish_schedule,
+        call_request = CallRequest(schedule_manager.create_publish_schedule, # rbarlow_converted
                                    [repo_id, distributor_id, publish_options, schedule_options],
                                    weight=weight,
                                    tags=tags,
                                    archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                                      distributor_id)
         schedule_id = execution.execute_sync(call_request)
 
         scheduler = dispatch_factory.scheduler()
@@ -696,19 +704,22 @@ class PublishScheduleResource(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
         if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id,
+                                             publish_schedule=schedule_id)
 
         schedule_manager = manager_factory.schedule_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                             distributor_id),
                 resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
                 action_tag('delete_publish_schedule')]
-        call_request = CallRequest(schedule_manager.delete_publish_schedule,
+        call_request = CallRequest(schedule_manager.delete_publish_schedule, # rbarlow_converted
                                    [repo_id, distributor_id, schedule_id],
                                    tags=tags,
                                    archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
+        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                                      distributor_id)
         call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
         result = execution.execute(call_request)
         return self.ok(result)
@@ -718,7 +729,8 @@ class PublishScheduleResource(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
         if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id,
+                                             publish_schedule=schedule_id)
 
         scheduler = dispatch_factory.scheduler()
         schedule = scheduler.get(schedule_id)
@@ -731,7 +743,8 @@ class PublishScheduleResource(JSONController):
         distributor_manager = manager_factory.repo_distributor_manager()
         schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
         if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id, publish_schedule=schedule_id)
+            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id,
+                                             publish_schedule=schedule_id)
 
         publish_update = {}
         schedule_update = self.params()
@@ -739,16 +752,18 @@ class PublishScheduleResource(JSONController):
             publish_update['override_config'] = schedule_update.pop('override_config')
 
         schedule_manager = manager_factory.schedule_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_publish_schedule')]
-        call_request = CallRequest(schedule_manager.update_publish_schedule,
-                                   [repo_id, distributor_id, schedule_id, publish_update, schedule_update],
-                                   tags=tags,
-                                   archive=True)
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
+            action_tag('update_publish_schedule')]
+        call_request = CallRequest( # rbarlow_converted
+            schedule_manager.update_publish_schedule,
+            [repo_id, distributor_id, schedule_id, publish_update, schedule_update], tags=tags,
+            archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id)
+        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                                    distributor_id)
         call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
         execution.execute(call_request)
 
@@ -757,8 +772,6 @@ class PublishScheduleResource(JSONController):
         obj = serialization.dispatch.scheduled_publish_obj(schedule)
         obj.update(serialization.link.current_link_obj())
         return self.ok(obj)
-
-# -- history controllers ------------------------------------------------------
 
 
 class RepoSyncHistory(JSONController):
@@ -769,9 +782,10 @@ class RepoSyncHistory(JSONController):
     @auth_required(READ)
     def GET(self, repo_id):
         # Params
-        filters = self.filters([constants.REPO_HISTORY_FILTER_LIMIT, constants.REPO_HISTORY_FILTER_SORT,
-                                constants.REPO_HISTORY_FILTER_START_DATE,
-                                constants.REPO_HISTORY_FILTER_END_DATE])
+        filters = self.filters(
+            [constants.REPO_HISTORY_FILTER_LIMIT, constants.REPO_HISTORY_FILTER_SORT,
+             constants.REPO_HISTORY_FILTER_START_DATE,
+             constants.REPO_HISTORY_FILTER_END_DATE])
         limit = filters.get(constants.REPO_HISTORY_FILTER_LIMIT, None)
         sort = filters.get(constants.REPO_HISTORY_FILTER_SORT, None)
         start_date = filters.get(constants.REPO_HISTORY_FILTER_START_DATE, None)
@@ -781,7 +795,7 @@ class RepoSyncHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.error('Invalid limit specified [%s]' % limit)
+                logger.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
         # Error checking is done on these options in the sync manager before the database is queried
         if sort is None:
@@ -819,7 +833,7 @@ class RepoPublishHistory(JSONController):
             try:
                 limit = int(limit[0])
             except ValueError:
-                _LOG.error('Invalid limit specified [%s]' % limit)
+                logger.error('Invalid limit specified [%s]' % limit)
                 raise exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
         if sort is None:
             sort = constants.SORT_DESCENDING
@@ -834,8 +848,6 @@ class RepoPublishHistory(JSONController):
         entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit, sort=sort,
                                                   start_date=start_date, end_date=end_date)
         return self.ok(entries)
-
-# -- action controllers -------------------------------------------------------
 
 
 class RepoSync(JSONController):
@@ -918,14 +930,14 @@ class RepoAssociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.error('Error parsing association criteria [%s]' % criteria)
+                logger.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id),
                 action_tag('associate')]
-        call_request = CallRequest(association_manager.associate_from_repo,
+        call_request = CallRequest(association_manager.associate_from_repo, # rbarlow_converted
                                    [source_repo_id, dest_repo_id],
                                    {'criteria': criteria, 'import_config_override': overrides},
                                    tags=tags,
@@ -951,15 +963,16 @@ class RepoUnassociate(JSONController):
             try:
                 criteria = UnitAssociationCriteria.from_client_input(criteria)
             except:
-                _LOG.error('Error parsing unassociation criteria [%s]' % criteria)
+                logger.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         association_manager = manager_factory.repo_unit_association_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('unassociate')]
 
-        call_request = CallRequest(association_manager.unassociate_by_criteria,
-                                   [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER, manager_factory.principal_manager().get_principal()['login']],
+        call_request = CallRequest(association_manager.unassociate_by_criteria, # rbarlow_converted
+                                   [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
+                                    manager_factory.principal_manager().get_principal()['login']],
                                    tags=tags,
                                    archive=True)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
@@ -971,7 +984,16 @@ class RepoImportUpload(JSONController):
 
     @auth_required(UPDATE)
     def POST(self, repo_id):
+        """
+        Import an uploaded unit into the given repository.
 
+        :param repo_id: The id of the repository the upload should be imported into
+        :type  repo_id: basestring
+        :return:        A json serialized dictionary with two keys. 'success_flag' indexes a boolean
+                        value that indicates whether the import was successful, and 'summary' will
+                        contain the summary as reported by the Importer.
+        :rtype:         basestring
+        """
         # Collect user input
         params = self.params()
         upload_id = params['upload_id']
@@ -984,13 +1006,14 @@ class RepoImportUpload(JSONController):
                 action_tag('import_upload')]
 
         upload_manager = manager_factory.content_upload_manager()
-        call_request = CallRequest(upload_manager.import_uploaded_unit,
+        call_request = CallRequest(upload_manager.import_uploaded_unit, # rbarlow_converted
             [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
             tags=tags, archive=True)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
 
-        execution.execute(call_request)
-        return self.ok(None)
+        report = execution.execute(call_request)
+        return self.ok(report)
+
 
 class RepoResolveDependencies(JSONController):
 
@@ -1008,7 +1031,7 @@ class RepoResolveDependencies(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.error('Error parsing association criteria [%s]' % query)
+            logger.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         try:
@@ -1021,11 +1044,12 @@ class RepoResolveDependencies(JSONController):
                 action_tag('resolve_dependencies')]
 
         dependency_manager = manager_factory.dependency_manager()
-        call_request = CallRequest(dependency_manager.resolve_dependencies_by_criteria,
+        call_request = CallRequest(dependency_manager.resolve_dependencies_by_criteria, # rbarlow_converted
                                    [repo_id, criteria, options],
                                    tags=tags, archive=True)
         call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
         return execution.execute_sync_ok(self, call_request, timeout=timedelta(seconds=timeout))
+
 
 class RepoUnitAdvancedSearch(JSONController):
 
@@ -1049,7 +1073,7 @@ class RepoUnitAdvancedSearch(JSONController):
         try:
             criteria = UnitAssociationCriteria.from_client_input(query)
         except:
-            _LOG.error('Error parsing association criteria [%s]' % query)
+            logger.error('Error parsing association criteria [%s]' % query)
             raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
         # Data lookup
@@ -1061,12 +1085,12 @@ class RepoUnitAdvancedSearch(JSONController):
             units = manager.get_units_across_types(repo_id, criteria=criteria)
 
         return self.ok(units)
-    
+
+
 class ContentApplicabilityRegeneration(JSONController):
     """
     Content applicability regeneration for updated repositories.
     """
-
     @auth_required(CREATE)
     def POST(self):
         """
@@ -1086,44 +1110,44 @@ class ContentApplicabilityRegeneration(JSONController):
 
         manager = manager_factory.applicability_regeneration_manager()
         regeneration_tag = action_tag('applicability_regeneration')
-        call_request = CallRequest(manager.regenerate_applicability_for_repos,
+        call_request = CallRequest(manager.regenerate_applicability_for_repos, # rbarlow_converted
                                    [repo_criteria],
-                                   tags = [regeneration_tag])
+                                   tags=[regeneration_tag])
         # allow only one applicability regeneration task at a time
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-                                      dispatch_constants.RESOURCE_ANY_ID)
+        call_request.updates_resource(
+            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+            dispatch_constants.RESOURCE_ANY_ID)
         return execution.execute_async(self, call_request)
 
-# -- web.py application -------------------------------------------------------
 
 # These are defined under /v2/repositories/ (see application.py to double-check)
 urls = (
-    '/', 'RepoCollection', # collection
-    '/search/$', 'RepoSearch', # resource search
+    '/', 'RepoCollection',  # collection
+    '/search/$', 'RepoSearch',  # resource search
     '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
-    '/([^/]+)/$', 'RepoResource', # resource
+    '/([^/]+)/$', 'RepoResource',  # resource
 
-    '/([^/]+)/importers/$', 'RepoImporters', # sub-collection
-    '/([^/]+)/importers/([^/]+)/$', 'RepoImporter', # exclusive sub-resource
+    '/([^/]+)/importers/$', 'RepoImporters',  # sub-collection
+    '/([^/]+)/importers/([^/]+)/$', 'RepoImporter',  # exclusive sub-resource
     '/([^/]+)/importers/([^/]+)/schedules/sync/$', 'SyncScheduleCollection',
     '/([^/]+)/importers/([^/]+)/schedules/sync/([^/]+)/$', 'SyncScheduleResource',
 
-    '/([^/]+)/distributors/$', 'RepoDistributors', # sub-collection
-    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor', # exclusive sub-resource
+    '/([^/]+)/distributors/$', 'RepoDistributors',  # sub-collection
+    '/([^/]+)/distributors/([^/]+)/$', 'RepoDistributor',  # exclusive sub-resource
     '/([^/]+)/distributors/([^/]+)/schedules/publish/$', 'PublishScheduleCollection',
     '/([^/]+)/distributors/([^/]+)/schedules/publish/([^/]+)/$', 'PublishScheduleResource',
 
-    '/([^/]+)/history/sync/$', 'RepoSyncHistory', # sub-collection
-    '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory', # sub-collection
+    '/([^/]+)/history/sync/$', 'RepoSyncHistory',  # sub-collection
+    '/([^/]+)/history/publish/([^/]+)/$', 'RepoPublishHistory',  # sub-collection
 
-    '/([^/]+)/actions/sync/$', 'RepoSync', # resource action
-    '/([^/]+)/actions/publish/$', 'RepoPublish', # resource action
-    '/([^/]+)/actions/associate/$', 'RepoAssociate', # resource action
-    '/([^/]+)/actions/unassociate/$', 'RepoUnassociate', # resource action
-    '/([^/]+)/actions/import_upload/$', 'RepoImportUpload', # resource action
-    '/([^/]+)/actions/resolve_dependencies/$', 'RepoResolveDependencies', # resource action
+    '/([^/]+)/actions/sync/$', 'RepoSync',  # resource action
+    '/([^/]+)/actions/publish/$', 'RepoPublish',  # resource action
+    '/([^/]+)/actions/associate/$', 'RepoAssociate',  # resource action
+    '/([^/]+)/actions/unassociate/$', 'RepoUnassociate',  # resource action
+    '/([^/]+)/actions/import_upload/$', 'RepoImportUpload',  # resource action
+    '/([^/]+)/actions/resolve_dependencies/$', 'RepoResolveDependencies',  # resource action
 
-    '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch', # resource search
+    '/([^/]+)/search/units/$', 'RepoUnitAdvancedSearch',  # resource search
 )
 
 application = web.application(urls, globals())

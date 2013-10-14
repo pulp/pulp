@@ -42,8 +42,7 @@ def repo_delete_itinerary(repo_id):
         action_tag('delete')
     ]
 
-    # rbarlow_TODO: Convert this call into a Celery task
-    delete_request = CallRequest(
+    delete_request = CallRequest( # rbarlow_converted
         manager.delete_repo,
         [repo_id],
         tags=tags,
@@ -91,8 +90,7 @@ def distributor_delete_itinerary(repo_id, distributor_id):
         action_tag('remove_distributor')
     ]
 
-    # rbarlow_TODO: Convert this call into a Celery Task
-    delete_request = CallRequest(
+    delete_request = CallRequest( # rbarlow_converted
         manager.remove_distributor,
         [repo_id, distributor_id],
         tags=tags,
@@ -159,8 +157,7 @@ def distributor_update_itinerary(repo_id, distributor_id, config, delta=None):
     if delta is not None:
         auto_publish = delta.get('auto_publish')
 
-    # rbarlow_TODO: Convert this into a Celery Task call
-    update_request = CallRequest(manager.update_distributor_config, [repo_id, distributor_id],
+    update_request = CallRequest(manager.update_distributor_config, [repo_id, distributor_id], # rbarlow_converted
                                  {'distributor_config': config, 'auto_publish': auto_publish}, tags=tags,
                                  archive=True, kwarg_blacklist=['distributor_config', 'auto_publish'])
 
