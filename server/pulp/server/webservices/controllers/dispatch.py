@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import httplib
-import logging
 from gettext import gettext as _
 
 import web
@@ -26,11 +25,6 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-# globals ----------------------------------------------------------------------
-
-_LOG = logging.getLogger(__name__)
-
-# exceptions -------------------------------------------------------------------
 
 class TaskNotFound(MissingResource):
 

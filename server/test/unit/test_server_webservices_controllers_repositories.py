@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -11,42 +9,35 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pprint import pformat
 import datetime
 import httplib
 import re
 import traceback
 import unittest
-from pprint import pformat
-
-import mock
-from pulp.devel import mock_plugins
-
-import base
-from pulp.devel import dummy_plugins
 
 from pulp.common import dateutils, tags, constants
+from pulp.devel import dummy_plugins, mock_plugins
 from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.model import SyncReport
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import UnitProfile, Consumer, Bind, RepoProfileApplicability
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.repository import (
-    Repo, RepoImporter, RepoDistributor, RepoPublishResult, RepoSyncResult)
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
+                                             RepoSyncResult)
+from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch.call import OBFUSCATED_VALUE
+from pulp.server.itineraries.repository import (
+    repo_delete_itinerary, distributor_delete_itinerary, distributor_update_itinerary,
+    bind_itinerary, unbind_itinerary)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 from pulp.server.webservices.controllers import repositories
-from pulp.server.itineraries.repository import (
-    repo_delete_itinerary,
-    distributor_delete_itinerary,
-    distributor_update_itinerary,
-    bind_itinerary,
-    unbind_itinerary,
-)
+import base
+import mock
 
 
 class RepoControllersTests(base.PulpWebserviceTests):
@@ -58,6 +49,33 @@ class RepoControllersTests(base.PulpWebserviceTests):
     def clean(self):
         super(RepoControllersTests, self).clean()
         Repo.get_collection().remove(safe=True)
+
+
+class RepoImportUploadTests(RepoControllersTests):
+    """
+    Test the RepoImportUpload class.
+    """
+    URL = '/v2/repositories/%s/actions/import_upload/'
+
+    @mock.patch('pulp.server.managers.content.upload.ContentUploadManager.import_uploaded_unit')
+    def test_POST_returns_report(self, import_uploaded_unit):
+        """
+        Assert that the POST() method returns the appropriate report dictionary, based on the return
+        value of the import_uploaded_unit() method.
+        """
+        success_flag = True
+        summary = 'A summary'
+        details = 'Some details'
+        upload_report = {'success_flag': success_flag, 'summary': summary, 'details': details}
+        import_uploaded_unit.return_value = upload_report
+        params = {'upload_id': 'upload_id', 'unit_type_id': 'unit_type_id', 'unit_key': 'unit_key'}
+
+        response = self.post(self.URL % 'repo_id', params)
+
+        self.assertEqual(response[0], 200)
+        self.assertEqual(response[1],
+                         {'success_flag': success_flag, 'summary': summary, 'details': details})
+
 
 class RepoSearchTests(RepoControllersTests):
 
@@ -351,6 +369,7 @@ class RepoCollectionTests(RepoControllersTests):
 
         # Verify
         self.assertEqual(409, status)
+
 
 class RepoResourceTests(RepoControllersTests):
 

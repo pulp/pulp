@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -33,7 +31,6 @@ from pulp.server.webservices import http
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 
-# test configuration -----------------------------------------------------------
 
 SerialNumber.PATH = '/tmp/sn.dat'
 
