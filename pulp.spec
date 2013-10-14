@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.19.beta%{?dist}
+Release: 0.20.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -483,6 +483,9 @@ exit 0
 %endif
 
 %changelog
+* Mon Oct 14 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.20.beta
+- Pulp rebuild
+
 * Fri Oct 11 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.19.beta
 - 1017924 - unzip the units.json instead of reading/seeking using gzip.
   (jortel@redhat.com)
