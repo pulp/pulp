@@ -11,16 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# Python
-import logging
-
-# 3rd Party
 import web
 
-# Pulp
 from pulp.common.tags import action_tag, resource_tag
 import pulp.server.managers.factory as managers
-from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE, EXECUTE, operation_to_name, _get_operations
+from pulp.server.auth.authorization import (READ, CREATE, UPDATE, DELETE, EXECUTE,
+                                            operation_to_name, _get_operations)
 from pulp.server.webservices import execution
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
@@ -29,12 +25,6 @@ from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
 import pulp.server.exceptions as exceptions
 
-
-# -- constants ----------------------------------------------------------------
-
-_LOG = logging.getLogger(__name__)
-
-# -- controllers --------------------------------------------------------------
 
 class PermissionCollection(JSONController):
 
@@ -45,7 +35,7 @@ class PermissionCollection(JSONController):
     def GET(self):
         query_params = web.input()
         resource = query_params.get('resource', None)
-        
+
         permissions = []
         if resource is None:
             permissions =  managers.permission_query_manager().find_all()
@@ -53,12 +43,12 @@ class PermissionCollection(JSONController):
             permission = managers.permission_query_manager().find_by_resource(resource)
             if permission is not None:
                 permissions = [permission]
-            
+
         for permission in permissions:
             users = permission['users']
             for user, ops in users.items():
                 users[user] = [operation_to_name(o) for o in ops]
-        
+
         return self.ok(permissions)
 
 
@@ -75,27 +65,27 @@ class GrantToUser(JSONController):
         login = params.get('login', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
-        
+
         _check_invalid_params({'login':login,
                                'resource':resource,
                                'operation_names':operation_names})
-            
+
         operations = _get_operations(operation_names)
-        
+
         # Grant permission synchronously
         permission_manager = managers.permission_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource),
                 resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('grant_permission_to_user')]
 
-        call_request = CallRequest(permission_manager.grant,
+        call_request = CallRequest(permission_manager.grant, # rbarlow_converted
                                    [resource, login, operations],
                                    tags=tags)
         call_request.reads_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         call_request.updates_resource(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource)
-        
+
         return self.ok(execution.execute_sync(call_request))
-        
+
 
 class RevokeFromUser(JSONController):
 
@@ -110,27 +100,28 @@ class RevokeFromUser(JSONController):
         login = params.get('login', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
-        
+
         _check_invalid_params({'login':login,
                                'resource':resource,
                                'operation_names':operation_names})
-        
+
         operations = _get_operations(operation_names)
-        
+
         # Grant permission synchronously
         permission_manager = managers.permission_manager()
-        
+
         tags = [resource_tag(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource),
                 resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
                 action_tag('revoke_permission_from_user')]
 
-        call_request = CallRequest(permission_manager.revoke,
+        call_request = CallRequest(permission_manager.revoke, # rbarlow_converted
                                    [resource, login, operations],
                                    tags=tags)
         call_request.reads_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         call_request.updates_resource(dispatch_constants.RESOURCE_PERMISSION_TYPE, resource)
-        
+
         return self.ok(execution.execute_sync(call_request))
+
 
 class GrantToRole(JSONController):
 
@@ -145,25 +136,26 @@ class GrantToRole(JSONController):
         role_id = params.get('role_id', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
-        
+
         _check_invalid_params({'role_id':role_id,
                                'resource':resource,
                                'operation_names':operation_names})
 
         operations = _get_operations(operation_names)
-        
+
         # Grant permission synchronously
         role_manager = managers.role_manager()
-        
+
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('grant_permission_to_role')]
 
-        call_request = CallRequest(role_manager.add_permissions_to_role,
+        call_request = CallRequest(role_manager.add_permissions_to_role, # rbarlow_converted
                                    [role_id, resource, operations],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
 
         return self.ok(execution.execute_sync(call_request))
+
 
 class RevokeFromRole(JSONController):
 
@@ -178,20 +170,20 @@ class RevokeFromRole(JSONController):
         role_id = params.get('role_id', None)
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
-        
+
         _check_invalid_params({'role_id':role_id,
                                'resource':resource,
                                'operation_names':operation_names})
 
         operations = _get_operations(operation_names)
-        
+
         # Grant permission synchronously
         role_manager = managers.role_manager()
-        
+
         tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
                 action_tag('remove_permission_from_role')]
 
-        call_request = CallRequest(role_manager.remove_permissions_from_role,
+        call_request = CallRequest(role_manager.remove_permissions_from_role, # rbarlow_converted
                                    [role_id, resource, operations],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)

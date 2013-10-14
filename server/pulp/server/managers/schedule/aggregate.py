@@ -28,5 +28,4 @@ class AggregateScheduleManager(ConsumerContentInstallScheduleManager,
     Aggregate schedule management class for the creation, update, and deletion
     of system-defined scheduled actions.
     """
-    # NOTE: based on the mixin pattern
     pass

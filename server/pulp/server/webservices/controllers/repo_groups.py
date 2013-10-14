@@ -29,7 +29,6 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 
-# repo group collection --------------------------------------------------------
 
 class RepoGroupCollection(JSONController):
 
@@ -64,7 +63,7 @@ class RepoGroupCollection(JSONController):
         weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)]
 
-        call_request = CallRequest(manager.create_and_configure_repo_group, args, kwargs, weight=weight,
+        call_request = CallRequest(manager.create_and_configure_repo_group, args, kwargs, weight=weight, # rbarlow_converted
                                    tags=tags)
         call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)
         group = execution.execute_sync(call_request)
@@ -92,7 +91,6 @@ class RepoGroupSearch(SearchController):
             item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
-# repo group resource ----------------------------------------------------------
 
 class RepoGroupResource(JSONController):
 
@@ -109,7 +107,7 @@ class RepoGroupResource(JSONController):
     def DELETE(self, repo_group_id):
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)]
-        call_request = CallRequest(manager.delete_repo_group,
+        call_request = CallRequest(manager.delete_repo_group, # rbarlow_converted
                                    [repo_group_id],
                                    tags=tags)
         call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
@@ -121,7 +119,7 @@ class RepoGroupResource(JSONController):
         update_data = self.params()
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)]
-        call_request = CallRequest(manager.update_repo_group,
+        call_request = CallRequest(manager.update_repo_group, # rbarlow_converted
                                    args=[repo_group_id],
                                    kwargs=update_data,
                                    tags=tags)
@@ -130,7 +128,6 @@ class RepoGroupResource(JSONController):
         group.update(serialization.link.current_link_obj())
         return self.ok(group)
 
-# repo group membership -------------------------------------------------------
 
 class RepoGroupAssociateAction(JSONController):
 
@@ -140,7 +137,7 @@ class RepoGroupAssociateAction(JSONController):
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 action_tag('repo_group_associate')]
-        call_request = CallRequest(manager.associate,
+        call_request = CallRequest(manager.associate, # rbarlow_converted
                                    [repo_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
@@ -158,7 +155,7 @@ class RepoGroupUnassociateAction(JSONController):
         manager = managers_factory.repo_group_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 action_tag('repo_group_unassociate')]
-        call_request = CallRequest(manager.unassociate,
+        call_request = CallRequest(manager.unassociate, # rbarlow_converted
                                    [repo_group_id, criteria],
                                    tags=tags)
         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
@@ -202,7 +199,7 @@ class RepoGroupDistributors(JSONController):
         if distributor_id is not None:
             tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id))
 
-        call_request = CallRequest(distributor_manager.add_distributor,
+        call_request = CallRequest(distributor_manager.add_distributor, # rbarlow_converted
                                    [repo_group_id, distributor_type_id, distributor_config, distributor_id],
                                    weight=weight,
                                    tags=tags)
@@ -242,7 +239,7 @@ class RepoGroupDistributor(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
                 action_tag('remove_distributor')
                ]
-        call_request = CallRequest(distributor_manager.remove_distributor,
+        call_request = CallRequest(distributor_manager.remove_distributor, # rbarlow_converted
                                    args=[repo_group_id, distributor_id],
                                    kwargs={'force' : force},
                                    tags=tags,
@@ -269,7 +266,7 @@ class RepoGroupDistributor(JSONController):
                 action_tag('update_distributor')
         ]
 
-        call_request = CallRequest(distributor_manager.update_distributor_config,
+        call_request = CallRequest(distributor_manager.update_distributor_config, # rbarlow_converted
                                    args=[repo_group_id, distributor_id, distributor_config],
                                    tags=tags,
                                    archive=True)
@@ -283,7 +280,6 @@ class RepoGroupDistributor(JSONController):
 
         return self.ok(result)
 
-# publish ---------------------------------------------------------------------
 
 class PublishAction(JSONController):
 
@@ -307,7 +303,7 @@ class PublishAction(JSONController):
         ]
         weight = pulp_config.config.getint('tasks', 'publish_weight')
 
-        call_request = CallRequest(publish_manager.publish,
+        call_request = CallRequest(publish_manager.publish, # rbarlow_converted
                                    args=[repo_group_id, distributor_id],
                                    kwargs={'publish_config_override' : overrides},
                                    tags=tags,

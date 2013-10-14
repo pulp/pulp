@@ -11,18 +11,16 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
 import random
 import string
 
 import base
 from pulp.server.auth import authorization
-from pulp.server.managers import factory as manager_factory
 from pulp.server.db.model.auth import Role
 from pulp.server.exceptions import PulpDataException
+from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.auth.role import cud
 
-
-# -- test cases ---------------------------------------------------------------
 
 class RoleManagerTests(base.PulpServerTests):
     def setUp(self):
@@ -48,7 +46,6 @@ class RoleManagerTests(base.PulpServerTests):
         Role.get_collection().remove()
 
     # test data generation
-
     def _create_user(self):
         username = ''.join(random.sample(self.alpha_num, random.randint(6, 10)))
         password = ''.join(random.sample(self.alpha_num, random.randint(6, 10)))
@@ -64,7 +61,6 @@ class RoleManagerTests(base.PulpServerTests):
                                  for i in range(random.randint(2, 4)))
 
     # test role management
-
     def test_create_role(self):
         n = 'create_role'
         r1 = self.role_manager.create_role(n)
@@ -83,7 +79,8 @@ class RoleManagerTests(base.PulpServerTests):
         u = self._create_user()
         r = self._create_role()
         self.role_manager.add_user_to_role(r['id'], u['login'])
-        user_names = [u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
+        user_names = [
+            u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
         self.assertTrue(u['login'] in user_names)
 
     def test_remove_user(self):
@@ -91,13 +88,13 @@ class RoleManagerTests(base.PulpServerTests):
         r = self._create_role()
         self.role_manager.add_user_to_role(r['id'], u['login'])
         self.role_manager.remove_user_from_role(r['id'], u['login'])
-        user_names = [u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
+        user_names = [
+            u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
         self.assertFalse(u['login'] in user_names)
 
     # test built in roles
-
     def test_super_users(self):
-        role = self.role_query_manager.find_by_id(self.role_manager.super_user_role)
+        role = self.role_query_manager.find_by_id(cud.SUPER_USER_ROLE)
         self.assertFalse(role is None)
 
     def test_super_users_grant(self):
@@ -105,19 +102,19 @@ class RoleManagerTests(base.PulpServerTests):
         o = authorization.READ
         self.assertRaises(PulpDataException,
                           self.role_manager.add_permissions_to_role,
-                          self.role_manager.super_user_role, s, [o])
+                          cud.SUPER_USER_ROLE, s, [o])
 
     def test_super_users_revoke(self):
         s = self._create_resource()
         o = authorization.READ
         self.assertRaises(PulpDataException,
                           self.role_manager.remove_permissions_from_role,
-                          self.role_manager.super_user_role, s, [o])
+                          cud.SUPER_USER_ROLE, s, [o])
 
     def test_super_user_permissions(self):
         u = self._create_user()
         s = self._create_resource()
-        r = self.role_manager.super_user_role
+        r = cud.SUPER_USER_ROLE
         self.role_manager.add_user_to_role(r, u['login'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], authorization.CREATE))
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], authorization.READ))

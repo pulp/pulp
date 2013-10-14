@@ -16,9 +16,11 @@ Contains the manager class and exceptions for operations surrounding the creatio
 update, and deletion on a Pulp Role.
 """
 
-import logging
 from gettext import gettext as _
 
+from celery import task
+
+from pulp.server.async.tasks import Task
 from pulp.server.auth.authorization import _get_operations
 from pulp.server.db.model.auth import Permission, User
 from pulp.server.exceptions import (
@@ -27,12 +29,6 @@ from pulp.server.exceptions import (
 from pulp.server.managers import factory
 from pulp.server.managers.auth.user import system
 
-
-# -- constants ----------------------------------------------------------------
-
-_LOG = logging.getLogger(__name__)
-
-# -- classes ------------------------------------------------------------------
 
 class PermissionManager(object):
     """
@@ -43,8 +39,8 @@ class PermissionManager(object):
         self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE = range(5)
         self.operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
 
-
-    def create_permission(self, resource_uri):
+    @staticmethod
+    def create_permission(resource_uri):
         """
         Creates a new Pulp permission.
 
@@ -98,7 +94,8 @@ class PermissionManager(object):
 
         Permission.get_collection().save(found, safe=True)
 
-    def delete_permission(self, resource_uri):
+    @staticmethod
+    def delete_permission(resource_uri):
         """
         Deletes the given permission.
         @param resource_uri: identifies the resource URI of the permission being deleted
@@ -119,7 +116,8 @@ class PermissionManager(object):
 
         Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
 
-    def grant(self, resource, login, operations):
+    @staticmethod
+    def grant(resource, login, operations):
         """
         Grant permission on a resource for a user and a set of operations.
 
@@ -147,7 +145,7 @@ class PermissionManager(object):
         # Get or create permission if it doesn't already exist
         permission = Permission.get_collection().find_one({'resource' : resource})
         if permission is None:
-            permission = self.create_permission(resource)
+            permission = PermissionManager.create_permission(resource)
 
         current_ops = permission['users'].setdefault(user['login'], [])
         for o in operations:
@@ -157,18 +155,17 @@ class PermissionManager(object):
 
         Permission.get_collection().save(permission, safe=True)
 
-    def revoke(self, resource, login, operations):
+    @staticmethod
+    def revoke(resource, login, operations):
         """
         Revoke permission on a resource for a user and a set of operations.
 
-        @type resource: str
-        @param resource: uri path representing a pulp resource
-
-        @type user: str
-        @param user: login of user to revoke permissions from
-
-        @type operations: list or tuple of integers
-        @param operations:list of allowed operations being revoked
+        :param resource:   uri path representing a pulp resource
+        :type  resource:   str
+        :param user:       login of user to revoke permissions from
+        :type  user:       str
+        :param operations: list of allowed operations being revoked
+        :type  operations: list or tuple of integers
         """
         # we don't revoke permissions from the system
         if login == system.SYSTEM_LOGIN:
@@ -197,7 +194,7 @@ class PermissionManager(object):
 
         # delete the permission if there are no more users
         if not permission['users']:
-            self.delete_permission(resource)
+            PermissionManager.delete_permission(resource)
             return
 
         Permission.get_collection().save(permission, safe=True)
@@ -274,3 +271,6 @@ class PermissionManager(object):
                 # Delete entire permission if there are no more users
                 Permission.get_collection().remove({'resource':permission['resource']}, safe=True)
 
+
+grant = task(PermissionManager.grant, base=Task, ignore_result=True)
+revoke = task(PermissionManager.revoke, base=Task, ignore_result=True)

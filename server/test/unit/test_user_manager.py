@@ -14,15 +14,14 @@
 import mock
 
 import base
-from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 from pulp.server.auth.ldap_connection import LDAPConnection
 from pulp.server.db.model.auth import User, Role
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.managers import factory as manager_factory
+from pulp.server.managers.auth.cert.cert_generator import SerialNumber
+from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 import pulp.server.exceptions as exceptions
 
-
-# -- test cases ---------------------------------------------------------------
 
 class UserManagerTests(base.PulpServerTests):
     def setUp(self):
@@ -55,7 +54,8 @@ class UserManagerTests(base.PulpServerTests):
 
         # Setup
         admin_user = self.user_manager.create_user('test-admin')
-        manager_factory.principal_manager().set_principal(admin_user) # pretend the user is logged in
+        # pretend the user is logged in
+        manager_factory.principal_manager().set_principal(admin_user)
 
         # Test
         cert = self.user_manager.generate_user_certificate()
@@ -98,8 +98,6 @@ class UserManagerTests(base.PulpServerTests):
             self.fail('User with an existing login did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(login in e)
-            print(e) # for coverage
-
 
     def test_user_list(self):
         # Setup
@@ -126,15 +124,15 @@ class UserManagerTests(base.PulpServerTests):
         # Verify
         user = self.user_query_manager.find_by_login(login)
         self.assertTrue(user is None)
-        
+
     def test_delete_last_superuser(self):
         # Setup
         login = 'admin'
         password = 'admin'
 
         # test
-        self.role_manager.create_role(role_id=self.role_manager.super_user_role)
-        self.user_manager.create_user(login, password, roles = [self.role_manager.super_user_role])
+        self.role_manager.create_role(role_id=SUPER_USER_ROLE)
+        self.user_manager.create_user(login, password, roles=[SUPER_USER_ROLE])
         try:
             self.user_manager.delete_user(login)
             self.fail('Last superuser delete did not raise an exception')

@@ -13,36 +13,36 @@
 
 import copy
 
-from pulp.common.tags import resource_tag
+from celery import task
 
-from pulp.server import config as pulp_config
-from pulp.server import exceptions as pulp_exceptions
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
+from pulp.common.tags import resource_tag
+from pulp.server import config as pulp_config, exceptions as pulp_exceptions
+from pulp.server.async.tasks import Task
+from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest
-from pulp.server.itineraries.repo import (
-    sync_with_auto_publish_itinerary, publish_itinerary)
+from pulp.server.itineraries.repo import (sync_with_auto_publish_itinerary, publish_itinerary)
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils as schedule_utils
 
 
+_PUBLISH_OPTION_KEYS = ('override_config',)
 _SYNC_OPTION_KEYS = ('override_config',)
 
 
 class RepoSyncScheduleManager(object):
-
-    def create_sync_schedule(self, repo_id, importer_id, sync_options, schedule_data):
+    @staticmethod
+    def create_sync_schedule(repo_id, importer_id, sync_options, schedule_data):
         """
         Create a new sync schedule for a given repository using the given importer.
-        @param repo_id:
-        @param importer_id:
-        @param sync_options:
-        @param schedule_data:
-        @return:
-        """
 
+        :param repo_id:
+        :param importer_id:
+        :param sync_options:
+        :param schedule_data:
+        :return:
+        """
         # validate the input
-        self._validate_importer(repo_id, importer_id)
+        RepoSyncScheduleManager._validate_importer(repo_id, importer_id)
         schedule_utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
         if 'schedule' not in schedule_data:
             raise pulp_exceptions.MissingValue(['schedule'])
@@ -59,19 +59,20 @@ class RepoSyncScheduleManager(object):
         importer_manager.add_sync_schedule(repo_id, schedule_id)
         return schedule_id
 
-    def update_sync_schedule(self, repo_id, importer_id, schedule_id, sync_options, schedule_data):
+    @staticmethod
+    def update_sync_schedule(repo_id, importer_id, schedule_id, sync_options, schedule_data):
         """
         Update an existing sync schedule.
-        @param repo_id:
-        @param importer_id:
-        @param schedule_id:
-        @param sync_options:
-        @param schedule_data:
-        @return:
-        """
 
+        :param repo_id:
+        :param importer_id:
+        :param schedule_id:
+        :param sync_options:
+        :param schedule_data:
+        :return:
+        """
         # validate the input
-        self._validate_importer(repo_id, importer_id)
+        RepoSyncScheduleManager._validate_importer(repo_id, importer_id)
         schedule_updates = copy.copy(schedule_data)
 
         # prepare the call request if there are changes to the sync itself
@@ -86,17 +87,18 @@ class RepoSyncScheduleManager(object):
         # update the scheduled sync
         scheduler.update(schedule_id, **schedule_updates)
 
-    def delete_sync_schedule(self, repo_id, importer_id, schedule_id):
+    @staticmethod
+    def delete_sync_schedule(repo_id, importer_id, schedule_id):
         """
         Delete a scheduled sync from a given repository and importer.
-        @param repo_id:
-        @param importer_id:
-        @param schedule_id:
-        @return:
-        """
 
+        :param repo_id:
+        :param importer_id:
+        :param schedule_id:
+        :return:
+        """
         # validate the input
-        self._validate_importer(repo_id, importer_id)
+        RepoSyncScheduleManager._validate_importer(repo_id, importer_id)
 
         # remove from the scheduler
         scheduler = dispatch_factory.scheduler()
@@ -106,32 +108,36 @@ class RepoSyncScheduleManager(object):
         importer_manager = managers_factory.repo_importer_manager()
         importer_manager.remove_sync_schedule(repo_id, schedule_id)
 
-    def _validate_importer(self, repo_id, importer_id):
+    @staticmethod
+    def _validate_importer(repo_id, importer_id):
         # make sure the passed in importer id matches the current importer on the repo
         importer_manager = managers_factory.repo_importer_manager()
         importer = importer_manager.get_importer(repo_id)
         if importer_id != importer['id']:
             raise pulp_exceptions.MissingResource(importer=importer_id)
 
-# publish schedule manager -----------------------------------------------------
 
-_PUBLISH_OPTION_KEYS = ('override_config',)
+create_sync_schedule = task(RepoSyncScheduleManager.create_sync_schedule, base=Task)
+delete_sync_schedule = task(RepoSyncScheduleManager.delete_sync_schedule, base=Task,
+                            ignore_result=True)
+update_sync_schedule = task(RepoSyncScheduleManager.update_sync_schedule, base=Task,
+                            ignore_result=True)
 
 
 class RepoPublishScheduleManager(object):
-
-    def create_publish_schedule(self, repo_id, distributor_id, publish_options, schedule_data):
+    @staticmethod
+    def create_publish_schedule(repo_id, distributor_id, publish_options, schedule_data):
         """
         Create a new scheduled publish for the given repository and distributor.
-        @param repo_id:
-        @param distributor_id:
-        @param publish_options:
-        @param schedule_data:
-        @return:
-        """
 
+        :param repo_id:
+        :param distributor_id:
+        :param publish_options:
+        :param schedule_data:
+        :return:
+        """
         # validate the input
-        self._validate_distributor(repo_id, distributor_id)
+        RepoPublishScheduleManager._validate_distributor(repo_id, distributor_id)
         schedule_utils.validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
         if 'schedule' not in schedule_data:
             raise pulp_exceptions.MissingValue(['schedule'])
@@ -148,19 +154,21 @@ class RepoPublishScheduleManager(object):
         distributor_manager.add_publish_schedule(repo_id, distributor_id, schedule_id)
         return schedule_id
 
-    def update_publish_schedule(self, repo_id, distributor_id, schedule_id, publish_options, schedule_data):
+    @staticmethod
+    def update_publish_schedule(repo_id, distributor_id, schedule_id, publish_options,
+                                schedule_data):
         """
         Update an existing scheduled publish for the given repository and distributor.
-        @param repo_id:
-        @param distributor_id:
-        @param schedule_id:
-        @param publish_options:
-        @param schedule_data:
-        @return:
-        """
 
+        :param repo_id:
+        :param distributor_id:
+        :param schedule_id:
+        :param publish_options:
+        :param schedule_data:
+        :return:
+        """
         # validate the input
-        self._validate_distributor(repo_id, distributor_id)
+        RepoPublishScheduleManager._validate_distributor(repo_id, distributor_id)
         schedule_updates = copy.copy(schedule_data)
 
         # prepare the call request if there are changes to the publish itself
@@ -175,17 +183,18 @@ class RepoPublishScheduleManager(object):
         # update the scheduled publish
         scheduler.update(schedule_id, **schedule_updates)
 
-    def delete_publish_schedule(self, repo_id, distributor_id, schedule_id):
+    @staticmethod
+    def delete_publish_schedule(repo_id, distributor_id, schedule_id):
         """
         Delete an existing scheduled publish from the given repository and distributor.
-        @param repo_id:
-        @param distributor_id:
-        @param schedule_id:
-        @return:
-        """
 
+        :param repo_id:
+        :param distributor_id:
+        :param schedule_id:
+        :return:
+        """
         # validate the input
-        self._validate_distributor(repo_id, distributor_id)
+        RepoPublishScheduleManager._validate_distributor(repo_id, distributor_id)
 
         # remove from the scheduler
         scheduler = dispatch_factory.scheduler()
@@ -195,8 +204,14 @@ class RepoPublishScheduleManager(object):
         dispatch_manager = managers_factory.repo_distributor_manager()
         dispatch_manager.remove_publish_schedule(repo_id, distributor_id, schedule_id)
 
-    def _validate_distributor(self, repo_id, distributor_id):
+    @staticmethod
+    def _validate_distributor(repo_id, distributor_id):
         distributor_manager = managers_factory.repo_distributor_manager()
         distributor_manager.get_distributor(repo_id, distributor_id)
 
 
+create_publish_schedule = task(RepoPublishScheduleManager.create_publish_schedule, base=Task)
+delete_publish_schedule = task(RepoPublishScheduleManager.delete_publish_schedule, base=Task,
+                               ignore_result=True)
+update_publish_schedule = task(RepoPublishScheduleManager.update_publish_schedule, base=Task,
+                               ignore_result=True)
