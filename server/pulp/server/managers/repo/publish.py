@@ -160,13 +160,13 @@ class RepoPublishManager(object):
             summary = publish_report.summary
             details = publish_report.details
             if publish_report.success_flag:
-                _LOG.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
+                logger.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
                            repo_id, distributor_id))
                 result_code = RepoPublishResult.RESULT_SUCCESS
             else:
-                _LOG.info('publish failed for repo [%s] with distributor ID [%s]' % (
+                logger.info('publish failed for repo [%s] with distributor ID [%s]' % (
                            repo_id, distributor_id))
-                _LOG.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
+                logger.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
                            repo_id, distributor_id, summary))
                 result_code = RepoPublishResult.RESULT_FAILED
         else:
