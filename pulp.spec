@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.20.beta%{?dist}
+Release: 0.21.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,14 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 15 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.21.beta
+- 1011716 - updated spec file to add selinux-policy-targeted dependency for f19
+  and removing wrong version dependency on policycoreutils-python
+  (skarmark@redhat.com)
+- 973678 - Add support for reporting unit upload statuses to the API and CLI.
+  (rbarlow@lemonade.usersys.redhat.com)
+- 975503 - Add status command to iso publish (bcourt@redhat.com)
+
 * Mon Oct 14 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.20.beta
 - Pulp rebuild
 
