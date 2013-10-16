@@ -64,29 +64,12 @@ def validate_config(config):
 
 def validate_feed_requirement(config):
     """
-    Ensures the feed URL is a string if specified. Also ensures the feed is present if any of the
-    other feed sync related configuration options are specified (for instance, proxy information).
+    Ensures the feed URL is a string if specified.
 
     This validation does not check the integrity of the feed URL.
     """
     feed_url = config.get(importer_constants.KEY_FEED)
-    # feed_urls are not required if all of the other feed related settings are None
-    dependencies = [
-        importer_constants.KEY_MAX_SPEED, importer_constants.KEY_MAX_DOWNLOADS,
-        importer_constants.KEY_PROXY_PASS, importer_constants.KEY_PROXY_PORT,
-        importer_constants.KEY_PROXY_HOST, importer_constants.KEY_PROXY_USER,
-        importer_constants.KEY_UNITS_RETAIN_OLD_COUNT, importer_constants.KEY_SSL_CA_CERT,
-        importer_constants.KEY_SSL_CLIENT_CERT,
-        importer_constants.KEY_SSL_CLIENT_KEY, importer_constants.KEY_VALIDATE]
-    if not feed_url and all([config.get(setting) is None for setting in dependencies]):
-        return True, None
-    elif not feed_url:
-        msg = _('The configuration parameter <%(name)s> is required when any of the following other '
-                'parameters are defined: ' + ', '.join(dependencies))
-        msg = msg % {'name': importer_constants.KEY_FEED}
-        raise ValueError(msg)
-
-    if not isinstance(feed_url, basestring):
+    if feed_url and not isinstance(feed_url, basestring):
         msg = _('<%(feed_url)s> must be a string.')
         msg = msg % {'feed_url': importer_constants.KEY_FEED}
         raise ValueError(msg)
