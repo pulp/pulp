@@ -53,7 +53,8 @@ def initialize(name=None, seeds=None, max_pool_size=None):
 
         _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
 
-        _CONNECTION = pymongo.Connection(seeds, max_pool_size=max_pool_size)
+        _CONNECTION = pymongo.MongoClient(seeds, max_pool_size=max_pool_size)
+
         # Decorate the methods that actually send messages to the db over the
         # network. These are the methods that call start_request, and the
         # decorator causes them call an corresponding end_request
@@ -61,12 +62,24 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         _CONNECTION._send_message_with_response = _end_request_decorator(_CONNECTION._send_message_with_response)
 
         _DATABASE = getattr(_CONNECTION, name)
+
+        # If username & password have been specified in the database config,
+        # attempt to authenticate to the database
+        if config.config.has_option('database', 'username') and \
+                config.config.has_option('database', 'password'):
+            username = config.config.get('database', 'username')
+            password = config.config.get('database', 'password')
+            _DATABASE.authenticate(username, password)
+
         _DATABASE.add_son_manipulator(NamespaceInjector())
+
+        # Query the collection names to ensure tha we are authenticated properly
+        _DATABASE.collection_names()
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
-    except:
-        _LOG.critical('Database initialization failed')
+    except Exception, e:
+        _LOG.critical('Database initialization failed: %s' % str(e))
         _CONNECTION = None
         _DATABASE = None
         raise
