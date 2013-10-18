@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.22.beta%{?dist}
+Release: 0.23.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,10 @@ exit 0
 %endif
 
 %changelog
+* Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
+- 1019455 - Loosened validation checks on the presence of the feed for certain
+  configuration parameters (jason.dobies@redhat.com)
+
 * Wed Oct 16 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.22.beta
 - Pulp rebuild
 
