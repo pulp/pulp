@@ -13,7 +13,7 @@
 
 import pulp.common.tags as tag_util
 from pulp.bindings.base import PulpAPI
-from pulp.bindings.responses import Task
+from pulp.bindings.responses import Task, CeleryTask
 
 
 class TasksAPI(PulpAPI):
@@ -72,7 +72,7 @@ class TasksAPI(PulpAPI):
 
         tasks = []
         for doc in response.response_body:
-            tasks.append(Task(doc))
+            tasks.append(CeleryTask(doc))
 
         response.response_body = tasks
         return response

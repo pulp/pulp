@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from pulp.common import dateutils
 from pulp.common.tags import resource_tag
@@ -116,4 +116,18 @@ class ArchivedCall(Model):
         self.call_request_string = str(call_request)
         self.serialized_call_report = call_report.serialize()
 
+class CeleryTaskResult(Model):
+    
+    collection_name = 'celery_task_result'
+    unique_indices = ()
+    search_indices = ()
+    
+    def __init__(self, task_id, status, date_done, traceback, result, children):
+        super(CeleryTaskResult, self).__init__()
+        self._id = task_id
+        self.status = status
+        self.date_done = date_done
+        self.traceback = traceback
+        self.result = result
+        self.children = children
 

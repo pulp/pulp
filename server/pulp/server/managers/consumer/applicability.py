@@ -27,6 +27,7 @@ from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
+from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
 from pulp.server.async.tasks import Task
@@ -44,6 +45,7 @@ class ApplicabilityRegenerationManager(object):
         :param consumer_criteria: The consumer selection criteria
         :type consumer_criteria: pulp.server.db.model.criteria.Criteria
         """
+        raise MissingResource(consumer_id=id)
         consumer_criteria = Criteria.from_dict(consumer_criteria)
         consumer_query_manager = managers.consumer_query_manager()
         bind_manager = managers.consumer_bind_manager()
@@ -270,7 +272,7 @@ class ApplicabilityRegenerationManager(object):
 
 regenerate_applicability_for_consumers = task(
     ApplicabilityRegenerationManager.regenerate_applicability_for_consumers, base=Task,
-    ignore_result=True)
+    ignore_result=False)
 regenerate_applicability_for_repos = task(
     ApplicabilityRegenerationManager.regenerate_applicability_for_repos, base=Task,
     ignore_result=True)

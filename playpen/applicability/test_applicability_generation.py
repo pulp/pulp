@@ -80,8 +80,8 @@ def main():
     title(p, 'Demo with consumer_criteria')
     content_applicability1()
 
-    title(p, 'Demo with repo_criteria')
-    content_applicability2()
+#    title(p, 'Demo with repo_criteria')
+#    content_applicability2()
 
 
 if __name__ == '__main__':

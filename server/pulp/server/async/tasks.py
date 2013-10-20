@@ -10,14 +10,21 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import itertools
+import logging
+import pickle
+
 from celery import Task as CeleryTask
 from celery.app import control
+from celery.result import AsyncResult
 
+from pulp.server.db.model.dispatch import CeleryTaskResult
 from pulp.server.async.celery_instance import celery
 
-
 controller = control.Control(app=celery)
+inspector= control.Inspect(app=celery)
 
+logger = logging.getLogger(__name__)
 
 class Task(CeleryTask):
     """
@@ -36,7 +43,8 @@ class Task(CeleryTask):
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
-        return self.apply_async(*args, **kwargs)
+        async_result = self.apply_async(*args, **kwargs)
+        return async_result
 
 
 def cancel(task_id):
@@ -47,3 +55,42 @@ def cancel(task_id):
     :type  task_id: basestring
     """
     controller.revoke(task_id, terminate=True)
+
+def get_task_details(task_id):
+    task_result_collection = CeleryTaskResult.get_collection()
+    task_result = task_result_collection.find_one({'_id': task_id})
+    serialize_task_result(task_result)
+    logger.info("$$$$$$ %s" % task_result)
+    logger.info("$$$ %s: %s:  %s" % (task_result['result'],
+                                     task_result['traceback'],
+                                     task_result['children']))   
+    return task_result
+
+def serialize_task_result(task_result):
+    task_result['traceback'] = pickle.loads(str(task_result['traceback']))
+    task_result['result'] = pickle.loads(str(task_result['result']))
+    task_result['children'] = pickle.loads(str(task_result['children']))
+
+def get_active():
+    return get_all_task_values(inspector.active())
+
+def get_reserved():
+    return get_all_task_values(inspector.reserved())
+
+def get_revoked():
+    return get_all_task_values(inspector.revoked())
+
+def get_scheduled():
+    return get_all_task_values(inspector.scheduled())
+
+def get_all_task_values(worker_tasks_dict):
+    current_tasks = []
+    for current_task in worker_tasks_dict.values():
+        current_tasks.extend(current_task)
+    return current_tasks
+
+def get_current_tasks():
+    return itertools.chain(get_active(),
+                           get_reserved(),
+                           get_revoked(),
+                           get_scheduled())
