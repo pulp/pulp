@@ -233,7 +233,6 @@ class ListRepositoriesCommand(PulpCliCommand):
 
         else:
             self.display_repositories(**kwargs)
-
             if kwargs.get('all', False):
                 self.display_other_repositories(**kwargs)
 
@@ -286,7 +285,6 @@ class ListRepositoriesCommand(PulpCliCommand):
         """
         repo_list = self.get_repositories({}, **kwargs)
         _default_summary_view(repo_list, self.prompt)
-
 
     def display_other_repository_summaries(self, **kwargs):
         """
@@ -386,11 +384,10 @@ def _default_summary_view(repo_list, prompt):
 
     terminal_width = prompt.terminal_size()[0]
 
-    id_width_cmp = lambda x, y : max(x, len(y))
-    max_id_width = reduce(id_width_cmp, [r['id'] for r in repo_list], 0)
+    max_id_width = max(len(r['id']) for r in repo_list)
     max_name_width = terminal_width - max_id_width - 1 # -1 for space between columns
 
-    line_template = '%s %s'
+    line_template = '%s  %s'
 
     for repo in repo_list:
         id_value = repo['id'] + ' ' * (max_id_width - len(repo['id']))
