@@ -74,7 +74,7 @@ DESC_FAILURE_THRESHOLD = _('number of failures before the schedule is automatica
                            'be automatically disabled')
 OPT_FAILURE_THRESHOLD = PulpCliOption('--failure-threshold', DESC_FAILURE_THRESHOLD,
                                       aliases=['-f'], required=False,
-                                      parse_func=parsers.parse_optional_positive_int)
+                                      parse_func=parsers.pulp_parse_optional_positive_int)
 
 DESC_ENABLED = _('if "false", the schedule will exist but will not trigger any '
                  'executions; defaults to true')

@@ -18,8 +18,8 @@ from gettext import gettext as _
 
 from pulp.client.commands.options import DESC_ID
 from pulp.client.extensions.extensions import PulpCliOption
-from pulp.client.validators import id_validator
-from pulp.client.parsers import parse_optional_positive_int
+from pulp.client.validators import id_validator_allow_dots
+from pulp.client.parsers import pulp_parse_optional_positive_int
 
 
 # --- descriptions -----------------------------------------------------------
@@ -30,10 +30,12 @@ MAX_CONCURRENCY_DESC = _('maximum number of downloads permitted to run concurren
 
 # --- options ----------------------------------------------------------------
 
-NODE_ID_OPTION = PulpCliOption('--node-id', DESC_ID, required=True, validate_func=id_validator)
+NODE_ID_OPTION = PulpCliOption(
+    '--node-id', DESC_ID, required=True, validate_func=id_validator_allow_dots)
 
-MAX_BANDWIDTH_OPTION = \
-    PulpCliOption('--max-speed', MAX_BANDWIDTH_DESC, required=False, parse_func=parse_optional_positive_int)
+MAX_BANDWIDTH_OPTION = PulpCliOption(
+    '--max-speed', MAX_BANDWIDTH_DESC, required=False, parse_func=pulp_parse_optional_positive_int)
 
-MAX_CONCURRENCY_OPTION = \
-    PulpCliOption('--max-downloads', MAX_CONCURRENCY_DESC, required=False, parse_func=parse_optional_positive_int)
+MAX_CONCURRENCY_OPTION = PulpCliOption(
+    '--max-downloads', MAX_CONCURRENCY_DESC, required=False,
+    parse_func=pulp_parse_optional_positive_int)

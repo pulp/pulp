@@ -33,3 +33,7 @@ class TestSerialization(TestCase):
         mock.assert_called_once_with(unit)
         self.assertTrue(LAST_UPDATED in serialized)
         self.assertEqual(serialized[LAST_UPDATED], '2012-10-24T10:20:00Z')
+
+    def test_serialization_no_last_modified(self):
+        serialized = content.content_unit_obj({})
+        self.assertFalse(LAST_UPDATED in serialized)

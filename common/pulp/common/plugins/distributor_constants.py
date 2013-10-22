@@ -15,3 +15,5 @@
 DISTRIBUTOR_TYPE_ID_KEY = 'distributor_type_id'
 DISTRIBUTOR_CONFIG_KEY = 'distributor_config'
 DISTRIBUTOR_ID_KEY = 'distributor_id'
+
+MANIFEST_FILENAME = 'PULP_MANIFEST'

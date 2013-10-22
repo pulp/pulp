@@ -26,8 +26,8 @@ from pulp.server.webservices import execution, serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-# content types controller classes ---------------------------------------------
 from pulp.server.webservices.controllers.search import SearchController
+
 
 class ContentTypesCollection(JSONController):
 
@@ -64,7 +64,6 @@ class ContentTypeResource(JSONController):
         resource.update(links)
         return self.ok(resource)
 
-# content units controller classes ---------------------------------------------
 
 class ContentUnitsCollection(JSONController):
 

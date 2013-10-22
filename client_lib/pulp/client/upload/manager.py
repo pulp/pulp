@@ -118,12 +118,6 @@ class UploadManager(object):
         if not os.path.exists(self.upload_working_dir):
             os.makedirs(self.upload_working_dir)
 
-        # Load all tracker files from the working directory
-        for filename in os.listdir(self.upload_working_dir):
-            full_filename = os.path.join(self.upload_working_dir, filename)
-            tracker_file = UploadTracker.load(full_filename)
-            self.tracker_files[tracker_file.upload_id] = tracker_file
-
         self.is_initialized = True
 
     def initialize_upload(self, filename, repo_id, unit_type_id, unit_key, unit_metadata):
@@ -301,6 +295,18 @@ class UploadManager(object):
         """
         self._verify_initialized()
 
+        # Load all tracker files from the working directory
+        for filename in os.listdir(self.upload_working_dir):
+            full_filename = os.path.join(self.upload_working_dir, filename)
+            # If the upload requests are getting processed at this time,
+            # resulting in the tracker files getting deleted, we want to
+            # ignore the IOError and try to load as many tracker files as we can.
+            try:
+                tracker_file = UploadTracker.load(full_filename)
+                self.tracker_files[tracker_file.upload_id] = tracker_file
+            except IOError:
+                pass
+
         cached_trackers = self._all_tracker_files()
         copies = [copy.copy(t) for t in cached_trackers] # copy for safety
         return copies
@@ -346,7 +352,7 @@ class UploadManager(object):
             raise ConcurrentUploadException()
 
         # Try to delete the server side upload first. If that fails, the force
-        # option can be used to delete the client side trackre anyway.
+        # option can be used to delete the client side tracker anyway.
         try:
             response = self.bindings.uploads.delete_upload(upload_id)
         except Exception, e:
