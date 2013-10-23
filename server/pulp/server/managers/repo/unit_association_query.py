@@ -427,6 +427,19 @@ class RepoUnitAssociationQueryManager(object):
 class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     def get_units(self, repo_id, criteria=None, as_generator=False):
+        """
+        Get the units associated with the repository based on the provided unit
+        association criteria.
+
+        :param repo_id: identifies the repository
+        :type  repo_id: str
+
+        :param criteria: if specified will drive the query
+        :type  criteria: UnitAssociationCriteria
+
+        :param as_generator: if true, return a generator; if false, a list
+        :type  as_generator: bool
+        """
 
         criteria = criteria or UnitAssociationCriteria()
 
@@ -438,6 +451,7 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
         unit_associations_by_id = OrderedDict((u['unit_id'], u) for u in unit_associations_generator)
 
         unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
+        unit_type_ids = sorted(unit_type_ids)
 
         units_generator = itertools.chain(self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.keys())
                                           for unit_type_id in unit_type_ids)
@@ -454,8 +468,74 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
         return list(units_generator)
 
+    def get_units_across_types(self, repo_id, criteria=None, as_generator=False):
+        """
+        Retrieves data describing units associated with the given repository
+        along with information on the association itself.
+
+        As this call may span multiple unit types, sort fields are
+        restricted to those related to the association itself:
+        - Type ID
+        - First Associated
+        - Last Updated
+        - Owner Type
+        - Owner ID
+
+        Multiple sort fields from the above list are supported. If no sort is
+        provided, units will be sorted by unit_type_id and created (in order).
+
+        :param repo_id: identifies the repository
+        :type  repo_id: str
+
+        :param criteria: if specified will drive the query
+        :type  criteria: UnitAssociationCriteria
+
+        :param as_generator: if true, return a generator; if false, a list
+        :type  as_generator: bool
+        """
+
+        return self.get_units(repo_id, criteria, as_generator)
+
+    def get_units_by_type(self, repo_id, type_id, criteria=None, as_generator=False):
+        """
+        Retrieves data describing units of the given type associated with the
+        given repository. Information on the associations themselves is also
+        provided.
+
+        The sort fields may be from either the association data OR the
+        unit fields. A mix of both is not supported. Multiple sort fields
+        are supported as long as they come from the same area.
+
+        If a sort is not provided, the units will be sorted ascending by each
+        value in the unit key for the given type.
+
+        :param repo_id: identifies the repository
+        :type  repo_id: str
+
+        :param type_id: limits returned units to the given type
+        :type  type_id: str
+
+        :param criteria: if specified will drive the query
+        :type  criteria: UnitAssociationCriteria
+
+        :param as_generator: if true, return a generator; if false, a list
+        :type  as_generator: bool
+        """
+
+        criteria = criteria or UnitAssociationCriteria()
+        criteria.type_ids = [type_id]
+
+        return self.get_units(repo_id, criteria, as_generator)
+
     @staticmethod
     def _unit_type_ids_for_repo(repo_id):
+        """
+        Retrieve a list of all unit type ids currently associated with the
+        repository
+
+        :type repo_id: str
+        :rtype: list
+        """
 
         collection = RepoContentUnit.get_collection()
 
@@ -466,6 +546,14 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     @staticmethod
     def _unit_associations_cursor(repo_id, criteria):
+        """
+        Retrieve a pymongo cursor for unit associations for the given repository
+        that match the given criteria.
+
+        :type repo_id: str
+        :type criteria: UnitAssociationCriteria
+        :rtype: pymongo.cursor.Cursor
+        """
 
         spec = criteria.association_filters.copy()
         spec['repo_id'] = repo_id
@@ -490,6 +578,12 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     @staticmethod
     def _unit_associations_no_duplicates(iterator):
+        """
+        Remove duplicate unit associations from a iterator of unit associations.
+
+        :type iterator: iterable
+        :rtype: generator
+        """
 
         # this algorithm returns the earliest association in the case of duplicates
         # this algorithm assumes the iterator is already sorted by "created"
@@ -509,6 +603,15 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     @staticmethod
     def _associated_units_by_type_cursor(unit_type_id, criteria, associated_unit_ids):
+        """
+        Retrieve a pymongo cursor for units associated with a repository of a
+        give unit type that meet to the provided criteria.
+
+        :type unit_type_id: str
+        :type criteria: UnitAssociationCriteria
+        :type associated_unit_ids: list
+        :rtype: pymongo.cursor.Cursor
+        """
 
         collection = types_db.type_units_collection(unit_type_id)
 
@@ -524,6 +627,17 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     @staticmethod
     def _with_skip_and_limit(iterator, skip, limit):
+        """
+        Skip the first *n* elements in an iterator and limit the return to *m*
+        elements.
+
+        The skip and limit arguments must either be None or a non-negative integer.
+
+        :type iterator: iterable
+        :type skip: int or None
+        :type limit: int or None
+        :rtype: generator
+        """
         assert (isinstance(skip, int) and skip >= 0) or skip is None
         assert (isinstance(limit, int) and limit >= 0) or limit is None
 
@@ -545,6 +659,14 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     @staticmethod
     def _association_ordered_units(associated_unit_ids, associated_units):
+        """
+        Return associated units in the order specified by the associated unit id
+        list.
+
+        :type associated_unit_ids: list
+        :type associated_units: iterator
+        :rtype: generator
+        """
 
         # this algorithm assumes that associated_unit_ids has already been sorted
 
@@ -557,6 +679,14 @@ class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
 
     @staticmethod
     def _merged_units(unit_associations_by_id, associated_units):
+        """
+        Return associated units as the unit association information and the unit
+        information as metadata on the unit association information.
+
+        :type unit_associations_by_id: dict
+        :type associated_units: iterator
+        :rtype: generator
+        """
 
         for unit in associated_units:
             association = unit_associations_by_id[unit['_id']]
