@@ -142,7 +142,7 @@ class SingleRepoUnitsMixin(object):
         self.repo_id = repo_id
         self.exception_class = exception_class
 
-    def get_units(self, criteria=None):
+    def get_units(self, criteria=None, as_generator=False):
         """
         Returns the collection of content units associated with the repository
         being operated on.
@@ -157,7 +157,7 @@ class SingleRepoUnitsMixin(object):
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
-        return do_get_repo_units(self.repo_id, criteria, self.exception_class)
+        return do_get_repo_units(self.repo_id, criteria, self.exception_class, as_generator)
 
 
 class MultipleRepoUnitsMixin(object):
@@ -165,7 +165,7 @@ class MultipleRepoUnitsMixin(object):
     def __init__(self, exception_class):
         self.exception_class = exception_class
 
-    def get_units(self, repo_id, criteria=None):
+    def get_units(self, repo_id, criteria=None, as_generator=False):
         """
         Returns the collection of content units associated with the given
         repository.
@@ -180,7 +180,7 @@ class MultipleRepoUnitsMixin(object):
         @return: list of unit instances
         @rtype:  list of L{AssociatedUnit}
         """
-        return do_get_repo_units(repo_id, criteria, self.exception_class)
+        return do_get_repo_units(repo_id, criteria, self.exception_class, as_generator)
 
 
 class SearchUnitsMixin(object):
@@ -606,31 +606,28 @@ class PublishReportMixin(object):
 
 # -- utilities ----------------------------------------------------------------
 
-def do_get_repo_units(repo_id, criteria, exception_class):
+def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
     """
     Performs a repo unit association query. This is split apart so we can have
     custom mixins with different signatures.
     """
     try:
         association_query_manager = manager_factory.repo_unit_association_query_manager()
-        units = association_query_manager.get_units(repo_id, criteria=criteria)
+        units = association_query_manager.get_units(repo_id, criteria=criteria, as_generator=as_generator)
 
-        all_units = []
+        # Load all type definitions so we don't hammer the database
+        type_defs = dict((t['id'], t) for t in types_db.all_type_definitions())
 
-        # Load all type definitions in use so we don't hammer the database
-        unique_type_defs = set([u['unit_type_id'] for u in units])
-        type_defs = {}
-        for def_id in unique_type_defs:
-            type_def = types_db.type_definition(def_id)
-            type_defs[def_id] = type_def
+        # Transfer object generator
+        def _transfer_object_generator():
+            for u in units:
+                yield common_utils.to_plugin_associated_unit(u, type_defs[u['unit_type_id']])
 
-        # Convert to transfer object
-        for unit in units:
-            type_id = unit['unit_type_id']
-            u = common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
-            all_units.append(u)
+        if as_generator:
+            return _transfer_object_generator()
 
-        return all_units
+        # Maintain legacy behavior by default
+        return list(_transfer_object_generator())
 
     except Exception, e:
         _LOG.exception('Exception from server requesting all content units for repository [%s]' % repo_id)
