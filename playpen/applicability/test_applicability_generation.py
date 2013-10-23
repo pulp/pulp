@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright © 2012 Red Hat, Inc.
@@ -15,7 +16,6 @@ from pulp.common import pic
 from okaara.prompt import Prompt, COLOR_LIGHT_PURPLE, COLOR_LIGHT_BLUE
 from pprint import pprint
 
-# -- ui -----------------------------------------------------------------------
 
 def pause(p):
     p.prompt('Press enter to continue...', allow_empty=True)
@@ -26,11 +26,10 @@ def divider(p):
 def title(p, text):
     p.write(text, color=COLOR_LIGHT_PURPLE)
 
-# -- functional ---------------------------------------------------------------
 
 def content_applicability1():
     consumer_criteria = { "sort": [["id", "ascending"]],
-                 "filters": {"id": {"$in": ["grapefruit", "sunflower", "voyager"]}}}
+                 "filters": {"id": {"$in": ["lemonade", "sunflower", "voyager"]}}}
 
     options = {"consumer_criteria":consumer_criteria,
               }
@@ -45,6 +44,7 @@ def content_applicability1():
     p.write('\nresult -', color=COLOR_LIGHT_BLUE)
     pprint(result)
     p.write('')
+
 
 def content_applicability2():
     repo_criteria = { "sort": [["id", "ascending"]],
@@ -64,8 +64,6 @@ def content_applicability2():
     pprint(result)
     p.write('')
 
-
-# -- script -------------------------------------------------------------------
 
 def main():
     p = Prompt()
