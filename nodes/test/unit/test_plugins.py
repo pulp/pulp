@@ -245,7 +245,8 @@ class PluginTestBase(WebTest):
                 unit['_storage_path'] = storage_path
                 if n == 0:  # 1st one is a directory of files
                     os.makedirs(storage_path)
-                    tb = tarfile.open('data/distribution.tar')
+                    dist_path = os.path.join(os.path.dirname(__file__), 'data/distribution.tar')
+                    tb = tarfile.open(dist_path)
                     tb.extractall(path=storage_path)
                     tb.close()
                 else:
