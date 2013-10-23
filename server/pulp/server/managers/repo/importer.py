@@ -343,7 +343,8 @@ class RepoImporterManager(object):
         repo_importer['scratchpad'] = contents
         importer_coll.save(repo_importer, safe=True)
 
-    def add_sync_schedule(self, repo_id, schedule_id):
+    @staticmethod
+    def add_sync_schedule(repo_id, schedule_id):
         """
         Adds a sync schedule for a repo to the importer.
         @param repo_id:
@@ -360,7 +361,8 @@ class RepoImporterManager(object):
                           {'$push': {'scheduled_syncs': schedule_id}},
                           safe=True)
 
-    def remove_sync_schedule(self, repo_id, schedule_id):
+    @staticmethod
+    def remove_sync_schedule(repo_id, schedule_id):
         """
         Removes a sync schedule for a repo from the importer.
         @param repo_id:
@@ -377,7 +379,8 @@ class RepoImporterManager(object):
                           {'$pull': {'scheduled_syncs': schedule_id}},
                           safe=True)
 
-    def list_sync_schedules(self, repo_id):
+    @staticmethod
+    def list_sync_schedules(repo_id):
         """
         List the sync schedules currently defined for the repo.
         @param repo_id:

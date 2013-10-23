@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from datetime import datetime
+import pickle
 
 from pulp.common import dateutils
 
@@ -28,6 +29,7 @@ def task_group_href(call_report):
     return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.call_request_group_id}
 
 
+#TODO: DELETE ME!
 def scheduled_call_obj(scheduled_call):
     obj = {
         '_id': str(scheduled_call['_id']),
@@ -41,7 +43,7 @@ def scheduled_call_obj(scheduled_call):
         'last_run': None,
         'next_run': None,
     }
-    for run_time_field in ('first_run', 'last_run', 'next_run'):
+    for run_time_field in ('first_run', 'last_run_at', 'next_run'):
         run_time = scheduled_call[run_time_field]
         if isinstance(run_time, datetime):
             utc_run_time = run_time.replace(tzinfo=dateutils.utc_tz())
@@ -50,8 +52,10 @@ def scheduled_call_obj(scheduled_call):
 
 
 def scheduled_sync_obj(scheduled_call):
-    obj = scheduled_call_obj(scheduled_call)
-    obj['override_config'] = scheduled_call['call_request'].kwargs['overrides']
+    obj = scheduled_call.as_dict()
+    obj['override_config'] = pickle.loads(scheduled_call['kwargs'])['overrides']
+    del obj['args']
+    del obj['kwargs']
     return obj
 
 

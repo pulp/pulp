@@ -15,16 +15,13 @@ import functools
 import pickle
 import bson
 
-import celery
 from celery.schedules import schedule
 import time
 
 from pulp.common import dateutils
-from pulp.server.async.tasks import Task
 from pulp.server.compat import json, json_util
 from pulp.server.db import connection
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.itineraries import repo
 from pulp.server.itineraries.repo import dummy_itinerary
 
 

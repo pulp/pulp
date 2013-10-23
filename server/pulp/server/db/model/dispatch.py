@@ -18,15 +18,16 @@ import pickle
 import time
 
 from bson import ObjectId
-from celery import current_app, beat, schedules
 from celery.beat import ScheduleEntry
+from celery import beat
+from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
 
 from pulp.common import dateutils
 from pulp.common.tags import resource_tag
 from pulp.server.db.model.base import Model
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.webservices.serialization.db import scrub_mongo_fields
+from pulp.server.managers import factory
 
 
 logger = logging.getLogger(__name__)
@@ -118,21 +119,32 @@ class ScheduledCall(Model):
     """
     Serialized scheduled call request
     """
+    USER_UPDATE_FIELDS = set(['iso_schedule', 'args', 'kwargs', 'enabled',
+                          'failure_threshold'])
 
     collection_name = 'scheduled_calls'
     unique_indices = ()
     search_indices = ('tags', 'last_run', 'last_updated')
 
-    def __init__(self, iso_schedule, task, total_run_count, next_run,
-                 schedule, args, kwargs, principal, last_updated,
+
+    def __init__(self, iso_schedule, task, total_run_count=0, next_run=None,
+                 schedule=None, args=None, kwargs=None, principal=None, last_updated=None,
                  consecutive_failures=0, enabled=True, failure_threshold=None,
                  last_run_at=None, first_run=None, remaining_runs=None, id=None,
-                 tag=None, name=None):
+                 tag=None, name=None, options=None):
         """
         :type  schedule_entry:  celery.beat.ScheduleEntry
 
         """
-        super(ScheduledCall, self).__init__()
+
+        if id is None:
+            # this creates self._id and self.id
+            #super(ScheduledCall, self).__init__()
+            self._id = ObjectId()
+            id = str(self._id) # legacy behavior, would love to rid ourselves of this
+            self._new = True
+        else:
+            self._new = False
 
         self.consecutive_failures = consecutive_failures
         self.enabled = enabled
@@ -140,12 +152,19 @@ class ScheduledCall(Model):
         self.id = id
         self.iso_schedule = iso_schedule
         self.last_run_at = last_run_at
-        self.last_updated = last_updated
+        self.last_updated = last_updated or time.time()
         self.name = id
-        self.next_run = next_run
-        self.options = {}
+        self.options = options or {}
         self.task = task
         self.total_run_count = total_run_count
+
+        if schedule is None:
+            interval, start_time, occurrences = dateutils.parse_iso8601_interval(iso_schedule)
+            schedule = pickle.dumps(CelerySchedule(interval))
+
+        args = args or []
+        kwargs = kwargs or {}
+        principal = principal or factory.principal_manager().get_principal()
 
         for key in ('schedule', 'args', 'kwargs', 'principal'):
             value = locals()[key]
@@ -157,8 +176,8 @@ class ScheduledCall(Model):
         if first_run is None:
             self.first_run = dateutils.format_iso8601_datetime(
                 dateutils.parse_iso8601_interval(iso_schedule)[1])
-        elif isinstance(first_run, basestring):
-            self.first_run = dateutils.parse_iso8601_datetime(first_run)
+        elif isinstance(first_run, datetime):
+            self.first_run = dateutils.format_iso8601_datetime(first_run)
         else:
             self.first_run = first_run
         if remaining_runs is None:
@@ -168,13 +187,16 @@ class ScheduledCall(Model):
 
         self.tag = tag or resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
 
+        self.next_run = self.calculate_next_run()
+
     @classmethod
     def from_db(cls, call):
         """
         :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
-        call = scrub_mongo_fields(call)
-        call.pop('_id', None)
+        _id = call.pop('_id', None)
+        if _id:
+            call['id'] = str(_id)
         call.pop('_ns', None)
         return cls(**call)
 
@@ -183,7 +205,10 @@ class ScheduledCall(Model):
         :return:    a ScheduleEntry instance based on this object
         :rtype:     celery.beat.ScheduleEntry
         """
-        last_run = dateutils.parse_iso8601_datetime(self.last_run_at)
+        if not self.last_run_at:
+            last_run = None
+        else:
+            last_run = dateutils.parse_iso8601_datetime(self.last_run_at)
         return ScheduleEntry(self.name, self.task, last_run, self.total_run_count,
                              pickle.loads(self.schedule), pickle.loads(self.args),
                              pickle.loads(self.kwargs), self.options,
@@ -203,11 +228,8 @@ class ScheduledCall(Model):
                          'schedule', 'args', 'kwargs', 'app')
         return dict((k, getattr(entry, k)) for k in schedule_keys)
 
-    def save(self):
-        """
-        Saves the current instance to the database
-        """
-        to_save = {
+    def as_dict(self):
+        return {
             'args': self.args,
             'consecutive_failures': self.consecutive_failures,
             'enabled': self.enabled,
@@ -218,7 +240,7 @@ class ScheduledCall(Model):
             'iso_schedule': self.iso_schedule,
             'last_run_at': self.last_run_at,
             'last_updated': self.last_updated,
-            'next_run': self.next_run,
+            'next_run': self.calculate_next_run(),
             'principal': self.principal,
             'remaining_runs': self.remaining_runs,
             'schedule': self.schedule,
@@ -226,7 +248,46 @@ class ScheduledCall(Model):
             'total_run_count': self.total_run_count,
         }
 
-        self.get_collection().update({'_id': ObjectId(self.id)}, to_save)
+    def for_display(self):
+        ret = self.as_dict()
+        del ret['principal']
+        del ret['schedule']
+        return ret
+
+    def save(self):
+        """
+        Saves the current instance to the database
+        """
+        if self._new:
+            as_dict = self.as_dict()
+            as_dict['_id'] = self._id
+            self.get_collection().insert(as_dict, safe=True)
+            self._new = False
+        else:
+            self.get_collection().update({'_id': ObjectId(self.id)}, self.as_dict())
+
+    def _calculate_times(self):
+        now_s = time.time()
+        first_run_dt = dateutils.parse_iso8601_datetime(self.first_run)
+        first_run_s = calendar.timegm(first_run_dt.utctimetuple())
+        since_first_s = now_s - first_run_s
+        run_every_s = timedelta_seconds(self.as_schedule_entry().schedule.run_every)
+        # don't want this to be negative
+        expected_runs = max(int(since_first_s/run_every_s), 0)
+        last_scheduled_run_s = first_run_s + expected_runs * run_every_s
+
+        return now_s, first_run_s, since_first_s, run_every_s, expected_runs, last_scheduled_run_s
+
+    def calculate_next_run(self):
+        now_s, first_run_s, since_first_s, run_every_s, expected_runs, \
+                last_scheduled_run_s = self._calculate_times()
+
+        if first_run_s > now_s:
+            next_run_s = first_run_s
+        else:
+            next_run_s = last_scheduled_run_s + run_every_s
+
+        return dateutils.format_iso8601_utc_timestamp(next_run_s)
 
 
 class ScheduleEntry(beat.ScheduleEntry):
@@ -239,31 +300,17 @@ class ScheduleEntry(beat.ScheduleEntry):
         super(ScheduleEntry, self).__init__(*args, **kwargs)
 
     def _next_instance(self, last_run_at=None):
-        now_s, first_run_s, since_first_s, run_every_s, expected_runs,\
-                last_scheduled_run_s = self._calculate_times()
-
         self._scheduled_call.last_run_at = dateutils.format_iso8601_utc_timestamp(time.time())
-        self._scheduled_call.next_run = dateutils.format_iso8601_utc_timestamp(last_scheduled_run_s + run_every_s)
         self._scheduled_call.total_run_count += 1
         self._scheduled_call.save()
         return self._scheduled_call.as_schedule_entry()
 
     __next__ = next = _next_instance
 
-    def _calculate_times(self):
-        now_s = time.time()
-        first_run_s = calendar.timegm(self._scheduled_call.first_run.utctimetuple())
-        since_first_s = now_s - first_run_s
-        run_every_s = timedelta_seconds(self.schedule.run_every)
-        expected_runs = int(since_first_s/run_every_s)
-        last_scheduled_run_s = first_run_s + expected_runs * run_every_s
-
-        return now_s, first_run_s, since_first_s, run_every_s, expected_runs, last_scheduled_run_s
-
 
     def is_due(self):
         now_s, first_run_s, since_first_s, run_every_s, expected_runs, \
-                last_scheduled_run_s = self._calculate_times()
+                last_scheduled_run_s = self._scheduled_call._calculate_times()
 
         # seconds remaining until the next time this should run, not counting
         # whether it gets run now or not

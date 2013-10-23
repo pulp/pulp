@@ -115,8 +115,6 @@ class ListScheduleCommand(PulpCliCommand):
 
         for s in schedules:
             # Need to convert _id into id in each document
-            s['id'] = s.pop('_id')
-
             if s['remaining_runs'] is None:
                 s['remaining_runs'] = _('N/A')
 
@@ -232,7 +230,7 @@ class NextRunCommand(PulpCliCommand):
     def run(self, **kwargs):
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
 
-        if len(schedules) is 0:
+        if len(schedules) == 0:
             self.context.prompt.render_paragraph(_('There are no schedules defined for this operation.'))
             return
 
@@ -244,7 +242,7 @@ class NextRunCommand(PulpCliCommand):
         else:
             msg_data = {
                 'next_run' : next_schedule['next_run'],
-                'schedule' : next_schedule['schedule'],
+                'schedule' : next_schedule['iso_schedule'],
             }
             template = _('The next scheduled run is at %(next_run)s driven by the '
                          'schedule %(schedule)s')

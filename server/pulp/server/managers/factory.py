@@ -64,6 +64,7 @@ TYPE_REPO_DISTRIBUTOR           = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH               = 'repo-publish-manager'
 TYPE_REPO_QUERY                 = 'repo-query-manager'
 TYPE_REPO_SYNC                  = 'repo-sync-manager'
+TYPE_REPO_SYNC_SCHEDULE         = 'repo-sync-schedule-manager'
 TYPE_ROLE                       = 'role-manager'
 TYPE_ROLE_QUERY                 = 'role-query-manager'
 TYPE_SCHEDULE                   = 'schedule-manager'
@@ -336,6 +337,12 @@ def repo_sync_manager():
     """
     return get_manager(TYPE_REPO_SYNC)
 
+def repo_sync_schedule_manager():
+    """
+    @rtype: L{pulp.server.managers.repo.sync.RepoSyncScheduleManager}
+    """
+    return get_manager(TYPE_REPO_SYNC_SCHEDULE)
+
 def role_manager():
     """
     @rtype: L{pulp.server.managers.auth.role.cud.RoleManager}
@@ -425,6 +432,7 @@ def initialize():
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.schedule.aggregate import AggregateScheduleManager
+    from pulp.server.managers.schedule.repo import RepoSyncScheduleManager
     import pulp.server.managers.consumer.applicability
 
     # Builtins for a normal running Pulp server (used to reset the state of the
@@ -469,6 +477,7 @@ def initialize():
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
+        TYPE_REPO_SYNC_SCHEDULE: RepoSyncScheduleManager,
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
         TYPE_SCHEDULE: AggregateScheduleManager,
