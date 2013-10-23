@@ -211,9 +211,13 @@ class RepoUnitAssociationQueryManager(object):
         """
 
         criteria = criteria or UnitAssociationCriteria()
+        # we're just going to overwrite the provided type_ids if the user was
+        # dumb enough to provided them in this call
         criteria.type_ids = [type_id]
 
         return self.get_units(repo_id, criteria, as_generator)
+
+    # -- unit association methods ----------------------------------------------
 
     @staticmethod
     def _unit_type_ids_for_repo(repo_id):
@@ -288,6 +292,8 @@ class RepoUnitAssociationQueryManager(object):
             yield unit_association
 
             previously_generated_association_ids.add(association_id)
+
+    # -- associated units methods ----------------------------------------------
 
     @staticmethod
     def _associated_units_by_type_cursor(unit_type_id, criteria, associated_unit_ids):
