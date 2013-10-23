@@ -16,10 +16,13 @@ Contains the manager class for performing queries for repo-unit associations.
 """
 
 import copy
+import itertools
 import logging
+
 import pymongo
 
-import pulp.plugins.types.database as types_db
+from pulp.common.odict import OrderedDict
+from pulp.plugins.types import database as types_db
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 
@@ -311,7 +314,7 @@ class RepoUnitAssociationQueryManager(object):
             def merge_metadata(association):
                 association['metadata'] = metadata_by_id[association['unit_id']]
             map(merge_metadata, unit_associations)
-            
+
             return unit_associations
 
         else:
@@ -418,3 +421,146 @@ class RepoUnitAssociationQueryManager(object):
         @rtype:     list
         """
         return RepoContentUnit.get_collection().query(criteria)
+
+# -- !! NEW GET UNITS HERE !! --------------------------------------------------
+
+class RepoUnitAssociationGeneratorQueryManager(RepoUnitAssociationQueryManager):
+
+    def get_units(self, repo_id, criteria=None, as_generator=False):
+
+        criteria = criteria or UnitAssociationCriteria()
+
+        unit_associations_generator = self._unit_associations_cursor(repo_id, criteria)
+
+        if criteria.remove_duplicates:
+            unit_associations_generator = self._unit_associations_no_duplicates(unit_associations_generator)
+
+        unit_associations_by_id = OrderedDict((u['unit_id'], u) for u in unit_associations_generator)
+
+        unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
+
+        units_generator = itertools.chain(self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.keys())
+                                          for unit_type_id in unit_type_ids)
+
+        units_generator = self._with_skip_and_limit(units_generator, criteria.skip, criteria.limit)
+
+        if criteria.association_sort is not None:
+            units_generator = self._association_ordered_units(unit_associations_by_id.keys(), units_generator)
+
+        units_generator = self._merged_units(unit_associations_by_id, units_generator)
+
+        if as_generator:
+            return units_generator
+
+        return list(units_generator)
+
+    @staticmethod
+    def _unit_type_ids_for_repo(repo_id):
+
+        collection = RepoContentUnit.get_collection()
+
+        unit_associations = collection.find({'repo_id': repo_id}, fields=['unit_type_id'])
+        unit_associations.distinct('unit_type_id')
+
+        return [u['unit_type_id'] for u in unit_associations]
+
+    @staticmethod
+    def _unit_associations_cursor(repo_id, criteria):
+
+        spec = criteria.association_filters.copy()
+        spec['repo_id'] = repo_id
+
+        if criteria.type_ids:
+            spec['unit_type_id'] = {'$in': criteria.type_ids}
+
+        collection = RepoContentUnit.get_collection()
+
+        cursor = collection.find(spec, fields=criteria.association_fields)
+
+        sort = criteria.association_sort or []
+
+        # sorting by the "created" flag is crucial to removing duplicate associations
+        created_sort_tuple = ('created', SORT_ASCENDING)
+        if created_sort_tuple not in sort:
+            sort.insert(0, created_sort_tuple)
+
+        cursor.sort(sort)
+
+        return cursor
+
+    @staticmethod
+    def _unit_associations_no_duplicates(iterator):
+
+        # this algorithm returns the earliest association in the case of duplicates
+        # this algorithm assumes the iterator is already sorted by "created"
+
+        previously_generated_association_ids = set()
+
+        for unit_association in iterator:
+
+            association_id = '+'.join((unit_association['unit_type_id'], unit_association['unit_id']))
+
+            if association_id in previously_generated_association_ids:
+                continue
+
+            yield unit_association
+
+            previously_generated_association_ids.add(association_id)
+
+    @staticmethod
+    def _associated_units_by_type_cursor(unit_type_id, criteria, associated_unit_ids):
+
+        collection = types_db.type_units_collection(unit_type_id)
+
+        spec = criteria.unit_filters.copy()
+        spec['_id'] = {'$in': associated_unit_ids}
+
+        cursor = collection.find(spec, fields=criteria.unit_fields)
+
+        sort = criteria.unit_sort or [(u, SORT_ASCENDING) for u in types_db.type_units_unit_key(unit_type_id)]
+        cursor.sort(sort)
+
+        return cursor
+
+    @staticmethod
+    def _with_skip_and_limit(iterator, skip, limit):
+        assert (isinstance(skip, int) and skip >= 0) or skip is None
+        assert (isinstance(limit, int) and limit >= 0) or limit is None
+
+        generated_elements = 0
+        skipped_elements = 0
+
+        for element in iterator:
+
+            if limit and generated_elements - skipped_elements == limit:
+                raise StopIteration()
+
+            if skip and skipped_elements < skip:
+                skipped_elements += 1
+                continue
+
+            yield element
+
+            generated_elements += 1
+
+    @staticmethod
+    def _association_ordered_units(associated_unit_ids, associated_units):
+
+        # this algorithm assumes that associated_unit_ids has already been sorted
+
+        # XXX this is unfortunate as it's the one place that loads all of the
+        # associated_units into memory
+        associated_units_by_id = dict((u['_id'], u) for u in associated_units)
+
+        for unit_id in associated_unit_ids:
+            yield associated_units_by_id[unit_id]
+
+    @staticmethod
+    def _merged_units(unit_associations_by_id, associated_units):
+
+        for unit in associated_units:
+            association = unit_associations_by_id[unit['_id']]
+            association['metadata'] = unit
+
+            yield association
+
