@@ -8,7 +8,9 @@ Pulp 2.4.0
 New Features
 ------------
 
-#. Username/password authentication for MongoDB
+#. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
+   version 2.5.2.
+#. Publishing Puppet repositories to flattened directories.
 
 Client Changes
 --------------
