@@ -146,7 +146,7 @@ class TestListCommands(ClientTests):
     def test_list_repos_disabled_only(self, mock_binding, *unused):
         # Test
         command = NodeListRepositoriesCommand(self.context)
-        command.run(details=True)
+        command.run(details=True, summary=False)
         # Verify
         mock_binding.assert_called_with(REPOSITORY_ID)
         lines = self.recorder.lines
@@ -158,7 +158,7 @@ class TestListCommands(ClientTests):
     def test_list_repos_with_enabled(self, mock_binding, *unused):
         # Test
         command = NodeListRepositoriesCommand(self.context)
-        command.run(details=True)
+        command.run(details=True, summary=False)
         # Verify
         mock_binding.assert_called_with(REPOSITORY_ID)
         lines = self.recorder.lines

@@ -201,7 +201,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
     def test_structure(self):
         # Ensure the correct arguments are present
-        expected_option_names = set(['--details', '--fields', '--all'])
+        expected_option_names = set(['--details', '--fields', '--all', '--summary'])
         found_option_names = set([o.name for o in self.command.options])
         self.assertEqual(expected_option_names, found_option_names)
 
@@ -215,7 +215,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
     def test_no_all_structure(self):
         # Ensure the all argument isn't present
         self.command = cudl.ListRepositoriesCommand(self.context, include_all_flag=False)
-        expected_option_names = set(['--details', '--fields'])
+        expected_option_names = set(['--details', '--fields', '--summary'])
         found_option_names = set([o.name for o in self.command.options])
         self.assertEqual(expected_option_names, found_option_names)
 
@@ -223,6 +223,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
     def test_run_with_details(self, mock_call):
         # Setup
         data = {
+            'summary' : False,
             'details' : True,
         }
 
@@ -252,6 +253,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
     def test_run_with_fields(self, mock_call):
         # Setup
         data = {
+            'summary' : False,
             'details' : False,
             'fields' : 'display_name',
         }
@@ -273,6 +275,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
     def test_all(self):
         # Setup
         data = {
+            'summary' : False,
             'details' : True,
             'all' : True,
         }
@@ -285,3 +288,31 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         # Verify
         self.assertEqual(2, len(self.prompt.get_write_tags())) # only one title, not the others
         self.assertEqual([TAG_TITLE, TAG_TITLE], self.prompt.get_write_tags())
+
+    def test_summary(self):
+        # Setup
+        data = {
+            'summary' : True,
+            'details' : False,
+        }
+
+        self.command.get_repositories = mock.MagicMock()
+        self.command.get_other_repositories = mock.MagicMock()
+        self.command.get_repositories.return_value = [
+            {'id' : 'abcdef', 'display_name' : 'ABCDEF'},
+            {'id' : 'xyz', 'display_name' : 'XYZ'}
+        ]
+
+        self.command.prompt.terminal_size = mock.MagicMock()
+        self.command.prompt.terminal_size.return_value = 20, 20
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(self.command.get_repositories.call_count, 1)
+        self.assertEqual(self.command.get_other_repositories.call_count, 0)
+
+        self.assertEqual(self.recorder.lines[0], 'abcdef  ABCDEF\n')
+        self.assertEqual(self.recorder.lines[1], 'xyz     XYZ\n')
+

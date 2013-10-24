@@ -202,6 +202,9 @@ class ListRepositoriesCommand(PulpCliCommand):
 
         super(ListRepositoriesCommand, self).__init__(name, description, method)
 
+        d = _('if specified, a condensed view with just the repository ID and name is displayed')
+        self.add_option(PulpCliFlag('--summary', d, aliases=['-s']))
+
         d = _('if specified, detailed configuration information is displayed for each repository')
         self.add_option(PulpCliFlag('--details', d))
 
@@ -214,10 +217,24 @@ class ListRepositoriesCommand(PulpCliCommand):
             self.add_option(PulpCliFlag('--all', d, aliases=['-a']))
 
     def run(self, **kwargs):
-        self.display_repositories(**kwargs)
 
-        if kwargs.get('all', False):
-            self.display_other_repositories(**kwargs)
+        # Summary branches here instead of in the display_repositories method to
+        # make it easier for subclasses to specifically customize either view.
+
+        if kwargs['summary'] and kwargs['details']:
+            msg = _('The summary and details views cannot be used together')
+            self.prompt.render_error_message(msg)
+            return
+
+        if kwargs['summary']:
+            self.display_repository_summaries(**kwargs)
+            if kwargs.get('all', False):
+                self.display_other_repository_summaries(**kwargs)
+
+        else:
+            self.display_repositories(**kwargs)
+            if kwargs.get('all', False):
+                self.display_other_repositories(**kwargs)
 
     def display_repositories(self, **kwargs):
         """
@@ -254,11 +271,29 @@ class ListRepositoriesCommand(PulpCliCommand):
         """
         self.prompt.render_title(self.other_repos_title)
 
-        repo_list = self.get_other_repositories(None, **kwargs)
+        repo_list = self.get_other_repositories({}, **kwargs)
 
         filters = ['id', 'display_name']
         order = filters
         self.prompt.render_document_list(repo_list, filters=filters, order=order)
+
+    def display_repository_summaries(self, **kwargs):
+        """
+        Default formatting for displaying the summary view of repositories returned
+        from the get_repositories method. This call may be overridden to customize
+        the repository list appearance.
+        """
+        repo_list = self.get_repositories({}, **kwargs)
+        _default_summary_view(repo_list, self.prompt)
+
+    def display_other_repository_summaries(self, **kwargs):
+        """
+        Default formatting for displaying the summary view of repositories returned
+        from the get_other_repositories method. This call may be overridden to
+        customize the repository list appearance.
+        """
+        repo_list = self.get_other_repositories({}, **kwargs)
+        _default_summary_view(repo_list, self.prompt)
 
     def get_repositories(self, query_params, **kwargs):
         """
@@ -331,3 +366,31 @@ class ListRepositoriesCommand(PulpCliCommand):
         @rtype: list
         """
         return []
+
+
+def _default_summary_view(repo_list, prompt):
+    """
+    Default rendering for printing the summary view of a list of
+    repositories.
+
+    :param repo_list: retrieved from either get_repositories or get_other_repositories
+    :type  repo_list: list
+    """
+
+    # The model being followed for this view is `yum repolist`. That command
+    # will always show the full ID without truncating. Any remaining space is
+    # left for the name (sort of; they have a status column that isn't relevant
+    # here).
+
+    terminal_width = prompt.terminal_size()[0]
+
+    max_id_width = max(len(r['id']) for r in repo_list)
+    max_name_width = terminal_width - max_id_width - 1 # -1 for space between columns
+
+    line_template = '%s  %s'
+
+    for repo in repo_list:
+        id_value = repo['id'] + ' ' * (max_id_width - len(repo['id']))
+        name_value = repo['display_name'][0:max_name_width]
+        line = line_template % (id_value, name_value)
+        prompt.write(line, skip_wrap=True)
