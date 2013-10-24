@@ -61,7 +61,7 @@ class ApplicabilityRegenerationManager(object):
 
         # Get all unit profiles associated with given consumers
         unit_profile_criteria = Criteria(filters={'consumer_id':{'$in':consumer_ids}},
-                                         fields=['consumer_id','profile_hash','content_type','id'])
+                                         fields=['consumer_id', 'profile_hash', 'content_type', 'id'])
         all_unit_profiles = consumer_profile_manager.find_by_criteria(unit_profile_criteria)
 
         # Create a consumer-profile map with consumer id as the key and list of tuples
@@ -138,7 +138,7 @@ class ApplicabilityRegenerationManager(object):
                 existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
-                                                                     fields=['id','content_type'])
+                                                                     fields=['id', 'content_type'])
                 # Regenerate applicability data for given unit_profile and repo id
                 self.regenerate_applicability(profile_hash, unit_profile['content_type'],
                                               unit_profile['id'],
@@ -183,7 +183,7 @@ class ApplicabilityRegenerationManager(object):
             bound_repo_id)
         # Get the intersection of existing types in the repo and the types that the profiler
         # handles. If the intersection is not empty, regenerate applicability
-        if ( set(repo_content_types) & set(profiler.metadata()['types']) ):
+        if (set(repo_content_types) & set(profiler.metadata()['types'])):
             # Get the actual profile for existing_applicability or lookup using profile_id
             if existing_applicability:
                 profile = existing_applicability.profile
@@ -617,7 +617,7 @@ def _get_consumer_applicability_map(applicability_map):
                     # sets, generate the union of those sets, and turn it back into a list
                     # so that we can report unique units.
                     consumer_applicability_map[consumers][content_type] = list(
-                        set(consumer_applicability_map[consumers][content_type]) |\
+                        set(consumer_applicability_map[consumers][content_type]) | \
                         set(applicability))
                 else:
                     # This consumer set does not already have applicability data for this type, so
