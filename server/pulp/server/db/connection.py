@@ -69,11 +69,20 @@ def initialize(name=None, seeds=None, max_pool_size=None):
                 config.config.has_option('database', 'password'):
             username = config.config.get('database', 'username')
             password = config.config.get('database', 'password')
+            _LOG.info('Database authentication enabled, attempting username/password'
+                      'authentication.')
             _DATABASE.authenticate(username, password)
+        elif ((config.config.has_option('database', 'username') and
+               not config.config.has_option('database', 'password')) or
+              (not config.config.has_option('database', 'username') and
+               config.config.has_option('database', 'password'))):
+            raise Exception("The server config specified username/password authentication but"
+                            "is missing either the username or the password")
 
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
-        # Query the collection names to ensure tha we are authenticated properly
+        # Query the collection names to ensure that we are authenticated properly
+        _LOG.debug("Querying the database to validate the connection.")
         _DATABASE.collection_names()
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))

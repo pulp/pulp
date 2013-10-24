@@ -252,7 +252,7 @@ If you want to use SSL with Qpid, see the
 MongoDB Authentication
 -----------------
 
-To configure pulp for connecting to the MongoDB with username/password authentication use the
+To configure pulp for connecting to the MongoDB with username/password authentication, use the
 following steps:
 1. Configure MongoDB for username password authentication.  See
 `MongoDB - Enable Authentication <http://docs.mongodb.org/manual/tutorial/enable-authentication/>`_
