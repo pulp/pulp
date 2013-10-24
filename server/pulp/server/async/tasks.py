@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
+import random
 
 from celery import chain, task, Task as CeleryTask
 from celery.app import control
@@ -64,8 +65,8 @@ class ResourceManager(object):
         self._available_queue_task_counts = {}
         # Map worker names to a list of reserved task queues that they are assigned to
         self._worker_queues = {}
-        # Map resource_ids to the queue they are supposed to go to, and the number of tasks for the
-        # resource
+        # Map resource_ids to the queue they are supposed to go to, and the number of tasks that
+        # are in that queue that will lock the resource
         self._resource_map = {}
 
         # Inspect the available workers to build our state variables
@@ -118,7 +119,7 @@ class ResourceManager(object):
         :type  resource_id: basestring
         :return:            The name of a Celery queue that the task that wishes to use the given
                             resource_id should be queued inside of.
-        :rtype:             basestr
+        :rtype:             basestring
         """
         if resource_id in self._resource_map:
             self._resource_map[resource_id]['task_count'] += 1
@@ -140,8 +141,12 @@ class ResourceManager(object):
         """
         least_busy_worker_task_count = None
         least_busy_worker_queue = None
+        # We want to consider the workers in a random order, so that we don't always choose the same
+        # workers when there is a tie for the least busy worker.
+        workers = self._worker_queues.keys()
+        random.shuffle(workers)
         # Loop over our available workers, comparing them to find the least busy one
-        for worker in self._worker_queues.keys():
+        for worker in workers:
             try:
                 stats = self._get_workers_available_queue_stats(worker)
             except NoAvailableQueues:
@@ -164,7 +169,7 @@ class ResourceManager(object):
         Given a worker's name, find out how many tasks are assigned to it by considering the queues
         it's assigned to work on that are also in our self._available_queue_task_counts table.
         Return a dictionary that includes the total number of tasks found in the workers available
-        queues, well as the name of its least busy queue. These are indexed by 'num_tasks' and
+        queues, as well as the name of its least busy queue. These are indexed by 'num_tasks' and
         'least_busy_queue', respectively.
 
         :param worker: The name of the worker we need a task count for
