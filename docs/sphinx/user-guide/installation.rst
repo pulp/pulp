@@ -248,3 +248,20 @@ these settings. If you plan to use Pulp's consumer features, set ``ssl_ca_certif
 
 If you want to use SSL with Qpid, see the
 :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
+
+MongoDB Authentication
+-----------------
+
+To configure pulp for connecting to the MongoDB with username/password authentication, use the
+following steps:
+1. Configure MongoDB for username password authentication.  See
+`MongoDB - Enable Authentication <http://docs.mongodb.org/manual/tutorial/enable-authentication/>`_
+for details.
+2. In ``/etc/pulp/server.conf``, find the ``[database]`` section and edit the ``username`` and
+``password`` values to match the user configured in step 1.
+3. Restart the httpd service
+::
+
+  $ sudo service httpd restart
+
+
