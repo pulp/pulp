@@ -34,13 +34,15 @@ _DEFAULT_MAX_POOL_SIZE = 10
 
 # -- connection api ------------------------------------------------------------
 
-def initialize(name=None, seeds=None, max_pool_size=None):
+def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
     """
     Initialize the connection pool and top-level database for pulp.
     """
     global _CONNECTION, _DATABASE
 
     try:
+        connection_kwargs = {}
+
         if name is None:
             name = config.config.get('database', 'name')
 
@@ -50,11 +52,19 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         if max_pool_size is None:
             # we may want to make this configurable, but then again, we may not
             max_pool_size = _DEFAULT_MAX_POOL_SIZE
+        connection_kwargs['max_pool_size'] = max_pool_size
 
-        _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
+        if replica_set is None:
+            if config.config.has_option('database', 'replica_set'):
+                replica_set = config.config.get('database', 'replica_set')
 
-        _CONNECTION = pymongo.MongoClient(seeds, max_pool_size=max_pool_size)
+        if replica_set is not None:
+            connection_kwargs['replicaset'] = replica_set
 
+        _LOG.info("Attempting Database connection with seeds = %s" % seeds)
+        _LOG.info('Connection Arguments: %s' % connection_kwargs)
+
+        _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
         # Decorate the methods that actually send messages to the db over the
         # network. These are the methods that call start_request, and the
         # decorator causes them call an corresponding end_request

@@ -36,11 +36,11 @@ def tar_path(path):
     return path + '.TGZ'
 
 
-def tar_dir(path, tar_path, bufsize=65535):
+def tar_dir(dir_path, tar_path, bufsize=65535):
     """
     Tar up the directory at the specified path.
-    :param path: The absolute path to a directory.
-    :type path: str
+    :param dir_path: The absolute path to a directory.
+    :type dir_path: str
     :param tar_path: The target path.
     :type tar_path: str
     :param bufsize: The buffer size to be used.
@@ -49,8 +49,9 @@ def tar_dir(path, tar_path, bufsize=65535):
     """
     tb = tarfile.open(tar_path, 'w', bufsize=bufsize)
     try:
-        _dir = os.path.basename(path)
-        tb.add(path, arcname=_dir)
+        for name in os.listdir(dir_path):
+            path = os.path.join(dir_path, name)
+            tb.add(path, arcname=name)
         return tar_path
     finally:
         tb.close()
