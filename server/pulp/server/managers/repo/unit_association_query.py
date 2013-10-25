@@ -15,7 +15,6 @@
 Contains the manager class for performing queries for repo-unit associations.
 """
 
-import copy
 import itertools
 import logging
 
