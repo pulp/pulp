@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.23.beta%{?dist}
+Release: 0.24.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -167,7 +167,7 @@ rm -rf %{buildroot}
 Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
-Requires: pymongo >= 2.1.1
+Requires: python-pymongo >= 2.5.2
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.32
@@ -176,7 +176,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.4
+Requires: python-nectar >= 1.1.5
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -482,6 +482,11 @@ exit 0
 %endif
 
 %changelog
+* Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
+- 1019909 - Added replica set support (jason.dobies@redhat.com)
+- 1020549 - tar the content of the distribution directory instead of the
+  directory. (jortel@redhat.com)
+
 * Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
 - 1019455 - Loosened validation checks on the presence of the feed for certain
   configuration parameters (jason.dobies@redhat.com)

@@ -34,13 +34,15 @@ _DEFAULT_MAX_POOL_SIZE = 10
 
 # -- connection api ------------------------------------------------------------
 
-def initialize(name=None, seeds=None, max_pool_size=None):
+def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
     """
     Initialize the connection pool and top-level database for pulp.
     """
     global _CONNECTION, _DATABASE
 
     try:
+        connection_kwargs = {}
+
         if name is None:
             name = config.config.get('database', 'name')
 
@@ -50,10 +52,19 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         if max_pool_size is None:
             # we may want to make this configurable, but then again, we may not
             max_pool_size = _DEFAULT_MAX_POOL_SIZE
+        connection_kwargs['max_pool_size'] = max_pool_size
 
-        _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
+        if replica_set is None:
+            if config.config.has_option('database', 'replica_set'):
+                replica_set = config.config.get('database', 'replica_set')
 
-        _CONNECTION = pymongo.Connection(seeds, max_pool_size=max_pool_size)
+        if replica_set is not None:
+            connection_kwargs['replicaset'] = replica_set
+
+        _LOG.info("Attempting Database connection with seeds = %s" % seeds)
+        _LOG.info('Connection Arguments: %s' % connection_kwargs)
+
+        _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
         # Decorate the methods that actually send messages to the db over the
         # network. These are the methods that call start_request, and the
         # decorator causes them call an corresponding end_request
@@ -61,12 +72,33 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         _CONNECTION._send_message_with_response = _end_request_decorator(_CONNECTION._send_message_with_response)
 
         _DATABASE = getattr(_CONNECTION, name)
+
+        # If username & password have been specified in the database config,
+        # attempt to authenticate to the database
+        if config.config.has_option('database', 'username') and \
+                config.config.has_option('database', 'password'):
+            username = config.config.get('database', 'username')
+            password = config.config.get('database', 'password')
+            _LOG.info('Database authentication enabled, attempting username/password'
+                      'authentication.')
+            _DATABASE.authenticate(username, password)
+        elif ((config.config.has_option('database', 'username') and
+               not config.config.has_option('database', 'password')) or
+              (not config.config.has_option('database', 'username') and
+               config.config.has_option('database', 'password'))):
+            raise Exception("The server config specified username/password authentication but"
+                            "is missing either the username or the password")
+
         _DATABASE.add_son_manipulator(NamespaceInjector())
+
+        # Query the collection names to ensure that we are authenticated properly
+        _LOG.debug("Querying the database to validate the connection.")
+        _DATABASE.collection_names()
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
-    except:
-        _LOG.critical('Database initialization failed')
+    except Exception, e:
+        _LOG.critical('Database initialization failed: %s' % str(e))
         _CONNECTION = None
         _DATABASE = None
         raise

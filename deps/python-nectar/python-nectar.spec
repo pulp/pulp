@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.1.4
+Version:        1.1.5
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -46,6 +46,18 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Wed Oct 23 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.5-1
+- minor update to the unit test (skarmark@redhat.com)
+- adding a unit test to verify request headers when using
+  HTTPBasicWithProxyAuth (skarmark@redhat.com)
+- Moving HTTPBasicWithProxyAuth class to nectar.config and adding doc blocks
+  (skarmark@redhat.com)
+- 1021662 - adding a class which inherits requests.auth.AuthBase and sets up
+  proxy and user basic authentication headers correctly instead of overwriting
+  each other (skarmark@redhat.com)
+- 1021662 - using HTTPProxyAuth when using proxy with authentication to
+  populate correct field in the header (skarmark@redhat.com)
+
 * Wed Oct 09 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.4-1
 - adding dependency to python-requests >= 2.0.0 to support proxy with https
   (skarmark@redhat.com)

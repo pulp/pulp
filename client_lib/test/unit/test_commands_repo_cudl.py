@@ -313,6 +313,6 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.get_repositories.call_count, 1)
         self.assertEqual(self.command.get_other_repositories.call_count, 0)
 
-        self.assertEqual(self.recorder.lines[0], 'abcdef ABCDEF\n')
-        self.assertEqual(self.recorder.lines[1], 'xyz    XYZ\n')
+        self.assertEqual(self.recorder.lines[0], 'abcdef  ABCDEF\n')
+        self.assertEqual(self.recorder.lines[1], 'xyz     XYZ\n')
 

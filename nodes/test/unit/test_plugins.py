@@ -16,6 +16,7 @@ import sys
 import tempfile
 import shutil
 import random
+import tarfile
 
 from copy import deepcopy
 
@@ -244,9 +245,10 @@ class PluginTestBase(WebTest):
                 unit['_storage_path'] = storage_path
                 if n == 0:  # 1st one is a directory of files
                     os.makedirs(storage_path)
-                    path = os.path.join(storage_path, 'abc.rpm')
-                    with open(path, 'w+') as fp:
-                        fp.write(path)
+                    dist_path = os.path.join(os.path.dirname(__file__), 'data/distribution.tar')
+                    tb = tarfile.open(dist_path)
+                    tb.extractall(path=storage_path)
+                    tb.close()
                 else:
                     with open(storage_path, 'w+') as fp:
                         fp.write(unit_id)
@@ -1028,7 +1030,7 @@ class TestEndToEnd(PluginTestBase):
                 self.assertEqual(content, unit_id)
             else:
                 self.assertTrue(os.path.isdir(storage_path))
-                self.assertEqual(len(os.listdir(storage_path)), 1)
+                self.assertEqual(len(os.listdir(storage_path)), 4)
 
     def test_handler_mirror(self):
         """
@@ -1078,6 +1080,8 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['added'], self.NUM_UNITS)
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
+        diff = 'diff %s/content %s/content' % (self.parentfs, self.childfs)
+        self.assertEqual(os.system(diff), 0)
         self.verify()
 
     def test_handler_cancelled(self):
