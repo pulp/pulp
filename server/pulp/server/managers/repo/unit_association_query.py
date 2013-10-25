@@ -140,8 +140,9 @@ class RepoUnitAssociationQueryManager(object):
         unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
         unit_type_ids = sorted(unit_type_ids)
 
-        units_generator = itertools.chain(self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.keys())
-                                          for unit_type_id in unit_type_ids)
+        units_generator = itertools.chain(
+            *[self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.keys())
+              for unit_type_id in unit_type_ids])
 
         units_generator = self._with_skip_and_limit(units_generator, criteria.skip, criteria.limit)
 
