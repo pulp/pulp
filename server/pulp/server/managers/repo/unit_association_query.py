@@ -159,13 +159,13 @@ class RepoUnitAssociationQueryManager(object):
         # collections once we've returned our limit of results
         units_cursors = (self._associated_units_by_type_cursor(unit_type_id, criteria, association_ordered_unit_ids)
                          for unit_type_id in unit_type_ids)
-
-        # perform skip and limit outside of the database to allow them to work
-        # across unit types, and regardless of duplicate removal or association
-        # ordering
+        # set the skip and limit individually across the cursors to get
+        # consistent behavior across multiple calls with skip and limit across
+        # multiple unit types
         units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
+        units_cursors = self._associated_units_cursors_with_limit(units_cursors, criteria.limit)
+
         units_generator = self._units_from_chained_cursors(units_cursors)
-        units_generator = self._with_limit(units_generator, criteria.limit)
 
         if criteria.association_sort is not None:
             # use the ordered associations we created to properly order the results
@@ -354,6 +354,7 @@ class RepoUnitAssociationQueryManager(object):
         specified.
 
         The skip argument must either be None or a non-negative integer.
+        Semantically 0 and None have the same meaning: no skip
 
         :type units_cursors: generator of pymongo.cursor.Cursor
         :type skip: int or None
@@ -378,6 +379,40 @@ class RepoUnitAssociationQueryManager(object):
                 skipped_units += cursor.count()
 
     @staticmethod
+    def _associated_units_cursors_with_limit(unit_cursors, limit):
+        """
+        Track and set the limit across multiple cursors.
+
+        The limit argument must either be None or a non-negative integer.
+        Semantically 0 and None have the same meaning: no limit
+
+        :type unit_cursors: generator of pymongo.cursor.Cursor
+        :type limit: int or None
+        :rtype: generator
+        """
+        assert (isinstance(limit, int) and limit >= 0) or limit is None
+
+        generated_elements = 0
+
+        for cursor in unit_cursors:
+
+            if not limit:
+                yield cursor
+
+            elif generated_elements == limit:
+                raise StopIteration()
+
+            elif cursor.count() + generated_elements > limit:
+                to_limit = limit - generated_elements
+                generated_elements += to_limit
+                cursor.limit(to_limit)
+                yield cursor
+
+            else: # cursor.count() + generated_elements <= limit
+                generated_elements += cursor.count()
+                yield cursor
+
+    @staticmethod
     def _units_from_chained_cursors(cursors):
         """
         Yield the individual elements from a iterator of db cursors.
@@ -389,30 +424,6 @@ class RepoUnitAssociationQueryManager(object):
         for cursor in cursors:
             for element in cursor:
                 yield element
-
-    @staticmethod
-    def _with_limit(iterator, limit):
-        """
-        Limit the return to *limit* elements.
-
-        The limit argument must either be None or a non-negative integer.
-
-        :type iterator: iterable
-        :type limit: int or None
-        :rtype: generator
-        """
-        assert (isinstance(limit, int) and limit >= 0) or limit is None
-
-        generated_elements = 0
-
-        for element in iterator:
-
-            if limit and generated_elements == limit:
-                raise StopIteration()
-
-            yield element
-
-            generated_elements += 1
 
     @staticmethod
     def _association_ordered_units(associated_unit_ids, associated_units):
