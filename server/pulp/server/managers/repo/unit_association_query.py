@@ -15,12 +15,10 @@
 Contains the manager class for performing queries for repo-unit associations.
 """
 
-import itertools
 import logging
 
 import pymongo
 
-from pulp.common.odict import OrderedDict
 from pulp.plugins.types import database as types_db
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
@@ -135,19 +133,40 @@ class RepoUnitAssociationQueryManager(object):
         if criteria.remove_duplicates:
             unit_associations_generator = self._unit_associations_no_duplicates(unit_associations_generator)
 
-        unit_associations_by_id = OrderedDict((u['unit_id'], u) for u in unit_associations_generator)
+        # the unit ids are used both for finding the content units in the db,
+        # and for ordering the units with association field ordering is
+        # specified (i.e. created timestamps, etc.)
+        association_ordered_unit_ids = []
+        # the unit association information is part of the return values, so we
+        # construct a lookup in order to retrieve that information when we are
+        # iterating over the content units
+        unit_associations_by_id = {}
+
+        for unit_association in unit_associations_generator:
+            unit_id = unit_association['unit_id']
+            association_ordered_unit_ids.append(unit_id)
+            unit_associations_by_id[unit_id] = unit_association
 
         unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
+        # the unit types should always be sorted in the same order, this allows
+        # multiple calls with skip and limit to work across types
         unit_type_ids = sorted(unit_type_ids)
 
-        units_generator = itertools.chain(
-            *[self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.keys())
-              for unit_type_id in unit_type_ids])
+        # use a generator expression here to keep from going back to the types
+        # collections once we've returned our limit of results
+        units_cursors = (self._associated_units_by_type_cursor(unit_type_id, criteria, association_ordered_unit_ids)
+                         for unit_type_id in unit_type_ids)
 
-        units_generator = self._with_skip_and_limit(units_generator, criteria.skip, criteria.limit)
+        # perform skip and limit outside of the database to allow them to work
+        # across unit types, and regardless of duplicate removal or association
+        # ordering
+        units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
+        units_generator = self._units_from_chained_cursors(units_cursors)
+        units_generator = self._with_limit(units_generator, criteria.limit)
 
         if criteria.association_sort is not None:
-            units_generator = self._association_ordered_units(unit_associations_by_id.keys(), units_generator)
+            # use the association lookup we created to properly order the results
+            units_generator = self._association_ordered_units(association_ordered_unit_ids, units_generator)
 
         units_generator = self._merged_units(unit_associations_by_id, units_generator)
 
@@ -182,6 +201,9 @@ class RepoUnitAssociationQueryManager(object):
         :type  as_generator: bool
         """
 
+        # this really is the new default behavior of get_units, so just pass
+        # the request through
+
         return self.get_units(repo_id, criteria, as_generator)
 
     def get_units_by_type(self, repo_id, type_id, criteria=None, as_generator=False):
@@ -210,9 +232,12 @@ class RepoUnitAssociationQueryManager(object):
         :type  as_generator: bool
         """
 
+        # get_units now defaults to batch behavior, so use a list of length 1 to
+        # specify the unit types and pass it through
+
         criteria = criteria or UnitAssociationCriteria()
-        # we're just going to overwrite the provided type_ids if the user was
-        # dumb enough to provided them in this call
+        # just overwrite the type_ids if the user was dumb enough to provide
+        # them in this call
         criteria.type_ids = [type_id]
 
         return self.get_units(repo_id, criteria, as_generator)
@@ -320,32 +345,67 @@ class RepoUnitAssociationQueryManager(object):
         return cursor
 
     @staticmethod
-    def _with_skip_and_limit(iterator, skip, limit):
+    def _associated_units_cursors_with_skip(units_cursors, skip):
         """
-        Skip the first *n* elements in an iterator and limit the return to *m*
-        elements.
+        Aggressively skip as many whole cursors as possible when skip is
+        specified.
 
-        The skip and limit arguments must either be None or a non-negative integer.
+        The skip argument must either be None or a non-negative integer.
 
-        :type iterator: iterable
+        :type units_cursors: generator of pymongo.cursor.Cursor
         :type skip: int or None
-        :type limit: int or None
         :rtype: generator
         """
         assert (isinstance(skip, int) and skip >= 0) or skip is None
+
+        skipped_units = 0
+
+        for cursor in units_cursors:
+
+            if not skip or skipped_units == skip:
+                yield cursor
+
+            if skipped_units + cursor.count() > skip:
+                to_skip = skip - skipped_units
+                skipped_units += to_skip # set skipped_units to skip
+                cursor.skip(to_skip)
+                yield cursor
+
+            # skipped_units + cursor.count() <= skip
+            skipped_units += cursor.count()
+
+    @staticmethod
+    def _units_from_chained_cursors(cursors):
+        """
+        Yield the individual elements from a iterator of db cursors.
+
+        :type cursors: generator of pymongo.cursor.Cursor
+        :rtype: generator
+        """
+
+        for cursor in cursors:
+            for element in cursor:
+                yield element
+
+    @staticmethod
+    def _with_limit(iterator, limit):
+        """
+        Limit the return to *limit* elements.
+
+        The limit argument must either be None or a non-negative integer.
+
+        :type iterator: iterable
+        :type limit: int or None
+        :rtype: generator
+        """
         assert (isinstance(limit, int) and limit >= 0) or limit is None
 
         generated_elements = 0
-        skipped_elements = 0
 
         for element in iterator:
 
-            if limit and generated_elements - skipped_elements == limit:
+            if limit and generated_elements == limit:
                 raise StopIteration()
-
-            if skip and skipped_elements < skip:
-                skipped_elements += 1
-                continue
 
             yield element
 
