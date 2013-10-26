@@ -124,6 +124,9 @@ class RepoUnitAssociationQueryManager(object):
 
         :param as_generator: if true, return a generator; if false, a list
         :type  as_generator: bool
+
+        :return: generator or list of units associated with the repo
+        :rtype: generator or list
         """
 
         criteria = criteria or UnitAssociationCriteria()
@@ -134,7 +137,7 @@ class RepoUnitAssociationQueryManager(object):
             unit_associations_generator = self._unit_associations_no_duplicates(unit_associations_generator)
 
         # the unit ids are used both for finding the content units in the db,
-        # and for ordering the units with association field ordering is
+        # and for ordering the units when association field ordering is
         # specified (i.e. created timestamps, etc.)
         association_ordered_unit_ids = []
         # the unit association information is part of the return values, so we
@@ -165,7 +168,7 @@ class RepoUnitAssociationQueryManager(object):
         units_generator = self._with_limit(units_generator, criteria.limit)
 
         if criteria.association_sort is not None:
-            # use the association lookup we created to properly order the results
+            # use the ordered associations we created to properly order the results
             units_generator = self._association_ordered_units(association_ordered_unit_ids, units_generator)
 
         units_generator = self._merged_units(unit_associations_by_id, units_generator)
@@ -365,14 +368,14 @@ class RepoUnitAssociationQueryManager(object):
             if not skip or skipped_units == skip:
                 yield cursor
 
-            if skipped_units + cursor.count() > skip:
+            elif skipped_units + cursor.count() > skip:
                 to_skip = skip - skipped_units
                 skipped_units += to_skip # set skipped_units to skip
                 cursor.skip(to_skip)
                 yield cursor
 
-            # skipped_units + cursor.count() <= skip
-            skipped_units += cursor.count()
+            else: # skipped_units + cursor.count() <= skip
+                skipped_units += cursor.count()
 
     @staticmethod
     def _units_from_chained_cursors(cursors):
