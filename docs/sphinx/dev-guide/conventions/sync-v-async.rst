@@ -58,7 +58,7 @@ Example Call Report::
 
  {
   "exception": null,
-  "job_id": null,
+  "task_group_id": null,
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
   "tags": [
     "pulp:repository:f16",
