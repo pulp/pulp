@@ -136,6 +136,15 @@ class RepoUnitAssociationQueryManager(object):
         if criteria.remove_duplicates:
             unit_associations_generator = self._unit_associations_no_duplicates(unit_associations_generator)
 
+        if criteria.association_sort and not criteria.unit_filters:
+            # if we're ordering by association fields, but not filtering the
+            # content units, then perform the skip and limit on this generator
+            # to limit the number of units we load into memory
+            # manually perform skip and limit so we don't have to differentiate
+            # based on whether we're removing duplicates or not
+            unit_associations_generator = self._with_skip_and_limit(unit_associations_generator,
+                                                                    criteria.skip, criteria.limit)
+
         # the unit ids are used both for finding the content units in the db,
         # and for ordering the units when association field ordering is
         # specified (i.e. created timestamps, etc.)
@@ -159,17 +168,26 @@ class RepoUnitAssociationQueryManager(object):
         # collections once we've returned our limit of results
         units_cursors = (self._associated_units_by_type_cursor(unit_type_id, criteria, association_ordered_unit_ids)
                          for unit_type_id in unit_type_ids)
-        # set the skip and limit individually across the cursors to get
-        # consistent behavior across multiple calls with skip and limit across
-        # multiple unit types
-        units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
-        units_cursors = self._associated_units_cursors_with_limit(units_cursors, criteria.limit)
+
+        if not criteria.association_sort:
+            # if we're not sorting based on association fields, then set the
+            # skip and limit individually across the cursors to get consistent
+            # behavior across multiple calls with skip and limit across multiple
+            # unit types
+            units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
+            units_cursors = self._associated_units_cursors_with_limit(units_cursors, criteria.limit)
 
         units_generator = self._units_from_chained_cursors(units_cursors)
 
-        if criteria.association_sort is not None:
+        if criteria.association_sort:
             # use the ordered associations we created to properly order the results
             units_generator = self._association_ordered_units(association_ordered_unit_ids, units_generator)
+
+            if criteria.unit_filters:
+                # if we're ordering by association fields and filtering the
+                # content units, then skip and limit must be performed manually
+                # and last (skip and limit must always come after sorting)
+                units_generator = self._with_skip_and_limit(units_generator, criteria.skip, criteria.limit)
 
         units_generator = self._merged_units(unit_associations_by_id, units_generator)
 
@@ -320,6 +338,25 @@ class RepoUnitAssociationQueryManager(object):
             yield unit_association
 
             previously_generated_association_ids.add(association_id)
+
+    @staticmethod
+    def _with_skip_and_limit(iterator, skip, limit):
+
+        skipped_elements = 0
+        generated_elements = 0
+
+        for element in iterator:
+
+            if limit and generated_elements == limit:
+                raise StopIteration()
+
+            if skip and skipped_elements < skip:
+                skipped_elements += 1
+                continue
+
+            yield element
+
+            generated_elements += 1
 
     # -- associated units methods ----------------------------------------------
 
