@@ -1,0 +1,39 @@
+======================
+Pulp 2.4 Release Notes
+======================
+
+Pulp 2.4.0
+==========
+
+New Features
+------------
+
+#. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
+   version 2.5.2.
+#. Publishing Puppet repositories to flattened directories.
+
+Client Changes
+--------------
+
+Noteworthy Bugs Fixed
+---------------------
+
+RFE Bugs
+--------
+
+All Bugs
+--------
+You can see the complete list of bugs that were
+`fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.0&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
+
+API Changes
+-----------
+
+Upgrade Instructions for 2.3.x --> 2.4.0
+----------------------------------------
+
+To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the latest RPMs
+from the Pulp repository and run the database migrations::
+
+    $ sudo yum upgrade
+    $ sudo pulp-manage-db

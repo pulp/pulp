@@ -117,7 +117,7 @@ class TestHttp(TestCase):
                     files = sorted(tb.getnames())
                 finally:
                     tb.close()
-                self.assertEqual(len(files), self.NUM_TARED_FILES + 1)
+                self.assertEqual(len(files), self.NUM_TARED_FILES)
             else:
                 path = pathlib.join(publish_dir, repo_id, unit[constants.RELATIVE_PATH])
                 with open(path, 'rb') as fp:

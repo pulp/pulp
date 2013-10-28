@@ -63,25 +63,10 @@ class FeedTests(unittest.TestCase):
         except ValueError, e:
             self.assertTrue(importer_constants.KEY_FEED in e[0])
 
-    def test_required_when_other_parameters_are_present(self):
-        for parameters in [
-            {importer_constants.KEY_MAX_SPEED: '1024'}, {importer_constants.KEY_MAX_DOWNLOADS: 2},
-            {importer_constants.KEY_PROXY_PASS: 'flock_of_seagulls',
-             importer_constants.KEY_PROXY_USER: 'big_kahuna_burger', importer_constants.KEY_PROXY_HOST: 'http://test.com'},
-            {importer_constants.KEY_PROXY_HOST: 'http://test.com', importer_constants.KEY_PROXY_PORT: '3037'},
-            {importer_constants.KEY_PROXY_HOST: 'http://test.com'},
-            {importer_constants.KEY_UNITS_RETAIN_OLD_COUNT: 2},
-            {importer_constants.KEY_SSL_CA_CERT: 'cert'},
-            {importer_constants.KEY_SSL_CLIENT_CERT: 'cert'},
-            {importer_constants.KEY_SSL_CLIENT_CERT: 'cert', importer_constants.KEY_SSL_CLIENT_KEY: 'key'},
-            {importer_constants.KEY_VALIDATE: True}]:
-                # Each of the above configurations should cause the validator to complain about the feed_url
-                # missing
-                config = PluginCallConfiguration({}, parameters)
-                try:
-                    importer_config.validate_feed_requirement(config)
-                except ValueError, e:
-                    self.assertTrue('is required' in e[0])
+    def test_optional(self):
+        config = PluginCallConfiguration({}, {})
+        importer_config.validate_feed_requirement(config)
+        # no exception should be raised
 
 
 class MaxSpeedTests(unittest.TestCase):
