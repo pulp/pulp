@@ -341,6 +341,20 @@ class RepoUnitAssociationQueryManager(object):
 
     @staticmethod
     def _with_skip_and_limit(iterator, skip, limit):
+        """
+        Generic generator that emulates database cursor skip and limit when
+        iterating over an iterator.
+
+        The skip and limit arguments must either be None or a non-negative integer
+        Skip and limit values of None and 0 are semantically equivalent.
+
+        :type iterator: iterable
+        :type skip: int or None
+        :type limit: into or None
+        :rtype: generator
+        """
+        assert (isinstance(skip, int) and skip >= 0) or skip is None
+        assert (isinstance(limit, int) and limit >= 0) or limit is None
 
         skipped_elements = 0
         generated_elements = 0
