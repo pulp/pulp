@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.1.5
+Version:        1.1.6
 Release:        1%{?dist}
 Summary:        Performance tuned network download client library
 
@@ -46,6 +46,11 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt
 
 %changelog
+* Mon Oct 28 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.6-1
+- Merge pull request #13 from pulp/skarmark-1021662 (skarmark@redhat.com)
+- 1021662 - adding proxy auth to proxy urls along with the headers
+  (skarmark@redhat.com)
+
 * Wed Oct 23 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.5-1
 - minor update to the unit test (skarmark@redhat.com)
 - adding a unit test to verify request headers when using
