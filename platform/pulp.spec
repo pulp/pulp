@@ -167,7 +167,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.5
+Requires: python-nectar >= 1.1.6
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
