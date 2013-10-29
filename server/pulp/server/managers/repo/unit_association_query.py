@@ -135,8 +135,10 @@ class RepoUnitAssociationQueryManager(object):
 
         unit_associations_generator = self._unit_associations_cursor(repo_id, criteria)
 
+        print type(unit_associations_generator)
+
         if criteria.remove_duplicates:
-            unit_associations_generator = self._unit_associations_no_duplicates(unit_associations_generator)
+            unit_associations_generator = self._unit_associations_no_duplicates(criteria, unit_associations_generator)
 
         if criteria.association_sort and not criteria.unit_filters:
             # If we're ordering by association fields, but not filtering the
@@ -329,16 +331,17 @@ class RepoUnitAssociationQueryManager(object):
 
         cursor = collection.find(spec, fields=criteria.association_fields)
 
-        sort = criteria.association_sort or []
-        cursor.sort(sort)
+        if criteria.association_sort:
+            cursor.sort(criteria.association_sort)
 
         return cursor
 
     @staticmethod
-    def _unit_associations_no_duplicates(cursor):
+    def _unit_associations_no_duplicates(criteria, cursor):
         """
         Remove duplicate unit associations from a iterator of unit associations.
 
+        :type criteria: UnitAssociationCriteria
         :type cursor: pymongo.cursor.Cursor
         :rtype: generator
         """
@@ -347,7 +350,10 @@ class RepoUnitAssociationQueryManager(object):
 
         # Sorting by the "created" flag is crucial to removing duplicate associations.
         created_sort_tuple = ('created', SORT_ASCENDING)
-        cursor.sort(created_sort_tuple)
+        sort = criteria.association_sort or []
+        if created_sort_tuple not in sort:
+            sort.append(created_sort_tuple)
+        cursor.sort(sort)
 
         previously_generated_association_ids = set()
 
