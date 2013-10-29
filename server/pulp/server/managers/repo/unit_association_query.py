@@ -157,7 +157,8 @@ class RepoUnitAssociationQueryManager(object):
         for unit_association in unit_associations_generator:
             unit_id = unit_association['unit_id']
             association_ordered_unit_ids.append(unit_id)
-            unit_associations_by_id[unit_id] = unit_association
+            association_list = unit_associations_by_id.setdefault(unit_id, [])
+            association_list.append(unit_association)
 
         unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
         # the unit types should always be sorted in the same order, this allows
@@ -520,8 +521,7 @@ class RepoUnitAssociationQueryManager(object):
         """
 
         for unit in associated_units:
-            association = unit_associations_by_id[unit['_id']]
-            association['metadata'] = unit
-
-            yield association
+            for association in unit_associations_by_id[unit['_id']]:
+                association['metadata'] = unit
+                yield association
 
