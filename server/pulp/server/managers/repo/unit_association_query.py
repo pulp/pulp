@@ -138,71 +138,86 @@ class RepoUnitAssociationQueryManager(object):
             unit_associations_generator = self._unit_associations_no_duplicates(unit_associations_generator)
 
         if criteria.association_sort and not criteria.unit_filters:
-            # if we're ordering by association fields, but not filtering the
+            # If we're ordering by association fields, but not filtering the
             # content units, then perform the skip and limit on this generator
-            # to limit the number of units we load into memory
-            # manually perform skip and limit so we don't have to differentiate
-            # based on whether we're removing duplicates or not
+            # to limit the number of units we load into memory.
+            # Manually perform skip and limit so we don't have to differentiate
+            # based on whether we're removing duplicates or not.
             unit_associations_generator = self._with_skip_and_limit(unit_associations_generator,
                                                                     criteria.skip, criteria.limit)
 
-        # the unit ids are used both for finding the content units in the db,
-        # and for ordering the units when association field ordering is
-        # specified (i.e. created timestamps, etc.)
+        # The unit ids are used for ordering the units when association field
+        # ordering is specified (i.e. created timestamps, etc.)
+        # The ids are (unit_type_id, unit_id) tuples.
         association_ordered_unit_ids = []
-        # the unit association information is part of the return values, so we
+
+        # The unit association information is part of the return values, so we
         # construct a lookup in order to retrieve that information when we are
-        # iterating over the content units
-        unit_associations_by_id = {}
+        # iterating over the content units.
+        #
+        # unit_type_id -> unit_id -> (ordered)[association_1, association_2, ...]
+        #
+        # We also use the unit_id keys to lookup the units from unit_type_id
+        # collections.
+        associations_lookup = {}
 
-        for unit_association in unit_associations_generator:
-            unit_type_id = unit_association['unit_type_id']
-            unit_id = unit_association['unit_id']
+        for association in unit_associations_generator:
 
+            unit_type_id = association['unit_type_id']
+            unit_id = association['unit_id']
+
+            # Build the ordering.
             association_ordered_unit_ids.append((unit_type_id, unit_id))
 
-            association_type_dict = unit_associations_by_id.setdefault(unit_type_id, {})
+            # Build the lookup.
+            association_type_dict = associations_lookup.setdefault(unit_type_id, {})
             association_list = association_type_dict.setdefault(unit_id, [])
-            association_list.append(unit_association)
+            association_list.append(association)
 
-        unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
-        # the unit types should always be sorted in the same order, this allows
-        # multiple calls with skip and limit to work across types
-        unit_type_ids = sorted(unit_type_ids)
+        association_unit_types = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
+        # The unit types should always be sorted in the same order, this allows
+        # multiple calls with skip and limit to work across types.
+        association_unit_types = sorted(association_unit_types)
 
-        # use a generator expression here to keep from going back to the types
-        # collections once we've returned our limit of results
-        units_cursors = (self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.get(unit_type_id, {}).keys())
-                         for unit_type_id in unit_type_ids)
+        # Use a generator expression here to keep from going back to the types
+        # collections once we've returned our limit of results.
+        # Be sure to skip cursors that would otherwise return an empty result set.
+        units_cursors = (self._associated_units_by_type_cursor(t, criteria, associations_lookup[t].keys())
+                         for t in association_unit_types if t in associations_lookup)
 
         if not criteria.association_sort:
-            # if we're not sorting based on association fields, then set the
+            # If we're not sorting based on association fields, then set the
             # skip and limit individually across the cursors to get consistent
-            # behavior across multiple calls with skip and limit across multiple
-            # unit types
+            # behavior across multiple calls across multiple unit types.
             units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
             units_cursors = self._associated_units_cursors_with_limit(units_cursors, criteria.limit)
 
         units_generator = self._units_from_chained_cursors(units_cursors)
 
         if criteria.association_sort:
-            # use the ordered associations we created to properly order the results
+            # Use the ordered associations we created to properly order the results.
             units_generator = self._association_ordered_units(association_ordered_unit_ids, units_generator)
 
             if criteria.unit_filters:
-                # if we're ordering by association fields and filtering the
+                # If we're ordering by association fields and filtering the
                 # content units, then skip and limit must be performed manually
-                # and last (skip and limit must always come after sorting)
+                # and last (skip and limit must always come after sorting).
                 units_generator = self._with_skip_and_limit(units_generator, criteria.skip, criteria.limit)
 
-            units_generator = self._merged_units_duplicate_units(unit_associations_by_id, units_generator)
+            # The association ordering will generate the same unit for every
+            # association it has with the repository, hence "duplicate units".
+            units_generator = self._merged_units_duplicate_units(associations_lookup, units_generator)
 
         else:
-            units_generator = self._merged_units_duplicate_associations(unit_associations_by_id, units_generator)
+            # Unit ordering or no ordering only produce unique units, hence
+            # "unique units".
+            units_generator = self._merged_units_unique_units(associations_lookup, units_generator)
 
         if as_generator:
             return units_generator
 
+        # If as_generator isn't set, evaluate the whole pipeline by casting it
+        # to a list. Should probably log this. Is there a log-level "stupid"?
         return list(units_generator)
 
     def get_units_across_types(self, repo_id, criteria=None, as_generator=False):
@@ -231,8 +246,8 @@ class RepoUnitAssociationQueryManager(object):
         :type  as_generator: bool
         """
 
-        # this really is the new default behavior of get_units, so just pass
-        # the request through
+        # This really is the new default behavior of get_units, so just pass
+        # the request through.
 
         return self.get_units(repo_id, criteria, as_generator)
 
@@ -262,12 +277,12 @@ class RepoUnitAssociationQueryManager(object):
         :type  as_generator: bool
         """
 
-        # get_units now defaults to batch behavior, so use a list of length 1 to
-        # specify the unit types and pass it through
+        # Get_units now defaults to batch behavior, so use a list of length 1 to
+        # specify the unit types and pass it through.
 
         criteria = criteria or UnitAssociationCriteria()
-        # just overwrite the type_ids if the user was dumb enough to provide
-        # them in this call
+        # Just overwrite the type_ids if the user was dumb enough to provide
+        # them in this call.
         criteria.type_ids = [type_id]
 
         return self.get_units(repo_id, criteria, as_generator)
@@ -288,7 +303,7 @@ class RepoUnitAssociationQueryManager(object):
 
         cursor = collection.find({'repo_id': repo_id}, fields=['unit_type_id'])
 
-        return [u for u in cursor.distinct('unit_type_id')]
+        return [t for t in cursor.distinct('unit_type_id')]
 
     @staticmethod
     def _unit_associations_cursor(repo_id, criteria):
@@ -313,9 +328,11 @@ class RepoUnitAssociationQueryManager(object):
 
         sort = criteria.association_sort or []
 
-        # sorting by the "created" flag is crucial to removing duplicate associations
+        # Sorting by the "created" flag is crucial to removing duplicate associations.
         created_sort_tuple = ('created', SORT_ASCENDING)
         if created_sort_tuple not in sort:
+            # Append it so that associations are sorted by it last, keeping in
+            # tact any other sorts that come before it.
             sort.append(created_sort_tuple)
 
         cursor.sort(sort)
@@ -331,8 +348,8 @@ class RepoUnitAssociationQueryManager(object):
         :rtype: generator
         """
 
-        # this algorithm returns the earliest association in the case of duplicates
-        # this algorithm assumes the iterator is already sorted by "created"
+        # This algorithm returns the earliest association in the case of duplicates.
+        # This algorithm assumes the iterator is already sorted by "created".
 
         previously_generated_association_ids = set()
 
@@ -503,14 +520,14 @@ class RepoUnitAssociationQueryManager(object):
         :rtype: generator
         """
 
-        # this algorithm assumes that associated_unit_ids has already been sorted
+        # This algorithm assumes that associated_unit_ids has already been sorted.
 
-        # XXX this is unfortunate as it's the one place that loads all of the
-        # associated_units into memory
+        # XXX This is unfortunate as it's the one place that loads all of the
+        # associated_units into memory.
         associated_units_by_id = dict(((u['_content_type_id'], u['_id']), u) for u in associated_units)
 
         for id_tuple in associated_unit_ids:
-            # the associated_unit_ids are sorted, but not all of the units may 
+            # the associated_unit_ids are sorted, but not all of the units may
             # be in the associated_units_by_id
             if id_tuple not in associated_units_by_id:
                 continue
@@ -518,38 +535,51 @@ class RepoUnitAssociationQueryManager(object):
             yield associated_units_by_id[id_tuple]
 
     @staticmethod
-    def _merged_units_duplicate_units(unit_associations_by_id, associated_units):
+    def _merged_units_duplicate_units(associations_lookup, associated_units):
         """
         Return associated units as the unit association information and the unit
         information as metadata on the unit association information.
 
         Used when there are duplicate units returned by the associated_units iterator.
 
-        :type unit_associations_by_id: dict
+        :type associations_lookup: dict
         :type associated_units: iterator
         :rtype: generator
         """
 
+        # This algorithm assumes that the units will come in the same order that
+        # the associations are listed in the associations_lookup.
+
         for unit in associated_units:
-            association = unit_associations_by_id[unit['_content_type_id']][unit['_id']].pop(0)
+            # Remove the associations from the list in the order they were
+            # placed in it.
+            association = associations_lookup[unit['_content_type_id']][unit['_id']].pop(0)
             association['metadata'] = unit
             yield association
 
     @staticmethod
-    def _merged_units_duplicate_associations(unit_associations_by_id, associated_units):
+    def _merged_units_unique_units(associations_lookup, associated_units):
         """
         Return associated units as the unit association information and the unit
         information as metadata on the unit association information.
 
         Used when no duplicate units returned by the associated_units iterator.
 
-        :type unit_associations_by_id: dict
+        :type associations_lookup: dict
         :type associated_units: iterator
         :rtype: generator
         """
 
+        # This algorithm assumes that only unique units will be generated,
+        # regardless of the number of times a unit is associated with a repo.
+
+        # It also assumes that the units will be presented in the proper order
+        # and the association ordering, if any, is secondary.
+
         for unit in associated_units:
-            for association in unit_associations_by_id[unit['_content_type_id']][unit['_id']]:
+            # Use the associations_lookup to determine how many times to return
+            # the unit in the results.
+            for association in associations_lookup[unit['_content_type_id']][unit['_id']]:
                 association['metadata'] = unit
                 yield association
 
