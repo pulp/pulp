@@ -1,14 +1,10 @@
-%if 0%{?fedora} > 12
-%global with_python3 1
-%else
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")}
-%endif
 
 %global srcname amqplib
 
 Name:           python-%{srcname}
 Version:        1.0.2
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Client library for AMQP
 
 Group:          Development/Languages
@@ -16,6 +12,8 @@ License:        LGPLv2+
 URL:            http://pypi.python.org/pypi/amqplib
 Source0:        http://pypi.python.org/packages/source/a/%{srcname}/%{srcname}-%{version}.tgz
 BuildArch:      noarch
+
+Requires: python-ssl
 
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
@@ -28,60 +26,22 @@ Client library for AMQP (Advanced Message Queuing Protocol)
 Supports the 0-8 AMQP spec, and has been tested with RabbitMQ
 and Python's 2.4, 2.5, and 2.6.
 
-%if 0%{?with_python3}
-%package -n python3-%{srcname}
-Summary:        Client library for AMQP
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
-BuildRequires:  python3-nose
-
-%description -n python3-%{srcname}
-Client library for AMQP (Advanced Message Queuing Protocol)
-
-Supports the 0-8 AMQP spec, and has been tested with RabbitMQ
-and Python's 2.4 up to 3.2
-%endif
-
-
 %prep
 %setup -q -n %{srcname}-%{version}
-%if 0%{?with_python3}
-cp -a . %{py3dir}
-%endif
-
 
 %build
 %{__python} setup.py build
-%if 0%{?with_python3}
-pushd %{py3dir}
-%{__python3} setup.py build
-popd
-%endif
-
 
 %install
 rm -rf %{buildroot}
 %{__python} setup.py install --skip-build --root %{buildroot}
-%if 0%{?with_python3}
-pushd %{py3dir}
-%{__python3} setup.py install --skip-build --root %{buildroot}
-popd
-%endif
  
 %clean
 rm -rf %{buildroot}
 
-
 %check
 cd tests/client_0_8
 nosetests run_all.py
-%if 0%{?with_python3}
-pushd %{py3dir}
-cd tests/client_0_8
-nosetests-%{python3_version} run_all.py
-popd
-%endif
-
 
 %files
 %defattr(-,root,root,-)
@@ -89,18 +49,7 @@ popd
 %{python_sitelib}/%{srcname}/
 %{python_sitelib}/%{srcname}*.egg-info
 
-%if 0%{?with_python3}
-%files -n python3-%{srcname}
-%doc CHANGES INSTALL LICENSE README TODO
-%{python3_sitelib}/%{srcname}/
-%{python3_sitelib}/%{srcname}*.egg-info
-%endif
-
-
 %changelog
-* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 1.0.2-6
-- new package built with tito
-
 * Sat Aug 04 2012 David Malcolm <dmalcolm@redhat.com> - 1.0.2-6
 - rebuild for https://fedoraproject.org/wiki/Features/Python_3.3
 
