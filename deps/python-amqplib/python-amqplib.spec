@@ -14,12 +14,10 @@ Source0:        http://pypi.python.org/packages/source/a/%{srcname}/%{srcname}-%
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 
-Requires: python-ssl
-
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-nose
-
+Requires:       python-ssl
 
 %description
 Client library for AMQP (Advanced Message Queuing Protocol)
