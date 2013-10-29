@@ -1,7 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (c) 2011 Red Hat, Inc.
-#
+# Copyright (c) 2011-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -21,12 +20,11 @@ from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
 from pulp.plugins.model import PublishReport
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.exceptions import InvalidValue
+from pulp.server.exceptions import InvalidValue, PulpExecutionException
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
@@ -117,7 +115,8 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(False, 'Summary of the publish', 'Details of the publish')
 
         # Test
-        self.publish_manager.publish('repo-1', 'dist-1', None)
+        self.assertRaises(PulpExecutionException, self.publish_manager.publish, 'repo-1',
+                          'dist-1', None)
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
