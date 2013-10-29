@@ -155,9 +155,13 @@ class RepoUnitAssociationQueryManager(object):
         unit_associations_by_id = {}
 
         for unit_association in unit_associations_generator:
+            unit_type_id = unit_association['unit_type_id']
             unit_id = unit_association['unit_id']
-            association_ordered_unit_ids.append(unit_id)
-            association_list = unit_associations_by_id.setdefault(unit_id, [])
+
+            association_ordered_unit_ids.append((unit_type_id, unit_id))
+
+            association_type_dict = unit_associations_by_id.setdefault(unit_type_id, {})
+            association_list = association_type_dict.setdefault(unit_id, [])
             association_list.append(unit_association)
 
         unit_type_ids = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
@@ -167,7 +171,9 @@ class RepoUnitAssociationQueryManager(object):
 
         # use a generator expression here to keep from going back to the types
         # collections once we've returned our limit of results
-        units_cursors = (self._associated_units_by_type_cursor(unit_type_id, criteria, association_ordered_unit_ids)
+        units_cursors = (self._associated_units_by_type_cursor(unit_type_id,
+                                                               criteria,
+                                                               unit_associations_by_id[unit_type_id].keys())
                          for unit_type_id in unit_type_ids)
 
         if not criteria.association_sort:
@@ -330,7 +336,7 @@ class RepoUnitAssociationQueryManager(object):
 
         for unit_association in iterator:
 
-            association_id = '+'.join((unit_association['unit_type_id'], unit_association['unit_id']))
+            association_id = (unit_association['unit_type_id'], unit_association['unit_id'])
 
             if association_id in previously_generated_association_ids:
                 continue
@@ -499,15 +505,15 @@ class RepoUnitAssociationQueryManager(object):
 
         # XXX this is unfortunate as it's the one place that loads all of the
         # associated_units into memory
-        associated_units_by_id = dict((u['_id'], u) for u in associated_units)
+        associated_units_by_id = dict(((u['type_id'], u['_id']), u) for u in associated_units)
 
-        for unit_id in associated_unit_ids:
+        for id_tuple in associated_unit_ids:
             # the associated_unit_ids are sorted, but not all of the units may 
             # be in the associated_units_by_id
-            if unit_id not in associated_units_by_id:
+            if id_tuple not in associated_units_by_id:
                 continue
 
-            yield associated_units_by_id[unit_id]
+            yield associated_units_by_id[id_tuple]
 
     @staticmethod
     def _merged_units(unit_associations_by_id, associated_units):
@@ -521,7 +527,7 @@ class RepoUnitAssociationQueryManager(object):
         """
 
         for unit in associated_units:
-            for association in unit_associations_by_id[unit['_id']]:
+            for association in unit_associations_by_id[unit['type_id']][unit['_id']:
                 association['metadata'] = unit
                 yield association
 
