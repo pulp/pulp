@@ -360,8 +360,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         # the second timestamps[1]. There are 4 such type/owner combinations,
         # however the user associations in gamma have timestamp offsets of i+1.
 
-        #pprint(after_units)
-
         self.assertEqual(self.repo_1_count - 3, len(after_units))
         self.assertEqual(3, len(before_units))
 

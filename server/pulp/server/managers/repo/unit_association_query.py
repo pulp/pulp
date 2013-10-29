@@ -16,6 +16,7 @@ Contains the manager class for performing queries for repo-unit associations.
 """
 
 import logging
+from pprint import pprint
 
 import pymongo
 
@@ -171,9 +172,7 @@ class RepoUnitAssociationQueryManager(object):
 
         # use a generator expression here to keep from going back to the types
         # collections once we've returned our limit of results
-        units_cursors = (self._associated_units_by_type_cursor(unit_type_id,
-                                                               criteria,
-                                                               unit_associations_by_id[unit_type_id].keys())
+        units_cursors = (self._associated_units_by_type_cursor(unit_type_id, criteria, unit_associations_by_id.get(unit_type_id, {}).keys())
                          for unit_type_id in unit_type_ids)
 
         if not criteria.association_sort:
@@ -196,7 +195,10 @@ class RepoUnitAssociationQueryManager(object):
                 # and last (skip and limit must always come after sorting)
                 units_generator = self._with_skip_and_limit(units_generator, criteria.skip, criteria.limit)
 
-        units_generator = self._merged_units(unit_associations_by_id, units_generator)
+            units_generator = self._merged_units_duplicate_units(unit_associations_by_id, units_generator)
+
+        else:
+            units_generator = self._merged_units_duplicate_associations(unit_associations_by_id, units_generator)
 
         if as_generator:
             return units_generator
@@ -314,7 +316,7 @@ class RepoUnitAssociationQueryManager(object):
         # sorting by the "created" flag is crucial to removing duplicate associations
         created_sort_tuple = ('created', SORT_ASCENDING)
         if created_sort_tuple not in sort:
-            sort.insert(0, created_sort_tuple)
+            sort.append(created_sort_tuple)
 
         cursor.sort(sort)
 
@@ -505,7 +507,7 @@ class RepoUnitAssociationQueryManager(object):
 
         # XXX this is unfortunate as it's the one place that loads all of the
         # associated_units into memory
-        associated_units_by_id = dict(((u['type_id'], u['_id']), u) for u in associated_units)
+        associated_units_by_id = dict(((u['_content_type_id'], u['_id']), u) for u in associated_units)
 
         for id_tuple in associated_unit_ids:
             # the associated_unit_ids are sorted, but not all of the units may 
@@ -516,10 +518,12 @@ class RepoUnitAssociationQueryManager(object):
             yield associated_units_by_id[id_tuple]
 
     @staticmethod
-    def _merged_units(unit_associations_by_id, associated_units):
+    def _merged_units_duplicate_units(unit_associations_by_id, associated_units):
         """
         Return associated units as the unit association information and the unit
         information as metadata on the unit association information.
+
+        Used when there are duplicate units returned by the associated_units iterator.
 
         :type unit_associations_by_id: dict
         :type associated_units: iterator
@@ -527,7 +531,25 @@ class RepoUnitAssociationQueryManager(object):
         """
 
         for unit in associated_units:
-            for association in unit_associations_by_id[unit['type_id']][unit['_id']:
+            association = unit_associations_by_id[unit['_content_type_id']][unit['_id']].pop(0)
+            association['metadata'] = unit
+            yield association
+
+    @staticmethod
+    def _merged_units_duplicate_associations(unit_associations_by_id, associated_units):
+        """
+        Return associated units as the unit association information and the unit
+        information as metadata on the unit association information.
+
+        Used when no duplicate units returned by the associated_units iterator.
+
+        :type unit_associations_by_id: dict
+        :type associated_units: iterator
+        :rtype: generator
+        """
+
+        for unit in associated_units:
+            for association in unit_associations_by_id[unit['_content_type_id']][unit['_id']]:
                 association['metadata'] = unit
                 yield association
 
