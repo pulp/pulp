@@ -49,6 +49,10 @@ nosetests run_all.py
 %{python_sitelib}/%{srcname}*.egg-info
 
 %changelog
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 1.0.2-7
+- define BuildRoot: for RHEL-5 builds (jortel@redhat.com)
+- remove python3 references. (jortel@redhat.com)
+
 * Sat Aug 04 2012 David Malcolm <dmalcolm@redhat.com> - 1.0.2-6
 - rebuild for https://fedoraproject.org/wiki/Features/Python_3.3
 
