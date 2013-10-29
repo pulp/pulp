@@ -628,7 +628,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
 
         # Test
         all_units.sort(lambda x, y: cmp(x['created'], y['created']))
-        matching = list(self.manager._unit_associations_no_duplicates(all_units))
+        matching = list(self.manager._unit_associations_no_duplicates(UnitAssociationCriteria(), all_units))
 
         # Verify
         self.assertEqual(3, len(matching))
