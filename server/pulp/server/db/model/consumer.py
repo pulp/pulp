@@ -42,6 +42,7 @@ class Consumer(Model):
     @param certificate: x509 certificate for the consumer
     @type certificate: str
     """
+    RESOURCE_TEMPLATE = 'pulp:consumer:%s'
 
     collection_name = 'consumers'
     unique_indices = ('id',)
@@ -57,6 +58,10 @@ class Consumer(Model):
 
         self.capabilities = capabilities or {}
         self.certificate = certificate or None
+
+    @classmethod
+    def build_resource_tag(cls, consumer_id):
+        return cls.RESOURCE_TEMPLATE % consumer_id
 
 
 class Bind(Model):

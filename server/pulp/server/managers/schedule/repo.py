@@ -11,15 +11,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import copy
-
 from pulp.server import exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.dispatch import factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest
-from pulp.server.itineraries.repo import publish_itinerary, dummy_itinerary
+from pulp.server.db.model.repository import RepoImporter, RepoDistributor
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
+from pulp.server.tasks.repository import sync_with_auto_publish, publish
 
 
 _PUBLISH_OPTION_KEYS = ('override_config',)
@@ -27,15 +24,14 @@ _SYNC_OPTION_KEYS = ('override_config',)
 
 
 class RepoSyncScheduleManager(object):
-    @staticmethod
-    def list(repo_id, importer_id):
-        RepoSyncScheduleManager.validate_importer(repo_id, importer_id)
+    @classmethod
+    def list(cls, repo_id, importer_id):
+        cls.validate_importer(repo_id, importer_id)
 
-        schedule_ids = managers_factory.repo_importer_manager().list_sync_schedules(repo_id)
-        return utils.get(schedule_ids)
+        return utils.get_by_resource(RepoImporter.build_resource_tag(repo_id, importer_id))
 
-    @staticmethod
-    def create(repo_id, importer_id, sync_options, schedule_data):
+    @classmethod
+    def create(cls, repo_id, importer_id, sync_options, schedule_data):
         """
         Create a new sync schedule for a given repository using the given importer.
 
@@ -47,24 +43,29 @@ class RepoSyncScheduleManager(object):
         :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
         # validate the input
-        RepoSyncScheduleManager.validate_importer(repo_id, importer_id)
+        cls.validate_importer(repo_id, importer_id)
         utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
 
         utils.validate_initial_schedule_options(schedule_data)
 
-        # TODO: put sync itinerary here
-        task = dummy_itinerary.name
+        task = sync_with_auto_publish.name
         args = [repo_id]
         kwargs = {'overrides': sync_options['override_config']}
-        schedule = ScheduledCall(schedule_data['schedule'], task, args=args, kwargs=kwargs)
+        resource = RepoImporter.build_resource_tag(repo_id, importer_id)
+        schedule = ScheduledCall(schedule_data['schedule'], task, args=args,
+                                 kwargs=kwargs, resource=resource)
         schedule.save()
-
-        managers_factory.repo_importer_manager().add_sync_schedule(repo_id, schedule.id)
+        try:
+            cls.validate_importer(repo_id, importer_id)
+        except exceptions.MissingResource:
+            # back out of this whole thing, since the importer disappeared
+            utils.delete(schedule.id)
+            raise
 
         return schedule
 
-    @staticmethod
-    def update(repo_id, importer_id, schedule_id, updates):
+    @classmethod
+    def update(cls, repo_id, importer_id, schedule_id, updates):
         """
         Update an existing sync schedule.
 
@@ -75,7 +76,7 @@ class RepoSyncScheduleManager(object):
         :param schedule_data:
         :return:
         """
-        RepoSyncScheduleManager.validate_importer(repo_id, importer_id)
+        cls.validate_importer(repo_id, importer_id)
 
         if 'override_config' in updates:
             updates['kwargs'] = {'overrides': updates.pop('override_config')}
@@ -84,8 +85,8 @@ class RepoSyncScheduleManager(object):
 
         utils.update(schedule_id, updates)
 
-    @staticmethod
-    def delete(repo_id, importer_id, schedule_id):
+    @classmethod
+    def delete(cls, repo_id, importer_id, schedule_id):
         """
         Delete a scheduled sync from a given repository and importer.
 
@@ -95,11 +96,7 @@ class RepoSyncScheduleManager(object):
         :return:
         """
         # validate the input
-        RepoSyncScheduleManager.validate_importer(repo_id, importer_id)
-
-        # remove from the importer
-        importer_manager = managers_factory.repo_importer_manager()
-        importer_manager.remove_sync_schedule(repo_id, schedule_id)
+        cls.validate_importer(repo_id, importer_id)
 
         # remove from the scheduler
         utils.delete(schedule_id)
@@ -114,8 +111,14 @@ class RepoSyncScheduleManager(object):
 
 
 class RepoPublishScheduleManager(object):
-    @staticmethod
-    def create(repo_id, distributor_id, publish_options, schedule_data):
+    @classmethod
+    def list(cls, repo_id, distributor_id):
+        cls.validate_distributor(repo_id, distributor_id)
+
+        return utils.get_by_resource(RepoDistributor.build_resource_tag(repo_id, distributor_id))
+
+    @classmethod
+    def create(cls, repo_id, distributor_id, publish_options, schedule_data):
         """
         Create a new scheduled publish for the given repository and distributor.
 
@@ -126,25 +129,23 @@ class RepoPublishScheduleManager(object):
         :return:
         """
         # validate the input
-        RepoPublishScheduleManager.validate_distributor(repo_id, distributor_id)
+        cls.validate_distributor(repo_id, distributor_id)
         utils.validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
 
         utils.validate_initial_schedule_options(schedule_data)
 
-        # TODO: put sync itinerary here
-        task = dummy_itinerary.name
-        args = [repo_id]
+        task = publish.name
+        args = [repo_id, distributor_id]
         kwargs = {'overrides': publish_options['override_config']}
-        schedule = ScheduledCall(schedule_data['schedule'], task, args=args, kwargs=kwargs)
+        resource = RepoDistributor.build_resource_tag(repo_id, distributor_id)
+        schedule = ScheduledCall(schedule_data['schedule'], task, args=args,
+                                 kwargs=kwargs, resource=resource)
         schedule.save()
-
-        dist_manager = managers_factory.repo_distributor_manager()
-        dist_manager.add_publish_schedule(repo_id, distributor_id, schedule.id)
 
         return schedule
 
-    @staticmethod
-    def update(repo_id, distributor_id, schedule_id, updates):
+    @classmethod
+    def update(cls, repo_id, distributor_id, schedule_id, updates):
         """
         Update an existing scheduled publish for the given repository and distributor.
 
@@ -156,7 +157,7 @@ class RepoPublishScheduleManager(object):
         :return:
         """
 
-        RepoPublishScheduleManager.validate_distributor(repo_id, distributor_id)
+        cls.validate_distributor(repo_id, distributor_id)
         if 'override_config' in updates:
             updates['kwargs'] = {'overrides': updates.pop('override_config')}
 
@@ -164,8 +165,8 @@ class RepoPublishScheduleManager(object):
 
         utils.update(schedule_id, updates)
 
-    @staticmethod
-    def delete(repo_id, distributor_id, schedule_id):
+    @classmethod
+    def delete(cls, repo_id, distributor_id, schedule_id):
         """
         Delete an existing scheduled publish from the given repository and distributor.
 
@@ -175,11 +176,7 @@ class RepoPublishScheduleManager(object):
         :return:
         """
         # validate the input
-        RepoPublishScheduleManager.validate_distributor(repo_id, distributor_id)
-
-        # remove from the distributor
-        dispatch_manager = managers_factory.repo_distributor_manager()
-        dispatch_manager.remove_publish_schedule(repo_id, distributor_id, schedule_id)
+        cls.validate_distributor(repo_id, distributor_id)
 
         # remove from the scheduler
         utils.delete(schedule_id)

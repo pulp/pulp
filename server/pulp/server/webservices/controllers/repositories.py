@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from datetime import timedelta
-from gettext import gettext as _
 import logging
 import sys
 
@@ -24,17 +23,17 @@ from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
-from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
-from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publish_itinerary
+from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
 from pulp.server.itineraries.repository import (repo_delete_itinerary, distributor_delete_itinerary,
                                                 distributor_update_itinerary)
-from pulp.server.managers.schedule import utils
-from pulp.server.managers.schedule.repo import RepoSyncScheduleManager
+from pulp.server.tasks.repository import publish
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.schedule import ScheduleResource
 from pulp.server.webservices.controllers.search import SearchController
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
@@ -418,22 +417,21 @@ class SyncScheduleCollection(JSONController):
     @auth_required(CREATE)
     def POST(self, repo_id, importer_id):
         manager = manager_factory.repo_sync_schedule_manager()
-        importer_manager = manager_factory.repo_importer_manager()
-        importer = importer_manager.get_importer(repo_id)
-        if importer_id != importer['id']:
-            raise exceptions.MissingResource(importer=importer_id)
 
         schedule_options = self.params()
         sync_options = {'override_config': schedule_options.pop('override_config', {})}
 
         schedule = manager.create(repo_id, importer_id, sync_options, schedule_options)
 
-        obj = serialization.dispatch.scheduled_sync_obj(schedule)
-        obj.update(serialization.link.child_link_obj(schedule.id))
-        return self.created(obj['_href'], obj)
+        ret = schedule.for_display()
+        ret.update(serialization.link.child_link_obj(schedule.id))
+        return self.created(ret['_href'], ret)
 
 
-class SyncScheduleResource(JSONController):
+class SyncScheduleResource(ScheduleResource):
+    def __init__(self):
+        super(SyncScheduleResource, self).__init__()
+        self.manager = manager_factory.repo_sync_schedule_manager()
 
     # Scope:  exclusive sub-sub-resource
     # DELETE: remove a scheduled sync
@@ -442,34 +440,19 @@ class SyncScheduleResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, repo_id, importer_id, schedule_id):
-        schedule_manager = manager_factory.repo_sync_schedule_manager()
-        result = schedule_manager.delete(repo_id, importer_id, schedule_id)
+        result = self.manager.delete(repo_id, importer_id, schedule_id)
         return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, importer_id, schedule_id):
-        manager = manager_factory.repo_sync_schedule_manager()
-        manager.validate_importer(repo_id, importer_id)
-        try:
-            schedule = utils.get([schedule_id])[0]
-        except IndexError:
-            raise exceptions.MissingResource(schedule_id=schedule_id)
-
-        ret = schedule.for_display()
-        ret.update(serialization.link.current_link_obj())
-        return self.ok(ret)
+        self.manager.validate_importer(repo_id, importer_id)
+        return self._get(schedule_id)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id, schedule_id):
         updates = self.params()
-
-        manager = manager_factory.repo_sync_schedule_manager()
-        manager.update(repo_id, importer_id, schedule_id, updates)
-
-        schedule = utils.get([schedule_id])[0]
-        ret = schedule.for_display()
-        ret.update(serialization.link.current_link_obj())
-        return self.ok(ret)
+        self.manager.update(repo_id, importer_id, schedule_id, updates)
+        return self._get(schedule_id)
 
 
 class RepoDistributors(JSONController):
@@ -581,55 +564,32 @@ class PublishScheduleCollection(JSONController):
 
     @auth_required(READ)
     def GET(self, repo_id, distributor_id):
-        scheduler = dispatch_factory.scheduler()
-        distributor_manager = manager_factory.repo_distributor_manager()
-        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
-        schedule_objs = []
-        for schedule_id in schedule_list:
-            try:
-                scheduled_call = scheduler.get(schedule_id)
-            except exceptions.MissingResource:
-                msg = _('Repository %(r)s; Distributor %(d)s: scheduled publish does not exist: '
-                        '%(s)s')
-                logger.warn(msg % {'r': repo_id, 'd': distributor_id, 's': schedule_id})
-            else:
-                obj = serialization.dispatch.scheduled_publish_obj(scheduled_call)
-                obj.update(serialization.link.child_link_obj(schedule_id))
-                schedule_objs.append(obj)
-        return self.ok(schedule_objs)
+        manager = manager_factory.repo_publish_schedule_manager()
+        schedules = manager.list(repo_id, distributor_id)
+        for_display = [schedule.for_display() for schedule in schedules]
+        for entry in for_display:
+            entry.update(serialization.link.child_link_obj(entry['id']))
+
+        return self.ok(for_display)
 
     @auth_required(CREATE)
     def POST(self, repo_id, distributor_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        distributor_manager.get_distributor(repo_id, distributor_id)
+        manager = manager_factory.repo_publish_schedule_manager()
 
         schedule_options = self.params()
         publish_options = {'override_config': schedule_options.pop('override_config', {})}
 
-        schedule_manager = manager_factory.schedule_manager()
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                             distributor_id),
-                action_tag('create_publish_schedule')]
-        call_request = CallRequest(schedule_manager.create_publish_schedule, # rbarlow_converted
-                                   [repo_id, distributor_id, publish_options, schedule_options],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                      distributor_id)
-        schedule_id = execution.execute_sync(call_request)
+        schedule = manager.create(repo_id, distributor_id, publish_options, schedule_options)
 
-        scheduler = dispatch_factory.scheduler()
-        schedule = scheduler.get(schedule_id)
-        obj = serialization.dispatch.scheduled_publish_obj(schedule)
-        obj.update(serialization.link.child_link_obj(schedule_id))
-        return self.created(obj['_href'], obj)
+        ret = schedule.for_display()
+        ret.update(serialization.link.child_link_obj(schedule.id))
+        return self.created(ret['_href'], ret)
 
 
-class PublishScheduleResource(JSONController):
+class PublishScheduleResource(ScheduleResource):
+    def __init__(self):
+        super(PublishScheduleResource, self).__init__()
+        self.manager = manager_factory.repo_publish_schedule_manager()
 
     # Scope:  exclusive sub-sub-resource
     # DELETE: remove a scheduled publish
@@ -638,77 +598,19 @@ class PublishScheduleResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, repo_id, distributor_id, schedule_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
-        if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id,
-                                             publish_schedule=schedule_id)
-
-        schedule_manager = manager_factory.schedule_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                             distributor_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_publish_schedule')]
-        call_request = CallRequest(schedule_manager.delete_publish_schedule, # rbarlow_converted
-                                   [repo_id, distributor_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                      distributor_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-        result = execution.execute(call_request)
+        result = self.manager.delete(repo_id, distributor_id, schedule_id)
         return self.ok(result)
 
     @auth_required(READ)
     def GET(self, repo_id, distributor_id, schedule_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
-        if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id,
-                                             publish_schedule=schedule_id)
-
-        scheduler = dispatch_factory.scheduler()
-        schedule = scheduler.get(schedule_id)
-        obj = serialization.dispatch.scheduled_publish_obj(schedule)
-        obj.update(serialization.link.current_link_obj())
-        return self.ok(obj)
+        self.manager.validate_distributor(repo_id, distributor_id)
+        return self._get(schedule_id)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id, schedule_id):
-        distributor_manager = manager_factory.repo_distributor_manager()
-        schedule_list = distributor_manager.list_publish_schedules(repo_id, distributor_id)
-        if schedule_id not in schedule_list:
-            raise exceptions.MissingResource(repo=repo_id, distributor=distributor_id,
-                                             publish_schedule=schedule_id)
-
-        publish_update = {}
-        schedule_update = self.params()
-        if 'override_config' in schedule_update:
-            publish_update['override_config'] = schedule_update.pop('override_config')
-
-        schedule_manager = manager_factory.schedule_manager()
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-            action_tag('update_publish_schedule')]
-        call_request = CallRequest( # rbarlow_converted
-            schedule_manager.update_publish_schedule,
-            [repo_id, distributor_id, schedule_id, publish_update, schedule_update], tags=tags,
-            archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                    distributor_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-        execution.execute(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        schedule = scheduler.get(schedule_id)
-        obj = serialization.dispatch.scheduled_publish_obj(schedule)
-        obj.update(serialization.link.current_link_obj())
-        return self.ok(obj)
+        updates = self.params()
+        self.manager.update(repo_id, distributor_id, schedule_id, updates)
+        return self._get(schedule_id)
 
 
 class RepoSyncHistory(JSONController):
@@ -830,9 +732,7 @@ class RepoPublish(JSONController):
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
 
-        call_request = publish_itinerary(repo_id, distributor_id, overrides)[0]
-
-        return execution.execute_async(self, call_request)
+        return self.ok(publish(repo_id, distributor_id, overrides).id)
 
 
 class RepoAssociate(JSONController):

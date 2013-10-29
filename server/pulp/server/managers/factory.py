@@ -38,6 +38,7 @@ TYPE_CONSUMER_GROUP_QUERY       = 'consumer-group-query-manager'
 TYPE_CONSUMER_HISTORY           = 'consumer-history-manager'
 TYPE_CONSUMER_PROFILE           = 'consumer-profile-manager'
 TYPE_CONSUMER_QUERY             = 'consumer-query-manager'
+TYPE_CONSUMER_SCHEDULE          = 'consumer-schedule-manager'
 TYPE_CONTENT                    = 'content-manager'
 TYPE_CONTENT_CATALOG            = 'content-catalog-manager'
 TYPE_CONTENT_ORPHAN             = 'content-orphan-manager'
@@ -62,12 +63,12 @@ TYPE_REPO_GROUP_QUERY           = 'repo-group-query-manager'
 TYPE_REPO_IMPORTER              = 'repo-importer-manager'
 TYPE_REPO_DISTRIBUTOR           = 'repo-distributor-manager'
 TYPE_REPO_PUBLISH               = 'repo-publish-manager'
+TYPE_REPO_PUBLISH_SCHEDULE      = 'repo-publish-schedule-manager'
 TYPE_REPO_QUERY                 = 'repo-query-manager'
 TYPE_REPO_SYNC                  = 'repo-sync-manager'
 TYPE_REPO_SYNC_SCHEDULE         = 'repo-sync-schedule-manager'
 TYPE_ROLE                       = 'role-manager'
 TYPE_ROLE_QUERY                 = 'role-query-manager'
-TYPE_SCHEDULE                   = 'schedule-manager'
 TYPE_TOPIC_PUBLISH              = 'topic-publish-manager'
 TYPE_USER                       = 'user-manager'
 TYPE_USER_QUERY                 = 'user-query-manager'
@@ -180,6 +181,12 @@ def consumer_profile_manager():
     @rtype: L{pulp.server.managers.consumer.profile.ConsumerProfileManager}
     """
     return get_manager(TYPE_CONSUMER_PROFILE)
+
+def consumer_schedule_manager():
+    """
+    @rtype: L{pulp.server.managers.schedule.consumer.ConsumerScheduleManager}
+    """
+    return get_manager(TYPE_CONSUMER_SCHEDULE)
 
 def content_manager():
     """
@@ -325,6 +332,12 @@ def repo_publish_manager():
     """
     return get_manager(TYPE_REPO_PUBLISH)
 
+def repo_publish_schedule_manager():
+    """
+    @rtype: L{pulp.server.managers.schedule.repo.RepoPublishScheduleManager}
+    """
+    return get_manager(TYPE_REPO_PUBLISH_SCHEDULE)
+
 def repo_query_manager():
     """
     @rtype: L{pulp.server.managers.repo.query.RepoQueryManager}
@@ -339,7 +352,7 @@ def repo_sync_manager():
 
 def repo_sync_schedule_manager():
     """
-    @rtype: L{pulp.server.managers.repo.sync.RepoSyncScheduleManager}
+    @rtype: L{pulp.server.managers.schedule.repo.RepoSyncScheduleManager}
     """
     return get_manager(TYPE_REPO_SYNC_SCHEDULE)
 
@@ -354,12 +367,6 @@ def role_query_manager():
     @rtype: L{pulp.server.managers.auth.role.query.RoleQueryManager}
     """
     return get_manager(TYPE_ROLE_QUERY)
-
-def schedule_manager():
-    """
-    @rtype: L{pulp.server.managers.schedule.aggregate.AggregateScheduleManager}
-    """
-    return get_manager(TYPE_SCHEDULE)
 
 def topic_publish_manager():
     """
@@ -431,9 +438,8 @@ def initialize():
     from pulp.server.managers.repo.sync import RepoSyncManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
-    from pulp.server.managers.schedule.aggregate import AggregateScheduleManager
-    from pulp.server.managers.schedule.repo import RepoSyncScheduleManager
-    import pulp.server.managers.consumer.applicability
+    from pulp.server.managers.schedule.repo import RepoPublishScheduleManager, RepoSyncScheduleManager
+    from pulp.server.managers.schedule.consumer import ConsumerScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
@@ -451,6 +457,7 @@ def initialize():
         TYPE_CONSUMER_HISTORY: ConsumerHistoryManager,
         TYPE_CONSUMER_PROFILE: ProfileManager,
         TYPE_CONSUMER_QUERY: ConsumerQueryManager,
+        TYPE_CONSUMER_SCHEDULE: ConsumerScheduleManager,
         TYPE_CONTENT: ContentManager,
         TYPE_CONTENT_CATALOG: ContentCatalogManager,
         TYPE_CONTENT_ORPHAN: OrphanManager,
@@ -475,12 +482,12 @@ def initialize():
         TYPE_REPO_GROUP_QUERY : RepoGroupQueryManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
         TYPE_REPO_PUBLISH: RepoPublishManager,
+        TYPE_REPO_PUBLISH_SCHEDULE: RepoPublishScheduleManager,
         TYPE_REPO_QUERY: RepoQueryManager,
         TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_REPO_SYNC_SCHEDULE: RepoSyncScheduleManager,
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,
-        TYPE_SCHEDULE: AggregateScheduleManager,
         TYPE_TOPIC_PUBLISH: TopicPublishManager,
         TYPE_USER: UserManager,
         TYPE_USER_QUERY: UserQueryManager,

@@ -90,7 +90,7 @@ class OldScheduledCall(Model):
     search_indices = ('serialized_call_request.tags', 'last_run', 'next_run')
 
     def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
-        super(ScheduledCall, self).__init__()
+        super(OldScheduledCall, self).__init__()
 
         # add custom scheduled call tag to call request
         schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
@@ -124,14 +124,14 @@ class ScheduledCall(Model):
 
     collection_name = 'scheduled_calls'
     unique_indices = ()
-    search_indices = ('tags', 'last_run', 'last_updated')
+    search_indices = ('tags', 'resource', 'last_updated')
 
 
     def __init__(self, iso_schedule, task, total_run_count=0, next_run=None,
                  schedule=None, args=None, kwargs=None, principal=None, last_updated=None,
                  consecutive_failures=0, enabled=True, failure_threshold=None,
                  last_run_at=None, first_run=None, remaining_runs=None, id=None,
-                 tag=None, name=None, options=None):
+                 tag=None, name=None, options=None, resource=None):
         """
         :type  schedule_entry:  celery.beat.ScheduleEntry
 
@@ -155,6 +155,7 @@ class ScheduledCall(Model):
         self.last_updated = last_updated or time.time()
         self.name = id
         self.options = options or {}
+        self.resource = resource
         self.task = task
         self.total_run_count = total_run_count
 
@@ -185,9 +186,8 @@ class ScheduledCall(Model):
         else:
             self.remaining_runs = remaining_runs
 
-        self.tag = tag or resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
-
         self.next_run = self.calculate_next_run()
+
 
     @classmethod
     def from_db(cls, call):
@@ -243,6 +243,7 @@ class ScheduledCall(Model):
             'next_run': self.calculate_next_run(),
             'principal': self.principal,
             'remaining_runs': self.remaining_runs,
+            'resource': self.resource,
             'schedule': self.schedule,
             'task': self.task,
             'total_run_count': self.total_run_count,

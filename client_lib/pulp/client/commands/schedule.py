@@ -114,7 +114,6 @@ class ListScheduleCommand(PulpCliCommand):
             return
 
         for s in schedules:
-            # Need to convert _id into id in each document
             if s['remaining_runs'] is None:
                 s['remaining_runs'] = _('N/A')
 

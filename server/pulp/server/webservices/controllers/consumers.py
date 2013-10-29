@@ -679,63 +679,51 @@ class ContentApplicabilityRegeneration(JSONController):
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
+class UnitActionScheduleCollection(JSONController):
+    ACTION = None
 
-class UnitInstallScheduleCollection(JSONController):
+    def __init__(self):
+        super(UnitActionScheduleCollection, self).__init__()
+        self.manager = managers.consumer_schedule_manager()
 
     @auth_required(READ)
     def GET(self, consumer_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        install_tag = action_tag('scheduled_unit_install')
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_calls = scheduler.find(consumer_tag, install_tag)
+        manager = managers.consumer_schedule_manager()
+        schedules = manager.get(consumer_id, self.ACTION)
 
         schedule_objs = []
-        for call in scheduled_calls:
-            obj = serialization.dispatch.scheduled_unit_management_obj(call)
+        for schedule in schedules:
+            obj = serialization.dispatch.scheduled_unit_management_obj(
+                schedule.for_display())
             obj.update(serialization.link.child_link_obj(obj['_id']))
             schedule_objs.append(obj)
         return self.ok(schedule_objs)
 
     @auth_required(CREATE)
     def POST(self, consumer_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
         schedule_data = self.params()
         units = schedule_data.pop('units', None)
-        install_options = {'options': schedule_data.pop('options', {})}
+        options = {'options': schedule_data.pop('options', {})}
 
         if not units:
             raise MissingValue(['units'])
 
-        schedule_manager = managers.schedule_manager()
+        schedule = self.manager.create_schedule(self.ACTION, consumer_id, units,
+                                                options, schedule_data)
 
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag('create_unit_install_schedule')]
-
-        call_request = CallRequest(schedule_manager.create_unit_install_schedule, # rbarlow_converted
-                                   [consumer_id, units, install_options, schedule_data],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        schedule_id = execution.execute_sync(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.child_link_obj(schedule_id))
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(schedule)
+        scheduled_obj.update(serialization.link.child_link_obj(schedule['id']))
         return self.created(scheduled_obj['_href'], scheduled_obj)
 
 
+class UnitInstallScheduleCollection(UnitActionScheduleCollection):
+    def __init__(self):
+        super(UnitInstallScheduleCollection, self).__init__()
+        self.ACTION = self.manager.UNIT_INSTALL_ACTION
+
+
 class UnitInstallScheduleResource(JSONController):
+    UPDATE_KEYS = set('schedule', 'failure_threshold', 'remaining_runs', 'enabled')
 
     @auth_required(READ)
     def GET(self, consumer_id, schedule_id):
@@ -763,6 +751,10 @@ class UnitInstallScheduleResource(JSONController):
 
         if 'options' in schedule_data:
             install_options = {'options': schedule_data.pop('options')}
+
+        unexpected_keys = set(schedule_data.keys()) - self.UPDATE_KEYS
+        if unexpected_keys:
+            raise InvalidValue(list(unexpected_keys))
 
         schedule_manager = managers.schedule_manager()
 
@@ -808,59 +800,10 @@ class UnitInstallScheduleResource(JSONController):
         return self.ok(result)
 
 
-class UnitUpdateScheduleCollection(JSONController):
-
-    @auth_required(READ)
-    def GET(self, consumer_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        update_tag = action_tag('scheduled_unit_update')
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_calls = scheduler.find(consumer_tag, update_tag)
-
-        schedule_objs = []
-        for call in scheduled_calls:
-            obj = serialization.dispatch.scheduled_unit_management_obj(call)
-            obj.update(serialization.link.child_link_obj(obj['_id']))
-            schedule_objs.append(obj)
-        return self.ok(schedule_objs)
-
-    @auth_required(CREATE)
-    def POST(self, consumer_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        schedule_data = self.params()
-        units = schedule_data.pop('units', None)
-        update_options = {'options': schedule_data.pop('options', {})}
-
-        if not units:
-            raise MissingValue(['units'])
-
-        schedule_manager = managers.schedule_manager()
-
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag('create_unit_update_schedule')]
-
-        call_request = CallRequest(schedule_manager.create_unit_update_schedule, # rbarlow_converted
-                                   [consumer_id, units, update_options, schedule_data],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        schedule_id = execution.execute_sync(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.child_link_obj(schedule_id))
-        return self.created(scheduled_obj['_href'], scheduled_obj)
+class UnitUpdateScheduleCollection(UnitActionScheduleCollection):
+    def __init__(self):
+        super(UnitUpdateScheduleCollection, self).__init__()
+        self.ACTION = self.manager.UNIT_UPDATE_ACTION
 
 
 class UnitUpdateScheduleResource(JSONController):
@@ -935,59 +878,10 @@ class UnitUpdateScheduleResource(JSONController):
         return self.ok(result)
 
 
-class UnitUninstallScheduleCollection(JSONController):
-
-    @auth_required(READ)
-    def GET(self, consumer_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        consumer_tag = resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        uninstall_tag = action_tag('scheduled_unit_uninstall')
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_calls = scheduler.find(consumer_tag, uninstall_tag)
-
-        schedule_objs = []
-        for call in scheduled_calls:
-            obj = serialization.dispatch.scheduled_unit_management_obj(call)
-            obj.update(serialization.link.child_link_obj(obj['_id']))
-            schedule_objs.append(obj)
-        return self.ok(schedule_objs)
-
-    @auth_required(CREATE)
-    def POST(self, consumer_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        schedule_data = self.params()
-        units = schedule_data.pop('units', None)
-        uninstall_options = {'options': schedule_data.pop('options', {})}
-
-        if not units:
-            raise MissingValue(['units'])
-
-        schedule_manager = managers.schedule_manager()
-
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag('create_unit_uninstall_schedule')]
-
-        call_request = CallRequest(schedule_manager.create_unit_uninstall_schedule, # rbarlow_converted
-                                   [consumer_id, units, uninstall_options, schedule_data],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        schedule_id = execution.execute_sync(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.child_link_obj(schedule_id))
-        return self.created(scheduled_obj['_href'], scheduled_obj)
+class UnitUninstallScheduleCollection(UnitActionScheduleCollection):
+    def __init__(self):
+        super(UnitUninstallScheduleCollection, self).__init__()
+        self.ACTION = self.manager.UNIT_UNINSTALL_ACTION
 
 
 class UnitUninstallScheduleResource(JSONController):

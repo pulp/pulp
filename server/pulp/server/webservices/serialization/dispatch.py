@@ -29,44 +29,7 @@ def task_group_href(call_report):
     return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.call_request_group_id}
 
 
-#TODO: DELETE ME!
-def scheduled_call_obj(scheduled_call):
-    obj = {
-        '_id': str(scheduled_call['_id']),
-        '_href': None, # should be replaced by the caller!
-        'schedule': scheduled_call['schedule'],
-        'failure_threshold': scheduled_call['failure_threshold'],
-        'enabled': scheduled_call['enabled'],
-        'consecutive_failures': scheduled_call['consecutive_failures'],
-        'remaining_runs': scheduled_call['remaining_runs'],
-        'first_run': None,
-        'last_run': None,
-        'next_run': None,
-    }
-    for run_time_field in ('first_run', 'last_run_at', 'next_run'):
-        run_time = scheduled_call[run_time_field]
-        if isinstance(run_time, datetime):
-            utc_run_time = run_time.replace(tzinfo=dateutils.utc_tz())
-            obj[run_time_field] = dateutils.format_iso8601_datetime(utc_run_time)
-    return obj
-
-
-def scheduled_sync_obj(scheduled_call):
-    obj = scheduled_call.as_dict()
-    obj['override_config'] = pickle.loads(scheduled_call['kwargs'])['overrides']
-    del obj['args']
-    del obj['kwargs']
-    return obj
-
-
-def scheduled_publish_obj(scheduled_call):
-    obj = scheduled_call_obj(scheduled_call)
-    obj['override_config'] = scheduled_call['call_request'].kwargs['overrides']
-    return obj
-
-
 def scheduled_unit_management_obj(scheduled_call):
-    obj = scheduled_call_obj(scheduled_call)
-    obj['options'] = scheduled_call['call_request'].kwargs['options']
-    obj['units'] = scheduled_call['call_request'].kwargs['units']
-    return obj
+    scheduled_call['options'] = scheduled_call['kwargs']['options']
+    scheduled_call['units'] = scheduled_call['kwargs']['units']
+    return scheduled_call

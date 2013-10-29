@@ -50,6 +50,7 @@ class Repo(Model):
                     either set by the user or by an importer or distributor
     @type metadata: dict
     """
+    RESOURCE_PREFIX = 'pulp:repository:'
 
     collection_name = 'repos'
     unique_indices = ('id',)
@@ -103,6 +104,8 @@ class RepoImporter(Model):
     @type last_sync: str
     """
 
+    RESOURCE_TEMPLATE = 'pulp:importer:%s:%s'
+
     collection_name = 'repo_importers'
     unique_indices = ( ('repo_id', 'id'), )
 
@@ -117,6 +120,10 @@ class RepoImporter(Model):
         self.scratchpad = None
         self.last_sync = None
         self.scheduled_syncs = []
+
+    @classmethod
+    def build_resource_tag(cls, repo_id, importer_id):
+        return cls.RESOURCE_TEMPLATE % (repo_id, importer_id)
 
 
 class RepoDistributor(Model):
@@ -153,6 +160,7 @@ class RepoDistributor(Model):
                         in ISO8601 format
     @type last_publish: str
     """
+    RESOURCE_TEMPLATE = 'pulp:distributor:%s:%s'
 
     collection_name = 'repo_distributors'
     unique_indices = ( ('repo_id', 'id'), )
@@ -168,6 +176,10 @@ class RepoDistributor(Model):
         self.scratchpad = None
         self.last_publish = None
         self.scheduled_publishes = []
+
+    @classmethod
+    def build_resource_tag(cls, repo_id, distributor_id):
+        return cls.RESOURCE_TEMPLATE % (repo_id, distributor_id)
 
 
 class RepoContentUnit(Model):

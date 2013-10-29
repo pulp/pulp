@@ -121,10 +121,8 @@ class ConsumerManager(object):
         group_manager.remove_consumer_from_groups(consumer_id)
 
         # delete any scheduled unit installs
-        schedule_manager = factory.schedule_manager()
-        schedule_manager.delete_all_unit_install_schedules(consumer_id)
-        schedule_manager.delete_all_unit_update_schedules(consumer_id)
-        schedule_manager.delete_all_unit_uninstall_schedules(consumer_id)
+        # TODO this
+        raise NotImplemented
 
         # Database Updates
         try:
@@ -182,7 +180,7 @@ class ConsumerManager(object):
         return consumer
 
     @staticmethod
-    def get_consumer(id):
+    def get_consumer(id, fields=None):
         """
         Returns a consumer with given ID.
 
@@ -191,10 +189,54 @@ class ConsumerManager(object):
         :raises MissingResource: if a consumer with given id does not exist
         """
         consumer_coll = Consumer.get_collection()
-        consumer = consumer_coll.find_one({'id' : id})
+        consumer = consumer_coll.find_one({'id' : id}, fields=fields)
         if not consumer:
             raise MissingResource(consumer=id)
         return consumer
+
+    @classmethod
+    def add_schedule(cls, operation, consumer_id, schedule_id):
+        """
+        Adds a install schedule for a repo to the importer.
+        @param repo_id:
+        @param schedule_id:
+        @return:
+        """
+        cls._validate_scheduled_operation(operation)
+        Consumer.get_collection().update(
+            {'_id': consumer_id},
+            {'$addToSet': {'schedules.%s' % operation: schedule_id}},
+            safe=True)
+
+    @classmethod
+    def remove_schedule(cls, operation, consumer_id, schedule_id):
+        """
+        Removes a install schedule for a repo from the importer.
+        @param repo_id:
+        @param schedule_id:
+        @return:
+        """
+        cls._validate_scheduled_operation(operation)
+        Consumer.get_collection().update(
+            {'_id': consumer_id},
+            {'$pull': {'schedules.%s' % operation: schedule_id}},
+            safe=True)
+
+    @classmethod
+    def list_schedules(cls, operation, consumer_id):
+        """
+        List the install schedules currently defined for the repo.
+        @param repo_id:
+        @return:
+        """
+        cls._validate_scheduled_operation(operation)
+        consumer = cls.get_consumer(consumer_id, ['schedules'])
+        return consumer.get('schedules', {}).get(operation, [])
+
+    @staticmethod
+    def _validate_scheduled_operation(operation):
+        if operation not in ['install', 'update', 'uninstall']:
+            raise ValueError('"%s" is not a valid operation' % operation)
 
 
 register = task(ConsumerManager.register, base=Task)
