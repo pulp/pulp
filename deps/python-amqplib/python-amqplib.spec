@@ -11,6 +11,7 @@ Group:          Development/Languages
 License:        LGPLv2+
 URL:            http://pypi.python.org/pypi/amqplib
 Source0:        http://pypi.python.org/packages/source/a/%{srcname}/%{srcname}-%{version}.tgz
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 
 Requires: python-ssl
