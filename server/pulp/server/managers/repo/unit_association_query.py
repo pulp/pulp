@@ -330,33 +330,28 @@ class RepoUnitAssociationQueryManager(object):
         cursor = collection.find(spec, fields=criteria.association_fields)
 
         sort = criteria.association_sort or []
-
-        # Sorting by the "created" flag is crucial to removing duplicate associations.
-        created_sort_tuple = ('created', SORT_ASCENDING)
-        if created_sort_tuple not in sort:
-            # Append it so that associations are sorted by it last, keeping in
-            # tact any other sorts that come before it.
-            sort.append(created_sort_tuple)
-
         cursor.sort(sort)
 
         return cursor
 
     @staticmethod
-    def _unit_associations_no_duplicates(iterator):
+    def _unit_associations_no_duplicates(cursor):
         """
         Remove duplicate unit associations from a iterator of unit associations.
 
-        :type iterator: iterable
+        :type cursor: pymongo.cursor.Cursor
         :rtype: generator
         """
 
         # This algorithm returns the earliest association in the case of duplicates.
-        # This algorithm assumes the iterator is already sorted by "created".
+
+        # Sorting by the "created" flag is crucial to removing duplicate associations.
+        created_sort_tuple = ('created', SORT_ASCENDING)
+        cursor.sort(created_sort_tuple)
 
         previously_generated_association_ids = set()
 
-        for unit_association in iterator:
+        for unit_association in cursor:
 
             association_id = (unit_association['unit_type_id'], unit_association['unit_id'])
 
