@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.25.beta%{?dist}
+Release: 0.26.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
+- Pulp rebuild
+
 * Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
 - 1017865 - Corrected task response docs (jason.dobies@redhat.com)
 - 1021116 - Convert info level log messages that include Task arguments into
