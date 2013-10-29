@@ -13,6 +13,7 @@
 
 import datetime
 import math
+from pprint import pprint
 
 import mock
 
@@ -209,23 +210,16 @@ class UnitAssociationQueryTests(base.PulpServerTests):
     class GetUnitsMock(association_query_manager.RepoUnitAssociationQueryManager):
 
         def __init__(self):
-            self.called_get_units_by_type = False
-            self.get_units_by_type_repo = None
-            self.get_units_by_type_criteria = None
+            self.called_get_units = False
+            self.repo_id = None
+            self.criteria = None
+            self.as_generator = None
 
-            self.called_get_units_across_types = False
-            self.get_units_across_types_repo = None
-            self.get_units_across_types_criteria = None
-
-        def get_units_by_type(self, repo_id, type_id, criteria=None):
-            self.called_get_units_by_type = True
-            self.get_units_by_type_repo = repo_id
-            self.get_units_by_type_criteria = criteria
-
-        def get_units_across_types(self, repo_id, criteria=None):
-            self.called_get_units_across_types = True
-            self.get_units_across_types_repo = repo_id
-            self.get_units_across_types_criteria = criteria
+        def get_units(self, repo_id, criteria=None, as_generator=None):
+            self.called_get_units = True
+            self.repo_id = repo_id
+            self.criteria = criteria
+            self.as_generator = as_generator
 
     def test_get_units_multiple_types(self):
         # Setup
@@ -233,29 +227,27 @@ class UnitAssociationQueryTests(base.PulpServerTests):
 
         # Test
         criteria = UnitAssociationCriteria(type_ids=['fus', 'ro'])
-        mock_manager.get_units('repo-1', criteria=criteria)
+        mock_manager.get_units_across_types('repo-1', criteria=criteria)
 
         # Verify
-        self.assertTrue(mock_manager.called_get_units_across_types)
-        self.assertFalse(mock_manager.called_get_units_by_type)
+        self.assertTrue(mock_manager.called_get_units)
 
-        self.assertEqual('repo-1', mock_manager.get_units_across_types_repo)
-        self.assertEqual(criteria, mock_manager.get_units_across_types_criteria)
+        self.assertEqual('repo-1', mock_manager.repo_id)
+        self.assertEqual(criteria, mock_manager.criteria)
 
     def test_get_units_single_type(self):
         # Setup
         mock_manager = self.GetUnitsMock()
 
         # Test
-        criteria = UnitAssociationCriteria(type_ids=['fus'])
-        mock_manager.get_units('repo-1', criteria=criteria)
+        criteria = UnitAssociationCriteria()
+        mock_manager.get_units_by_type('repo-1', 'fus', criteria=criteria)
 
         # Verify
-        self.assertFalse(mock_manager.called_get_units_across_types)
-        self.assertTrue(mock_manager.called_get_units_by_type)
+        self.assertTrue(mock_manager.called_get_units)
 
-        self.assertEqual('repo-1', mock_manager.get_units_by_type_repo)
-        self.assertEqual(criteria, mock_manager.get_units_by_type_criteria)
+        self.assertEqual('repo-1', mock_manager.repo_id)
+        self.assertEqual(['fus'], mock_manager.criteria.type_ids)
 
     def test_get_units_no_criteria(self):
     # Setup
@@ -265,11 +257,10 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         mock_manager.get_units('repo-1')
 
         # Verify
-        self.assertTrue(mock_manager.called_get_units_across_types)
-        self.assertFalse(mock_manager.called_get_units_by_type)
+        self.assertTrue(mock_manager.called_get_units)
 
-        self.assertEqual('repo-1', mock_manager.get_units_across_types_repo)
-        self.assertEqual(None, mock_manager.get_units_across_types_criteria)
+        self.assertEqual('repo-1', mock_manager.repo_id)
+        self.assertEqual(None, mock_manager.criteria)
 
     # -- get_units_across_types tests -----------------------------------------
 
@@ -368,6 +359,8 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         # The first association in each type/owner combination will be timestamps[0],
         # the second timestamps[1]. There are 4 such type/owner combinations,
         # however the user associations in gamma have timestamp offsets of i+1.
+
+        #pprint(after_units)
 
         self.assertEqual(self.repo_1_count - 3, len(after_units))
         self.assertEqual(3, len(before_units))
@@ -636,19 +629,20 @@ class UnitAssociationQueryTests(base.PulpServerTests):
             ]
 
         # Test
-        matching = self.manager._remove_duplicate_associations(all_units)
+        all_units.sort(lambda x, y: cmp(x['created'], y['created']))
+        matching = list(self.manager._unit_associations_no_duplicates(all_units))
 
         # Verify
         self.assertEqual(3, len(matching))
         self.assertEqual(matching[0]['unit_type_id'], 't1')
         self.assertEqual(matching[0]['unit_id'], 'u1')
         self.assertEqual(matching[0]['created'], self.timestamps[1])
-        self.assertEqual(matching[1]['unit_type_id'], 't1')
-        self.assertEqual(matching[1]['unit_id'], 'u2')
-        self.assertEqual(matching[1]['created'], self.timestamps[6])
-        self.assertEqual(matching[2]['unit_type_id'], 't2')
-        self.assertEqual(matching[2]['unit_id'], 'u1')
-        self.assertEqual(matching[2]['created'], self.timestamps[5])
+        self.assertEqual(matching[1]['unit_type_id'], 't2')
+        self.assertEqual(matching[1]['unit_id'], 'u1')
+        self.assertEqual(matching[1]['created'], self.timestamps[5])
+        self.assertEqual(matching[2]['unit_type_id'], 't1')
+        self.assertEqual(matching[2]['unit_id'], 'u2')
+        self.assertEqual(matching[2]['created'], self.timestamps[6])
 
     def test_criteria_str(self):
         # Setup

@@ -277,10 +277,9 @@ class RepoUnitAssociationQueryManager(object):
 
         collection = RepoContentUnit.get_collection()
 
-        unit_associations = collection.find({'repo_id': repo_id}, fields=['unit_type_id'])
-        unit_associations.distinct('unit_type_id')
+        cursor = collection.find({'repo_id': repo_id}, fields=['unit_type_id'])
 
-        return [u['unit_type_id'] for u in unit_associations]
+        return [u for u in cursor.distinct('unit_type_id')]
 
     @staticmethod
     def _unit_associations_cursor(repo_id, criteria):
@@ -393,8 +392,16 @@ class RepoUnitAssociationQueryManager(object):
 
         cursor = collection.find(spec, fields=criteria.unit_fields)
 
-        sort = criteria.unit_sort or [(u, SORT_ASCENDING) for u in types_db.type_units_unit_key(unit_type_id)]
-        cursor.sort(sort)
+        sort = criteria.unit_sort
+
+        if sort is None:
+            unit_key = types_db.type_units_unit_key(unit_type_id)
+
+            if unit_key is not None:
+                sort = [(u, SORT_ASCENDING) for u in unit_key]
+
+        if sort is not None:
+            cursor.sort(sort)
 
         return cursor
 
@@ -494,6 +501,11 @@ class RepoUnitAssociationQueryManager(object):
         associated_units_by_id = dict((u['_id'], u) for u in associated_units)
 
         for unit_id in associated_unit_ids:
+            # the associated_unit_ids are sorted, but not all of the units may 
+            # be in the associated_units_by_id
+            if unit_id not in associated_units_by_id:
+                continue
+
             yield associated_units_by_id[unit_id]
 
     @staticmethod
