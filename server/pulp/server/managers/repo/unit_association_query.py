@@ -17,7 +17,6 @@ Contains the manager class for performing queries for repo-unit associations.
 
 import copy
 import logging
-from pprint import pprint
 
 import pymongo
 
@@ -134,8 +133,6 @@ class RepoUnitAssociationQueryManager(object):
         criteria = criteria or UnitAssociationCriteria()
 
         unit_associations_generator = self._unit_associations_cursor(repo_id, criteria)
-
-        print type(unit_associations_generator)
 
         if criteria.remove_duplicates:
             unit_associations_generator = self._unit_associations_no_duplicates(criteria, unit_associations_generator)
