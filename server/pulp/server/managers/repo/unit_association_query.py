@@ -189,6 +189,8 @@ class RepoUnitAssociationQueryManager(object):
             # If we're not sorting based on association fields, then set the
             # skip and limit individually across the cursors to get consistent
             # behavior across multiple calls across multiple unit types.
+            # The order that the generators are applied here is extremely
+            # important. DO NOT CHANGE!
             units_cursors = self._associated_units_cursors_with_skip(units_cursors, criteria.skip)
             units_cursors = self._associated_units_cursors_with_limit(units_cursors, criteria.limit)
 
@@ -524,6 +526,9 @@ class RepoUnitAssociationQueryManager(object):
 
         # XXX This is unfortunate as it's the one place that loads all of the
         # associated_units into memory.
+        # It is worth noting that the units have already been filtered by type,
+        # association filters, and unit filters. In addition, skip and limit
+        # may have also been performed, so it's potentially not as bad as it seems.
         associated_units_by_id = dict(((u['_content_type_id'], u['_id']), u) for u in associated_units)
 
         for id_tuple in associated_unit_ids:

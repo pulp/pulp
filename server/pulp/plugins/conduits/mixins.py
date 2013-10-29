@@ -148,14 +148,14 @@ class SingleRepoUnitsMixin(object):
         being operated on.
 
         Units returned from this call will have the id field populated and are
-        useable in any calls in this conduit that require the id field.
+        usable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within;
+        :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: UnitAssociationCriteria
 
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        :return: list of unit instances
+        :rtype:  list or generator of AssociatedUnit
         """
         return do_get_repo_units(self.repo_id, criteria, self.exception_class, as_generator)
 
@@ -171,14 +171,14 @@ class MultipleRepoUnitsMixin(object):
         repository.
 
         Units returned from this call will have the id field populated and are
-        useable in any calls in this conduit that require the id field.
+        usable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within;
+        :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: UnitAssociationCriteria
 
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        :return: list of unit instances
+        :rtype:  list or generator of AssociatedUnit
         """
         return do_get_repo_units(repo_id, criteria, self.exception_class, as_generator)
 
@@ -613,12 +613,13 @@ def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
     """
     try:
         association_query_manager = manager_factory.repo_unit_association_query_manager()
-        units = association_query_manager.get_units(repo_id, criteria=criteria, as_generator=as_generator)
+        # Use a get_units as_generator here and cast to a list later, if necessary.
+        units = association_query_manager.get_units(repo_id, criteria=criteria, as_generator=True)
 
-        # Load all type definitions so we don't hammer the database
+        # Load all type definitions so we don't hammer the database.
         type_defs = dict((t['id'], t) for t in types_db.all_type_definitions())
 
-        # Transfer object generator
+        # Transfer object generator.
         def _transfer_object_generator():
             for u in units:
                 yield common_utils.to_plugin_associated_unit(u, type_defs[u['unit_type_id']])
@@ -626,7 +627,7 @@ def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
         if as_generator:
             return _transfer_object_generator()
 
-        # Maintain legacy behavior by default
+        # Maintain legacy behavior by default.
         return list(_transfer_object_generator())
 
     except Exception, e:
