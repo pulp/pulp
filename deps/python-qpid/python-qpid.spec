@@ -49,6 +49,10 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 0.18-1
+- update python-qpid to 0.18. (jortel@redhat.com)
+- Update python-qpid tito.props to bump release on tagging. (jortel@redhat.com)
+
 * Tue Sep 11 2012 Darryl L. Pierce <dpierce@redhat.com> - 0.18-1
 - Rebased on Qpid 0.18 release.
 
