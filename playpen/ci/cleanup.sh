@@ -7,7 +7,7 @@ echo "Cleaning up after the build"
 set -x
 cd $WORKSPACE
 
-pip list | grep pulp | cut -f1 -d" " | while read line
+pip freeze | grep pulp | cut -f1 -d"=" | while read line
 do
   sudo pip-python uninstall -y $line
 done

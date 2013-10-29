@@ -112,8 +112,6 @@ class UpdateCommandTests(base.PulpClientTests):
         self.assertTrue(url.find('test-consumer') > 0)
 
         body = json.loads(self.server_mock.request.call_args[0][2])
-
         self.assertEqual(body['delta']['display_name'], 'Test Consumer')
         self.assertEqual(body['delta']['description'], 'Consumer for testing')
-        self.assertEqual(body['delta']['notes'], {'a': 'a', 'b': 'b'})
-
+        self.assertEqual(body['delta'][OPTION_NOTES.keyword], {'a': 'a', 'b': 'b'})
