@@ -15,6 +15,7 @@
 Contains the manager class for performing queries for repo-unit associations.
 """
 
+import copy
 import logging
 from pprint import pprint
 
@@ -418,7 +419,12 @@ class RepoUnitAssociationQueryManager(object):
         spec = criteria.unit_filters.copy()
         spec['_id'] = {'$in': associated_unit_ids}
 
-        cursor = collection.find(spec, fields=criteria.unit_fields)
+        fields = copy.copy(criteria.unit_fields)
+        # The _content_type_id is required for looking up the association.
+        if fields is not None and '_content_type_id' not in fields:
+            fields.append('_content_type_id')
+
+        cursor = collection.find(spec, fields=fields)
 
         sort = criteria.unit_sort
 
