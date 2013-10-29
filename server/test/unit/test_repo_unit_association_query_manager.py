@@ -611,37 +611,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         for u in units:
             self.assertTrue(u['metadata']['key_1'] != 'aardvark')
 
-    def test_remove_duplicates(self):
-        # Setup
-        def unit(unit_type_id, unit_id, created):
-            return {'unit_type_id' : unit_type_id,
-                    'unit_id' : unit_id,
-                    'created' : created}
-
-        all_units = [
-            unit('t1', 'u1', self.timestamps[2]),
-            unit('t1', 'u1', self.timestamps[1]),
-            unit('t1', 'u1', self.timestamps[3]),
-            unit('t1', 'u2', self.timestamps[6]),
-            unit('t2', 'u1', self.timestamps[5]),
-            ]
-
-        # Test
-        all_units.sort(lambda x, y: cmp(x['created'], y['created']))
-        matching = list(self.manager._unit_associations_no_duplicates(all_units))
-
-        # Verify
-        self.assertEqual(3, len(matching))
-        self.assertEqual(matching[0]['unit_type_id'], 't1')
-        self.assertEqual(matching[0]['unit_id'], 'u1')
-        self.assertEqual(matching[0]['created'], self.timestamps[1])
-        self.assertEqual(matching[1]['unit_type_id'], 't2')
-        self.assertEqual(matching[1]['unit_id'], 'u1')
-        self.assertEqual(matching[1]['created'], self.timestamps[5])
-        self.assertEqual(matching[2]['unit_type_id'], 't1')
-        self.assertEqual(matching[2]['unit_id'], 'u2')
-        self.assertEqual(matching[2]['created'], self.timestamps[6])
-
     def test_criteria_str(self):
         # Setup
         c1 = UnitAssociationCriteria()
