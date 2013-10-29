@@ -174,7 +174,7 @@ class RepoUnitAssociationQueryManager(object):
             association_list = association_type_dict.setdefault(unit_id, [])
             association_list.append(association)
 
-        association_unit_types = criteria.type_ids or self._unit_type_ids_for_repo(repo_id)
+        association_unit_types = criteria.type_ids or self.unit_type_ids_for_repo(repo_id)
         # The unit types should always be sorted in the same order, this allows
         # multiple calls with skip and limit to work across types.
         association_unit_types = sorted(association_unit_types)
@@ -289,10 +289,8 @@ class RepoUnitAssociationQueryManager(object):
 
         return self.get_units(repo_id, criteria, as_generator)
 
-    # -- unit association methods ----------------------------------------------
-
     @staticmethod
-    def _unit_type_ids_for_repo(repo_id):
+    def unit_type_ids_for_repo(repo_id):
         """
         Retrieve a list of all unit type ids currently associated with the
         repository
@@ -306,6 +304,8 @@ class RepoUnitAssociationQueryManager(object):
         cursor = collection.find({'repo_id': repo_id}, fields=['unit_type_id'])
 
         return [t for t in cursor.distinct('unit_type_id')]
+
+    # -- unit association methods ----------------------------------------------
 
     @staticmethod
     def _unit_associations_cursor(repo_id, criteria):
