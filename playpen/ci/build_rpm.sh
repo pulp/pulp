@@ -7,7 +7,7 @@ echo "Setting up after source control extract"
 set -x
 # Jenkins isn't setting the workspace properly on slave nodes so resetting it here
 cd $WORKSPACE
-mkdir tito
+mkdir -p tito
 
 #function that takes a directory as an argument and runs the setup steps within that directory
 function build_rpm {
