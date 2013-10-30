@@ -34,7 +34,6 @@ PACKAGES = [
 TESTS_ALL_PLATFORMS = [
     'agent/test/unit',
     'bindings/test/unit',
-    'client_admin/test/unit',
     'client_consumer/test/unit',
     'client_lib/test/unit',
     'common/test/unit',
@@ -42,6 +41,7 @@ TESTS_ALL_PLATFORMS = [
 ]
 
 TESTS_NON_RHEL5 = [
+    'client_admin/test/unit',
     'nodes/test/unit',
     'server/test/unit'
 ]
