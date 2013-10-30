@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.24.beta%{?dist}
+Release: 0.26.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -176,7 +176,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.5
+Requires: python-nectar >= 1.1.6
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -482,6 +482,16 @@ exit 0
 %endif
 
 %changelog
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
+- Pulp rebuild
+
+* Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
+- 1017865 - Corrected task response docs (jason.dobies@redhat.com)
+- 1021116 - Convert info level log messages that include Task arguments into
+  debug level messages. (rbarlow@redhat.com)
+- 1017253 - Removed v1 attribute that no longer exists
+  (jason.dobies@redhat.com)
+
 * Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
 - 1019909 - Added replica set support (jason.dobies@redhat.com)
 - 1020549 - tar the content of the distribution directory instead of the
