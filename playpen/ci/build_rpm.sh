@@ -25,5 +25,4 @@ if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" == "5" ]; then
     echo "Nectar is not installed on RHEL 5"
 else
     build_rpm 'pulp/nodes'
-
 fi
