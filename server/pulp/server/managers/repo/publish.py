@@ -62,6 +62,9 @@ class RepoPublishManager(object):
         @param publish_config_override: optional config values to use for this
                                         publish call only
         @type  publish_config_override: dict, None
+
+        :return: report of the details of the publish
+        :rtype: pulp.server.plugins.model.PublishReport
         """
 
         repo_coll = Repo.get_collection()
