@@ -99,9 +99,6 @@ class RepoPublishManager(object):
 
         dispatch_context.clear_cancel_control_hook()
 
-        if result['result'] == RepoPublishResult.RESULT_FAILED:
-            raise PulpExecutionException(_('Distributor indicated a failed response'))
-
         return result
 
     def _get_distributor_instance_and_config(self, repo_id, distributor_id):

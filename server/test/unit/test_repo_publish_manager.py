@@ -115,23 +115,24 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(False, 'Summary of the publish', 'Details of the publish')
 
         # Test
-        self.assertRaises(PulpExecutionException, self.publish_manager.publish, 'repo-1',
-                          'dist-1', None)
+        report = self.publish_manager.publish('repo-1', 'dist-1', None)
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
         self.assertEqual(1, len(entries))
-        self.assertEqual('repo-1', entries[0]['repo_id'])
-        self.assertEqual('dist-1', entries[0]['distributor_id'])
-        self.assertEqual('mock-distributor', entries[0]['distributor_type_id'])
-        self.assertTrue(entries[0]['started'] is not None)
-        self.assertTrue(entries[0]['completed'] is not None)
-        self.assertEqual(RepoPublishResult.RESULT_FAILED, entries[0]['result'])
-        self.assertTrue(entries[0]['summary'] is not None)
-        self.assertTrue(entries[0]['details'] is not None)
-        self.assertTrue(entries[0]['error_message'] is None)
-        self.assertTrue(entries[0]['exception'] is None)
-        self.assertTrue(entries[0]['traceback'] is None)
+
+        for check_me in entries[0], report:
+            self.assertEqual('repo-1', check_me['repo_id'])
+            self.assertEqual('dist-1', check_me['distributor_id'])
+            self.assertEqual('mock-distributor', check_me['distributor_type_id'])
+            self.assertTrue(check_me['started'] is not None)
+            self.assertTrue(check_me['completed'] is not None)
+            self.assertEqual(RepoPublishResult.RESULT_FAILED, check_me['result'])
+            self.assertTrue(check_me['summary'] is not None)
+            self.assertTrue(check_me['details'] is not None)
+            self.assertTrue(check_me['error_message'] is None)
+            self.assertTrue(check_me['exception'] is None)
+            self.assertTrue(check_me['traceback'] is None)
 
         # Cleanup
         mock_plugins.reset()
