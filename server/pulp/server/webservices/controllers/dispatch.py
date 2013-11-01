@@ -75,7 +75,7 @@ class TaskCollection(JSONController):
         call_reports = coordinator.find_call_reports(**criteria)
         serialized_call_reports = [c.serialize() for c in call_reports]
         return self.ok(serialized_call_reports)
-        
+
 
 class TaskResource(JSONController):
 

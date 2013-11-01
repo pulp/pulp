@@ -62,7 +62,7 @@ class TaskStatusManager(object):
         Returns an existing task status corresponding to the given task id.
         If it doesn't exist, creates a new TaskStatus and returns it.
 
-        :param task_id: identity of the task
+        :param task_id: identity of the task this status corresponds to
         :type  task_id: basetring
         :return: serialized task status
         :rtype:  dict
@@ -87,7 +87,7 @@ class TaskStatusManager(object):
         * finish_time
         Other fields found in delta will be ignored.
 
-        :param task_id: identity of the task
+        :param task_id: identity of the task this status corresponds to
         :type  task_id: basetring
         :param delta: list of attributes and their new values to change
         :type  delta: dict
@@ -107,6 +107,24 @@ class TaskStatusManager(object):
                 
         TaskStatus.get_collection().save(task_status, safe=True)
         return task_status
+
+    @staticmethod
+    def delete_task_status(task_id):
+        """
+        Deletes the task status with given task id.
+
+        :param task_id: identity of the task this status corresponds to
+        :type  task_id: basestring
+        :raise MissingResource: if the given task status does not exist
+        :raise InvalidValue: if task_id is invalid
+        """
+        if task_id is None or not isinstance(task_id, basestring):
+            raise InvalidValue('task_id')
+        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        if task_status is None:
+            raise MissingResource(task_id)
+
+        TaskStatus.get_collection().remove({'task_id' : task_id}, safe=True)
 
     @staticmethod
     def find_all():
