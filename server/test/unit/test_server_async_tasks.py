@@ -14,11 +14,14 @@
 This module contains tests for the pulp.server.tasks module.
 """
 from copy import deepcopy
+import uuid
 
+import celery
 import mock
 
 from base import PulpServerTests
 from pulp.server.async import tasks
+from pulp.server.async.task_status_manager import TaskStatusManager
 
 
 # This is used as the mock return value for the celery.app.control.Inspect.active_queues() method
@@ -498,6 +501,70 @@ class TestTask(PulpServerTests):
         _queue_release_resource.apply_async.assert_called_once_with((resource_id,),
                                                                     queue=MOCK_RESERVED_QUEUE)
 
+    def test_on_success_handler(self):
+        """
+        Make sure that overridden on_success handler updates task status correctly
+        """
+        retval = 'return_value'
+        task_id = str(uuid.uuid4())
+        args = []
+        kwargs = {}
+
+        task = tasks.Task()
+        task_status = TaskStatusManager.create_task_status(task_id)
+        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['finish_time'], None)
+
+        task.on_success(retval, task_id, args, kwargs)
+        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(new_task_status['state'], 'finished')
+        self.assertEqual(new_task_status['result'], retval)
+        self.assertIsNotNone(new_task_status['finish_time'])
+
+    def test_on_failure_handler(self):
+        """
+        Make sure that overridden on_failure handler updates task status correctly
+        """
+        exc = Exception()
+        task_id = str(uuid.uuid4())
+        args = []
+        kwargs = {}
+        # on_failure handler expects an instance of celery's ExceptionInfo class
+        # as one of the attributes. It stores string representation of traceback
+        # in it's traceback instance variable. Creating a stub to imitate that behavior.
+        class EInfo(object):
+            def __init__(self):
+                self.traceback = "string_repr_of_traceback"
+        einfo = EInfo()
+
+        task = tasks.Task()
+        task_status = TaskStatusManager.create_task_status(task_id)
+        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['finish_time'], None)
+        self.assertEqual(task_status['traceback'], None)
+
+        task.on_failure(exc, task_id, args, kwargs, einfo)
+        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(new_task_status['state'], 'error')
+        self.assertIsNotNone(new_task_status['finish_time'])
+        self.assertEqual(new_task_status['traceback'], einfo.traceback)
+
+    @mock.patch('celery.Task.apply_async', autospec=True)
+    def test_apply_async_task_status(self, apply_async):
+        """
+        Assert that apply_async() creates new task status.
+        """
+        task = tasks.Task()
+        args = []
+        kwargs = {}
+
+        task_id = str(uuid.uuid4())
+        apply_async.return_value = celery.result.AsyncResult(task_id)
+        task.apply_async(*args, **kwargs)
+
+        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertIsNotNone(new_task_status)
+        self.assertEqual(new_task_status['state'], 'waiting')
 
 class TestCancel(PulpServerTests):
     """
