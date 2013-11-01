@@ -671,13 +671,12 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise InvalidValue('consumer_criteria')
 
-        async_result = regenerate_applicability_for_consumers.apply_async(
+        task_status = regenerate_applicability_for_consumers.apply_async(
             (consumer_criteria.as_dict(),))
 #        async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
 #            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
 #            (consumer_criteria.as_dict(),))
-        call_report = CallReport(call_request_id=async_result['task_id'])
-
+        call_report = CallReport(call_request_id=task_status['task_id'])
         raise OperationPostponed(call_report)
 
 class UnitInstallScheduleCollection(JSONController):

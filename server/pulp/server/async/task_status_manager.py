@@ -31,7 +31,8 @@ class TaskStatusManager(object):
         :type  tags: list
         :param state: state of callable in its lifecycle
         :type  state: basestring
-
+        :return: serialized task status
+        :rtype:  dict
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue: if any of the fields are unacceptable
         """
@@ -63,7 +64,7 @@ class TaskStatusManager(object):
 
         :param task_id: identity of the task
         :type  task_id: basetring
-        :return: serialized data describing the task status
+        :return: serialized task status
         :rtype:  dict
         """
         task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
@@ -90,6 +91,8 @@ class TaskStatusManager(object):
         :type  task_id: basetring
         :param delta: list of attributes and their new values to change
         :type  delta: dict
+        :return: updated serialized task status
+        :rtype:  dict
         :raise MissingResource: if there is no task status corresponding to the given task_id
         """
 
@@ -122,7 +125,7 @@ class TaskStatusManager(object):
         Returns a serialized version the status of given task, if it exists.
         If a task status cannot be found with the given task_id, None is returned.
 
-        :return: serialized data describing the task status
+        :return: serialized task status
         :rtype:  dict or None
         """
         task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})

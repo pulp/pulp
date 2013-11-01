@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import logging
 import httplib
 from gettext import gettext as _
 
@@ -27,7 +26,6 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-logger = logging.getLogger(__name__)
 
 class TaskNotFound(MissingResource):
 
@@ -74,16 +72,10 @@ class TaskCollection(JSONController):
         if 'id' in filters:
             criteria['call_request_id_list'] = filters['id']
         coordinator = dispatch_factory.coordinator()
-#         call_reports = coordinator.find_call_reports(**criteria)
-#         serialized_call_reports = [c.serialize() for c in call_reports]
-#        return self.ok(serialized_call_reports)
-        result = []
-        current_tasks = tasks.get_current_tasks()
-        for current_task in current_tasks:
-            task_details = tasks.get_task_result(current_task['id'])
-            result.append(task_details)
-            logger.info("^^^^^^^^^ %s" % task_details)
-        return self.ok(result)
+        call_reports = coordinator.find_call_reports(**criteria)
+        serialized_call_reports = [c.serialize() for c in call_reports]
+        return self.ok(serialized_call_reports)
+        
 
 class TaskResource(JSONController):
 

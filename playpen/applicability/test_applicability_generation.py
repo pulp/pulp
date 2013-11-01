@@ -29,7 +29,7 @@ def title(p, text):
 
 def content_applicability1():
     consumer_criteria = { "sort": [["id", "ascending"]],
-                 "filters": {"id": {"$in": ["lemonade", "sunflower", "voyager1"]}}}
+                 "filters": {"id": {"$in": ["lemonade", "sunflower", "voyager"]}}}
 
     options = {"consumer_criteria":consumer_criteria,
               }
@@ -78,8 +78,8 @@ def main():
     title(p, 'Demo with consumer_criteria')
     content_applicability1()
 
-#    title(p, 'Demo with repo_criteria')
-#    content_applicability2()
+    title(p, 'Demo with repo_criteria')
+    content_applicability2()
 
 
 if __name__ == '__main__':

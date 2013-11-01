@@ -13,7 +13,7 @@
 
 import pulp.common.tags as tag_util
 from pulp.bindings.base import PulpAPI
-from pulp.bindings.responses import Task, CeleryTask
+from pulp.bindings.responses import Task
 
 
 class TasksAPI(PulpAPI):
@@ -70,6 +70,11 @@ class TasksAPI(PulpAPI):
 
         response = self.server.GET(path, queries=tags)
 
+        tasks = []
+        for doc in response.response_body:
+            tasks.append(Task(doc))
+
+        response.response_body = tasks
         return response
 
     def get_repo_tasks(self, repo_id):

@@ -145,7 +145,7 @@ class TaskStatus(Model):
         super(TaskStatus, self).__init__()
         self.task_id = task_id
         self.tags = tags
-        self.state = None
+        self.state = state
         self.result = None
         self.traceback = None
         self.start_time = None

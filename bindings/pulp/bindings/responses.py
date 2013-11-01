@@ -112,55 +112,6 @@ class Task(object):
         self.exception = response_body['exception']
         self.traceback = response_body['traceback']
 
-class CeleryTask(object):
-    """
-    Contains the data received from a call to the server that describes an
-    asynchronous call queued or running on the server.
-
-    This class provides a number of utility methods for interpreting the state
-    of the task which should be used whenever possible instead of manually
-    interpreting the structure of the data within.
-
-    Below is a sample task dictionary that can be copied for unit tests that
-    need to simulate a task response:
-
-    TASK_TEMPLATE = 
-    {
-    "hostname": "voyager", 
-    "time_start": null, 
-    "name": "pulp.server.managers.consumer.applicability.regenerate_applicability_for_consumers", 
-    "delivery_info": {
-      "priority": null, 
-      "routing_key": "celery", 
-      "exchange": "celery"
-    }, 
-    "args": "({'sort': [('id', 1)], 'skip': None, 'limit': None, 'filters': {'id': {'$in': ['grapefruit', 'sunflower', 'voyager']}}, 'fields': None},)", 
-    "acknowledged": false, 
-    "kwargs": "{}", 
-    "id": "bb1d2a78-8b2f-4fba-b916-8947ad16e449", 
-    "worker_pid": null
-    }
-    """
-
-    def __init__(self, response_body):
-
-        # Tasking identity information
-        if '_href' in response_body:
-            self.href = response_body['_href']
-        else:
-            self.href = None
-
-        self.task_id = response_body['id']
-        self.name = response_body['name']
-
-        self.start_time = response_body['time_start']
-        self.delivery_info = response_body['delivery_info']
-
-        self.args = response_body['args']
-        self.kwargs = response_body['kwargs']
-        
-        self.ackknowledged = response_body['acknowledged']
-
     def is_rejected(self):
         """
         Indicates if the response represents that the request was rejected.

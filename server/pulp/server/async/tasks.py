@@ -26,6 +26,7 @@ from pulp.server.dispatch import constants as dispatch_constants
 DEFAULT_CELERY_QUEUE = 'celery'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 
+
 controller = control.Control(app=celery)
 # The singleton ResourceManager will be stored here when and if it is instantiated. Only one worker
 # should do this.
@@ -323,14 +324,14 @@ class Task(CeleryTask, ReservedTask):
         """
         A wrapper around the Celery apply_async method. It allows us to accept a few more
         parameters than Celery does for our own purposes, listed below. It also allows us
-        to create and update a task status which can be used to track status of this task
+        to create and update task status which can be used to track status of this task
         during it's lifetime.
 
         :param tags:        A list of tags (strings) to place onto the task, used for searching for
                             tasks by tag
         :type  tags:        list
-        :return:            A TaskStatus instance as returned by Celery's apply_async
-        :rtype:             celery.result.AsyncResult
+        :return:            serialized task status
+        :rtype:             dict
         """
         tags = kwargs.pop('tags', [])
 
