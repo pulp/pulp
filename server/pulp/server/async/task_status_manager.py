@@ -72,7 +72,7 @@ class TaskStatusManager(object):
             task_status = TaskStatus(task_id)
             TaskStatus.get_collection().save(task_status, safe=True)
             task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
-        
+    
         return task_status
 
     @staticmethod

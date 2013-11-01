@@ -334,8 +334,8 @@ class Task(CeleryTask, ReservedTask):
         :rtype:             dict
         """
         tags = kwargs.pop('tags', [])
-
         async_result = super(Task, self).apply_async(*args, **kwargs)
+
         # Create a new task status with task id in the async_result
         # and set it's state to 'waiting'.
         task_status = TaskStatusManager.create_task_status(task_id=async_result.id,
@@ -347,8 +347,12 @@ class Task(CeleryTask, ReservedTask):
         """
         This overrides CeleryTask's __call__() method
         """
+        # Make sure that the TaskStatus object has already been created in the db,
+        # else wait for it to be created by Task.apply_async.
+        task_status = None
+        while task_status is None:
+            task_status = TaskStatusManager.find_by_task_id(self.request.id)
         # Update start_time and set task state to 'running'
-        TaskStatusManager.get_or_create_task_status(self.request.id)
         delta = {'state': dispatch_constants.CALL_RUNNING_STATE,
                  'start_time':  dateutils.now_utc_timestamp()}
         TaskStatusManager.update_task_status(task_id=self.request.id, delta=delta)
