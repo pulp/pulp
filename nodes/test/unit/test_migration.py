@@ -24,6 +24,12 @@ from pulp_node.migration import *
 
 MANIFEST_ID = 'test_1'
 
+manifest_0 = {
+    TOTAL_UNITS: 100,
+    UNITS_SIZE: 123,
+    UNITS_PATH: 'http://rdhat.com/units.json.gz'
+}
+
 manifest_1 = {
     VERSION: 1,
     TOTAL_UNITS: 100,
@@ -40,6 +46,11 @@ manifest_2 = {
 }
 
 
+INITIAL_MANIFEST = manifest_0
+
+LATEST_MANIFEST = manifest_2
+
+
 class TestManifestMigration(TestCase):
 
     def setUp(self):
@@ -48,6 +59,11 @@ class TestManifestMigration(TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.tmp_dir, ignore_errors=True)
+
+    def test_migration_0(self):
+        manifest = migration_0(dict(manifest_0))
+        self.assertEqual(manifest[VERSION], 0)
+        self.assertFalse(manifest[UNITS_PATH])
 
     def test_migration_1(self):
         manifest = migration_1(dict(manifest_1))
@@ -58,7 +74,7 @@ class TestManifestMigration(TestCase):
     def test_migrate(self):
         path = os.path.join(self.tmp_dir, _manifest.MANIFEST_FILE_NAME)
         with open(path, 'w+') as fp:
-            json.dump(manifest_1, fp)
+            json.dump(INITIAL_MANIFEST, fp)
         last_modified = os.path.getmtime(path)
         time.sleep(1)  # getmtime() is to the second.
         migrate(path)
@@ -66,7 +82,7 @@ class TestManifestMigration(TestCase):
         manifest.read()
         self.assertEqual(manifest.id, MANIFEST_ID)
         self.assertEqual(manifest.version, _manifest.MANIFEST_VERSION)
-        self.assertEqual(manifest.units, manifest_2[UNITS])
+        self.assertEqual(manifest.units, LATEST_MANIFEST[UNITS])
         self.assertEqual(manifest.path, path)
         self.assertNotEqual(last_modified, os.path.getmtime(path))
 
