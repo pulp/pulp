@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.26.beta%{?dist}
+Release: 0.27.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,17 @@ exit 0
 %endif
 
 %changelog
+* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
+- 1023056 - fix SSL on f19 by using qpid builtin SSL transport.
+  (jortel@redhat.com)
+- 1022646 - fix migration of nodes 2.2 => 2.3 manifests. (jortel@redhat.com)
+- 1022621 - Failed reports are now successful tasks and the report indicates
+  the failure (jason.dobies@redhat.com)
+- 1022621 - Fixed communication between publish manager and tasking
+  (jason.dobies@redhat.com)
+- 1017587 - Added a list of possible task states to the docs.
+  (rbarlow@redhat.com)
+
 * Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
 - Pulp rebuild
 
