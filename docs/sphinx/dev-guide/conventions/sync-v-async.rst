@@ -44,7 +44,7 @@ that has the following fields:
 * **reasons** *(array)* - a list of reasons for postponed or rejected responses
 * **state** *(string)* - the current state of the task
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
-* **task_group_id**(null or string)* - the unique id of the group the task is a part of
+* **task_group_id** *(null or string)* - the unique id of the group the task is a part of
 * **schedule_id** *(null or string)* - the unique id of the schedule if the call is scheduled
 * **progress** *(object)* - arbitrary progress information, usually in the form of an object
 * **result** *(any)* - the return value of the call, if any
