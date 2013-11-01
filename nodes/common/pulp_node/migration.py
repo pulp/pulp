@@ -37,7 +37,7 @@ def migration_0(manifest):
     property references an unzipped file.  But, in 2.2, this property
     references the zipped file.
     Manifests with version=None were published by 2.2.
-    :param manifest: The migration to migrate.
+    :param manifest: The manifest to migrate.
     :type manifest: dict
     :return: The migrated manifest.
     """
@@ -51,7 +51,7 @@ def migration_1(manifest):
     Migrate v1 -> v2.
     This migration groups unit properties under a 'units' property.
     Manifests with version=1 were published by 2.3.0.
-    :param manifest: The migration to migrate.
+    :param manifest: The manifest to migrate.
     :type manifest: dict
     :return: The migrated manifest.
     """
