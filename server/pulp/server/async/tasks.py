@@ -12,25 +12,21 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-import random
-import itertools
 import logging
-import pickle
+import random
 
 from celery import chain, task, Task as CeleryTask
 from celery.app import control
-from celery.result import AsyncResult
 
-from pulp.server.db.model.dispatch import CeleryTaskResult
+from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery
-
+from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.dispatch import constants as dispatch_constants
 
 DEFAULT_CELERY_QUEUE = 'celery'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 
-
 controller = control.Control(app=celery)
-inspector= control.Inspect(app=celery)
 # The singleton ResourceManager will be stored here when and if it is instantiated. Only one worker
 # should do this.
 _resource_manager = None
@@ -331,14 +327,41 @@ class Task(CeleryTask, ReservedTask):
         :param tags:        A list of tags (strings) to place onto the task, used for searching for
                             tasks by tag
         :type  tags:        list
-        :return:            An AsyncResult instance as returned by Celery's apply_async
+        :return:            A TaskStatus instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
         tags = kwargs.pop('tags', [])
 
         async_result = super(Task, self).apply_async(*args, **kwargs)
-        return async_result
+        TaskStatusManager.get_or_create_task_status(async_result.id)
+        delta = {'tags': tags,
+                 'state': dispatch_constants.CALL_WAITING_STATE}
+        task_status = TaskStatusManager.update_task_status(async_result.id, delta)        
+        return task_status
 
+    def __call__(self, *args, **kwargs):
+        # Set task status to 'running' and save it in the db
+        TaskStatusManager.get_or_create_task_status(self.request.id)
+        delta = {'state': dispatch_constants.CALL_RUNNING_STATE,
+                 'start_time':  dateutils.now_utc_timestamp()}
+        TaskStatusManager.update_task_status(task_id=self.request.id, delta=delta)
+
+        logger.debug("Running task : [%s]" % self.request.id)
+        CeleryTask.__call__(self, *args, **kwargs)
+
+    def on_success(self, retval, task_id, args, kwargs):
+        logger.debug("Task successful : [%s]" % task_id)
+        delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
+                 'finish_time': dateutils.now_utc_timestamp(),
+                 'result': retval}
+        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        logger.debug("Task failed : [%s]" % task_id)
+        delta = {'state': dispatch_constants.CALL_ERROR_STATE,
+                 'finish_time': dateutils.now_utc_timestamp(),
+                 'traceback': einfo.traceback}
+        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
 def cancel(task_id):
     """
@@ -349,41 +372,3 @@ def cancel(task_id):
     """
     controller.revoke(task_id, terminate=True)
 
-def get_task_details(task_id):
-    task_result_collection = CeleryTaskResult.get_collection()
-    task_result = task_result_collection.find_one({'_id': task_id})
-    serialize_task_result(task_result)
-    logger.info("$$$$$$ %s" % task_result)
-    logger.info("$$$ %s: %s:  %s" % (task_result['result'],
-                                     task_result['traceback'],
-                                     task_result['children']))   
-    return task_result
-
-def serialize_task_result(task_result):
-    task_result['traceback'] = pickle.loads(str(task_result['traceback']))
-    task_result['result'] = pickle.loads(str(task_result['result']))
-    task_result['children'] = pickle.loads(str(task_result['children']))
-
-def get_active():
-    return get_all_task_values(inspector.active())
-
-def get_reserved():
-    return get_all_task_values(inspector.reserved())
-
-def get_revoked():
-    return get_all_task_values(inspector.revoked())
-
-def get_scheduled():
-    return get_all_task_values(inspector.scheduled())
-
-def get_all_task_values(worker_tasks_dict):
-    current_tasks = []
-    for current_task in worker_tasks_dict.values():
-        current_tasks.extend(current_task)
-    return current_tasks
-
-def get_current_tasks():
-    return itertools.chain(get_active(),
-                           get_reserved(),
-                           get_revoked(),
-                           get_scheduled())

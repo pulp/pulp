@@ -20,8 +20,6 @@ Hopefully we will eliminate the factory in the future, but until then this worka
 from celery import Celery
 
 from pulp.server.config import config
-import celeryconfig
 
 broker_url = config.get('tasks', 'broker_url')
-celery = Celery('tasks', broker=broker_url)
-celery.config_from_object(celeryconfig)
+celery = Celery('tasks', backend='amqp', broker=broker_url)

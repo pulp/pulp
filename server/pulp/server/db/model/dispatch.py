@@ -116,18 +116,38 @@ class ArchivedCall(Model):
         self.call_request_string = str(call_request)
         self.serialized_call_report = call_report.serialize()
 
-class CeleryTaskResult(Model):
+
+class TaskStatus(Model):
+    """
+    Represents current state of a task.
+
+    :param task_id: identity of the task this status corresponds to
+    :type  task_id: basestring
+    :param tags: custom tags on the task
+    :type  tags: list
+    :param state: state of callable in its lifecycle
+    :type  state: basestring
+    :param result: return value of the callable, if any
+    :type  result: any
+    :param traceback: string representation of the traceback from callable, if any
+    :type  traceback: basestring
+    :param start_time: time the task started executing
+    :type  start_time: datetime.datetime
+    :param finish_time: time the task completed
+    :type  finish_time: datetime.datetime
+    """
+
+    collection_name = 'task_status'
+    unique_indices = ('task_id',)
+    search_indices = ('task_id', 'tags', 'state')
     
-    collection_name = 'celery_task_result'
-    unique_indices = ()
-    search_indices = ()
-    
-    def __init__(self, task_id, status, date_done, traceback, result, children):
-        super(CeleryTaskResult, self).__init__()
-        self._id = task_id
-        self.status = status
-        self.date_done = date_done
-        self.traceback = traceback
-        self.result = result
-        self.children = children
+    def __init__(self, task_id, tags=[], state=None):
+        super(TaskStatus, self).__init__()
+        self.task_id = task_id
+        self.tags = tags
+        self.state = None
+        self.result = None
+        self.traceback = None
+        self.start_time = None
+        self.finish_time = None
 

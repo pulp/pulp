@@ -80,7 +80,7 @@ class TaskCollection(JSONController):
         result = []
         current_tasks = tasks.get_current_tasks()
         for current_task in current_tasks:
-            task_details = tasks.get_task_details(current_task['id'])
+            task_details = tasks.get_task_result(current_task['id'])
             result.append(task_details)
             logger.info("^^^^^^^^^ %s" % task_details)
         return self.ok(result)

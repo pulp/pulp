@@ -70,11 +70,6 @@ class TasksAPI(PulpAPI):
 
         response = self.server.GET(path, queries=tags)
 
-        tasks = []
-        for doc in response.response_body:
-            tasks.append(CeleryTask(doc))
-
-        response.response_body = tasks
         return response
 
     def get_repo_tasks(self, repo_id):
