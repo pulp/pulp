@@ -6,7 +6,7 @@
 echo "Running the tests"
 set -x
 rm -rf $WORKSPACE/test
-mkdir $WORKSPACE/test
+mkdir -p $WORKSPACE/test
 
 
 cd $WORKSPACE/pulp
