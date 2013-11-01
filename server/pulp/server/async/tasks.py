@@ -322,7 +322,9 @@ class Task(CeleryTask, ReservedTask):
     def apply_async(self, *args, **kwargs):
         """
         A wrapper around the Celery apply_async method. It allows us to accept a few more
-        parameters than Celery does for our own purposes, listed below.
+        parameters than Celery does for our own purposes, listed below. It also allows us
+        to create and update a task status which can be used to track status of this task
+        during it's lifetime.
 
         :param tags:        A list of tags (strings) to place onto the task, used for searching for
                             tasks by tag
@@ -333,23 +335,32 @@ class Task(CeleryTask, ReservedTask):
         tags = kwargs.pop('tags', [])
 
         async_result = super(Task, self).apply_async(*args, **kwargs)
-        TaskStatusManager.get_or_create_task_status(async_result.id)
-        delta = {'tags': tags,
-                 'state': dispatch_constants.CALL_WAITING_STATE}
-        task_status = TaskStatusManager.update_task_status(async_result.id, delta)        
+        # Create a new task status with task id in the async_result
+        # and set it's state to 'waiting'.
+        task_status = TaskStatusManager.create_task_status(task_id=async_result.id,
+                                                           tags=tags,
+                                                           state=dispatch_constants.CALL_WAITING_STATE)
         return task_status
 
     def __call__(self, *args, **kwargs):
-        # Set task status to 'running' and save it in the db
+        """
+        This overrides CeleryTask's __call__() method
+        """
+        # Update start_time and set task state to 'running'
         TaskStatusManager.get_or_create_task_status(self.request.id)
         delta = {'state': dispatch_constants.CALL_RUNNING_STATE,
                  'start_time':  dateutils.now_utc_timestamp()}
         TaskStatusManager.update_task_status(task_id=self.request.id, delta=delta)
-
+        # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
         CeleryTask.__call__(self, *args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
+        """
+        This overrides the success handler run by the worker when the task
+        executes successfully. It updates state, finish_time and traceback
+        of the relevant task status.
+        """
         logger.debug("Task successful : [%s]" % task_id)
         delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
                  'finish_time': dateutils.now_utc_timestamp(),
@@ -357,6 +368,10 @@ class Task(CeleryTask, ReservedTask):
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        This overrides the error handler run by the worker when the task fails.
+        It updates state, finish_time and traceback of the relevant task status.
+        """
         logger.debug("Task failed : [%s]" % task_id)
         delta = {'state': dispatch_constants.CALL_ERROR_STATE,
                  'finish_time': dateutils.now_utc_timestamp(),
