@@ -86,7 +86,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
                not config.config.has_option('database', 'password')) or
               (not config.config.has_option('database', 'username') and
                config.config.has_option('database', 'password'))):
-            raise Exception("The server config specified username/password authentication but"
+            raise Exception("The server config specified username/password authentication but "
                             "is missing either the username or the password")
 
         _DATABASE.add_son_manipulator(NamespaceInjector())
