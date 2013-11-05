@@ -1,6 +1,33 @@
 Retrieval
 =========
 
+Retrieve a Single Unit
+----------------------
+
+Returns information about a single content unit.
+
+| :method:`get`
+| :path:`/v2/content/units/<content_type>/<unit_id>/`
+| :permission:`read`
+| :response_list:`_`
+
+* :response_code:`200,if the unit is found`
+* :response_code:`404,if there is no unit at the given id`
+
+| :return:`the details of the unit`
+
+:sample_response:`200` ::
+
+    {
+      "_id": "046ca98d-5977-400d-b4de-a5bb57c8b7e2",
+      "_content_type_id": "type-2",
+      "_last_updated": "2013-09-05T17:49:41Z",
+      "_storage_path": "/var/lib/pulp/content/type-2/A",
+      "key-2a": "A",
+      "key-2b": "B",
+    }
+
+
 Search for Units
 ----------------
 
