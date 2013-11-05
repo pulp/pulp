@@ -46,4 +46,7 @@ TESTS_NON_RHEL5 = [
     'server/test/unit'
 ]
 
-run_tests(PACKAGES, TESTS_ALL_PLATFORMS, TESTS_NON_RHEL5)
+dir_safe_all_platforms = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_ALL_PLATFORMS]
+dir_safe_non_rhel5 = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_ALL_PLATFORMS]
+
+run_tests(PACKAGES, dir_safe_all_platforms, dir_safe_non_rhel5)
