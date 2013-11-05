@@ -42,6 +42,7 @@ def migration_0(manifest):
     :return: The migrated manifest.
     """
     manifest[VERSION] = 0
+    manifest[UNITS_SIZE] = 0
     manifest[UNITS_PATH] = None
     return manifest
 
