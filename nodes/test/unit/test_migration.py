@@ -26,14 +26,13 @@ MANIFEST_ID = 'test_1'
 
 manifest_0 = {
     TOTAL_UNITS: 100,
-    UNITS_SIZE: 123,
     UNITS_PATH: 'http://rdhat.com/units.json.gz'
 }
 
 manifest_1 = {
     VERSION: 1,
     TOTAL_UNITS: 100,
-    UNITS_SIZE: 123,
+    UNITS_SIZE: 0,
 }
 
 manifest_2 = {
