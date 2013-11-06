@@ -172,9 +172,10 @@ This script tags all pulp projects
 
 OPTIONS:
    -h      Show this message
-   -v      The pulp version and release. Eg: 2.0.6-1
+   -v      The pulp version and release. Eg: 2.3.0-1
    -a      Auto accept the changelog
    -b      Checkout the specified branch
+   -p      A parent branch. (default: master)
 EOF
 }
 
