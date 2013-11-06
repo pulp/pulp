@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.27.beta%{?dist}
+Release: 0.28.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.28.beta
+- 1022646 - migration_0 needs to add units_size=0. (jortel@redhat.com)
+
 * Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
 - 1023056 - fix SSL on f19 by using qpid builtin SSL transport.
   (jortel@redhat.com)
