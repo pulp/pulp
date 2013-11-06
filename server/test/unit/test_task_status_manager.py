@@ -115,7 +115,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         TaskStatusManager.create_task_status(task_id)
         TaskStatusManager.delete_task_status(task_id)
-        task_statuses = TaskStatusManager.find_all()
+        task_statuses = list(TaskStatusManager.find_all())
         self.assertEqual(0, len(task_statuses))
   
     def test_delete_not_existing_task_status(self):

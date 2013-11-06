@@ -141,10 +141,10 @@ class TaskStatus(Model):
     unique_indices = ('task_id',)
     search_indices = ('task_id', 'tags', 'state')
     
-    def __init__(self, task_id, tags=[], state=None):
+    def __init__(self, task_id, tags=None, state=None):
         super(TaskStatus, self).__init__()
         self.task_id = task_id
-        self.tags = tags
+        self.tags = tags or []
         self.state = state
         self.result = None
         self.traceback = None

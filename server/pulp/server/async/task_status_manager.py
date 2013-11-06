@@ -21,17 +21,17 @@ class TaskStatusManager(object):
     """
 
     @staticmethod
-    def create_task_status(task_id, tags=[], state=None):
+    def create_task_status(task_id, tags=None, state=None):
         """
         Creates a new task status for given task_id. 
 
         :param task_id: identity of the task this status corresponds to
         :type  task_id: basestring
         :param tags: custom tags on the task
-        :type  tags: list
+        :type  tags: list of basestrings or None
         :param state: state of callable in its lifecycle
-        :type  state: basestring
-        :return: serialized task status
+        :type  state: basestring or None
+        :return: task status document
         :rtype:  dict
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue: if any of the fields are unacceptable
@@ -64,7 +64,7 @@ class TaskStatusManager(object):
 
         :param task_id: identity of the task this status corresponds to
         :type  task_id: basetring
-        :return: serialized task status
+        :return: task status document
         :rtype:  dict
         """
         task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
@@ -72,7 +72,7 @@ class TaskStatusManager(object):
             task_status = TaskStatus(task_id)
             TaskStatus.get_collection().save(task_status, safe=True)
             task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
-    
+
         return task_status
 
     @staticmethod
@@ -118,7 +118,7 @@ class TaskStatusManager(object):
         :raise MissingResource: if the given task status does not exist
         :raise InvalidValue: if task_id is invalid
         """
-        if task_id is None or not isinstance(task_id, basestring):
+        if not isinstance(task_id, basestring):
             raise InvalidValue('task_id')
         task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
         if task_status is None:
@@ -134,7 +134,7 @@ class TaskStatusManager(object):
         :return: list of serialized task statuses
         :rtype:  list of dict
         """
-        all_task_statuses = list(TaskStatus.get_collection().find())
+        all_task_statuses = TaskStatus.get_collection().find()
         return all_task_statuses
 
     @staticmethod
