@@ -205,9 +205,6 @@ do
   esac
 done
 
-# verify the version
-verify_version
-
 # git (pre-tag) preparation
 if [[ -n $BRANCH ]]
 then
@@ -233,6 +230,9 @@ if [[ -z $VERSION ]]
 then
   set_version
 fi
+
+# verify the version
+verify_version
 
 # confirmation
 echo ""
