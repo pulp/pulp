@@ -3,6 +3,8 @@
 # Tagging script
 #
 
+set -e  # exit on failed
+
 VERSION=
 BUILD_TAG=
 GIT="git"
@@ -31,7 +33,6 @@ set_version()
 {
   pushd pulp
   VERSION=`python -c "$NEXT_VR_SCRIPT"`
-  exit_on_failed
   popd
 }
 
@@ -40,7 +41,6 @@ tito_tag()
   # $1=<git-root>
   pushd $1
   $TITO tag $TITO_TAG_FLAGS && $GIT push origin HEAD && $GIT push --tags
-  exit_on_failed
   popd
 }
 
@@ -49,7 +49,6 @@ git_tag()
   # $1=<git-root>
   pushd $1
   $GIT tag -m "Build Tag" $BUILD_TAG && $GIT push --tags
-  exit_on_failed
   popd
 }
 
@@ -63,15 +62,11 @@ git_prep()
     if [ "$PARENT" != "$BRANCH" ]
     then
       $GIT checkout $BRANCH && $GIT pull --rebase
-      exit_on_failed
       $GIT checkout $PARENT && $GIT pull --rebase
-      exit_on_failed
       git_pre_tag_merge
       $GIT checkout $BRANCH
-      exit_on_failed
     else
       $GIT checkout $BRANCH && $GIT pull --rebase
-      exit_on_failed
     fi
     popd
   done
@@ -85,16 +80,13 @@ git_pre_tag_merge()
       echo "(pre-tag) Merging $BRANCH => $PARENT"
       echo ""
       $GIT log ..$BRANCH
-      exit_on_failed
       echo ""
       read -p "Continue [y|n]: " ANS
       if [ $ANS = "y" ]
       then
         MESSAGE="Merge $BRANCH => $PARENT, pre-build"
         $GIT merge -m "$MESSAGE" $BRANCH
-        exit_on_failed
         $GIT push origin HEAD
-        exit_on_failed
       else
         exit 0
       fi
@@ -116,12 +108,9 @@ git_post_tag_merge()
     echo "(post-tag) Merging (-s ours) $DIR $BRANCH => $PARENT"
     pushd $DIR
     $GIT checkout $PARENT
-    exit_on_failed
     MESSAGE="Merge (-s ours) $BRANCH => $PARENT, post-build"
     $GIT merge -s ours -m "$MESSAGE" $BRANCH
-    exit_on_failed
     $GIT push origin HEAD
-    exit_on_failed
     popd
   done
 }
@@ -132,17 +121,20 @@ verify_branch()
   do
     pushd $DIR
     $GIT fetch --tags
+    set +e
     $GIT tag -l $BRANCH | grep $BRANCH >& /dev/null
     if [ $? = 0 ]; then
       echo "[$BRANCH] must be a branch."
       exit 1
     fi
+    set -e
     popd
   done
 }
 
 verify_version()
 {
+  set +e
   echo $VERSION | grep -E "(alpha|beta)$"
   if [ $? = 1 ]
   then
@@ -154,13 +146,7 @@ verify_version()
       exit 0
     fi
   fi
-}
-
-exit_on_failed()
-{
-  if [ $? != 0 ]; then
-    exit 1
-  fi
+  set -e
 }
 
 usage()
