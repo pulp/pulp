@@ -182,7 +182,7 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 0.77.1
+Requires: python-gofer >= 0.77
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
