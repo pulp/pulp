@@ -253,11 +253,9 @@ class RemoteManifest(Manifest):
         self.downloader = downloader
         self.destination = destination
 
-    def fetch(self, migration=None):
+    def fetch(self):
         """
         Fetch the manifest file using the specified URL.
-        :param migration: Migration function used to migrate the document.
-        :type migration: callable
         :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
         :raise ValueError: on json decoding errors
@@ -269,7 +267,7 @@ class RemoteManifest(Manifest):
         if listener.failed_reports:
             report = listener.failed_reports[0]
             raise ManifestDownloadError(self.url, report.error_msg)
-        self.read(migration)
+        self.read()
 
     def fetch_units(self):
         """

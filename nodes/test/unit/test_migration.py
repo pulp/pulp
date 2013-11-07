@@ -62,7 +62,7 @@ class TestManifestMigration(TestCase):
     def test_migration_0(self):
         manifest = migration_0(dict(manifest_0))
         self.assertEqual(manifest[VERSION], 0)
-        self.assertFalse(manifest[UNITS_PATH])
+        self.assertFalse(UNITS_PATH in manifest)
 
     def test_migration_1(self):
         manifest = migration_1(dict(manifest_1))

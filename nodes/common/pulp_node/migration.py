@@ -9,9 +9,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from logging import getLogger
+
 from pulp.server.compat import json
 
 from pulp_node import manifest as _manifest
+
+
+log = getLogger(__name__)
 
 
 # --- constants --------------------------------------------------------------
@@ -33,9 +38,8 @@ def migration_0(manifest):
     Migrate v0 -> v1.
     This migration is used to migrate any manifest published prior
     to the introduction of manifest migration capabilities.  In this
-    migration, the 'units_path' is set to None because in 2.3.0+, this
-    property references an unzipped file.  But, in 2.2, this property
-    references the zipped file.
+    migration, the 'units_path' removed because in 2.3.0+, the
+    units_path is a method.
     Manifests with version=None were published by 2.2.
     :param manifest: The manifest to migrate.
     :type manifest: dict
@@ -43,7 +47,7 @@ def migration_0(manifest):
     """
     manifest[VERSION] = 0
     manifest[UNITS_SIZE] = 0
-    manifest[UNITS_PATH] = None
+    manifest.pop(UNITS_PATH)
     return manifest
 
 
@@ -85,7 +89,9 @@ def migrate(path):
     version_in = manifest.get(VERSION, 0)
     for version in range(version_in, _manifest.MANIFEST_VERSION):
         migration = MIGRATIONS[version]
+        log.info('{%s} manifest (in): %s', version, manifest)
         manifest = migration(manifest)
+        log.info('{%s} manifest (out): %s', version, manifest)
         manifest[VERSION] = version + 1
     if version_in < manifest[VERSION]:
         with open(path, 'w+') as fp:
