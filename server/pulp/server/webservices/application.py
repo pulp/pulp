@@ -100,6 +100,9 @@ def _initialize_pulp():
     if _IS_INITIALIZED:
         return
 
+    # configure agent services
+    AgentServices.init()
+
     # Verify the database has been migrated to the correct version. This is
     # very likely a reason the server will fail to start.
     try:
@@ -140,7 +143,7 @@ def _initialize_pulp():
     # database document reaper
     reaper.initialize()
 
-    # agent services
+    # start agent services
     AgentServices.start()
 
     # Setup debugging, if configured
