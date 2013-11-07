@@ -28,7 +28,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
-BuildRequires: python-nose
 BuildRequires: rpm-python
 
 %description

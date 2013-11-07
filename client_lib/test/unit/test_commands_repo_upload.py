@@ -10,9 +10,11 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
 """
 This module tests the pulp.client.commands.repo.upload module.
 """
+
 import mock
 
 from pulp.client.commands.repo import upload
@@ -61,3 +63,34 @@ class TestPerformUpload(base.PulpClientTests):
         write.assert_any_call('... completed', tag='import_upload_success')
         # No errors should have been rendered
         self.assertEqual(render_failure_message.call_count, 0)
+
+
+class UploadCommandTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(UploadCommandTests, self).setUp()
+
+        self.mock_upload_manager = mock.MagicMock()
+        self.upload_command = upload.UploadCommand(self.context, self.mock_upload_manager)
+
+    def test_verify_repo_exists(self):
+        # Setup
+        mock_repo_api = mock.MagicMock()
+        self.context.server.repo.repository = mock_repo_api
+
+        # Test
+        self.upload_command._verify_repo_exists('repo-1')
+        # no exception should be raised
+
+    def test_verify_repo_doesnt_exist(self):
+        # Setup
+        mock_repo_api = mock.MagicMock()
+        mock_repo_api.side_effect = Exception()
+        self.context.server.repo.repository = mock_repo_api
+
+        # Test
+        try:
+            self.upload_command._verify_repo_exists('repo-1')
+            self.fail('Exception was not bubbled up')
+        except Exception, e:
+            self.assertTrue(e is mock_repo_api.side_effect)

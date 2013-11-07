@@ -40,7 +40,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
-BuildRequires: python-nose
 BuildRequires: rpm-python
 
 %description
@@ -167,7 +166,7 @@ rm -rf %{buildroot}
 Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
-Requires: pymongo >= 2.1.1
+Requires: python-pymongo >= 2.5.2
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.32
