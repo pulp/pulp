@@ -507,7 +507,8 @@ class TestTask(PulpServerTests):
         _queue_release_resource.apply_async.assert_called_once_with((resource_id,),
                                                                     queue=MOCK_RESERVED_QUEUE)
 
-    def test_on_success_handler(self):
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    def test_on_success_handler(self, mock_request):
         """
         Make sure that overridden on_success handler updates task status correctly
         """
@@ -515,6 +516,7 @@ class TestTask(PulpServerTests):
         task_id = str(uuid.uuid4())
         args = []
         kwargs = {}
+        mock_request.called_directly = False
 
         task = tasks.Task()
         task_status = TaskStatusManager.create_task_status(task_id)
@@ -527,7 +529,8 @@ class TestTask(PulpServerTests):
         self.assertEqual(new_task_status['result'], retval)
         self.assertIsNotNone(new_task_status['finish_time'])
 
-    def test_on_failure_handler(self):
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    def test_on_failure_handler(self, mock_request):
         """
         Make sure that overridden on_failure handler updates task status correctly
         """
@@ -542,6 +545,7 @@ class TestTask(PulpServerTests):
             def __init__(self):
                 self.traceback = "string_repr_of_traceback"
         einfo = EInfo()
+        mock_request.called_directly = False
 
         task = tasks.Task()
         task_status = TaskStatusManager.create_task_status(task_id)

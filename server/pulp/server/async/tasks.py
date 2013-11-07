@@ -342,10 +342,10 @@ class Task(CeleryTask, ReservedTask):
         TaskStatusManager.create_task_status(task_id, tags)
         async_result = super(Task, self).apply_async(task_id=task_id, *args, **kwargs)
 
-        # Update task's state in the task state to 'waiting'.
+        # Updates task's state in the task state to 'waiting'.
         # To avoid the race condition where __call__ method below is called before
-        # this change is propagated to all db nodes, using an upsert here and setting
-        # the task state to 'waiting' only on insert.
+        # this change is propagated to all db nodes, using an 'upsert' here and setting
+        # the task state to 'waiting' only on an insert.
         TaskStatus.get_collection().update({'task_id': task_id},
                                            {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE}},
                                             upsert = True)
@@ -355,12 +355,14 @@ class Task(CeleryTask, ReservedTask):
         """
         This overrides CeleryTask's __call__() method
         """
-        # Update start_time and set the task state to 'running'.
-        # using an 'upsert' to avoid a possible race condition described above.
-        TaskStatus.get_collection().update({'task_id': self.request.id},
-                                           {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
-                                                     'start_time':  dateutils.now_utc_timestamp()}},
-                                           upsert = True)
+        # Updates start_time and set the task state to 'running' for asynchronous tasks.
+        # Skip updating status for eagerly executed tasks.
+        # Using 'upsert' to avoid a possible race condition described above.
+        if not self.request.called_directly:
+            TaskStatus.get_collection().update({'task_id': self.request.id},
+                                               {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
+                                                         'start_time':  dateutils.now_utc_timestamp()}},
+                                               upsert = True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
         super(Task, self).__call__(*args, **kwargs)
@@ -369,24 +371,28 @@ class Task(CeleryTask, ReservedTask):
         """
         This overrides the success handler run by the worker when the task
         executes successfully. It updates state, finish_time and traceback
-        of the relevant task status.
+        of the relevant task status for asynchronous tasks. Skip updating status
+        for eagerly executed tasks.
         """
         logger.debug("Task successful : [%s]" % task_id)
-        delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
-                 'finish_time': dateutils.now_utc_timestamp(),
-                 'result': retval}
-        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+        if not self.request.called_directly:
+            delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
+                     'finish_time': dateutils.now_utc_timestamp(),
+                     'result': retval}
+            TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
         This overrides the error handler run by the worker when the task fails.
-        It updates state, finish_time and traceback of the relevant task status.
+        It updates state, finish_time and traceback of the relevant task status
+        for asynchronous tasks. Skip updating status for eagerly executed tasks.
         """
         logger.debug("Task failed : [%s]" % task_id)
-        delta = {'state': dispatch_constants.CALL_ERROR_STATE,
-                 'finish_time': dateutils.now_utc_timestamp(),
-                 'traceback': einfo.traceback}
-        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+        if not self.request.called_directly:
+            delta = {'state': dispatch_constants.CALL_ERROR_STATE,
+                     'finish_time': dateutils.now_utc_timestamp(),
+                     'traceback': einfo.traceback}
+            TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
 def cancel(task_id):
     """

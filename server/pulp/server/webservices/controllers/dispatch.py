@@ -26,6 +26,7 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
+from pulp.server.async.task_status_manager import TaskStatusManager
 
 class TaskNotFound(MissingResource):
 
@@ -71,10 +72,8 @@ class TaskCollection(JSONController):
         criteria = {'tags': filters.get('tag', [])}
         if 'id' in filters:
             criteria['call_request_id_list'] = filters['id']
-        coordinator = dispatch_factory.coordinator()
-        call_reports = coordinator.find_call_reports(**criteria)
-        serialized_call_reports = [c.serialize() for c in call_reports]
-        return self.ok(serialized_call_reports)
+        serialized_task_statuses = list(TaskStatusManager.find_all())
+        return self.ok(serialized_task_statuses)
 
 
 class TaskResource(JSONController):
