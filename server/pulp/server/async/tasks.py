@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
+from uuid import uuid4
 import logging
 import random
 
@@ -20,6 +21,7 @@ from celery.app import control
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.dispatch import constants as dispatch_constants
 
 
@@ -334,31 +336,34 @@ class Task(CeleryTask, ReservedTask):
         :rtype:             dict
         """
         tags = kwargs.pop('tags', [])
-        async_result = super(Task, self).apply_async(*args, **kwargs)
+        task_id = str(uuid4())
 
-        # Create a new task status with task id in the async_result
-        # and set it's state to 'waiting'.
-        task_status = TaskStatusManager.create_task_status(task_id=async_result.id,
-                                                           tags=tags,
-                                                           state=dispatch_constants.CALL_WAITING_STATE)
-        return task_status
+        # Create a new task status with the task id and tags.
+        TaskStatusManager.create_task_status(task_id, tags)
+        async_result = super(Task, self).apply_async(task_id=task_id, *args, **kwargs)
+
+        # Update task's state in the task state to 'waiting'.
+        # To avoid the race condition where __call__ method below is called before
+        # this change is propagated to all db nodes, using an upsert here and setting
+        # the task state to 'waiting' only on insert.
+        TaskStatus.get_collection().update({'task_id': task_id},
+                                           {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE}},
+                                            upsert = True)
+        return async_result
 
     def __call__(self, *args, **kwargs):
         """
         This overrides CeleryTask's __call__() method
         """
-        # Make sure that the TaskStatus object has already been created in the db,
-        # else wait for it to be created by Task.apply_async.
-        task_status = None
-        while task_status is None:
-            task_status = TaskStatusManager.find_by_task_id(self.request.id)
-        # Update start_time and set task state to 'running'
-        delta = {'state': dispatch_constants.CALL_RUNNING_STATE,
-                 'start_time':  dateutils.now_utc_timestamp()}
-        TaskStatusManager.update_task_status(task_id=self.request.id, delta=delta)
+        # Update start_time and set the task state to 'running'.
+        # using an 'upsert' to avoid a possible race condition described above.
+        TaskStatus.get_collection().update({'task_id': self.request.id},
+                                           {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
+                                                     'start_time':  dateutils.now_utc_timestamp()}},
+                                           upsert = True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
-        CeleryTask.__call__(self, *args, **kwargs)
+        super(Task, self).__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """

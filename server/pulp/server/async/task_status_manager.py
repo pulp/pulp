@@ -57,25 +57,6 @@ class TaskStatusManager(object):
         return created
 
     @staticmethod
-    def get_or_create_task_status(task_id):
-        """
-        Returns an existing task status corresponding to the given task id.
-        If it doesn't exist, creates a new TaskStatus and returns it.
-
-        :param task_id: identity of the task this status corresponds to
-        :type  task_id: basetring
-        :return: task status document
-        :rtype:  dict
-        """
-        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
-        if task_status is None:
-            task_status = TaskStatus(task_id)
-            TaskStatus.get_collection().save(task_status, safe=True)
-            task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
-
-        return task_status
-
-    @staticmethod
     def update_task_status(task_id, delta):
         """
         Updates status of the task with given task id. Only the following
@@ -131,8 +112,8 @@ class TaskStatusManager(object):
         """
         Returns serialized versions of all task statuses in the database.
 
-        :return: list of serialized task statuses
-        :rtype:  list of dict
+        :return: pymongo cursor for the list of serialized task statuses
+        :rtype:  pymongo.cursor.Cursor
         """
         all_task_statuses = TaskStatus.get_collection().find()
         return all_task_statuses
@@ -157,8 +138,8 @@ class TaskStatusManager(object):
         :param criteria:    A Criteria object representing a search you want
                             to perform
         :type  criteria:    pulp.server.db.model.criteria.Criteria
-        :return:    list of TaskStatus instances
-        :rtype:     list
+        :return:    pymongo cursor for the TaskStatus instances satisfying the query 
+        :rtype:     pymongo.cursor.Cursor
         """
         return TaskStatus.get_collection().query(criteria)
 

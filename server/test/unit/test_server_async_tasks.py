@@ -22,6 +22,7 @@ import mock
 from base import PulpServerTests
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.dispatch import TaskStatus
 
 
 # This is used as the mock return value for the celery.app.control.Inspect.active_queues() method
@@ -479,6 +480,11 @@ class TestTask(PulpServerTests):
     """
     Test the pulp.server.tasks.Task class.
     """
+
+    def clean(self):
+        super(TestTask, self).clean()
+        TaskStatus.get_collection().remove()
+
     @mock.patch('pulp.server.async.tasks._queue_release_resource')
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async',
                 return_value=_reserve_resource_apply_async())
@@ -562,9 +568,9 @@ class TestTask(PulpServerTests):
         apply_async.return_value = celery.result.AsyncResult(task_id)
         task.apply_async(*args, **kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
-        self.assertIsNotNone(new_task_status)
-        self.assertEqual(new_task_status['state'], 'waiting')
+        task_statuses = list(TaskStatusManager.find_all())
+        self.assertEqual(len(task_statuses), 1)
+
 
 class TestCancel(PulpServerTests):
     """
