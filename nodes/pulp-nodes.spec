@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.29.beta%{?dist}
+Release: 0.30.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -240,6 +240,9 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Nov 07 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.30.beta
+- 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
+
 * Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
 - Pulp rebuild
 
