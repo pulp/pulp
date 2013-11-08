@@ -22,20 +22,20 @@ import pulp.server.exceptions as exceptions
 
  
 class TaskStatusManagerTests(base.PulpServerTests):
- 
+
     def setUp(self):
         super(TaskStatusManagerTests, self).setUp()
- 
+
     def tearDown(self):
         super(TaskStatusManagerTests, self).tearDown()
- 
+
     def clean(self):
         super(TaskStatusManagerTests, self).clean()
         TaskStatus.get_collection().remove()
- 
+
     def get_random_uuid(self):
         return str(uuid.uuid4())
- 
+
     def test_create(self):
         """
         Tests creating a TaskStatus with valid data is successful.
@@ -49,16 +49,16 @@ class TaskStatusManagerTests(base.PulpServerTests):
         # Verify
         task_statuses = list(TaskStatus.get_collection().find())
         self.assertEqual(1, len(task_statuses))
- 
+
         task_status = task_statuses[0]
         self.assertEqual(task_id, task_status['task_id'])
         self.assertEqual(tags, task_status['tags'])
         self.assertEqual(state, task_status['state'])
- 
+
         self.assertEqual(task_id, created['task_id'])
         self.assertEqual(tags, created['tags'])
         self.assertEqual(state, created['state'])
- 
+
     def test_create_defaults(self):
         """
         Tests creating a task status with minimal information.
@@ -117,7 +117,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         TaskStatusManager.delete_task_status(task_id)
         task_statuses = list(TaskStatusManager.find_all())
         self.assertEqual(0, len(task_statuses))
-  
+
     def test_delete_not_existing_task_status(self):
         """
         Tests that deleting a task status that doesn't exist raises the appropriate error.
@@ -148,7 +148,8 @@ class TaskStatusManagerTests(base.PulpServerTests):
         self.assertEqual(task_status['state'], delta['state'])
         self.assertEqual(updated['start_time'], delta['start_time'])
         self.assertEqual(updated['state'], delta['state'])
-  
+        self.assertTrue('disregard' not in updated)
+
     def test_update_missing_task_status(self):
         """
         Tests updating a task status that doesn't exist raises the appropriate exception.

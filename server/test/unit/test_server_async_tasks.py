@@ -512,18 +512,19 @@ class TestTask(PulpServerTests):
         """
         Make sure that overridden on_success handler updates task status correctly
         """
-        retval = 'return_value'
+        retval = 'random_return_value'
         task_id = str(uuid.uuid4())
-        args = []
-        kwargs = {}
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': MOCK_RESERVED_QUEUE}
         mock_request.called_directly = False
 
-        task = tasks.Task()
         task_status = TaskStatusManager.create_task_status(task_id)
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
 
+        task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
+
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], retval)
@@ -536,8 +537,8 @@ class TestTask(PulpServerTests):
         """
         exc = Exception()
         task_id = str(uuid.uuid4())
-        args = []
-        kwargs = {}
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags']}
         # on_failure handler expects an instance of celery's ExceptionInfo class
         # as one of the attributes. It stores string representation of traceback
         # in it's traceback instance variable. Creating a stub to imitate that behavior.
@@ -547,34 +548,35 @@ class TestTask(PulpServerTests):
         einfo = EInfo()
         mock_request.called_directly = False
 
-        task = tasks.Task()
         task_status = TaskStatusManager.create_task_status(task_id)
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
 
+        task = tasks.Task()
         task.on_failure(exc, task_id, args, kwargs, einfo)
+
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'error')
         self.assertIsNotNone(new_task_status['finish_time'])
         self.assertEqual(new_task_status['traceback'], einfo.traceback)
 
-    @mock.patch('celery.Task.apply_async', autospec=True)
+    @mock.patch('celery.Task.apply_async')
     def test_apply_async_task_status(self, apply_async):
         """
         Assert that apply_async() creates new task status.
         """
-        task = tasks.Task()
-        args = []
-        kwargs = {}
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': MOCK_RESERVED_QUEUE}
+        #apply_async.return_value = celery.result.AsyncResult('test_task_id')
 
-        task_id = str(uuid.uuid4())
-        apply_async.return_value = celery.result.AsyncResult(task_id)
+        task = tasks.Task()
         task.apply_async(*args, **kwargs)
 
         task_statuses = list(TaskStatusManager.find_all())
         self.assertEqual(len(task_statuses), 1)
-
+        new_task_status = task_statuses[0]
+        self.assertEqual(new_task_status['tags'], kwargs['tags'])
 
 class TestCancel(PulpServerTests):
     """
