@@ -40,6 +40,11 @@ MANIFEST_VERSION = 2
 MANIFEST_FILE_NAME = 'manifest.json'
 UNITS_FILE_NAME = 'units.json.gz'
 
+ID = 'id'
+VERSION = 'version'
+PUBLISHING_DETAILS = 'publishing_details'
+PATH = 'path'
+UNITS = 'units'
 UNITS_PATH = 'path'
 UNITS_TOTAL = 'total'
 UNITS_SIZE = 'size'
@@ -109,28 +114,30 @@ class Manifest(object):
         :raise IOError: on I/O errors.
         :raise ValueError: on json encoding errors
         """
-        state = dict(
-            id=self.id,
-            version=self.version,
-            units=self.units,
-            publishing_details=self.publishing_details)
+        state = {
+            ID: self.id,
+            VERSION: self.version,
+            UNITS: self.units,
+            PUBLISHING_DETAILS: self.publishing_details
+        }
         with open(self.path, 'w+') as fp:
             json.dump(state, fp, indent=2)
 
-    def read(self, migration=None):
+    def read(self, path=None):
         """
         Read the manifest file at the specified path.
         The manifest is updated using the contents of the read json document.
-        :param migration: Migration function used to migrate the document.
-        :type migration: callable
+        :param path: An optional path to the manifest.
+        :type path: str
         :raise IOError: on I/O errors.
         :raise ValueError: on json decoding errors
         """
-        if migration:
-            migration(self.path)
-        with open(self.path) as fp:
+        with open(path or self.path) as fp:
             d = json.load(fp)
-            self.__dict__.update(d)
+        self.id = d.get(ID)
+        self.version = d.get(VERSION, 0)
+        self.units = d.get(UNITS, {UNITS_PATH: None, UNITS_TOTAL: 0, UNITS_SIZE: 0})
+        self.publishing_details = d.get(PUBLISHING_DETAILS, {})
 
     def get_units(self):
         """
@@ -237,39 +244,35 @@ class RemoteManifest(Manifest):
     Represents a remote manifest.
     """
 
-    def __init__(self, url, downloader, destination):
+    def __init__(self, url, downloader, path=None):
         """
         :param url: The URL to the remote manifest.
         :type url: str
         :param downloader: The downloader used for fetch methods.
         :type downloader: nectar.downloaders.base.Downloader
-        :param destination: An absolute path to a file or directory.
-        :type destination: str
+        :param path: An absolute path to a file or directory.
+        :type path: str
         """
-        if os.path.isdir(destination):
-            destination = pathlib.join(destination, MANIFEST_FILE_NAME)
-        Manifest.__init__(self, destination)
+        Manifest.__init__(self, path)
         self.url = str(url)
         self.downloader = downloader
-        self.destination = destination
 
-    def fetch(self, migration=None):
+    def fetch(self):
         """
         Fetch the manifest file using the specified URL.
-        :param migration: Migration function used to migrate the document.
-        :type migration: callable
         :raise ManifestDownloadError: on downloading errors.
         :raise HTTPError: on URL errors.
         :raise ValueError: on json decoding errors
         """
         listener = AggregatingEventListener()
-        request = DownloadRequest(self.url, self.destination)
+        destination = os.path.join(os.path.dirname(self.path), '.' + MANIFEST_FILE_NAME)
+        request = DownloadRequest(self.url, destination)
         self.downloader.event_listener = listener
         self.downloader.download([request])
         if listener.failed_reports:
             report = listener.failed_reports[0]
             raise ManifestDownloadError(self.url, report.error_msg)
-        self.read(migration)
+        self.read(destination)
 
     def fetch_units(self):
         """
