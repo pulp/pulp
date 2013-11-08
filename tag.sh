@@ -79,7 +79,7 @@ git_pre_tag_merge()
     $BRANCH)
       echo "(pre-tag) Merging $BRANCH => $PARENT"
       echo ""
-      $GIT log ..$BRANCH
+      $GIT log $PARENT..$BRANCH
       echo ""
       read -p "Continue [y|n]: " ANS
       if [ $ANS = "y" ]
@@ -108,9 +108,15 @@ git_post_tag_merge()
     echo "(post-tag) Merging (-s ours) $DIR $BRANCH => $PARENT"
     pushd $DIR
     $GIT checkout $PARENT
-    MESSAGE="Merge (-s ours) $BRANCH => $PARENT, post-build"
-    $GIT merge -s ours -m "$MESSAGE" $BRANCH
-    $GIT push origin HEAD
+    $GIT log $PARENT..$BRANCH
+    echo ""
+    read -p "Continue [y|n]: " ANS
+    if [ $ANS = "y" ]
+    then
+      MESSAGE="Merge (-s ours) $BRANCH => $PARENT, post-build"
+      $GIT merge -s ours -m "$MESSAGE" $BRANCH
+      $GIT push origin HEAD
+    fi
     popd
   done
 }
