@@ -26,7 +26,6 @@ from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
 from pulp_node import pathlib
-from pulp_node.migration import migrate
 from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
@@ -187,7 +186,7 @@ class ImporterStrategy(object):
             url = request.config.get(constants.MANIFEST_URL_KEYWORD)
             manifest = Manifest(request.working_dir)
             try:
-                manifest.read(migrate)
+                manifest.read()
             except IOError, e:
                 if e.errno == errno.ENOENT:
                     pass
@@ -195,9 +194,10 @@ class ImporterStrategy(object):
                 # json decoding failed
                 pass
             fetched_manifest = RemoteManifest(url, request.downloader, request.working_dir)
-            fetched_manifest.fetch(migrate)
+            fetched_manifest.fetch()
             if manifest != fetched_manifest or \
                     not manifest.is_valid() or not manifest.has_valid_units():
+                fetched_manifest.write()
                 fetched_manifest.fetch_units()
                 manifest = fetched_manifest
             if not manifest.is_valid():
