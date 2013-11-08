@@ -244,7 +244,7 @@ class RemoteManifest(Manifest):
     Represents a remote manifest.
     """
 
-    def __init__(self, url, downloader, path=None):
+    def __init__(self, url, downloader, path):
         """
         :param url: The URL to the remote manifest.
         :type url: str
