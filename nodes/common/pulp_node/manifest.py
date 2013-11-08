@@ -40,6 +40,11 @@ MANIFEST_VERSION = 2
 MANIFEST_FILE_NAME = 'manifest.json'
 UNITS_FILE_NAME = 'units.json.gz'
 
+ID = 'id'
+VERSION = 'version'
+PUBLISHING_DETAILS = 'publishing_details'
+PATH = 'path'
+UNITS = 'units'
 UNITS_PATH = 'path'
 UNITS_TOTAL = 'total'
 UNITS_SIZE = 'size'
@@ -109,28 +114,28 @@ class Manifest(object):
         :raise IOError: on I/O errors.
         :raise ValueError: on json encoding errors
         """
-        state = dict(
-            id=self.id,
-            version=self.version,
-            units=self.units,
-            publishing_details=self.publishing_details)
+        state = {
+            ID: self.id,
+            VERSION: self.version,
+            UNITS: self.units,
+            PUBLISHING_DETAILS: self.publishing_details
+        }
         with open(self.path, 'w+') as fp:
             json.dump(state, fp, indent=2)
 
-    def read(self, migration=None):
+    def read(self):
         """
         Read the manifest file at the specified path.
         The manifest is updated using the contents of the read json document.
-        :param migration: Migration function used to migrate the document.
-        :type migration: callable
         :raise IOError: on I/O errors.
         :raise ValueError: on json decoding errors
         """
-        if migration:
-            migration(self.path)
         with open(self.path) as fp:
             d = json.load(fp)
-            self.__dict__.update(d)
+        self.id = d.get(ID)
+        self.version = d.get(VERSION, 0)
+        self.units = d.get(UNITS, {UNITS_PATH: None, UNITS_TOTAL: 0, UNITS_SIZE: 0})
+        self.publishing_details = d.get(PUBLISHING_DETAILS, {})
 
     def get_units(self):
         """
