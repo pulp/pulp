@@ -74,27 +74,23 @@ git_prep()
 
 git_pre_tag_merge()
 {
-  not_merged=(`$GIT branch --no-merged $PARENT | cut -c3-80`)
-  case "${not_merged[@]}" in
-    $BRANCH)
-      echo "(pre-tag) Merging $BRANCH => $PARENT"
-      echo ""
-      $GIT log $PARENT..$BRANCH
-      echo ""
-      read -p "Continue [y|n]: " ANS
-      if [ $ANS = "y" ]
-      then
-        MESSAGE="Merge $BRANCH => $PARENT, pre-build"
-        $GIT merge -m "$MESSAGE" $BRANCH
-        $GIT push origin HEAD
-      else
-        exit 0
-      fi
-      ;;
-    *)
-      # skip, not our branch
-      ;;
-  esac
+  commits=(`$GIT log $PARENT..$BRANCH`)
+  if [ ${#commits[@]} -gt 0 ]
+  then
+    echo "(pre-tag) Merging $BRANCH => $PARENT"
+    echo ""
+    $GIT log $PARENT..$BRANCH
+    echo ""
+    read -p "Continue [y|n]: " ANS
+    if [ $ANS = "y" ]
+    then
+      MESSAGE="Merge $BRANCH => $PARENT, pre-build"
+      $GIT merge -m "$MESSAGE" $BRANCH
+      $GIT push origin HEAD
+    else
+      exit 0
+    fi
+  fi
 }
 
 git_post_tag_merge()
