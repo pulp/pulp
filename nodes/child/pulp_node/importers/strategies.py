@@ -197,6 +197,7 @@ class ImporterStrategy(object):
             fetched_manifest.fetch()
             if manifest != fetched_manifest or \
                     not manifest.is_valid() or not manifest.has_valid_units():
+                fetched_manifest.write()
                 fetched_manifest.fetch_units()
                 manifest = fetched_manifest
             if not manifest.is_valid():
