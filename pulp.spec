@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.29.beta%{?dist}
+Release: 0.30.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Nov 07 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.30.beta
+- 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
+
 * Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
 - 1027500 - init python-gofer before agent and tasking services started.
   (jortel@redhat.com)
