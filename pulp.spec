@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.31.beta%{?dist}
+Release: 0.32.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Mon Nov 11 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.32.beta
+- Pulp rebuild
+
 * Thu Nov 07 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.31.beta
 - Pulp rebuild
 
