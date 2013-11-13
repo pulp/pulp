@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.77
+Version: 0.77.1
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -116,7 +116,7 @@ Group: Development/Languages
 Obsoletes: %{name}-lib
 BuildRequires: python
 Requires: python-simplejson
-Requires: python-qpid >= 0.7
+Requires: python-qpid >= 0.18
 Requires: PyPAM
 %if 0%{?rhel} && 0%{?rhel} < 6
 Requires: python-hashlib
@@ -248,9 +248,8 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Tue Oct 01 2013 Jeff Ortel <jortel@redhat.com> 0.77-1
-- 1010016 - messaging logged at DEBUG. (jortel@redhat.com)
-
+* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 0.77.1-1
+- 1023056 - use qpid builtin SSL transport. (jortel@redhat.com)
 * Mon Sep 30 2013 Jeff Ortel <jortel@redhat.com> 0.77-1
 - Reduce logging do DEBUG on frequent messaging and RMI processing events.
   (jortel@redhat.com)

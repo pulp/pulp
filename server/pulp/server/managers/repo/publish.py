@@ -62,6 +62,9 @@ class RepoPublishManager(object):
         @param publish_config_override: optional config values to use for this
                                         publish call only
         @type  publish_config_override: dict, None
+
+        :return: report of the details of the publish
+        :rtype: pulp.server.plugins.model.PublishReport
         """
 
         repo_coll = Repo.get_collection()
@@ -98,6 +101,8 @@ class RepoPublishManager(object):
         fire_manager.fire_repo_publish_finished(result)
 
         dispatch_context.clear_cancel_control_hook()
+
+        return result
 
     def _get_distributor_instance_and_config(self, repo_id, distributor_id):
         repo_distributor_manager = manager_factory.repo_distributor_manager()
