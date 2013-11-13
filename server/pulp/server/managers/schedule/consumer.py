@@ -13,7 +13,6 @@
 
 import copy
 
-
 from pulp.server import exceptions
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -24,15 +23,21 @@ from pulp.server.tasks import consumer
 
 _UNIT_OPTION_KEYS = ('options',)
 
+UNIT_INSTALL_ACTION = 'scheduled_unit_install'
+UNIT_UPDATE_ACTION = 'scheduled_unit_update'
+UNIT_UNINSTALL_ACTION = 'scheduled_unit_uninstall'
+
+ACTIONS_TO_TASKS = {
+    UNIT_INSTALL_ACTION: consumer.install_content,
+    UNIT_UPDATE_ACTION: consumer.update_content,
+    UNIT_UNINSTALL_ACTION: consumer.uninstall_content,
+}
+
 
 class ConsumerScheduleManager(object):
     """
     Abstract base class for consumer content management schedules.
     """
-    UNIT_INSTALL_ACTION = 'scheduled_unit_install'
-    UNIT_UPDATE_ACTION = 'scheduled_unit_update'
-    UNIT_UNINSTALL_ACTION = 'scheduled_unit_uninstall'
-
     @staticmethod
     def _validate_consumer(consumer_id):
         consumer_manager = managers_factory.consumer_manager()
@@ -50,6 +55,16 @@ class ConsumerScheduleManager(object):
     @classmethod
     def create_schedule(cls, action_name, consumer_id, units, options,
                          schedule_data):
+        """
+
+        :param action_name:
+        :param consumer_id:
+        :param units:
+        :param options:
+        :param schedule_data:
+        :return:
+        :rtype:     pulp.server.db.models.dispatch.ScheduledCall
+        """
         cls._validate_consumer(consumer_id)
         utils.validate_keys(options, _UNIT_OPTION_KEYS)
         if 'schedule' not in schedule_data:
@@ -60,14 +75,26 @@ class ConsumerScheduleManager(object):
         args = [consumer_id]
         kwargs = {'units': units,
                   'options': options.get('options', {})}
+        resource = Consumer.build_resource_tag(consumer_id)
 
-        schedule = ScheduledCall(schedule_data['schedule'], task, args=args, kwargs=kwargs)
+        schedule = ScheduledCall(schedule_data['schedule'], task, args=args,
+                                 kwargs=kwargs, resource=resource)
         schedule.save()
         return schedule
 
     @staticmethod
     def update_schedule(consumer_id, schedule_id, units=None, options=None,
                          schedule_data=None):
+        """
+
+        :param consumer_id:
+        :param schedule_id:
+        :param units:
+        :param options:
+        :param schedule_data:
+        :return:
+        :rtype:     pulp.server.db.models.dispatch.ScheduledCall
+        """
         ConsumerScheduleManager._validate_consumer(consumer_id)
         schedule_updates = copy.copy(schedule_data) or {}
 
@@ -76,18 +103,10 @@ class ConsumerScheduleManager(object):
         if options is not None:
             schedule_updates.setdefault('kwargs', {})['options'] = options
 
-        utils.update(schedule_id, schedule_updates)
+        return utils.update(schedule_id, schedule_updates)
 
     @staticmethod
     def delete_schedule(consumer_id, schedule_id):
         ConsumerScheduleManager._validate_consumer(consumer_id)
 
         utils.delete(schedule_id)
-
-
-ACTIONS_TO_TASKS = {
-    ConsumerScheduleManager.UNIT_INSTALL_ACTION: consumer.install_content,
-    ConsumerScheduleManager.UNIT_UPDATE_ACTION: consumer.update_content,
-    ConsumerScheduleManager.UNIT_UNINSTALL_ACTION: consumer.uninstall_content,
-    }
-

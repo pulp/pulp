@@ -410,7 +410,7 @@ class SyncScheduleCollection(JSONController):
         schedules = manager.list(repo_id, importer_id)
         for_display = [schedule.for_display() for schedule in schedules]
         for entry in for_display:
-            entry.update(serialization.link.child_link_obj(entry['id']))
+            entry.update(serialization.link.child_link_obj(entry['_id']))
 
         return self.ok(for_display)
 
@@ -568,7 +568,7 @@ class PublishScheduleCollection(JSONController):
         schedules = manager.list(repo_id, distributor_id)
         for_display = [schedule.for_display() for schedule in schedules]
         for entry in for_display:
-            entry.update(serialization.link.child_link_obj(entry['id']))
+            entry.update(serialization.link.child_link_obj(entry['_id']))
 
         return self.ok(for_display)
 

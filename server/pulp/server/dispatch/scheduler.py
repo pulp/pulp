@@ -18,10 +18,13 @@ from pprint import pformat
 
 import isodate
 
+#TODO: delete this
+from mock import MagicMock
+OldScheduledCall = MagicMock()
+
 from pulp.common import dateutils
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.compat import ObjectId
-from pulp.server.db.model.dispatch import OldScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory

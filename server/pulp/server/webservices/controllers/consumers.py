@@ -21,9 +21,8 @@ from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, OperationPostponed
+from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
@@ -31,6 +30,7 @@ from pulp.server.itineraries.bind import (
     bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
+from pulp.server.managers.schedule.consumer import UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION, UNIT_UPDATE_ACTION
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -679,6 +679,7 @@ class ContentApplicabilityRegeneration(JSONController):
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
+
 class UnitActionScheduleCollection(JSONController):
     ACTION = None
 
@@ -711,30 +712,21 @@ class UnitActionScheduleCollection(JSONController):
         schedule = self.manager.create_schedule(self.ACTION, consumer_id, units,
                                                 options, schedule_data)
 
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(schedule)
-        scheduled_obj.update(serialization.link.child_link_obj(schedule['id']))
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(schedule.for_display())
+        scheduled_obj.update(serialization.link.child_link_obj(schedule.id))
         return self.created(scheduled_obj['_href'], scheduled_obj)
 
 
-class UnitInstallScheduleCollection(UnitActionScheduleCollection):
+class UnitActionScheduleResource(JSONController):
+    ACTION = None
+
     def __init__(self):
-        super(UnitInstallScheduleCollection, self).__init__()
-        self.ACTION = self.manager.UNIT_INSTALL_ACTION
-
-
-class UnitInstallScheduleResource(JSONController):
-    UPDATE_KEYS = set('schedule', 'failure_threshold', 'remaining_runs', 'enabled')
+        super(UnitActionScheduleResource, self).__init__()
+        self.manager = managers.consumer_schedule_manager()
 
     @auth_required(READ)
     def GET(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        if consumer_id not in scheduled_call['call_request'].args:
-            raise MissingResource(consumer=consumer_id, unit_install_schedule=schedule_id)
+        scheduled_call = self.manager.get(consumer_id, self.ACTION)
 
         scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
         scheduled_obj.update(serialization.link.current_link_obj())
@@ -742,219 +734,51 @@ class UnitInstallScheduleResource(JSONController):
 
     @auth_required(UPDATE)
     def PUT(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
         schedule_data = self.params()
-        install_options = None
+        options = None
         units = schedule_data.pop('units', None)
 
         if 'options' in schedule_data:
-            install_options = {'options': schedule_data.pop('options')}
+            options = {'options': schedule_data.pop('options')}
 
-        unexpected_keys = set(schedule_data.keys()) - self.UPDATE_KEYS
-        if unexpected_keys:
-            raise InvalidValue(list(unexpected_keys))
+        if 'schedule' in schedule_data:
+            schedule_data['iso_schedule'] = schedule_data.pop('schedule')
 
-        schedule_manager = managers.schedule_manager()
+        schedule = self.manager.update_schedule(consumer_id, schedule_id, units,
+                                                options, schedule_data)
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_unit_install_schedule')]
-
-        call_request = CallRequest(schedule_manager.update_unit_install_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id, units, install_options, schedule_data],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        execution.execute(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(schedule.for_display())
         scheduled_obj.update(serialization.link.current_link_obj())
         return self.ok(scheduled_obj)
 
     @auth_required(DELETE)
     def DELETE(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
+        self.manager.delete_schedule(consumer_id, schedule_id)
+        return self.ok()
 
-        schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_unit_install_schedule')]
+class UnitInstallScheduleCollection(UnitActionScheduleCollection):
+    ACTION = UNIT_INSTALL_ACTION
 
-        call_request = CallRequest(schedule_manager.delete_unit_install_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
 
-        result = execution.execute(call_request)
-        return self.ok(result)
+class UnitInstallScheduleResource(UnitActionScheduleResource):
+    ACTION = UNIT_INSTALL_ACTION
 
 
 class UnitUpdateScheduleCollection(UnitActionScheduleCollection):
-    def __init__(self):
-        super(UnitUpdateScheduleCollection, self).__init__()
-        self.ACTION = self.manager.UNIT_UPDATE_ACTION
+    ACTION = UNIT_UPDATE_ACTION
 
 
-class UnitUpdateScheduleResource(JSONController):
-
-    @auth_required(READ)
-    def GET(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        if consumer_id not in scheduled_call['call_request'].args:
-            raise MissingResource(consumer=consumer_id, unit_update_schedule=schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.current_link_obj())
-        return self.ok(scheduled_obj)
-
-    @auth_required(UPDATE)
-    def PUT(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        schedule_data = self.params()
-        install_options = None
-        units = schedule_data.pop('units', None)
-
-        if 'options' in schedule_data:
-            install_options = {'options': schedule_data.pop('options')}
-
-        schedule_manager = managers.schedule_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_unit_update_schedule')]
-
-        call_request = CallRequest(schedule_manager.update_unit_update_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id, units, install_options, schedule_data],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        execution.execute(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.current_link_obj())
-        return self.ok(scheduled_obj)
-
-    @auth_required(DELETE)
-    def DELETE(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        schedule_manager = managers.schedule_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_unit_update_schedule')]
-
-        call_request = CallRequest(schedule_manager.delete_unit_update_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-        result = execution.execute(call_request)
-        return self.ok(result)
+class UnitUpdateScheduleResource(UnitActionScheduleResource):
+    ACTION = UNIT_UPDATE_ACTION
 
 
 class UnitUninstallScheduleCollection(UnitActionScheduleCollection):
-    def __init__(self):
-        super(UnitUninstallScheduleCollection, self).__init__()
-        self.ACTION = self.manager.UNIT_UNINSTALL_ACTION
+    ACTION = UNIT_UNINSTALL_ACTION
 
 
-class UnitUninstallScheduleResource(JSONController):
-
-    @auth_required(READ)
-    def GET(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        if consumer_id not in scheduled_call['call_request'].args:
-            raise MissingResource(consumer=consumer_id, unit_uninstall_schedule=schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.current_link_obj())
-        return self.ok(scheduled_obj)
-
-    @auth_required(UPDATE)
-    def PUT(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        schedule_data = self.params()
-        install_options = None
-        units = schedule_data.pop('units', None)
-
-        if 'options' in schedule_data:
-            install_options = {'options': schedule_data.pop('options')}
-
-        schedule_manager = managers.schedule_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_unit_uninstall_schedule')]
-
-        call_request = CallRequest(schedule_manager.update_unit_uninstall_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id, units, install_options, schedule_data],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        execution.execute(call_request)
-
-        scheduler = dispatch_factory.scheduler()
-        scheduled_call = scheduler.get(schedule_id)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
-        scheduled_obj.update(serialization.link.current_link_obj())
-        return self.ok(scheduled_obj)
-
-    @auth_required(DELETE)
-    def DELETE(self, consumer_id, schedule_id):
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
-        schedule_manager = managers.schedule_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_unit_uninstall_schedule')]
-
-        call_request = CallRequest(schedule_manager.delete_unit_uninstall_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        result = execution.execute(call_request)
-        return self.ok(result)
+class UnitUninstallScheduleResource(UnitActionScheduleResource):
+    ACTION = UNIT_UNINSTALL_ACTION
 
 # -- web.py application -------------------------------------------------------
 

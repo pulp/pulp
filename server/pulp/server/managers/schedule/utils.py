@@ -10,9 +10,11 @@
 # PARTICULAR PURPOSE.
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-from bson import ObjectId
-import isodate
+
+import logging
 import time
+
+import isodate
 
 from pulp.common import dateutils
 from pulp.server import exceptions
@@ -23,10 +25,11 @@ from pulp.server.db.model.dispatch import ScheduledCall
 SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
 SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold', 'remaining_runs', 'enabled')
 
+_logger = logging.getLogger(__name__)
+
 
 def get(schedule_ids):
-    object_ids = map(ObjectId, schedule_ids)
-    criteria = Criteria(filters={'_id': {'$in': object_ids}})
+    criteria = Criteria(filters={'_id': {'$in': schedule_ids}})
     schedules = ScheduledCall.get_collection().query(criteria)
     return map(ScheduledCall.from_db, schedules)
 
@@ -38,7 +41,7 @@ def get_by_resource(resource):
 
 
 def delete(schedule_id):
-    ScheduledCall.get_collection().remove({'_id': ObjectId(schedule_id)}, safe=True)
+    ScheduledCall.get_collection().remove({'_id': schedule_id}, safe=True)
 
 
 def update(schedule_id, delta):
@@ -52,8 +55,58 @@ def update(schedule_id, delta):
     for key, value in kwargs.iteritems():
         delta['kwargs.%s' % key] = value
 
-    spec = {'_id': ObjectId(schedule_id)}
-    ScheduledCall.get_collection().update(spec, {'$set': delta}, safe=True)
+    spec = {'_id': schedule_id}
+    schedule = ScheduledCall.get_collection().find_and_modify(
+        query=spec, update={'$set': delta}, safe=True, new=True)
+    if schedule is None:
+        raise exceptions.MissingResource(schedule_id=schedule_id)
+    return ScheduledCall.from_db(schedule)
+
+
+def reset_failure_count(schedule_id):
+    """
+    Reset the consecutive failure count on a schedule to 0, presumably because
+    it ran successfully.
+
+    :param schedule_id: ID of the schedule whose count should be reset
+    :type  schedule_id: str
+    """
+    spec = {'_id': schedule_id}
+    delta = {'$set': {
+        'consecutive_failures': 0,
+        'last_updated': time.time(),
+    }}
+    ScheduledCall.get_collection().update(spec=spec, document=delta)
+
+
+def increment_failure_count(schedule_id):
+    """
+    Increment the number of consecutive failures, and if it has met or exceeded
+    the threshold, disable the schedule.
+
+    :param schedule_id: ID of the schedule whose count should be incremented
+    :type  schedule_id: str
+    """
+    spec = {'_id': schedule_id}
+    delta = {
+        '$inc': {'consecutive_failures': 1},
+        '$set': {'last_updated': time.time()},
+    }
+    schedule = ScheduledCall.get_collection().find_and_modify(
+        query=spec, update=delta, new=True)
+    if schedule:
+        scheduled_call = ScheduledCall.from_db(schedule)
+        if scheduled_call.failure_threshold is None or not scheduled_call.enabled:
+            return
+        if scheduled_call.consecutive_failures >= scheduled_call.failure_threshold:
+            _logger.info('disabling schedule %s with %d consecutive failures' % (
+                schedule_id, scheduled_call.consecutive_failures
+            ))
+            delta = {'$set': {
+                'enabled': False,
+                'last_updated': time.time(),
+            }}
+            ScheduledCall.get_collection().update(spec, delta)
 
 
 def validate_keys(options, valid_keys, all_required=False):

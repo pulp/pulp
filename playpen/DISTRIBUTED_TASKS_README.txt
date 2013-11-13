@@ -84,7 +84,7 @@ order to get up and running.
    that only one Celery Beat be run across the entire application, no matter how many Pulp servers
    are part of the system.
 
-   $ celery beat -A pulp.server.async.app --loglevel INFO
+   $ celery beat -A pulp.server.async.app --loglevel INFO --pidfile /tmp/beat.pid
 
 I believe that is all that is required to get up and running with Celery in Pulp at the moment. We
 plan to develop a way to package all of this and make it really easy for our users in a future

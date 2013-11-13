@@ -18,15 +18,13 @@ import pickle
 import time
 
 from bson import ObjectId
-from celery.beat import ScheduleEntry
 from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
+import isodate
 
 from pulp.common import dateutils
-from pulp.common.tags import resource_tag
 from pulp.server.db.model.base import Model
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory
 
 
@@ -80,41 +78,6 @@ class QueuedCallGroup(Model):
         self.completed_calls = 0
 
 
-class OldScheduledCall(Model):
-    """
-    Serialized scheduled call request
-    """
-
-    collection_name = 'scheduled_calls'
-    unique_indices = ()
-    search_indices = ('serialized_call_request.tags', 'last_run', 'next_run')
-
-    def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
-        super(OldScheduledCall, self).__init__()
-
-        # add custom scheduled call tag to call request
-        schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
-        call_request.tags.append(schedule_tag)
-
-        self.serialized_call_request = call_request.serialize()
-
-        self.schedule = schedule
-        self.enabled = enabled
-
-        self.failure_threshold = failure_threshold
-        self.consecutive_failures = 0
-
-        # scheduling fields
-        self.first_run = None # will be calculated and set by the scheduler
-        self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
-        self.next_run = None # will be calculated and set by the scheduler
-        self.remaining_runs = dateutils.parse_iso8601_interval(schedule)[2]
-
-        # run-time call group metadata for tracking success or failure
-        self.call_count = 0
-        self.call_exit_states = []
-
-
 class ScheduledCall(Model):
     """
     Serialized scheduled call request
@@ -139,18 +102,22 @@ class ScheduledCall(Model):
 
         if id is None:
             # this creates self._id and self.id
-            #super(ScheduledCall, self).__init__()
-            self._id = ObjectId()
-            id = str(self._id) # legacy behavior, would love to rid ourselves of this
+            super(ScheduledCall, self).__init__()
             self._new = True
         else:
+            self.id = id
+            self._id = ObjectId(id)
             self._new = False
 
+        if hasattr(task, 'name'):
+            task = task.name
+
+        self.args = args or []
         self.consecutive_failures = consecutive_failures
         self.enabled = enabled
         self.failure_threshold = failure_threshold
-        self.id = id
         self.iso_schedule = iso_schedule
+        self.kwargs = kwargs or {}
         self.last_run_at = last_run_at
         self.last_updated = last_updated or time.time()
         self.name = id
@@ -163,11 +130,9 @@ class ScheduledCall(Model):
             interval, start_time, occurrences = dateutils.parse_iso8601_interval(iso_schedule)
             schedule = pickle.dumps(CelerySchedule(interval))
 
-        args = args or []
-        kwargs = kwargs or {}
         principal = principal or factory.principal_manager().get_principal()
 
-        for key in ('schedule', 'args', 'kwargs', 'principal'):
+        for key in ('schedule', 'principal'):
             value = locals()[key]
             if isinstance(value, basestring):
                 setattr(self, key, value)
@@ -176,7 +141,8 @@ class ScheduledCall(Model):
 
         if first_run is None:
             self.first_run = dateutils.format_iso8601_datetime(
-                dateutils.parse_iso8601_interval(iso_schedule)[1])
+                dateutils.parse_iso8601_interval(iso_schedule)[1] or
+                datetime.utcnow().replace(tzinfo=isodate.UTC))
         elif isinstance(first_run, datetime):
             self.first_run = dateutils.format_iso8601_datetime(first_run)
         else:
@@ -188,11 +154,15 @@ class ScheduledCall(Model):
 
         self.next_run = self.calculate_next_run()
 
-
     @classmethod
     def from_db(cls, call):
         """
-        :rtype:     pulp.server.db.model.dispatch.ScheduledCall
+        :param call:    document retrieved directly from the database
+        :type  call:    bson.BSON
+
+        :return:    An instance of ScheduledCall based on the values passed in
+                    the "call" object.
+        :rtype:     ScheduledCall
         """
         _id = call.pop('_id', None)
         if _id:
@@ -210,9 +180,8 @@ class ScheduledCall(Model):
         else:
             last_run = dateutils.parse_iso8601_datetime(self.last_run_at)
         return ScheduleEntry(self.name, self.task, last_run, self.total_run_count,
-                             pickle.loads(self.schedule), pickle.loads(self.args),
-                             pickle.loads(self.kwargs), self.options,
-                             self.relative, scheduled_call=self)
+                             pickle.loads(self.schedule), self.args, self.kwargs,
+                             self.options, False, scheduled_call=self)
 
     @staticmethod
     def explode_schedule_entry(entry):
@@ -229,13 +198,18 @@ class ScheduledCall(Model):
         return dict((k, getattr(entry, k)) for k in schedule_keys)
 
     def as_dict(self):
+        """
+
+        :return:    dictionary of public keys and values
+        :rtype:     dict
+        """
         return {
+            '_id': str(self._id),
             'args': self.args,
             'consecutive_failures': self.consecutive_failures,
             'enabled': self.enabled,
             'failure_threshold': self.failure_threshold,
             'first_run': self.first_run,
-            'id': self.id,
             'kwargs': self.kwargs,
             'iso_schedule': self.iso_schedule,
             'last_run_at': self.last_run_at,
@@ -250,9 +224,17 @@ class ScheduledCall(Model):
         }
 
     def for_display(self):
+        """
+        :return:    dictionary of public keys and values minus the "principal",
+                    which may be sensitive from a security standpoint, and
+                    renaming "iso_schedule" to "schedule" for historical
+                    compatibility.
+        :rtype:     dict
+        """
         ret = self.as_dict()
         del ret['principal']
-        del ret['schedule']
+        # preserving external API compatibility
+        ret['schedule'] = ret.pop('iso_schedule')
         return ret
 
     def save(self):
@@ -261,15 +243,14 @@ class ScheduledCall(Model):
         """
         if self._new:
             as_dict = self.as_dict()
-            as_dict['_id'] = self._id
             self.get_collection().insert(as_dict, safe=True)
             self._new = False
         else:
-            self.get_collection().update({'_id': ObjectId(self.id)}, self.as_dict())
+            self.get_collection().update({'_id': self.id}, self.as_dict())
 
     def _calculate_times(self):
         now_s = time.time()
-        first_run_dt = dateutils.parse_iso8601_datetime(self.first_run)
+        first_run_dt = dateutils.to_utc_datetime(dateutils.parse_iso8601_datetime(self.first_run))
         first_run_s = calendar.timegm(first_run_dt.utctimetuple())
         since_first_s = now_s - first_run_s
         run_every_s = timedelta_seconds(self.as_schedule_entry().schedule.run_every)
@@ -280,11 +261,26 @@ class ScheduledCall(Model):
         return now_s, first_run_s, since_first_s, run_every_s, expected_runs, last_scheduled_run_s
 
     def calculate_next_run(self):
+        """
+        This algorithm determines when the first call was or should have been.
+        If that is in the future, it just returns that time. If not, it
+        adds as many intervals as it can without exceeding the current
+        time, adds one more interval, and returns the result.
+
+        For a schedule with no historically-recorded or scheduled start time,
+        it will run immediately.
+
+        :return:    ISO8601 string representing the next time this call should run.
+        :rtype:     str
+        """
         now_s, first_run_s, since_first_s, run_every_s, expected_runs, \
                 last_scheduled_run_s = self._calculate_times()
 
         if first_run_s > now_s:
             next_run_s = first_run_s
+        # if there is no start date
+        elif first_run_s == -1:
+            next_run_s = now_s
         else:
             next_run_s = last_scheduled_run_s + run_every_s
 
@@ -303,11 +299,15 @@ class ScheduleEntry(beat.ScheduleEntry):
     def _next_instance(self, last_run_at=None):
         self._scheduled_call.last_run_at = dateutils.format_iso8601_utc_timestamp(time.time())
         self._scheduled_call.total_run_count += 1
+        if self._scheduled_call.remaining_runs:
+            self._scheduled_call.remaining_runs -= 1
+        if self._scheduled_call.remaining_runs == 0:
+            logger.info('disabling schedule with 0 remaining runs: %s' % self._scheduled_call.id)
+            self._scheduled_call.enabled = False
         self._scheduled_call.save()
         return self._scheduled_call.as_schedule_entry()
 
     __next__ = next = _next_instance
-
 
     def is_due(self):
         now_s, first_run_s, since_first_s, run_every_s, expected_runs, \

@@ -11,12 +11,18 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import logging
+
 import celery
 
 from pulp.common.tags import resource_tag, action_tag
+from pulp.server.async.tasks import Task
 from pulp.server.constants import REPO_RESOURCE_PREFIX
 from pulp.server.dispatch.constants import RESOURCE_REPOSITORY_TYPE
-from pulp.server.managers.repo import publish
+from pulp.server.managers.repo import publish as publish_manager
+
+
+logger = logging.getLogger(__name__)
 
 
 @celery.task
@@ -57,8 +63,9 @@ def publish(repo_id, distributor_id, overrides=None):
     tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('publish')]
 
-    return publish.publish.apply_async_with_reservation(
+    return publish_manager.publish.apply_async_with_reservation(
         resource_id, tags=tags, kwargs=kwargs)
+
 
 @celery.task
 def sync_with_auto_publish(repo_id, overrides=None):

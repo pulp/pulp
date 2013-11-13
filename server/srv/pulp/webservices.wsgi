@@ -13,6 +13,9 @@
 # granted to use or replicate Red Hat trademarks that are incorporated
 # in this software or its documentation.
 
+import site
+site.addsitedir('/home/mhrivnak/pythons/celery/lib/python2.7/site-packages/')
+
 from pulp.server.webservices.application import wsgi_application
 
 

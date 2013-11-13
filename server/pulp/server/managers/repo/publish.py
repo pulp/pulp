@@ -18,6 +18,7 @@ need to execute syncs asynchronously must be handled at a higher layer.
 """
 
 import datetime
+import pickle
 import isodate
 import logging
 import sys
@@ -66,9 +67,8 @@ class RepoPublishManager(object):
         @type  publish_config_override: dict, None
 
         :return: report of the details of the publish
-        :rtype: pulp.server.plugins.model.PublishReport
+        :rtype: pulp.server.db.model.repository.RepoPublishResult
         """
-
         repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
 
@@ -87,9 +87,6 @@ class RepoPublishManager(object):
         if distributor_instance is None:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
-        dispatch_context = dispatch_factory.context()
-        dispatch_context.set_cancel_control_hook(distributor_instance.cancel_publish_repo)
-
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id)
 
@@ -101,12 +98,12 @@ class RepoPublishManager(object):
 
         # Fire events describing the publish state
         fire_manager = manager_factory.event_fire_manager()
-        fire_manager.fire_repo_publish_started(repo_id, distributor_id)
+        # TODO: re-enable this after fixing it
+        #fire_manager.fire_repo_publish_started(repo_id, distributor_id)
         result = RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
                                                 transfer_repo, conduit, call_config)
-        fire_manager.fire_repo_publish_finished(result)
-
-        dispatch_context.clear_cancel_control_hook()
+        # TODO: re-enable this after fixing it
+        #fire_manager.fire_repo_publish_finished(result)
 
         return result
 
@@ -363,7 +360,7 @@ class RepoPublishManager(object):
         return auto_distributors
 
 
-publish = task(RepoPublishManager.publish, base=Task, ignore_result=True)
+publish = task(RepoPublishManager.publish, base=Task)
 
 
 def _now_timestamp():

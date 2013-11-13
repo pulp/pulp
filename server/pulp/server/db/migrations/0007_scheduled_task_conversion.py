@@ -106,22 +106,12 @@ def convert_schedules(save_func, call):
 
 
 NAMES_TO_TASKS = {
+    # these are the only tasks that have been possible to schedule
     'publish_itinerary': 'pulp.server.tasks.repository.publish',
     'sync_with_auto_publish_itinerary': 'pulp.server.tasks.repository.sync_with_auto_publish',
-    'repo_delete_itinerary': 'pulp.server.tasks.repository.delete',
-    'distributor_delete_itinerary': 'pulp.server.tasks.repository.distributor_delete',
-    'distributor_update_itinerary': 'pulp.server.tasks.repository.distributor_update',
-    'bind_itinerary': 'pulp.server.tasks.consumer.bind',
-    'unbind_itinerary': 'pulp.server.tasks.consumer.unbind',
-    'forced_unbind_itinerary': 'pulp.server.tasks.consumer.force_unbind',
     'consumer_content_install_itinerary': 'pulp.server.tasks.consumer.install_content',
     'consumer_content_update_itinerary': 'pulp.server.tasks.consumer.update_content',
     'consumer_content_uninstall_itinerary': 'pulp.server.tasks.consumer.uninstall_content',
-    'consumer_group_bind_itinerary': 'pulp.server.tasks.consumer_group.bind',
-    'consumer_group_unbind_itinerary': 'pulp.server.tasks.consumer_group.unbind',
-    'consumer_group_content_install_itinerary': 'pulp.server.tasks.consumer_group.install_content',
-    'consumer_group_content_update_itinerary': 'pulp.server.tasks.consumer_group.update_content',
-    'consumer_group_content_uninstall_itinerary': 'pulp.server.tasks.consumer_group.uninstall_content',
 }
 
 
