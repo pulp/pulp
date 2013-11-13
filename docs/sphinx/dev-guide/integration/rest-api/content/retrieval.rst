@@ -27,6 +27,11 @@ Returns information about a single content unit.
       "key-2b": "B",
     }
 
+.. note::
+ In the above example, the fields that begin with ``_`` are consistent across content
+ types. All other data, such as the example data "key-2a", is contingent on the type
+ of unit being retrieved.
+
 
 Search for Units
 ----------------
