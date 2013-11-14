@@ -3,11 +3,13 @@
 
 Name:           python-qpid
 Version:        0.18
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python client library for AMQP
 
+Group:          Development/Languages
 License:        ASL 2.0
 URL:            http://qpid.apache.org
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Source0:        http://www.apache.org/dyn/closer.cgi/qpid/%{version}/qpid-python-%{version}.tar.gz
 
 BuildArch:      noarch
@@ -49,6 +51,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Thu Nov 14 2013 Jeff Ortel <jortel@redhat.com> 0.18-2
+- Fix building on el5. (jortel@redhat.com)
+
 * Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 0.18-1
 - update python-qpid to 0.18. (jortel@redhat.com)
 - Update python-qpid tito.props to bump release on tagging. (jortel@redhat.com)
