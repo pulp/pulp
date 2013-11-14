@@ -51,6 +51,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Thu Nov 14 2013 Jeff Ortel <jortel@redhat.com> 0.18-2
+- Fix building on el5. (jortel@redhat.com)
+
 * Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 0.18-1
 - update python-qpid to 0.18. (jortel@redhat.com)
 - Update python-qpid tito.props to bump release on tagging. (jortel@redhat.com)
