@@ -3,11 +3,13 @@
 
 Name:           python-qpid
 Version:        0.18
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python client library for AMQP
 
+Group:          Development/Languages
 License:        ASL 2.0
 URL:            http://qpid.apache.org
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Source0:        http://www.apache.org/dyn/closer.cgi/qpid/%{version}/qpid-python-%{version}.tar.gz
 
 BuildArch:      noarch
