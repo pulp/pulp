@@ -116,13 +116,15 @@ class ApplicabilityRegenerationManager(object):
             profile_id = profile_hash_profile_id_map[profile_hash]
             manager.regenerate_applicability(profile_hash, content_type, profile_id, repo_id)
 
-    def regenerate_applicability_for_repos(self, repo_criteria=None):
+    @staticmethod
+    def regenerate_applicability_for_repos(repo_criteria):
         """
         Regenerate and save applicability data affected by given updated repositories.
 
         :param repo_criteria: The repo selection criteria
         :type repo_criteria: pulp.server.db.model.criteria.Criteria
         """
+        repo_criteria = Criteria.from_dict(repo_criteria)
         repo_query_manager = managers.repo_query_manager()
 
         # Process repo criteria
@@ -140,10 +142,11 @@ class ApplicabilityRegenerationManager(object):
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
                                                                      fields=['id', 'content_type'])
                 # Regenerate applicability data for given unit_profile and repo id
-                self.regenerate_applicability(profile_hash, unit_profile['content_type'],
-                                              unit_profile['id'],
-                                              repo_id,
-                                              existing_applicability)
+                ApplicabilityRegenerationManager.regenerate_applicability(profile_hash, 
+                                                                          unit_profile['content_type'],
+                                                                          unit_profile['id'],
+                                                                          repo_id,
+                                                                          existing_applicability)
 
     @staticmethod
     def regenerate_applicability(profile_hash, content_type, profile_id,
@@ -214,7 +217,8 @@ class ApplicabilityRegenerationManager(object):
                                                         unit_profile['profile'],
                                                         applicability)
 
-    def _get_existing_repo_content_types(self, repo_id):
+    @staticmethod
+    def _get_existing_repo_content_types(repo_id):
         """
         For the given repo_id, return a list of content_type_ids that have content units counts greater than 0.
 

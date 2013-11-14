@@ -27,10 +27,13 @@ from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest
+from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.exceptions import OperationPostponed
 from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publish_itinerary
 from pulp.server.itineraries.repository import (repo_delete_itinerary, distributor_delete_itinerary,
                                                 distributor_update_itinerary)
+from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
+from pulp.server.managers.repo.cud import update_repo_and_plugins
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -270,27 +273,34 @@ class RepoResource(JSONController):
         execution.execute_multiple(call_requests)
 
     @auth_required(UPDATE)
-    def PUT(self, id):
+    def PUT(self, repo_id):
         parameters = self.params()
         delta = parameters.get('delta', None)
         importer_config = parameters.get('importer_config', None)
         distributor_configs = parameters.get('distributor_configs', None)
 
-        repo_manager = manager_factory.repo_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id),
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('update')]
 
-        call_request = CallRequest(repo_manager.update_repo_and_plugins, # rbarlow_converted
-                                   [id, delta],
-                                   {'importer_config': importer_config,
-                                    'distributor_configs': distributor_configs},
-                                   tags=tags,
-                                   archive=True,
-                                   kwarg_blacklist=['importer_config', 'distributor_configs'])
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id)
-        repo = execution.execute(call_request)
-        repo.update(serialization.link.current_link_obj())
-        return self.ok(repo)
+        task_args = (delta, importer_config, distributor_configs)
+        async_result = update_repo_and_plugins.apply_async_with_reservation(repo_id,
+                                                                            task_args,
+                                                                            tags=tags)
+        call_report = CallReport(call_request_id=async_result.id)
+        raise OperationPostponed(call_report)
+#         call_request = CallRequest(repo_manager.update_repo_and_plugins, # rbarlow_converted
+#                                    [id, delta],
+#                                    {'importer_config': importer_config,
+#                                     'distributor_configs': distributor_configs},
+#                                    tags=tags,
+#                                    archive=True,
+#                                    kwarg_blacklist=['importer_config', 'distributor_configs'])
+#         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id)
+#         repo = execution.execute(call_request)
+#         repo.update(serialization.link.current_link_obj())
+#         return self.ok(repo)
+
+        
 
 
 class RepoImporters(JSONController):
@@ -1108,16 +1118,13 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise exceptions.InvalidValue('repo_criteria')
 
-        manager = manager_factory.applicability_regeneration_manager()
         regeneration_tag = action_tag('applicability_regeneration')
-        call_request = CallRequest(manager.regenerate_applicability_for_repos, # rbarlow_converted
-                                   [repo_criteria],
-                                   tags=[regeneration_tag])
-        # allow only one applicability regeneration task at a time
-        call_request.updates_resource(
+        async_result = regenerate_applicability_for_repos.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-            dispatch_constants.RESOURCE_ANY_ID)
-        return execution.execute_async(self, call_request)
+            (repo_criteria.as_dict(),),
+            tags=[regeneration_tag])
+        call_report = CallReport(call_request_id=async_result.id)
+        raise OperationPostponed(call_report)
 
 
 # These are defined under /v2/repositories/ (see application.py to double-check)

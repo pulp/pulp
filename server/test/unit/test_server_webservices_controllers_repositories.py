@@ -1720,7 +1720,8 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    def test_regenerate_applicability(self):
+    @mock.patch('pulp.server.async.tasks.Task.apply_async_with_reservation')
+    def test_regenerate_applicability(self, mock_apply_sync):
         # Setup
         self.populate()
         self.populate_bindings()
