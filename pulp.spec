@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.33.beta%{?dist}
+Release: 0.34.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Nov 14 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.34.beta
+- 1026606 - Added docs for get unit REST API (jason.dobies@redhat.com)
+
 * Tue Nov 12 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.33.beta
 - Pulp rebuild
 
