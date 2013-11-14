@@ -1345,7 +1345,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
     @mock.patch('pulp.server.async.tasks._resource_manager')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_regenerate_applicability(self, _resource_manager, find_by_task_id, update_task_status):
+    def test_regenerate_applicability(self, update_task_status, find_by_task_id, _resource_manager):
         # We need to fake the _resource_manager returning a queue to us
         _resource_manager.reserve_resource.return_value = 'some_queue'
         self.populate()
@@ -1361,8 +1361,8 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
     @mock.patch('pulp.server.async.tasks._resource_manager')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_regenerate_applicability_no_consumers(self, _resource_manager, find_by_task_id,
-                                                   update_task_status):
+    def test_regenerate_applicability_no_consumers(self, update_task_status, find_by_task_id,
+                                                   _resource_manager):
         # We need to fake the _resource_manager returning a queue to us
         _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
@@ -1376,8 +1376,8 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
     @mock.patch('pulp.server.async.tasks._resource_manager')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_regenerate_applicability_no_bindings(self, _resource_manager, find_by_task_id,
-                                                  update_task_status):
+    def test_regenerate_applicability_no_bindings(self, update_task_status, find_by_task_id,
+                                                  _resource_manager):
         # We need to fake the _resource_manager returning a queue to us
         #_resource_manager.reserve_resource.return_value = 'some_queue'
         # Setup

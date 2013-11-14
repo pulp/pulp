@@ -17,6 +17,7 @@ from gettext import gettext as _
 import web
 
 from pulp.server.async import tasks
+from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
@@ -26,7 +27,6 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
-from pulp.server.async.task_status_manager import TaskStatusManager
 
 class TaskNotFound(MissingResource):
 

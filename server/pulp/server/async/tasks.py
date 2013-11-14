@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
-from uuid import uuid4
 import logging
 import random
 
@@ -332,47 +331,51 @@ class Task(CeleryTask, ReservedTask):
         :param tags:        A list of tags (strings) to place onto the task, used for searching for
                             tasks by tag
         :type  tags:        list
-        :return:            serialized task status
-        :rtype:             dict
+        :return:            An AsyncResult instance as returned by Celery's apply_async
+        :rtype:             celery.result.AsyncResult
         """
         tags = kwargs.pop('tags', [])
-        task_id = str(uuid4())
+        async_result = super(Task, self).apply_async(*args, **kwargs)
 
         # Create a new task status with the task id and tags.
-        TaskStatusManager.create_task_status(task_id, tags)
-        async_result = super(Task, self).apply_async(task_id=task_id, *args, **kwargs)
-
-        # Updates task's state in the task state to 'waiting'.
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        TaskStatus.get_collection().update({'task_id': task_id},
+        TaskStatus.get_collection().update({'task_id': async_result.id},
                                            {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE}},
-                                            upsert = True)
+                                           {'$set': {'tags':tags}},
+                                           upsert = True)
         return async_result
 
     def __call__(self, *args, **kwargs):
         """
-        This overrides CeleryTask's __call__() method
+        This overrides CeleryTask's __call__() method. We use this method
+        for task state tracking of Pulp tasks.
         """
-        # Updates start_time and set the task state to 'running' for asynchronous tasks.
-        # Skip updating status for eagerly executed tasks.
-        # Using 'upsert' to avoid a possible race condition described above.
+        # Updates start_time and sets the task state to 'running' for asynchronous tasks.
+        # Skip updating status for eagerly executed tasks, since we don't want to track
+        # synchronous tasks in our database.
         if not self.request.called_directly:
+            # Using 'upsert' to avoid a possible race condition described in the apply_async method above.
             TaskStatus.get_collection().update({'task_id': self.request.id},
                                                {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
                                                          'start_time':  dateutils.now_utc_timestamp()}},
                                                upsert = True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
-        super(Task, self).__call__(*args, **kwargs)
+        return super(Task, self).__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
         """
         This overrides the success handler run by the worker when the task
         executes successfully. It updates state, finish_time and traceback
         of the relevant task status for asynchronous tasks. Skip updating status
-        for eagerly executed tasks.
+        for synchronous tasks.
+
+        :param retval:  The return value of the task.
+        :param task_id: Unique id of the executed task.
+        :param args:    Original arguments for the executed task.
+        :param kwargs:  Original keyword arguments for the executed task.
         """
         logger.debug("Task successful : [%s]" % task_id)
         if not self.request.called_directly:
@@ -385,7 +388,13 @@ class Task(CeleryTask, ReservedTask):
         """
         This overrides the error handler run by the worker when the task fails.
         It updates state, finish_time and traceback of the relevant task status
-        for asynchronous tasks. Skip updating status for eagerly executed tasks.
+        for asynchronous tasks. Skip updating status for synchronous tasks.
+
+        :param exc:     The exception raised by the task.
+        :param task_id: Unique id of the failed task.
+        :param args:    Original arguments for the executed task.
+        :param kwargs:  Original keyword arguments for the executed task.
+        :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
         logger.debug("Task failed : [%s]" % task_id)
         if not self.request.called_directly:

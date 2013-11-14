@@ -11,8 +11,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pymongo.errors import DuplicateKeyError
+
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
+
 
 class TaskStatusManager(object):
     """
@@ -36,11 +39,6 @@ class TaskStatusManager(object):
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue: if any of the fields are unacceptable
         """
-
-        existing_task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
-        if existing_task_status is not None:
-            raise DuplicateResource(task_id)
-
         invalid_values = []
         if task_id is None:
             invalid_values.append('task_id')
@@ -51,7 +49,11 @@ class TaskStatusManager(object):
         if invalid_values:
             raise InvalidValue(invalid_values)
 
-        task_status = TaskStatus(task_id, tags=tags, state=state)
+        try:
+            task_status = TaskStatus(task_id, tags=tags, state=state)
+        except DuplicateKeyError:
+            raise DuplicateResource(task_id)
+
         TaskStatus.get_collection().save(task_status, safe=True)
         created = TaskStatus.get_collection().find_one({'task_id' : task_id})
         return created

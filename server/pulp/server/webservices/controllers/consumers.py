@@ -679,6 +679,7 @@ class ContentApplicabilityRegeneration(JSONController):
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
+
 class UnitInstallScheduleCollection(JSONController):
 
     @auth_required(READ)
