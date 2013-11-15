@@ -76,6 +76,11 @@ NODE_CERTIFICATE = """
     -----END CERTIFICATE-----
 """
 
+REPO_NAME = 'pulp-nodes'
+REPO_DESCRIPTION = 'full of goodness'
+REPO_NOTES = {'the answer to everything': 42}
+REPO_SCRATCHPAD = {'a': 1, 'b': 2}
+
 # --- testing mock classes ---------------------------------------------------
 
 
@@ -217,7 +222,9 @@ class PluginTestBase(WebTest):
         pulp_conf.set('server', 'storage_dir', self.parentfs)
         # create repo
         manager = managers.repo_manager()
-        manager.create_repo(self.REPO_ID)
+        manager.create_repo(
+            self.REPO_ID, display_name=REPO_NAME, description=REPO_DESCRIPTION, notes=REPO_NOTES)
+        manager.set_repo_scratchpad(self.REPO_ID, REPO_SCRATCHPAD)
         # add units
         units = self.add_units(0, self.NUM_UNITS)
         self.units = units
@@ -995,7 +1002,11 @@ class TestEndToEnd(PluginTestBase):
     def verify(self, num_units=PluginTestBase.NUM_UNITS):
         # repository
         manager = managers.repo_query_manager()
-        manager.get_repository(self.REPO_ID)
+        repository = manager.get_repository(self.REPO_ID)
+        self.assertEqual(repository['description'], REPO_DESCRIPTION)
+        self.assertEqual(repository['display_name'], REPO_NAME)
+        self.assertEqual(repository['notes'], REPO_NOTES)
+        self.assertEqual(repository['scratchpad'], REPO_SCRATCHPAD)
         # importer
         manager = managers.repo_importer_manager()
         importer = manager.get_importer(self.REPO_ID)
@@ -1080,7 +1091,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['added'], self.NUM_UNITS)
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
-        diff = 'diff %s/content %s/content' % (self.parentfs, self.childfs)
+        diff = 'diff %s/content %s/content &> /dev/null' % (self.parentfs, self.childfs)
         self.assertEqual(os.system(diff), 0)
         self.verify()
 
