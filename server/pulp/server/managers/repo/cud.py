@@ -309,11 +309,9 @@ class RepoManager(object):
         # fields here, but frankly, there are so few that this is just easier.
         # It also makes it very simple to ignore any rogue keys that are in delta.
 
-        if 'display_name' in delta:
-            repo['display_name'] = delta['display_name']
-
-        if 'description' in delta:
-            repo['description'] = delta['description']
+        for key in ('description', 'display_name', 'scratchpad'):
+            if key in delta:
+                repo[key] = delta[key]
 
         if 'notes' in delta:
 
