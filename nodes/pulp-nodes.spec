@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.3.0
-Release: 0.35.beta%{?dist}
+Release: 0.36.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -240,6 +240,9 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Fri Nov 15 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.36.beta
+- 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
+
 * Thu Nov 14 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.35.beta
 - Pulp rebuild
 
