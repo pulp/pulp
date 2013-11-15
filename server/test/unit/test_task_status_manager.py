@@ -11,12 +11,14 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import mock
 import uuid 
 
 import base
 
 from pulp.common import dateutils
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 import pulp.server.exceptions as exceptions
 
@@ -161,3 +163,8 @@ class TaskStatusManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue(task_id == e.resources['resource_id'])
 
+    @mock.patch('pulp.server.db.connection.PulpCollection.query')
+    def test_find_by_criteria(self, mock_query):
+        criteria = Criteria()
+        TaskStatusManager.find_by_criteria(criteria)
+        mock_query.assert_called_once_with(criteria)

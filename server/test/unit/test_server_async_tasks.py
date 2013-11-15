@@ -528,7 +528,7 @@ class TestTask(PulpServerTests):
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], retval)
-        self.assertIsNotNone(new_task_status['finish_time'])
+        self.assertFalse(new_task_status['finish_time'] is None)
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_failure_handler(self, mock_request):
@@ -558,7 +558,7 @@ class TestTask(PulpServerTests):
 
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'error')
-        self.assertIsNotNone(new_task_status['finish_time'])
+        self.assertFalse(new_task_status['finish_time'] is None)
         self.assertEqual(new_task_status['traceback'], einfo.traceback)
 
     @mock.patch('celery.Task.apply_async')
@@ -568,7 +568,7 @@ class TestTask(PulpServerTests):
         """
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': MOCK_RESERVED_QUEUE}
-        #apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
 
         task = tasks.Task()
         task.apply_async(*args, **kwargs)

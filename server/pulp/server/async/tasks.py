@@ -342,8 +342,8 @@ class Task(CeleryTask, ReservedTask):
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
         TaskStatus.get_collection().update({'task_id': async_result.id},
-                                           {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE}},
-                                           {'$set': {'tags':tags}},
+                                           {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
+                                            '$set': {'tags':tags}},
                                            upsert = True)
         return async_result
 

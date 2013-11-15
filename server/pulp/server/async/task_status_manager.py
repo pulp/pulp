@@ -49,12 +49,12 @@ class TaskStatusManager(object):
         if invalid_values:
             raise InvalidValue(invalid_values)
 
+        task_status = TaskStatus(task_id, tags=tags, state=state)
         try:
-            task_status = TaskStatus(task_id, tags=tags, state=state)
+            TaskStatus.get_collection().save(task_status, safe=True)
         except DuplicateKeyError:
             raise DuplicateResource(task_id)
 
-        TaskStatus.get_collection().save(task_status, safe=True)
         created = TaskStatus.get_collection().find_one({'task_id' : task_id})
         return created
 
@@ -101,8 +101,6 @@ class TaskStatusManager(object):
         :raise MissingResource: if the given task status does not exist
         :raise InvalidValue: if task_id is invalid
         """
-        if not isinstance(task_id, basestring):
-            raise InvalidValue('task_id')
         task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
         if task_status is None:
             raise MissingResource(task_id)
