@@ -214,7 +214,8 @@ class ApplicabilityRegenerationManager(object):
                                                         unit_profile['profile'],
                                                         applicability)
 
-    def _get_existing_repo_content_types(self, repo_id):
+    @staticmethod
+    def _get_existing_repo_content_types(repo_id):
         """
         For the given repo_id, return a list of content_type_ids that have content units counts greater than 0.
 
