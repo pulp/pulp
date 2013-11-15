@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2011 Red Hat, Inc.
+# Copyright © 2013 Red Hat, Inc.
 #
 #
 # This software is licensed to you under the GNU General Public
@@ -24,12 +24,6 @@ import pulp.server.exceptions as exceptions
 
  
 class TaskStatusManagerTests(base.PulpServerTests):
-
-    def setUp(self):
-        super(TaskStatusManagerTests, self).setUp()
-
-    def tearDown(self):
-        super(TaskStatusManagerTests, self).tearDown()
 
     def clean(self):
         super(TaskStatusManagerTests, self).clean()

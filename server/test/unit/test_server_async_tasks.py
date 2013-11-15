@@ -528,7 +528,7 @@ class TestTask(PulpServerTests):
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], retval)
-        self.assertFalse(new_task_status['finish_time'] is None)
+        self.assertFalse(new_task_status['finish_time'] == None)
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_failure_handler(self, mock_request):
@@ -558,7 +558,7 @@ class TestTask(PulpServerTests):
 
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'error')
-        self.assertFalse(new_task_status['finish_time'] is None)
+        self.assertFalse(new_task_status['finish_time'] == None)
         self.assertEqual(new_task_status['traceback'], einfo.traceback)
 
     @mock.patch('celery.Task.apply_async')
@@ -577,6 +577,7 @@ class TestTask(PulpServerTests):
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
+        self.assertEqual(new_task_status['state'], 'waiting')
 
 class TestCancel(PulpServerTests):
     """
