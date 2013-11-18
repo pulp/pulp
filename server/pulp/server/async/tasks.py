@@ -279,7 +279,7 @@ def _reserve_resource(resource_id):
     return _get_resource_manager().reserve_resource(resource_id)
 
 
-class ReservedTask(object):
+class ReservedTaskMixin(object):
     def apply_async_with_reservation(self, resource_id, *args, **kwargs):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
@@ -308,7 +308,7 @@ class ReservedTask(object):
         return async_result
 
 
-class Chain(chain, ReservedTask):
+class Chain(chain, ReservedTaskMixin):
     """
     This is a custom Pulp subclass of the Celery chain class. It allows us to inject resource
     locking behaviors into the Chain.
@@ -316,7 +316,7 @@ class Chain(chain, ReservedTask):
     pass
 
 
-class Task(CeleryTask, ReservedTask):
+class Task(CeleryTask, ReservedTaskMixin):
     """
     This is a custom Pulp subclass of the Celery Task object. It allows us to inject some custom
     behavior into each Pulp task, including management of resource locking.
@@ -344,7 +344,7 @@ class Task(CeleryTask, ReservedTask):
         TaskStatus.get_collection().update({'task_id': async_result.id},
                                            {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
                                             '$set': {'tags':tags}},
-                                           upsert = True)
+                                           upsert=True)
         return async_result
 
     def __call__(self, *args, **kwargs):
@@ -360,7 +360,7 @@ class Task(CeleryTask, ReservedTask):
             TaskStatus.get_collection().update({'task_id': self.request.id},
                                                {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
                                                          'start_time':  dateutils.now_utc_timestamp()}},
-                                               upsert = True)
+                                               upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
         return super(Task, self).__call__(*args, **kwargs)
