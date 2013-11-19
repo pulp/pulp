@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.36.beta%{?dist}
+Release: 0.37.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Tue Nov 19 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.37.beta
+- Pulp rebuild
+
 * Fri Nov 15 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.36.beta
 - 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
 
