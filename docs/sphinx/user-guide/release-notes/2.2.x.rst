@@ -45,7 +45,7 @@ New Features
 ------------
 
 * MongoDB replica sets are now supported. See the comments in ``/etc/pulp/server.conf``
-  underthe ``[database]`` section for information on how to configure Pulp to use
+  under the ``[database]`` section for information on how to configure Pulp to use
   a replica set.
 
 Bug Fixes
