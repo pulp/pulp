@@ -19,8 +19,12 @@ import mock
 
 from base import PulpServerTests
 from pulp.server.async import tasks
+from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 
 
+RESERVED_WORKER_1 = '%s1' % tasks.RESERVED_WORKER_NAME_PREFIX
+RESERVED_WORKER_2 = '%s2' % tasks.RESERVED_WORKER_NAME_PREFIX
+RESERVED_WORKER_3 = '%s3' % tasks.RESERVED_WORKER_NAME_PREFIX
 # This is used as the mock return value for the celery.app.control.Inspect.active_queues() method
 MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
     # This is a plain old default Celery worker, subscribed to the general Celery queue
@@ -32,20 +36,21 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
          u'auto_delete': False}],
     # This is a worker subscribed only to a reserved resource queue on worker_1
-    u'worker_1-reserved': [
-        {u'exclusive': False, u'name': u'worker_1-reserved_1', u'exchange': {
-            u'name': u'worker_1-reserved_1', u'durable': True, u'delivery_mode': 2,
-            u'passive': False, u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'worker_1-reserved_1', u'no_ack': False,
+    RESERVED_WORKER_1: [
+        {u'exclusive': False, u'name': RESERVED_WORKER_1, u'exchange': {
+            u'name': RESERVED_WORKER_1, u'durable': True,
+            u'delivery_mode': 2, u'passive': False, u'arguments': None, u'type': u'direct',
+            u'auto_delete': False},
+         u'durable': True, u'routing_key': RESERVED_WORKER_1, u'no_ack': False,
          u'alias': None, u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
          u'auto_delete': False}],
-    # This is a worker subscribed to both a reserved resource queue and the general Celery queue,
-    # running on worker_2
-    u'worker_2-reserved': [
-        {u'exclusive': False, u'name': u'worker_2-reserved_1', u'exchange': {
-            u'name': u'worker_2-reserved_1', u'durable': True, u'delivery_mode': 2,
-            u'passive': False, u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'worker_2-reserved_1', u'no_ack': False,
+    # This is a worker subscribed to both a reserved resource queue and the general Celery queue
+    RESERVED_WORKER_2: [
+        {u'exclusive': False, u'name': RESERVED_WORKER_2, u'exchange': {
+            u'name': RESERVED_WORKER_2, u'durable': True,
+            u'delivery_mode': 2, u'passive': False, u'arguments': None, u'type': u'direct',
+            u'auto_delete': False},
+         u'durable': True, u'routing_key': RESERVED_WORKER_2, u'no_ack': False,
          u'alias': None, u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
          u'auto_delete': False},
         {u'exclusive': False, u'name': u'celery', u'exchange': {
@@ -54,20 +59,8 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'durable': True, u'routing_key': u'celery', u'no_ack': False, u'alias': None,
          u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
          u'auto_delete': False}],
-    # This is another worker subscribed to two reserved resource queues
-    u'worker_3-reserved': [
-        {u'exclusive': False, u'name': u'worker_3-reserved_1', u'exchange': {
-            u'name': u'worker_3-reserved_1', u'durable': True, u'delivery_mode': 2,
-            u'passive': False, u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'worker_3-reserved_1', u'no_ack': False,
-         u'alias': None, u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False},
-        {u'exclusive': False, u'name': u'worker_3-reserved_2', u'exchange': {
-            u'name': u'worker_3-reserved_2', u'durable': True, u'delivery_mode': 2,
-            u'passive': False, u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'worker_3-reserved_2', u'no_ack': False,
-         u'alias': None, u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False}],
+    # This is another worker, but it is not yet subscribed to any queues
+    RESERVED_WORKER_3: [],
     # This is a worker subscribed to the special ReservationManager queue
     u'resource_manager': [
         {u'exclusive': False, u'name': u'resource_manager', u'exchange': {
@@ -78,45 +71,13 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'auto_delete': False}]}
 
 
-MOCK_RESERVED_QUEUE = 'a_reserved_queue_name'
+class ResourceReservationTests(PulpServerTests):
+    def tearDown(self):
+        AvailableQueue.get_collection().remove()
+        ReservedResource.get_collection().remove()
 
 
-@mock.patch('celery.app.control.Inspect.active_queues', return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
-class TestGetResourceManager(PulpServerTests):
-    """
-    Test the _get_resource_manager() function.
-    """
-    @mock.patch('pulp.server.async.tasks._resource_manager', 'a_fake_resource_manager')
-    def test_initialized(self, active_queues):
-        """
-        If the _resource_manager attribute is not None, _get_resource_manager should return it to us
-        without instantiating a new ResourceManager.
-        """
-        resource_manager = tasks._get_resource_manager()
-
-        # Make sure the return value is the expected value
-        self.assertEqual(resource_manager, 'a_fake_resource_manager')
-        # The module's _resource_manager should remain the same
-        self.assertEqual(tasks._resource_manager, 'a_fake_resource_manager')
-
-    @mock.patch('pulp.server.async.tasks._resource_manager', None)
-    def test_unitialized(self, active_queues):
-        """
-        Test the function when it is called for the first time. We've patched the _resource_manager
-        module attribute to be None, as it would be before _get_resource_manager() is called for the
-        first time.
-        """
-        # Make sure we are in the expected starting state
-        self.assertEqual(tasks._resource_manager, None)
-
-        resource_manager = tasks._get_resource_manager()
-
-        self.assertTrue(isinstance(resource_manager, tasks.ResourceManager))
-        # Make sure the singleton instance was saved to the module so it can be returned later.
-        self.assertTrue(resource_manager is tasks._resource_manager)
-
-
-class TestQueueReleaseResource(PulpServerTests):
+class TestQueueReleaseResource(ResourceReservationTests):
     """
     Test the _queue_release_resource() function.
     """
@@ -134,43 +95,224 @@ class TestQueueReleaseResource(PulpServerTests):
                                                               queue=tasks.RESOURCE_MANAGER_QUEUE)
 
 
-class TestReleaseResource(PulpServerTests):
+class TestReleaseResource(ResourceReservationTests):
     """
     Test the _release_resource() Task.
     """
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test__release_resource(self, _resource_manager):
+    def test__release_resource_not_in__resource_map(self):
         """
-        Ensure that the _release_resource() Task calls the singleton's release_resource() method
-        with the appropriate arguments.
+        Test _release_resource() with a resource that is not in the _resource_map. This should be
+        gracefully handled, and result in no changes to the _resource_map.
         """
-        resource_id = 'a_resource'
+        # Set up two available queues
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        available_queue_1.save()
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 3)
+        available_queue_2.save()
+        # Set up two resource reservations, using our available_queues from above
+        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
+                                               available_queue_1.num_reservations)
+        reserved_resource_1.save()
+        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name,
+                                               available_queue_2.num_reservations)
+        reserved_resource_2.save()
 
-        tasks._release_resource.apply_async((resource_id,), queue=tasks.RESOURCE_MANAGER_QUEUE)
+        # This should not raise any Exception, but should also not alter either the AvailableQueue
+        # collection or the ReservedResource collection
+        tasks._release_resource('made_up_resource_id')
 
-        _resource_manager.release_resource.assert_called_once_with(resource_id)
+        # Make sure that the available queues collection has not been altered
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 2)
+        aq_1 = aqc.find_one({'_id': available_queue_1.name})
+        self.assertEqual(aq_1['num_reservations'], 7)
+        aq_2 = aqc.find_one({'_id': available_queue_2.name})
+        self.assertEqual(aq_2['num_reservations'], 3)
+        # Make sure that the reserved resources collection has not been altered
+        rrc = ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 2)
+        rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
+        self.assertEqual(rr_1['assigned_queue'], reserved_resource_1.assigned_queue)
+        self.assertEqual(rr_1['num_reservations'], 7)
+        rr_2 = rrc.find_one({'_id': reserved_resource_2.name})
+        self.assertEqual(rr_2['assigned_queue'], reserved_resource_2.assigned_queue)
+        self.assertEqual(rr_2['num_reservations'], 3)
+
+    def test__release_resource_queue_task_count_zero(self):
+        """
+        Test _release_resource() with a resource that has a queue with a task count of zero. This
+        should not decrement the queue task count into the negative range.
+        """
+        # Set up two available queues, the second with a task count of 0
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        available_queue_1.save()
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 0)
+        available_queue_2.save()
+        # Set up two reserved resources, and let's make it so the second one is out of sync with its
+        # queue's task count by setting its num_reservations to 1
+        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
+                                               available_queue_1.num_reservations)
+        reserved_resource_1.save()
+        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name, 1)
+        reserved_resource_2.save()
+
+        # This should remove resource_2 from the _resource_map, but should leave the queue's task
+        # count at 0.
+        tasks._release_resource('resource_2')
+
+        # The _available_queue_task_counts should remain as they were before, since we don't want
+        # queue lengths below zero
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 2)
+        aq_1 = aqc.find_one({'_id': available_queue_1.name})
+        self.assertEqual(aq_1['num_reservations'], 7)
+        aq_2 = aqc.find_one({'_id': available_queue_2.name})
+        self.assertEqual(aq_2['num_reservations'], 0)
+        # resource_2 should have been removed from the _resource_map
+        rrc = ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 1)
+        rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
+        self.assertEqual(rr_1['assigned_queue'], reserved_resource_1.assigned_queue)
+        self.assertEqual(rr_1['num_reservations'], 7)
+
+    def test__release_resource_task_count_one(self):
+        """
+        Test _release_resource() with a resource that has a task count of one. This should remove
+        the resource from the _resource_map.
+        """
+        # Set up two available queues
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        available_queue_1.save()
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 1)
+        available_queue_2.save()
+        # Set up two reserved resources
+        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
+                                               available_queue_1.num_reservations)
+        reserved_resource_1.save()
+        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name,
+                                               available_queue_2.num_reservations)
+        reserved_resource_2.save()
+
+        # This should remove resource_2 from the _resource_map, and should reduce the queue's task
+        # count to 0.
+        tasks._release_resource('resource_2')
+
+        # available_queue_2 should have had its num_reservations reduced to 0, and the other one
+        # should have remained the same
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 2)
+        aq_1 = aqc.find_one({'_id': available_queue_1.name})
+        self.assertEqual(aq_1['num_reservations'], 7)
+        aq_2 = aqc.find_one({'_id': available_queue_2.name})
+        self.assertEqual(aq_2['num_reservations'], 0)
+        # resource_2 should have been removed from the _resource_map
+        rrc = ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 1)
+        rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
+        self.assertEqual(rr_1['assigned_queue'], reserved_resource_1.assigned_queue)
+        self.assertEqual(rr_1['num_reservations'], 7)
+
+    def test__release_resource_task_count_two(self):
+        """
+        Test _release_resource() with a resource that has a task count of two. This should simply
+        decrement the task_count for the resource, but should not remove it from the _resource_map.
+        """
+        # Set up two available queues
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        available_queue_1.save()
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 2)
+        available_queue_2.save()
+        # Set up two resource reservations, using our available_queues from above
+        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
+                                               available_queue_1.num_reservations)
+        reserved_resource_1.save()
+        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name,
+                                               available_queue_2.num_reservations)
+        reserved_resource_2.save()
+
+        # This should reduce the reserved_resource_2 num_reservations to 1, and should also reduce
+        # available_queue_2's num_reservations to 1.
+        tasks._release_resource('resource_2')
+
+        # Make sure that the AvailableQueues are correct
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 2)
+        aq_1 = aqc.find_one({'_id': available_queue_1.name})
+        self.assertEqual(aq_1['num_reservations'], 7)
+        aq_2 = aqc.find_one({'_id': available_queue_2.name})
+        self.assertEqual(aq_2['num_reservations'], 1)
+        # Make sure the ReservedResources are also correct
+        rrc = ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 2)
+        rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
+        self.assertEqual(rr_1['assigned_queue'], reserved_resource_1.assigned_queue)
+        self.assertEqual(rr_1['num_reservations'], 7)
+        rr_2 = rrc.find_one({'_id': reserved_resource_2.name})
+        self.assertEqual(rr_2['assigned_queue'], reserved_resource_2.assigned_queue)
+        self.assertEqual(rr_2['num_reservations'], 1)
 
 
-class TestReserveResource(PulpServerTests):
+class TestReserveResource(ResourceReservationTests):
     """
     Test the _reserve_resource() Task.
     """
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test__reserve_resource(self, _resource_manager):
+    def test__reserve_resource_with_existing_reservation(self):
         """
-        Ensure that the _reserve_resource() Task calls the singleton's reserve_resource() method
-        with the appropriate arguments.
+        Test _reserve_resource() with a resource that has an existing reservation in the database.
+        It should return the queue listed in the database, and increment the reservation counter.
         """
-        a_queue = 'a_special_queue'
-        _resource_manager.reserve_resource.return_value = a_queue
-        resource_id = 'some_resource'
+        # Set up an available queue with a reservation count of 1
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 1)
+        available_queue_1.save()
+        # Set up a resource reservation, using our available_queue from above
+        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
+                                               available_queue_1.num_reservations)
+        reserved_resource_1.save()
 
-        async_result = tasks._reserve_resource.apply_async((resource_id,),
-                                                           queue=tasks.RESOURCE_MANAGER_QUEUE)
+        # This should increase the reserved_resource_1 num_reservations to 2, and should also
+        # increase available_queue_1's num_reservations to 2. available_queue_1's name should be
+        # returned
+        queue = tasks._reserve_resource('resource_1')
 
-        _resource_manager.reserve_resource.assert_called_once_with(resource_id)
-        # Make sure the return value is correct
-        self.assertEqual(async_result.get(), a_queue)
+        self.assertEqual(queue, RESERVED_WORKER_1)
+        # Make sure that the AvailableQueue is correct
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 1)
+        aq_1 = aqc.find_one({'_id': available_queue_1.name})
+        self.assertEqual(aq_1['num_reservations'], 2)
+        # Make sure the ReservedResource is also correct
+        rrc = ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 1)
+        rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
+        self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
+        self.assertEqual(rr_1['num_reservations'], 2)
+
+    def test__reserve_resource_without_existing_reservation(self):
+        """
+        Test _reserve_resource() with a resource that does not have an existing reservation in the
+        database. It should find the least busy queue, add a reservation to the database with that
+        queue, and then return the queue.
+        """
+        resource_manager = tasks.ResourceManager()
+        resource_manager._resource_map = {
+            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
+            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3}}
+        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
+                                                         'worker_2-reserved_1': 3}
+
+        queue = resource_manager.reserve_resource('resource_3')
+
+        self.assertEqual(queue, 'worker_2-reserved_1')
+        # The available queue task count for worker_2-reserved_3 should have been incremented
+        self.assertEqual(resource_manager._available_queue_task_counts,
+                         {'worker_1-reserved_1': 7, 'worker_2-reserved_1': 4})
+        # The _resource_map should now have a resource_3 entry with a task_count of 1 and the
+        # correct queue
+        self.assertEqual(
+            resource_manager._resource_map,
+            {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
+             'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3},
+             'resource_3': {'queue': 'worker_2-reserved_1', 'task_count': 1}})
 
 
 @mock.patch('celery.app.control.Inspect.active_queues',
@@ -201,156 +343,6 @@ class TestResourceManager(PulpServerTests):
         # Since no reservations have been made yet, the _resource_map attribute should be
         # initialized as an empty dictionary
         self.assertEqual(resource_manager._resource_map, {})
-
-    def test_release_resource_not_in__resource_map(self, active_queues):
-        """
-        Test release_resource() with a resource that is not in the _resource_map. This should be
-        gracefully handled, and result in no changes to the _resource_map.
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 3}
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3}}
-        expected_available_queue_task_counts = deepcopy(
-            resource_manager._available_queue_task_counts)
-        expected_resource_map = deepcopy(resource_manager._resource_map)
-
-        # This should not raise any Exception, but should also not alter the resource_map
-        resource_manager.release_resource('made_up_resource_id')
-
-        # None of the state variables should have changed
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         expected_available_queue_task_counts)
-        self.assertEqual(resource_manager._resource_map, expected_resource_map)
-
-    def test_release_resource_queue_task_count_zero(self, active_queues):
-        """
-        Test release_resource() with a resource that has a queue with a task count of zero. This
-        should not decrement the queue task count into the negative range.
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 0}
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 1}}
-        expected_available_queue_task_counts = deepcopy(
-            resource_manager._available_queue_task_counts)
-
-        # This should remove resource_2 from the _resource_map, but should leave the queue's task
-        # count at 0.
-        resource_manager.release_resource('resource_2')
-
-        # The _available_queue_task_counts should remain as they were before, since we don't want
-        # queue lengths below zero
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         expected_available_queue_task_counts)
-        # resource_2 should have been removed from the _resource_map
-        expected_resource_map = {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7}}
-        self.assertEqual(resource_manager._resource_map, expected_resource_map)
-
-    def test_release_resource_task_count_one(self, active_queues):
-        """
-        Test release_resource() with a resource that has a task count of one. This should remove
-        the resource from the _resource_map.
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 1}
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 1}}
-
-        # This should remove resource_2 from the _resource_map, and decrement the queue count for
-        # worker_2-reserved_3
-        resource_manager.release_resource('resource_2')
-
-        # The task count for worker_2-reserved_3 should have been decremented to 0
-        expected_available_queue_task_counts = {'worker_1-reserved_1': 7, 'worker_2-reserved_1': 0}
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         expected_available_queue_task_counts)
-        # resource_2 should have been removed from the _resource_map
-        expected_resource_map = {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7}}
-        self.assertEqual(resource_manager._resource_map, expected_resource_map)
-
-    def test_release_resource_task_count_two(self, active_queues):
-        """
-        Test release_resource() with a resource that has a task count of two. This should simply
-        decrement the task_count for the resource, but should not remove it from the _resource_map.
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 2}
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 2}}
-
-        # This should decrement the task count for resource_2 in the _resource_map, and decrement
-        # the queue count for worker_2-reserved_3
-        resource_manager.release_resource('resource_2')
-
-        # The task count for worker_2-reserved_3 should have been decremented to 1
-        expected_available_queue_task_counts = {'worker_1-reserved_1': 7, 'worker_2-reserved_1': 1}
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         expected_available_queue_task_counts)
-        # resource_2's task count should have been decremented to 1
-        expected_resource_map = {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-                                 'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 1}}
-        self.assertEqual(resource_manager._resource_map, expected_resource_map)
-
-    def test_reserve_resource_in_resource_map(self, active_queues):
-        """
-        Test reserve_resource() with a resource that is already in the _resource_map. It should
-        return the queue in there, and increment the task counter.
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 3}
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3}}
-
-        queue = resource_manager.reserve_resource('resource_2')
-
-        self.assertEqual(queue, 'worker_2-reserved_1')
-        # The available queue task count for worker_2-reserved_3 should have been incremented
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         {'worker_1-reserved_1': 7, 'worker_2-reserved_1': 4})
-        # The _resource_map should be the same as before, but now with a task_count of 4 for
-        # resource_2
-        self.assertEqual(
-            resource_manager._resource_map,
-            {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-             'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 4}})
-
-    def test_reserve_resource_not_in_resource_map(self, active_queues):
-        """
-        Test reserve_resource() with a resource that is not in the _resource_map. It should
-        return a queue from the least busy worker, and it should add the resource to the
-        _resource_map
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3}}
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 3}
-
-        queue = resource_manager.reserve_resource('resource_3')
-
-        self.assertEqual(queue, 'worker_2-reserved_1')
-        # The available queue task count for worker_2-reserved_3 should have been incremented
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         {'worker_1-reserved_1': 7, 'worker_2-reserved_1': 4})
-        # The _resource_map should now have a resource_3 entry with a task_count of 1 and the
-        # correct queue
-        self.assertEqual(
-            resource_manager._resource_map,
-            {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-             'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3},
-             'resource_3': {'queue': 'worker_2-reserved_1', 'task_count': 1}})
 
     def test__get_available_queue_no_queues_available(self, active_queues):
         """
@@ -468,7 +460,7 @@ class TestResourceManager(PulpServerTests):
 def _reserve_resource_apply_async():
     class AsyncResult(object):
         def get(self):
-            return MOCK_RESERVED_QUEUE
+            return RESERVED_WORKER_1
     return AsyncResult()
 
 
@@ -486,7 +478,7 @@ class TestTask(PulpServerTests):
         Assert that apply_async_with_reservation() calls Celery's apply_async.
         """
         some_args = [1, 'b', 'iii']
-        some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': MOCK_RESERVED_QUEUE}
+        some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': RESERVED_WORKER_1}
         resource_id = 'three_to_get_ready'
         task = tasks.Task()
 
@@ -496,7 +488,7 @@ class TestTask(PulpServerTests):
                                                   queue=tasks.RESOURCE_MANAGER_QUEUE)
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
         _queue_release_resource.apply_async.assert_called_once_with((resource_id,),
-                                                                    queue=MOCK_RESERVED_QUEUE)
+                                                                    queue=RESERVED_WORKER_1)
 
 
 class TestCancel(PulpServerTests):

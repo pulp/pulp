@@ -11,6 +11,7 @@
 
 from pulp.server.db.model.base import Model
 
+
 class MigrationTracker(Model):
     """
     This is used to track state about our migrations package. There will be one object for each
