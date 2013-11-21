@@ -293,26 +293,24 @@ class TestReserveResource(ResourceReservationTests):
         database. It should find the least busy queue, add a reservation to the database with that
         queue, and then return the queue.
         """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._resource_map = {
-            'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-            'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3}}
-        resource_manager._available_queue_task_counts = {'worker_1-reserved_1': 7,
-                                                         'worker_2-reserved_1': 3}
+        # Set up an available queue
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 0)
+        available_queue_1.save()
 
-        queue = resource_manager.reserve_resource('resource_3')
+        queue = tasks._reserve_resource('resource_1')
 
-        self.assertEqual(queue, 'worker_2-reserved_1')
-        # The available queue task count for worker_2-reserved_3 should have been incremented
-        self.assertEqual(resource_manager._available_queue_task_counts,
-                         {'worker_1-reserved_1': 7, 'worker_2-reserved_1': 4})
-        # The _resource_map should now have a resource_3 entry with a task_count of 1 and the
-        # correct queue
-        self.assertEqual(
-            resource_manager._resource_map,
-            {'resource_1': {'queue': 'worker_1-reserved_1', 'task_count': 7},
-             'resource_2': {'queue': 'worker_2-reserved_1', 'task_count': 3},
-             'resource_3': {'queue': 'worker_2-reserved_1', 'task_count': 1}})
+        self.assertEqual(queue, RESERVED_WORKER_1)
+        # Make sure that the AvailableQueue is correct
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 1)
+        aq_1 = aqc.find_one({'_id': available_queue_1.name})
+        self.assertEqual(aq_1['num_reservations'], 1)
+        # Make sure the ReservedResource is also correct
+        rrc = ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 1)
+        rr_1 = rrc.find_one({'_id': 'resource_1'})
+        self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
+        self.assertEqual(rr_1['num_reservations'], 1)
 
 
 @mock.patch('celery.app.control.Inspect.active_queues',
@@ -321,29 +319,6 @@ class TestResourceManager(PulpServerTests):
     """
     Test the ResourceManager class.
     """
-    def test___init__(self, active_queues):
-        """
-        Test the __init__() method.
-        """
-        resource_manager = tasks.ResourceManager()
-
-        # There should be three available queues, all with their task counts initialized to 0
-        self.assertEqual(
-            resource_manager._available_queue_task_counts,
-            {'worker_1-reserved_1': 0, 'worker_2-reserved_1': 0, 'worker_3-reserved_1': 0,
-             'worker_3-reserved_2': 0})
-        # There are three workers, and they collectively have four reserved task queues assigned to
-        # them. Note that the celery and resource manager queues are not included here, as this data
-        # structure should only contain information about reserved task queues.
-        self.assertEqual(
-            resource_manager._worker_queues,
-            {'worker_1-reserved': ['worker_1-reserved_1'],
-             'worker_2-reserved': ['worker_2-reserved_1'],
-             'worker_3-reserved': ['worker_3-reserved_1', 'worker_3-reserved_2']})
-        # Since no reservations have been made yet, the _resource_map attribute should be
-        # initialized as an empty dictionary
-        self.assertEqual(resource_manager._resource_map, {})
-
     def test__get_available_queue_no_queues_available(self, active_queues):
         """
         Test the _get_available_queue() method when there are no reserved queues available at all.

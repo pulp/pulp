@@ -26,7 +26,7 @@ def filter_available_queues(criteria):
     """
     available_queues = resources.AvailableQueue.get_collection().query(criteria)
     for q in available_queues:
-        yield resources.AvailableQueue(name=q['name'],
+        yield resources.AvailableQueue(name=q['_id'],
                                        num_reservations=q['num_reservations'])
 
 
@@ -40,7 +40,12 @@ def get_least_busy_available_queue():
     """
     available_queue = resources.AvailableQueue.get_collection().find_one(
         sort=[('num_reservations', pymongo.ASCENDING)])
-    return resources.AvailableQueue(name=available_queue['name'],
+
+    if available_queue is None:
+        msg = _('There are no available queues in the system for reserved task work.')
+        raise NoAvailableQueues(msg)
+
+    return resources.AvailableQueue(name=available_queue['_id'],
                                     num_reservations=available_queue['num_reservations'])
 
 
@@ -55,9 +60,9 @@ def get_or_create_available_queue(name):
     :rtype:      pulp.server.db.model.resources.AvailableQueue
     """
     available_queue = resources.AvailableQueue.get_collection().find_and_modify(
-        query={'name': name}, update={'$setOnInsert': {'num_reservations': 0, 'name': name}},
+        query={'_id': name}, update={'$setOnInsert': {'num_reservations': 0}},
         upsert=True, new=True)
-    return resources.AvailableQueue(name=available_queue['name'],
+    return resources.AvailableQueue(name=available_queue['_id'],
                                     num_reservations=available_queue['num_reservations'])
 
 
@@ -72,9 +77,17 @@ def get_or_create_reserved_resource(name):
     :rtype:      pulp.server.db.model.resources.ReservedResource
     """
     reserved_resource = resources.ReservedResource.get_collection().find_and_modify(
-        query={'name': name},
-        update={'$setOnInsert': {'num_reservations': 1, 'assigned_queue': None, 'name': name}},
+        query={'_id': name},
+        update={'$setOnInsert': {'num_reservations': 1, 'assigned_queue': None}},
         upsert=True, new=True)
     return resources.ReservedResource(
-        name=reserved_resource['name'], assigned_queue=reserved_resource['assigned_queue'],
+        name=reserved_resource['_id'], assigned_queue=reserved_resource['assigned_queue'],
         num_reservations=reserved_resource['num_reservations'])
+
+
+class NoAvailableQueues(Exception):
+    """ 
+    This Exception is raised by _get_least_busy_available_queue() if there are no AvailableQueue
+    objects.
+    """
+    pass

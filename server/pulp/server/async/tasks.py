@@ -67,31 +67,6 @@ def babysit():
         queue.delete()
 
 
-class NoAvailableQueues(Exception):
-    """
-    This Exception is raised by ResourceManager._get_workers_available_queue_stats() if the given
-    worker does not have any available queues for reserved work. It can also be raised by
-    ResourceManager._get_least_busy_queue() if no queues can be found in the system.
-    """
-    pass
-
-
-def _get_least_busy_queue():
-    """
-    Find the AvailableQueue with the fewest reservations, and return its name. There are no
-    guarantees about how the winner is chosen if there is a tie.
-
-    :return: The name of an available queue
-    :rtype:  basestring
-    """
-    least_busy_queue = resources.get_least_busy_available_queue()
-
-    if least_busy_queue is None:
-        msg = _('There are no available queues in the system for reserved task work.')
-        raise NoAvailableQueues(msg)
-    return least_busy_queue.name
-
-
 @task
 def _queue_release_resource(resource_id):
     """
@@ -159,7 +134,7 @@ def _reserve_resource(resource_id):
     if reserved_resource.assigned_queue is None:
         # The assigned_queue will be None if the reserved_resource was just created, so we'll
         # need to assign a queue to it
-        reserved_resource.assigned_queue = _get_least_busy_queue()
+        reserved_resource.assigned_queue = resources.get_least_busy_available_queue().name
         reserved_resource.save()
     else:
         # The assigned_queue is set, so we just need to increment the num_reservations on the
