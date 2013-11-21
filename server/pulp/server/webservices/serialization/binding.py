@@ -54,12 +54,12 @@ def serialize(bind, include_details=True):
 
     href = link.current_link_obj()
 
-    href_url = href['_href']
+    href_suffix = href['_href'].split('bindings', 1)[1]
 
-    if href_url.count(repo_id) == 0:
+    if href_suffix.count(repo_id) == 0:
         href = link.child_link_obj(repo_id, distributor_id)
 
-    elif href_url.count(distributor_id) == 0:
+    elif href_suffix.count(distributor_id) == 0:
         href = link.child_link_obj(distributor_id)
 
     serialized.update(href)
