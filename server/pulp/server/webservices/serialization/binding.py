@@ -19,6 +19,7 @@ import link
 
 from pulp.server.managers import factory as manager_factory
 from pulp.server.exceptions import MissingResource
+from pulp.server.webservices import http
 
 
 def serialize(bind, include_details=True):
@@ -40,28 +41,16 @@ def serialize(bind, include_details=True):
     # bind
     serialized = dict(bind)
 
+    consumer_id = bind['consumer_id']
     repo_id = bind['repo_id']
     distributor_id = bind['distributor_id']
 
     # href
-    #
-    # 1019155 - There are three URLs that currently support bindings:
-    # 1. /consumers/<consumer_id>/bindings/
-    # 2. /consumers/<consumer_id>/bindings/<repo_id>/
-    # 3. /consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>/
-    #
-    # Make sure we return the third URL for an individual binding.
-
-    href = link.current_link_obj()
-
-    href_suffix = href['_href'].split('bindings', 1)[1]
-
-    if href_suffix.count(repo_id) == 0:
-        href = link.child_link_obj(repo_id, distributor_id)
-
-    elif href_suffix.count(distributor_id) == 0:
-        href = link.child_link_obj(distributor_id)
-
+    # 1019155 - Make sure the binding URL points to:
+    # /pulp/api/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id/
+    href_url = '%s/consumers/%s/bindings/%s/%s/' % (
+        http.API_V2_HREF, consumer_id, repo_id, distributor_id)
+    href = link.link_obj(href_url)
     serialized.update(href)
 
     repo_distributor_manager = manager_factory.repo_distributor_manager()
