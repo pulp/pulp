@@ -40,30 +40,47 @@ def serialize(bind, include_details=True):
     # bind
     serialized = dict(bind)
 
+    repo_id = bind['repo_id']
+    distributor_id = bind['distributor_id']
+
     # href
-    href = link.child_link_obj(
-        bind['consumer_id'],
-        bind['repo_id'],
-        bind['distributor_id'])
+    #
+    # 1019155 - There are three URLs that currently support bindings:
+    # 1. /consumers/<consumer_id>/bindings/
+    # 2. /consumers/<consumer_id>/bindings/<repo_id>/
+    # 3. /consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>/
+    #
+    # Make sure we return the third URL for an individual binding.
+
+    href = link.current_link_obj()
+
+    href_url = href['_href']
+
+    if href_url.count(repo_id) == 0:
+        href = link.child_link_obj(repo_id, distributor_id)
+
+    elif href_url.count(distributor_id) == 0:
+        href = link.child_link_obj(distributor_id)
+
     serialized.update(href)
+
+    repo_distributor_manager = manager_factory.repo_distributor_manager()
 
     # type_id
     try:
-        repo_distributor_manager = manager_factory.repo_distributor_manager()
-        distributor = repo_distributor_manager.get_distributor(
-            bind['repo_id'],
-            bind['distributor_id'])
-        serialized['type_id'] = distributor['distributor_type_id']
+        distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+
     except MissingResource:
         if include_details:
             raise
 
+    else:
+        serialized['type_id'] = distributor['distributor_type_id']
+
     # details
     if include_details:
-        details = repo_distributor_manager.create_bind_payload(
-            bind['repo_id'],
-            bind['distributor_id'],
-            bind['binding_config'])
+        details = repo_distributor_manager.create_bind_payload(repo_id, distributor_id,
+                                                               bind['binding_config'])
         serialized['details'] = details
 
     return serialized
