@@ -75,7 +75,7 @@ framework and the server itself. The context contains the following pieces:
 
 .. note::
   Currently, the API for the client context is not published. The code can
-  be found at ``ClientContext`` in ``platform/src/pulp/client/extensions/core.py``.
+  be found at ``ClientContext`` in ``client_lib/pulp/client/extensions/core.py``.
 
 
 .. _extensions_conventions:
@@ -104,7 +104,7 @@ customize them to your needs.
 
 .. note::
   Again, the API for these reusable commands is not yet published. The code
-  can be found under ``platform/src/pulp/client/commands``.
+  can be found under ``client_lib/pulp/client/commands``.
 
 
 Installation

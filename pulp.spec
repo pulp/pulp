@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.0
-Release: 0.23.beta%{?dist}
+Release: 0.29.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -40,7 +40,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
-BuildRequires: python-nose
 BuildRequires: rpm-python
 
 %description
@@ -176,7 +175,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.4
+Requires: python-nectar >= 1.1.6
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -482,6 +481,39 @@ exit 0
 %endif
 
 %changelog
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
+- 1027500 - init python-gofer before agent and tasking services started.
+  (jortel@redhat.com)
+
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.28.beta
+- 1022646 - migration_0 needs to add units_size=0. (jortel@redhat.com)
+
+* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
+- 1023056 - fix SSL on f19 by using qpid builtin SSL transport.
+  (jortel@redhat.com)
+- 1022646 - fix migration of nodes 2.2 => 2.3 manifests. (jortel@redhat.com)
+- 1022621 - Failed reports are now successful tasks and the report indicates
+  the failure (jason.dobies@redhat.com)
+- 1022621 - Fixed communication between publish manager and tasking
+  (jason.dobies@redhat.com)
+- 1017587 - Added a list of possible task states to the docs.
+  (rbarlow@redhat.com)
+
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
+- Pulp rebuild
+
+* Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
+- 1017865 - Corrected task response docs (jason.dobies@redhat.com)
+- 1021116 - Convert info level log messages that include Task arguments into
+  debug level messages. (rbarlow@redhat.com)
+- 1017253 - Removed v1 attribute that no longer exists
+  (jason.dobies@redhat.com)
+
+* Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
+- 1019909 - Added replica set support (jason.dobies@redhat.com)
+- 1020549 - tar the content of the distribution directory instead of the
+  directory. (jortel@redhat.com)
+
 * Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
 - 1019455 - Loosened validation checks on the presence of the feed for certain
   configuration parameters (jason.dobies@redhat.com)

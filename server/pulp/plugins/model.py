@@ -22,34 +22,41 @@ class Repository(object):
     Contains repository data and any additional data relevant for the plugin to
     function.
 
-    @ivar id: programmatic ID for the repository
-    @type id: str
+    :ivar id: programmatic ID for the repository
+    :type id: str
 
-    @ivar display_name: user-friendly name describing the repository
-    @type display_name: str or None
+    :ivar display_name: user-friendly name describing the repository
+    :type display_name: str or None
 
-    @ivar description: user-friendly description of the repository
-    @type description: str or None
+    :ivar description: user-friendly description of the repository
+    :type description: str or None
 
-    @ivar notes: arbitrary key-value pairs set and used by users to
+    :ivar notes: arbitrary key-value pairs set and used by users to
                  programmatically describe the repository
-    @type notes: dict or None
+    :type notes: dict or None
 
-    @ivar working_dir: local (to the Pulp server) directory the plugin may use
+    :ivar working_dir: local (to the Pulp server) directory the plugin may use
           to store any temporary data required by the plugin; this directory
           is unique for each repository and plugin combination
-    @type working_dir: str
+    :type working_dir: str
+
+    :ivar content_unit_counts: dictionary of unit types and the count of units
+                               of that type associated with the repository.
+    :type content_unit_counts: dict
     """
 
-    def __init__(self, id, display_name=None, description=None, notes=None, working_dir=None):
+    def __init__(self, id, display_name=None, description=None, notes=None,
+                 working_dir=None, content_unit_counts=None):
         self.id = id
         self.display_name = display_name
         self.description = description
         self.notes = notes
         self.working_dir = working_dir
+        self.content_unit_counts = content_unit_counts or {}
 
     def __str__(self):
         return 'Repository [%s]' % self.id
+
 
 class RelatedRepository(Repository):
     """

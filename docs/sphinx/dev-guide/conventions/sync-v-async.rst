@@ -40,11 +40,11 @@ A 202 ACCEPTED response returns a **call report** JSON object as the response bo
 that has the following fields:
 
 * **_href** *(string)* - uri path to retrieve subsequent call reports for this task.
-* **response** *(string)* - a response from Pulp's tasking system: accepted, postponed, or rejected
+* **response** *(string)* - a response from Pulp's tasking system. The possible values include: 'accepted', 'postponed', and 'rejected'.
 * **reasons** *(array)* - a list of reasons for postponed or rejected responses
-* **state** *(string)* - the current state of the task
+* **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
-* **job_id** *(null or string)* - the unique id of the job the task is a part of
+* **task_group_id** *(null or string)* - the unique id of the group the task is a part of
 * **schedule_id** *(null or string)* - the unique id of the schedule if the call is scheduled
 * **progress** *(object)* - arbitrary progress information, usually in the form of an object
 * **result** *(any)* - the return value of the call, if any
@@ -58,7 +58,7 @@ Example Call Report::
 
  {
   "exception": null,
-  "job_id": null,
+  "task_group_id": null,
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
   "tags": [
     "pulp:repository:f16",

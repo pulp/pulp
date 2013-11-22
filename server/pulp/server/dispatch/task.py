@@ -28,9 +28,8 @@ from pulp.server.dispatch import history as dispatch_history
 from pulp.server.managers import factory as managers_factory
 
 
-_LOG = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-# synchronous task -------------------------------------------------------------
 
 class Task(object):
     """
@@ -139,7 +138,7 @@ class Task(object):
 
         except:
             e, tb = sys.exc_info()[1:]
-            _LOG.exception(e)
+            _logger.exception(e)
             return self._failed(e, tb)
 
         else:
@@ -159,7 +158,7 @@ class Task(object):
 
         self.call_report.result = result
 
-        _LOG.info(_('SUCCESS: %(t)s') % {'t': str(self)})
+        _logger.debug(_('SUCCESS: %(t)s') % {'t': str(self)})
 
         self.call_life_cycle_callbacks(dispatch_constants.CALL_SUCCESS_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_FINISHED_STATE)
@@ -180,7 +179,7 @@ class Task(object):
         if exception is not None:
             self.call_report.result = {'error_message': exception.message}
 
-        _LOG.info(_('FAILURE: %(t)s') % {'t': str(self)})
+        _logger.debug(_('FAILURE: %(t)s') % {'t': str(self)})
 
         self.call_life_cycle_callbacks(dispatch_constants.CALL_FAILURE_LIFE_CYCLE_CALLBACK)
         self._complete(dispatch_constants.CALL_ERROR_STATE)
@@ -217,7 +216,7 @@ class Task(object):
             self.complete_callback(self)
 
         except Exception, e:
-            _LOG.exception(e)
+            _logger.exception(e)
 
     # callback and hook execution ----------------------------------------------
 
@@ -264,7 +263,7 @@ class Task(object):
                 self._call_cancel_control_hook()
 
             except Exception, e:
-                _LOG.exception(e)
+                _logger.exception(e)
                 return False
 
         # nothing special needs to happen to cancel a task in a ready state
@@ -283,7 +282,6 @@ class Task(object):
         # if this occurs, the task DID NOT CANCEL and should not proceed as if it has
         cancel_hook(self.call_request, self.call_report)
 
-# asynchronous task ------------------------------------------------------------
 
 class AsyncTask(Task):
     """
@@ -325,7 +323,7 @@ class AsyncTask(Task):
             # execute, if this isn't the case, or it got far enough, we may be
             # faced with _succeeded or _failed being called again
             e, tb = sys.exc_info()[1:]
-            _LOG.exception(e)
+            _logger.exception(e)
             return self._failed(e, tb)
 
         else:

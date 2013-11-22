@@ -73,7 +73,7 @@ def to_plugin_associated_unit(pulp_unit, type_def):
     @type  pulp_unit: dict
 
     @param type_def: Pulp stored definition for the unit type
-    @type  type_def: pulp.server.db.model.content.ContentType
+    @type  type_def: dict or BSON
 
     @return: plugin unit representation of the given unit
     @rtype:  pulp.plugins.model.AssociatedUnit
