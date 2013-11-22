@@ -297,8 +297,8 @@ class RoleManager(object):
             raise MissingResource(login)
 
         if role_id == self.super_user_role and factory.user_query_manager().is_last_super_user(login):
-            raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
-                                     (self.super_user_role, login))
+            raise PulpDataException(_('%(role)s cannot be empty, and %(login)s is the last member') %
+                                     {'role': self.super_user_role, 'login': login})
 
         if role_id not in user['roles']:
             return

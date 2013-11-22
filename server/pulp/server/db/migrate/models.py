@@ -155,8 +155,8 @@ class MigrationPackage(object):
         :type  update_current_version: bool
         """
         if update_current_version and migration.version != self.current_version + 1:
-            msg = _('Cannot apply migration %s, because the next migration version is %s.')
-            msg = msg % (migration.name, self.current_version + 1)
+            msg = _('Cannot apply migration %(name)s, because the next migration version is %(version)s.')
+            msg = msg % {'name': migration.name, 'version': self.current_version + 1}
             raise Exception(msg)
         migration.migrate()
         if update_current_version:

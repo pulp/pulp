@@ -137,15 +137,17 @@ def _retry_decorator(full_name=None, retries=0):
                 except AutoReconnect:
                     tries += 1
 
-                    _LOG.warn(_('%s operation failed on %s: tries remaining: %d') %
-                              (method.__name__, full_name, retries - tries + 1))
+                    _LOG.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
+                              {'method': method.__name__, 'name': full_name,
+                               'tries': retries - tries + 1})
 
                     if tries <= retries:
                         time.sleep(0.3)
 
             raise PulpCollectionFailure(
-                _('%s operation failed on %s: database connection still down after %d tries') %
-                (method.__name__, full_name, (retries + 1)))
+                _('%(method)s operation failed on %(name)s: database connection '
+                  'still down after %(tries)d tries') %
+                {'method': method.__name__, 'name': full_name, 'tries': (retries + 1)})
 
         return retry
 
