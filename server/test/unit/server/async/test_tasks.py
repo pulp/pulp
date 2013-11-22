@@ -17,7 +17,7 @@ from copy import deepcopy
 
 import mock
 
-from base import PulpServerTests
+from ...base import PulpServerTests, ResourceReservationTests
 from pulp.server.async import tasks
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 
@@ -69,12 +69,6 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'durable': True, u'routing_key': u'resource_manager', u'no_ack': False, u'alias': None,
          u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
          u'auto_delete': False}]}
-
-
-class ResourceReservationTests(PulpServerTests):
-    def tearDown(self):
-        AvailableQueue.get_collection().remove()
-        ReservedResource.get_collection().remove()
 
 
 class TestQueueReleaseResource(ResourceReservationTests):
@@ -311,125 +305,6 @@ class TestReserveResource(ResourceReservationTests):
         rr_1 = rrc.find_one({'_id': 'resource_1'})
         self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
         self.assertEqual(rr_1['num_reservations'], 1)
-
-
-@mock.patch('celery.app.control.Inspect.active_queues',
-            return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
-class TestResourceManager(PulpServerTests):
-    """
-    Test the ResourceManager class.
-    """
-    def test__get_available_queue_no_queues_available(self, active_queues):
-        """
-        Test the _get_available_queue() method when there are no reserved queues available at all.
-        It should raise a NoAvailableQueues Exception.
-        """
-        resource_manager = tasks.ResourceManager()
-        # We can fake there being no available queues by setting the _available_queues_task_count to
-        # the empty dictionary
-        resource_manager._available_queue_task_counts = {}
-
-        # When no queues are available, a NoAvailableQueues Exception should be raised
-        self.assertRaises(tasks.NoAvailableQueues, resource_manager._get_available_queue)
-
-    def test__get_available_queue_no_workers_available(self, active_queues):
-        """
-        Test the _get_available_queue() method when there are no workers assigned to reserved
-        queues. It should raise a NoAvailableQueues Exception.
-        """
-        resource_manager = tasks.ResourceManager()
-        # We can fake there being no workers assigned to queues by setting the _worker_queues to
-        # the empty dictionary
-        resource_manager._worker_queues = {}
-
-        # When no queues are available, a NoAvailableQueues Exception should be raised
-        self.assertRaises(tasks.NoAvailableQueues, resource_manager._get_available_queue)
-
-    def test__get_available_queue_picks_least_busy_queue(self, active_queues):
-        """
-        Test that the _get_available_queue() method picks the least busy queue, when the least busy
-        queue is assigned to the least busy worker.
-        """
-        resource_manager = tasks.ResourceManager()
-        resource_manager._available_queue_task_counts = {
-            'worker_1-reserved_1': 7, 'worker_2-reserved_1': 1, 'worker_3-reserved_1': 8,
-            'worker_3-reserved_2': 3}
-
-        queue = resource_manager._get_available_queue()
-
-        self.assertEqual(queue, 'worker_2-reserved_1')
-
-    def test__get_available_queue_picks_least_busy_worker(self, active_queues):
-        """
-        Test that the _get_available_queue() method doesn't pick the least busy queue, when there is
-        a busier queue assigned to the least busy worker. It should always pick the least busy
-        queue from the least busy worker, not the least busy queue overall.
-        """
-        resource_manager = tasks.ResourceManager()
-        # Worker 2 has the least work here, even though worker_3 has a queue of shorter length.
-        resource_manager._available_queue_task_counts = {
-            'worker_1-reserved_1': 7, 'worker_2-reserved_1': 3, 'worker_3-reserved_1': 1,
-            'worker_3-reserved_2': 3}
-
-        queue = resource_manager._get_available_queue()
-
-        # We should have gotten the queue from worker_2 and not the one from worker_3
-        self.assertEqual(queue, 'worker_2-reserved_1')
-
-    def test__get_workers_available_queue_stats_none_assigned(self, active_queues):
-        """
-        Test the _get_workers_available_queue_stats() method when the requested worker has no queues
-        assigned to it. It should raise a NoAvailableQueues Exception.
-        """
-        resource_manager = tasks.ResourceManager()
-        # worker_1 has no assigned reserved queues
-        resource_manager._worker_queues = {'worker_1-reserved': []}
-
-        self.assertRaises(tasks.NoAvailableQueues,
-                          resource_manager._get_workers_available_queue_stats, 'worker_1-reserved')
-
-    def test__get_workers_available_queue_stats_none_available(self, active_queues):
-        """
-        Test the _get_workers_available_queue_stats() method when the requested worker has no queues
-        available. It should raise a NoAvailableQueues Exception.
-        """
-        resource_manager = tasks.ResourceManager()
-        # Remove 'worker_1-reserved_1 from the _available_queue_task_counts. Since it is the only
-        # queue that worker_1-reserved is assigned to, this should cause the NoAvailableQueues
-        # Exception to be raised
-        del resource_manager._available_queue_task_counts['worker_1-reserved_1']
-
-        self.assertRaises(tasks.NoAvailableQueues,
-                          resource_manager._get_workers_available_queue_stats, 'worker_1-reserved')
-
-    def test__get_workers_available_queue_stats_one_available(self, active_queues):
-        """
-        Test the _get_workers_available_queue_stats() method when the requested worker has one queue
-        available. It should return the appropriate data.
-        """
-        resource_manager = tasks.ResourceManager()
-        # Let's set the queue length for worker_1-reserved_1 to a non-zero value so we can assert
-        # that the total count is correct later
-        resource_manager._available_queue_task_counts['worker_1-reserved_1'] = 7
-
-        stats = resource_manager._get_workers_available_queue_stats('worker_1-reserved')
-
-        self.assertEqual(stats, {'num_tasks': 7, 'least_busy_queue': 'worker_1-reserved_1'})
-
-    def test__get_workers_available_queue_stats_two_available(self, active_queues):
-        """
-        Test the _get_workers_available_queue_stats() method when the requested worker has two
-        queues available. It should return the appropriate data.
-        """
-        resource_manager = tasks.ResourceManager()
-        # Let's set the queue lengths for worker_3-reserved's to non-zero values. We should see the
-        # correct num_tasks as well as worker_3-reserved_2 being the least busy
-        resource_manager._available_queue_task_counts['worker_3-reserved_1'] = 7
-        resource_manager._available_queue_task_counts['worker_3-reserved_2'] = 3
-
-        stats = resource_manager._get_workers_available_queue_stats('worker_3-reserved')
-
-        self.assertEqual(stats, {'num_tasks': 10, 'least_busy_queue': 'worker_3-reserved_2'})
 
 
 def _reserve_resource_apply_async():
