@@ -163,21 +163,24 @@ def getlinks():
             src = l
             dst = os.path.join('/', l)
         links.append((src, dst))
-    
-    # Get links for httpd conf files according to apache version, since things
-    # changed substantially between apache 2.2 and 2.4.
-    apache_22_conf = ('server/etc/httpd/conf.d/pulp_apache_22.conf', '/etc/httpd/conf.d/pulp.conf')
-    apache_24_conf = ('server/etc/httpd/conf.d/pulp_apache_24.conf', '/etc/httpd/conf.d/pulp.conf')
 
-    apachectl_output = subprocess.Popen(['apachectl', '-v'], stdout=subprocess.PIPE).communicate()[0]
-    search_result = re.search(r'Apache\/([0-9]+)\.([0-9]+)\.([0-9]+)', apachectl_output)
-    apache_version = tuple(map(int, search_result.groups()))
-    if apache_version >= (2, 4, 0):
-        src, dst = apache_24_conf
-    else:
-        src, dst = apache_22_conf
+    if sys.version_info >= (2, 6):
+        # Don't try to link apache on RHEL 5 since it is not supported for the server
 
-    links.append((src, dst))
+        # Get links for httpd conf files according to apache version, since things
+        # changed substantially between apache 2.2 and 2.4.
+        apache_22_conf = ('server/etc/httpd/conf.d/pulp_apache_22.conf', '/etc/httpd/conf.d/pulp.conf')
+        apache_24_conf = ('server/etc/httpd/conf.d/pulp_apache_24.conf', '/etc/httpd/conf.d/pulp.conf')
+
+        apachectl_output = subprocess.Popen(['apachectl', '-v'], stdout=subprocess.PIPE).communicate()[0]
+        search_result = re.search(r'Apache\/([0-9]+)\.([0-9]+)\.([0-9]+)', apachectl_output)
+        apache_version = tuple(map(int, search_result.groups()))
+        if apache_version >= (2, 4, 0):
+            src, dst = apache_24_conf
+        else:
+            src, dst = apache_22_conf
+
+        links.append((src, dst))
     
     return links
 

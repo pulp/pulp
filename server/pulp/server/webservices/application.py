@@ -95,6 +95,9 @@ def _initialize_pulp():
     # is necessary for the Celery application to initialize.
     from pulp.server.async import app
 
+    # configure agent services
+    AgentServices.init()
+
     # Verify the database has been migrated to the correct version. This is
     # very likely a reason the server will fail to start.
     try:
@@ -121,7 +124,7 @@ def _initialize_pulp():
     # database document reaper
     reaper.initialize()
 
-    # agent services
+    # start agent services
     AgentServices.start()
 
     # Setup debugging, if configured

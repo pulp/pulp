@@ -671,9 +671,11 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise InvalidValue('consumer_criteria')
 
+        tags = [action_tag('content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-            (consumer_criteria.as_dict(),))
+            (consumer_criteria.as_dict(),),
+            tags=tags)
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 

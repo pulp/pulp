@@ -36,3 +36,28 @@ from the Pulp repository and run the database migrations::
     $ sudo pulp-manage-db
 
 Then restart apache.
+
+
+Pulp 2.2.1
+==========
+
+New Features
+------------
+
+* MongoDB replica sets are now supported. See the comments in ``/etc/pulp/server.conf``
+  under the ``[database]`` section for information on how to configure Pulp to use
+  a replica set.
+
+Bug Fixes
+---------
+
+Multiple proxy-related issues related to authentication and HTTPS to the proxy
+were fixed in
+`1022662 <https://bugzilla.redhat.com/show_bug.cgi?id=1022662>`_ and
+`1014368 <https://bugzilla.redhat.com/show_bug.cgi?id=1014368>`_.
+
+See the RPM-specific user guide for highlights of the most important bug fixes
+there. All bug fixes for this release can be seen at this link:
+
+`All Bug Fixes <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&classification=Community&product=Pulp&query_format=advanced&target_release=2.2.1>`_
+

@@ -141,7 +141,7 @@ class Repository(Entity):
         :return: A dict of basic properties.
         :rtype: dict
         """
-        return subdict(self.details['repository'], 'display_name', 'description', 'notes')
+        return subdict(self.details['repository'], 'display_name', 'description', 'notes', 'scratchpad')
 
     @property
     def distributors(self):
@@ -172,6 +172,7 @@ class Repository(Entity):
             self.basic_properties['display_name'],
             self.basic_properties['description'],
             self.basic_properties['notes'])
+        bindings.repo.update(self.repo_id, {'scratchpad': self.basic_properties['scratchpad']})
         # distributors
         for details in self.distributors:
             dist_id = details['id']

@@ -3,12 +3,15 @@
 # Tagging script
 #
 
+set -e  # exit on failed
+
 VERSION=
 BUILD_TAG=
 GIT="git"
 TITO="tito"
 TITO_TAG_FLAGS=
 BRANCH=
+PARENT='master'
 
 GIT_ROOTS="pulp pulp_rpm pulp_puppet"
 PACKAGES="
@@ -30,35 +33,86 @@ set_version()
 {
   pushd pulp
   VERSION=`python -c "$NEXT_VR_SCRIPT"`
-  exit_on_failed
   popd
 }
 
 tito_tag()
 {
+  # $1=<git-root>
   pushd $1
   $TITO tag $TITO_TAG_FLAGS && $GIT push origin HEAD && $GIT push --tags
-  exit_on_failed
   popd
 }
 
 git_tag()
 {
+  # $1=<git-root>
   pushd $1
   $GIT tag -m "Build Tag" $BUILD_TAG && $GIT push --tags
-  exit_on_failed
   popd
 }
 
 git_prep()
 {
-  verify_branch $1
+  verify_branch
   for DIR in $GIT_ROOTS
   do
     pushd $DIR
-    echo "Preparing git in repository: $DIR using: $1"
-    $GIT checkout $1 && $GIT pull --rebase
-    exit_on_failed
+    echo "Preparing git in repository [$DIR] using [$BRANCH]"
+    if [ "$PARENT" != "$BRANCH" ]
+    then
+      $GIT checkout $BRANCH && $GIT pull --rebase
+      $GIT checkout $PARENT && $GIT pull --rebase
+      git_pre_tag_merge
+      $GIT checkout $BRANCH
+    else
+      $GIT checkout $BRANCH && $GIT pull --rebase
+    fi
+    popd
+  done
+}
+
+git_pre_tag_merge()
+{
+  commits=(`$GIT log $PARENT..$BRANCH`)
+  if [ ${#commits[@]} -gt 0 ]
+  then
+    echo "(pre-tag) Merging $BRANCH => $PARENT"
+    echo ""
+    $GIT log $PARENT..$BRANCH
+    echo ""
+    read -p "Continue [y|n]: " ANS
+    if [ $ANS = "y" ]
+    then
+      MESSAGE="Merge $BRANCH => $PARENT, pre-build"
+      $GIT merge -m "$MESSAGE" $BRANCH
+      $GIT push origin HEAD
+    else
+      exit 0
+    fi
+  fi
+}
+
+git_post_tag_merge()
+{
+  if [ "$PARENT" = "$BRANCH" ]
+  then
+    return
+  fi
+  for DIR in $GIT_ROOTS
+  do
+    echo "(post-tag) Merging (-s ours) $DIR $BRANCH => $PARENT"
+    pushd $DIR
+    $GIT checkout $PARENT
+    $GIT log $PARENT..$BRANCH
+    echo ""
+    read -p "Continue [y|n]: " ANS
+    if [ $ANS = "y" ]
+    then
+      MESSAGE="Merge (-s ours) $BRANCH => $PARENT, post-build"
+      $GIT merge -s ours -m "$MESSAGE" $BRANCH
+      $GIT push origin HEAD
+    fi
     popd
   done
 }
@@ -69,20 +123,32 @@ verify_branch()
   do
     pushd $DIR
     $GIT fetch --tags
-    $GIT tag -l $1 | grep $1 >& /dev/null
+    set +e
+    $GIT tag -l $BRANCH | grep $BRANCH >& /dev/null
     if [ $? = 0 ]; then
-      echo "[$1] must be a branch."
+      echo "[$BRANCH] must be a branch."
       exit 1
     fi
+    set -e
     popd
   done
 }
 
-exit_on_failed()
+verify_version()
 {
-  if [ $? != 0 ]; then
-    exit 1
+  set +e
+  echo $VERSION | grep -E "(alpha|beta)$"
+  if [ $? = 1 ]
+  then
+    echo ""
+    echo "WARNING: [$VERSION] does not contain (alpha|beta)."
+    read -p "Is this a STABLE build [y|n]: " ANS
+    if [ $ANS != "y" ]
+    then
+      exit 0
+    fi
   fi
+  set -e
 }
 
 usage()
@@ -94,13 +160,14 @@ This script tags all pulp projects
 
 OPTIONS:
    -h      Show this message
-   -v      The pulp version and release. Eg: 2.0.6-1
+   -v      The pulp version and release. Eg: 2.3.0-1
    -a      Auto accept the changelog
    -b      Checkout the specified branch
+   -p      A parent branch. (default: master)
 EOF
 }
 
-while getopts "hav:b:" OPTION
+while getopts "hav:b:p:" OPTION
 do
   case $OPTION in
     h)
@@ -116,6 +183,9 @@ do
     b)
       BRANCH=$OPTARG
       ;;
+    p)
+      PARENT=$OPTARG
+      ;;
     ?)
       usage
       exit
@@ -123,14 +193,20 @@ do
   esac
 done
 
-# git preparation
+# git (pre-tag) preparation
 if [[ -n $BRANCH ]]
 then
-  echo "Prepare git repositories using: [$BRANCH]"
+  if [ "$BRANCH" = "$PARENT" ]
+  then
+    BRANCHES=$BRANCH
+  else
+    BRANCHES="$PARENT/$BRANCH"
+  fi
+  echo "Prepare git repositories using: [$BRANCHES]"
   read -p "Continue [y|n]: " ANS
   if [ $ANS = "y" ]
   then
-    git_prep $BRANCH
+    git_prep
     echo ""
     echo ""
   fi
@@ -142,6 +218,9 @@ if [[ -z $VERSION ]]
 then
   set_version
 fi
+
+# verify the version
+verify_version
 
 # confirmation
 echo ""
@@ -173,4 +252,10 @@ for GIT_ROOT in $GIT_ROOTS
 do
   git_tag $GIT_ROOT
 done
+
+# git (post-tag) merging
+if [[ -n $BRANCH ]]
+then
+  git_post_tag_merge
+fi
 

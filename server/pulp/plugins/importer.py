@@ -277,6 +277,21 @@ class Importer(object):
         raise NotImplementedError()
 
     def cancel_sync_repo(self, call_request, call_report):
+        """
+        Cancels an in-progress sync.
+
+        This call is responsible for halting a current sync by stopping any
+        in-progress downloads and performing any cleanup necessary to get the
+        system back into a stable state.
+
+        :param call_request: dispatch system call request wrapper
+        :type  call_request: pulp.server.dispatch.call.CallRequest
+
+        :param call_report: dispatch system call report
+        :type  call_report: pulp.server.dispatch.call.CallReport
+
+        :raise NotImplementedError: if this method is not overridden
+        """
         raise NotImplementedError()
 
     def resolve_dependencies(self, repo, units, dependency_conduit, config):

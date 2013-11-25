@@ -459,13 +459,7 @@ def calculate_associated_type_ids(source_repo_id, associated_units):
         associated_unit_type_ids = set([u['unit_type_id'] for u in associated_units])
     else:
         association_query_manager = manager_factory.repo_unit_association_query_manager()
-
-        # We may want to make a call here that only retrieves the unique
-        # type IDs instead of all of the units, but for now it doesn't exist
-        # and I'm not entirely sure this will be a huge problem.
-        all_units = association_query_manager.get_units(source_repo_id)
-        associated_unit_type_ids = set(u['unit_type_id'] for u in all_units)
-
+        associated_unit_type_ids = association_query_manager.unit_type_ids_for_repo(source_repo_id)
     return associated_unit_type_ids
 
 

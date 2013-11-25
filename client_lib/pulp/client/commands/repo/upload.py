@@ -115,6 +115,8 @@ class UploadCommand(PulpCliCommand):
         specified_dirs = kwargs.get(OPTION_DIR.keyword) or []
         verbose = kwargs.get(FLAG_VERBOSE.keyword) or False
 
+        self._verify_repo_exists(repo_id)
+
         # Resolve the total list of files to upload
         all_filenames = list(specified_files)
 
@@ -358,6 +360,14 @@ class UploadCommand(PulpCliCommand):
         :rtype:  list
         """
         return file_bundles
+
+    def _verify_repo_exists(self, repo_id):
+        """
+        Called at the outset of an upload request, this method will ensure the
+        requested repository exists on the server. If the repository does not
+        exist, the missing resource exception is bubbled up.
+        """
+        self.context.server.repo.repository(repo_id)
 
 
 class ResumeCommand(PulpCliCommand):

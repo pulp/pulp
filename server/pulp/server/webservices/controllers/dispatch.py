@@ -17,6 +17,7 @@ from gettext import gettext as _
 import web
 
 from pulp.server.async import tasks
+from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
@@ -71,10 +72,8 @@ class TaskCollection(JSONController):
         criteria = {'tags': filters.get('tag', [])}
         if 'id' in filters:
             criteria['call_request_id_list'] = filters['id']
-        coordinator = dispatch_factory.coordinator()
-        call_reports = coordinator.find_call_reports(**criteria)
-        serialized_call_reports = [c.serialize() for c in call_reports]
-        return self.ok(serialized_call_reports)
+        serialized_task_statuses = list(TaskStatusManager.find_all())
+        return self.ok(serialized_task_statuses)
 
 
 class TaskResource(JSONController):
