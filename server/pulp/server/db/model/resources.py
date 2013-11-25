@@ -45,8 +45,8 @@ class AvailableQueue(Model):
         self.num_reservations = num_reservations
 
         # We don't need these
-        del self._id
-        del self.id
+        del self['_id']
+        del self['id']
 
     def decrement_num_reservations(self):
         """
@@ -88,6 +88,11 @@ class AvailableQueue(Model):
         new_queue = self.get_collection().find_and_modify(
             query={'_id': self.name},
             update={'$inc': {'num_reservations': 1}}, new=True)
+
+        if new_queue is None:
+            # We were asked to increment a queue that doesn't exist in the database.
+            raise DoesNotExist('AvailableQueue with name %s does not exist.' % self.name)
+
         # Update the num_reservations attribute to reflect the value in the database
         self.num_reservations = new_queue['num_reservations']
 
@@ -182,6 +187,11 @@ class ReservedResource(Model):
         new_resource = self.get_collection().find_and_modify(
             query={'_id': self.name},
             update={'$inc': {'num_reservations': 1}}, new=True)
+
+        if new_resource is None:
+            # We were asked to increment a ReservedResource that does not exist.
+            raise DoesNotExist('ReservedResource with name %s does not exist.' % self.name)
+
         # Update the instance attributes to reflect the value in the database
         self.assigned_queue = new_resource['assigned_queue']
         self.num_reservations = new_resource['num_reservations']
