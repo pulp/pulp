@@ -36,9 +36,12 @@ RESERVED_WORKER_NAME_PREFIX = 'reserved_resource_worker-'
 
 
 # TODO: We must find a way to deal with the situation where babysit() tasks have piled up in the
-#       RESOURCE_MANAGER_QUEUE due to no worker listening to it. This can cause huge delays and
-#       unnecessary work, as the babysit() task takes about 1 second to complete. This situation can
-#       happen if celery beat is left running with no reservation manager present.
+#       RESOURCE_MANAGER_QUEUE due to no worker listening to it. Remembering the last time we
+#       babysat and skipping if it was too recent might be a good way to do it.
+# TODO: Convert the babysit() Task to accept the results of the active_queues() output, and create
+#       a new Task to generate that data and pass it to babysit(). This will keep our reservation
+#       queue from having tasks that take too long in it (active_queues() can take seconds to
+#       complete.)
 @task
 def babysit():
     """
@@ -62,7 +65,7 @@ def babysit():
             # TODO: See if we can detect and/or set the worker's concurrency to 1 here
 
     # Now we must delete queues for workers that don't exist anymore
-    missing_queue_criteria = Criteria(filters={'name': {'$nin': reserved_queues}})
+    missing_queue_criteria = Criteria(filters={'_id': {'$nin': reserved_queues}})
     available_queues_missing_workers = resources.filter_available_queues(
         missing_queue_criteria)
     for queue in available_queues_missing_workers:

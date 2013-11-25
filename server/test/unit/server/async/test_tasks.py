@@ -75,6 +75,64 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'auto_delete': False}]}
 
 
+class TestBabysit(ResourceReservationTests):
+    """
+    Test the babysit() function.
+    """
+    @mock.patch('celery.app.control.Inspect.active_queues',
+                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
+    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
+    def test_babysit_creates_correct_records(self, add_consumer, active_queues):
+        """
+        Test babysit() with a blank database. It should create the correct AvailableQueues.
+        """
+        tasks.babysit()
+
+        # babysit() should have called the active_queues() method
+        active_queues.assert_called_once_with()
+        # There should be three ActiveQueues, one for each reserved worker in the mock data
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 3)
+        # Let's make sure their names and num_reservations counts are correct
+        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_1})['num_reservations'], 0)
+        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_2})['num_reservations'], 0)
+        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_3})['num_reservations'], 0)
+        # Reserved worker 3 wasn't assigned to a queue, so babysit() should have assigned it to one
+        add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
+                                             destination=(RESERVED_WORKER_3,))
+
+    @mock.patch('celery.app.control.Inspect.active_queues',
+                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
+    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
+    def test_babysit_deletes_correct_records(self, add_consumer, active_queues):
+        """
+        Test babysit() with pre-existing state. It should create the correct AvailableQueues, and
+        delete other ones, and leave others in place.
+        """
+        # This AvailableQueue should remain in the DB
+        available_queue_2 = AvailableQueue(name=RESERVED_WORKER_2)
+        available_queue_2.save()
+        # This AvailableQueue doesn't exist anymore since it's not in the mock results, so it should
+        # get deleted
+        available_queue_4 = AvailableQueue(name='%s4' % tasks.RESERVED_WORKER_NAME_PREFIX)
+        available_queue_4.save()
+
+        tasks.babysit()
+
+        # babysit() should have called the active_queues() method
+        active_queues.assert_called_once_with()
+        # There should be three ActiveQueues, one for each reserved worker in the mock data
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 3)
+        # Let's make sure their names and num_reservations counts are correct
+        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_1})['num_reservations'], 0)
+        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_2})['num_reservations'], 0)
+        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_3})['num_reservations'], 0)
+        # Reserved worker 3 wasn't assigned to a queue, so babysit() should have assigned it to one
+        add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
+                                             destination=(RESERVED_WORKER_3,))
+
+
 class TestQueueReleaseResource(ResourceReservationTests):
     """
     Test the _queue_release_resource() function.
