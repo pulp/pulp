@@ -19,6 +19,7 @@ from pulp.plugins.loader import exceptions as loader_exceptions
 from pulp.plugins.loader import loading
 from pulp.plugins.loader.manager import PluginManager
 from pulp.plugins.profiler import Profiler
+from pulp.plugins.cataloger import Cataloger
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
 
@@ -37,6 +38,7 @@ ENTRY_POINT_GROUP_DISTRIBUTORS = 'pulp.group_distributors'
 ENTRY_POINT_IMPORTERS = 'pulp.importers'
 ENTRY_POINT_GROUP_IMPORTERS = 'pulp.group_importers'
 ENTRY_POINT_PROFILERS = 'pulp.profilers'
+ENTRY_POINT_CATALOGERS = 'pulp.catalogers'
 
 # plugin locations
 
@@ -44,6 +46,7 @@ _PLUGINS_ROOT = '/usr/lib/pulp/plugins'
 _DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/distributors'
 _IMPORTERS_DIR = _PLUGINS_ROOT + '/importers'
 _PROFILERS_DIR = _PLUGINS_ROOT + '/profilers'
+_CATALOGERS_DIR = _PLUGINS_ROOT + '/catalogers'
 _TYPES_DIR = _PLUGINS_ROOT + '/types'
 
 # state management -------------------------------------------------------------
@@ -65,7 +68,8 @@ def initialize(validate=True):
                       (_DISTRIBUTORS_DIR, GroupDistributor, _MANAGER.group_distributors),
                       (_IMPORTERS_DIR, GroupImporter, _MANAGER.group_importers),
                       (_IMPORTERS_DIR, Importer, _MANAGER.importers),
-                      (_PROFILERS_DIR, Profiler, _MANAGER.profilers))
+                      (_PROFILERS_DIR, Profiler, _MANAGER.profilers),
+                      (_CATALOGERS_DIR, Cataloger, _MANAGER.catalogers))
     for path, base_class, plugin_map in plugin_tuples:
         loading.load_plugins_from_path(path, base_class, plugin_map)
 
@@ -75,6 +79,7 @@ def initialize(validate=True):
         (ENTRY_POINT_IMPORTERS, _MANAGER.importers),
         (ENTRY_POINT_GROUP_IMPORTERS, _MANAGER.group_importers),
         (ENTRY_POINT_PROFILERS, _MANAGER.profilers),
+        (ENTRY_POINT_CATALOGERS, _MANAGER.catalogers),
     )
     for entry_point in plugin_entry_points:
         loading.load_plugins_from_entry_point(*entry_point)
@@ -156,6 +161,16 @@ def list_profilers():
     """
     assert _is_initialized()
     return _MANAGER.profilers.get_loaded_plugins()
+
+
+def list_catalogers():
+    """
+    List the loaded catalogers.
+    @return: dictionary of catalogers names: metadata
+    @rtype: dict {str: dict, ...}
+    """
+    assert _is_initialized()
+    return _MANAGER.catalogers.get_loaded_plugins()
 
 
 def list_distributor_types(id):
@@ -277,8 +292,22 @@ def is_valid_profiler(id):
     @rtype: bool
     """
     assert _is_initialized()
-    plugins = _MANAGER.importers.get_loaded_plugins()
+    plugins = _MANAGER.profilers.get_loaded_plugins()
     return id in plugins
+
+
+def is_valid_cataloger(id):
+    """
+    Check to see that a cataloger exists for the given id.
+    @param id: id of the cataloger
+    @type id: str
+    @return: True if the cataloger exists, False otherwise
+    @rtype: bool
+    """
+    assert _is_initialized()
+    plugins = _MANAGER.catalogers.get_loaded_plugins()
+    return id in plugins
+
 
 # plugin api -------------------------------------------------------------------
 
@@ -365,6 +394,20 @@ def get_profiler_by_type(type_id):
     ids = _MANAGER.profilers.get_plugin_ids_by_type(type_id)
     # this makes the assumption that there is only 1 profiler per type
     cls, cfg = _MANAGER.profilers.get_plugin_by_id(ids[0])
+    return cls(), cfg
+
+
+def get_cataloger_by_id(id):
+    """
+    Get a cataloger instance that corresponds to the given id.
+    @param id: id of the cataloger
+    @type id: str
+    @return: tuple of L{Cataloger} instance and dictionary configuration
+    @rtype: tuple (L{Cataloger}, dict)
+    @raise: L{PluginNotFound} if no cataloger corresponds to the id
+    """
+    assert _is_initialized()
+    cls, cfg = _MANAGER.catalogers.get_plugin_by_id(id)
     return cls(), cfg
 
 

@@ -25,4 +25,4 @@ class TestAPI(base.PulpServerTests):
         api.load_content_types()
         api.initialize()
         # calls for 5 types of plugins
-        self.assertEqual(mock_load.call_count, 5)
+        self.assertEqual(mock_load.call_count, 6)

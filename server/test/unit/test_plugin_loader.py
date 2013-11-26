@@ -170,6 +170,7 @@ class WebDistributor(Distributor):
     def metadata(cls):
         return {'types': ['http', 'https']}
 
+
 class ExcellentImporter(Importer):
     @classmethod
     def metadata(cls):
@@ -181,7 +182,14 @@ class BogusImporter(Importer):
     def metadata(cls):
         return {'types': ['excellent_type']}
 
+
 class GoodProfiler(Importer):
+    @classmethod
+    def metadata(cls):
+        return {'types': ['good_type']}
+
+
+class TestCataloger(Importer):
     @classmethod
     def metadata(cls):
         return {'types': ['good_type']}
@@ -327,6 +335,25 @@ class LoaderDirectOperationsTests(LoaderTest):
         self.loader.profilers.remove_plugin(name)
         self.assertRaises(exceptions.PluginNotFound,
                           self.loader.profilers.get_plugin_by_id,
+                          name)
+
+    def test_cataloger(self):
+        name = 'elmer'
+        types = TestCataloger.metadata()['types']
+        self.loader.catalogers.add_plugin(name, TestCataloger, {}, types)
+
+        cls = self.loader.catalogers.get_plugin_by_id(name)[0]
+        self.assertTrue(cls is TestCataloger)
+
+        cls = self.loader.catalogers.get_plugins_by_type(types[0])[0][0]
+        self.assertTrue(cls is TestCataloger)
+
+        catalogers = self.loader.catalogers.get_loaded_plugins()
+        self.assertTrue(name in catalogers)
+
+        self.loader.catalogers.remove_plugin(name)
+        self.assertRaises(exceptions.PluginNotFound,
+                          self.loader.catalogers.get_plugin_by_id,
                           name)
 
 

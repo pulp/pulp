@@ -39,6 +39,7 @@ TYPE_CONSUMER_HISTORY           = 'consumer-history-manager'
 TYPE_CONSUMER_PROFILE           = 'consumer-profile-manager'
 TYPE_CONSUMER_QUERY             = 'consumer-query-manager'
 TYPE_CONTENT                    = 'content-manager'
+TYPE_CONTENT_CATALOG            = 'content-catalog-manager'
 TYPE_CONTENT_ORPHAN             = 'content-orphan-manager'
 TYPE_CONTENT_QUERY              = 'content-query-manager'
 TYPE_CONTENT_UPLOAD             = 'content-upload-manager'
@@ -184,6 +185,12 @@ def content_manager():
     @rtype: L{pulp.server.managers.content.cud.ContentManager}
     """
     return get_manager(TYPE_CONTENT)
+
+def content_catalog_manager():
+    """
+    @rtype: L{pulp.server.managers.content.catalog.ContentCatalogManager}
+    """
+    return get_manager(TYPE_CONTENT_CATALOG)
 
 def content_orphan_manager():
     """
@@ -395,6 +402,7 @@ def initialize():
     from pulp.server.managers.consumer.profile import ProfileManager
     from pulp.server.managers.consumer.query import ConsumerQueryManager
     from pulp.server.managers.content.cud import ContentManager
+    from pulp.server.managers.content.catalog import ContentCatalogManager
     from pulp.server.managers.content.orphan import OrphanManager
     from pulp.server.managers.content.query import ContentQueryManager
     from pulp.server.managers.content.upload import ContentUploadManager
@@ -436,6 +444,7 @@ def initialize():
         TYPE_CONSUMER_PROFILE: ProfileManager,
         TYPE_CONSUMER_QUERY: ConsumerQueryManager,
         TYPE_CONTENT: ContentManager,
+        TYPE_CONTENT_CATALOG: ContentCatalogManager,
         TYPE_CONTENT_ORPHAN: OrphanManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
