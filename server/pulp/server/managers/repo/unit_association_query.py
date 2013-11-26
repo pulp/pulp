@@ -417,9 +417,11 @@ class RepoUnitAssociationQueryManager(object):
         spec = criteria.unit_filters.copy()
         spec['_id'] = {'$in': associated_unit_ids}
 
-        fields = copy.copy(criteria.unit_fields)
+        fields = criteria.unit_fields
+
         # The _content_type_id is required for looking up the association.
         if fields is not None and '_content_type_id' not in fields:
+            fields = list(fields)
             fields.append('_content_type_id')
 
         cursor = collection.find(spec, fields=fields)
