@@ -37,7 +37,10 @@ import pulp.server.exceptions as exceptions
 
 _LOG = logging.getLogger(__name__)
 
+USER_WHITELIST = [u'login', u'name', u'roles']
+
 # -- controllers --------------------------------------------------------------
+
 
 class UsersCollection(JSONController):
 
@@ -59,15 +62,12 @@ class UsersCollection(JSONController):
         @rtype  list of User instances
         """
         for user in users:
-            user.pop('password', None)
             user.update(serialization.link.search_safe_link_obj(user['login']))
-
+            JSONController.process_dictionary_against_whitelist(user, USER_WHITELIST)
         return users
-
 
     @auth_required(READ)
     def GET(self):
-
         query_manager = managers.user_query_manager()
         users = query_manager.find_all()
         self._process_users(users)
@@ -125,6 +125,7 @@ class UserResource(JSONController):
 
         user.update(serialization.link.current_link_obj())
 
+        self.process_dictionary_against_whitelist(user, USER_WHITELIST)
         return self.ok(user)
 
 
@@ -166,6 +167,7 @@ class UserResource(JSONController):
         call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         result = execution.execute(call_request)
         result.update(serialization.link.current_link_obj())
+        self.process_dictionary_against_whitelist(result, USER_WHITELIST)
         return self.ok(result)
 
 
