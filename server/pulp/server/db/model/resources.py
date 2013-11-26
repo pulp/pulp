@@ -108,7 +108,8 @@ class AvailableQueue(Model):
 
 class ReservedResource(Model):
     """
-    Instances of this class represent resources that have been reserved through the ResourceManager.
+    Instances of this class represent resources that have been reserved through the resource
+    manager.
 
     :ivar name:             The name of the reserved resource.
     :type name:             unicode
