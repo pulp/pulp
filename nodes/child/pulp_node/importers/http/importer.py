@@ -115,6 +115,7 @@ class NodesHttpImporter(Importer):
         :rtype: pulp.server.plugins.model.SyncReport
         """
         summary_report = SummaryReport()
+        downloader = None
 
         try:
             downloader = self._downloader(config)
@@ -132,6 +133,10 @@ class NodesHttpImporter(Importer):
             strategy.synchronize(request)
         except Exception, e:
             summary_report.errors.append(CaughtException(e, repo.id))
+
+        finally:
+            if downloader is not None:
+                downloader.config.finalize()
 
         summary_report.update(repo_id=repo.id)
         report = conduit.build_success_report({}, summary_report.dict())
