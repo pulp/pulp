@@ -141,7 +141,7 @@ class TestQueueReleaseResource(ResourceReservationTests):
     def test__queue_release_resource(self, _release_resource):
         """
         Make sure that _queue_release_resource queues _release_resource with the correct resource_id
-        in the ResourceManager's queue.
+        in the resource manager's queue.
         """
         resource_id = 'some_resource'
 

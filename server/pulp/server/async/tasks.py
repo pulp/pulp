@@ -81,16 +81,15 @@ def babysit():
 @task
 def _queue_release_resource(resource_id):
     """
-    This function will queue the _release_resource() task in the ResourceManager's queue for the
+    This function will queue the _release_resource() task in the resource manager's queue for the
     given resource_id. It is necessary to have this function in addition to the _release_resource()
     function because we typically do not want to queue the _release_resource() task until the task
     that is using the resource is finished. Therefore, when queuing a function that reserves a
     resource, you should always queue a call to this function after it, and it is important that you
     queue this task in the same queue that the resource reserving task is being performed in so that
-    it happens afterwards. You should not queue the _release_resource() task yourself. It is also
-    important that you do not use the ResourceManager itself for releasing resources.
+    it happens afterwards. You should not queue the _release_resource() task yourself.
 
-    :param resource_id: The resource_id that you wish to release with the ResourceManager singleton
+    :param resource_id: The resource_id that you wish to release
     :type  resource_id: basestring
     """
     _release_resource.apply_async(args=(resource_id,), queue=RESOURCE_MANAGER_QUEUE)

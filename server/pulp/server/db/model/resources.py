@@ -9,8 +9,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
-This module contains models that are used by the ResourceManager to persist its state so that it can
-survive being restarted.
+This module contains models that are used by the resource manager to persist its state so that it
+can survive being restarted.
 """
 from pulp.server.db.model.base import DoesNotExist, Model
 
@@ -18,7 +18,7 @@ from pulp.server.db.model.base import DoesNotExist, Model
 class AvailableQueue(Model):
     """
     Instances of this class represent existing Celery worker queues that are available for use by
-    the ResourceManager for assigning tasks.
+    the resource manager for assigning tasks.
 
     :ivar name:             The name of the queue
     :type name:             unicode
