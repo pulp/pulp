@@ -30,11 +30,14 @@ class ContentCatalogManager(object):
      - Entries are contributed by content sources.
      - Each entry contains an expiration timestamp.  Entries are permitted
        to remain in the catalog until they expire (plus an optional grace period).
-     - The catalog may refreshed concurrently.
-     - The catalog provides best effort read consistency by lazily purging expired
-       entries and by supporting find() operations on a catalog containing multiple
-       entries matching a locator.  In these cases, the newest entry is included in
-       the result set.
+     - The locator is a hashed json encoding of the type_id and unit_key.  It is
+       used for fast indexing and searching since the unit_key is arbitrary.
+     - The catalog may be refreshed concurrently.
+     - The catalog provides best effort read consistency by:
+       - lazily purging expired entries.
+       - supporting find() operations on a catalog containing multiple entries
+         matching the same locator.  In these cases, only the newest entry is
+         included for each source in the result set.
     """
 
     def add_entry(self, source_id, expires, type_id, unit_key, url):
@@ -114,7 +117,7 @@ class ContentCatalogManager(object):
         Find entries in the content catalog using the specified unit type_id
         and unit_key.  The catalog may contain more than one entry matching the
         locator for a given content source.  In this case, only the newest entry
-        is included in the result set.
+        for each source is included in the result set.
         :param type_id: The unit type ID.
         :type type_id: str
         :param unit_key: The unit key.
