@@ -139,8 +139,8 @@ class ReservedResource(Model):
         self.num_reservations = num_reservations
 
         # We don't need these
-        del self._id
-        del self.id
+        del self['_id']
+        del self['id']
 
     def decrement_num_reservations(self):
         """
