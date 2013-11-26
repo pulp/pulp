@@ -24,6 +24,8 @@ def filter_available_queues(criteria):
 
     :param criteria: A Criteria containing a query to be used to find AvailableQueue objects
     :type  criteria: pulp.server.db.model.criteria.Criteria
+    :return:         A generator that iterates over the result set
+    :rtype:          generator
     """
     available_queues = resources.AvailableQueue.get_collection().query(criteria)
     for q in available_queues:
