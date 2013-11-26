@@ -78,9 +78,8 @@ class ContentCatalog(Model):
      - The catalog provides best effort read consistency by:
        - lazily purging expired entries.
        - supporting find() operations on a catalog containing multiple entries
-         matching the same locator.  In these cases, the newest entry is included
-         in the result set.
-
+         matching the same locator.  In these cases, only the newest entry is
+         included for each source in the result set.
     :ivar source_id: The ID of the contributing content source.
     :type source_id: str
     :ivar expires: The expiration UTC timestamp.
@@ -132,7 +131,7 @@ class ContentCatalog(Model):
         """
         :param source_id: The ID of the contributing content source.
         :type source_id: str
-        :param expires: The expiration UTC timestamp.
+        :param expires: The expiration duration in seconds.
         :type expires: int
         :param type_id: A content unit's type ID.
         :type type_id: str
