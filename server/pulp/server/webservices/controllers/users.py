@@ -63,7 +63,7 @@ class UsersCollection(JSONController):
         """
         for user in users:
             user.update(serialization.link.search_safe_link_obj(user['login']))
-            JSONController.process_whitelist_against_dictionary(user, USER_WHITELIST)
+            JSONController.process_dictionary_against_whitelist(user, USER_WHITELIST)
         return users
 
     @auth_required(READ)
@@ -125,7 +125,7 @@ class UserResource(JSONController):
 
         user.update(serialization.link.current_link_obj())
 
-        self.process_whitelist_against_dictionary(user, USER_WHITELIST)
+        self.process_dictionary_against_whitelist(user, USER_WHITELIST)
         return self.ok(user)
 
 
@@ -167,7 +167,7 @@ class UserResource(JSONController):
         call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
         result = execution.execute(call_request)
         result.update(serialization.link.current_link_obj())
-        self.process_whitelist_against_dictionary(result, USER_WHITELIST)
+        self.process_dictionary_against_whitelist(result, USER_WHITELIST)
         return self.ok(result)
 
 

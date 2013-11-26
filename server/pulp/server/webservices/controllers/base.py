@@ -271,7 +271,7 @@ class JSONController(object):
         return self._output(msg)
 
     @staticmethod
-    def process_whitelist_against_dictionary(source_dict, valid_keys):
+    def process_dictionary_against_whitelist(source_dict, valid_keys):
         """
         Process a dictionary and remove all keys that are not in a known white list
 

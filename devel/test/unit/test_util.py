@@ -1,0 +1,58 @@
+# -*- coding: utf-8 -*-
+# Copyright (c) 2013 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+
+import unittest
+
+from pulp.devel.unit import util
+
+
+class TestCompareDic(unittest.TestCase):
+
+    def test_compare_dict_equality(self):
+        """
+        Tests the correct API in the bindings is replaced by the simulator.
+        """
+        source = {'foo': 'bar', 'baz': 'qux'}
+        util.compare_dict(source, source)
+
+    def test_compare_dict_inequality_keys(self):
+        """
+        Tests the correct API in the bindings is replaced by the simulator.
+        """
+        source = {'foo': 'bar', 'baz': 'qux'}
+        target = {'quack': 'duck'}
+        self.assertRaises(AssertionError, util.compare_dict, source, target)
+
+    def test_compare_dict_inequality_values(self):
+        """
+        Tests the correct API in the bindings is replaced by the simulator.
+        """
+        source = {'foo': 'bar', 'baz': 'qux'}
+        target = {'foo': 'bar', 'baz': 'duck'}
+        self.assertRaises(AssertionError, util.compare_dict, source, target)
+
+    def test_compare_dict_source_not_dict(self):
+        """
+        Tests the correct API in the bindings is replaced by the simulator.
+        """
+        source = 'foo'
+        target = {'foo': 'bar', 'baz': 'duck'}
+        self.assertRaises(AssertionError, util.compare_dict, source, target)
+
+    def test_compare_dict_target_not_dict(self):
+        """
+        Tests the correct API in the bindings is replaced by the simulator.
+        """
+        source = {'foo': 'bar', 'baz': 'qux'}
+        target = 'bar'
+        self.assertRaises(AssertionError, util.compare_dict, source, target)
+
