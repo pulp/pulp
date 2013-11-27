@@ -17,6 +17,8 @@ the factory ends up importing tasks.py when it imports all the managers.
 
 Hopefully we will eliminate the factory in the future, but until then this workaround is necessary.
 """
+from datetime import timedelta
+
 from celery import Celery
 
 from pulp.server.config import config
@@ -24,3 +26,17 @@ from pulp.server.config import config
 
 broker_url = config.get('tasks', 'broker_url')
 celery = Celery('tasks', backend='amqp', broker=broker_url)
+
+
+RESOURCE_MANAGER_QUEUE = 'resource_manager'
+CELERYBEAT_SCHEDULE = {
+    'babysit': {
+        'task': 'pulp.server.async.tasks.babysit',
+        'schedule': timedelta(seconds=60),
+        'args': tuple(),
+        'options': {'queue': RESOURCE_MANAGER_QUEUE,},
+    },
+}
+
+
+celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)

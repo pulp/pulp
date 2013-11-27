@@ -1351,10 +1351,10 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test_regenerate_applicability(self, _resource_manager):
+    @mock.patch('pulp.server.async.tasks._reserve_resource')
+    def test_regenerate_applicability(self, _reserve_resource):
         # We need to fake the _resource_manager returning a queue to us
-        _resource_manager.reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = 'some_queue'
         self.populate()
         self.populate_bindings()
         request_body = dict(consumer_criteria={'filters':self.FILTER})
@@ -1365,10 +1365,10 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test_regenerate_applicability_no_consumers(self, _resource_manager):
+    @mock.patch('pulp.server.async.tasks._reserve_resource')
+    def test_regenerate_applicability_no_consumers(self, _reserve_resource):
         # We need to fake the _resource_manager returning a queue to us
-        _resource_manager.reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = 'some_queue'
         # Test
         request_body = dict(consumer_criteria={'filters':self.FILTER})
         status, body = self.post(self.PATH, request_body)
@@ -1377,10 +1377,10 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test_regenerate_applicability_no_bindings(self, _resource_manager):
+    @mock.patch('pulp.server.async.tasks._reserve_resource')
+    def test_regenerate_applicability_no_bindings(self, _reserve_resource):
         # We need to fake the _resource_manager returning a queue to us
-        #_resource_manager.reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = 'some_queue'
         # Setup
         self.populate()
         # Test

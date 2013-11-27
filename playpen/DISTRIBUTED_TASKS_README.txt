@@ -59,23 +59,30 @@ order to get up and running.
      Secondly, you will need at least one celeryd to do the work of the reserved tasks. This is very
      important, as reserved tasks will just pile up if there isn't at least one process around to
      deal with them. Start as many of these as you like, but take care to assign them all the -c 1
-     flag (concurrency of 1), and make sure they have unique names and unique queue names. The queue
-     names can be anything other than "celery" or "resource_manager". This will start two of them,
-     for example:
+     flag (concurrency of 1), and make sure they have unique names. Each of them must be named (with
+     the -n flag) with the prefix "reserved_resource_worker-". The resource manager will look for
+     workers with names that start with that prefix to identify that they wish to perform these
+     duties. If you want them to only process reserved work, you should use the -Q flag to assign
+     them to queues of their own name. If you don't supply the -Q flag, the resource_manager will
+     automatically subscribe them to their own queue, and they will also be subscribed to the
+     general Celery queue. I (rbarlow) recommend leaving the -Q flag off so they can perform work
+     from both queues, but feel free to do as you please. This will start two of them, for example:
 
-     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_task_worker_1 -Q reserved_task_worker_1
+     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_resource_worker-1
 
-     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_task_worker_2 -Q reserved_task_worker_2
+     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_resource_worker-2
 
      The last one is the ReservationManager. It is very important, as its job is to route tasks
      that reserve resources to the correct workers. You can adjust the -n flag to whatever you like,
-     but it is critical that you do not change the -c or -Q flags on this command. Also very
-     important, *THIS CELERYD MUST BE STARTED AFTER THE RESERVED WORKER CELERYDS*. Apologies for the
-     caps, but if you don't start the ReservationManager last, it will not discover the workers.
-     Don't worry though, as one of our stories this sprint will introduct the "babysitter" that will
-     lift this restriction.
+     but it is critical that you do not change the -c or -Q flags on this command.
 
      $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n resource_manager -Q resource_manager
+
+5) Lastly, you need to run a Celery Beat. This is similar to a crond for Celery. It is important
+   that only one Celery Beat be run across the entire application, no matter how many Pulp servers
+   are part of the system.
+
+   $ celery beat -A pulp.server.async.app --loglevel INFO
 
 I believe that is all that is required to get up and running with Celery in Pulp at the moment. We
 plan to develop a way to package all of this and make it really easy for our users in a future
