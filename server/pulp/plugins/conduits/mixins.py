@@ -520,7 +520,8 @@ class AddUnitMixin(object):
             if bidirectional:
                 content_manager.link_referenced_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
         except Exception, e:
-            _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
+            _LOG.exception(_('Child link from parent [%(parent)s] to child [%(child)s] failed' %
+                             {'parent': str(from_unit), 'child': str(to_unit)}))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
 

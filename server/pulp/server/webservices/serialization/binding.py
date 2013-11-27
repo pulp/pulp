@@ -19,6 +19,7 @@ import link
 
 from pulp.server.managers import factory as manager_factory
 from pulp.server.exceptions import MissingResource
+from pulp.server.webservices import http
 
 
 def serialize(bind, include_details=True):
@@ -40,30 +41,35 @@ def serialize(bind, include_details=True):
     # bind
     serialized = dict(bind)
 
+    consumer_id = bind['consumer_id']
+    repo_id = bind['repo_id']
+    distributor_id = bind['distributor_id']
+
     # href
-    href = link.child_link_obj(
-        bind['consumer_id'],
-        bind['repo_id'],
-        bind['distributor_id'])
+    # 1019155 - Make sure the binding URL points to:
+    # /pulp/api/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id/
+    href_url = '%s/consumers/%s/bindings/%s/%s/' % (
+        http.API_V2_HREF, consumer_id, repo_id, distributor_id)
+    href = link.link_obj(href_url)
     serialized.update(href)
+
+    repo_distributor_manager = manager_factory.repo_distributor_manager()
 
     # type_id
     try:
-        repo_distributor_manager = manager_factory.repo_distributor_manager()
-        distributor = repo_distributor_manager.get_distributor(
-            bind['repo_id'],
-            bind['distributor_id'])
-        serialized['type_id'] = distributor['distributor_type_id']
+        distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+
     except MissingResource:
         if include_details:
             raise
 
+    else:
+        serialized['type_id'] = distributor['distributor_type_id']
+
     # details
     if include_details:
-        details = repo_distributor_manager.create_bind_payload(
-            bind['repo_id'],
-            bind['distributor_id'],
-            bind['binding_config'])
+        details = repo_distributor_manager.create_bind_payload(repo_id, distributor_id,
+                                                               bind['binding_config'])
         serialized['details'] = details
 
     return serialized
