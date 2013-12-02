@@ -35,13 +35,6 @@ logger = logging.getLogger(__name__)
 RESERVED_WORKER_NAME_PREFIX = 'reserved_resource_worker-'
 
 
-# TODO: We must find a way to deal with the situation where babysit() tasks have piled up in the
-#       RESOURCE_MANAGER_QUEUE due to no worker listening to it. Remembering the last time we
-#       babysat and skipping if it was too recent might be a good way to do it.
-# TODO: Convert the babysit() Task to accept the results of the active_queues() output, and create
-#       a new Task to generate that data and pass it to babysit(). This will keep our reservation
-#       queue from having tasks that take too long in it (active_queues() can take seconds to
-#       complete.)
 @task
 def babysit():
     """
@@ -62,19 +55,12 @@ def babysit():
             # collection
             resources.get_or_create_available_queue(worker)
             reserved_queues.append(worker)
-            # TODO: See if we can detect and/or set the worker's concurrency to 1 here
 
     # Now we must delete queues for workers that don't exist anymore
     missing_queue_criteria = Criteria(filters={'_id': {'$nin': reserved_queues}})
     available_queues_missing_workers = resources.filter_available_queues(
         missing_queue_criteria)
     for queue in available_queues_missing_workers:
-        # TODO: WHEN REMOVING QUEUES, WE ALSO SHOULD MARK ALL TASKS ASSIGNED TO THEM AS FAILED.
-        # TODO: DON'T REMOVE QUEUES UNLESS IT HAS BEEN LONG ENOUGH SINCE WE LAST SAW THEM (5
-        #       minutes is the suggested timeout.
-        # TODO: Also delete the queues themselves from the broker when deleting them here.
-        # TODO: Also delete the queues from the reserved_resources collection so that no new
-        #       tasks enter them
         queue.delete()
 
 
