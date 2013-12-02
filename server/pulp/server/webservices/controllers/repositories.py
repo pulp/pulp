@@ -281,26 +281,16 @@ class RepoResource(JSONController):
 
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('update')]
-
-        task_args = (delta, importer_config, distributor_configs)
         async_result = update_repo_and_plugins.apply_async_with_reservation(repo_id,
-                                                                            task_args,
+                                                                            [repo_id, delta],
+                                                                            {'importer_config': importer_config,
+                                                                             'distributor_configs': distributor_configs},
                                                                             tags=tags)
+        # Following are a few additional attributes previously saved with the call request
+        # which we may want to support in the future when using distributed tasking.
+        # archive=True, kwarg_blacklist=['importer_config', 'distributor_configs'])
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
-#         call_request = CallRequest(repo_manager.update_repo_and_plugins, # rbarlow_converted
-#                                    [id, delta],
-#                                    {'importer_config': importer_config,
-#                                     'distributor_configs': distributor_configs},
-#                                    tags=tags,
-#                                    archive=True,
-#                                    kwarg_blacklist=['importer_config', 'distributor_configs'])
-#         call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, id)
-#         repo = execution.execute(call_request)
-#         repo.update(serialization.link.current_link_obj())
-#         return self.ok(repo)
-
-        
 
 
 class RepoImporters(JSONController):

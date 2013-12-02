@@ -23,6 +23,7 @@ from pulp.server import config
 from pulp.server.async import celery_instance
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
@@ -175,6 +176,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
     def tearDown(self):
         super(PulpWebserviceTests, self).tearDown()
         User.get_collection().remove()
+        TaskStatus.get_collection().remove()
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers, serialize_json=False)

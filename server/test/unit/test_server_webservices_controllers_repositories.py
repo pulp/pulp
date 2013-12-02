@@ -8,13 +8,14 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from celery.result import AsyncResult
 from pprint import pformat
 import datetime
 import httplib
 import re
 import traceback
 import unittest
+import uuid
 
 from pulp.common import dateutils, tags, constants
 from pulp.devel import dummy_plugins, mock_plugins
@@ -501,38 +502,43 @@ class RepoResourceTests(RepoControllersTests):
         # Verify
         self.assertEqual(404, status)
 
-    def test_put(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_put(self, _resource_manager, mock_apply_async):
         """
         Tests using put to update a repo.
         """
-
         # Setup
         self.repo_manager.create_repo('turkey', display_name='hungry')
-
-        req_body = {'delta' : {'display_name' : 'thanksgiving'}}
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _resource_manager.reserve_resource.return_value = 'some_queue'
 
         # Test
+        req_body = {'delta' : {'display_name' : 'thanksgiving'},
+                    'importer_config': {'feed' : 'http://some-feed/'}}
         status, body = self.put('/v2/repositories/turkey/', params=req_body)
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        exepcted_call_args = (['turkey', {'display_name' : 'thanksgiving'}],
+                              {'importer_config': {'feed': 'http://some-feed/'}, 'distributor_configs': None})
+        self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0])
 
-        self.assertEqual(body['display_name'], req_body['delta']['display_name'])
-
-        repo = Repo.get_collection().find_one({'id' : 'turkey'})
-        self.assertEqual(repo['display_name'], req_body['delta']['display_name'])
-
-    def test_put_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_put_missing_repo(self, _resource_manager):
         """
         Tests updating a repo that doesn't exist.
         """
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         req_body = {'delta' : {'pie' : 'apple'}}
         status, body = self.put('/v2/repositories/not-there/', params=req_body)
 
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
 
 class RepoPluginsTests(RepoControllersTests):
@@ -1720,9 +1726,10 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks.Task.apply_async_with_reservation')
-    def test_regenerate_applicability(self, mock_apply_sync):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_regenerate_applicability(self, _resource_manager):
         # Setup
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         self.populate()
         self.populate_bindings()
         # Test
@@ -1732,19 +1739,22 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        self.assertTrue('pulp:action:applicability_regeneration' in body['tags'])
 
-    def test_regenerate_applicability_no_consumer(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_regenerate_applicability_no_consumer(self, _resource_manager):
         # Test
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        
-    def test_regenerate_applicability_no_bindings(self):
+
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_regenerate_applicability_no_bindings(self, _resource_manager):
         # Setup
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         self.populate()
         # Test
         request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
