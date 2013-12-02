@@ -47,7 +47,7 @@ class CatalogerConduit(object):
 
     def delete_entry(self, type_id, unit_key):
         """
-        Delete an entry to the content catalog.
+        Delete an entry from the content catalog.
         :param type_id: The content unit type ID.
         :type type_id: str
         :param unit_key: The content unit key.

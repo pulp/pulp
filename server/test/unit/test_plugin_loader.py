@@ -26,6 +26,7 @@ import base
 from pulp.plugins.loader import exceptions, loading, manager
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
+from pulp.plugins.cataloger import Cataloger
 
 # test data and data generation api --------------------------------------------
 
@@ -189,7 +190,7 @@ class GoodProfiler(Importer):
         return {'types': ['good_type']}
 
 
-class TestCataloger(Importer):
+class TestCataloger(Cataloger):
     @classmethod
     def metadata(cls):
         return {'types': ['good_type']}
@@ -355,6 +356,9 @@ class LoaderDirectOperationsTests(LoaderTest):
         self.assertRaises(exceptions.PluginNotFound,
                           self.loader.catalogers.get_plugin_by_id,
                           name)
+
+        cataloger = Cataloger()
+        self.assertRaises(NotImplementedError, cataloger.refresh, None, None, None)
 
 
 class LoaderFileSystemOperationsTests(LoaderTest):

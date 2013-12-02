@@ -15,6 +15,7 @@ from base import PulpAsyncServerTests
 
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.managers.content.catalog import ContentCatalogManager
+from pulp.server.managers import factory
 
 
 TYPE_ID = 'type_a'
@@ -195,3 +196,7 @@ class TestCatalogManager(PulpAsyncServerTests):
         for unit_key, url in units:
             entries = manager.find(TYPE_ID, unit_key)
             self.assertEqual(len(entries), 0)
+
+    def test_factory(self):
+        manager = factory.content_catalog_manager()
+        self.assertTrue(isinstance(manager, ContentCatalogManager))

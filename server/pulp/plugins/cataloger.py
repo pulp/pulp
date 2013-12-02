@@ -25,4 +25,4 @@ class Cataloger(object):
         :param url: The URL for the content source.
         :type url: str
         """
-        raise NotImplemented()
+        raise NotImplementedError()
