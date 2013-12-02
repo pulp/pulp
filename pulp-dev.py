@@ -33,6 +33,7 @@ DIRS = (
     '/etc/pulp/consumer/conf.d',
     '/etc/pulp/server',
     '/etc/pulp/server/plugins.conf.d',
+    '/etc/pulp/content/sources/conf.d',
     '/etc/pulp/server/plugins.conf.d/nodes/importer',
     '/etc/pulp/server/plugins.conf.d/nodes/distributor',
     '/etc/pulp/agent',
