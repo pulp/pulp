@@ -11,6 +11,8 @@
 
 import mock
 
+from unittest import TestCase
+
 from base import PulpServerTests
 from pulp.plugins.loader import api
 from pulp.plugins.loader.exceptions import PluginNotFound
@@ -70,17 +72,7 @@ class MockCataloger:
         return METADATA
 
 
-class TestAPI(PulpServerTests):
-
-    def setUp(self):
-        PulpServerTests.setUp(self)
-        api._create_manager()
-        api._MANAGER.importers.add_plugin(IMPORTER_ID, MockImporter, {})
-        api._MANAGER.group_importers.add_plugin(GRP_IMPORTER_ID, MockGroupImporter, {})
-        api._MANAGER.distributors.add_plugin(DISTRIBUTOR_ID, MockDistributor, {})
-        api._MANAGER.group_distributors.add_plugin(GRP_DISTRIBUTOR_ID, MockGroupDistributor, {})
-        api._MANAGER.profilers.add_plugin(PROFILER_ID, MockProfiler, {}, TYPES)
-        api._MANAGER.catalogers.add_plugin(CATALOGER_ID, MockCataloger, {})
+class TestEntryPoint(PulpServerTests):
 
     @mock.patch('pulp.plugins.loader.loading.load_plugins_from_entry_point', autospec=True)
     def test_init_calls_entry_points(self, mock_load):
@@ -92,6 +84,24 @@ class TestAPI(PulpServerTests):
         api.initialize()
         # calls for 5 types of plugins
         self.assertEqual(mock_load.call_count, 6)
+
+
+class TestAPI(TestCase):
+
+    def setUp(self):
+        TestCase.setUp(self)
+        api._MANAGER = None
+        api._create_manager()
+        api._MANAGER.importers.add_plugin(IMPORTER_ID, MockImporter, {})
+        api._MANAGER.group_importers.add_plugin(GRP_IMPORTER_ID, MockGroupImporter, {})
+        api._MANAGER.distributors.add_plugin(DISTRIBUTOR_ID, MockDistributor, {})
+        api._MANAGER.group_distributors.add_plugin(GRP_DISTRIBUTOR_ID, MockGroupDistributor, {})
+        api._MANAGER.profilers.add_plugin(PROFILER_ID, MockProfiler, {}, TYPES)
+        api._MANAGER.catalogers.add_plugin(CATALOGER_ID, MockCataloger, {})
+
+    def tearDown(self):
+        TestCase.tearDown(self)
+        api._MANAGER = None
 
     def test_importers(self):
         # listing
