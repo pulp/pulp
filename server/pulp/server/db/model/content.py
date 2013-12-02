@@ -96,6 +96,7 @@ class ContentCatalog(Model):
 
     collection_name = 'content_catalog'
     search_indices = ('source_id', 'locator')
+    unique_indices = ()
 
     @staticmethod
     def get_locator(type_id, unit_key):
