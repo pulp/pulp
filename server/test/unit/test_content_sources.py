@@ -299,8 +299,8 @@ class TestRefreshing(ContentTest):
 
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
     def test_refresh(self, mock):
-        manager = managers.content_catalog_manager()
-        manager.refresh(path=self.tmp_dir, force=True)
+        coordinator = Coordinator(path=self.tmp_dir)
+        coordinator.refresh(force=True)
         plugin = mock.return_value[0]
         self.assertEqual(plugin.refresh.call_count, 5)
         calls = iter(plugin.refresh.call_args_list)
