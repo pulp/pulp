@@ -9,7 +9,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from time import sleep
 from uuid import uuid4
 
 from base import PulpAsyncServerTests
@@ -20,7 +19,7 @@ from pulp.server.managers.content.catalog import ContentCatalogManager
 
 TYPE_ID = 'type_a'
 SOURCE_ID = 'test'
-EXPIRES = 3600
+EXPIRATION = 3600
 
 
 class TestCatalogManager(PulpAsyncServerTests):
@@ -64,7 +63,7 @@ class TestCatalogManager(PulpAsyncServerTests):
         units = self.units(0, 10)
         manager = ContentCatalogManager()
         for unit_key, url in units:
-            manager.add_entry(SOURCE_ID, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(SOURCE_ID, EXPIRATION, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(len(units), collection.find().count())
         for unit_key, url in units:
@@ -78,7 +77,7 @@ class TestCatalogManager(PulpAsyncServerTests):
         units = self.units(0, 10)
         manager = ContentCatalogManager()
         for unit_key, url in units:
-            manager.add_entry(SOURCE_ID, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(SOURCE_ID, EXPIRATION, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(len(units), collection.find().count())
         unit_key, url = units[5]
@@ -97,9 +96,9 @@ class TestCatalogManager(PulpAsyncServerTests):
         source_b = 'B'
         manager = ContentCatalogManager()
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_a, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(source_a, EXPIRATION, TYPE_ID, unit_key, url)
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_b, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(source_b, EXPIRATION, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(20, collection.find().count())
         manager = ContentCatalogManager()
@@ -113,15 +112,14 @@ class TestCatalogManager(PulpAsyncServerTests):
         source_c = 'C'
         manager = ContentCatalogManager()
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_a, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(source_a, EXPIRATION, TYPE_ID, unit_key, url)
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_b, 0, TYPE_ID, unit_key, url)
+            manager.add_entry(source_b, -1, TYPE_ID, unit_key, url)
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_c, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(source_c, EXPIRATION, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(30, collection.find().count())
         manager = ContentCatalogManager()
-        sleep(1)
         self.assertTrue(manager.has_entries(source_a))
         self.assertFalse(manager.has_entries(source_b))
         self.assertTrue(manager.has_entries(source_c))
@@ -135,12 +133,11 @@ class TestCatalogManager(PulpAsyncServerTests):
         source_b = 'B'
         manager = ContentCatalogManager()
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_a, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(source_a, EXPIRATION, TYPE_ID, unit_key, url)
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_b, 1, TYPE_ID, unit_key, url)
+            manager.add_entry(source_b, -1, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(20, collection.find().count())
-        sleep(2)
         manager = ContentCatalogManager()
         manager.purge_expired(0)
         self.assertEqual(collection.find({'source_id': source_a}).count(), 10)
@@ -151,7 +148,7 @@ class TestCatalogManager(PulpAsyncServerTests):
         source_b = 'B'
         manager = ContentCatalogManager()
         for unit_key, url in self.units(0, 10):
-            manager.add_entry(source_a, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(source_a, EXPIRATION, TYPE_ID, unit_key, url)
         for unit_key, url in self.units(0, 10):
             manager.add_entry(source_b, 1, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
@@ -165,7 +162,7 @@ class TestCatalogManager(PulpAsyncServerTests):
         units = self.units(0, 10)
         manager = ContentCatalogManager()
         for unit_key, url in units:
-            manager.add_entry(SOURCE_ID, EXPIRES, TYPE_ID, unit_key, url)
+            manager.add_entry(SOURCE_ID, EXPIRATION, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(len(units), collection.find().count())
         for unit_key, url in units:
@@ -186,7 +183,7 @@ class TestCatalogManager(PulpAsyncServerTests):
         units = self.units(0, 10)
         manager = ContentCatalogManager()
         for unit_key, url in units:
-            manager.add_entry(SOURCE_ID, 1, TYPE_ID, unit_key, url)
+            manager.add_entry(SOURCE_ID, -1, TYPE_ID, unit_key, url)
         collection = ContentCatalog.get_collection()
         self.assertEqual(len(units), collection.find().count())
         for unit_key, url in units:
@@ -195,7 +192,6 @@ class TestCatalogManager(PulpAsyncServerTests):
             self.assertEqual(entry['type_id'], TYPE_ID)
             self.assertEqual(entry['unit_key'], unit_key)
             self.assertEqual(entry['url'], url)
-        sleep(2)
         for unit_key, url in units:
             entries = manager.find(TYPE_ID, unit_key)
             self.assertEqual(len(entries), 0)

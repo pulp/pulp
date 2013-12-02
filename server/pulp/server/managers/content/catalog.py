@@ -11,6 +11,8 @@
 
 from logging import getLogger
 
+from pymongo import ASCENDING
+
 from pulp.server.db.model.content import ContentCatalog
 
 
@@ -94,9 +96,9 @@ class ContentCatalogManager(object):
         :type grace_period: int
         """
         collection = ContentCatalog.get_collection()
-        now = ContentCatalog.get_expires(0)
+        now = ContentCatalog.get_expiration(0)
         timestamp = now - grace_period
-        query = {'expires': {'$lt': timestamp}}
+        query = {'expiration': {'$lt': timestamp}}
         collection.remove(query, safe=True)
 
     def purge_orphans(self, valid_ids):
@@ -129,12 +131,12 @@ class ContentCatalogManager(object):
         locator = ContentCatalog.get_locator(type_id, unit_key)
         query = {
             'locator': locator,
-            'expires': {'$gte': ContentCatalog.get_expires(0)}
+            'expiration': {'$gte': ContentCatalog.get_expiration(0)}
         }
-        unique = {}
-        for entry in collection.find(query, sort=[('_id', 1)]):
-            unique[entry['source_id']] = entry
-        return unique.values()
+        newest_by_source = {}
+        for entry in collection.find(query, sort=[('_id', ASCENDING)]):
+            newest_by_source[entry['source_id']] = entry
+        return newest_by_source.values()
 
     def has_entries(self, source_id):
         """
@@ -147,7 +149,7 @@ class ContentCatalogManager(object):
         collection = ContentCatalog.get_collection()
         query = {
             'source_id': source_id,
-            'expires': {'$gte': ContentCatalog.get_expires(0)}
+            'expiration': {'$gte': ContentCatalog.get_expiration(0)}
         }
         cursor = collection.find(query)
         return cursor.count() > 0

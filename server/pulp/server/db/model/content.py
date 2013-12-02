@@ -115,24 +115,24 @@ class ContentCatalog(Model):
         return h.hexdigest()
 
     @staticmethod
-    def get_expires(seconds):
+    def get_expiration(duration):
         """
         Get an expiration timestamp using the specified duration in seconds.
-        :param seconds: The duration in seconds.
-        :type seconds: int
+        :param duration: The duration in seconds.
+        :type duration: int
         :return: The timestamp.
         :rtype: int
         """
         now = datetime.now(dateutils.utc_tz())
-        dt = now + timedelta(seconds=seconds)
+        dt = now + timedelta(seconds=duration)
         return dateutils.datetime_to_utc_timestamp(dt)
 
-    def __init__(self, source_id, expires, type_id, unit_key, url):
+    def __init__(self, source_id, expiration, type_id, unit_key, url):
         """
         :param source_id: The ID of the contributing content source.
         :type source_id: str
-        :param expires: The expiration duration in seconds.
-        :type expires: int
+        :param expiration: The expiration (duration in seconds).
+        :type expiration: int
         :param type_id: A content unit's type ID.
         :type type_id: str
         :param unit_key: A content unit's key.
@@ -142,7 +142,7 @@ class ContentCatalog(Model):
         """
         Model.__init__(self)
         self.source_id = source_id
-        self.expires = self.get_expires(expires)
+        self.expiration = self.get_expiration(expiration)
         self.type_id = type_id
         self.unit_key = unit_key
         self.locator = self.get_locator(type_id, unit_key)
