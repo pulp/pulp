@@ -35,6 +35,7 @@ class PluginManager(object):
         self.group_importers = _PluginMap()
         self.importers = _PluginMap()
         self.profilers = _PluginMap()
+        self.catalogers = _PluginMap()
 
 # plugin management class ------------------------------------------------------
 

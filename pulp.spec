@@ -95,6 +95,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/distributors
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/importers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/profilers
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/catalogers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/types
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
@@ -228,6 +229,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_usr}/lib/%{name}/plugins/distributors
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
+%{_usr}/lib/%{name}/plugins/catalogers
 %{_usr}/lib/%{name}/plugins/types
 /srv/%{name}/webservices.wsgi
 %doc README LICENSE
