@@ -71,6 +71,7 @@ ssl_client_cert: /etc/pki/tls/certs/content-world.crt
 
 from logging import getLogger
 
+from nectar.config import DownloaderConfig
 from pulp.common.config import Config, Validator, ValidationException
 from pulp.common.config import REQUIRED, OPTIONAL, BOOL, ANY, NUMBER
 
@@ -145,3 +146,21 @@ def to_seconds(duration):
     if duration.endswith('d'):
         return int(duration[:-1]) * 3600 * 24
     return int(duration)
+
+
+def nectar_config(descriptor):
+    """
+    Create a nectar download configuration using the specified
+    content source descriptor.  The nectar options are a subset of
+    the properties included in the descriptor.
+    :param descriptor: A content source descriptor.
+    :type descriptor: dict
+    :return: A nectar configuration.
+    :rtype: DownloaderConfig
+    """
+    options = {}
+    for key in constants.NECTAR_PROPERTIES:
+        value = descriptor.get(key)
+        if value:
+            options[key] = value
+    return DownloaderConfig(**options)

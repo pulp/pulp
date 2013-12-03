@@ -28,7 +28,7 @@ from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 
 from pulp.server.content.sources import constants
-from pulp.server.content.sources.descriptor import is_valid, to_seconds
+from pulp.server.content.sources.descriptor import is_valid, to_seconds, nectar_config
 
 
 log = getLogger(__name__)
@@ -162,6 +162,8 @@ class ContentSource(object):
         sources = {}
         _dir = conf_d or ContentSource.CONF_D
         for name in os.listdir(_dir):
+            if not name.endswith('.conf'):
+                continue
             path = os.path.join(_dir, name)
             cfg = ConfigParser()
             cfg.read(path)
@@ -268,12 +270,7 @@ class ContentSource(object):
         :rtype: nectar.downloaders.Downloader.
         """
         url = self.base_url()
-        options = {}
-        for key in constants.NECTAR_PROPERTIES:
-            value = self.descriptor.get(key)
-            if value:
-                options[key] = value
-        conf = DownloaderConfig(**options)
+        conf = nectar_config(self.descriptor)
         try:
             parts = urlsplit(url)
             downloader = DOWNLOADER[parts.scheme](conf)
