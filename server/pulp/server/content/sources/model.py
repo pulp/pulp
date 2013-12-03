@@ -138,6 +138,7 @@ class Request(object):
 class ContentSource(object):
     """
     Represents a content source.
+    This object is sortable by priority.
     :ivar id: The source ID.
     :type id: str
     :ivar descriptor: The content source descriptor.
@@ -328,8 +329,8 @@ class ContentSource(object):
 
 class PrimarySource(ContentSource):
     """
-    Specialized content source used to ensure ordering and to
-    specify the primary downloader.
+    Specialized content source used to ensure ordering and provides
+    a wrapper around the primary downloader.
     :ivar downloader: A nectar downloader.
     :type downloader: nectar.downloaders.base.Downloader
     """
@@ -343,12 +344,23 @@ class PrimarySource(ContentSource):
         self.__downloader = downloader
 
     def downloader(self):
+        """
+        Get the wrapped downloader.
+        :return: The wrapped (primary) downloader.
+        :rtype: nectar.downloaders.base.Downloader.
+        """
         return self.__downloader
 
     def refresh(self):
+        """
+        Does not support refresh.
+        """
         pass
 
     def priority(self):
+        """
+        Must be last.
+        """
         return sys.maxint
 
 
