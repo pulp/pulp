@@ -83,12 +83,14 @@ class Coordinator(object):
     def download(self, downloader, request_list):
         """
         Download files using available alternate content sources.
-        An attempt is made to satisfy each download request using alternate
+        An attempt is made to satisfy each download request using the alternate
         content sources in the order specified by priority.  The specified
-        downlaoder is used when alternate sources are exhausted.
+        downlaoder is designated as the primary source and is used in the event that
+        the request cannot be completed using alternate sources.
         :param downloader: A primary nectar downloader.  Used to download the
             requested content unit when it cannot be achieved using alternate
             content sources.
+        :type downloader: nectar.downloaders.base.Downloader
         :param request_list: A list of pulp.server.content.sources.model.Request.
         :type request_list: list
         """
@@ -100,6 +102,8 @@ class Coordinator(object):
         while not self.cancelled:
             collated = self.collated(request_list)
             if not collated:
+                #  Either we have exhausted our content sources or all
+                #  of the requests have been satisfied.
                 break
             for source, nectar_list in collated.items():
                 downloader = source.downloader()
@@ -145,26 +149,26 @@ class Coordinator(object):
 
 class Listener(object):
     """
-    A download event listener.
+    Download event listener.
     """
 
     def download_started(self, request):
         """
-        Notification that the downloading has started for the specified request.
+        Notification that downloading has started for the specified request.
         :param request: A download request.
         :type request: pulp.server.content.sources.model.Request
         """
 
     def download_succeeded(self, request):
         """
-        Notification that the downloading has succeeded for the specified request.
+        Notification that downloading has succeeded for the specified request.
         :param request: A download request.
         :type request: pulp.server.content.sources.model.Request
         """
 
     def download_failed(self, request):
         """
-        Notification that the downloading has failed for the specified request.
+        Notification that downloading has failed for the specified request.
         :param request: A download request.
         :type request: pulp.server.content.sources.model.Request
         """
@@ -177,16 +181,36 @@ class NectarListener(DownloadEventListener):
 
     @staticmethod
     def _notify(method, request):
+        """
+        Safely invoke the method forwarding a notification to the listener.
+        Catch and log exceptions.
+        :param method: A listener method.
+        :type method: callable
+        :param request: A download request.
+        :type request: pulp.server.content.sources.model.Request.
+        """
         try:
             method(request)
         except Exception:
             log.exception(request.id)
 
     def __init__(self, coordinator, downloader):
+        """
+        :param coordinator: A coordinator object.
+        :type coordinator: Coordinator
+        :param downloader: The active nectar downloader.
+        :type downloader: nectar.downloaders.base.Downloader
+        """
         self.coordinator = coordinator
         self.downloader = downloader
 
     def download_started(self, report):
+        """
+        Nectar download started.
+        Forwarded to the listener registered with the coordinator.
+        :param report: A nectar download report.
+        :type report: nectar.report.DownloadReport
+        """
         if self.coordinator.cancelled:
             self.downloader.cancel()
             return
@@ -197,6 +221,13 @@ class NectarListener(DownloadEventListener):
         self._notify(listener.download_started, request)
 
     def download_succeeded(self, report):
+        """
+        Nectar download succeeded.
+        The associated request is marked as succeeded.
+        Forwarded to the listener registered with the coordinator.
+        :param report: A nectar download report.
+        :type report: nectar.report.DownloadReport
+        """
         if self.coordinator.cancelled:
             self.downloader.cancel()
             return
@@ -208,6 +239,14 @@ class NectarListener(DownloadEventListener):
         self._notify(listener.download_succeeded, request)
 
     def download_failed(self, report):
+        """
+        Nectar download failed.
+        Forwarded to the listener registered with the coordinator.
+        The request is marked as failed ONLY if the request has no more
+        content sources to try.
+        :param report: A nectar download report.
+        :type report: nectar.report.DownloadReport
+        """
         if self.coordinator.cancelled:
             self.downloader.cancel()
             return
