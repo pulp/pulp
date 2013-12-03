@@ -26,10 +26,10 @@ from base import PulpAsyncServerTests
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server.db.model.content import ContentCatalog
-from pulp.server.content.sources import Coordinator, Request, ContentSource, Listener
+from pulp.server.content.sources import ContentWarehouse, Request, ContentSource, Listener
 from pulp.server.content.sources.descriptor import to_seconds, is_valid
 from pulp.server.content.sources import model
-from pulp.server.content.sources.coordinator import NectarListener
+from pulp.server.content.sources.warehouse import NectarListener
 
 
 PRIMARY = 'primary'
@@ -253,9 +253,9 @@ class TestDownloading(ContentTest):
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
         listener = MockListener()
-        coordinator = Coordinator(path=self.tmp_dir, listener=listener)
-        coordinator.refresh = Mock()
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir, listener=listener)
+        warehouse.refresh = Mock()
+        warehouse.download(downloader, request_list)
         # unit-world
         for i in range(0, 10):
             request = request_list[i]
@@ -277,28 +277,28 @@ class TestDownloading(ContentTest):
         self.assertEqual(listener.download_failed.call_count, 0)
 
     def test_cancel(self):
-        coordinator = Coordinator(path=self.tmp_dir)
-        self.assertFalse(coordinator.cancelled)
-        coordinator.cancel()
-        self.assertTrue(coordinator.cancelled)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        self.assertFalse(warehouse.cancelled)
+        warehouse.cancel()
+        self.assertTrue(warehouse.cancelled)
 
     def test_download_cancelled_during_refreshing(self):
         downloader = LocalFileDownloader(DownloaderConfig())
-        coordinator = Coordinator(path=self.tmp_dir)
-        coordinator.collated = Mock()
-        coordinator.reset = Mock()
-        coordinator.cancelled = Cancelled(1)
-        coordinator.download(downloader, [])
-        self.assertFalse(coordinator.collated.called)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        warehouse.collated = Mock()
+        warehouse.reset = Mock()
+        warehouse.cancelled = Cancelled(1)
+        warehouse.download(downloader, [])
+        self.assertFalse(warehouse.collated.called)
 
     def test_download_cancelled_in_download(self):
-        coordinator = Coordinator(path=self.tmp_dir)
-        coordinator.reset = Mock()
-        coordinator.refresh = Mock()
-        coordinator.collated = Mock()
-        coordinator.cancelled = Cancelled(1)
-        coordinator.download(None, [])
-        self.assertFalse(coordinator.collated.called)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        warehouse.reset = Mock()
+        warehouse.refresh = Mock()
+        warehouse.collated = Mock()
+        warehouse.cancelled = Cancelled(1)
+        warehouse.download(None, [])
+        self.assertFalse(warehouse.collated.called)
 
     @patch('nectar.downloaders.base.Downloader.cancel')
     def test_download_cancelled_in_started(self, mock_cancel):
@@ -318,15 +318,15 @@ class TestDownloading(ContentTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
-        coordinator = Coordinator(path=self.tmp_dir)
-        coordinator.reset = Mock()
-        coordinator.refresh = Mock()
-        coordinator.cancelled = Cancelled(2)
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        warehouse.reset = Mock()
+        warehouse.refresh = Mock()
+        warehouse.cancelled = Cancelled(2)
+        warehouse.download(downloader, request_list)
         self.assertTrue(mock_cancel.called)
 
     @patch('nectar.downloaders.base.Downloader.cancel')
-    @patch('pulp.server.content.sources.coordinator.NectarListener.download_started')
+    @patch('pulp.server.content.sources.warehouse.NectarListener.download_started')
     def test_download_cancelled_in_succeeded(self, mock_started, mock_cancel):
         request_list = []
         _dir = self.populate_content(PRIMARY, 0, 5)
@@ -344,16 +344,16 @@ class TestDownloading(ContentTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
-        coordinator = Coordinator(path=self.tmp_dir)
-        coordinator.reset = Mock()
-        coordinator.refresh = Mock()
-        coordinator.cancelled = Cancelled(2)
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        warehouse.reset = Mock()
+        warehouse.refresh = Mock()
+        warehouse.cancelled = Cancelled(2)
+        warehouse.download(downloader, request_list)
         self.assertTrue(mock_started.called)
         self.assertTrue(mock_cancel.called)
 
     @patch('nectar.downloaders.base.Downloader.cancel')
-    @patch('pulp.server.content.sources.coordinator.NectarListener.download_started')
+    @patch('pulp.server.content.sources.warehouse.NectarListener.download_started')
     def test_download_cancelled_in_failed(self, mock_started, mock_cancel):
         request_list = []
         for n in range(0, 5):
@@ -370,11 +370,11 @@ class TestDownloading(ContentTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         downloader = HTTPThreadedDownloader(DownloaderConfig())
-        coordinator = Coordinator(path=self.tmp_dir)
-        coordinator.reset = Mock()
-        coordinator.refresh = Mock()
-        coordinator.cancelled = Cancelled(2)
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        warehouse.reset = Mock()
+        warehouse.refresh = Mock()
+        warehouse.cancelled = Cancelled(2)
+        warehouse.download(downloader, request_list)
         self.assertTrue(mock_started.called)
         self.assertTrue(mock_cancel.called)
 
@@ -409,9 +409,9 @@ class TestDownloading(ContentTest):
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
         listener = MockListener()
-        coordinator = Coordinator(path=self.tmp_dir, listener=listener)
-        coordinator.refresh = Mock()
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir, listener=listener)
+        warehouse.refresh = Mock()
+        warehouse.download(downloader, request_list)
         # unit-world
         for i in range(0, 10):
             request = request_list[i]
@@ -453,9 +453,9 @@ class TestDownloading(ContentTest):
             request_list.append(request)
         downloader = HTTPThreadedDownloader(DownloaderConfig())
         listener = MockListener()
-        coordinator = Coordinator(path=self.tmp_dir, listener=listener)
-        coordinator.refresh = Mock()
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir, listener=listener)
+        warehouse.refresh = Mock()
+        warehouse.download(downloader, request_list)
         # primary
         for i in range(0, len(request_list)):
             request = request_list[i]
@@ -493,9 +493,9 @@ class TestDownloading(ContentTest):
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
         listener = MockListener()
-        coordinator = Coordinator(path=self.tmp_dir, listener=listener)
-        coordinator.refresh = Mock()
-        coordinator.download(downloader, request_list)
+        warehouse = ContentWarehouse(path=self.tmp_dir, listener=listener)
+        warehouse.refresh = Mock()
+        warehouse.download(downloader, request_list)
         for i in range(0, len(request_list)):
             request = request_list[i]
             self.assertTrue(request.downloaded)
@@ -512,8 +512,8 @@ class TestRefreshing(ContentTest):
 
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
     def test_refresh(self, mock_plugin):
-        coordinator = Coordinator(path=self.tmp_dir)
-        report = coordinator.refresh(force=True)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        report = warehouse.refresh(force=True)
         plugin = mock_plugin.return_value[0]
         self.assertEqual(plugin.refresh.call_count, 5)
         self.assertEqual(len(report), 5)
@@ -531,8 +531,8 @@ class TestRefreshing(ContentTest):
 
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', side_effect=PluginNotFound)
     def test_refresh_plugin_not_found(self, mock_plugin):
-        coordinator = Coordinator(path=self.tmp_dir)
-        report = coordinator.refresh(force=True)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        report = warehouse.refresh(force=True)
         self.assertEqual(len(report), 2)
         for r in report:
             self.assertFalse(r.succeeded)
@@ -546,8 +546,8 @@ class TestRefreshing(ContentTest):
 
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(ValueError), {}))
     def test_refresh_failure(self, mock_plugin):
-        coordinator = Coordinator(path=self.tmp_dir)
-        report = coordinator.refresh(force=True)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        report = warehouse.refresh(force=True)
         self.assertEqual(len(report), 5)
         for r in report:
             self.assertFalse(r.succeeded)
@@ -561,8 +561,8 @@ class TestRefreshing(ContentTest):
 
     @patch('pulp.server.content.sources.model.ContentSource.refresh', side_effect=ValueError)
     def test_refresh_exception(self, mock_refresh):
-        coordinator = Coordinator(path=self.tmp_dir)
-        report = coordinator.refresh(force=True)
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        report = warehouse.refresh(force=True)
         self.assertEqual(len(report), 2)
         for r in report:
             self.assertFalse(r.succeeded)
@@ -579,8 +579,8 @@ class TestRefreshing(ContentTest):
         _dir, cataloged = self.populate_catalog(UNIT_WORLD, 0, 10)
         collection = ContentCatalog.get_collection()
         self.assertEqual(collection.find().count(), 30)
-        coordinator = Coordinator(path=self.tmp_dir)
-        coordinator.purge_orphans()
+        warehouse = ContentWarehouse(path=self.tmp_dir)
+        warehouse.purge_orphans()
         self.assertEqual(collection.find().count(), 20)
         self.assertEqual(collection.find({'source_id': ORPHANED}).count(), 0)
         self.assertEqual(collection.find({'source_id': UNDERGROUND}).count(), 10)
@@ -594,8 +594,8 @@ class TestNectarListener(TestCase):
         request = Request('', {}, '', '')
         listener = MockListener()
         listener.download_started = Mock(side_effect=ValueError)
-        coordinator = Coordinator('', listener=listener)
-        nectar_listener = NectarListener(coordinator, Mock())
+        warehouse = ContentWarehouse('', listener=listener)
+        nectar_listener = NectarListener(warehouse, Mock())
         report = Mock()
         report.data = request
         # started
@@ -611,8 +611,8 @@ class TestNectarListener(TestCase):
     @patch('pulp.server.content.sources.model.ContentSource.load_all', returns={})
     def test_notification_no_listener(self, *unused):
         request = Request('', {}, '', '')
-        coordinator = Coordinator('')
-        nectar_listener = NectarListener(coordinator, Mock())
+        warehouse = ContentWarehouse('')
+        nectar_listener = NectarListener(warehouse, Mock())
         nectar_listener._notify = Mock()
         report = Mock()
         report.data = request

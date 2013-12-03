@@ -11,7 +11,7 @@
 
 
 from pulp.server.content.sources.model import Request, ContentSource
-from pulp.server.content.sources.coordinator import Coordinator, Listener
+from pulp.server.content.sources.warehouse import ContentWarehouse, Listener
 
 
-__all__ = ['Request', 'Coordinator', 'ContentSource']
+__all__ = ['Request', 'ContentWarehouse', 'ContentSource']
