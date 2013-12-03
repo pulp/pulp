@@ -44,6 +44,7 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         super(ProfileManagerTests, self).tearDown()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
+        mock_plugins.reset()
 
     def populate(self):
         manager = factory.consumer_manager()

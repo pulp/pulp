@@ -60,6 +60,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         UnitProfile.get_collection().remove()
         typedb.clean()
         factory.reset()
+        mock_plugins.reset()
 
     def populate(self, additional_key=None):
         self.populate_consumer()
