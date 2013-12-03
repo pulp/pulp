@@ -11,7 +11,7 @@ call always executes asynchronously and will return a :term:`call report`.
 
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/publish/`
-| :permission:`update`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`id,str,identifies which distributor on the repository to publish`

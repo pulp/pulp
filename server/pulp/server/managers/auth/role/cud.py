@@ -14,7 +14,6 @@
 Contains the manager class and exceptions for operations surrounding the creation,
 update, and deletion on a Pulp Role.
 """
-import logging
 import re
 from gettext import gettext as _
 
@@ -273,8 +272,9 @@ class RoleManager(object):
             raise MissingResource(login)
 
         if role_id == SUPER_USER_ROLE and factory.user_query_manager().is_last_super_user(login):
-            raise PulpDataException(_('%s cannot be empty, and %s is the last member') %
-                                     (SUPER_USER_ROLE, login))
+            raise PulpDataException(
+                _('%(role)s cannot be empty, and %(login)s is the last member') %
+                {'role': self.super_user_role, 'login': login})
 
         if role_id not in user['roles']:
             return

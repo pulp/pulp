@@ -297,6 +297,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         Repo.get_collection().drop()
         Consumer.get_collection().drop()
         UnitProfile.get_collection().drop()
+        mock_plugins.reset()
 
     def test_create(self):
         """

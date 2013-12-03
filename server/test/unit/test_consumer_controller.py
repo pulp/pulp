@@ -524,6 +524,9 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(body['repo_id'], self.REPO_ID)
         self.assertEquals(body['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertTrue('_href' in body)
+        self.assertEqual(body['_href'].count(self.CONSUMER_ID), 1)
+        self.assertEqual(body['_href'].count(self.REPO_ID), 1)
+        self.assertEqual(body['_href'].count(self.DISTRIBUTOR_ID), 1)
 
     def test_get_bind_by_consumer(self):
         # Setup
@@ -542,6 +545,9 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertTrue('_href' in bind)
+        self.assertEqual(bind['_href'].count(self.CONSUMER_ID), 1)
+        self.assertEqual(bind['_href'].count(self.REPO_ID), 1)
+        self.assertEqual(bind['_href'].count(self.DISTRIBUTOR_ID), 1)
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
@@ -562,6 +568,9 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertTrue('_href' in bind)
+        self.assertEqual(bind['_href'].count(self.CONSUMER_ID), 1)
+        self.assertEqual(bind['_href'].count(self.REPO_ID), 1)
+        self.assertEqual(bind['_href'].count(self.DISTRIBUTOR_ID), 1)
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
@@ -1219,7 +1228,7 @@ class TestContentApplicability(base.PulpWebserviceTests,
         ca.params = mock.MagicMock(
             return_value={'criteria': {'sort': [['id', 'ascending']], 'limit': '10',
                                        'skip': '20',
-                                       'filters': {'id': {'$in': 
+                                       'filters': {'id': {'$in':
                                         ['consumer_1', 'consumer_2']}}}})
 
         consumer_criteria = ca._get_consumer_criteria()

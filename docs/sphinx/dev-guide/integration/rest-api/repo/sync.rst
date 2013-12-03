@@ -10,7 +10,7 @@ Syncs content into a repository from a feed source using the repository's
 
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/sync/`
-| :permission:`update`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`override_config,object,importer configuration values that override the importer's default configuration for this sync`

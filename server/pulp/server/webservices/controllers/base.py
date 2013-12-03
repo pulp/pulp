@@ -269,3 +269,23 @@ class JSONController(object):
         """
         http.status_not_implemented()
         return self._output(msg)
+
+    @staticmethod
+    def process_dictionary_against_whitelist(source_dict, valid_keys):
+        """
+        Process a dictionary and remove all keys that are not in a known white list
+
+        This method assumes that the _href, _id, and _ns keys are always valid
+
+        :param source_dict: The dictionary to filter out values from
+        :type source_dict: dict
+        :param valid_keys: list of keys that are valid in the resulting object
+        :type valid_keys: list of unicode
+
+        """
+        global_whitelist = [u'_href', u'_id', u'_ns']
+        merged_whitelist = global_whitelist + valid_keys
+        keys_list = source_dict.keys()
+        for key in keys_list:
+            if key not in merged_whitelist:
+                source_dict.pop(key, None)

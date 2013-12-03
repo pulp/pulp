@@ -49,6 +49,7 @@ class ImporterScratchPadMixinTests(base.PulpServerTests):
     def tearDown(self):
         super(ImporterScratchPadMixinTests, self).tearDown()
         manager_factory.reset()
+        mock_plugins.reset()
 
     def test_get_set_scratchpad(self):
         """

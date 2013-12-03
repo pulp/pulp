@@ -214,8 +214,9 @@ class PermissionManager(object):
         principal_manager = factory.principal_manager()
         user = principal_manager.get_principal()
         if principal_manager.is_system_principal():
-            raise PulpExecutionException(_('Cannot grant automatic permissions for [%s] on resource [%s]') %
-                               (user, resource))
+            raise PulpExecutionException(
+                _('Cannot grant automatic permissions for [%(user)s] on resource [%(resource)s]') %
+                {'user': user, 'resource': resource})
 
         operations = [self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE]
         self.grant(resource, user['login'], operations)
