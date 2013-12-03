@@ -75,6 +75,9 @@ def babysit():
         # TODO: Also delete the queues from the reserved_resources collection so that no new
         #       tasks enter them
 
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
+        msg = msg % {'name': queue}
+        logger.error(msg)
         # Cancel all of the tasks that were assigned to this queue
         for task in TaskStatusManager.find_by_criteria(Criteria(filters={'queue': queue.name})):
             cancel(task['task_id'])
@@ -299,3 +302,6 @@ def cancel(task_id):
     :type  task_id: basestring
     """
     controller.revoke(task_id, terminate=True)
+    msg = _('Task canceled: %(task_id)s.')
+    msg = msg % {'task_id': task_id}
+    logger.info(msg)
