@@ -23,6 +23,7 @@ from nectar.downloaders.threaded import HTTPThreadedDownloader
 
 from base import PulpAsyncServerTests
 
+from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server.db.model.content import ContentCatalog
@@ -152,11 +153,14 @@ class ContentTest(PulpAsyncServerTests):
         MockListener.download_started.reset_mock()
         MockListener.download_succeeded.reset_mock()
         MockListener.download_failed.reset_mock()
+        plugins._create_manager()
+        plugins._MANAGER.catalogers.add_plugin('yum', MockCataloger, {})
 
     def tearDown(self):
         PulpAsyncServerTests.tearDown(self)
         ContentCatalog.get_collection().remove()
         shutil.rmtree(self.tmp_dir, ignore_errors=True)
+        plugins.finalize()
 
     def add_sources(self):
         # unit-world
@@ -529,21 +533,6 @@ class TestRefreshing(ContentTest):
                 self.assertEqual(args[1], source.descriptor)
                 self.assertEqual(args[2], url)
 
-    @patch('pulp.plugins.loader.api.get_cataloger_by_id', side_effect=PluginNotFound)
-    def test_refresh_plugin_not_found(self, mock_plugin):
-        warehouse = ContentWarehouse(path=self.tmp_dir)
-        report = warehouse.refresh(force=True)
-        self.assertEqual(len(report), 2)
-        for r in report:
-            self.assertFalse(r.succeeded)
-            self.assertEqual(r.added_count, 0)
-            self.assertEqual(r.deleted_count, 0)
-            self.assertEqual(len(r.errors), 1)
-        plugin = mock_plugin.return_value[0]
-        collection = ContentCatalog.get_collection()
-        self.assertEqual(plugin.refresh.call_count, 0)
-        self.assertEqual(collection.find().count(), 0)
-
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(ValueError), {}))
     def test_refresh_failure(self, mock_plugin):
         warehouse = ContentWarehouse(path=self.tmp_dir)
@@ -625,7 +614,6 @@ class TestNectarListener(TestCase):
         # failed
         nectar_listener.download_failed(report)
         self.assertFalse(nectar_listener._notify.called)
-
 
 
 class TestDescriptor(TestCase):

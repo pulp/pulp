@@ -191,13 +191,15 @@ class ContentSource(object):
 
     def is_valid(self):
         """
-        Get whether the content source has a valid descriptor and
-        can create a valid nectar downloader.
+        Get whether the content source has a valid descriptor,
+        references a valid cataloger plugin, and can create a nectar downloader.
         :return: True if valid.
         :rtype: bool
         """
         try:
             self.downloader()
+            plugin_id = self.descriptor[constants.TYPE]
+            plugins.get_cataloger_by_id(plugin_id)
             return is_valid(self.id, self.descriptor)
         except Exception:
             return False
@@ -287,32 +289,25 @@ class ContentSource(object):
         :rtype: list of: RefreshReport
         """
         reports = []
-        _id = self.descriptor[constants.TYPE]
-        try:
-            plugin, cfg = plugins.get_cataloger_by_id(_id)
-            conduit = CatalogerConduit(self.id, self.expires())
-            for url in self.urls():
-                conduit.reset()
-                report = RefreshReport(self.id, url)
-                log.info(REFRESHING, self.id, url)
-                try:
-                    plugin.refresh(conduit, self.descriptor, url)
-                    log.info(REFRESH_SUCCEEDED, self.id, conduit.added_count, conduit.deleted_count)
-                    report.succeeded = True
-                    report.added_count = conduit.added_count
-                    report.deleted_count = conduit.deleted_count
-                except Exception, e:
-                    log.error(REFRESH_FAILED, self.id, url, e)
-                    report.errors.append(str(e))
-                finally:
-                    reports.append(report)
-        except PluginNotFound, pe:
-            log.error(str(pe))
-            report = RefreshReport(_id, '')
-            report.errors.append(pe)
-            reports.append(report)
-        finally:
-            return reports
+        plugin_id = self.descriptor[constants.TYPE]
+        plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
+        conduit = CatalogerConduit(self.id, self.expires())
+        for url in self.urls():
+            conduit.reset()
+            report = RefreshReport(self.id, url)
+            log.info(REFRESHING, self.id, url)
+            try:
+                plugin.refresh(conduit, self.descriptor, url)
+                log.info(REFRESH_SUCCEEDED, self.id, conduit.added_count, conduit.deleted_count)
+                report.succeeded = True
+                report.added_count = conduit.added_count
+                report.deleted_count = conduit.deleted_count
+            except Exception, e:
+                log.error(REFRESH_FAILED, self.id, url, e)
+                report.errors.append(str(e))
+            finally:
+                reports.append(report)
+        return reports
 
     def __eq__(self, other):
         return self.id == other.id
