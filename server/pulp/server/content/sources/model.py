@@ -188,11 +188,16 @@ class ContentSource(object):
 
     def is_valid(self):
         """
-        Get whether the content source has a valid descriptor.
+        Get whether the content source has a valid descriptor and
+        can create a valid nectar downloader.
         :return: True if valid.
         :rtype: bool
         """
-        return is_valid(self.id, self.descriptor)
+        try:
+            self.downloader()
+            return is_valid(self.id, self.descriptor)
+        except Exception:
+            return False
 
     def enabled(self):
         """
@@ -274,33 +279,45 @@ class ContentSource(object):
             downloader = DOWNLOADER[parts.scheme](conf)
             return downloader
         except KeyError:
-            raise ValueError('unsupported scheme: %s', url)
+            raise ValueError('unsupported protocol: %s', url)
 
     def refresh(self):
         """
         Refresh the content catalog using the cataloger plugin as
         defined by the "type" descriptor property.
+        :return: The list of refresh reports.
+        :rtype: list of: RefreshReport
         """
+        reports = []
         _id = self.descriptor[constants.TYPE]
         try:
             plugin, cfg = plugins.get_cataloger_by_id(_id)
             conduit = CatalogerConduit(self.id, self.expires())
             for url in self.urls():
+                conduit.reset()
+                report = RefreshReport(self.id, url)
+                log.info(REFRESHING, self.id, url)
                 try:
-                    conduit.reset()
-                    log.info(REFRESHING, self.id, url)
                     plugin.refresh(conduit, self.descriptor, url)
                     log.info(REFRESH_SUCCEEDED, self.id, conduit.added_count, conduit.deleted_count)
+                    report.succeeded = True
+                    report.added_count = conduit.added_count
+                    report.deleted_count = conduit.deleted_count
                 except Exception, e:
                     log.error(REFRESH_FAILED, self.id, url, e)
+                    report.errors.append(str(e))
+                finally:
+                    reports.append(report)
         except PluginNotFound, pe:
             log.error(str(pe))
+            report = RefreshReport(_id, '')
+            report.errors.append(pe)
+            reports.append(report)
+        finally:
+            return reports
 
     def __eq__(self, other):
         return self.id == other.id
-
-    def __ne__(self, other):
-        return self.id != other.id
 
     def __hash__(self):
         return hash(self.id)
@@ -336,3 +353,31 @@ class PrimarySource(ContentSource):
 
     def priority(self):
         return sys.maxint
+
+
+class RefreshReport(object):
+    """
+    Refresh report.
+    :ivar succeeded: Indicates whether the refresh was successful.
+    :type succeeded: bool
+    :ivar added_count: The number of entries added to the catalog.
+    :type added_count: int
+    :ivar deleted_count: The number of entries deleted from the catalog.
+    :type deleted_count: int
+    :ivar errors: The list of errors.
+    :type errors: list
+    """
+
+    def __init__(self, source_id, url):
+        """
+        :param source_id: The content source ID.
+        :type source_id: str
+        :param url: The URL used to refresh.
+        :type url: str
+        """
+        self.source_id = source_id
+        self.url = url
+        self.succeeded = False
+        self.added_count = 0
+        self.deleted_count = 0
+        self.errors = []

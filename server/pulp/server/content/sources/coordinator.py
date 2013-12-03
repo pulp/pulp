@@ -15,7 +15,7 @@ from nectar.listener import DownloadEventListener
 from nectar.request import DownloadRequest
 
 from pulp.server.managers import factory as managers
-from pulp.server.content.sources.model import ContentSource, PrimarySource
+from pulp.server.content.sources.model import ContentSource, PrimarySource, RefreshReport
 
 
 log = getLogger(__name__)
@@ -74,6 +74,12 @@ class Coordinator(object):
         """
         self.cancelled = True
 
+    def reset(self):
+        """
+        Reset the object.
+        """
+        self.cancelled = False
+
     def download(self, downloader, request_list):
         """
         Download files using available alternate content sources.
@@ -86,7 +92,7 @@ class Coordinator(object):
         :param request_list: A list of pulp.server.content.sources.model.Request.
         :type request_list: list
         """
-        self.cancelled = False
+        self.reset()
         self.refresh()
         primary = PrimarySource(downloader)
         for request in request_list:
@@ -96,10 +102,8 @@ class Coordinator(object):
             if not collated:
                 break
             for source, nectar_list in collated.items():
-                if not nectar_list:
-                    continue
                 downloader = source.downloader()
-                downloader.event_listener = _Listener(self, downloader)
+                downloader.event_listener = NectarListener(self, downloader)
                 downloader.download(nectar_list)
 
     def refresh(self, force=False):
@@ -107,17 +111,26 @@ class Coordinator(object):
         Refresh the content catalog using available content sources.
         :param force: Force refresh of content sources with unexpired catalog entries.
         :type force: bool
+        :return: A list of refresh reports.
+        :rtype: list of: pulp.server.content.sources.model.RefreshReport
         """
+        reports = []
+        self.reset()
         catalog = managers.content_catalog_manager()
         for source_id, source in self.sources.items():
             if self.cancelled:
                 return
             if force or not catalog.has_entries(source_id):
                 try:
-                    source.refresh()
+                    report = source.refresh()
+                    reports.extend(report)
                 except Exception, e:
                     log.error('refresh %s, failed: %s', source_id, e)
+                    report = RefreshReport(source_id, '')
+                    report.errors.append(str(e))
+                    reports.append(report)
         catalog.purge_expired()
+        return reports
 
     def purge_orphans(self):
         """
@@ -160,7 +173,7 @@ class Listener(object):
 # --- nectar -----------------------------------------------------------------
 
 
-class _Listener(DownloadEventListener):
+class NectarListener(DownloadEventListener):
 
     @staticmethod
     def _notify(method, request):
