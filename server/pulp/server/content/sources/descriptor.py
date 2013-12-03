@@ -104,6 +104,15 @@ SCHEMA = [
 
 
 def is_valid(source_id, descriptor):
+    """
+    Get whether a content source descriptor is valid.
+    :param source_id: A content source ID.
+    :type source_id: str
+    :param descriptor: A content source descriptor.
+    :type descriptor: dict
+    :return: True if valid.
+    :rtype: bool
+    """
     try:
         schema = list(SCHEMA)
         schema[0] = source_id
@@ -116,13 +125,23 @@ def is_valid(source_id, descriptor):
     return False
 
 
-def to_seconds(value):
-    if value.endswith('s'):
-        return int(value[:-1])
-    if value.endswith('m'):
-        return int(value[:-1]) * 60
-    if value.endswith('h'):
-        return int(value[:-1]) * 3600
-    if value.endswith('d'):
-        return int(value[:-1]) * 3600 * 24
-    return int(value)
+def to_seconds(duration):
+    """
+    Convert the specified duration into seconds.
+    The duration unit is seconds by default or specified as follows
+    using an optional suffix (s=seconds, m=minutes, h=hours, d=days).
+    Example: '10m' = 10 minutes; '30d' = 30 days.
+    :param duration: A duration.
+    :type duration: str
+    :return: The duration in seconds.
+    :rtype: int
+    """
+    if duration.endswith('s'):
+        return int(duration[:-1])
+    if duration.endswith('m'):
+        return int(duration[:-1]) * 60
+    if duration.endswith('h'):
+        return int(duration[:-1]) * 3600
+    if duration.endswith('d'):
+        return int(duration[:-1]) * 3600 * 24
+    return int(duration)
