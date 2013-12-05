@@ -51,6 +51,7 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
     def tearDown(self):
         super(DistributorScratchpadMixinTests, self).tearDown()
         manager_factory.reset()
+        mock_plugins.reset()
 
     def test_get_set_scratchpad(self):
         """

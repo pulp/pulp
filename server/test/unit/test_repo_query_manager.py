@@ -40,6 +40,10 @@ class RepoQueryManagerTests(base.PulpServerTests):
         self.distributor_manager = manager_factory.repo_distributor_manager()
         self.query_manager = manager_factory.repo_query_manager()
 
+    def tearDown(self):
+        super(RepoQueryManagerTests, self).tearDown()
+        mock_plugins.reset()
+
     def test_find_all(self):
         """
         Tests finding all repos when there are results to return.

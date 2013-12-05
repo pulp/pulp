@@ -55,6 +55,10 @@ class RepoConfigConduitTests(base.PulpServerTests):
                                                  True, distributor_id='dist-5')
         self.conduit = RepoConfigConduit('rpm')
 
+    def tearDown(self):
+        super(RepoConfigConduitTests, self).tearDown()
+        mock_plugins.reset()
+
     def clean(self):
         super(RepoConfigConduitTests, self).clean()
 

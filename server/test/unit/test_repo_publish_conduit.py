@@ -50,6 +50,10 @@ class RepoPublishConduitTests(base.PulpServerTests):
 
         self.conduit = RepoPublishConduit('repo-1', 'dist-1')
 
+    def tearDown(self):
+        super(RepoPublishConduitTests, self).tearDown()
+        mock_plugins.reset()
+
     def test_str(self):
         """
         Makes sure the __str__ implementation doesn't crash.
@@ -106,6 +110,10 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
         self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id=self.distributor_id)
 
         self.conduit = RepoGroupPublishConduit(self.group_id, self.distributor_id)
+
+    def tearDown(self):
+        super(RepoGroupPublishConduitTests, self).tearDown()
+        mock_plugins.reset()
 
     def test_str(self):
         str(self.conduit) # make sure no exception is raised
