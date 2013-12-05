@@ -63,9 +63,11 @@ def babysit():
     for queue in available_queues_missing_workers:
         # Cancel all of the tasks that were assigned to this queue
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-        msg = msg % {'name': queue}
+        msg = msg % {'name': queue.name}
         logger.error(msg)
-        for task in TaskStatusManager.find_by_criteria(Criteria(filters={'queue': queue.name})):
+        for task in TaskStatusManager.find_by_criteria(
+                Criteria(filters={'queue': queue.name,
+                                  'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
             cancel(task['task_id'])
 
         # Finally, delete the queue
