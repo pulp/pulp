@@ -108,7 +108,8 @@ class ArchivedCall(Model):
 
     collection_name = 'archived_calls'
     unique_indices = ()
-    search_indices = ('serialized_call_report.call_request_id', 'serialized_call_report.call_request_group_id')
+    search_indices = ('serialized_call_report.call_request_id',
+                      'serialized_call_report.call_request_group_id')
 
     def __init__(self, call_request, call_report):
         super(ArchivedCall, self).__init__()

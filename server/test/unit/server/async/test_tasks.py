@@ -100,16 +100,16 @@ class TestBabysit(ResourceReservationTests):
         # Let's simulate three tasks being assigned to this AvailableQueue, with two of them being
         # in an incomplete state and one in a complete state. The two should get canceled.
         # Let's put task_1 in progress
-        task_1 = TaskStatusManager.create_task_status('task_1', missing_available_queue.name)
-        TaskStatusManager.update_task_status('task_1', {'state': CALL_RUNNING_STATE})
-        task_2 = TaskStatusManager.create_task_status('task_2', missing_available_queue.name)
-        TaskStatusManager.update_task_status('task_2', {'state': CALL_WAITING_STATE})
+        task_1 = TaskStatusManager.create_task_status('task_1', missing_available_queue.name,
+                                                      state=CALL_RUNNING_STATE)
+        task_2 = TaskStatusManager.create_task_status('task_2', missing_available_queue.name,
+                                                      state=CALL_WAITING_STATE)
         # This task shouldn't get canceled because it isn't in an incomplete state
-        task_3 = TaskStatusManager.create_task_status('task_3', missing_available_queue.name)
-        TaskStatusManager.update_task_status('task_3', {'state': CALL_FINISHED_STATE})
+        task_3 = TaskStatusManager.create_task_status('task_3', missing_available_queue.name,
+                                                      state=CALL_FINISHED_STATE)
         # Let's make a task in a worker that is still present just to make sure it isn't touched.
-        task_4 = TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1)
-        TaskStatusManager.update_task_status('task_4', {'state': CALL_RUNNING_STATE})
+        task_4 = TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
+                                                      state=CALL_RUNNING_STATE)
 
         # Now, let's call babysit() again. This time, it should delete the AvailableQueue, and it
         # should cancel task_1 and task_2. task_3 should be left alone.
