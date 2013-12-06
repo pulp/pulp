@@ -13,7 +13,6 @@ import sys
 import os
 import re
 
-from uuid import uuid4
 from urlparse import urlsplit, urljoin
 from logging import getLogger
 from ConfigParser import ConfigParser
@@ -80,7 +79,6 @@ class Request(object):
         :param destination: The absolute path used to store the downloaded file.
         :type destination: str
         """
-        self.id = str(uuid4())
         self.type_id = type_id
         self.unit_key = unit_key
         self.url = url
