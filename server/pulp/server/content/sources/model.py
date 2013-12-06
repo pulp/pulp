@@ -18,13 +18,11 @@ from urlparse import urlsplit, urljoin
 from logging import getLogger
 from ConfigParser import ConfigParser
 
-from nectar.config import DownloaderConfig
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugins
-from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 
 from pulp.server.content.sources import constants
