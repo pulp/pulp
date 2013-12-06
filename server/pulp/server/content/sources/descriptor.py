@@ -21,8 +21,8 @@ are supported:
  - priority <int>
      The source priority used when downloading content.  (0 is lowest and the default).
  - expires <str>
-     How long until cataloged information expires. The default unit is seconds but
-     and optional suffix can (and should) be used.  Supported suffixes:
+     How long until cataloged information expires. The default unit is seconds however
+     an optional suffix can (and should) be used.  Supported suffixes:
      (s=seconds, m=minutes, h=hours, d=days)
  - base_url <str>
      The URL used to fetch info used to refresh the catalog.

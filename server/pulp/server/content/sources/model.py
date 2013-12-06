@@ -48,7 +48,7 @@ REFRESH_FAILED = 'Refresh [%s] url: %s, failed: %s'
 
 class Request(object):
     """
-    A download request object is used request the downloading of a
+    A download request object is used to request the downloading of a
     file associated to a content unit.  The request collaborates with
     the coordinator and the content catalog to perform the download.
     :ivar type_id: The content unit type ID.
@@ -59,7 +59,7 @@ class Request(object):
     :type url: str
     :ivar destination: The absolute path used to store the downloaded file.
     :type destination: str
-    :ivar sources: A list of: ContentSource.
+    :ivar sources: A list of tuple: (ContentSource, url).
     :type sources: list
     :ivar index: Used to iterate the list of sources.
     :type index: int
@@ -95,7 +95,7 @@ class Request(object):
         """
         Find and set the list of content sources in the order they are to
         be used to satisfy the request.  The alternate sources are
-        ordered by priority.  The primary content sources is always last.
+        ordered by priority.  The primary content source is always last.
         :param primary: The primary content source.
         :type primary: ContentSource
         :param alternates: A list of alternative sources.

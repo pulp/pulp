@@ -85,7 +85,7 @@ class ContentWarehouse(object):
         Download files using available alternate content sources.
         An attempt is made to satisfy each download request using the alternate
         content sources in the order specified by priority.  The specified
-        downlaoder is designated as the primary source and is used in the event that
+        downloader is designated as the primary source and is used in the event that
         the request cannot be completed using alternate sources.
         :param downloader: A primary nectar downloader.  Used to download the
             requested content unit when it cannot be achieved using alternate

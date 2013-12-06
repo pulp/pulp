@@ -4,11 +4,11 @@ Content Sources
 Pulp supports a generic concept of *Alternate Content Sources* that is independent of Importers
 and Repositories. Each content source is a potential alternate provider of files that are
 associated with content units in Pulp. Pulp maintains a catalog of the content provided by
-each source which is periodical refreshed using a *Cataloger* server-side plugin. During a refresh,
+each source which is periodically refreshed using a *Cataloger* server-side plugin. During a refresh,
 the cataloger queries the content source using this information to update the catalog. The
 next time Pulp needs to download a file associated with a content unit, it searches the catalog
 for alternate sources based on the source's *priority*. Each alternate source is tried in *priority*
-order. If the file cannot be successfully downloaded from on of the alternate sources, it is
+order. If the file cannot be successfully downloaded from one of the alternate sources, it is
 finally downloaded from the original (primary) source.
 
 
