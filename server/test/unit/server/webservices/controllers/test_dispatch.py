@@ -16,7 +16,7 @@ This module contains tests for the pulp.server.webservices.dispatch module.
 import uuid
 import mock
 
-import base
+from .... import base
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 
@@ -56,14 +56,16 @@ class TestTaskCollection(base.PulpWebserviceTests):
         """
         # Populate a couple of task statuses
         task_id1 = str(uuid.uuid4())
+        queue_1 = 'queue_1'
         state1 = 'waiting'
 
         task_id2 = str(uuid.uuid4())
+        queue_2 = 'queue_2'
         state2 = 'running'
         tags = ['random','tags']
 
-        TaskStatusManager.create_task_status(task_id1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, tags, state2)
+        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
+        TaskStatusManager.create_task_status(task_id2, queue_2, tags, state2)
         status, body = self.get('/v2/tasks/')
 
         # Validate
@@ -72,8 +74,8 @@ class TestTaskCollection(base.PulpWebserviceTests):
         for task in body:
             if task['task_id'] == task_id1:
                 self.assertEquals(task['state'], state1)
+                self.assertEqual(task['queue'], queue_1)
             else:
                 self.assertEquals(task['state'], state2)
+                self.assertEqual(task['queue'], queue_2)
         self.assertEquals(task['tags'], tags)
-
-
