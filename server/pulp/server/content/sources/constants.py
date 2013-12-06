@@ -9,6 +9,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.common.config import parse_bool
+
+
 URL = 'url'
 
 ENABLED = 'enabled'
@@ -31,16 +34,16 @@ PROXY_USERID = 'proxy_username'
 PROXY_PASSWORD = 'proxy_password'
 
 NECTAR_PROPERTIES = (
-    MAX_CONCURRENT,
-    MAX_SPEED,
-    SSL_VALIDATION,
-    SSL_CA_CERT,
-    SSL_CLIENT_KEY,
-    SSL_CLIENT_CERT,
-    PROXY_URL,
-    PROXY_PORT,
-    PROXY_USERID,
-    PROXY_PASSWORD,
+    (MAX_CONCURRENT, int),
+    (MAX_SPEED, int),
+    (SSL_VALIDATION, parse_bool),
+    (SSL_CA_CERT, str),
+    (SSL_CLIENT_KEY, str),
+    (SSL_CLIENT_CERT, str),
+    (PROXY_URL, str),
+    (PROXY_PORT, int),
+    (PROXY_USERID, str),
+    (PROXY_PASSWORD, str),
 )
 
 SOURCE_ID = 'source_id'

@@ -25,16 +25,16 @@ from base import PulpAsyncServerTests
 
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
-from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentWarehouse, Request, ContentSource, Listener
-from pulp.server.content.sources.descriptor import to_seconds, is_valid
+from pulp.server.content.sources.descriptor import to_seconds, is_valid, nectar_config
 from pulp.server.content.sources import model
 from pulp.server.content.sources.warehouse import NectarListener
 
 
 PRIMARY = 'primary'
 UNIT_WORLD = 'unit-world'
+UNIT_WORLD_SECURE = 'unit-world-secure'
 UNDERGROUND = 'underground-content'
 ORPHANED = 'orphaned'
 UNSUPPORTED_PROTOCOL = 'unsupported-protocol'
@@ -110,6 +110,28 @@ name: Test Invalid
 priority: 2
 """
 
+MOST_SECURE = """
+[%s]
+enabled: 0
+type: yum
+name: Secure Unit World
+priority: 1
+max_concurrent: 10
+base_url: https:///unit-world/units
+max_concurrent: 10
+max_speed: 1000
+ssl_ca_cert: /my-ca
+ssl_validation: true
+ssl_client_cert: /my-client-cert
+ssl_client_key: /my-client-key
+proxy_url: /my-proxy-url
+proxy_port: 9090
+proxy_username: proxy-user
+proxy_password: proxy-password
+""" % UNIT_WORLD_SECURE
+
+OTHER_SOURCES = (DISABLED, MISSING_ENABLED, MISSING_TYPE, MISSING_BASE_URL, MOST_SECURE)
+
 
 class MockCataloger(object):
 
@@ -178,7 +200,7 @@ class ContentTest(PulpAsyncServerTests):
         # other
         path = os.path.join(self.tmp_dir, 'other.conf')
         with open(path, 'w+') as fp:
-            for descriptor in (DISABLED, MISSING_ENABLED, MISSING_TYPE, MISSING_BASE_URL):
+            for descriptor in OTHER_SOURCES:
                 fp.write(descriptor)
 
     def populate_content(self, source, n_start, n_units):
@@ -224,6 +246,21 @@ class TestLoading(ContentTest):
         self.assertEqual(urls[1], 'file:///underground/fedora/18/i386/')
         self.assertEqual(urls[2], 'file:///underground/fedora/19/x86_64/')
         self.assertEqual(urls[3], 'file:///underground/fedora/19/i386/')
+
+    @patch('pulp.server.content.sources.model.ContentSource.enabled', return_value=True)
+    def test_nectar_config(self, *unused):
+        sources = ContentSource.load_all(self.tmp_dir)
+        unit_world = sources[UNIT_WORLD_SECURE]
+        downloader = unit_world.downloader()
+        self.assertEqual(downloader.config.max_concurrent, 10)
+        self.assertEqual(downloader.config.max_speed, 1000)
+        self.assertEqual(downloader.config.ssl_validation, True)
+        self.assertEqual(downloader.config.ssl_client_cert, '/my-client-cert')
+        self.assertEqual(downloader.config.ssl_client_key, '/my-client-key')
+        self.assertEqual(downloader.config.proxy_url, '/my-proxy-url')
+        self.assertEqual(downloader.config.proxy_port, 9090)
+        self.assertEqual(downloader.config.proxy_username, 'proxy-user')
+        self.assertEqual(downloader.config.proxy_password, 'proxy-password')
 
 
 class TestDownloading(ContentTest):

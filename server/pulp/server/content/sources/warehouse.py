@@ -192,7 +192,7 @@ class NectarListener(DownloadEventListener):
         try:
             method(request)
         except Exception:
-            log.exception(request.id)
+            log.exception(str(method))
 
     def __init__(self, warehouse, downloader):
         """

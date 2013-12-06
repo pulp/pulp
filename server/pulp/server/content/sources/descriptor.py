@@ -159,8 +159,8 @@ def nectar_config(descriptor):
     :rtype: DownloaderConfig
     """
     options = {}
-    for key in constants.NECTAR_PROPERTIES:
+    for key, fn in constants.NECTAR_PROPERTIES:
         value = descriptor.get(key)
         if value:
-            options[key] = value
+            options[key] = fn(value)
     return DownloaderConfig(**options)
