@@ -13,6 +13,7 @@ Contents:
    admin-client/index
    consumer-client/index
    nodes
+   content-sources
    general-reference
    glossary
    troubleshooting

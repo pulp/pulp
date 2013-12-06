@@ -82,6 +82,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server/plugins.conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/content/sources/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
@@ -212,6 +213,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/vhosts80
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
+%dir %{_sysconfdir}/%{name}/content/sources/conf.d
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
