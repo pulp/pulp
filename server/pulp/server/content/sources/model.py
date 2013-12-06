@@ -332,7 +332,7 @@ class PrimarySource(ContentSource):
         :type downloader: nectar.downloaders.base.Downloader
         """
         ContentSource.__init__(self, '__primary__', {})
-        self.__downloader = downloader
+        self._downloader = downloader
 
     def downloader(self):
         """
@@ -340,7 +340,7 @@ class PrimarySource(ContentSource):
         :return: The wrapped (primary) downloader.
         :rtype: nectar.downloaders.base.Downloader.
         """
-        return self.__downloader
+        return self._downloader
 
     def refresh(self):
         """
