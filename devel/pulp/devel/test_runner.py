@@ -65,11 +65,12 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
                      '--cover-package',
                      ','.join(packages)])
 
-    # don't run the server tests in RHEL5.
+    # don't run the server or plugins tests in RHEL5.
     if sys.version_info >= (2, 6):
         args.extend(tests_non_rhel5)
     else:
         args.extend(['-e', 'server'])
+        args.extend(['-e', 'plugins'])
 
     args.extend(tests_all_platforms)
 
