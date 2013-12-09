@@ -445,8 +445,8 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         # rpa_2 and rpa_3 should have been removed
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
         existing_rpas = RepoProfileApplicability.objects.filter({})
-        existing_rpa_ids = [rpa.id for rpa in existing_rpas]
-        self.assertEqual(set(existing_rpa_ids), set([rpa_1.id, rpa_4.id]))
+        existing_rpa_ids = [rpa._id for rpa in existing_rpas]
+        self.assertEqual(set(existing_rpa_ids), set([rpa_1._id, rpa_4._id]))
 
     def test_remove_orphans_missing_profile_hash(self):
         """
@@ -470,7 +470,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         # rpa_2 should have been removed
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
         existing_rpa = RepoProfileApplicability.objects.get({})
-        self.assertEqual(rpa_1.id, existing_rpa.id)
+        self.assertEqual(rpa_1._id, existing_rpa._id)
 
     def test_remove_orphans_missing_repo(self):
         """
@@ -494,7 +494,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         # rpa_2 should have been removed
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
         existing_rpa = RepoProfileApplicability.objects.get({})
-        self.assertEqual(rpa_1.id, existing_rpa.id)
+        self.assertEqual(rpa_1._id, existing_rpa._id)
 
     def test_remove_orphans_nothing_to_remove(self):
         """
@@ -515,7 +515,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         # Nothing should have been removed
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 1)
         existing_rpa = RepoProfileApplicability.objects.get({})
-        self.assertEqual(rpa.id, existing_rpa.id)
+        self.assertEqual(rpa._id, existing_rpa._id)
 
 
 class TestRetrieveConsumerApplicability(base.PulpServerTests,
