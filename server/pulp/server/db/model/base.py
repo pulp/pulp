@@ -72,7 +72,10 @@ class Model(dict):
     # dict to dot-notation mapping methods
 
     def __getattr__(self, attr):
-        return self.get(attr, None)
+        try:
+            return self[attr]
+        except KeyError:
+            raise AttributeError(attr)
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
