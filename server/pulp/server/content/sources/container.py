@@ -81,7 +81,7 @@ class ContentContainer(object):
         primary = PrimarySource(downloader)
         for request in request_list:
             request.find_sources(primary, self.sources)
-        while not Call.canceled():
+        while not Call.current_canceled():
             collated = self.collated(request_list)
             if not collated:
                 #  Either we have exhausted our content sources or all
@@ -103,7 +103,7 @@ class ContentContainer(object):
         reports = []
         catalog = managers.content_catalog_manager()
         for source_id, source in self.sources.items():
-            if Call.canceled():
+            if Call.current_canceled():
                 break
             if force or not catalog.has_entries(source_id):
                 try:
@@ -189,7 +189,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if Call.canceled():
+        if Call.current_canceled():
             self.downloader.cancel()
             return
         request = report.data
@@ -206,7 +206,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if Call.canceled():
+        if Call.current_canceled():
             self.downloader.cancel()
             return
         request = report.data
@@ -225,7 +225,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if Call.canceled():
+        if Call.current_canceled():
             self.downloader.cancel()
             return
         request = report.data

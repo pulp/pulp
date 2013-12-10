@@ -290,7 +290,7 @@ class ContentSource(object):
         plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
         conduit = CatalogerConduit(self.id, self.expires())
         for url in self.urls():
-            if Call.canceled():
+            if Call.current_canceled():
                 break
             conduit.reset()
             report = RefreshReport(self.id, url)

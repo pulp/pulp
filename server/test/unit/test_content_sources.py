@@ -317,7 +317,7 @@ class TestDownloading(ContainerTest):
         self.assertEqual(listener.download_succeeded.call_count, len(request_list))
         self.assertEqual(listener.download_failed.call_count, 0)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(1))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(1))
     def test_download_cancelled_during_refreshing(self):
         downloader = LocalFileDownloader(DownloaderConfig())
         container = ContentContainer(path=self.tmp_dir)
@@ -325,7 +325,7 @@ class TestDownloading(ContainerTest):
         container.download(downloader, [])
         self.assertFalse(container.collated.called)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(1))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(1))
     def test_download_cancelled_in_download(self):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
@@ -333,7 +333,7 @@ class TestDownloading(ContainerTest):
         container.download(None, [])
         self.assertFalse(container.collated.called)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(2))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(2))
     @patch('nectar.downloaders.base.Downloader.cancel')
     def test_download_cancelled_in_started(self, mock_cancel, *unused):
         request_list = []
@@ -357,7 +357,7 @@ class TestDownloading(ContainerTest):
         container.download(downloader, request_list)
         self.assertTrue(mock_cancel.called)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(2))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(2))
     @patch('nectar.downloaders.base.Downloader.cancel')
     @patch('pulp.server.content.sources.container.NectarListener.download_started')
     def test_download_cancelled_in_succeeded(self, mock_started, mock_cancel, *unused):
@@ -383,7 +383,7 @@ class TestDownloading(ContainerTest):
         self.assertTrue(mock_started.called)
         self.assertTrue(mock_cancel.called)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(2))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(2))
     @patch('nectar.downloaders.base.Downloader.cancel')
     @patch('pulp.server.content.sources.container.NectarListener.download_started')
     def test_download_cancelled_in_failed(self, mock_started, mock_cancel, *unused):
@@ -559,7 +559,7 @@ class TestRefreshing(ContainerTest):
                 self.assertEqual(args[1], source.descriptor)
                 self.assertEqual(args[2], url)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(1))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(1))
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
     def test_refresh_cancel_in_sources(self, mock_plugin, *unused):
         container = ContentContainer(path=self.tmp_dir)
@@ -568,7 +568,7 @@ class TestRefreshing(ContainerTest):
         self.assertEqual(plugin.refresh.call_count, 0)
         self.assertEqual(len(report), 0)
 
-    @patch('pulp.server.cancel.Call.canceled', Canceled(3))
+    @patch('pulp.server.cancel.Call.current_canceled', Canceled(3))
     @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
     def test_refresh_cancel_in_plugin(self, mock_plugin, *unused):
         container = ContentContainer(path=self.tmp_dir)
