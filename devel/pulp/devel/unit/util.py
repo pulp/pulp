@@ -56,7 +56,8 @@ def compare_element(source, target):
         raise AssertionError("Target is not an element")
 
     if source.tag != target.tag:
-        raise AssertionError("elements do not match.  Tags are different")
+        raise AssertionError("elements do not match.  Tags are different %s != %s" %
+                             (source.tag, target.tag))
 
     #test keys
     source_keys = set(source.keys())
@@ -67,7 +68,8 @@ def compare_element(source, target):
 
     for key in source_keys:
         if source.get(key) != target.get(key):
-            raise AssertionError("Key values do not match.  Value mismatch for key %s" % key)
+            raise AssertionError("Key values do not match.  Value mismatch for key %s: %s != %s" %
+                                 (key, source.get(key), target.get(key)))
 
     if source.text != target.text:
         raise AssertionError("elements do not match.  Text is different\n%s\n%s" % (source.text,
