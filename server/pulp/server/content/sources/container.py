@@ -21,9 +21,9 @@ from pulp.server.content.sources.model import ContentSource, PrimarySource, Refr
 log = getLogger(__name__)
 
 
-class ContentWarehouse(object):
+class ContentContainer(object):
     """
-    The content warehouse represents a virtual collection of content that is
+    The content container represents a virtual collection of content that is
     supplied by a collection of content sources.
     :ivar sources: A dictionary of content sources keyed by source ID.
     :type sources: dict
@@ -194,28 +194,28 @@ class NectarListener(DownloadEventListener):
         except Exception:
             log.exception(str(method))
 
-    def __init__(self, warehouse, downloader):
+    def __init__(self, container, downloader):
         """
-        :param warehouse: A warehouse object.
-        :type warehouse: ContentWarehouse
+        :param container: A container object.
+        :type container: ContentContainer
         :param downloader: The active nectar downloader.
         :type downloader: nectar.downloaders.base.Downloader
         """
-        self.warehouse = warehouse
+        self.container = container
         self.downloader = downloader
 
     def download_started(self, report):
         """
         Nectar download started.
-        Forwarded to the listener registered with the warehouse.
+        Forwarded to the listener registered with the container.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.warehouse.cancelled:
+        if self.container.cancelled:
             self.downloader.cancel()
             return
         request = report.data
-        listener = self.warehouse.listener
+        listener = self.container.listener
         if not listener:
             return
         self._notify(listener.download_started, request)
@@ -224,16 +224,16 @@ class NectarListener(DownloadEventListener):
         """
         Nectar download succeeded.
         The associated request is marked as succeeded.
-        Forwarded to the listener registered with the warehouse.
+        Forwarded to the listener registered with the container.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.warehouse.cancelled:
+        if self.container.cancelled:
             self.downloader.cancel()
             return
         request = report.data
         request.downloaded = True
-        listener = self.warehouse.listener
+        listener = self.container.listener
         if not listener:
             return
         self._notify(listener.download_succeeded, request)
@@ -241,18 +241,18 @@ class NectarListener(DownloadEventListener):
     def download_failed(self, report):
         """
         Nectar download failed.
-        Forwarded to the listener registered with the warehouse.
+        Forwarded to the listener registered with the container.
         The request is marked as failed ONLY if the request has no more
         content sources to try.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.warehouse.cancelled:
+        if self.container.cancelled:
             self.downloader.cancel()
             return
         request = report.data
         request.errors.append(report.error_msg)
-        listener = self.warehouse.listener
+        listener = self.container.listener
         if not listener:
             return
         if request.has_source():
