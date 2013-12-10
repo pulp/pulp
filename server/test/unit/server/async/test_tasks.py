@@ -11,7 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
-This module contains tests for the pulp.server.tasks module.
+This module contains tests for the pulp.server.async.tasks module.
 """
 from copy import deepcopy
 import uuid
