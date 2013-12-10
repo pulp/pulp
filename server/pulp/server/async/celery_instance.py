@@ -36,6 +36,11 @@ CELERYBEAT_SCHEDULE = {
         'args': tuple(),
         'options': {'queue': RESOURCE_MANAGER_QUEUE,},
     },
+    'reap_expired_documents': {
+        'task': 'pulp.server.db.reaper.reap_expired_documents',
+        'schedule': timedelta(days=config.getfloat('data_reaping', 'reaper_interval')),
+        'args': tuple(),
+    },
 }
 
 
