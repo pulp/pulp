@@ -20,6 +20,7 @@ from ConfigParser import ConfigParser
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
+from pulp.server.cancel import Call
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
@@ -289,6 +290,8 @@ class ContentSource(object):
         plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
         conduit = CatalogerConduit(self.id, self.expires())
         for url in self.urls():
+            if Call.canceled():
+                break
             conduit.reset()
             report = RefreshReport(self.id, url)
             log.info(REFRESHING, self.id, url)

@@ -33,6 +33,16 @@ call()
 Thread #2:
 
 call.cancel()
+
+Benefits:
+ - Easily supports canceling function call graphs.
+ - Easily supports canceling instance method call graphs.
+ - Easily supports canceling mixed (functions and methods) call graphs.
+ - No need stored things in class attributes just to support propagating cancel.
+ - Classes can be modeled without unnatural attributes such as 'canceled' flags
+   or methods such as 'cancel()'.
+ - Specific calls can be canceled instead of calling cancel() on objects (which is often weird).
+ - To support cancel, simple add checks for Call.canceled() in loops and you're done.
 """
 
 from threading import local, RLock
@@ -111,6 +121,9 @@ class Call(object):
             self._delete()
 
     def _add(self):
+        """
+        Add the call to the _calls mapping.
+        """
         Call._mutex.acquire()
         try:
             Call._calls[self.id] = False
@@ -118,6 +131,9 @@ class Call(object):
             Call._mutex.release()
 
     def _delete(self):
+        """
+        Delete the call from the _calls mapping.
+        """
         Call._mutex.acquire()
         try:
             del Call._calls[self.id]
