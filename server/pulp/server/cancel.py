@@ -19,13 +19,25 @@ Example (caller):
 
 Thread #1:
 
+def checksum(dir_path):
+  for path in list_files(dir_path):
+    if not Call.current_canceled():
+      checksum(path)
+    else:
+      break
+
 def bar():
-  while not Call.canceled():
-    do_something()  # long running
+  for dir_path in root_directories:
+    checksum(dir_path)  # long running
+    if Call.current_canceled():
+      break
 
 def foo():
-  while not Call.canceled():
-    bar()
+  for i in range(0, 100):
+    if not Call.current_canceled():
+      bar()
+    else:
+      break
 
 call = Call(foo)  # cancelable foo()
 call()
@@ -42,52 +54,58 @@ Benefits:
  - Classes can be modeled without unnatural attributes such as 'canceled' flags
    or methods such as 'cancel()'.
  - Specific calls can be canceled instead of calling cancel() on objects (which is often weird).
- - To support cancel, simple add checks for Call.canceled() in loops and you're done.
+ - To support cancel, simply add checks for Call.canceled() in loops and you're done.
 """
 
-from threading import local, RLock
-
-_calls = {}
-_current = local()
+from threading import local
 
 
 class Call(object):
     """
     Provides wrapper for cancelable function/method invocation.
-    :cvar _calls: Call cancel status: {call_id: canceled}.
+    :cvar _calls: Call cancel status: {call_id: Call}.
     :cvar _calls: dict
     :cvar _current: Call stack in the current thread used to find
         the currently running call_id.  The call_id is contained in the
         'stack' attribute on the thread local.
     :type _current: Thread local.
-    :ivar _mutex: Protected concurrent access to _calls.
-    :type _mutex: RLock.
     :ivar id: The call ID.
     :type id: int
     :ivar target: The wrapped callable.
     :type target: callable
+    :ivar canceled: Canceled indicator.
+    :type canceled: bool
     """
 
     _calls = {}
     _current = local()
-    _mutex = RLock()
 
     @staticmethod
-    def canceled():
+    def current():
         """
-        Get whether the current call has been cancelled.
-        Sentinel to be used in loops.
-        :return: True if canceled.
-        :rtype: bool
+        Get the current call.
+        :return: The current call or None.
+        :rtype: Call
         """
-        Call._mutex.acquire()
         try:
             call_id = Call._current.stack[-1]
             return Call._calls[call_id]
         except (AttributeError, IndexError):
+            # nothing found
+            pass
+
+    @staticmethod
+    def current_canceled():
+        """
+        Shorthand for getting whether the current call has been cancelled.
+        :return: True if canceled.
+        :rtype: bool
+        """
+        call = Call.current()
+        if call is not None:
+            return call.canceled
+        else:
             return False
-        finally:
-            Call._mutex.release()
 
     def __init__(self, target):
         """
@@ -96,15 +114,16 @@ class Call(object):
         """
         self.id = id(self)
         self.target = target
+        self.canceled = False
 
     def __call__(self, *args, **kwargs):
         """
         Invoke the target with the specified arguments.
          - Push call_id on the stack.
-         - Set canceled (False) for this call.
+         - Store the call.
          - Invoke target.
          - Pop call_id from stack.
-         - Delete canceled flag.
+         - Delete the call from _calls.
         :param args: Arguments passed to target.
         :param kwargs: Keywords passed to target.
         :return: Whatever target() returns.
@@ -113,40 +132,15 @@ class Call(object):
             Call._current.stack.append(self.id)
         except AttributeError:
             Call._current.stack = [self.id]
-        self._add()
+        Call._calls[self.id] = self
         try:
             self.target(*args, **kwargs)
         finally:
             Call._current.stack.pop()
-            self._delete()
-
-    def _add(self):
-        """
-        Add the call to the _calls mapping.
-        """
-        Call._mutex.acquire()
-        try:
-            Call._calls[self.id] = False
-        finally:
-            Call._mutex.release()
-
-    def _delete(self):
-        """
-        Delete the call from the _calls mapping.
-        """
-        Call._mutex.acquire()
-        try:
             del Call._calls[self.id]
-        finally:
-            Call._mutex.release()
 
     def cancel(self):
         """
         Cancel the call.
         """
-        Call._mutex.acquire()
-        try:
-            if self.id in Call._calls:
-                Call._calls[self.id] = True
-        finally:
-            Call._mutex.release()
+        self.canceled = True

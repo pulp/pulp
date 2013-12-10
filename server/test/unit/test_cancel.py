@@ -22,52 +22,59 @@ class Dog(object):
         self.canceled = False
 
     def bark(self, something):
-        while not Call.canceled():
+        while not Call.current_canceled():
             self.bark_count += 1
-        self.canceled = Call.canceled()
+        self.canceled = Call.current_canceled()
 
 
 def bark(something):
-    while not Call.canceled():
+    while not Call.current_canceled():
         if callable(something):
             return something()
 
 
 def wag():
-    while not Call.canceled():
+    while not Call.current_canceled():
         pass  # wag
 
 
 class TestCall(TestCase):
 
-    def verify(self, call_id, depth=1):
+    def verify(self, call, depth=1):
+        self.assertEqual(call, Call.current())
         self.assertEqual(len(Call._current.stack), depth)
-        self.assertEqual(Call._current.stack[-1], call_id)
+        self.assertEqual(Call._current.stack[-1], call.id)
         self.assertEqual(len(Call._calls), depth)
-        self.assertFalse(Call._calls[call_id])
-        return Call.canceled()
+        self.assertFalse(Call._calls[call.id].canceled)
+        return Call.current_canceled()
 
     def test_call(self):
         call = Call(self.verify)
-        call(call.id)
+        call(call)
         self.assertEqual(len(Call._current.stack), 0)
         self.assertEqual(len(Call._calls), 0)
 
+    def test_nothing_current(self):
+        self.assertTrue(Call.current() is None)
+
     def test_nested(self):
+        preceding = Call(None)
         call = Call(self.verify)
-        Call._current.stack = [123]
-        Call._calls[123] = False
-        call(call.id, 2)
+        Call._current.stack = [preceding.id]
+        Call._calls[preceding.id] = preceding
+        call(call, 2)
         self.assertEqual(len(Call._current.stack), 1)
         self.assertEqual(len(Call._calls), 1)
-        self.assertEqual(Call._current.stack[-1], 123)
-        self.assertFalse(Call._calls[123])
+        self.assertEqual(Call._current.stack[-1], preceding.id)
+        self.assertFalse(Call._calls[preceding.id].canceled)
         Call._current.stack.pop()
-        del Call._calls[123]
+        del Call._calls[preceding.id]
 
     def test_cancel_not_running(self):
+        Call._current.stack = []
         call = Call(self.verify)
-        self.assertFalse(call.canceled())
+        self.assertFalse(call.canceled)
+        self.assertFalse(Call.current_canceled())
         call.cancel()
         self.assertEqual(len(Call._current.stack), 0)
         self.assertEqual(len(Call._calls), 0)
