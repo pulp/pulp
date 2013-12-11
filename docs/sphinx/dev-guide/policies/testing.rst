@@ -6,6 +6,7 @@ Conventions
 
 Unit tests are found under the ``test/unit`` directory in each subproject.
 Within the ``test/unit`` directory are two subdirectories:
+
 * **data** - Holds any data files used by the unit tests
 * **unit** - Holds the unit tests themselves.
 
