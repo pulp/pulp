@@ -22,10 +22,6 @@ connections, such as to an external repository or the message bus.
 
 Test cases are required for all submitted pull requests.
 
-If a there are any purpose build utilities that are used by many test cases they should be
-placed in the ``devel`` subproject.  This subproject contains a number of mock objects and
-utilities that are used by unit tests in all of the pulp projects.
-
 Python Libraries
 ----------------
 
@@ -52,6 +48,10 @@ The above base classes should only be used in the event they are needed. The
 added setup and tear down time should be avoided in the event that those
 features are not needed, in which case simply subclassing ``unittest.TestCase``
 is preferred.
+
+If a there are any utilities that are used by many test modules they should be
+placed in the ``devel`` subproject.  This subproject contains a number of mock objects and
+utilities that are used by unit tests in all of the pulp projects.
 
 
 Compatibility
