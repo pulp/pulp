@@ -13,6 +13,7 @@
 
 from xml.etree import ElementTree
 
+
 def compare_dict(source, target):
     """
     Utility method to compare dictionaries since python 2.6 doesn't support assertDictEquals
@@ -83,4 +84,3 @@ def compare_element(source, target):
 
     for source_child, target_child in zip(source_children, target_children):
         compare_element(source_child, target_child)
-
