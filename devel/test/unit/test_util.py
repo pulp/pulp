@@ -11,6 +11,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import unittest
+from xml.etree import ElementTree
 
 from pulp.devel.unit import util
 
@@ -55,4 +56,67 @@ class TestCompareDic(unittest.TestCase):
         source = {'foo': 'bar', 'baz': 'qux'}
         target = 'bar'
         self.assertRaises(AssertionError, util.compare_dict, source, target)
+
+
+class TestCompareEtree(unittest.TestCase):
+
+    def test_compare_element_equality(self):
+        source_string = '<foo alpha="bar">some text <baz></baz></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(source_string)
+        util.compare_element(source, target)
+
+    def test_compare_element_inequality_tags(self):
+        source_string = '<foo></foo>'
+        target_string = '<bar></bar>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target)
+
+    def test_compare_element_inequality_text(self):
+        source_string = '<foo>alpha</foo>'
+        target_string = '<foo>beta</foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target)
+
+    def test_compare_element_inequality_keys(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo beta="bar"></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target)
+
+    def test_compare_element_inequality_values(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo alpha="foo"></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target)
+
+    def test_compare_element_source_not_element(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo alpha="foo"></foo>'
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source_string, target)
+
+    def test_compare_element_target_not_element(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo alpha="foo"></foo>'
+        source = ElementTree.fromstring(source_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target_string)
+
+    def test_compare_element_child_different(self):
+        source_string = '<foo alpha="bar">some text <baz>qux</baz></foo>'
+        target_string = '<foo alpha="bar">some text <baz>zap</baz></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target)
+
+    def test_compare_element_child_different_number(self):
+        source_string = '<foo alpha="bar">some text <baz>qux</baz></foo>'
+        target_string = '<foo alpha="bar">some text <baz>zap</baz><fuz></fuz></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, util.compare_element, source, target)
 
