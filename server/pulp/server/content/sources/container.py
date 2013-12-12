@@ -21,16 +21,12 @@ from pulp.server.content.sources.model import ContentSource, PrimarySource, Refr
 log = getLogger(__name__)
 
 
-class ContentWarehouse(object):
+class ContentContainer(object):
     """
-    The content warehouse represents a virtual collection of content that is
+    The content container represents a virtual collection of content that is
     supplied by a collection of content sources.
     :ivar sources: A dictionary of content sources keyed by source ID.
     :type sources: dict
-    :ivar listener: An optional download request listener.
-    :type listener: Listener
-    :ivar cancelled: Request cancelled flag.
-    :type cancelled: bool
     """
 
     @staticmethod
@@ -56,50 +52,37 @@ class ContentWarehouse(object):
             nectar_list.append(nectar_request)
         return collated
 
-    def __init__(self, path=None, listener=None):
+    def __init__(self, path=None):
         """
         :param path: The absolute path to a directory containing
             content source descriptor files.
         :type path: str
-        :param listener: An optional download request listener.
-        :type listener: Listener
         """
         self.sources = ContentSource.load_all(path)
-        self.listener = listener
-        self.cancelled = False
 
-    def cancel(self):
-        """
-        Cancel the current operation.
-        """
-        self.cancelled = True
-
-    def reset(self):
-        """
-        Reset the object.
-        """
-        self.cancelled = False
-
-    def download(self, downloader, request_list):
+    def download(self, cancel_event, downloader, request_list, listener=None):
         """
         Download files using available alternate content sources.
         An attempt is made to satisfy each download request using the alternate
         content sources in the order specified by priority.  The specified
         downloader is designated as the primary source and is used in the event that
         the request cannot be completed using alternate sources.
+        :param cancel_event: An event that indicates the download has been canceled.
+        :type cancel_event: threading.Event
         :param downloader: A primary nectar downloader.  Used to download the
             requested content unit when it cannot be achieved using alternate
             content sources.
         :type downloader: nectar.downloaders.base.Downloader
         :param request_list: A list of pulp.server.content.sources.model.Request.
         :type request_list: list
+        :param listener: An optional download request listener.
+        :type listener: Listener
         """
-        self.reset()
-        self.refresh()
+        self.refresh(cancel_event)
         primary = PrimarySource(downloader)
         for request in request_list:
             request.find_sources(primary, self.sources)
-        while not self.cancelled:
+        while not cancel_event.isSet():
             collated = self.collated(request_list)
             if not collated:
                 #  Either we have exhausted our content sources or all
@@ -107,26 +90,29 @@ class ContentWarehouse(object):
                 break
             for source, nectar_list in collated.items():
                 downloader = source.downloader()
-                downloader.event_listener = NectarListener(self, downloader)
+                downloader.event_listener = NectarListener(cancel_event, downloader, listener)
                 downloader.download(nectar_list)
+                if cancel_event.isSet():
+                    break
 
-    def refresh(self, force=False):
+    def refresh(self, cancel_event, force=False):
         """
         Refresh the content catalog using available content sources.
+        :param cancel_event: An event that indicates the refresh has been canceled.
+        :type cancel_event: threading.Event
         :param force: Force refresh of content sources with unexpired catalog entries.
         :type force: bool
         :return: A list of refresh reports.
         :rtype: list of: pulp.server.content.sources.model.RefreshReport
         """
         reports = []
-        self.reset()
         catalog = managers.content_catalog_manager()
         for source_id, source in self.sources.items():
-            if self.cancelled:
-                return
+            if cancel_event.isSet():
+                break
             if force or not catalog.has_entries(source_id):
                 try:
-                    report = source.refresh()
+                    report = source.refresh(cancel_event)
                     reports.extend(report)
                 except Exception, e:
                     log.error('refresh %s, failed: %s', source_id, e)
@@ -174,9 +160,6 @@ class Listener(object):
         """
 
 
-# --- nectar -----------------------------------------------------------------
-
-
 class NectarListener(DownloadEventListener):
 
     @staticmethod
@@ -194,28 +177,31 @@ class NectarListener(DownloadEventListener):
         except Exception:
             log.exception(str(method))
 
-    def __init__(self, warehouse, downloader):
+    def __init__(self, cancel_event, downloader, listener=None):
         """
-        :param warehouse: A warehouse object.
-        :type warehouse: ContentWarehouse
+        :param cancel_event: An event that indicates the download has been canceled.
+        :type cancel_event: threading.Event
         :param downloader: The active nectar downloader.
         :type downloader: nectar.downloaders.base.Downloader
+        :param listener: An optional download request listener.
+        :type listener: Listener
         """
-        self.warehouse = warehouse
+        self.cancel_event = cancel_event
         self.downloader = downloader
+        self.listener = listener
 
     def download_started(self, report):
         """
         Nectar download started.
-        Forwarded to the listener registered with the warehouse.
+        Forwarded to the listener registered with the container.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.warehouse.cancelled:
+        if self.cancel_event.isSet():
             self.downloader.cancel()
             return
         request = report.data
-        listener = self.warehouse.listener
+        listener = self.listener
         if not listener:
             return
         self._notify(listener.download_started, request)
@@ -224,16 +210,16 @@ class NectarListener(DownloadEventListener):
         """
         Nectar download succeeded.
         The associated request is marked as succeeded.
-        Forwarded to the listener registered with the warehouse.
+        Forwarded to the listener registered with the container.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.warehouse.cancelled:
+        if self.cancel_event.isSet():
             self.downloader.cancel()
             return
         request = report.data
         request.downloaded = True
-        listener = self.warehouse.listener
+        listener = self.listener
         if not listener:
             return
         self._notify(listener.download_succeeded, request)
@@ -241,18 +227,18 @@ class NectarListener(DownloadEventListener):
     def download_failed(self, report):
         """
         Nectar download failed.
-        Forwarded to the listener registered with the warehouse.
+        Forwarded to the listener registered with the container.
         The request is marked as failed ONLY if the request has no more
         content sources to try.
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if self.warehouse.cancelled:
+        if self.cancel_event.isSet():
             self.downloader.cancel()
             return
         request = report.data
         request.errors.append(report.error_msg)
-        listener = self.warehouse.listener
+        listener = self.listener
         if not listener:
             return
         if request.has_source():

@@ -11,4 +11,4 @@
 
 
 from pulp.server.content.sources.model import Request, ContentSource
-from pulp.server.content.sources.warehouse import ContentWarehouse, Listener
+from pulp.server.content.sources.container import ContentContainer, Listener
