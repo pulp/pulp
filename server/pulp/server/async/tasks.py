@@ -16,7 +16,7 @@ import random
 import re
 
 from celery import chain, task, Task as CeleryTask
-from celery.app import control
+from celery.app import control, defaults
 
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
@@ -61,6 +61,16 @@ def babysit():
     available_queues_missing_workers = resources.filter_available_queues(
         missing_queue_criteria)
     for queue in available_queues_missing_workers:
+        # Cancel all of the tasks that were assigned to this queue
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
+        msg = msg % {'name': queue.name}
+        logger.error(msg)
+        for task in TaskStatusManager.find_by_criteria(
+                Criteria(filters={'queue': queue.name,
+                                  'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
+            cancel(task['task_id'])
+
+        # Finally, delete the queue
         queue.delete()
 
 
@@ -190,12 +200,16 @@ class Task(CeleryTask, ReservedTaskMixin):
         to create and update task status which can be used to track status of this task
         during it's lifetime.
 
+        :param queue:       The queue that the task has been placed into (optional, defaults to
+                            the general Celery queue.)
+        :type  queue:       basestring
         :param tags:        A list of tags (strings) to place onto the task, used for searching for
                             tasks by tag
         :type  tags:        list
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
+        queue = kwargs.get('queue', defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
         tags = kwargs.pop('tags', [])
         async_result = super(Task, self).apply_async(*args, **kwargs)
 
@@ -206,7 +220,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         TaskStatus.get_collection().update(
             {'task_id': async_result.id},
             {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
-                              '$set': {'tags':tags}},
+             '$set': {'queue': queue, 'tags': tags}},
             upsert=True)
         return async_result
 
@@ -268,6 +282,7 @@ class Task(CeleryTask, ReservedTaskMixin):
                      'traceback': einfo.traceback}
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
+
 def cancel(task_id):
     """
     Cancel the task that is represented by the given task_id.
@@ -276,3 +291,6 @@ def cancel(task_id):
     :type  task_id: basestring
     """
     controller.revoke(task_id, terminate=True)
+    msg = _('Task canceled: %(task_id)s.')
+    msg = msg % {'task_id': task_id}
+    logger.info(msg)

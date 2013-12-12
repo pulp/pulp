@@ -8,12 +8,14 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+"""
+Test the pulp.server.webservices.controllers.consumer module.
+"""
 import logging
 
 import mock
 
-import base
+from .... import base
 from pulp.devel import mock_agent
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
@@ -1351,10 +1353,17 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource')
+    class ReservedResourceApplyAsync(object):
+        """
+        This object allows us to mock the return value of _reserve_resource.apply_async.get().
+        """
+        def get(self):
+            return 'some_queue'
+
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability(self, _reserve_resource):
         # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
         self.populate()
         self.populate_bindings()
         request_body = dict(consumer_criteria={'filters':self.FILTER})
@@ -1365,10 +1374,10 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_consumers(self, _reserve_resource):
         # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
         # Test
         request_body = dict(consumer_criteria={'filters':self.FILTER})
         status, body = self.post(self.PATH, request_body)
@@ -1377,10 +1386,10 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_bindings(self, _reserve_resource):
         # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
         # Setup
         self.populate()
         # Test

@@ -16,14 +16,16 @@ This module contains tests for the pulp.server.async.tasks module.
 from copy import deepcopy
 import uuid
 
+from celery.app import defaults
 import celery
 import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
+from pulp.server.dispatch.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
+                                            CALL_RUNNING_STATE, CALL_WAITING_STATE)
 
 
 RESERVED_WORKER_1 = '%s1' % tasks.RESERVED_WORKER_NAME_PREFIX
@@ -79,6 +81,52 @@ class TestBabysit(ResourceReservationTests):
     """
     Test the babysit() function.
     """
+    @mock.patch('celery.app.control.Inspect.active_queues',
+                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
+    @mock.patch('pulp.server.async.tasks.cancel')
+    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
+    @mock.patch('pulp.server.async.tasks.logger')
+    def test_babysit_cancels_correct_tasks(self, logger, add_consumer, cancel, active_queues):
+        """
+        When babysit() discovers that a worker has gone missing, it should cancel all of the tasks
+        that were in its queue.
+        """
+        # Let's start off by creating the existing queues and what not by calling babysit
+        tasks.babysit()
+        # Now, let's add another AvailableQueue that isn't found in our active_queues mock so that
+        # babysit() can notice that it appears to have gone missing next time it's called
+        missing_available_queue = AvailableQueue('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX, 2)
+        missing_available_queue.save()
+        # Let's simulate three tasks being assigned to this AvailableQueue, with two of them being
+        # in an incomplete state and one in a complete state. The two should get canceled.
+        # Let's put task_1 in progress
+        task_1 = TaskStatusManager.create_task_status('task_1', missing_available_queue.name,
+                                                      state=CALL_RUNNING_STATE)
+        task_2 = TaskStatusManager.create_task_status('task_2', missing_available_queue.name,
+                                                      state=CALL_WAITING_STATE)
+        # This task shouldn't get canceled because it isn't in an incomplete state
+        task_3 = TaskStatusManager.create_task_status('task_3', missing_available_queue.name,
+                                                      state=CALL_FINISHED_STATE)
+        # Let's make a task in a worker that is still present just to make sure it isn't touched.
+        task_4 = TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
+                                                      state=CALL_RUNNING_STATE)
+
+        # Now, let's call babysit() again. This time, it should delete the AvailableQueue, and it
+        # should cancel task_1 and task_2. task_3 should be left alone.
+        tasks.babysit()
+
+        # cancel() should have been called twice with task_1 and task_2 as parameters
+        self.assertEqual(cancel.call_count, 2)
+        # Let's build a set out of the two times that cancel was called. We can't know for sure
+        # which order the Tasks got canceled in, but we can assert that the correct two tasks were
+        # canceled (task_3 should not appear in this set).
+        cancel_param_set = set([c[1] for c in cancel.mock_calls])
+        self.assertEqual(cancel_param_set, set([('task_1',), ('task_2',)]))
+        # We should have logged that we are canceling the tasks
+        self.assertEqual(logger.call_count, 0)
+        self.assertTrue(missing_available_queue.name in logger.mock_calls[0][1][0])
+        self.assertTrue('Canceling the tasks' in logger.mock_calls[0][1][0])
+
     @mock.patch('celery.app.control.Inspect.active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
@@ -376,14 +424,10 @@ def _reserve_resource_apply_async():
     return AsyncResult()
 
 
-class TestTask(PulpServerTests):
+class TestTask(ResourceReservationTests):
     """
     Test the pulp.server.tasks.Task class.
     """
-    def clean(self):
-        super(TestTask, self).clean()
-        TaskStatus.get_collection().remove()
-
     @mock.patch('pulp.server.async.tasks._queue_release_resource')
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async',
                 return_value=_reserve_resource_apply_async())
@@ -424,7 +468,7 @@ class TestTask(PulpServerTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
 
@@ -454,7 +498,7 @@ class TestTask(PulpServerTests):
         einfo = EInfo()
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
@@ -475,14 +519,37 @@ class TestTask(PulpServerTests):
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_1}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
-
         task = tasks.Task()
+
         task.apply_async(*args, **kwargs)
 
         task_statuses = list(TaskStatusManager.find_all())
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertEqual(new_task_status['queue'], RESERVED_WORKER_1)
+        self.assertEqual(new_task_status['tags'], kwargs['tags'])
+        self.assertEqual(new_task_status['state'], 'waiting')
+
+    @mock.patch('celery.Task.apply_async')
+    def test_apply_async_task_status_default_queue(self, apply_async):
+        """
+        Assert that apply_async() creates new task status when we do not pass the queue kwarg. It
+        default to the default Celery queue.
+        """
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags']}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        task_statuses = list(TaskStatusManager.find_all())
+        self.assertEqual(len(task_statuses), 1)
+        new_task_status = task_statuses[0]
+        self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertEqual(new_task_status['queue'],
+                         defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
@@ -492,9 +559,12 @@ class TestCancel(PulpServerTests):
     Test the tasks.cancel() function.
     """
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
-    def test_cancel(self, revoke):
+    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
+    def test_cancel(self, logger, revoke):
         task_id = '1234abcd'
 
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
+        self.assertEqual(logger.info.call_count, 1)
+        self.assertTrue(task_id in logger.info.mock_calls[0][1][0])
