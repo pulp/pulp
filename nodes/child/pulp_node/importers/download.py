@@ -54,20 +54,18 @@ def untar_dir(path, storage_path):
 
 # --- downloading ------------------------------------------------------------
 
-class UnitDownloadManager(Listener):
+class ContentDownloadListener(Listener):
     """
-    The content unit download manager.
+    The content unit download event listener.
     Listens for status changes to unit download requests and calls into the importer
     strategy object based on whether the download succeeded or failed.  If the download
     succeeded, the importer strategy is called to add the associated content unit (in the DB).
-    In all cases, it checks the cancellation status of the sync request and when
-    cancellation is detected, the downloader is cancelled.
     """
 
     @staticmethod
     def create_request(url, destination, unit, unit_ref):
         """
-        Create a nectar download request compatible with the listener.
+        Create a content container download request that is compatible with the listener.
         The destination directory is created as needed.
         :param url: The download URL.
         :type url: str
@@ -92,9 +90,9 @@ class UnitDownloadManager(Listener):
 
     def __init__(self, strategy, request):
         """
-        :param strategy: An importer strategy
+        :param strategy: An importer strategy object.
         :type strategy: pulp_node.importer.strategy.ImporterStrategy.
-        :param request: The nodes sync request.
+        :param request: The nodes synchronization request.
         :type request: pulp_node.importers.strategies.SyncRequest.
         """
         super(self.__class__, self).__init__()
@@ -108,8 +106,6 @@ class UnitDownloadManager(Listener):
           1. Fetch the content unit using the reference.
           2. Update the storage_path on the unit.
           3. Add the unit.
-          4. Check to see if the node sync request has been cancelled and cancel
-             the downloader as needed.
         :param request: The download request that succeeded.
         :type request: Request
         """
@@ -124,8 +120,7 @@ class UnitDownloadManager(Listener):
     def download_failed(self, request):
         """
         A specific download (request) has failed.
-        Just need to check to see if the node sync request has been cancelled
-        and cancel the downloader as needed.
+        Append download request errors to our list of errors.
         :param request: The download request that failed.
         :type request: Request
         """
