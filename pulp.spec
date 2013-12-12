@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.3.0
-Release: 0.29.beta%{?dist}
+Version: 2.4.0
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -485,6 +485,24 @@ exit 0
 %endif
 
 %changelog
+* Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
+- 1031220 - raising an AttributeError when an attribute is missing on a Model
+  (mhrivnak@redhat.com)
+- Add support for alternate content sources. (jortel@redhat.com)
+- 995076 - make sure to call finalize on the nectar config object
+  (jason.connor@gmail.com)
+- 1032189 - fixed use of gettext with multiple substitutions
+  (mhrivnak@redhat.com)
+- 1020300 - Prevent hashed password from being returned by the get user
+  command. (bcourt@redhat.com)
+- 1019155 - added logic to correctly set the URL when called from any
+  /bindings/ URLs (jason.connor@gmail.com)
+- 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
+- 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
+- 1026606 - Added docs for get unit REST API (jason.dobies@redhat.com)
+- 996606 - Check to see if a repo exists before starting upload process
+  (jason.dobies@redhat.com)
+
 * Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
 - 1027500 - init python-gofer before agent and tasking services started.
   (jortel@redhat.com)
