@@ -10,8 +10,8 @@ Within the ``test/unit`` directory are two subdirectories:
 * **data** - Holds any data files used by the unit tests
 * **unit** - Holds the unit tests themselves.
 
-Within the **unit** directory the tests are to be packaged in a directory structure that matches
-the directory structure of the module they are testing.  The test module itself shall be named
+Within the **unit** directory the tests are to be organized in a directory structure that matches
+the directory structure of the module they are testing. The test module itself shall be named
 test_<module_name>.py where <module_name> matches the module that is being tested.
 
 For example: If the module being tested is ``/common/pulp/common/plugins/progress.py`` the
@@ -50,7 +50,7 @@ features are not needed, in which case simply subclassing ``unittest.TestCase``
 is preferred.
 
 If a there are any utilities that are used by many test modules they should be
-placed in the ``devel`` subproject.  This subproject contains a number of mock objects and
+placed in the ``devel`` subproject. This subproject contains a number of mock objects and
 utilities that are used by unit tests in all of the pulp projects.
 
 
