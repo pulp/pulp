@@ -114,7 +114,7 @@ class TestBase(TestCase):
         progress = RepositoryProgress(REPO_ID, ProgressListener(conduit))
         summary = SummaryReport()
         cancel_event = CancelEvent(cancel_on)
-        request = SyncRequest(
+        request = Request(
             cancel_event,
             conduit=conduit,
             config={},

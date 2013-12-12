@@ -46,7 +46,7 @@ STRATEGY_UNSUPPORTED = _('Importer strategy "%(s)s" not supported')
 # --- request ---------------------------------------------------------------------------
 
 
-class SyncRequest(object):
+class Request(object):
     """
     Represents a specific request to synchronize a repository on a child node.
     It contains the resources needed by the strategy to complete the request

@@ -141,9 +141,7 @@ class BadDownloadRequest(DownloadRequest):
 
     def __init__(self, *args, **kwargs):
         DownloadRequest.__init__(self, *args, **kwargs)
-        self.url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
-
-
+        self.url = 'http:/NOWHERE/FAIL_ME_%f' % random.random()
 
 class AgentConduit(Conduit):
 
@@ -1549,7 +1547,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertFalse(report.succeeded)
         errors = report.details['errors']
         repositories = report.details['repositories']
-        self.assertEqual(len(errors), 1)
+        self.assertEqual(len(errors), 5)
         self.assertEqual(errors[0]['error_id'], error.UnitDownloadError.ERROR_ID)
         self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
         self.assertEqual(len(repositories), 1)

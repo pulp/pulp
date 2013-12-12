@@ -25,7 +25,7 @@ from pulp_node import constants
 from pulp_node.error import CaughtException
 from pulp_node.reports import RepositoryProgress
 from pulp_node.importers.reports import SummaryReport, ProgressListener
-from pulp_node.importers.strategies import find_strategy, SyncRequest
+from pulp_node.importers.strategies import find_strategy, Request
 
 
 log = getLogger(__name__)
@@ -65,9 +65,9 @@ class NodesHttpImporter(Importer):
     @classmethod
     def metadata(cls):
         return {
-            'id' : constants.HTTP_IMPORTER,
-            'display_name' : 'Pulp Nodes HTTP Importer',
-            'types' : ['node', 'repository']
+            'id': constants.HTTP_IMPORTER,
+            'display_name': 'Pulp Nodes HTTP Importer',
+            'types': ['node', 'repository']
         }
 
     def __init__(self):
@@ -101,7 +101,7 @@ class NodesHttpImporter(Importer):
             errors.append(msg)
 
         valid = not bool(errors)
-        return (valid, errors)
+        return valid, errors
 
     def sync_repo(self, repo, conduit, config):
         """
@@ -123,7 +123,7 @@ class NodesHttpImporter(Importer):
             downloader = self._downloader(config)
             strategy_name = config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
             progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
-            request = SyncRequest(
+            request = Request(
                 self.cancel_event,
                 conduit=conduit,
                 config=config,
