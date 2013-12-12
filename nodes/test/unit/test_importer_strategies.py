@@ -17,9 +17,6 @@ from mock import Mock, patch
 from tempfile import mkdtemp
 from uuid import uuid4
 
-from nectar.config import DownloaderConfig
-from nectar.downloaders.local import LocalFileDownloader
-
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
@@ -44,22 +41,15 @@ class TestConduit:
     set_progress = Mock()
 
 
-class TestImporter:
+class CancelEvent(object):
 
-    def __init__(self):
-        self.cancelled = False
+    def __init__(self, on_call):
+        self.on_call = on_call
+        self.call_count = 0
 
-
-class TestRequest(SyncRequest):
-
-    def __init__(self, cancel_on, *args, **kwargs):
-        super(TestRequest, self).__init__(*args, **kwargs)
-        self.cancel_on = cancel_on
-        self.cancelled_call_count = 0
-
-    def cancelled(self):
-        self.cancelled_call_count += 1
-        return self.cancel_on and self.cancelled_call_count >= self.cancel_on
+    def isSet(self):
+        self.call_count += 1
+        return self.on_call and self.call_count >= self.on_call
 
 
 class TestRepo(object):
@@ -123,9 +113,9 @@ class TestBase(TestCase):
         conduit = TestConduit()
         progress = RepositoryProgress(REPO_ID, ProgressListener(conduit))
         summary = SummaryReport()
-        request = TestRequest(
-            cancel_on=cancel_on,
-            importer=TestImporter(),
+        cancel_event = CancelEvent(cancel_on)
+        request = Request(
+            cancel_event,
             conduit=conduit,
             config={},
             downloader=Mock(),
@@ -214,7 +204,8 @@ class TestBase(TestCase):
         strategy = ImporterStrategy()
         self.assertRaises(ManifestDownloadError, strategy._unit_inventory, request)
 
-    def test_cancel_at_add_units(self):
+    @patch('pulp_node.importers.strategies.ImporterStrategy.add_unit')
+    def test_cancel_at_add_units(self, mock_add_unit):
         # Setup
         request = self.request(1)
         request.downloader.download = Mock()
@@ -225,8 +216,8 @@ class TestBase(TestCase):
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 1)
-        self.assertFalse(request.downloader.download.called)
+        self.assertEqual(request.cancel_event.call_count, 1)
+        self.assertEqual(mock_add_unit.call_count, 0)
 
     def test_cancel_at_delete_units(self):
         # Setup
@@ -237,10 +228,11 @@ class TestBase(TestCase):
         # Test
         strategy = ImporterStrategy()
         strategy._delete_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 1)
+        self.assertEqual(request.cancel_event.call_count, 1)
         request.conduit.remove_unit.assert_not_called()
 
-    def test_cancel_just_before_downloading(self):
+    @patch('pulp.server.content.sources.container.ContentContainer.download')
+    def test_cancel_just_before_downloading(self, mock_download):
         # Setup
         unit_id = str(uuid4())
         request = self.request(2)
@@ -258,84 +250,8 @@ class TestBase(TestCase):
         # Test
         strategy = ImporterStrategy()
         strategy._add_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 2)
-        self.assertFalse(request.downloader.download.called)
-
-    def test_cancel_begin_downloading(self):
-        # Setup
-        unit_id = str(uuid4())
-        request = self.request(3)
-        request.downloader = LocalFileDownloader(DownloaderConfig())
-        request.downloader.download = Mock(side_effect=request.downloader.download)
-        request.downloader.cancel = Mock()
-        unit = dict(
-            unit_id=unit_id,
-            type_id='T',
-            unit_key={},
-            metadata={},
-            storage_path=os.path.join(self.tmp_dir, unit_id),
-            relative_path=os.path.join(self.tmp_dir, 'testing', unit_id))
-        units = [unit]
-        manifest = TestManifest(units)
-        inventory = UnitInventory(BASE_URL, manifest.get_units(), [])
-        # Test
-        strategy = ImporterStrategy()
-        strategy._add_units(request, inventory)
-        self.assertTrue(request.cancelled_call_count >= 3)
-        self.assertTrue(request.downloader.download.called)
-        self.assertTrue(request.downloader.cancel.called)
-
-    def test_cancel_during_download_failed(self):
-        # Setup
-        unit_id = str(uuid4())
-        request = self.request(3)
-        request.downloader = LocalFileDownloader(DownloaderConfig())
-        request.downloader.download = Mock(side_effect=request.downloader.download)
-        request.downloader.cancel = Mock()
-        unit = dict(
-            unit_id=unit_id,
-            type_id='T',
-            unit_key={},
-            metadata={},
-            storage_path=os.path.join(self.tmp_dir, unit_id),
-            relative_path=os.path.join(self.tmp_dir, 'testing', unit_id))
-        units = [unit]
-        manifest = TestManifest(units)
-        inventory = UnitInventory(BASE_URL, manifest.get_units(), [])
-        # Test
-        strategy = ImporterStrategy()
-        strategy._add_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 3)
-        self.assertTrue(request.downloader.download.called)
-        self.assertTrue(request.downloader.cancel.called)
-
-    def test_cancel_during_download_succeeded(self):
-        # Setup
-        unit_id = str(uuid4())
-        request = self.request(4)
-        request.downloader = LocalFileDownloader(DownloaderConfig())
-        request.downloader.download = Mock(side_effect=request.downloader.download)
-        request.downloader.cancel = Mock()
-        relative_path = os.path.join(self.tmp_dir, 'testing', unit_id)
-        os.makedirs(os.path.dirname(relative_path))
-        with open(relative_path, 'w+') as fp:
-            fp.write(unit_id)
-        unit = dict(
-            unit_id=unit_id,
-            type_id='T',
-            unit_key={},
-            metadata={},
-            storage_path=os.path.join(self.tmp_dir, unit_id),
-            relative_path=relative_path)
-        units = [unit]
-        manifest = TestManifest(units)
-        inventory = UnitInventory(BASE_URL, manifest.get_units(), [])
-        # Test
-        strategy = ImporterStrategy()
-        strategy._add_units(request, inventory)
-        self.assertEqual(request.cancelled_call_count, 4)
-        self.assertTrue(request.downloader.download.called)
-        self.assertTrue(request.downloader.cancel.called)
+        self.assertEqual(request.cancel_event.call_count, 2)
+        self.assertFalse(mock_download.called)
 
     def test_needs_update(self):
         # Setup
