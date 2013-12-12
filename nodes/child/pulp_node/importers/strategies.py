@@ -30,7 +30,7 @@ from pulp_node import pathlib
 from pulp_node.conduit import NodesConduit
 from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
-from pulp_node.importers.download import UnitDownloadManager
+from pulp_node.importers.download import ContentDownloadListener
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
     DeleteUnitError, InvalidManifestError, CaughtException)
 
@@ -256,7 +256,7 @@ class ImporterStrategy(object):
         download_list = []
         units = unit_inventory.units_on_parent_only()
         request.progress.begin_adding_units(len(units))
-        manager = UnitDownloadManager(self, request)
+        listener = ContentDownloadListener(self, request)
         for unit, unit_ref in units:
             if request.cancelled():
                 return
@@ -267,13 +267,13 @@ class ImporterStrategy(object):
                 continue
             unit_path, destination = self._path_and_destination(unit)
             unit_URL = pathlib.url_join(unit_inventory.base_URL, unit_path)
-            _request = manager.create_request(unit_URL, destination, unit, unit_ref)
+            _request = listener.create_request(unit_URL, destination, unit, unit_ref)
             download_list.append(_request)
         if request.cancelled():
             return
         container = ContentContainer()
-        container.download(request.cancel_event, request.downloader, download_list, manager)
-        request.summary.errors.extend(manager.error_list)
+        container.download(request.cancel_event, request.downloader, download_list, listener)
+        request.summary.errors.extend(listener.error_list)
 
     def _update_units(self, request, unit_inventory):
         """
