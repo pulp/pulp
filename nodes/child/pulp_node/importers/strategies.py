@@ -23,6 +23,7 @@ from logging import getLogger
 
 from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
+from pulp.server.content.sources import ContentContainer
 
 from pulp_node import constants
 from pulp_node import pathlib
@@ -66,8 +67,11 @@ class SyncRequest(object):
     :type working_dir: str
     """
 
-    def __init__(self, importer, conduit, config, downloader, progress, summary, repo):
+    def __init__(self, cancel_event, conduit, config, downloader, progress, summary, repo):
         """
+        :param cancel_event: Event used to signal that the synchronization has been
+            canceled by another thread.
+        :type cancel_event: threading.Event
         :param conduit: Provides access to relevant Pulp functionality.
         :type conduit: pulp.server.conduits.repo_sync.RepoSyncConduit
         :param config: The plugin configuration.
@@ -78,10 +82,10 @@ class SyncRequest(object):
         :type progress: pulp_node.importers.reports.RepositoryProgress
         :param summary: A summary report.
         :type summary: pulp_node.importers.reports.SummaryReport
-        :param repo_id: The ID of a repository to synchronize.
-        :type repo_id: str
+        :param repo: The repository to synchronize.
+        :type repo_id: pulp.server.plugins.model.Repository
         """
-        self.importer = importer
+        self.cancel_event = cancel_event
         self.conduit = conduit
         self.config = config
         self.downloader = downloader
@@ -102,7 +106,7 @@ class SyncRequest(object):
         :return: True if cancelled.
         :rtype: bool
         """
-        return self.importer.cancelled
+        return self.cancel_event.isSet()
 
 
 # --- abstract strategy  ----------------------------------------------------------------
@@ -267,9 +271,9 @@ class ImporterStrategy(object):
             download_list.append(_request)
         if request.cancelled():
             return
-        request.downloader.event_listener = manager
-        request.downloader.download(download_list)
-        request.summary.errors.extend(manager.error_list())
+        container = ContentContainer()
+        container.download(request.cancel_event, request.downloader, download_list, manager)
+        request.summary.errors.extend(manager.error_list)
 
     def _update_units(self, request, unit_inventory):
         """

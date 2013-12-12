@@ -13,6 +13,7 @@
 
 from logging import getLogger
 from gettext import gettext as _
+from threading import Event
 
 from nectar.downloaders.threaded import HTTPThreadedDownloader as Downloader
 
@@ -56,8 +57,9 @@ def entry_point():
 class NodesHttpImporter(Importer):
     """
     The nodes importer is used to synchronize repository content.
-    :ivar cancelled: Indicates whether the sync has been cancelled.
-    :type cancelled: bool
+    :ivar cancel_event: Event used to signal that the last method called has been
+        canceled by another thread.
+    :type cancel_event: Event
     """
 
     @classmethod
@@ -69,7 +71,7 @@ class NodesHttpImporter(Importer):
         }
 
     def __init__(self):
-        self.cancelled = False
+        self.cancel_event = Event()
 
     def validate_config(self, repo, config):
         """
@@ -122,7 +124,7 @@ class NodesHttpImporter(Importer):
             strategy_name = config.get(constants.STRATEGY_KEYWORD, constants.DEFAULT_STRATEGY)
             progress_report = RepositoryProgress(repo.id, ProgressListener(conduit))
             request = SyncRequest(
-                importer=self,
+                self.cancel_event,
                 conduit=conduit,
                 config=config,
                 downloader=downloader,
@@ -133,7 +135,6 @@ class NodesHttpImporter(Importer):
             strategy.synchronize(request)
         except Exception, e:
             summary_report.errors.append(CaughtException(e, repo.id))
-
         finally:
             if downloader is not None:
                 downloader.config.finalize()
@@ -148,15 +149,7 @@ class NodesHttpImporter(Importer):
         :param call_request:
         :param call_report:
         """
-        self.cancelled = True
-
-    def _cancelled(self):
-        """
-        Get whether the current operation has been cancelled.
-        :return: True if cancelled.
-        :rtype: bool
-        """
-        return self.cancelled
+        self.cancel_event.set()
 
     def _downloader(self, config):
         """
