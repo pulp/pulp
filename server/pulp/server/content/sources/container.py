@@ -14,7 +14,6 @@ from logging import getLogger
 from nectar.listener import DownloadEventListener
 from nectar.request import DownloadRequest
 
-from pulp.server.cancel import Call
 from pulp.server.managers import factory as managers
 from pulp.server.content.sources.model import ContentSource, PrimarySource, RefreshReport
 
@@ -61,13 +60,15 @@ class ContentContainer(object):
         """
         self.sources = ContentSource.load_all(path)
 
-    def download(self, downloader, request_list, listener=None):
+    def download(self, cancel_event, downloader, request_list, listener=None):
         """
         Download files using available alternate content sources.
         An attempt is made to satisfy each download request using the alternate
         content sources in the order specified by priority.  The specified
         downloader is designated as the primary source and is used in the event that
         the request cannot be completed using alternate sources.
+        :param cancel_event: An event that indicates the download has been canceled.
+        :type cancel_event: threading.Event
         :param downloader: A primary nectar downloader.  Used to download the
             requested content unit when it cannot be achieved using alternate
             content sources.
@@ -77,11 +78,11 @@ class ContentContainer(object):
         :param listener: An optional download request listener.
         :type listener: Listener
         """
-        self.refresh()
+        self.refresh(cancel_event)
         primary = PrimarySource(downloader)
         for request in request_list:
             request.find_sources(primary, self.sources)
-        while not Call.current_canceled():
+        while not cancel_event.isSet():
             collated = self.collated(request_list)
             if not collated:
                 #  Either we have exhausted our content sources or all
@@ -89,12 +90,16 @@ class ContentContainer(object):
                 break
             for source, nectar_list in collated.items():
                 downloader = source.downloader()
-                downloader.event_listener = NectarListener(downloader, listener)
+                downloader.event_listener = NectarListener(cancel_event, downloader, listener)
                 downloader.download(nectar_list)
+                if cancel_event.isSet():
+                    break
 
-    def refresh(self, force=False):
+    def refresh(self, cancel_event, force=False):
         """
         Refresh the content catalog using available content sources.
+        :param cancel_event: An event that indicates the refresh has been canceled.
+        :type cancel_event: threading.Event
         :param force: Force refresh of content sources with unexpired catalog entries.
         :type force: bool
         :return: A list of refresh reports.
@@ -103,11 +108,11 @@ class ContentContainer(object):
         reports = []
         catalog = managers.content_catalog_manager()
         for source_id, source in self.sources.items():
-            if Call.current_canceled():
+            if cancel_event.isSet():
                 break
             if force or not catalog.has_entries(source_id):
                 try:
-                    report = source.refresh()
+                    report = source.refresh(cancel_event)
                     reports.extend(report)
                 except Exception, e:
                     log.error('refresh %s, failed: %s', source_id, e)
@@ -172,13 +177,16 @@ class NectarListener(DownloadEventListener):
         except Exception:
             log.exception(str(method))
 
-    def __init__(self, downloader, listener=None):
+    def __init__(self, cancel_event, downloader, listener=None):
         """
+        :param cancel_event: An event that indicates the download has been canceled.
+        :type cancel_event: threading.Event
         :param downloader: The active nectar downloader.
         :type downloader: nectar.downloaders.base.Downloader
         :param listener: An optional download request listener.
         :type listener: Listener
         """
+        self.cancel_event = cancel_event
         self.downloader = downloader
         self.listener = listener
 
@@ -189,7 +197,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if Call.current_canceled():
+        if self.cancel_event.isSet():
             self.downloader.cancel()
             return
         request = report.data
@@ -206,7 +214,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if Call.current_canceled():
+        if self.cancel_event.isSet():
             self.downloader.cancel()
             return
         request = report.data
@@ -225,7 +233,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        if Call.current_canceled():
+        if self.cancel_event.isSet():
             self.downloader.cancel()
             return
         request = report.data
