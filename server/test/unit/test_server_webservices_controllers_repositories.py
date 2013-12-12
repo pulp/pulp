@@ -536,7 +536,6 @@ class RepoResourceTests(RepoControllersTests):
         # Test
         req_body = {'delta' : {'pie' : 'apple'}}
         status, body = self.put('/v2/repositories/not-there/', params=req_body)
-
         # Verify
         self.assertEqual(202, status)
 
@@ -572,14 +571,11 @@ class RepoImportersTests(RepoPluginsTests):
         """
         Tests getting the list of importers for a valid repo with importers.
         """
-
         # Setup
         self.repo_manager.create_repo('stuffing')
         self.importer_manager.set_importer('stuffing', 'dummy-importer', {})
-
         # Test
         status, body = self.get('/v2/repositories/stuffing/importers/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(1, len(body))
@@ -588,13 +584,10 @@ class RepoImportersTests(RepoPluginsTests):
         """
         Tests an empty list is returned for a repo with no importers.
         """
-
         # Setup
         self.repo_manager.create_repo('potatoes')
-
         # Test
         status, body = self.get('/v2/repositories/potatoes/importers/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
@@ -603,85 +596,80 @@ class RepoImportersTests(RepoPluginsTests):
         """
         Tests getting importers for a repo that doesn't exist.
         """
-
         # Test
         status, body = self.get('/v2/repositories/not_there/importers/')
-
         # Verify
         self.assertEqual(404, status)
 
-    def test_post(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_post(self, _resource_manager, mock_apply_async):
         """
         Tests adding an importer to a repo.
         """
-
         # Setup
         self.repo_manager.create_repo('gravy')
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _resource_manager.reserve_resource.return_value = 'some_queue'
 
+        # Test
         req_body = {
             'importer_type_id' : 'dummy-importer',
             'importer_config' : {'foo' : 'bar'},
         }
-
-        # Test
         status, body = self.post('/v2/repositories/gravy/importers/', params=req_body)
 
         # Verify
-        self.assertEqual(201, status)
-        self.assertEqual(body['importer_type_id'], req_body['importer_type_id'])
-        self.assertEqual(body['repo_id'], 'gravy')
-        self.assertEqual(body['config'], req_body['importer_config'])
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args, call_kwargs = mock_apply_async.call_args[0]
+        self.assertEqual(call_args, ['gravy', 'dummy-importer'])
+        self.assertEqual(call_kwargs, {'repo_plugin_config': {'foo': 'bar'}})
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : 'gravy'})
-        self.assertTrue(importer is not None)
-        self.assertEqual(importer['importer_type_id'], req_body['importer_type_id'])
-        self.assertEqual(importer['config'], req_body['importer_config'])
-
-    def test_post_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_post_missing_repo(self, _resource_manager):
         """
         Tests adding an importer to a repo that doesn't exist.
         """
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         req_body = {
             'importer_type_id' : 'dummy-importer',
             'importer_config' : {'foo' : 'bar'},
         }
         status, body = self.post('/v2/repositories/blah/importers/', params=req_body)
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
     def test_post_bad_request_missing_data(self):
         """
         Tests adding an importer but not specifying the required data.
         """
-
         # Setup
         self.repo_manager.create_repo('icecream')
-
         # Test
         status, body = self.post('/v2/repositories/icecream/importers/', params={})
-
         # Verify
         self.assertEqual(400, status)
 
-    def test_post_bad_request_invalid_data(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_post_bad_request_invalid_data(self, _resource_manager):
         """
         Tests adding an importer but specifying incorrect metadata.
         """
-
         # Setup
         self.repo_manager.create_repo('walnuts')
         req_body = {
             'importer_type_id' : 'not-a-real-importer'
         }
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         status, body = self.post('/v2/repositories/walnuts/importers/', params=req_body)
-
         # Verify
-        self.assertEqual(400, status)
+        self.assertEqual(202, status)
+
 
 class RepoImporterTests(RepoPluginsTests):
 
@@ -689,14 +677,11 @@ class RepoImporterTests(RepoPluginsTests):
         """
         Tests getting an importer that exists.
         """
-
         # Setup
         self.repo_manager.create_repo('pie')
         self.importer_manager.set_importer('pie', 'dummy-importer', {})
-
         # Test
         status, body = self.get('/v2/repositories/pie/importers/dummy-importer/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(body['id'], 'dummy-importer')
@@ -705,10 +690,8 @@ class RepoImporterTests(RepoPluginsTests):
         """
         Tests getting the importer for a repo that doesn't exist.
         """
-
         # Test
         status, body = self.get('/v2/repositories/not-there/importers/irrelevant')
-
         # Verify
         self.assertEqual(404, status)
 
@@ -716,116 +699,122 @@ class RepoImporterTests(RepoPluginsTests):
         """
         Tests getting the importer for a repo that doesn't have one.
         """
-
         # Setup
         self.repo_manager.create_repo('cherry_pie')
-
         # Test
         status, body = self.get('/v2/repositories/cherry_pie/importers/not_there/')
-
         # Verify
         self.assertEqual(404, status)
 
-    def test_delete(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_delete(self, _resource_manager, mock_apply_async):
         """
         Tests removing an importer from a repo.
         """
-
         # Setup
-        self.repo_manager.create_repo('blueberry_pie')
-        self.importer_manager.set_importer('blueberry_pie', 'dummy-importer', {})
+        repo_id = 'blueberry_pie'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, 'dummy-importer', {})
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _resource_manager.reserve_resource.return_value = 'some_queue'
 
         # Test
         status, body = self.delete('/v2/repositories/blueberry_pie/importers/dummy-importer/')
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args = mock_apply_async.call_args[0]
+        self.assertTrue([repo_id] in call_args)
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : 'blueberry_pie'})
-        self.assertTrue(importer is None)
-
-    def test_delete_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_delete_missing_repo(self, _resource_manager):
         """
         Tests deleting the importer from a repo that doesn't exist.
         """
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         status, body = self.delete('/v2/repositories/bad_pie/importers/dummy-importer/')
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_delete_missing_importer(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_delete_missing_importer(self, _resource_manager):
         """
         Tests deleting an importer from a repo that doesn't have one.
         """
-
         # Setup
         self.repo_manager.create_repo('apple_pie')
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         status, body = self.delete('/v2/repositories/apple_pie/importers/dummy-importer/')
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_update_importer_config(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_update_importer_config(self, _resource_manager, mock_apply_async):
         """
         Tests successfully updating an importer's config.
         """
-
         # Setup
-        self.repo_manager.create_repo('pumpkin_pie')
-        self.importer_manager.set_importer('pumpkin_pie', 'dummy-importer', {})
-
+        repo_id = 'pumpkin_pie'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, 'dummy-importer', {})
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         new_config = {'importer_config' : {'ice_cream' : True}}
-        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/', params=new_config)
-
+        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/', 
+                                params=new_config)
         # Verify
-        self.assertEqual(200, status)
-        self.assertEqual(body['id'], 'dummy-importer')
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args, call_kwargs = mock_apply_async.call_args[0]
+        self.assertTrue(repo_id in call_args)
+        self.assertEqual(call_kwargs['importer_config'], {'ice_cream' : True})
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : 'pumpkin_pie'})
-        self.assertTrue(importer is not None)
-
-    def test_update_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_update_missing_repo(self, _resource_manager):
         """
         Tests updating an importer config on a repo that doesn't exist.
         """
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
-        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/', params={'importer_config' : {}})
-
+        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/', 
+                                params={'importer_config' : {}})
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_update_missing_importer(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_update_missing_importer(self, _resource_manager):
         """
         Tests updating a repo that doesn't have an importer.
         """
-
         # Setup
         self.repo_manager.create_repo('pie')
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
-        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', params={'importer_config' : {}})
-
+        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', 
+                                params={'importer_config' : {}})
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
     def test_update_bad_request(self):
         """
         Tests updating with incorrect parameters.
         """
-
         # Setup
         self.repo_manager.create_repo('pie')
         self.importer_manager.set_importer('pie', 'dummy-importer', {})
-
+        #_resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', params={})
-
         # Verify
         self.assertEqual(400, status)
 
@@ -835,15 +824,12 @@ class RepoDistributorsTests(RepoPluginsTests):
         """
         Tests retrieving all distributors for a repo.
         """
-
         # Setup
         self.repo_manager.create_repo('coffee')
         self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True, distributor_id='dist-1')
         self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True, distributor_id='dist-2')
-
         # Test
         status, body = self.get('/v2/repositories/coffee/distributors/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(2, len(body))
@@ -852,13 +838,10 @@ class RepoDistributorsTests(RepoPluginsTests):
         """
         Tests retrieving distributors for a repo that has none.
         """
-
         # Setup
         self.repo_manager.create_repo('dark-roast')
-
         # Test
         status, body = self.get('/v2/repositories/dark-roast/distributors/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
@@ -867,64 +850,68 @@ class RepoDistributorsTests(RepoPluginsTests):
         """
         Tests retrieving distributors for a repo that doesn't exist.
         """
-
         # Test
         status, body = self.get('/v2/repositories/not-there/distributors/')
-
         # Verify
         self.assertEqual(404, status)
 
-    def test_create_distributor(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_create_distributor(self, _resource_manager, mock_apply_async):
         """
         Tests creating a distributor on a repo.
         """
-
         # Setup
-        self.repo_manager.create_repo('tea')
+        repo_id = 'tea'
+        self.repo_manager.create_repo(repo_id)
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _resource_manager.reserve_resource.return_value = 'some_queue'
 
+        # Test
         req_body = {
             'distributor_type_id' : 'dummy-distributor',
             'distributor_config' : {'a' : 'b'},
         }
-
-        # Test
         status, body = self.post('/v2/repositories/tea/distributors/', params=req_body)
 
         # Verify
-        self.assertEqual(201, status)
-        self.assertEqual(body['repo_id'], 'tea')
-        self.assertEqual(body['config'], req_body['distributor_config'])
-        self.assertEqual(body['auto_publish'], False)
-        self.assertTrue('id' in body)
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args, call_kwargs = mock_apply_async.call_args[0]
+        self.assertTrue(repo_id in call_args)
+        self.assertTrue('dummy-distributor' in call_args)
+        self.assertEqual(call_kwargs['repo_plugin_config'], {'a': 'b'}) 
+        self.assertEqual(call_kwargs['auto_publish'], False)
 
-    def test_create_distributor_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_create_distributor_missing_repo(self, _resource_manager):
         """
         Tests creating a distributor on a repo that doesn't exist.
         """
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         req_body = {
             'distributor_type_id' : 'dummy-distributor',
             'distributor_config' : {'a' : 'b'},
         }
         status, body = self.post('/v2/repositories/not_there/distributors/', params=req_body)
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_create_distributor_invalid_data(self):
+    @mock.patch('pulp.server.async.tasks._resource_manager')
+    def test_create_distributor_invalid_data(self, _resource_manager):
         """
         Tests creating a distributor but not passing in all the required data.
         """
-
         # Setup
         self.repo_manager.create_repo('invalid')
-
+        _resource_manager.reserve_resource.return_value = 'some_queue'
         # Test
         status, body = self.post('/v2/repositories/invalid/distributors/', params={})
-
         # Verify
-        self.assertEqual(400, status)
+        self.assertEqual(202, status)
 
 class RepoDistributorTests(RepoPluginsTests):
 
