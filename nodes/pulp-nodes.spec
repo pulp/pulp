@@ -17,8 +17,8 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: 2.3.0
-Release: 0.29.beta%{?dist}
+Version: 2.4.0
+Release: 0.1.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -239,6 +239,12 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
+- 995076 - make sure to call finalize on the nectar config object
+  (jason.connor@gmail.com)
+- 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
+- 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
+
 * Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
 - Pulp rebuild
 
