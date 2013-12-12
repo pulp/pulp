@@ -106,6 +106,7 @@ class ContentDownloadListener(Listener):
           1. Fetch the content unit using the reference.
           2. Update the storage_path on the unit.
           3. Add the unit.
+          4. Extract downloaded tarballs as needed.
         :param request: The download request that succeeded.
         :type request: Request
         """
