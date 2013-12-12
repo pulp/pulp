@@ -18,6 +18,7 @@ from pulp.agent.lib.report import ContentReport
 
 from pulp_node import constants
 from pulp_node import resources
+from pulp_node.error import GetBindingsError
 from pulp_node.handlers.strategies import find_strategy, SyncRequest
 from pulp_node.handlers.reports import HandlerProgress, SummaryReport
 from pulp_node.handlers.model import RepositoryBinding
@@ -82,10 +83,18 @@ class NodeHandler(ContentHandler):
         :return: An update report.
         :rtype: ContentReport
         """
+        handler_report = ContentReport()
         summary_report = SummaryReport()
         progress_report = HandlerProgress(conduit)
         pulp_bindings = parent_bindings(options)
-        bindings = RepositoryBinding.fetch_all(pulp_bindings, conduit.consumer_id)
+
+        try:
+            bindings = RepositoryBinding.fetch_all(pulp_bindings, conduit.consumer_id)
+        except GetBindingsError, ne:
+            log.error(ne)
+            summary_report.errors.append(ne)
+            handler_report.set_failed(summary_report.dict())
+            return handler_report
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
         request = SyncRequest(
@@ -101,7 +110,6 @@ class NodeHandler(ContentHandler):
         for ne in summary_report.errors:
             log.error(ne)
 
-        handler_report = ContentReport()
         if summary_report.succeeded():
             handler_report.set_succeeded(summary_report.dict())
         else:
