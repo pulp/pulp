@@ -17,9 +17,6 @@ from mock import Mock, patch
 from tempfile import mkdtemp
 from uuid import uuid4
 
-from nectar.config import DownloaderConfig
-from nectar.downloaders.local import LocalFileDownloader
-
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
