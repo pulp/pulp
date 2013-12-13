@@ -16,6 +16,8 @@ This module contains tests for the pulp.server.async.celery_instance module.
 from datetime import timedelta
 import unittest
 
+import mock
+
 from pulp.server.async import celery_instance
 from pulp.server.async.tasks import babysit
 from pulp.server.config import config
@@ -68,3 +70,58 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE'],
                          celery_instance.CELERYBEAT_SCHEDULE)
+
+
+def fake_get(section, key):
+    """
+    Fake version of the get() method from pulp's config object. This is useful
+    so we can have concrete values to test for.
+    """
+    if key == 'name':
+        return 'database_name'
+    elif key == 'seeds':
+        return 'host1:27017,host2:27017'
+    elif key == 'user':
+        return 'someguy'
+    elif key == 'password':
+        return 'letmein'
+
+
+class TestMongoBackendConfig(unittest.TestCase):
+
+    def test_celery_conf_updated(self):
+        self.assertEqual(celery_instance.celery.conf['CELERY_RESULT_BACKEND'], 'mongodb')
+        self.assertTrue(isinstance(celery_instance.celery.conf['CELERY_MONGODB_BACKEND_SETTINGS'], dict))
+
+        conf = celery_instance.celery.conf['CELERY_MONGODB_BACKEND_SETTINGS']
+
+        self.assertTrue(conf.get('host') is not None)
+        self.assertTrue(conf.get('database') is not None)
+
+    @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
+    @mock.patch('pulp.server.async.celery_instance.config.get', new=fake_get)
+    def test_create_config(self):
+        conf = celery_instance.create_mongo_config()
+
+        self.assertEqual(conf['host'], 'host1:27017,host2:27017')
+        self.assertEqual(conf['database'], 'database_name')
+        self.assertEqual(conf['user'], 'someguy')
+        self.assertEqual(conf['password'], 'letmein')
+
+    @mock.patch('pulp.server.config.config.has_option',
+                new=lambda x, y: False if y == 'password' else True)
+    @mock.patch('pulp.server.config.config.get', new=fake_get)
+    def test_no_password(self):
+        conf = celery_instance.create_mongo_config()
+
+        self.assertTrue('user' not in conf)
+        self.assertTrue('password' not in conf)
+
+    @mock.patch('pulp.server.config.config.has_option',
+                new=lambda x, y: False if y == 'user' else True)
+    @mock.patch('pulp.server.config.config.get', new=fake_get)
+    def test_no_user(self):
+        conf = celery_instance.create_mongo_config()
+
+        self.assertTrue('user' not in conf)
+        self.assertTrue('password' not in conf)
