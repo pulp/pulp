@@ -24,7 +24,6 @@ from mock import Mock, patch
 from base import WebTest
 
 from nectar.downloaders.local import LocalFileDownloader
-from nectar.request import DownloadRequest
 from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
@@ -49,6 +48,7 @@ from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.common.plugins import importer_constants
 from pulp.common.config import Config
 from pulp.server.managers import factory as managers
+from pulp.server.content.sources import Request as DownloadRequest
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.server.config import config as pulp_conf
@@ -139,10 +139,9 @@ class AdditiveTestStrategy(TestStrategy):
 
 class BadDownloadRequest(DownloadRequest):
 
-    def __init__(self, url, *args, **kwargs):
-        url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
-        DownloadRequest.__init__(self, url, *args, **kwargs)
-
+    def __init__(self, *args, **kwargs):
+        DownloadRequest.__init__(self, *args, **kwargs)
+        self.url = 'http:/NOWHERE/FAIL_ME_%f' % random.random()
 
 class AgentConduit(Conduit):
 
@@ -575,7 +574,6 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
-    @patch('nectar.config.DownloaderConfig.finalize')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -620,8 +618,6 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
-        mock_finalize = mocks[-1]
-        mock_finalize.assert_called_once()
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
@@ -1523,7 +1519,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
-        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.Request', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
@@ -1551,7 +1547,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertFalse(report.succeeded)
         errors = report.details['errors']
         repositories = report.details['repositories']
-        self.assertEqual(len(errors), 1)
+        self.assertEqual(len(errors), 5)
         self.assertEqual(errors[0]['error_id'], error.UnitDownloadError.ERROR_ID)
         self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
         self.assertEqual(len(repositories), 1)
@@ -1574,7 +1570,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
-        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.Request', BadDownloadRequest)
         @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish

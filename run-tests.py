@@ -36,14 +36,14 @@ TESTS_ALL_PLATFORMS = [
     'bindings/test/unit',
     'client_consumer/test/unit',
     'client_lib/test/unit',
-    'common/test/unit',
-    'devel/test/unit'
+    'common/test/unit'
 ]
 
 TESTS_NON_RHEL5 = [
     'client_admin/test/unit',
     'nodes/test/unit',
-    'server/test/unit'
+    'server/test/unit',
+    'devel/test/unit'
 ]
 
 dir_safe_all_platforms = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_ALL_PLATFORMS]
