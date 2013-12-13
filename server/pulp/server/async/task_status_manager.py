@@ -19,17 +19,19 @@ from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResou
 
 class TaskStatusManager(object):
     """
-    Performs task status related functions including both CRUD operations and queries on task statuses. 
-    Task statuses returned by query calls are TaskStatus SON objects from the database.
+    Performs task status related functions including both CRUD operations and queries on task
+    statuses. Task statuses returned by query calls are TaskStatus SON objects from the database.
     """
 
     @staticmethod
-    def create_task_status(task_id, tags=None, state=None):
+    def create_task_status(task_id, queue, tags=None, state=None):
         """
         Creates a new task status for given task_id. 
 
         :param task_id: identity of the task this status corresponds to
         :type  task_id: basestring
+        :param queue:   The name of the queue that the Task is in
+        :type  queue:   basestring
         :param tags: custom tags on the task
         :type  tags: list of basestrings or None
         :param state: state of callable in its lifecycle
@@ -42,6 +44,8 @@ class TaskStatusManager(object):
         invalid_values = []
         if task_id is None:
             invalid_values.append('task_id')
+        if queue is None:
+            invalid_values.append('queue')
         if tags is not None and not isinstance(tags, list):
             invalid_values.append('tags')
         if state is not None and not isinstance(state, basestring):
@@ -49,7 +53,7 @@ class TaskStatusManager(object):
         if invalid_values:
             raise InvalidValue(invalid_values)
 
-        task_status = TaskStatus(task_id, tags=tags, state=state)
+        task_status = TaskStatus(task_id, queue, tags=tags, state=state)
         try:
             TaskStatus.get_collection().save(task_status, safe=True)
         except DuplicateKeyError:
@@ -87,7 +91,7 @@ class TaskStatusManager(object):
         for key, value in delta.items():
             if key in updatable_attributes:
                 task_status[key] = value
-                
+
         TaskStatus.get_collection().save(task_status, safe=True)
         return task_status
 

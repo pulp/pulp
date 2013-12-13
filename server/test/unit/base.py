@@ -23,6 +23,7 @@ from pulp.server import config
 from pulp.server.async import celery_instance
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -307,6 +308,7 @@ class ResourceReservationTests(PulpServerTests):
     def tearDown(self):
         AvailableQueue.get_collection().remove()
         ReservedResource.get_collection().remove()
+        TaskStatus.get_collection().remove()
 
 
 class TaskQueue:
