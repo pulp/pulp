@@ -34,7 +34,6 @@ CELERYBEAT_SCHEDULE = {
         'task': 'pulp.server.async.tasks.babysit',
         'schedule': timedelta(seconds=60),
         'args': tuple(),
-        'options': {'queue': RESOURCE_MANAGER_QUEUE,},
     },
 }
 

@@ -14,6 +14,7 @@
 This module contains tests for the pulp.server.tasks module.
 """
 from copy import deepcopy
+from datetime import datetime, timedelta
 import uuid
 
 from celery.app import defaults
@@ -94,8 +95,10 @@ class TestBabysit(ResourceReservationTests):
         # Let's start off by creating the existing queues and what not by calling babysit
         tasks.babysit()
         # Now, let's add another AvailableQueue that isn't found in our active_queues mock so that
-        # babysit() can notice that it appears to have gone missing next time it's called
-        missing_available_queue = AvailableQueue('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX, 2)
+        # babysit() can notice that it appears to have gone missing next time it's called. We need
+        # to also mark it as having been missing for at least 5 minutes.
+        missing_available_queue = AvailableQueue('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX, 2,
+                                                 datetime.utcnow() - timedelta(minutes=5))
         missing_available_queue.save()
         # Let's simulate three tasks being assigned to this AvailableQueue, with two of them being
         # in an incomplete state and one in a complete state. The two should get canceled.
@@ -160,10 +163,73 @@ class TestBabysit(ResourceReservationTests):
         # This AvailableQueue should remain in the DB
         available_queue_2 = AvailableQueue(name=RESERVED_WORKER_2)
         available_queue_2.save()
-        # This AvailableQueue doesn't exist anymore since it's not in the mock results, so it should
-        # get deleted
-        available_queue_4 = AvailableQueue(name='%s4' % tasks.RESERVED_WORKER_NAME_PREFIX)
+        # This AvailableQueue doesn't exist anymore since it's not in the mock results, and it's
+        # been missing for five minutes, so it should get deleted
+        available_queue_4 = AvailableQueue(name='%s4' % tasks.RESERVED_WORKER_NAME_PREFIX,
+                                           missing_since=datetime.utcnow() - timedelta(minutes=5))
         available_queue_4.save()
+        # This AvailableQueue doesn't exist anymore since it's not in the mock results, but it's
+        # been missing for less than five minutes, so it should not get deleted
+        available_queue_5 = AvailableQueue(name='%s5' % tasks.RESERVED_WORKER_NAME_PREFIX,
+                                           missing_since=datetime.utcnow() - timedelta(minutes=2))
+        available_queue_5.save()
+        # This AvailableQueue doesn't exist anymore since it's not in the mock results, but it
+        # hasn't been missing before (i.e., it's missing_since attribute is None), so it should not
+        # get deleted. It's missing_since attribute should be set to a datetime, however.
+        available_queue_6 = AvailableQueue(name='%s6' % tasks.RESERVED_WORKER_NAME_PREFIX,
+                                           missing_since=None)
+        available_queue_6.save()
+
+        # This should cause queue 4 to get deleted, and 6 to get marked as missing.
+        tasks.babysit()
+
+        # babysit() should have called the active_queues() method
+        active_queues.assert_called_once_with()
+        # There should be five ActiveQueues, one for each reserved worker in the mock data (3), and
+        # numbers 5 and 6 that we created above should also remain because they have been missing
+        # for less than five minutes.
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.count(), 5)
+        # Let's make sure their names, num_reservations counts, and missing_since attributes are
+        # correct
+        aq_1 = aqc.find_one({'_id': RESERVED_WORKER_1})
+        self.assertEqual(aq_1['num_reservations'], 0)
+        self.assertEqual(aq_1['missing_since'], None)
+        aq_2 = aqc.find_one({'_id': RESERVED_WORKER_2})
+        self.assertEqual(aq_2['num_reservations'], 0)
+        self.assertEqual(aq_2['missing_since'], None)
+        aq_3 = aqc.find_one({'_id': RESERVED_WORKER_3})
+        self.assertEqual(aq_3['num_reservations'], 0)
+        self.assertEqual(aq_3['missing_since'], None)
+
+        # Numbers 5 and 6 should exist, with non-null missing_since attributes
+        aq_5 = aqc.find_one({'_id': '%s5' % tasks.RESERVED_WORKER_NAME_PREFIX})
+        self.assertEqual(aq_5['num_reservations'], 0)
+        self.assertEqual(type(aq_5['missing_since']), datetime)
+        self.assertTrue(aq_5['missing_since'] < datetime.utcnow() - timedelta(minutes=2))
+        aq_6 = aqc.find_one({'_id': '%s6' % tasks.RESERVED_WORKER_NAME_PREFIX})
+        self.assertEqual(aq_6['num_reservations'], 0)
+        self.assertEqual(type(aq_6['missing_since']), datetime)
+        self.assertTrue(aq_6['missing_since'] < datetime.utcnow())
+
+        # Reserved worker 3 wasn't assigned to a queue, so babysit() should have assigned it to one
+        add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
+                                             destination=(RESERVED_WORKER_3,))
+
+    @mock.patch('celery.app.control.Inspect.active_queues',
+                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
+    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
+    def test_babysit_resets_missing_since_on_reappearing_workers(self, add_consumer, active_queues):
+        """
+        Let's simulate an AvailableQueue having been missing in the past by setting its
+        missing_since attribute to two minutes ago. It is part of the mocked active_queues() call,
+        so we expect babysit() to set its missing_since attribute back to None. Note that this one
+        has been missing for more than five minutes, but it got lucky because it is back just in
+        time to avoid being deleted.
+        """
+        available_queue_2 = AvailableQueue(name=RESERVED_WORKER_2,
+                                           missing_since=datetime.utcnow() - timedelta(minutes=6))
+        available_queue_2.save()
 
         tasks.babysit()
 
@@ -172,13 +238,10 @@ class TestBabysit(ResourceReservationTests):
         # There should be three ActiveQueues, one for each reserved worker in the mock data
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 3)
-        # Let's make sure their names and num_reservations counts are correct
-        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_1})['num_reservations'], 0)
-        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_2})['num_reservations'], 0)
-        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_3})['num_reservations'], 0)
-        # Reserved worker 3 wasn't assigned to a queue, so babysit() should have assigned it to one
-        add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
-                                             destination=(RESERVED_WORKER_3,))
+        # Make sure it's set back to None
+        aq_2 = aqc.find_one({'_id': RESERVED_WORKER_2})
+        self.assertEqual(aq_2['num_reservations'], 0)
+        self.assertEqual(aq_2['missing_since'], None)
 
 
 class TestQueueReleaseResource(ResourceReservationTests):
