@@ -154,8 +154,11 @@ class TestBabysit(ResourceReservationTests):
 
     @mock.patch('celery.app.control.Inspect.active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
+    @mock.patch('pulp.server.async.tasks._delete_queue.apply_async',
+                side_effect=tasks._delete_queue.apply_async)
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    def test_babysit_deletes_correct_records(self, add_consumer, active_queues):
+    def test_babysit_deletes_correct_records(self, add_consumer, _delete_queue_apply_async,
+                                             active_queues):
         """
         Test babysit() with pre-existing state. It should create the correct AvailableQueues, and
         delete other ones, and leave others in place.
@@ -216,6 +219,11 @@ class TestBabysit(ResourceReservationTests):
         add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
                                              destination=(RESERVED_WORKER_3,))
 
+        # Make sure that _delete_queue was called for #4, and that the delete task was sent to the
+        # RESOURCE_MANAGER_QUEUE
+        _delete_queue_apply_async.assert_called_once_with(
+            args=('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX,), queue=tasks.RESOURCE_MANAGER_QUEUE)
+
     @mock.patch('celery.app.control.Inspect.active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
@@ -242,6 +250,60 @@ class TestBabysit(ResourceReservationTests):
         aq_2 = aqc.find_one({'_id': RESERVED_WORKER_2})
         self.assertEqual(aq_2['num_reservations'], 0)
         self.assertEqual(aq_2['missing_since'], None)
+
+
+class TestDeleteQueue(ResourceReservationTests):
+    """
+    Test the _delete_queue() Task.
+    """
+    @mock.patch('celery.app.control.Inspect.active_queues',
+                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
+    @mock.patch('pulp.server.async.tasks.cancel')
+    @mock.patch('pulp.server.async.tasks.logger')
+    def test__delete_queue(self, logger, cancel, active_queues):
+        """
+        Assert that the correct Tasks get canceled when their queue is deleted, and that the queue
+        is removed from the database.
+        """
+        # Let's start off by creating the existing queues and what not by calling babysit
+        tasks.babysit()
+        # Let's simulate three tasks being assigned to RESERVED_WORKER_2, with two of them being
+        # in an incomplete state and one in a complete state. We will delete RESERVED_WORKER_2's
+        # queue, which should cause the two to get canceled. Let's put task_1 in progress
+        task_1 = TaskStatusManager.create_task_status('task_1', RESERVED_WORKER_2,
+                                                      state=CALL_RUNNING_STATE)
+        task_2 = TaskStatusManager.create_task_status('task_2', RESERVED_WORKER_2,
+                                                      state=CALL_WAITING_STATE)
+        # This task shouldn't get canceled because it isn't in an incomplete state
+        task_3 = TaskStatusManager.create_task_status('task_3', RESERVED_WORKER_2,
+                                                      state=CALL_FINISHED_STATE)
+        # Let's make a task in a worker that is still present just to make sure it isn't touched.
+        task_4 = TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
+                                                      state=CALL_RUNNING_STATE)
+        # Let's just make sure the babysit() worked and that we have an AvailableQueue with RR2
+        aqc = AvailableQueue.get_collection()
+        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 1)
+
+        # Now let's delete the queue named RESERVED_WORKER_2
+        tasks._delete_queue.apply_async(args=(RESERVED_WORKER_2,),
+                                        queue=tasks.RESOURCE_MANAGER_QUEUE)
+
+        # cancel() should have been called twice with task_1 and task_2 as parameters
+        self.assertEqual(cancel.call_count, 2)
+        # Let's build a set out of the two times that cancel was called. We can't know for sure
+        # which order the Tasks got canceled in, but we can assert that the correct two tasks were
+        # canceled (task_3 should not appear in this set).
+        cancel_param_set = set([c[1] for c in cancel.mock_calls])
+        self.assertEqual(cancel_param_set, set([('task_1',), ('task_2',)]))
+        # We should have logged that we are canceling the tasks
+        self.assertEqual(logger.call_count, 0)
+        self.assertTrue(RESERVED_WORKER_2 in logger.mock_calls[0][1][0])
+        self.assertTrue('Canceling the tasks' in logger.mock_calls[0][1][0])
+
+        # The queue should have been deleted
+        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 0)
+        # The other queues (1 and 3) should remain
+        self.assertEqual(aqc.find().count(), 2)
 
 
 class TestQueueReleaseResource(ResourceReservationTests):
