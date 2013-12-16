@@ -46,7 +46,9 @@ order to get up and running.
    Don't forget to update the [messaging] section if you aren't using qpidd anymore. I'm not sure
    what goes there, so ask jortel :)
 
-4) Now you must start at least three celeryd's. I recommend keeping each one in it's own terminal
+4) Now you must install Celery and start at least three celeryd's. Currently, the Celery packages in
+   both EPEL and Fedora cannot be used with Pulp, so you will need to install
+   Celery with pip. I recommend keeping each celeryd in it's own terminal
    for fun, but do what you like. Also, the --loglevel can be seasoned to taste. INFO will print out
    each task that was accepted, and will also note when they complete and how long they took. I
    think the default loglevel doesn't print anything unless there's a problem or a print statement.
