@@ -212,7 +212,7 @@ rm -rf $DIR
 # =========== POST =============
 #
 
-echo "Recommended properties in /etc/qpidd.conf:"
+echo "Recommended properties in qpidd.conf:"
 echo "
 auth=no
 # SSL
@@ -246,6 +246,11 @@ clientcert=$INST_DIR/client.crt
 "
 
 echo "
-NOTE: The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
-need to be manually copied to each consumer.
+NOTES:
+  [1] The location for qpidd.conf depends on the version of Qpid installed.
+      For 0.24+: /etc/qpid/qpidd.conf.
+      For all earlier versions: /etc/qpidd.conf.
+
+  [2] The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
+      need to be manually copied to each consumer.
 "
