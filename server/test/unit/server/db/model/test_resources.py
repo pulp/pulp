@@ -110,6 +110,32 @@ class TestAvailableQueue(ResourceReservationTests):
 
         self.assertEqual(aqc.count(), 0)
 
+    def test_delete_with_reserved_resources(self):
+        """
+        Test delete() for a queue with a ReservedResource referencing it.
+        """
+        aq = resources.AvailableQueue('queue_with_a_reserved_resource')
+        aq.save()
+        aqc = resources.AvailableQueue.get_collection()
+        self.assertEqual(aqc.find({'_id': 'queue_with_a_reserved_resource'}).count(), 1)
+
+        # Create 2 resources 1 referencing the queue to be deleted and the other with no queue references
+        rr1 = resources.ReservedResource('reserved_resource', assigned_queue='queue_with_a_reserved_resource',
+                                        num_reservations=1)
+        rr2 = resources.ReservedResource('reserved_resource_no_queue', num_reservations=0)
+        rr1.save()
+        rr2.save()
+        rrc = resources.ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 2)
+        self.assertEqual(rrc.find({'_id': 'reserved_resource',
+                                   'assigned_queue':'queue_with_a_reserved_resource'}).count(), 1)
+
+        aq.delete()
+
+        # Make sure that only the resource with reference to the deleted queue is deleted
+        self.assertEqual(aqc.count(), 0)
+        self.assertEqual(rrc.count(), 1)
+
     def test_increment_num_reservations(self):
         """
         Test increment_num_reservations().

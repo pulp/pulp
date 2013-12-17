@@ -33,7 +33,7 @@ class AvailableQueue(Model):
 
     def __init__(self, name, num_reservations=0):
         """
-        Initialize the AvailabeQueue. A new AvailableQueue always has a num_reservations of 0.
+        Initialize the AvailableQueue. A new AvailableQueue always has a num_reservations of 0.
 
         :param name:             The name of the AvailableQueue, which should correspond to the name
                                  of a queue that a worker is assigned to.
@@ -79,6 +79,9 @@ class AvailableQueue(Model):
         Delete this AvailableQueue from the database. Take no prisoners.
         """
         self.get_collection().remove({'_id': self.name})
+        # Also delete ReservedResources referencing this queue. This will prevent new tasks
+        # using existing reservations to enter this deleted queue.
+        ReservedResource.get_collection().remove({'assigned_queue': self.name})
 
     def increment_num_reservations(self):
         """
