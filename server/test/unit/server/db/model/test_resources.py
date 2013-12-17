@@ -119,16 +119,18 @@ class TestAvailableQueue(ResourceReservationTests):
         aqc = resources.AvailableQueue.get_collection()
         self.assertEqual(aqc.find({'_id': 'queue_with_a_reserved_resource'}).count(), 1)
 
-        # Create 2 resources 1 referencing the queue to be deleted and the other with no queue references
-        rr1 = resources.ReservedResource('reserved_resource', assigned_queue='queue_with_a_reserved_resource',
+        # Create 3 resources, 2 referencing the queue to be deleted and the other with no queue references
+        rr1 = resources.ReservedResource('reserved_resource1', assigned_queue='queue_with_a_reserved_resource',
                                         num_reservations=1)
-        rr2 = resources.ReservedResource('reserved_resource_no_queue', num_reservations=0)
+        rr2 = resources.ReservedResource('reserved_resource2', assigned_queue='queue_with_a_reserved_resource',
+                                        num_reservations=1)
+        rr = resources.ReservedResource('reserved_resource_no_queue', num_reservations=0)
         rr1.save()
         rr2.save()
+        rr.save()
         rrc = resources.ReservedResource.get_collection()
-        self.assertEqual(rrc.count(), 2)
-        self.assertEqual(rrc.find({'_id': 'reserved_resource',
-                                   'assigned_queue':'queue_with_a_reserved_resource'}).count(), 1)
+        self.assertEqual(rrc.count(), 3)
+        self.assertEqual(rrc.find({'assigned_queue':'queue_with_a_reserved_resource'}).count(), 2)
 
         aq.delete()
 
