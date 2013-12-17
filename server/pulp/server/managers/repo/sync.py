@@ -156,6 +156,10 @@ class RepoSyncManager(object):
         result = None
 
         try:
+            # Replace the Importer's sync_repo() method with our graceful_cancel decorator, which
+            # will set up cancel_sync_repo() as the target for the signal handler
+            importer_instance.sync_repo = tasks.graceful_cancel(importer_instance.sync_repo,
+                                                                importer_instance.cancel_sync_repo)
             sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
 
         except Exception, e:

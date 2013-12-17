@@ -133,6 +133,10 @@ class RepoPublishManager(object):
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
         try:
+            # Add the graceful_cancel decorator to the publish_repo call, so that we can respond to
+            # signals by calling the Distributor's cancel_publish_repo() method.
+            distributor_instance.publish_repo = tasks.graceful_cancel(
+                distributor_instance.publish_repo, distributor_instance.cancel_publish_repo)
             publish_report = distributor_instance.publish_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             publish_end_timestamp = _now_timestamp()
