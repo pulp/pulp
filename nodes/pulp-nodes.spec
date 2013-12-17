@@ -17,7 +17,7 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: pulp-2.3.1
+Version: 2.3.1
 Release: 0.5.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
