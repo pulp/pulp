@@ -142,22 +142,22 @@ class SingleRepoUnitsMixin(object):
         self.repo_id = repo_id
         self.exception_class = exception_class
 
-    def get_units(self, criteria=None):
+    def get_units(self, criteria=None, as_generator=False):
         """
         Returns the collection of content units associated with the repository
         being operated on.
 
         Units returned from this call will have the id field populated and are
-        useable in any calls in this conduit that require the id field.
+        usable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within;
+        :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: UnitAssociationCriteria
 
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        :return: list of unit instances
+        :rtype:  list or generator of AssociatedUnit
         """
-        return do_get_repo_units(self.repo_id, criteria, self.exception_class)
+        return do_get_repo_units(self.repo_id, criteria, self.exception_class, as_generator)
 
 
 class MultipleRepoUnitsMixin(object):
@@ -165,22 +165,22 @@ class MultipleRepoUnitsMixin(object):
     def __init__(self, exception_class):
         self.exception_class = exception_class
 
-    def get_units(self, repo_id, criteria=None):
+    def get_units(self, repo_id, criteria=None, as_generator=False):
         """
         Returns the collection of content units associated with the given
         repository.
 
         Units returned from this call will have the id field populated and are
-        useable in any calls in this conduit that require the id field.
+        usable in any calls in this conduit that require the id field.
 
-        @param criteria: used to scope the returned results or the data within;
+        :param criteria: used to scope the returned results or the data within;
                the Criteria class can be imported from this module
-        @type  criteria: L{UnitAssociationCriteria}
+        :type  criteria: UnitAssociationCriteria
 
-        @return: list of unit instances
-        @rtype:  list of L{AssociatedUnit}
+        :return: list of unit instances
+        :rtype:  list or generator of AssociatedUnit
         """
-        return do_get_repo_units(repo_id, criteria, self.exception_class)
+        return do_get_repo_units(repo_id, criteria, self.exception_class, as_generator)
 
 
 class SearchUnitsMixin(object):
@@ -520,7 +520,8 @@ class AddUnitMixin(object):
             if bidirectional:
                 content_manager.link_referenced_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
         except Exception, e:
-            _LOG.exception(_('Child link from parent [%s] to child [%s] failed' % (str(from_unit), str(to_unit))))
+            _LOG.exception(_('Child link from parent [%(parent)s] to child [%(child)s] failed' %
+                             {'parent': str(from_unit), 'child': str(to_unit)}))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
 
@@ -606,31 +607,29 @@ class PublishReportMixin(object):
 
 # -- utilities ----------------------------------------------------------------
 
-def do_get_repo_units(repo_id, criteria, exception_class):
+def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
     """
     Performs a repo unit association query. This is split apart so we can have
     custom mixins with different signatures.
     """
     try:
         association_query_manager = manager_factory.repo_unit_association_query_manager()
-        units = association_query_manager.get_units(repo_id, criteria=criteria)
+        # Use a get_units as_generator here and cast to a list later, if necessary.
+        units = association_query_manager.get_units(repo_id, criteria=criteria, as_generator=True)
 
-        all_units = []
+        # Load all type definitions so we don't hammer the database.
+        type_defs = dict((t['id'], t) for t in types_db.all_type_definitions())
 
-        # Load all type definitions in use so we don't hammer the database
-        unique_type_defs = set([u['unit_type_id'] for u in units])
-        type_defs = {}
-        for def_id in unique_type_defs:
-            type_def = types_db.type_definition(def_id)
-            type_defs[def_id] = type_def
+        # Transfer object generator.
+        def _transfer_object_generator():
+            for u in units:
+                yield common_utils.to_plugin_associated_unit(u, type_defs[u['unit_type_id']])
 
-        # Convert to transfer object
-        for unit in units:
-            type_id = unit['unit_type_id']
-            u = common_utils.to_plugin_associated_unit(unit, type_defs[type_id])
-            all_units.append(u)
+        if as_generator:
+            return _transfer_object_generator()
 
-        return all_units
+        # Maintain legacy behavior by default.
+        return list(_transfer_object_generator())
 
     except Exception, e:
         _LOG.exception('Exception from server requesting all content units for repository [%s]' % repo_id)

@@ -49,15 +49,17 @@ class Services:
 
     CTAG = 'pulp.task'
 
-    @classmethod
-    def start(cls):
+    @staticmethod
+    def init():
         url = config.get('messaging', 'url')
-        log.info('Using URL: %s', url)
-        # broker configuration
         broker = Broker(url)
         broker.cacert = config.get('messaging', 'cacert')
         broker.clientcert = config.get('messaging', 'clientcert')
-        log.info('AMQP broker configured')
+        log.info('AMQP broker configured: %s', broker)
+
+    @classmethod
+    def start(cls):
+        url = config.get('messaging', 'url')
         # watchdog
         journal = Journal('/var/lib/pulp/journal/watchdog')
         cls.watchdog = WatchDog(url=url, journal=journal)

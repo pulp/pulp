@@ -188,7 +188,6 @@ The details of the added importer are returned from the call.
   "importer_type_id": "harness_importer",
   "last_sync": null,
   "repo_id": "harness_repo_1",
-  "sync_in_progress": false,
   "_id": "bab0f9d5-dfd1-45ef-bd1d-fd7ea8077d75",
   "config": {
     "num_units": "5",

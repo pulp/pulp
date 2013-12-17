@@ -17,6 +17,8 @@ the factory ends up importing tasks.py when it imports all the managers.
 
 Hopefully we will eliminate the factory in the future, but until then this workaround is necessary.
 """
+from datetime import timedelta
+
 from celery import Celery
 
 from pulp.server.config import config
@@ -24,3 +26,43 @@ from pulp.server.config import config
 
 broker_url = config.get('tasks', 'broker_url')
 celery = Celery('tasks', backend='amqp', broker=broker_url)
+
+
+RESOURCE_MANAGER_QUEUE = 'resource_manager'
+CELERYBEAT_SCHEDULE = {
+    'babysit': {
+        'task': 'pulp.server.async.tasks.babysit',
+        'schedule': timedelta(seconds=60),
+        'args': tuple(),
+        'options': {'queue': RESOURCE_MANAGER_QUEUE,},
+    },
+    'reap_expired_documents': {
+        'task': 'pulp.server.db.reaper.reap_expired_documents',
+        'schedule': timedelta(days=config.getfloat('data_reaping', 'reaper_interval')),
+        'args': tuple(),
+    },
+}
+
+
+def create_mongo_config():
+    """
+    Inspects the pulp config's mongodb settings and returns a data structure
+    that can be passed to celery for it's mongodb result backend config.
+
+    :return:    dictionary with keys 'host' and 'database', and optionally with
+                keys 'user' and 'password', that can be passed to celery as the
+                config for a mongodb result backend
+    :rtype:     dict
+    """
+    db_name = config.get('database', 'name')
+    seeds = config.get('database', 'seeds')
+    mongo_config = {'host': seeds, 'database': db_name}
+    if config.has_option('database', 'user') and config.has_option('database', 'password'):
+        mongo_config['user'] = config.get('database', 'user')
+        mongo_config['password'] = config.get('database', 'password')
+    return mongo_config
+
+
+celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
+celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
+celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())

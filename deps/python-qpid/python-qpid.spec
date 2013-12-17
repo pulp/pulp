@@ -2,45 +2,16 @@
 %{!?python_version: %global python_version %(%{__python} -c "from distutils.sysconfig import get_python_version; print get_python_version()")}
 
 Name:           python-qpid
-Version:        0.7.946106
+Version:        0.18
 Release:        2%{?dist}
 Summary:        Python client library for AMQP
 
-Group:          Development/Python
+Group:          Development/Languages
 License:        ASL 2.0
 URL:            http://qpid.apache.org
-Source0:        %{name}-%{version}.tar.gz
-# svn export -r<rev> http://svn.apache.org/repos/asf/qpid/trunk/qpid/python python-qpid-0.7.<rev>
-# tar czf python-qpid-0.7.<rev>.tar.gz python-qpid-0.7.<rev>
-
-Patch0:         0001-BZ-597066.patch
-Patch1:         0002-Bug-538188-Fixed-connection.start-hangs-if-connectio.patch
-Patch2:         0003-Bug-597149-Fixed-qpid-python-high-level-API-clients-.patch
-Patch3:         0004-BZ-567249-added-back-values-method-for-backwards-com.patch
-Patch4:         0005-BZ-567249-fix-for-python-2.3.patch
-Patch5:         0006-BZ-596677-performance-tweaks-for-receive-added-confi.patch
-Patch6:         0007-BZ-574817-don-t-always-set-the-sync-bit-on-send.patch
-Patch7:         0008-BZ-604836-reset-reconnect-delay-after-successful-con.patch
-Patch8:         0009-BZ-560707-added-full-support-for-unreliable-at-least.patch
-Patch9:         0010-BZ-569515-added-optional-timeouts-to-connection-sess.patch
-Patch10:        0011-BZ-608118-added-support-for-x-amqp-0-10.-app-id-cont.patch
-Patch11:        0012-BZ-608118-make-sure-we-initialize-properties-even-if.patch
-Patch12:        0013-BZ-569515-fix-timeout-tests-to-not-leave-queues-lyin.patch
-Patch13:        0014-BZ-607798-add-uuid-prefix-to-addresses-beginning-wit.patch
-Patch14:        0015-BZ-607798-fix-mangling-for-addresses-that-are-None.patch
-Patch15:        0016-BZ-608807-fixed-concurrent-close.patch
-Patch16:        0017-BZ-609258-added-accessor-for-auth_username.patch
-Patch17:        0018-BZ-609258-fixed-auth-username-for-sasl.patch
-Patch18:        0019-Bug-611543-Assertion-when-raising-a-link-established.patch
-Patch19:        0020-BZ-612615-convert-ttl-from-seconds-to-milliseconds.patch
-Patch20:        0021-BZ-613216-fixed-payload-of-None-for-text-plain-messa.patch
-Patch21:        0022-removed-old-python-examples.patch
-Patch22:        0023-BZ-613912-fixed-missign-import-and-added-test-case-f.patch
-Patch23:        0024-BZ-614054-eliminate-spurious-error-logging-and-recon.patch
-Patch24:        0025-BZ-614054-fixed-parsing-of-failover-URLs-fixed-drive.patch
-Patch25:        0026-BZ-614344-default-ports-for-reconnect_urls.patch
-
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Source0:        http://www.apache.org/dyn/closer.cgi/qpid/%{version}/qpid-python-%{version}.tar.gz
+
 BuildArch:      noarch
 
 BuildRequires:  python-devel
@@ -49,33 +20,8 @@ BuildRequires:  python-devel
 The Apache Qpid Python client library for AMQP.
 
 %prep
-%setup -q
-%patch0 -p3
-%patch1 -p3
-%patch2 -p3
-%patch3 -p3
-%patch4 -p3
-%patch5 -p3
-%patch6 -p3
-%patch7 -p3
-%patch8 -p3
-%patch9 -p3
-%patch10 -p3
-%patch11 -p3
-%patch12 -p3
-%patch13 -p3
-%patch14 -p3
-%patch15 -p3
-%patch16 -p3
-%patch17 -p3
-%patch18 -p3
-%patch19 -p3
-%patch20 -p3
-%patch21 -p3
-%patch22 -p3
-%patch23 -p3
-%patch24 -p3
-%patch25 -p3
+%setup -q -n qpid-%{version}/python
+cd ..
 
 %build
 CFLAGS="$RPM_OPT_FLAGS" %{__python} setup.py build
@@ -84,26 +30,82 @@ CFLAGS="$RPM_OPT_FLAGS" %{__python} setup.py build
 rm -rf $RPM_BUILD_ROOT
 %{__python} setup.py install --skip-build --root $RPM_BUILD_ROOT
 
+chmod +x %{buildroot}/%{python_sitelib}/qpid/codec.py
+chmod +x %{buildroot}/%{python_sitelib}/qpid/tests/codec.py
+chmod +x %{buildroot}/%{python_sitelib}/qpid/reference.py
+chmod +x %{buildroot}/%{python_sitelib}/qpid/managementdata.py
+chmod +x %{buildroot}/%{python_sitelib}/qpid/disp.py
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
+%doc LICENSE.txt NOTICE.txt README.txt examples
 %{python_sitelib}/mllib
 %{python_sitelib}/qpid
 %{_bindir}/qpid-python-test
-%doc LICENSE.txt NOTICE.txt README.txt examples/
 
 %if "%{python_version}" >= "2.6"
 %{python_sitelib}/qpid_python-*.egg-info
 %endif
 
 %changelog
-* Fri Jun 15 2012 Jeff Ortel <jortel@redhat.com> 0.7.946106-2
-- Renamed dependency RPMs (jason.dobies@redhat.com)
+* Thu Nov 14 2013 Jeff Ortel <jortel@redhat.com> 0.18-2
+- Fix building on el5. (jortel@redhat.com)
 
-* Thu Jul 22 2010 Mike McCune <mmccune@redhat.com> 0.7.946106-1
-- switching to orig (mmccune@redhat.com)
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 0.18-1
+- update python-qpid to 0.18. (jortel@redhat.com)
+- Update python-qpid tito.props to bump release on tagging. (jortel@redhat.com)
+
+* Tue Sep 11 2012 Darryl L. Pierce <dpierce@redhat.com> - 0.18-1
+- Rebased on Qpid 0.18 release.
+
+* Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.16-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
+* Tue Jun 05 2012 Darryl L. Pierce <dpierce@redhat.com> - 0.16-1
+- Release 0.16 of Qpid upstream.
+- Some cleanup to remove rpmlint errors.
+
+* Fri Feb 17 2012 Nuno Santos <nsantos@redhat.com> - 0.14-1
+- Rebased to sync with upstream's official 0.14 release
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.12-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Tue Sep 20 2011 Nuno Santos <nsantos@redhat.com> - 0.12-1
+- Rebased to sync with upstream's official 0.12 release
+
+* Mon May  2 2011 Nuno Santos <nsantos@redhat.com> - 0.10-1
+- Rebased to sync with upstream's official 0.10 release
+
+* Tue Feb 15 2011 Nuno Santos <nsantos@redhat.com> - 0.8-4
+- Qmf-related patch
+
+* Wed Feb 09 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.8-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
+* Tue Jan 11 2011 Nuno Santos <nsantos@redhat.com> - 0.8-2
+- Add qmf-related files
+
+* Tue Jan 11 2011 Nuno Santos <nsantos@redhat.com> - 0.8-1
+- Rebased to sync with upstream's official 0.8 release, based on svn rev 1037942
+
+* Mon Sep 13 2010 Rafael Schloming <rafaels@redhat.com> - 0.7.946106-14
+- Fix for bz632349
+- Fix for bz632395
+
+* Tue Aug 17 2010 Rafael Schloming <rafaels@redhat.com> - 0.7.946106-13
+- Fix for bz622699
+- Fix for bz621527
+- Fix for bz624715
+- Fix for bz624714
+
+* Mon Aug  2 2010 Rafael Schloming <rafaels@redhat.com> - 0.7.946106-12
+- Fixes to examples for compatibility with older python versions
+- Fix for bz621998
+- Fix for bz620402
 
 * Wed Jul 14 2010 Rafael Schloming <rafaels@redhat.com> - 0.7.946106-9
 - Fix for bz614344

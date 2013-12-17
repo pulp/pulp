@@ -24,7 +24,6 @@ from mock import Mock, patch
 from base import WebTest
 
 from nectar.downloaders.local import LocalFileDownloader
-from nectar.request import DownloadRequest
 from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
@@ -49,6 +48,7 @@ from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.common.plugins import importer_constants
 from pulp.common.config import Config
 from pulp.server.managers import factory as managers
+from pulp.server.content.sources import Request as DownloadRequest
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
 from pulp.server.config import config as pulp_conf
@@ -75,6 +75,11 @@ NODE_CERTIFICATE = """
     PULPROCKSPULPROCKSPULPROCKS
     -----END CERTIFICATE-----
 """
+
+REPO_NAME = 'pulp-nodes'
+REPO_DESCRIPTION = 'full of goodness'
+REPO_NOTES = {'the answer to everything': 42}
+REPO_SCRATCHPAD = {'a': 1, 'b': 2}
 
 # --- testing mock classes ---------------------------------------------------
 
@@ -134,10 +139,9 @@ class AdditiveTestStrategy(TestStrategy):
 
 class BadDownloadRequest(DownloadRequest):
 
-    def __init__(self, url, *args, **kwargs):
-        url = 'http:/NOWHERE/FAIL_ME_%d' % random.random()
-        DownloadRequest.__init__(self, url, *args, **kwargs)
-
+    def __init__(self, *args, **kwargs):
+        DownloadRequest.__init__(self, *args, **kwargs)
+        self.url = 'http:/NOWHERE/FAIL_ME_%f' % random.random()
 
 class AgentConduit(Conduit):
 
@@ -217,7 +221,9 @@ class PluginTestBase(WebTest):
         pulp_conf.set('server', 'storage_dir', self.parentfs)
         # create repo
         manager = managers.repo_manager()
-        manager.create_repo(self.REPO_ID)
+        manager.create_repo(
+            self.REPO_ID, display_name=REPO_NAME, description=REPO_DESCRIPTION, notes=REPO_NOTES)
+        manager.set_repo_scratchpad(self.REPO_ID, REPO_SCRATCHPAD)
         # add units
         units = self.add_units(0, self.NUM_UNITS)
         self.units = units
@@ -995,7 +1001,11 @@ class TestEndToEnd(PluginTestBase):
     def verify(self, num_units=PluginTestBase.NUM_UNITS):
         # repository
         manager = managers.repo_query_manager()
-        manager.get_repository(self.REPO_ID)
+        repository = manager.get_repository(self.REPO_ID)
+        self.assertEqual(repository['description'], REPO_DESCRIPTION)
+        self.assertEqual(repository['display_name'], REPO_NAME)
+        self.assertEqual(repository['notes'], REPO_NOTES)
+        self.assertEqual(repository['scratchpad'], REPO_SCRATCHPAD)
         # importer
         manager = managers.repo_importer_manager()
         importer = manager.get_importer(self.REPO_ID)
@@ -1080,7 +1090,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertEqual(units['added'], self.NUM_UNITS)
         self.assertEqual(units['updated'], 0)
         self.assertEqual(units['removed'], 0)
-        diff = 'diff %s/content %s/content' % (self.parentfs, self.childfs)
+        diff = 'diff %s/content %s/content &> /dev/null' % (self.parentfs, self.childfs)
         self.assertEqual(os.system(diff), 0)
         self.verify()
 
@@ -1509,7 +1519,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
-        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.Request', BadDownloadRequest)
         @patch('pulp_node.handlers.handler.find_strategy', return_value=MirrorTestStrategy(self))
         @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
@@ -1537,7 +1547,7 @@ class TestEndToEnd(PluginTestBase):
         self.assertFalse(report.succeeded)
         errors = report.details['errors']
         repositories = report.details['repositories']
-        self.assertEqual(len(errors), 1)
+        self.assertEqual(len(errors), 5)
         self.assertEqual(errors[0]['error_id'], error.UnitDownloadError.ERROR_ID)
         self.assertEqual(errors[0]['details']['repo_id'], self.REPO_ID)
         self.assertEqual(len(repositories), 1)
@@ -1560,7 +1570,7 @@ class TestEndToEnd(PluginTestBase):
         binding = Bindings(conn)
         @patch('pulp_node.resources.pulp_bindings', return_value=binding)
         @patch('pulp_node.resources.parent_bindings', return_value=binding)
-        @patch('pulp_node.importers.download.DownloadRequest', BadDownloadRequest)
+        @patch('pulp_node.importers.download.Request', BadDownloadRequest)
         @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
         def test_handler(*unused):
             # publish

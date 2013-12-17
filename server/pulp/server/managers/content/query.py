@@ -14,10 +14,12 @@
 import os
 from gettext import gettext as _
 from pprint import pformat
+import errno
 
 from pulp.server import config as pulp_config
 from pulp.plugins.types import database as content_types_db
 from pulp.server.exceptions import InvalidValue, MissingResource
+
 
 class ContentQueryManager(object):
     """
@@ -247,7 +249,7 @@ class ContentQueryManager(object):
 
     def get_root_content_dir(self, content_type):
         """
-        Get the full path to Pulp's root conent directory for a given content
+        Get the full path to Pulp's root content directory for a given content
         type.
         @param content_type: unique id of content collection
         @type content_type: str
@@ -257,8 +259,13 @@ class ContentQueryManager(object):
         # I'm partitioning the content on the file system based on content type
         storage_dir = pulp_config.config.get('server', 'storage_dir')
         root = os.path.join(storage_dir, 'content', content_type)
-        if not os.path.exists(root):
+        try:
             os.makedirs(root)
+        except OSError, e:
+            if e.errno == errno.EEXIST:
+                pass
+            else:
+                raise
         return root
 
     def request_content_unit_file_path(self, content_type, relative_path):

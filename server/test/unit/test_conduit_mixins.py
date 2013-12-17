@@ -116,7 +116,7 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         self.repo_id = 'sr-repo'
         self.mixin = mixins.SingleRepoUnitsMixin(self.repo_id, mixins.DistributorConduitException)
 
-    @mock.patch('pulp.plugins.types.database.type_definition')
+    @mock.patch('pulp.plugins.types.database.all_type_definitions')
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
     def test_get_units(self, mock_query_call, mock_type_def_call):
         # Setup
@@ -125,10 +125,10 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
             {'unit_type_id' : 'type-2', 'metadata' : {'m' : 'm1', 'k1' : 'v2'}},
         ]
 
-        mock_type_def_call.return_value = {
-            'id' : 'mock-type-def',
-            'unit_key' : ['k1']
-        }
+        mock_type_def_call.return_value = [
+            {'id' : 'type-1', 'unit_key' : ['k1']},
+            {'id' : 'type-2', 'unit_key' : ['k1']},
+        ]
 
         fake_criteria = 'fake-criteria'
 
@@ -157,7 +157,7 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
 
         self.mixin = mixins.MultipleRepoUnitsMixin(mixins.ImporterConduitException)
 
-    @mock.patch('pulp.plugins.types.database.type_definition')
+    @mock.patch('pulp.plugins.types.database.all_type_definitions')
     @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
     def test_get_units(self, mock_query_call, mock_type_def_call):
         # Setup
@@ -166,10 +166,10 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
                 {'unit_type_id' : 'type-2', 'metadata' : {'m' : 'm1', 'k1' : 'v2'}},
         ]
 
-        mock_type_def_call.return_value = {
-            'id' : 'mock-type-def',
-            'unit_key' : ['k1']
-        }
+        mock_type_def_call.return_value = [
+            {'id' : 'type-1', 'unit_key' : ['k1']},
+            {'id' : 'type-2', 'unit_key' : ['k1']},
+        ]
 
         fake_criteria = 'fake-criteria'
 

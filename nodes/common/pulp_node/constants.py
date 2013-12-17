@@ -47,6 +47,8 @@ SKIP_CONTENT_UPDATE_KEYWORD = 'skip_content_update'
 
 # --- unit/publishing --------------------------------------------------------
 
+TYPE_ID = 'type_id'
+UNIT_KEY = 'unit_key'
 BASE_URL = 'base_url'
 STORAGE_PATH = 'storage_path'
 RELATIVE_PATH = 'relative_path'

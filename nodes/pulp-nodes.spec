@@ -17,8 +17,8 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: 2.3.0
-Release: 0.23.beta%{?dist}
+Version: 2.4.0
+Release: 0.1.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -28,7 +28,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
-BuildRequires: python-nose
 BuildRequires: rpm-python
 
 %description
@@ -240,6 +239,31 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
+- 995076 - make sure to call finalize on the nectar config object
+  (jason.connor@gmail.com)
+- 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
+- 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
+
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
+- Pulp rebuild
+
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.28.beta
+- 1022646 - migration_0 needs to add units_size=0. (jortel@redhat.com)
+
+* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
+- 1022646 - fix migration of nodes 2.2 => 2.3 manifests. (jortel@redhat.com)
+
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
+- Pulp rebuild
+
+* Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
+- Pulp rebuild
+
+* Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
+- 1020549 - tar the content of the distribution directory instead of the
+  directory. (jortel@redhat.com)
+
 * Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
 - Pulp rebuild
 

@@ -48,7 +48,8 @@ def to_transfer_repo(repo_data):
     @return: transfer object used in many plugin API calls
     @rtype:  pulp.plugins.model.Repository}
     """
-    r = Repository(repo_data['id'], repo_data['display_name'], repo_data['description'], repo_data['notes'])
+    r = Repository(repo_data['id'], repo_data['display_name'], repo_data['description'],
+                   repo_data['notes'], content_unit_counts=repo_data['content_unit_counts'])
     return r
 
 def to_related_repo(repo_data, configs):

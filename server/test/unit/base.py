@@ -24,6 +24,7 @@ from pulp.server.async import celery_instance
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
@@ -302,6 +303,13 @@ class RecursiveUnorderedListComparisonMixin(object):
                           {'a_list': [1, 2, 3]}, {'a_list': [2, 1]})
         self.assertRaises(AssertionError, self.assert_equal_ignoring_list_order,
                           [[1, 2], [3]], [[3, 3], [2, 1]])
+
+
+class ResourceReservationTests(PulpServerTests):
+    def tearDown(self):
+        AvailableQueue.get_collection().remove()
+        ReservedResource.get_collection().remove()
+        TaskStatus.get_collection().remove()
 
 
 class TaskQueue:

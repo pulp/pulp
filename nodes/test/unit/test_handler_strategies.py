@@ -78,7 +78,7 @@ class TestBase(TestCase):
         conduit = TestConduit(cancel_on)
         progress = HandlerProgress(conduit)
         summary = SummaryReport()
-        request = SyncRequest(
+        request = Request(
             conduit=conduit,
             progress=progress,
             summary=summary,

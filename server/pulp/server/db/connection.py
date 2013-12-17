@@ -34,13 +34,15 @@ _DEFAULT_MAX_POOL_SIZE = 10
 
 # -- connection api ------------------------------------------------------------
 
-def initialize(name=None, seeds=None, max_pool_size=None):
+def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
     """
     Initialize the connection pool and top-level database for pulp.
     """
     global _CONNECTION, _DATABASE
 
     try:
+        connection_kwargs = {}
+
         if name is None:
             name = config.config.get('database', 'name')
 
@@ -50,11 +52,19 @@ def initialize(name=None, seeds=None, max_pool_size=None):
         if max_pool_size is None:
             # we may want to make this configurable, but then again, we may not
             max_pool_size = _DEFAULT_MAX_POOL_SIZE
+        connection_kwargs['max_pool_size'] = max_pool_size
 
-        _LOG.info("Attempting Database connection with seeds = %s" % (seeds))
+        if replica_set is None:
+            if config.config.has_option('database', 'replica_set'):
+                replica_set = config.config.get('database', 'replica_set')
 
-        _CONNECTION = pymongo.MongoClient(seeds, max_pool_size=max_pool_size)
+        if replica_set is not None:
+            connection_kwargs['replicaset'] = replica_set
 
+        _LOG.info("Attempting Database connection with seeds = %s" % seeds)
+        _LOG.info('Connection Arguments: %s' % connection_kwargs)
+
+        _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
         # Decorate the methods that actually send messages to the db over the
         # network. These are the methods that call start_request, and the
         # decorator causes them call an corresponding end_request
@@ -76,7 +86,7 @@ def initialize(name=None, seeds=None, max_pool_size=None):
                not config.config.has_option('database', 'password')) or
               (not config.config.has_option('database', 'username') and
                config.config.has_option('database', 'password'))):
-            raise Exception("The server config specified username/password authentication but"
+            raise Exception("The server config specified username/password authentication but "
                             "is missing either the username or the password")
 
         _DATABASE.add_son_manipulator(NamespaceInjector())
@@ -127,15 +137,17 @@ def _retry_decorator(full_name=None, retries=0):
                 except AutoReconnect:
                     tries += 1
 
-                    _LOG.warn(_('%s operation failed on %s: tries remaining: %d') %
-                              (method.__name__, full_name, retries - tries + 1))
+                    _LOG.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
+                              {'method': method.__name__, 'name': full_name,
+                               'tries': retries - tries + 1})
 
                     if tries <= retries:
                         time.sleep(0.3)
 
             raise PulpCollectionFailure(
-                _('%s operation failed on %s: database connection still down after %d tries') %
-                (method.__name__, full_name, (retries + 1)))
+                _('%(method)s operation failed on %(name)s: database connection '
+                  'still down after %(tries)d tries') %
+                {'method': method.__name__, 'name': full_name, 'tries': (retries + 1)})
 
         return retry
 

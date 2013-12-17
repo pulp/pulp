@@ -28,7 +28,7 @@ class ConsumerRegisterCommand(PulpCliCommand):
 
     def __init__(self, context, name=None, description=None):
         name = name or 'register'
-        description = description or _('')
+        description = description or ''
         super(ConsumerRegisterCommand, self).__init__(name, description, self.run)
 
         self.add_option(OPTION_CONSUMER_ID)

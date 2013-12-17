@@ -32,7 +32,7 @@ STRATEGY_UNSUPPORTED = _('Handler strategy "%(s)s" not supported')
 # --- request  --------------------------------------------------------------------------
 
 
-class SyncRequest(object):
+class Request(object):
     """
     Represents a specific request to synchronize a child node.
     It contains the resources needed by the strategy to complete the request

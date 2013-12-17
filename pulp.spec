@@ -29,8 +29,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.3.0
-Release: 0.23.beta%{?dist}
+Version: 2.4.0
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -40,7 +40,6 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
-BuildRequires: python-nose
 BuildRequires: rpm-python
 
 %description
@@ -83,6 +82,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server/plugins.conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/content/sources/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
@@ -96,6 +96,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/distributors
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/importers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/profilers
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/catalogers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/types
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
@@ -176,7 +177,7 @@ Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
-Requires: python-nectar >= 1.1.4
+Requires: python-nectar >= 1.1.6
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -212,6 +213,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/vhosts80
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
+%dir %{_sysconfdir}/%{name}/content/sources/conf.d
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
@@ -229,6 +231,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_usr}/lib/%{name}/plugins/distributors
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
+%{_usr}/lib/%{name}/plugins/catalogers
 %{_usr}/lib/%{name}/plugins/types
 /srv/%{name}/webservices.wsgi
 %doc README LICENSE
@@ -482,6 +485,57 @@ exit 0
 %endif
 
 %changelog
+* Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
+- 1031220 - raising an AttributeError when an attribute is missing on a Model
+  (mhrivnak@redhat.com)
+- Add support for alternate content sources. (jortel@redhat.com)
+- 995076 - make sure to call finalize on the nectar config object
+  (jason.connor@gmail.com)
+- 1032189 - fixed use of gettext with multiple substitutions
+  (mhrivnak@redhat.com)
+- 1020300 - Prevent hashed password from being returned by the get user
+  command. (bcourt@redhat.com)
+- 1019155 - added logic to correctly set the URL when called from any
+  /bindings/ URLs (jason.connor@gmail.com)
+- 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
+- 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
+- 1026606 - Added docs for get unit REST API (jason.dobies@redhat.com)
+- 996606 - Check to see if a repo exists before starting upload process
+  (jason.dobies@redhat.com)
+
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
+- 1027500 - init python-gofer before agent and tasking services started.
+  (jortel@redhat.com)
+
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.28.beta
+- 1022646 - migration_0 needs to add units_size=0. (jortel@redhat.com)
+
+* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
+- 1023056 - fix SSL on f19 by using qpid builtin SSL transport.
+  (jortel@redhat.com)
+- 1022646 - fix migration of nodes 2.2 => 2.3 manifests. (jortel@redhat.com)
+- 1022621 - Failed reports are now successful tasks and the report indicates
+  the failure (jason.dobies@redhat.com)
+- 1022621 - Fixed communication between publish manager and tasking
+  (jason.dobies@redhat.com)
+- 1017587 - Added a list of possible task states to the docs.
+  (rbarlow@redhat.com)
+
+* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
+- Pulp rebuild
+
+* Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
+- 1017865 - Corrected task response docs (jason.dobies@redhat.com)
+- 1021116 - Convert info level log messages that include Task arguments into
+  debug level messages. (rbarlow@redhat.com)
+- 1017253 - Removed v1 attribute that no longer exists
+  (jason.dobies@redhat.com)
+
+* Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
+- 1019909 - Added replica set support (jason.dobies@redhat.com)
+- 1020549 - tar the content of the distribution directory instead of the
+  directory. (jortel@redhat.com)
+
 * Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
 - 1019455 - Loosened validation checks on the presence of the feed for certain
   configuration parameters (jason.dobies@redhat.com)

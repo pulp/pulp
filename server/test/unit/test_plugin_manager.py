@@ -36,6 +36,11 @@ class MockProfiler:
     def metadata(cls):
         return {'types': ['mock_type']}
 
+class MockCataloger:
+    @classmethod
+    def metadata(cls):
+        return {'types': ['mock_type']}
+
 # -- test cases ---------------------------------------------------------------
 
 class PluginManagerTests(base.PulpServerTests):
@@ -49,6 +54,7 @@ class PluginManagerTests(base.PulpServerTests):
         plugin_api._MANAGER.importers.add_plugin('MockImporter', MockImporter, {})
         plugin_api._MANAGER.distributors.add_plugin('MockDistributor', MockDistributor, {})
         plugin_api._MANAGER.profilers.add_plugin('MockProfiler', MockProfiler, {})
+        plugin_api._MANAGER.catalogers.add_plugin('MockCataloger', MockCataloger, {})
 
         # Create the manager instance to test
         self.manager = plugin_manager.PluginManager()
@@ -179,6 +185,33 @@ class PluginManagerTests(base.PulpServerTests):
 
         # Test
         found = self.manager.profilers()
+
+        # Verify
+        self.assertTrue(isinstance(found, list))
+        self.assertEqual(0, len(found))
+
+    def test_catalogers(self):
+        """
+        Tests retrieving all catalogers.
+        """
+
+        # Test
+        found = self.manager.catalogers()
+
+        # Verify
+        self.assertEqual(1, len(found))
+        self.assertEqual('MockCataloger', found[0]['id'])
+
+    def test_catalogers_no_catalogers(self):
+        """
+        Tests an empty list is returned when no catalogers are present.
+        """
+
+        # Setup
+        plugin_api._MANAGER.catalogers.remove_plugin('MockCataloger')
+
+        # Test
+        found = self.manager.catalogers()
 
         # Verify
         self.assertTrue(isinstance(found, list))

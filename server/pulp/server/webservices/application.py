@@ -39,7 +39,6 @@ logs.start_logging()
 from pulp.server import initialization
 
 from pulp.server.agent.direct.services import Services as AgentServices
-from pulp.server.db import reaper
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
@@ -95,6 +94,9 @@ def _initialize_pulp():
     # is necessary for the Celery application to initialize.
     from pulp.server.async import app
 
+    # configure agent services
+    AgentServices.init()
+
     # Verify the database has been migrated to the correct version. This is
     # very likely a reason the server will fail to start.
     try:
@@ -118,10 +120,7 @@ def _initialize_pulp():
     user_manager = manager_factory.user_manager()
     user_manager.ensure_admin()
 
-    # database document reaper
-    reaper.initialize()
-
-    # agent services
+    # start agent services
     AgentServices.start()
 
     # Setup debugging, if configured

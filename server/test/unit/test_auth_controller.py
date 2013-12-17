@@ -167,7 +167,7 @@ class UserResourceTests(AuthControllersTests):
         """
 
         # Setup
-        self.user_manager.create_user('user-1')
+        self.user_manager.create_user('user-1', password='test-password')
 
         # Test
         status, body = self.get('/v2/users/user-1/')
@@ -177,6 +177,7 @@ class UserResourceTests(AuthControllersTests):
         self.assertEqual('user-1', body['login'])
         self.assertTrue('_href' in body)
         self.assertTrue(body['_href'].endswith('users/user-1/'))
+        self.assertTrue('password' not in body)
 
     def test_get_missing_user(self):
         """

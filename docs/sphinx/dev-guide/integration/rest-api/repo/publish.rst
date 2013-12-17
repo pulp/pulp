@@ -11,7 +11,7 @@ call always executes asynchronously and will return a :term:`call report`.
 
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/publish/`
-| :permission:`update`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`id,str,identifies which distributor on the repository to publish`
@@ -39,7 +39,7 @@ call always executes asynchronously and will return a :term:`call report`.
   "reasons": [],
   "state": "waiting",
   "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-  "job_id": null,
+  "task_group_id": null,
   "schedule_id": null,
   "progress": {},
   "result": null,
