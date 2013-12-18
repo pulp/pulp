@@ -196,7 +196,7 @@ class ReplyHandler(Listener):
         """
         log.info('Task RMI (succeeded)\n%s', reply)
         result = reply.retval
-        call_context = reply.any  # makes IDE happy
+        call_context = reply.any
         task_id = call_context.get('task_id')
         if not task_id:
             return
@@ -215,7 +215,7 @@ class ReplyHandler(Listener):
         log.info('Task RMI (failed)\n%s', reply)
         exception = reply.exval
         traceback = reply.xstate['trace']
-        call_context = reply.any  # make IDE happy
+        call_context = reply.any
         task_id = call_context.get('task_id')
         if not task_id:
             return

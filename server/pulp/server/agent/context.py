@@ -26,7 +26,7 @@ class Context(object):
     :type uiud: str
     :ivar url: The broker URL.
     :type url: str
-    :ivar secret: The server agent shared secret for the consumer.
+    :ivar secret: The shared secret for the consumer.
     :type secret: str
     :ivar round_tripped: Data round tripped to that agent and back.
         Used by the reply consumer.
