@@ -96,7 +96,7 @@ class Consumer(object):
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :return: The RMI request serial number.
         :rtype: str
         """
@@ -109,7 +109,7 @@ class Consumer(object):
         """
         Bind a consumer to the specified repository.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :param bindings: A list of bindings to add/update.
           Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
             The 'details' are at the discretion of the distributor.
@@ -135,7 +135,7 @@ class Consumer(object):
         """
         Unbind a consumer from the specified repository.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :param bindings: A list of bindings to be removed.
           Each binding is: {type_id:<str>, repo_id:<str>}
         :type bindings: list
@@ -166,7 +166,7 @@ class Content(object):
         """
         Install content on a consumer.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :param units: A list of content units to be installed.
         :type units: list of:
             { type_id:<str>, unit_key:<dict> }
@@ -191,7 +191,7 @@ class Content(object):
         """
         Update content on a consumer.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :param units: A list of content units to be updated.
         :type units: list of:
             { type_id:<str>, unit_key:<dict> }
@@ -216,7 +216,7 @@ class Content(object):
         """
         Uninstall content on a consumer.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :param units: A list of content units to be uninstalled.
         :type units: list of:
             { type_id:<str>, unit_key:<dict> }
@@ -247,7 +247,7 @@ class Profile(object):
         """
         Request the agent to send the package profile.
         :param context: The call context.
-        :type context: pulp.server.agent.direct.context.Context
+        :type context: pulp.server.agent.context.Context
         :return: The RMI request serial number.
         :rtype: str
         """

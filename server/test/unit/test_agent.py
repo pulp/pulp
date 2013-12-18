@@ -22,7 +22,7 @@ from gofer.rmi.async import Succeeded, Failed
 from base import PulpServerTests
 from pulp.devel import mock_agent
 from pulp.server.config import config as pulp_conf
-from pulp.server.agent.direct.context import Context
+from pulp.server.agent import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
 from pulp.server.agent.direct.services import HeartbeatListener, Services, ReplyHandler
 
