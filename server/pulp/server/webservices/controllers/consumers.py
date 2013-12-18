@@ -675,7 +675,7 @@ class ContentApplicabilityRegeneration(JSONController):
             dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
             (consumer_criteria.as_dict(),),
             tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 

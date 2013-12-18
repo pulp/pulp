@@ -306,7 +306,7 @@ class PublishAction(JSONController):
                                                 args=[repo_group_id, distributor_id],
                                                 kwargs={'publish_config_override' : overrides},
                                                 tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 # web.py application -----------------------------------------------------------

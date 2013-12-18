@@ -347,12 +347,18 @@ class CallReport(object):
         """
         task_status = TaskStatusManager.find_by_task_id(task_id)
         if task_status:
+            task_result = None
+            task_traceback = None
+            if 'result' in task_status:
+                task_result = task_status['result']
+            if 'traceback' in task_status:
+                task_traceback = task_status['traceback']
             call_report = cls(task_id,
                               call_request_group_id = None,
                               call_request_tags = task_status['tags'],
                               state = task_status['state'],
-                              result = task_status['result'],
-                              traceback = task_status['traceback'])
+                              result = task_result,
+                              traceback = task_traceback)
         else:
             call_report = cls(task_id)
         return call_report
@@ -382,7 +388,7 @@ class CallReport(object):
         assert isinstance(state, (NoneType, basestring))
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
-        assert isinstance(traceback, (NoneType, TracebackType))
+        assert isinstance(traceback, (NoneType, TracebackType, basestring))
         assert isinstance(serialize_result, bool)
 
         self.call_request_id = call_request_id
@@ -448,7 +454,7 @@ class CallReport(object):
         tb = getattr(self, 'traceback')
 
         if tb is not None:
-            if isinstance(tb, (str, list, tuple)):
+            if isinstance(tb, (basestring, list, tuple)):
                 data['traceback'] = str(tb)
             else:
                 data['traceback'] = traceback.format_tb(tb)

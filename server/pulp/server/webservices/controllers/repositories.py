@@ -292,7 +292,7 @@ class RepoResource(JSONController):
                                                             {'importer_config': importer_config,
                                                              'distributor_configs': distributor_configs},
                                                             tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -331,7 +331,7 @@ class RepoImporters(JSONController):
                                                                  [repo_id, importer_type],
                                                                  {'repo_plugin_config': importer_config},
                                                                  tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -363,7 +363,7 @@ class RepoImporter(JSONController):
         async_result = remove_importer.apply_async_with_reservation(repo_id,
                                                                     [repo_id],
                                                                     tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
     @auth_required(UPDATE)
@@ -386,7 +386,7 @@ class RepoImporter(JSONController):
                                                             [repo_id],
                                                             {'importer_config': importer_config},
                                                             tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -563,7 +563,7 @@ class RepoDistributors(JSONController):
                                                          'auto_publish': auto_publish,
                                                          'distributor_id': distributor_id},
                                                         tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -927,7 +927,7 @@ class RepoAssociate(JSONController):
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -957,7 +957,7 @@ class RepoUnassociate(JSONController):
                     [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
                      manager_factory.principal_manager().get_principal()['login']],
                     tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -988,7 +988,7 @@ class RepoImportUpload(JSONController):
                                     repo_id,
                                     [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
                                     tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -1090,7 +1090,7 @@ class ContentApplicabilityRegeneration(JSONController):
             dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
             (repo_criteria.as_dict(),),
             tags=[regeneration_tag])
-        call_report = CallReport(call_request_id=async_result.id)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
