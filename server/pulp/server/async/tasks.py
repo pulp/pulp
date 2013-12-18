@@ -340,8 +340,8 @@ def graceful_cancel(f, cancel_method):
         :return:       The return value from calling f
         :rtype:        Could be anything!
         """
+        old_signal = signal.signal(signal.SIGTERM, cancel)
         try:
-            old_signal = signal.signal(signal.SIGTERM, cancel)
             return f(*args, **kwargs)
         finally:
             signal.signal(signal.SIGTERM, old_signal)

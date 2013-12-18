@@ -37,7 +37,7 @@ from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
-from pulp.server.async.tasks import Task
+from pulp.server.async.tasks import graceful_cancel, Task
 
 
 logger = logging.getLogger(__name__)
@@ -135,9 +135,9 @@ class RepoPublishManager(object):
         try:
             # Add the graceful_cancel decorator to the publish_repo call, so that we can respond to
             # signals by calling the Distributor's cancel_publish_repo() method.
-            distributor_instance.publish_repo = tasks.graceful_cancel(
+            publish_repo = graceful_cancel(
                 distributor_instance.publish_repo, distributor_instance.cancel_publish_repo)
-            publish_report = distributor_instance.publish_repo(transfer_repo, conduit, call_config)
+            publish_report = publish_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             publish_end_timestamp = _now_timestamp()
 
