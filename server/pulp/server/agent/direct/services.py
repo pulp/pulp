@@ -15,16 +15,19 @@
 from threading import RLock
 from datetime import datetime as dt
 from datetime import timedelta
+from logging import getLogger
+
 from pulp.common import dateutils
 from pulp.server.config import config
-from pulp.server.dispatch import factory
+from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.managers import factory as managers
 from gofer.messaging.broker import Broker
 from gofer.messaging import Topic
 from gofer.messaging.consumer import Consumer
 from gofer.messaging import Queue
 from gofer.rmi.async import ReplyConsumer, Listener
 from gofer.rmi.async import WatchDog, Journal
-from logging import getLogger
+
 
 
 log = getLogger(__name__)
@@ -33,14 +36,14 @@ log = getLogger(__name__)
 class Services:
     """
     Agent services.
-    @cvar CTAG: The RMI correlation.
-    @type CTAG: str
-    @cvar watchdog: Asynchronous RMI watchdog.
-    @type watchdog: L{WatchDog}
-    @cvar reply_handler: Asynchornous RMI reply listener.
-    @type reply_handler: L{ReplyHandler}
-    @cvar heartbeat_listener: Agent heartbeat listener.
-    @type heartbeat_listener: L{HeartbeatListener}
+    :cvar CTAG: The RMI correlation.
+    :type CTAG: str
+    :cvar watchdog: Asynchronous RMI watchdog.
+    :type watchdog: WatchDog
+    :cvar reply_handler: Asynchronous RMI reply listener.
+    :type reply_handler: ReplyHandler
+    :cvar heartbeat_listener: Agent heartbeat listener.
+    :type heartbeat_listener: HeartbeatListener
     """
 
     watchdog = None
@@ -87,8 +90,8 @@ class HeartbeatListener(Consumer):
     def status(cls, uuids=[]):
         """
         Get the agent heartbeat status.
-        @param uuids: An (optional) list of uuids to query.
-        @return: A tuple (status,last-heartbeat)
+        :param uuids: An (optional) list of uuids to query.
+        :return: A tuple (status,last-heartbeat)
         """
         cls.__lock()
         try:
@@ -147,9 +150,29 @@ class HeartbeatListener(Consumer):
 class ReplyHandler(Listener):
     """
     The async RMI reply handler.
-    @ivar consumer: The reply consumer.
-    @type consumer: L{ReplyConsumer}
+    :ivar consumer: The reply consumer.
+    :type consumer: ReplyConsumer
     """
+
+    @staticmethod
+    def _update_bind_action(action_id, call_context, succeeded):
+        """
+        Update the bind action.
+        :param action_id: The action ID (basically the task_id).
+        :type action_id: str
+        :param call_context: The information about the bind call that was
+            passed to the agent to be round tripped back here.
+        :param succeeded: The bind action status.
+        :type succeeded: bool
+        """
+        manager = managers.consumer_bind_manager()
+        consumer_id = call_context['consumer_id']
+        repo_id = call_context['repo_id']
+        distributor_id = call_context['distributor_id']
+        if succeeded:
+            manager.action_succeeded(consumer_id, repo_id, distributor_id, action_id)
+        else:
+            manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
 
     def __init__(self, url):
         queue = Queue(Services.CTAG)
@@ -158,8 +181,8 @@ class ReplyHandler(Listener):
     def start(self, watchdog):
         """
         Start the reply handler (thread)
-        @param watchdog: A watchdog object used to synthesize timeouts.
-        @type watchdog: L{gofer.rmi.async.WatchDog}
+        :param watchdog: A watchdog object used to synthesize timeouts.
+        :type watchdog: Watchdog
         """
         self.consumer.start(self, watchdog=watchdog)
         log.info('Task reply handler, started.')
@@ -168,37 +191,44 @@ class ReplyHandler(Listener):
         """
         Notification (reply) indicating an RMI succeeded.
         This information is relayed to the task coordinator.
-        @param reply: A successful reply object.
-        @type reply: L{gofer.rmi.async.Succeeded}
+        :param reply: A successful reply object.
+        :type reply: gofer.rmi.async.Succeeded
         """
         log.info('Task RMI (succeeded)\n%s', reply)
-        taskid = reply.any
         result = reply.retval
-        coordinator = factory.coordinator()
-        coordinator.complete_call_success(taskid, result)
+        call_context = reply.any  # makes IDE happy
+        task_id = call_context.get('task_id')
+        if not task_id:
+            return
+        TaskStatusManager.set_task_succeeded(task_id, result)
+        action = call_context.get('action')
+        if action in ('bind', 'unbind'):
+            ReplyHandler._update_bind_action(task_id, call_context, result['succeeded'])
 
     def failed(self, reply):
         """
         Notification (reply) indicating an RMI failed.
-        This information is relayed to the task coordinator.
-        @param reply: A failure reply object.
-        @type reply: L{gofer.rmi.async.Failed}
+        This information used to update the task status.
+        :param reply: A failure reply object.
+        :type reply: gofer.rmi.async.Failed
         """
         log.info('Task RMI (failed)\n%s', reply)
-        taskid = reply.any
         exception = reply.exval
         traceback = reply.xstate['trace']
-        coordinator = factory.coordinator()
-        coordinator.complete_call_failure(taskid, exception, traceback)
+        call_context = reply.any  # make IDE happy
+        task_id = call_context.get('task_id')
+        if not task_id:
+            return
+        TaskStatusManager.set_task_failed(task_id, traceback)
+        action = call_context.get('action')
+        if action in ('bind', 'unbind'):
+            ReplyHandler._update_bind_action(task_id, call_context, False)
 
     def progress(self, reply):
         """
         Notification (reply) indicating an RMI has reported status.
         This information is relayed to the task coordinator.
-        @param reply: A progress reply object.
-        @type reply: L{gofer.rmi.async.Progress}
+        :param reply: A progress reply object.
+        :type reply: gofer.rmi.async.Progress
         """
-        log.info('Task RMI (progress)\n%s', reply)
-        taskid = reply.any
-        coordinator = factory.coordinator()
-        coordinator.report_call_progress(taskid, reply.details)
+        # TODO: not supported by TaskStats yet.

@@ -21,6 +21,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.profiler import InvalidUnitsRequested
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpDataException
 from pulp.server.managers import factory
 
@@ -38,9 +39,9 @@ class AgentManagerTests(base.PulpServerTests):
     NOTIFY_AGENT = True
     BINDING_CONFIG = {}
 
-    REPOSITORY = {'id':REPO_ID}
+    REPOSITORY = {'id': REPO_ID}
     DETAILS = {}
-    OPTIONS = { 'xxx' : 123 }
+    OPTIONS = {'xxx': 123}
 
     def setUp(self):
         base.PulpServerTests.setUp(self)
@@ -48,6 +49,7 @@ class AgentManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
+        TaskStatus.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
@@ -58,10 +60,11 @@ class AgentManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
+        TaskStatus.get_collection().remove()
         mock_plugins.reset()
 
     def populate(self):
-        config = {'key1' : 'value1', 'key2' : None}
+        config = {'key1': 'value1', 'key2': None}
         manager = factory.repo_manager()
         repo = manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
@@ -83,9 +86,9 @@ class AgentManagerTests(base.PulpServerTests):
         # verify
         mock_agent.Consumer.unregistered.assert_called_once_with()
 
-    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
-           return_value=CONSUMER_PAYLOAD)
-    def test_bind(self, unused):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload')
+    def test_bind(self, mock_payload):
+        mock_payload.return_value = CONSUMER_PAYLOAD
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -106,13 +109,15 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 1)
-        self.assertEqual(actions[0]['id'], None)
+        self.assertEqual(len(actions), 2)
+        self.assertFalse(actions[0]['id'] is None)
+        self.assertFalse(actions[1]['id'] is None)
         self.assertEqual(actions[0]['status'], 'pending')
+        self.assertEqual(actions[1]['status'], 'pending')
 
-    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload',
-           return_value=CONSUMER_PAYLOAD)
-    def test_unbind(self, unused):
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload')
+    def test_unbind(self, mock_payload):
+        mock_payload.return_value = CONSUMER_PAYLOAD
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -131,9 +136,11 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 1)
-        self.assertEqual(actions[0]['id'], None)
+        self.assertEqual(len(actions), 2)
+        self.assertFalse(actions[0]['id'] is None)
+        self.assertFalse(actions[1]['id'] is None)
         self.assertEqual(actions[0]['status'], 'pending')
+        self.assertEqual(actions[1]['status'], 'pending')
 
     def test_content_install(self):
         # Setup

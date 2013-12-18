@@ -12,102 +12,120 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base
+import hashlib
+from unittest import TestCase
 
-from mock import patch
-
+from mock import patch, Mock
 from gofer.messaging import Envelope
+from gofer.rmi.async import Succeeded, Failed
 
+from base import PulpServerTests
 from pulp.devel import mock_agent
-from pulp.server.agent.hub.pulpagent import PulpAgent as RestAgent
-from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
-from pulp.server.agent.direct.services import HeartbeatListener
+from pulp.server.config import config as pulp_conf
+from pulp.server.agent.direct.context import Context
+from pulp.server.agent.direct.pulpagent import PulpAgent
+from pulp.server.agent.direct.services import HeartbeatListener, Services, ReplyHandler
 
 
 REPO_ID = 'repo_1'
 DETAILS = {}
 BINDINGS = [
-    {'type_id':'yum',
-     'repo_id':REPO_ID,
-     'details':DETAILS,}
+    {'type_id': 'yum',
+     'repo_id': REPO_ID,
+     'details': DETAILS}
 ]
 CONSUMER = {
-    'id':'gc',
-    'certificate':'XXX',
+    'id': 'gc',
+    'certificate': 'XXX',
 }
 UNIT = {
-    'type_id':'rpm',
-    'unit_key':{
-        'name':'zsh',
+    'type_id': 'rpm',
+    'unit_key': {
+        'name': 'zsh',
     }
 }
-UNITS = [UNIT,]
+UNITS = [UNIT]
 OPTIONS = {
-    'xxx':True,
+    'xxx': True,
 }
 
-TASKID = 'TASK-123'
+TASK_ID = 'TASK-123'
 
-def mock_get(path):
-    if path[-2] == 'A':
-        return (200, (True, '2012-11-08T14:12:19.843772+00:00', {}))
-    else:
-        return (200, (False, None, {}))
+CONTEXT_DETAILS = {
+    'task_id': TASK_ID
+}
+
+CONTEXT = Context(CONSUMER, **CONTEXT_DETAILS)
 
 
-class TestAgent(base.PulpServerTests):
+class TestContext(TestCase):
+
+    def test_context(self):
+        h = hashlib.sha256()
+        h.update(CONSUMER['certificate'])
+        secret = h.hexdigest()
+        context = Context(CONSUMER, **CONTEXT_DETAILS)
+        self.assertEqual(context.uuid, CONSUMER['id'])
+        self.assertEqual(context.url, pulp_conf.get('messaging', 'url'))
+        self.assertEqual(context.secret, secret)
+        self.assertEqual(context.details, CONTEXT_DETAILS)
+        self.assertEqual(context.ctag, Services.CTAG)
+        self.assertEqual(context.watchdog, Services.watchdog)
+
+
+class TestAgent(PulpServerTests):
     
     def setUp(self):
-        base.PulpServerTests.setUp(self)
+        PulpServerTests.setUp(self)
         mock_agent.install()
         mock_agent.reset()
-    
+
     def test_unregistered(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        agent.consumer.unregistered()
+        agent = PulpAgent()
+        agent.consumer.unregistered(CONTEXT)
         # Verify
         mock_agent.Consumer.unregistered.assert_called_once_with()
         
     def test_bind(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        result = agent.consumer.bind(BINDINGS, OPTIONS)
+        agent = PulpAgent()
+        result = agent.consumer.bind(CONTEXT, BINDINGS, OPTIONS)
         # Verify
         mock_agent.Consumer.bind.assert_called_once_with(BINDINGS, OPTIONS)
         
     def test_unbind(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        result = agent.consumer.unbind(BINDINGS, OPTIONS)
+        agent = PulpAgent()
+        result = agent.consumer.unbind(CONTEXT, BINDINGS, OPTIONS)
         # Verify
         mock_agent.Consumer.unbind.assert_called_once_with(BINDINGS, OPTIONS)
         
     def test_install_content(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        result = agent.content.install(UNITS, OPTIONS)
+        agent = PulpAgent()
+        result = agent.content.install(CONTEXT, UNITS, OPTIONS)
         # Verify
         mock_agent.Content.install.assert_called_once_with(UNITS, OPTIONS)
         
     def test_update_content(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        result = agent.content.update(UNITS, OPTIONS)
+        agent = PulpAgent()
+        result = agent.content.update(CONTEXT, UNITS, OPTIONS)
         # Verify
         mock_agent.Content.update.assert_called_once_with(UNITS, OPTIONS)
         
     def test_uninstall_content(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        result = agent.content.uninstall(UNITS, OPTIONS)
+        agent = PulpAgent()
+        result = agent.content.uninstall(CONTEXT, UNITS, OPTIONS)
         # Verify
         mock_agent.Content.uninstall.assert_called_once_with(UNITS, OPTIONS)
 
     def test_profile_send(self):
         # Test
-        agent = DirectAgent(CONSUMER)
-        print agent.profile.send()
+        agent = PulpAgent()
+        print agent.profile.send(CONTEXT)
         # Verify
         mock_agent.Profile.send.assert_called_once_with()
 
@@ -117,7 +135,7 @@ class TestAgent(base.PulpServerTests):
         envelope = Envelope(heartbeat=dict(uuid='A', next=10))
         listener.dispatch(envelope)
         # Test
-        result = DirectAgent.status(['A','B'])
+        result = PulpAgent.status(['A','B'])
         # Verify
         self.assertEqual(len(result), 2)
         # A
@@ -134,91 +152,196 @@ class TestAgent(base.PulpServerTests):
     def test_cancel(self):
         # Test
         task_id = '123'
-        agent = DirectAgent(CONSUMER)
-        agent.cancel(task_id)
+        agent = PulpAgent()
+        agent.cancel(CONTEXT, task_id)
         # Verify
-        criteria = {'eq': task_id}
+        criteria = {'match': {'task_id': task_id}}
         mock_agent.Admin.cancel.assert_called_once_with(criteria=criteria)
 
 
-class TestRestAgent(base.PulpServerTests):
+class TestReplyHandler(TestCase):
 
-    def setUp(self):
-        base.PulpServerTests.setUp(self)
-        mock_agent.install()
-        mock_agent.reset()
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
+    def test_agent_succeeded(self, task_succeeded):
+        dispatch_report = Envelope(succeeded=True)
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        result = Envelope(retval=dispatch_report)
+        envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
+        reply = Succeeded(envelope)
+        handler = ReplyHandler('')
+        handler.succeeded(reply)
 
-    def test_unregistered(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        agent.consumer.unregistered()
-        # Verify
-        mock_agent.Consumer.unregistered.assert_called_once_with()
+        # validate task updated
+        task_succeeded.assert_called_with(task_id, dispatch_report)
 
-    def test_bind(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.consumer.bind(BINDINGS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.bind.assert_called_once_with(BINDINGS, OPTIONS)
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
+    def test_agent_raised_exception(self, task_failed):
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        raised = Envelope(
+            exval='Boom',
+            xmodule='foo.py',
+            xclass=ValueError,
+            xstate={'trace': 'stack-trace'},
+            xargs=[]
+        )
+        envelope = Envelope(routing=['A', 'B'], result=raised, any=call_context)
+        reply = Failed(envelope)
+        handler = ReplyHandler('')
+        handler.failed(reply)
 
-    def test_unbind(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.consumer.unbind(BINDINGS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(BINDINGS, OPTIONS)
+        # validate task updated
+        task_failed.assert_called_with(task_id, 'stack-trace')
 
-    def test_install_content(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.content.install(UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.install.assert_called_once_with(UNITS, OPTIONS)
+    @patch('pulp.server.managers.factory.consumer_bind_manager')
+    def test_update_bind_action(self, get_manager):
+        bind_manager = Mock()
+        get_manager.return_value = bind_manager
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'bind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        # handler report: succeeded
+        ReplyHandler._update_bind_action(task_id, call_context, True)
+        bind_manager.action_succeeded.assert_called_with(consumer_id, repo_id, dist_id, task_id)
+        # handler report: failed
+        ReplyHandler._update_bind_action(task_id, call_context, False)
+        bind_manager.action_failed.assert_called_with(consumer_id, repo_id, dist_id, task_id)
 
-    def test_update_content(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.content.update(UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.update.assert_called_once_with(UNITS, OPTIONS)
+    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
+    def test_bind_succeeded(self, task_succeeded, update_action):
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'bind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        dispatch_report = Envelope(succeeded=True)
+        result = Envelope(retval=dispatch_report)
+        envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
+        reply = Succeeded(envelope)
+        handler = ReplyHandler('')
+        handler.succeeded(reply)
 
-    def test_uninstall_content(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.content.uninstall(UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.uninstall.assert_called_once_with(UNITS, OPTIONS)
+        # validate task updated
+        task_succeeded.assert_called_with(task_id, dispatch_report)
+        # validate bind action updated
+        update_action.called_with(task_id, call_context, True)
 
-    def test_profile_send(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        print agent.profile.send()
-        # Verify
-        mock_agent.Profile.send.assert_called_once_with()
+    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
+    def test_unbind_succeeded(self, task_succeeded, update_action):
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'unbind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        dispatch_report = Envelope(succeeded=True)
+        result = Envelope(retval=dispatch_report)
+        envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
+        reply = Succeeded(envelope)
+        handler = ReplyHandler('')
+        handler.succeeded(reply)
 
-    @patch.object(mock_agent.MockRest, 'get', side_effect=mock_get)
-    def test_status(self, mock_rest):
-        # Test
-        result = RestAgent.status(['A', 'B'])
-        # Verify
-        self.assertEqual(len(result), 2)
-        # A
-        alive, next_heartbeat, details = result['A']
-        self.assertTrue(alive)
-        self.assertTrue(isinstance(next_heartbeat, basestring))
-        self.assertTrue(isinstance(details, dict))
-        # B
-        alive, last_heartbeat, details = result['B']
-        self.assertFalse(alive)
-        self.assertTrue(last_heartbeat is None)
-        self.assertTrue(isinstance(details, dict))
+        # validate task updated
+        task_succeeded.assert_called_with(task_id, dispatch_report)
+        # validate bind action updated
+        update_action.called_with(task_id, call_context, True)
 
-    def test_cancel(self):
-        # Test
-        task_id = '123'
-        agent = RestAgent(CONSUMER)
-        agent.cancel(task_id)
-        # Verify
-        criteria = {'eq': task_id}
-        mock_agent.Admin.cancel.assert_called_once_with(criteria=criteria)
+    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
+    def test_bind_failed(self, task_failed, update_action):
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'bind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        raised = Envelope(
+            exval='Boom',
+            xmodule='foo.py',
+            xclass=ValueError,
+            xstate={'trace': 'stack-trace'},
+            xargs=[]
+        )
+        envelope = Envelope(routing=['A', 'B'], result=raised, any=call_context)
+        reply = Failed(envelope)
+        handler = ReplyHandler('')
+        handler.failed(reply)
+
+        # validate task updated
+        task_failed.assert_called_with(task_id, 'stack-trace')
+        # validate bind action updated
+        update_action.called_with(task_id, call_context, False)
+
+    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
+    def test_unbind_failed(self, task_failed, update_action):
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'unbind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        raised = Envelope(
+            exval='Boom',
+            xmodule='foo.py',
+            xclass=ValueError,
+            xstate={'trace': 'stack-trace'},
+            xargs=[]
+        )
+        envelope = Envelope(routing=['A', 'B'], result=raised, any=call_context)
+        reply = Failed(envelope)
+        handler = ReplyHandler('')
+        handler.failed(reply)
+
+        # validate task updated
+        task_failed.assert_called_with(task_id, 'stack-trace')
+        # validate bind action updated
+        update_action.called_with(task_id, call_context, False)

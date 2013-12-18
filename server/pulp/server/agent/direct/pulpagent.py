@@ -19,236 +19,238 @@ from logging import getLogger
 
 from gofer.proxy import Agent
 
-from pulp.server.agent.context import Context, Capability
 from pulp.server.agent.direct.services import Services
-
 
 
 log = getLogger(__name__)
 
 
-#
-# Agent
-#
+# --- Agent ------------------------------------------------------------------
 
 class PulpAgent(object):
     """
     Represents a remote pulp agent.
     """
 
-    def __init__(self, consumer):
-        context = Context(consumer)
-        context.watchdog = Services.watchdog
-        context.ctag = Services.CTAG
-        self.context = context
-
     @property
     def consumer(self):
         """
-        Access to I{consumer} capability.
-        @return: Consumer API.
-        @rtype: L{Consumer}
+        Access to *consumer* capability.
+        :return: Consumer API.
+        :rtype: Consumer
         """
-        return Consumer(self.context)
+        return Consumer
 
     @property
     def content(self):
         """
-        Access to I{content} capability.
-        @return: Content API.
-        @rtype: L{Content}
+        Access to *content* capability.
+        :return: Content API.
+        :rtype: Content
         """
-        return Content(self.context)
+        return Content
 
     @property
     def profile(self):
         """
-        Access to I{profile} capability.
-        @return: Profile API.
-        @rtype: L{Profile}
+        Access to *profile* capability.
+        :return: Profile API.
+        :rtype: Profile
         """
-        return Profile(self.context)
+        return Profile()
 
     @classmethod
     def status(cls, uuids):
         """
         Get the status of the agent.
         Relies on heartbeat.
-        @param uuids: A list of uuids.
-        @type uuids: list
-        @return: {}
+        :param uuids: A list of uuids.
+        :type uuids: list
+        :return: {}
         """
         return Services.heartbeat_listener.status(uuids)
 
-    def cancel(self, task_id):
+    def cancel(self, context, task_id):
         """
         Cancel an agent request by task ID.
         :param task_id: The ID of a task associated with an agent request.
         :type task_id: str
         """
-        agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            secret=self.context.secret,
-            async=True)
+        criteria = {'match': {'task_id': task_id}}
+        agent = Agent(context.uuid, url=context.url, secret=context.secret, async=True)
         admin = agent.Admin()
-        admin.cancel(criteria={'eq': task_id})
+        admin.cancel(criteria=criteria)
 
-#
-# Agent Capability(s)
-#
 
-class Consumer(Capability):
+# --- Agent Capabilities -----------------------------------------------------
+
+
+class Consumer(object):
     """
     The consumer management capability.
     """
 
-    def unregistered(self):
+    @staticmethod
+    def unregistered(context):
         """
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
-        @return: The RMI request serial number.
-        @rtype: str
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :return: The RMI request serial number.
+        :rtype: str
         """
-        agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            secret=self.context.secret,
-            async=True)
+        agent = Agent(context.uuid, url=context.url, secret=context.secret, async=True)
         consumer = agent.Consumer()
         return consumer.unregistered()
 
-    def bind(self, bindings, options):
+    @staticmethod
+    def bind(context, bindings, options):
         """
         Bind a consumer to the specified repository.
-        @param bindings: A list of bindings to add/update.
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :param bindings: A list of bindings to add/update.
           Each binding is: {type_id:<str>, repo_id:<str>, details:<dict>}
             The 'details' are at the discretion of the distributor.
-        @type bindings: list
-        @param options: Bind options.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
+        :type bindings: list
+        :param options: Bind options.
+        :type options: dict
+        :return: The RMI request serial number.
+        :rtype: str
         """
         agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            timeout=self.context.get_timeout('bind_timeout'),
-            secret=self.context.secret,
-            ctag=self.context.ctag,
-            watchdog=self.context.watchdog,
-            any=self.context.call_request_id)
+            context.uuid,
+            url=context.url,
+            timeout=context.get_timeout('bind_timeout'),
+            secret=context.secret,
+            ctag=context.ctag,
+            watchdog=context.watchdog,
+            any=context.details)
         consumer = agent.Consumer()
         return consumer.bind(bindings, options)
 
-    def unbind(self, bindings, options):
+    @staticmethod
+    def unbind(context, bindings, options):
         """
         Unbind a consumer from the specified repository.
-        @param bindings: A list of bindings to be removed.
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :param bindings: A list of bindings to be removed.
           Each binding is: {type_id:<str>, repo_id:<str>}
-        @type bindings: list
-        @param options: Unbind options.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
+        :type bindings: list
+        :param options: Unbind options.
+        :type options: dict
+        :return: The RMI request serial number.
+        :rtype: str
         """
         agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            timeout=self.context.get_timeout('unbind_timeout'),
-            secret=self.context.secret,
-            ctag=self.context.ctag,
-            watchdog=self.context.watchdog,
-            any=self.context.call_request_id)
+            context.uuid,
+            url=context.url,
+            timeout=context.get_timeout('unbind_timeout'),
+            secret=context.secret,
+            ctag=context.ctag,
+            watchdog=context.watchdog,
+            any=context.details)
         consumer = agent.Consumer()
         return consumer.unbind(bindings, options)
 
 
-class Content(Capability):
+class Content(object):
     """
     The content management capability.
     """
 
-    def install(self, units, options):
+    @staticmethod
+    def install(context, units, options):
         """
         Install content on a consumer.
-        @param units: A list of content units to be installed.
-        @type units: list of:
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :param units: A list of content units to be installed.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Install options; based on unit type.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
+        :param options: Install options; based on unit type.
+        :type options: dict
+        :return: The RMI request serial number.
+        :rtype: str
         """
         agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            timeout=self.context.get_timeout('install_timeout'),
-            secret=self.context.secret,
-            ctag=self.context.ctag,
-            watchdog=self.context.watchdog,
-            any=self.context.call_request_id)
+            context.uuid,
+            url=context.url,
+            timeout=context.get_timeout('install_timeout'),
+            secret=context.secret,
+            ctag=context.ctag,
+            watchdog=context.watchdog,
+            any=context.details)
         content = agent.Content()
         return content.install(units, options)
 
-    def update(self, units, options):
+    @staticmethod
+    def update(context, units, options):
         """
         Update content on a consumer.
-        @param units: A list of content units to be updated.
-        @type units: list of:
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :param units: A list of content units to be updated.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Update options; based on unit type.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
+        :param options: Update options; based on unit type.
+        :type options: dict
+        :return: The RMI request serial number.
+        :rtype: str
         """
         agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            timeout=self.context.get_timeout('update_timeout'),
-            secret=self.context.secret,
-            ctag=self.context.ctag,
-            watchdog=self.context.watchdog,
-            any=self.context.call_request_id)
+            context.uuid,
+            url=context.url,
+            timeout=context.get_timeout('update_timeout'),
+            secret=context.secret,
+            ctag=context.ctag,
+            watchdog=context.watchdog,
+            any=context.details)
         content = agent.Content()
         return content.update(units, options)
 
-    def uninstall(self, units, options):
+    @staticmethod
+    def uninstall(context, units, options):
         """
         Uninstall content on a consumer.
-        @param units: A list of content units to be uninstalled.
-        @type units: list of:
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :param units: A list of content units to be uninstalled.
+        :type units: list of:
             { type_id:<str>, unit_key:<dict> }
-        @param options: Uninstall options; based on unit type.
-        @type options: dict
-        @return: The RMI request serial number.
-        @rtype: str
+        :param options: Uninstall options; based on unit type.
+        :type options: dict
+        :return: The RMI request serial number.
+        :rtype: str
         """
         agent = Agent(
-            self.context.uuid,
-            url=self.context.url,
-            timeout=self.context.get_timeout('uninstall_timeout'),
-            secret=self.context.secret,
-            ctag=self.context.ctag,
-            watchdog=self.context.watchdog,
-            any=self.context.call_request_id)
+            context.uuid,
+            url=context.url,
+            timeout=context.get_timeout('uninstall_timeout'),
+            secret=context.secret,
+            ctag=context.ctag,
+            watchdog=context.watchdog,
+            any=context.details)
         content = agent.Content()
         return content.uninstall(units, options)
 
 
-class Profile(Capability):
+class Profile(object):
     """
     The profile management capability.
     """
 
-    def send(self):
+    @staticmethod
+    def send(context):
         """
         Request the agent to send the package profile.
-        @return: The RMI request serial number.
-        @rtype: str
+        :param context: The call context.
+        :type context: pulp.server.agent.direct.context.Context
+        :return: The RMI request serial number.
+        :rtype: str
         """
-        agent = Agent(
-            self.context.uuid,
-            secret=self.context.secret)
+        agent = Agent(context.uuid, secret=context.secret)
         profile = agent.Profile()
         return profile.send()
