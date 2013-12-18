@@ -654,7 +654,6 @@ class ContentApplicabilityRegeneration(JSONController):
     """
     Content applicability regeneration for updated consumers.
     """
-
     @auth_required(CREATE)
     def POST(self):
         """

@@ -1097,7 +1097,7 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise exceptions.InvalidValue('repo_criteria')
 
-        regeneration_tag = action_tag('applicability_regeneration')
+        regeneration_tag = action_tag('content_applicability_regeneration')
         async_result = regenerate_applicability_for_repos.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
             (repo_criteria.as_dict(),),

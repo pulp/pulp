@@ -42,7 +42,7 @@ class ApplicabilityRegenerationManager(object):
         Regenerate and save applicability data for given updated consumers.
 
         :param consumer_criteria: The consumer selection criteria
-        :type consumer_criteria: pulp.server.db.model.criteria.Criteria
+        :type consumer_criteria: dict
         """
         consumer_criteria = Criteria.from_dict(consumer_criteria)
         consumer_query_manager = managers.consumer_query_manager()
@@ -122,7 +122,7 @@ class ApplicabilityRegenerationManager(object):
         Regenerate and save applicability data affected by given updated repositories.
 
         :param repo_criteria: The repo selection criteria
-        :type repo_criteria: pulp.server.db.model.criteria.Criteria
+        :type repo_criteria: dict
         """
         repo_criteria = Criteria.from_dict(repo_criteria)
         repo_query_manager = managers.repo_query_manager()

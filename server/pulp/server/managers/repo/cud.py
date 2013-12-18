@@ -430,16 +430,14 @@ class RepoManager(object):
         repo = RepoManager.update_repo(repo_id, repo_delta)
 
         # Importer Update
-        if importer_config:
+        if importer_config is not None:
             importer_manager = manager_factory.repo_importer_manager()
             importer_manager.update_importer_config(repo_id, importer_config)
 
         # Distributor Update
-        if distributor_configs:
+        if distributor_configs is not None:
             distributor_manager = manager_factory.repo_distributor_manager()
             for dist_id, dist_config in distributor_configs.items():
-                if not dist_config:
-                    continue
                 # Update the distributor config to ensure that errors are reported immediately
                 distributor_manager.update_distributor_config(repo_id, dist_id, dist_config)
                 # Use the itinerary to update the bindings on the consumers.
