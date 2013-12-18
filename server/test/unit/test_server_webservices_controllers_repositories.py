@@ -66,8 +66,10 @@ class RepoImportUploadTests(RepoControllersTests):
     """
     URL = '/v2/repositories/%s/actions/import_upload/'
 
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     @mock.patch('pulp.server.managers.content.upload.ContentUploadManager.import_uploaded_unit')
-    def test_POST_returns_report(self, import_uploaded_unit):
+    def test_POST_returns_report(self, import_uploaded_unit, _reserve_resource, mock_apply_async):
         """
         Assert that the POST() method returns the appropriate report dictionary, based on the return
         value of the import_uploaded_unit() method.
@@ -77,13 +79,20 @@ class RepoImportUploadTests(RepoControllersTests):
         details = 'Some details'
         upload_report = {'success_flag': success_flag, 'summary': summary, 'details': details}
         import_uploaded_unit.return_value = upload_report
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         params = {'upload_id': 'upload_id', 'unit_type_id': 'unit_type_id', 'unit_key': 'unit_key'}
 
-        response = self.post(self.URL % 'repo_id', params)
-
-        self.assertEqual(response[0], 200)
-        self.assertEqual(response[1],
-                         {'success_flag': success_flag, 'summary': summary, 'details': details})
+        status, body = self.post(self.URL % 'repo_id', params)
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        expected_args = mock_apply_async.call_args[0][0]
+        self.assertTrue('repo_id' in expected_args)
+        self.assertTrue('unit_type_id' in expected_args)
+        self.assertTrue('unit_key' in expected_args)
+        self.assertTrue('upload_id' in expected_args)
 
 
 class RepoSearchTests(RepoControllersTests):

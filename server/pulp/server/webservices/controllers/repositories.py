@@ -34,6 +34,7 @@ from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publi
 from pulp.server.itineraries.repository import (repo_delete_itinerary, distributor_delete_itinerary,
                                                 distributor_update_itinerary)
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
+from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo.cud import update_repo_and_plugins
 from pulp.server.managers.repo.distributor import add_distributor
 from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
@@ -990,18 +991,14 @@ class RepoImportUpload(JSONController):
         unit_key = params['unit_key']
         unit_metadata = params.pop('unit_metadata', None)
 
-        # Coordinator configuration
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('import_upload')]
-
-        upload_manager = manager_factory.content_upload_manager()
-        call_request = CallRequest(upload_manager.import_uploaded_unit, # rbarlow_converted
-            [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
-            tags=tags, archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-
-        report = execution.execute(call_request)
-        return self.ok(report)
+        async_result = import_uploaded_unit.apply_async_with_reservation(
+                                    repo_id,
+                                    [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
+                                    tags=tags)
+        call_report = CallReport(call_request_id=async_result.id)
+        raise OperationPostponed(call_report)
 
 
 class RepoResolveDependencies(JSONController):
