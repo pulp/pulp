@@ -1719,10 +1719,10 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test_regenerate_applicability(self, _resource_manager):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_regenerate_applicability(self, _reserve_resource):
         # Setup
-        _resource_manager.reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         self.populate()
         self.populate_bindings()
         # Test
@@ -1733,10 +1733,10 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test_regenerate_applicability_no_consumer(self, _resource_manager):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_regenerate_applicability_no_consumer(self, _reserve_resource):
         # Test
-        _resource_manager.reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
@@ -1744,10 +1744,10 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
 
-    @mock.patch('pulp.server.async.tasks._resource_manager')
-    def test_regenerate_applicability_no_bindings(self, _resource_manager):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_regenerate_applicability_no_bindings(self, _reserve_resource):
         # Setup
-        _resource_manager.reserve_resource.return_value = 'some_queue'
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         self.populate()
         # Test
         request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
