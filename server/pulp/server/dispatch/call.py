@@ -24,6 +24,7 @@ from pulp.common.util import encode_unicode
 from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers_factory
+from pulp.server.async.task_status_manager import TaskStatusManager
 
 
 _LOG = logging.getLogger(__name__)
@@ -330,6 +331,30 @@ class CallReport(object):
                           call_request.tags,
                           call_request.principal['login'],
                           call_request.schedule_id)
+        return call_report
+
+    @classmethod
+    def from_task_status(cls, task_id):
+        """
+        Factory method that forms a CallReport using existing TaskStatus for given task id.
+
+        @param cls: CallReport class
+        @type cls: type
+        @param task_id: task id to be used to lookup task status
+        @type task_id: basestring
+        @return: CallReport instance
+        @rtype: L{CallReport}
+        """
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        if task_status:
+            call_report = cls(task_id,
+                              call_request_group_id = None,
+                              call_request_tags = task_status['tags'],
+                              state = task_status['state'],
+                              result = task_status['result'],
+                              traceback = task_status['traceback'])
+        else:
+            call_report = cls(task_id)
         return call_report
 
     def __init__(self,

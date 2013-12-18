@@ -292,9 +292,6 @@ class RepoResource(JSONController):
                                                             {'importer_config': importer_config,
                                                              'distributor_configs': distributor_configs},
                                                             tags=tags)
-        # Following are a few additional attributes previously saved with the call request
-        # which we may want to support in some way after conversion to distributed tasking.
-        # archive=True, kwarg_blacklist=['importer_config', 'distributor_configs'])
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
@@ -334,7 +331,6 @@ class RepoImporters(JSONController):
                                                                  [repo_id, importer_type],
                                                                  {'repo_plugin_config': importer_config},
                                                                  tags=tags)
-        # kwarg_blacklist=['repo_plugin_config'])
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
@@ -367,7 +363,6 @@ class RepoImporter(JSONController):
         async_result = remove_importer.apply_async_with_reservation(repo_id,
                                                                     [repo_id],
                                                                     tags=tags)
-        # archive=True
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
@@ -391,7 +386,6 @@ class RepoImporter(JSONController):
                                                             [repo_id],
                                                             {'importer_config': importer_config},
                                                             tags=tags)
-        # archive=True, kwarg_blacklist=['importer_config'])
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
@@ -569,7 +563,6 @@ class RepoDistributors(JSONController):
                                                          'auto_publish': auto_publish,
                                                          'distributor_id': distributor_id},
                                                         tags=tags)
-        # kwarg_blacklist=['repo_plugin_config']
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
@@ -934,7 +927,6 @@ class RepoAssociate(JSONController):
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)
-        # archive=True, kwarg_blacklist=['criteria', 'import_config_override'])
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
@@ -965,7 +957,6 @@ class RepoUnassociate(JSONController):
                     [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
                      manager_factory.principal_manager().get_principal()['login']],
                     tags=tags)
-        # archive=True
         call_report = CallReport(call_request_id=async_result.id)
         raise OperationPostponed(call_report)
 
