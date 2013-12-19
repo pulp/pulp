@@ -32,7 +32,7 @@ class AvailableQueue(Model):
     :type missing_since:    datetime.datetime
     """
     collection_name = 'available_queues'
-    unique_indices = ('_id',)
+    unique_indices = tuple()
     # The compound index with _id and missing since will help the babysit() Task to be able to
     # retrieve the data it needs without accessing the disk
     search_indices = ('num_reservations', ('_id', 'missing_since'))
@@ -151,7 +151,7 @@ class ReservedResource(Model):
     :type num_reservations: int
     """
     collection_name = 'reserved_resources'
-    unique_indices = ('_id',)
+    unique_indices = tuple()
 
     def __init__(self, name, assigned_queue=None, num_reservations=1):
         """
