@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.3.1
-Release: 0.7.beta%{?dist}
+Release: 0.8.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -482,6 +482,9 @@ exit 0
 %endif
 
 %changelog
+* Thu Dec 19 2013 Barnaby Court <bcourt@redhat.com> 2.3.1-0.8.beta
+- Pulp rebuild
+
 * Tue Dec 17 2013 Barnaby Court <bcourt@redhat.com> 2.3.1-0.7.beta
 - 1039619 - update output to account for qpidd.conf location changing in qpid
   0.24 (jortel@redhat.com)
