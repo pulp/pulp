@@ -20,15 +20,14 @@
 
 from mock import Mock
 from gofer.rmi import mock as mock
+
 from pulp.server.agent.direct.services import Services, HeartbeatListener
-from pulp.server.agent.hub import pulpagent as restagent
 from pulp.agent.lib.report import DispatchReport
 from pulp.common.compat import json
 
 
 def install():
     reset()
-    restagent.Rest = MockRest
     Services.heartbeat_listener = HeartbeatListener(None)
     mock.install()
     mock.reset()
@@ -46,44 +45,6 @@ def reset():
 def all():
     return mock.all()
     
-
-class MockRest:
-    
-    def get(self, path):
-        # status
-        parts = path.split('/')
-        if len(parts) == 5:
-            return (200, {})
-        raise Exception, 'GET: unhandled path: %s' % path
-    
-    def post(self, path, body):
-        path = path.split('/')
-        if path[4] == 'call':
-            return self.call(path, body)
-        # unknown
-        raise Exception, 'POST: unhandled path: %s' % path
-        
-    def call(self, path, body):
-        method = self.method(path)
-        options = body['options']
-        request = body['request']
-        args = request['args']
-        kwargs = request['kwargs']
-        taskid = options.get('any')
-        result = method(*args, **kwargs)
-        return (202, result)
-
-    def method(self, path):
-        try:
-            Class = path[5]
-            Method = path[6]
-            inst = globals()[Class]()
-            return getattr(inst, Method)
-        except KeyError:
-            raise Exception, '%s, not mocked' % Class
-        except AttributeError:
-            raise Exception, '%s, not mocked' % Method
-
 
 def dispatch(*args):
     # test json serialization
