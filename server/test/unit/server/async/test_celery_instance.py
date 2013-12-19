@@ -47,7 +47,6 @@ class TestCelerybeatSchedule(unittest.TestCase):
             'task': babysit.name,
             'schedule': timedelta(seconds=60),
             'args': tuple(),
-            'options': {'queue': celery_instance.RESOURCE_MANAGER_QUEUE},
         }
         self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['babysit'],
                          expected_babysit)
