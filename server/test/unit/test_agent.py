@@ -19,7 +19,6 @@ from mock import patch
 from gofer.messaging import Envelope
 
 from pulp.devel import mock_agent
-from pulp.server.agent.hub.pulpagent import PulpAgent as RestAgent
 from pulp.server.agent.direct.pulpagent import PulpAgent as DirectAgent
 from pulp.server.agent.direct.services import HeartbeatListener
 
@@ -47,12 +46,6 @@ OPTIONS = {
 }
 
 TASKID = 'TASK-123'
-
-def mock_get(path):
-    if path[-2] == 'A':
-        return (200, (True, '2012-11-08T14:12:19.843772+00:00', {}))
-    else:
-        return (200, (False, None, {}))
 
 
 class TestAgent(base.PulpServerTests):
@@ -135,89 +128,6 @@ class TestAgent(base.PulpServerTests):
         # Test
         task_id = '123'
         agent = DirectAgent(CONSUMER)
-        agent.cancel(task_id)
-        # Verify
-        criteria = {'eq': task_id}
-        mock_agent.Admin.cancel.assert_called_once_with(criteria=criteria)
-
-
-class TestRestAgent(base.PulpServerTests):
-
-    def setUp(self):
-        base.PulpServerTests.setUp(self)
-        mock_agent.install()
-        mock_agent.reset()
-
-    def test_unregistered(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        agent.consumer.unregistered()
-        # Verify
-        mock_agent.Consumer.unregistered.assert_called_once_with()
-
-    def test_bind(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.consumer.bind(BINDINGS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.bind.assert_called_once_with(BINDINGS, OPTIONS)
-
-    def test_unbind(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.consumer.unbind(BINDINGS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(BINDINGS, OPTIONS)
-
-    def test_install_content(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.content.install(UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.install.assert_called_once_with(UNITS, OPTIONS)
-
-    def test_update_content(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.content.update(UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.update.assert_called_once_with(UNITS, OPTIONS)
-
-    def test_uninstall_content(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        result = agent.content.uninstall(UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.uninstall.assert_called_once_with(UNITS, OPTIONS)
-
-    def test_profile_send(self):
-        # Test
-        agent = RestAgent(CONSUMER)
-        print agent.profile.send()
-        # Verify
-        mock_agent.Profile.send.assert_called_once_with()
-
-    @patch.object(mock_agent.MockRest, 'get', side_effect=mock_get)
-    def test_status(self, mock_rest):
-        # Test
-        result = RestAgent.status(['A', 'B'])
-        # Verify
-        self.assertEqual(len(result), 2)
-        # A
-        alive, next_heartbeat, details = result['A']
-        self.assertTrue(alive)
-        self.assertTrue(isinstance(next_heartbeat, basestring))
-        self.assertTrue(isinstance(details, dict))
-        # B
-        alive, last_heartbeat, details = result['B']
-        self.assertFalse(alive)
-        self.assertTrue(last_heartbeat is None)
-        self.assertTrue(isinstance(details, dict))
-
-    def test_cancel(self):
-        # Test
-        task_id = '123'
-        agent = RestAgent(CONSUMER)
         agent.cancel(task_id)
         # Verify
         criteria = {'eq': task_id}
