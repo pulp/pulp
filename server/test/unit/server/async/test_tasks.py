@@ -14,6 +14,8 @@
 This module contains tests for the pulp.server.async.tasks module.
 """
 from copy import deepcopy
+import signal
+import unittest
 import uuid
 
 from celery.app import defaults
@@ -568,3 +570,106 @@ class TestCancel(PulpServerTests):
         revoke.assert_called_once_with(task_id, terminate=True)
         self.assertEqual(logger.info.call_count, 1)
         self.assertTrue(task_id in logger.info.mock_calls[0][1][0])
+
+
+class TestGracefulCancel(unittest.TestCase):
+    """
+    Test the graceful_cancel() decorator.
+    """
+    def test_error_case(self):
+        """
+        Make sure that graceful_cancel() does the right thing during the error case.
+        """
+        class FakeException(Exception):
+            """
+            This Exception gets raised by f(). It's better to raise this instead of Exception, so we
+            can assert it with self.assertRaises without missing the Exceptions that could be raised
+            by the other assertions in f().
+            """
+
+        def f(*args, **kwargs):
+            """
+            This function will be wrapped by the decorator during this test. It asserts that the
+            signal handler is correct and then raises Exception.
+
+            :param args:   positional arguments that will be asserted to be correct
+            :type  args:   tuple
+            :param kwargs: keyword argumets that will be asserted to be correct
+            :type  kwargs: dict
+            """
+            # Make sure the correct params were passed
+            self.assertEqual(args, some_args)
+            self.assertEqual(kwargs, some_kwargs)
+            # We can't assert that our mock cancel method below is the handler, because the real
+            # handler is the cancel inside of graceful_cancel. What we can do is to assert that the
+            # signal handler has changed, and that calling the signal handler calls our mock cancel.
+            signal_handler = signal.getsignal(signal.SIGTERM)
+            self.assertNotEqual(signal_handler, starting_term_handler)
+            # Now let's call the signal handler and make sure that cancel() gets called.
+            self.assertEqual(cancel.call_count, 0)
+            signal_handler(signal.SIGTERM, None)
+            self.assertEqual(cancel.call_count, 1)
+
+            raise FakeException()
+
+        f = mock.MagicMock(side_effect=f)
+        cancel = mock.MagicMock()
+        starting_term_handler = signal.getsignal(signal.SIGTERM)
+        wrapped_f = tasks.graceful_cancel(f, cancel)
+        # So far, the signal handler should still be the starting one
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+        some_args = (1, 'b', 4)
+        some_kwargs = {'key': 'value'}
+
+        # Now, let's call wrapped_f(). This should raise the Exception, but the signal handler
+        # should be restored to its initial value. f() also asserts that during the operation the
+        # signal handler is cancel.
+        self.assertRaises(FakeException, wrapped_f, *some_args, **some_kwargs)
+
+        # Assert that f() was called with the right params
+        f.assert_called_once_with(*some_args, **some_kwargs)
+        # Assert that the signal handler has been restored
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+
+    def test_normal_case(self):
+        """
+        Make sure that graceful_cancel() does the right thing during the normal case.
+        """
+        def f(*args, **kwargs):
+            """
+            This function will be wrapped by the decorator during this test. It asserts that the
+            signal handler is correct and then returns 42.
+            """
+            self.assertEqual(args, some_args)
+            self.assertEqual(kwargs, some_kwargs)
+            # We can't assert that our mock cancel method below is the handler, because the real
+            # handler is the cancel inside of graceful_cancel. What we can do is to assert that the
+            # signal handler has changed, and that calling the signal handler calls our mock cancel.
+            signal_handler = signal.getsignal(signal.SIGTERM)
+            self.assertNotEqual(signal_handler, starting_term_handler)
+            # Now let's call the signal handler and make sure that cancel() gets called.
+            self.assertEqual(cancel.call_count, 0)
+            signal_handler(signal.SIGTERM, None)
+            self.assertEqual(cancel.call_count, 1)
+
+            return 42
+
+        f = mock.MagicMock(side_effect=f)
+        cancel = mock.MagicMock()
+        starting_term_handler = signal.getsignal(signal.SIGTERM)
+        wrapped_f = tasks.graceful_cancel(f, cancel)
+        # So far, the signal handler should still be the starting one
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+        some_args = (1, 'b', 4)
+        some_kwargs = {'key': 'value'}
+
+        # Now, let's call wrapped_f(). This should raise the Exception, but the signal handler
+        # should be restored to its initial value. f() also asserts that during the operation the
+        # signal handler is cancel.
+        return_value = wrapped_f(*some_args, **some_kwargs)
+
+        self.assertEqual(return_value, 42)
+        # Assert that f() was called with the right params
+        f.assert_called_once_with(*some_args, **some_kwargs)
+        # Assert that the signal handler has been restored
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)

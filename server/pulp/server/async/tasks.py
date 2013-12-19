@@ -14,6 +14,7 @@ from gettext import gettext as _
 import logging
 import random
 import re
+import signal
 
 from celery import chain, task, Task as CeleryTask
 from celery.app import control, defaults
@@ -294,3 +295,55 @@ def cancel(task_id):
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)
+
+
+def graceful_cancel(f, cancel_method):
+    """
+    graceful_cancel is a method or function decorator. It will register a special signal handler for
+    SIGTERM that will call cancel_method() with no arguments if SIGTERM is received during the
+    operation of f. Once f has completed, the signal handler will be restored to the handler that
+    was in place before the method began.
+
+    :param f:             The method or function that should be wrapped.
+    :type  f:             instancemethod or function
+    :param cancel_method: The method or function that should be called when we receive SIGTERM.
+                          cancel_method will be called with no arguments.
+    :type  cancel_method: instancemethod or function
+    :return:              A wrapped version of f that performs the signal registering and
+                          unregistering.
+    :rtype:               instancemethod or function
+    """
+    def cancel(signal_number, stack_frame):
+        """
+        This is the signal handler that gets installed to handle SIGTERM. We don't wish to pass the
+        signal_number or the stack_frame on to the cancel_method, so its only purpose is to avoid
+        passing these arguments onward. It calls cancel_method().
+
+        :param signal_number: The signal that is being handled. Since we have registered for
+                              SIGTERM, this will be signal.SIGTERM.
+        :type  signal_number: int
+        :param stack_frame:   The current execution stack frame
+        :type  stack_frame:   None or frame
+        """
+        cancel_method()
+
+    def wrap_f(*args, **kwargs):
+        """
+        This function is a wrapper around f. It replaces the signal handler for SIGTERM with
+        cancel(), calls f, sets the SIGTERM handler back to what it was before, and then returns the
+        return value from f.
+
+        :param args:   The positional arguments to be passed to f
+        :type  args:   tuple
+        :param kwargs: The keyword arguments to be passed to f
+        :type  kwargs: dict
+        :return:       The return value from calling f
+        :rtype:        Could be anything!
+        """
+        old_signal = signal.signal(signal.SIGTERM, cancel)
+        try:
+            return f(*args, **kwargs)
+        finally:
+            signal.signal(signal.SIGTERM, old_signal)
+
+    return wrap_f
