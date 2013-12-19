@@ -13,6 +13,7 @@
 """
 This module contains tests for the pulp.server.managers.resources module.
 """
+from datetime import datetime
 import types
 
 import mock
@@ -117,9 +118,14 @@ class TestGetOrCreateAvailableQueue(ResourceReservationTests):
         self.assertEqual(aq_2.name, 'queue_2')
         # A new queue should default to 0 reservations
         self.assertEqual(aq_2.num_reservations, 0)
+        # missing_since defaults to None
+        self.assertEqual(aq_2.missing_since, None)
         # Now we need to assert that it made it to the database as well
         aqc = aq_2.get_collection()
-        self.assertEqual(aqc.find_one({'_id': 'queue_2'})['num_reservations'], 0)
+        aq_bson = aqc.find_one({'_id': 'queue_2'})
+        # Make sure the default values were set correctly
+        self.assertEqual(aq_bson['num_reservations'], 0)
+        self.assertEqual(aq_bson['missing_since'], None)
 
     def test_get(self):
         """
@@ -128,7 +134,8 @@ class TestGetOrCreateAvailableQueue(ResourceReservationTests):
         # Let's add two AvailableQueues just to make sure that it doesn't return the wrong queue.
         aq_1 = AvailableQueue('queue_1')
         aq_1.save()
-        aq_2 = AvailableQueue('queue_2', 7)
+        missing_since = datetime(2013, 12, 16)
+        aq_2 = AvailableQueue('queue_2', 7, missing_since)
         aq_2.save()
 
         aq_2 = resources.get_or_create_available_queue('queue_2')
@@ -136,11 +143,14 @@ class TestGetOrCreateAvailableQueue(ResourceReservationTests):
         # Assert that the returned instance is correct
         self.assertEqual(type(aq_2), AvailableQueue)
         self.assertEqual(aq_2.name, 'queue_2')
-        # The queue should have 7 reservations
+        # Make sure the instance attributes are correct
         self.assertEqual(aq_2.num_reservations, 7)
+        self.assertEqual(aq_2.missing_since, missing_since)
         # Now we need to assert that the DB is still correct
         aqc = aq_2.get_collection()
-        self.assertEqual(aqc.find_one({'_id': 'queue_2'})['num_reservations'], 7)
+        aq_bson = aqc.find_one({'_id': 'queue_2'})
+        self.assertEqual(aq_bson['num_reservations'], 7)
+        self.assertEqual(aq_bson['missing_since'], missing_since)
 
 
 class TestGetOrCreateReservedResource(ResourceReservationTests):
