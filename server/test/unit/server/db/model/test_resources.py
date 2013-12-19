@@ -141,6 +141,35 @@ class TestAvailableQueue(ResourceReservationTests):
 
         self.assertEqual(aqc.count(), 0)
 
+    def test_delete_with_reserved_resources(self):
+        """
+        Test delete() for a queue with a ReservedResource referencing it.
+        """
+        aq = resources.AvailableQueue('queue_with_a_reserved_resource')
+        aq.save()
+        aqc = resources.AvailableQueue.get_collection()
+        self.assertEqual(aqc.find({'_id': 'queue_with_a_reserved_resource'}).count(), 1)
+
+        # Create 3 resources, 2 referencing the queue to be deleted and the other with no queue references
+        rr1 = resources.ReservedResource('reserved_resource1', assigned_queue='queue_with_a_reserved_resource',
+                                        num_reservations=1)
+        rr2 = resources.ReservedResource('reserved_resource2', assigned_queue='queue_with_a_reserved_resource',
+                                        num_reservations=1)
+        rr = resources.ReservedResource('reserved_resource_no_queue', num_reservations=0)
+        rr1.save()
+        rr2.save()
+        rr.save()
+        rrc = resources.ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 3)
+        self.assertEqual(rrc.find({'assigned_queue':'queue_with_a_reserved_resource'}).count(), 2)
+
+        aq.delete()
+
+        # Make sure that only the resource with reference to the deleted queue is deleted
+        self.assertEqual(aqc.count(), 0)
+        self.assertEqual(rrc.count(), 1)
+        self.assertFalse(rrc.find_one({'_id':'reserved_resource_no_queue', 'num_reservations':0}) is None)
+
     def test_from_bson(self):
         """
         Test from_bson().
