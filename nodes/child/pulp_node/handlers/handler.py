@@ -19,7 +19,7 @@ from pulp.agent.lib.report import ContentReport
 from pulp_node import constants
 from pulp_node import resources
 from pulp_node.error import GetBindingsError
-from pulp_node.handlers.strategies import find_strategy, SyncRequest
+from pulp_node.handlers.strategies import find_strategy, Request
 from pulp_node.handlers.reports import HandlerProgress, SummaryReport
 from pulp_node.handlers.model import RepositoryBinding
 
@@ -97,7 +97,7 @@ class NodeHandler(ContentHandler):
             return handler_report
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
-        request = SyncRequest(
+        request = Request(
             conduit=conduit,
             progress=progress_report,
             summary=summary_report,
@@ -161,7 +161,7 @@ class RepositoryHandler(ContentHandler):
         bindings = RepositoryBinding.fetch(pulp_bindings, conduit.consumer_id, repo_ids)
 
         strategy_name = options.setdefault(constants.STRATEGY_KEYWORD, constants.MIRROR_STRATEGY)
-        request = SyncRequest(
+        request = Request(
             conduit=conduit,
             progress=progress_report,
             summary=summary_report,
