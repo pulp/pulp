@@ -137,6 +137,7 @@ class TestAvailableQueue(ResourceReservationTests):
         # Make sure that only the resource with reference to the deleted queue is deleted
         self.assertEqual(aqc.count(), 0)
         self.assertEqual(rrc.count(), 1)
+        self.assertFalse(rrc.find_one({'_id':'reserved_resource_no_queue', 'num_reservations':0}) is None)
 
     def test_increment_num_reservations(self):
         """
