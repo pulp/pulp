@@ -11,6 +11,8 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
+from gettext import gettext as _
+import itertools
 import logging
 import time
 
@@ -29,31 +31,96 @@ _logger = logging.getLogger(__name__)
 
 
 def get(schedule_ids):
+    """
+    Get schedules by ID
+
+    :param schedule_ids:    a list of schedule IDs
+    :type  schedule_ids:    list
+
+    :return:    iterator of ScheduledCall instances
+    :rtype:     iterator
+    """
     criteria = Criteria(filters={'_id': {'$in': schedule_ids}})
     schedules = ScheduledCall.get_collection().query(criteria)
-    return map(ScheduledCall.from_db, schedules)
+    return itertools.imap(ScheduledCall.from_db, schedules)
 
 
 def get_by_resource(resource):
+    """
+    Get schedules by resource
+
+    :param resource:    unique ID for a lockable resource
+    :type  resource:    basestring
+
+    :return:    iterator of ScheduledCall instances
+    :rtype:     iterator
+    """
     criteria = Criteria(filters={'resource': resource})
     schedules = ScheduledCall.get_collection().query(criteria)
-    return map(ScheduledCall.from_db, schedules)
+    return itertools.imap(ScheduledCall.from_db, schedules)
+
+
+def get_enabled():
+    """
+    Get schedules that are enabled, that is, their "enabled" attribute is True
+
+    :return:    pymongo cursor of ScheduledCall database objects
+    :rtype:     pymongo.cursor.Cursor
+    """
+    criteria = Criteria(filters={'enabled': True})
+    return ScheduledCall.get_collection().query(criteria)
+
+
+def get_updated_since(seconds):
+    """
+    Get schedules that are enabled, that is, their "enabled" attribute is True,
+    and that have been updated since the timestamp represented by "seconds".
+
+    :param seconds: seconds since the epoch
+    :param seconds: float
+
+    :return:    pymongo cursor of ScheduledCall database objects
+    :rtype:     pymongo.cursor.Cursor
+    """
+    criteria = Criteria(filters={
+        'enabled': True,
+        'last_updated': {'$gt': seconds},
+    })
+    return ScheduledCall.get_collection().query(criteria)
 
 
 def delete(schedule_id):
+    """
+    Deletes the schedule with unique ID schedule_id
+
+    :param schedule_id: a unique ID for a schedule
+    :type  schedule_id: basestring
+    """
     ScheduledCall.get_collection().remove({'_id': schedule_id}, safe=True)
 
 
 def update(schedule_id, delta):
+    """
+    Updates the schedule with unique ID schedule_id. This only allows updating
+    of fields in ScheduledCall.USER_UPDATE_FIELDS.
+
+    :param schedule_id: a unique ID for a schedule
+    :type  schedule_id: basestring
+    :param delta:       a dictionary of keys with values that should be modified
+                        on the schedule.
+    :type  delta:       dict
+
+    :return:    instance of ScheduledCall representing the post-update state
+    :rtype      ScheduledCall
+
+    :raise  exceptions.UnsupportedValue
+    :raise  exceptions.MissingResource
+    """
     unknown_keys = set(delta.keys()) - ScheduledCall.USER_UPDATE_FIELDS
     if unknown_keys:
         raise exceptions.UnsupportedValue(list(unknown_keys))
 
     delta['last_updated'] = time.time()
-
-    kwargs = delta.pop('kwargs', {})
-    for key, value in kwargs.iteritems():
-        delta['kwargs.%s' % key] = value
 
     spec = {'_id': schedule_id}
     schedule = ScheduledCall.get_collection().find_and_modify(
@@ -99,9 +166,9 @@ def increment_failure_count(schedule_id):
         if scheduled_call.failure_threshold is None or not scheduled_call.enabled:
             return
         if scheduled_call.consecutive_failures >= scheduled_call.failure_threshold:
-            _logger.info('disabling schedule %s with %d consecutive failures' % (
-                schedule_id, scheduled_call.consecutive_failures
-            ))
+            _logger.info(_('disabling schedule %(id)s with %(count)d consecutive failures') % {
+                'id': schedule_id, 'count': scheduled_call.consecutive_failures
+            })
             delta = {'$set': {
                 'enabled': False,
                 'last_updated': time.time(),
@@ -112,12 +179,12 @@ def increment_failure_count(schedule_id):
 def validate_keys(options, valid_keys, all_required=False):
     """
     Validate the keys of a dictionary using the list of valid keys.
-    @param options: dictionary of options to validate
-    @type options: dict
-    @param valid_keys: list of keys that are valid
-    @type valid_keys: list or tuple
-    @param all_required: flag whether all the keys in valid_keys must be present
-    @type all_required: bool
+    :param options: dictionary of options to validate
+    :type options: dict
+    :param valid_keys: list of keys that are valid
+    :type valid_keys: list or tuple
+    :param all_required: flag whether all the keys in valid_keys must be present
+    :type all_required: bool
     """
     invalid_keys = []
     for key in options:
