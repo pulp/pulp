@@ -19,6 +19,7 @@ import web
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch import history as dispatch_history
@@ -69,10 +70,14 @@ class TaskCollection(JSONController):
     def GET(self):
         valid_filters = ['tag', 'id']
         filters = self.filters(valid_filters)
-        criteria = {'tags': filters.get('tag', [])}
+        criteria_filters = {}
+        tags = filters.get('tag', [])
+        if tags:
+            criteria_filters['tags'] = { '$all':  filters.get('tag', [])}
         if 'id' in filters:
-            criteria['call_request_id_list'] = filters['id']
-        serialized_task_statuses = list(TaskStatusManager.find_all())
+            criteria_filters['task_id'] = filters['id']
+        criteria = Criteria.from_client_input({'filters': criteria_filters})
+        serialized_task_statuses = list(TaskStatusManager.find_by_criteria(criteria))
         return self.ok(serialized_task_statuses)
 
 
