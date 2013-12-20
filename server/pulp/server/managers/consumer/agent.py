@@ -67,10 +67,9 @@ class AgentManager(object):
         :param options: The options are handler specific.
         :type options: dict
         """
-        # agent request tracked using task status.
+        # track agent operations using a pseudo task
         task_id = str(uuid4())
         TaskStatusManager.create_task_status(task_id, 'agent')
-        TaskStatusManager.set_task_started(task_id)
 
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -88,7 +87,7 @@ class AgentManager(object):
         agent = PulpAgent()
         agent.consumer.bind(context, agent_bindings, options)
 
-        # bind request tracking
+        # bind action tracking
         consumer_manager = managers.consumer_bind_manager()
         consumer_manager.action_pending(
             consumer_id,
@@ -110,10 +109,9 @@ class AgentManager(object):
         :param options: The options are handler specific.
         :type options: dict
         """
-        # agent request tracked using task status.
+        # track agent operations using a pseudo task
         task_id = str(uuid4())
         TaskStatusManager.create_task_status(task_id, 'agent')
-        TaskStatusManager.set_task_started(task_id)
 
         # agent request
         manager = managers.consumer_manager()
@@ -130,7 +128,7 @@ class AgentManager(object):
         agent = PulpAgent()
         agent.consumer.unbind(context, bindings, options)
 
-        # unbind request tracking
+        # unbind action tracking
         manager = managers.consumer_bind_manager()
         manager.action_pending(
             consumer_id,
@@ -151,10 +149,9 @@ class AgentManager(object):
         :param options: Install options; based on unit type.
         :type options: dict
         """
-        # agent request tracked using task status.
+        # track agent operations using a pseudo task
         task_id = str(uuid4())
         TaskStatusManager.create_task_status(task_id, 'agent')
-        TaskStatusManager.set_task_started(task_id)
 
         # agent request
         manager = managers.consumer_manager()
@@ -189,10 +186,9 @@ class AgentManager(object):
         :param options: Update options; based on unit type.
         :type options: dict
         """
-        # agent request tracked using task status.
+        # track agent operations using a pseudo task
         task_id = str(uuid4())
         TaskStatusManager.create_task_status(task_id, 'agent')
-        TaskStatusManager.set_task_started(task_id)
 
         # agent request
         manager = managers.consumer_manager()
@@ -227,10 +223,9 @@ class AgentManager(object):
         :param options: Uninstall options; based on unit type.
         :type options: dict
         """
-        # agent request tracked using task status.
+        # track agent operations using a pseudo task
         task_id = str(uuid4())
         TaskStatusManager.create_task_status(task_id, 'agent')
-        TaskStatusManager.set_task_started(task_id)
 
         # agent request
         manager = managers.consumer_manager()

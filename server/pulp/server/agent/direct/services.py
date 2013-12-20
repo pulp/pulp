@@ -187,6 +187,17 @@ class ReplyHandler(Listener):
         self.consumer.start(self, watchdog=watchdog)
         log.info('Task reply handler, started.')
 
+    def started(self, status):
+        """
+        Notification that an RMI has started executing in the agent.
+        The task status is updated in the pulp DB.
+        :param status: A RMi status object.
+        :type status: gofer.rmi.async.Started
+        """
+        call_context = status.any
+        task_id = call_context['task_id']
+        TaskStatusManager.set_task_started(task_id)
+
     def succeeded(self, reply):
         """
         Notification (reply) indicating an RMI succeeded.
@@ -197,7 +208,7 @@ class ReplyHandler(Listener):
         log.info('Task RMI (succeeded)\n%s', reply)
         result = reply.retval
         call_context = reply.any
-        task_id = call_context.get('task_id')
+        task_id = call_context['task_id']
         TaskStatusManager.set_task_succeeded(task_id, result)
         action = call_context.get('action')
         if action in ('bind', 'unbind'):
@@ -213,7 +224,7 @@ class ReplyHandler(Listener):
         log.info('Task RMI (failed)\n%s', reply)
         traceback = reply.xstate['trace']
         call_context = reply.any
-        task_id = call_context.get('task_id')
+        task_id = call_context['task_id']
         TaskStatusManager.set_task_failed(task_id, traceback)
         action = call_context.get('action')
         if action in ('bind', 'unbind'):
