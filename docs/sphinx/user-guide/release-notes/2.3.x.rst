@@ -75,3 +75,13 @@ from the Pulp repository and run the database migrations::
 
    $ sudo yum upgrade
    $ sudo pulp-manage-db
+
+
+Pulp 2.3.1
+==========
+
+Bugs Fixed
+----------
+
+The ``pulp-qpid-ssl-cfg`` tool `displayed an incorrect path <https://bugzilla.redhat.com/show_bug.cgi?id=1039619>`_
+to the qpid configuration file.
