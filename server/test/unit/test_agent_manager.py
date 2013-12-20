@@ -13,7 +13,7 @@
 
 import base
 
-from mock import patch
+from mock import patch, Mock
 
 from pulp.devel import mock_plugins
 from pulp.devel import mock_agent
@@ -22,7 +22,8 @@ from pulp.plugins.profiler import InvalidUnitsRequested
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.exceptions import PulpDataException
+from pulp.server.exceptions import PulpDataException, PulpExecutionException
+from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.server.managers import factory
 
 
@@ -109,11 +110,9 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 2)
+        self.assertEqual(len(actions), 1)
         self.assertFalse(actions[0]['id'] is None)
-        self.assertFalse(actions[1]['id'] is None)
         self.assertEqual(actions[0]['status'], 'pending')
-        self.assertEqual(actions[1]['status'], 'pending')
 
     @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload')
     def test_unbind(self, mock_payload):
@@ -136,11 +135,9 @@ class AgentManagerTests(base.PulpServerTests):
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 2)
+        self.assertEqual(len(actions), 1)
         self.assertFalse(actions[0]['id'] is None)
-        self.assertFalse(actions[1]['id'] is None)
         self.assertEqual(actions[0]['status'], 'pending')
-        self.assertEqual(actions[1]['status'], 'pending')
 
     def test_content_install(self):
         # Setup
@@ -256,7 +253,6 @@ class AgentManagerTests(base.PulpServerTests):
         self.assertEquals(pargs[1], units[:3])
         self.assertEquals(pargs[2], options)
 
-
     def test_uninstall_invalid_units(self):
         # Setup
         self.populate()
@@ -272,3 +268,38 @@ class AgentManagerTests(base.PulpServerTests):
             self.fail()
         except PulpDataException, e:
             self.assertEqual(e.message, message)
+
+    def test_cancel(self):
+        # Setup
+        self.populate()
+
+        # Test
+        manager = factory.consumer_agent_manager()
+        manager.cancel_request(self.CONSUMER_ID, 'task_1')
+
+        # validate cancel called on agent.
+        mock_agent.Admin.cancel.assert_called_with(criteria={'match': {'task_id': 'task_1'}})
+
+    def test_invoke_plugin_exception(self):
+        manager = factory.consumer_agent_manager()
+        call = Mock(side_effect=KeyError)
+        self.assertRaises(PulpExecutionException, manager._invoke_plugin, call)
+
+    @patch('pulp.server.managers.consumer.profile.ProfileManager.get_profiles')
+    def test_profiled_consumer(self,  mock_get_profiles):
+        # Setup
+        rpm_profile = {'A': 1, 'B': 2}
+        puppet_profile = {'C': 3, 'D': 4}
+        profiles = [
+            {'content_type': 'rpm', 'profile': rpm_profile},
+            {'content_type': 'puppet', 'profile': puppet_profile},
+        ]
+        mock_get_profiles.return_value = profiles
+
+        # Test
+        manager = factory.consumer_agent_manager()
+        consumer = manager._profiled_consumer(self.CONSUMER_ID)
+        self.assertEqual(consumer.id, self.CONSUMER_ID)
+        self.assertEqual(len(consumer.profiles), 2)
+        self.assertEqual(consumer.profiles['rpm'], rpm_profile)
+        self.assertEqual(consumer.profiles['puppet'], puppet_profile)

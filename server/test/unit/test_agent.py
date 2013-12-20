@@ -172,7 +172,7 @@ class TestReplyHandler(TestCase):
 
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
-    def test_agent_succeeded(self, task_succeeded):
+    def test_agent_succeeded(self, mock_task_succeeded):
         dispatch_report = Envelope(succeeded=True)
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -191,10 +191,10 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_started')
-    def test_started(self, task_started):
+    def test_started(self, mock_task_started):
         dispatch_report = Envelope(succeeded=True)
         task_id = 'task_1'
         consumer_id = 'consumer_1'
@@ -213,10 +213,10 @@ class TestReplyHandler(TestCase):
         handler.started(reply)
 
         # validate task updated
-        task_started.assert_called_with(task_id)
+        mock_task_started.assert_called_with(task_id)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
-    def test_agent_raised_exception(self, task_failed):
+    def test_agent_raised_exception(self, mock_task_failed):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -240,12 +240,12 @@ class TestReplyHandler(TestCase):
         handler.failed(reply)
 
         # validate task updated
-        task_failed.assert_called_with(task_id, 'stack-trace')
+        mock_task_failed.assert_called_with(task_id, 'stack-trace')
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
-    def test_update_bind_action(self, get_manager):
+    def test_update_bind_action(self, mock_get_manager):
         bind_manager = Mock()
-        get_manager.return_value = bind_manager
+        mock_get_manager.return_value = bind_manager
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -266,7 +266,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
-    def test_bind_succeeded(self, task_succeeded, update_action):
+    def test_bind_succeeded(self, mock_task_succeeded, mock_update_action):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -286,13 +286,13 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
         # validate bind action updated
-        update_action.called_with(task_id, call_context, True)
+        mock_update_action.called_with(task_id, call_context, True)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
-    def test_unbind_succeeded(self, task_succeeded, update_action):
+    def test_unbind_succeeded(self, mock_task_succeeded, mock_update_action):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -312,13 +312,13 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
         # validate bind action updated
-        update_action.called_with(task_id, call_context, True)
+        mock_update_action.called_with(task_id, call_context, True)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
-    def test_bind_failed(self, task_failed, update_action):
+    def test_bind_failed(self, mock_task_failed, mock_update_action):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -343,13 +343,13 @@ class TestReplyHandler(TestCase):
         handler.failed(reply)
 
         # validate task updated
-        task_failed.assert_called_with(task_id, 'stack-trace')
+        mock_task_failed.assert_called_with(task_id, 'stack-trace')
         # validate bind action updated
-        update_action.called_with(task_id, call_context, False)
+        mock_update_action.called_with(task_id, call_context, False)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
-    def test_unbind_failed(self, task_failed, update_action):
+    def test_unbind_failed(self, mock_task_failed, mock_update_action):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -374,9 +374,9 @@ class TestReplyHandler(TestCase):
         handler.failed(reply)
 
         # validate task updated
-        task_failed.assert_called_with(task_id, 'stack-trace')
+        mock_task_failed.assert_called_with(task_id, 'stack-trace')
         # validate bind action updated
-        update_action.called_with(task_id, call_context, False)
+        mock_update_action.called_with(task_id, call_context, False)
 
 
 class TestServices(TestCase):
@@ -394,8 +394,8 @@ class TestServices(TestCase):
     @patch('pulp.server.agent.direct.services.ReplyHandler')
     @patch('pulp.server.agent.direct.services.HeartbeatListener')
     @patch('gofer.rmi.async.WatchDog')
-    def test_start(self, watchdog, heartbeat_listener, reply_handler):
+    def test_start(self, mock_watchdog, mock_heartbeat_listener, mock_reply_handler):
         Services.start()
-        watchdog.assert_called()
-        heartbeat_listener.assert_called()
-        reply_handler.assert_called()
+        mock_watchdog.start.assert_called()
+        mock_heartbeat_listener.start.assert_called()
+        mock_reply_handler.start.assert_called()

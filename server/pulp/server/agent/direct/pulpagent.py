@@ -86,7 +86,8 @@ class PulpAgent(object):
         """
         return Services.heartbeat_listener.status(uuids)
 
-    def cancel(self, context, task_id):
+    @staticmethod
+    def cancel(context, task_id):
         """
         Cancel an agent request by task ID.
         :param task_id: The ID of a task associated with an agent request.
