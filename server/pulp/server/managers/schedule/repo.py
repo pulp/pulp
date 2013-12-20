@@ -43,7 +43,8 @@ class RepoSyncScheduleManager(object):
         return utils.get_by_resource(RepoImporter.build_resource_tag(repo_id, importer_id))
 
     @classmethod
-    def create(cls, repo_id, importer_id, sync_options, schedule_data):
+    def create(cls, repo_id, importer_id, sync_options, schedule,
+               failure_threshold=None, enabled=True):
         """
         Create a new sync schedule for a given repository using the given importer.
 
@@ -69,14 +70,15 @@ class RepoSyncScheduleManager(object):
         # validate the input
         cls.validate_importer(repo_id, importer_id)
         utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
-        utils.validate_initial_schedule_options(schedule_data)
+        utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
         task = sync_with_auto_publish.name
         args = [repo_id]
         kwargs = {'overrides': sync_options['override_config']}
         resource = RepoImporter.build_resource_tag(repo_id, importer_id)
-        schedule = ScheduledCall(schedule_data['schedule'], task, args=args,
-                                 kwargs=kwargs, resource=resource)
+        schedule = ScheduledCall(schedule, task, args=args, kwargs=kwargs,
+                                 resource=resource, failure_threshold=failure_threshold,
+                                 enabled=enabled)
         schedule.save()
         try:
             cls.validate_importer(repo_id, importer_id)
@@ -168,7 +170,8 @@ class RepoPublishScheduleManager(object):
         return utils.get_by_resource(RepoDistributor.build_resource_tag(repo_id, distributor_id))
 
     @classmethod
-    def create(cls, repo_id, distributor_id, publish_options, schedule_data):
+    def create(cls, repo_id, distributor_id, publish_options, schedule,
+               failure_threshold=None, enabled=True):
         """
         Create a new scheduled publish for the given repository and distributor.
 
@@ -194,15 +197,15 @@ class RepoPublishScheduleManager(object):
         # validate the input
         cls.validate_distributor(repo_id, distributor_id)
         utils.validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
-
-        utils.validate_initial_schedule_options(schedule_data)
+        utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
         task = publish.name
         args = [repo_id, distributor_id]
         kwargs = {'overrides': publish_options['override_config']}
         resource = RepoDistributor.build_resource_tag(repo_id, distributor_id)
-        schedule = ScheduledCall(schedule_data['schedule'], task, args=args,
-                                 kwargs=kwargs, resource=resource)
+        schedule = ScheduledCall(schedule, task, args=args, kwargs=kwargs,
+                                 resource=resource, failure_threshold=failure_threshold,
+                                 enabled=enabled)
         schedule.save()
 
         try:

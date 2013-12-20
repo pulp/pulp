@@ -202,7 +202,7 @@ def validate_keys(options, valid_keys, all_required=False):
         raise exceptions.MissingValue(missing_keys)
 
 
-def validate_initial_schedule_options(options):
+def validate_initial_schedule_options(schedule, failure_threshold, enabled):
     """
     Validate the initial schedule and schedule options.
 
@@ -211,24 +211,15 @@ def validate_initial_schedule_options(options):
     :raises: pulp.server.exceptions.UnsupportedValue if unsupported schedule options are passed in
     :raises: pulp.server.exceptions.InvalidValue if any of the options are invalid
     """
-
-    options = options.copy()
-    schedule = options.pop('schedule', None)
-
-    unknown_options = _find_unknown_options(options, SCHEDULE_OPTIONS_FIELDS)
-
-    if unknown_options:
-        raise exceptions.UnsupportedValue(unknown_options)
-
     invalid_options = []
 
     if not _is_valid_schedule(schedule):
         invalid_options.append('schedule')
 
-    if 'failure_threshold' in options and not _is_valid_failure_threshold(options['failure_threshold']):
+    if not _is_valid_failure_threshold(failure_threshold):
         invalid_options.append('failure_threshold')
 
-    if 'enabled' in options and not _is_valid_enabled_flag(options['enabled']):
+    if not _is_valid_enabled_flag(enabled):
         invalid_options.append('enabled')
 
     if not invalid_options:

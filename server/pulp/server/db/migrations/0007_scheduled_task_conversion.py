@@ -35,6 +35,8 @@ def migrate(*args, **kwargs):
     move_scheduled_publishes(distributor_collection, schedule_collection)
 
 
+# TODO: one of the below does not need to exist
+
 def move_scheduled_syncs(importer_collection, schedule_collection):
     for importer in importer_collection.find(fields=['scheduled_syncs', 'id', 'repo_id']):
         scheduled_syncs = importer.get('scheduled_syncs')
@@ -92,7 +94,9 @@ def convert_schedules(save_func, call):
     # determine if this is a consumer-related schedule, which we can only identify
     # by the consumer resource tag. If it is, save that tag value in the new
     # "resource" field, which is the new way that we will identify the
-    # relationship between a schedule and some other object.
+    # relationship between a schedule and some other object. This is not
+    # necessary for repos, because we have a better method above for identifying
+    # them (move_scheduled_syncs).
     tags = call_request.get('tags', [])
     for tag in tags:
         if tag.startswith('pulp:consumer:'):

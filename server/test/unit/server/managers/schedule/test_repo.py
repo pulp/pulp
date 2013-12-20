@@ -11,12 +11,19 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import functools
+import itertools
 import unittest
 
 import mock
 
-from pulp.server.db.model.repository import RepoImporter
+from pulp.server import exceptions
+from pulp.server.db.model.dispatch import ScheduledCall
+from pulp.server.db.model.repository import RepoImporter, RepoDistributor
+from pulp.server.managers.factory import initialize
 from pulp.server.managers.schedule.repo import RepoSyncScheduleManager, RepoPublishScheduleManager
+
+initialize()
 
 
 class TestSyncList(unittest.TestCase):
@@ -35,6 +42,306 @@ class TestSyncList(unittest.TestCase):
         mock_get_by_resource.assert_called_once_with(RepoImporter.build_resource_tag('repo1', 'importer1'))
         self.assertTrue(ret is mock_get_by_resource.return_value)
 
+
+class TestSyncCreate(unittest.TestCase):
+    repo = 'repo1'
+    importer = 'importer1'
+    options = {'override_config': {}}
+    schedule = 'PT1M'
+
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_validate_importer(self, mock_get_importer):
+        mock_get_importer.return_value = {'id': 'foo'}
+
+        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.create,
+                          self.repo, self.importer, self.options, self.schedule)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
+    @mock.patch.object(RepoSyncScheduleManager, 'validate_importer', return_value=None)
+    @mock.patch('pulp.server.managers.schedule.utils.validate_initial_schedule_options')
+    @mock.patch('pulp.server.managers.schedule.utils.validate_keys')
+    def test_utils_validation(self, mock_validate_keys, mock_validate_options,
+                             mock_validate_importer, mock_save):
+        RepoSyncScheduleManager.create(self.repo, self.importer, self.options, self.schedule)
+
+        mock_validate_keys.assert_called_once_with(self.options, ('override_config',))
+        mock_validate_options.assert_called_once_with(self.schedule, None, True)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_save(self, mock_get_importer, mock_save):
+        mock_get_importer.return_value = {'id': 'importer1'}
+
+        ret = RepoSyncScheduleManager.create(self.repo, self.importer, self.options,
+                                             self.schedule, 3, False)
+
+        mock_save.assert_called_once_with()
+        self.assertTrue(isinstance(ret, ScheduledCall))
+        self.assertEqual(ret.iso_schedule, self.schedule)
+        self.assertEqual(ret.failure_threshold, 3)
+        self.assertTrue(ret.enabled is False)
+
+    @mock.patch('pulp.server.db.model.base.ObjectId', return_value='myobjectid')
+    @mock.patch('pulp.server.managers.schedule.utils.delete')
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_cleanup(self, mock_get_importer, mock_save, mock_delete, mock_objectid):
+        mock_get_importer.side_effect = [{'id': 'importer1'}, {'id': 'someotherimporter'}]
+
+        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.create,
+                          self.repo, self.importer, self.options, self.schedule)
+
+        mock_delete.assert_called_once_with('myobjectid')
+
+
+class TestSyncUpdate(unittest.TestCase):
+    repo = 'repo1'
+    importer = 'importer1'
+    schedule_id = 'schedule1'
+    override = {'override_config': {'foo': 'bar'}}
+    updates = {'enabled': True}
+
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_validate_importer(self, mock_get_importer):
+        mock_get_importer.return_value = {'id': 'foo'}
+
+        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.update,
+                          self.repo, self.importer, self.schedule_id, self.updates)
+
+    @mock.patch('pulp.server.managers.schedule.utils.update')
+    @mock.patch('pulp.server.managers.schedule.utils.validate_updated_schedule_options')
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_validate_options(self, mock_get_importer, mock_validate_options, mock_update):
+        mock_get_importer.return_value = {'id': self.importer}
+
+        RepoSyncScheduleManager.update(self.repo, self.importer, self.schedule_id, self.updates)
+
+        mock_validate_options.assert_called_once_with(self.updates)
+
+    @mock.patch('pulp.server.managers.schedule.utils.update')
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_update(self, mock_get_importer, mock_update):
+        mock_get_importer.return_value = {'id': self.importer}
+
+        RepoSyncScheduleManager.update(self.repo, self.importer, self.schedule_id, self.updates)
+
+        mock_update.assert_called_once_with(self.schedule_id, self.updates)
+
+    @mock.patch('pulp.server.managers.schedule.utils.update')
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_update_overrides(self, mock_get_importer, mock_update):
+        mock_get_importer.return_value = {'id': self.importer}
+
+        RepoSyncScheduleManager.update(self.repo, self.importer, self.schedule_id,
+                                       {'override_config': {'foo': 'bar'}})
+
+        mock_update.assert_called_once_with(self.schedule_id,
+                                            {'kwargs': {'overrides': {'foo': 'bar'}}})
+
+
+class TestSyncDelete(unittest.TestCase):
+    repo = 'repo1'
+    importer = 'importer1'
+    schedule_id = 'schedule1'
+
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_validate_importer(self, mock_get_importer):
+        mock_get_importer.return_value = {'id': 'foo'}
+
+        self.assertRaises(exceptions.MissingResource, RepoSyncScheduleManager.delete,
+                          self.repo, self.importer, self.schedule_id)
+
+    @mock.patch('pulp.server.managers.schedule.utils.delete')
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_delete(self, mock_get_importer, mock_delete):
+        mock_get_importer.return_value = {'id': self.importer}
+
+        RepoSyncScheduleManager.delete(self.repo, self.importer, self.schedule_id)
+
+        mock_delete.assert_called_once_with(self.schedule_id)
+
+
+class TestValidateImporter(unittest.TestCase):
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_matching_importer(self, mock_get_importer):
+        mock_get_importer.return_value = {'id': 'importer1'}
+
+        RepoSyncScheduleManager.validate_importer('repo1', 'importer1')
+
+        mock_get_importer.assert_called_once_with('repo1')
+
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
+    def test_wrong_importer(self, mock_get_importer):
+        mock_get_importer.return_value = {'id': 'wrong_importer'}
+
+        self.assertRaises(exceptions.MissingResource,
+                          RepoSyncScheduleManager.validate_importer, 'repo1', 'importer1')
+
+
+class TestPublishList(unittest.TestCase):
+    @mock.patch.object(RepoPublishScheduleManager, 'validate_distributor')
+    @mock.patch('pulp.server.managers.schedule.utils.get_by_resource')
+    def test_validate_distributor(self, mock_get_by_resource, mock_validate_distributor):
+        RepoPublishScheduleManager.list('repo1', 'distributor1')
+
+        mock_validate_distributor.assert_called_once_with('repo1', 'distributor1')
+
+    @mock.patch.object(RepoPublishScheduleManager, 'validate_distributor', return_value=None)
+    @mock.patch('pulp.server.managers.schedule.utils.get_by_resource')
+    def test_list(self, mock_get_by_resource, mock_validate_distributor):
+        ret = RepoPublishScheduleManager.list('repo1', 'distributor1')
+
+        mock_get_by_resource.assert_called_once_with(RepoDistributor.build_resource_tag('repo1', 'distributor1'))
+        self.assertTrue(ret is mock_get_by_resource.return_value)
+
+
+class TestPublishCreate(unittest.TestCase):
+    repo = 'repo1'
+    distributor = 'distributor1'
+    options = {'override_config': {}}
+    schedule = 'PT1M'
+
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_validate_distributor(self, mock_get_distributor):
+        mock_get_distributor.side_effect = exceptions.MissingResource
+
+        self.assertRaises(exceptions.MissingResource, RepoPublishScheduleManager.create,
+                          self.repo, self.distributor, self.options, self.schedule)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
+    @mock.patch.object(RepoPublishScheduleManager, 'validate_distributor', return_value=None)
+    @mock.patch('pulp.server.managers.schedule.utils.validate_initial_schedule_options')
+    @mock.patch('pulp.server.managers.schedule.utils.validate_keys')
+    def test_utils_validation(self, mock_validate_keys, mock_validate_options,
+                              mock_validate_distributor, mock_save):
+        RepoPublishScheduleManager.create(self.repo, self.distributor, self.options, self.schedule)
+
+        mock_validate_keys.assert_called_once_with(self.options, ('override_config',))
+        mock_validate_options.assert_called_once_with(self.schedule, None, True)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_save(self, mock_get_distributor, mock_save):
+        mock_get_distributor.return_value = {'id': 'distributor1'}
+
+        ret = RepoPublishScheduleManager.create(self.repo, self.distributor, self.options,
+                                                self.schedule, 3, False)
+
+        mock_save.assert_called_once_with()
+        self.assertTrue(isinstance(ret, ScheduledCall))
+        self.assertEqual(ret.iso_schedule, self.schedule)
+        self.assertEqual(ret.failure_threshold, 3)
+        self.assertTrue(ret.enabled is False)
+
+    @mock.patch('pulp.server.db.model.base.ObjectId', return_value='myobjectid')
+    @mock.patch('pulp.server.managers.schedule.utils.delete')
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.save')
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_cleanup(self, mock_get_distributor, mock_save, mock_delete, mock_objectid):
+        def fake_get(count, *args, **kwargs):
+            """
+            Return legit data on the first call, and raise an exception on the
+            second, to simulate the distributor being deleted while a schedule
+            create operation is happening.
+
+            :type count: itertools.count
+            """
+            if next(count) == 0:
+                return {'id': 'distributor1'}
+            else:
+                raise exceptions.MissingResource
+
+        count = itertools.count()
+        mock_get_distributor.side_effect = functools.partial(fake_get, count)
+
+        self.assertRaises(exceptions.MissingResource, RepoPublishScheduleManager.create,
+                          self.repo, self.distributor, self.options, self.schedule)
+
+        mock_delete.assert_called_once_with('myobjectid')
+
+
+class TestPublishUpdate(unittest.TestCase):
+    repo = 'repo1'
+    distributor = 'distributor1'
+    schedule_id = 'schedule1'
+    override = {'override_config': {'foo': 'bar'}}
+    updates = {'enabled': True}
+
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_validate_distributor(self, mock_get_distributor):
+        mock_get_distributor.side_effect = exceptions.MissingResource
+
+        self.assertRaises(exceptions.MissingResource, RepoPublishScheduleManager.update,
+                          self.repo, self.distributor, self.schedule_id, self.updates)
+
+    @mock.patch('pulp.server.managers.schedule.utils.update')
+    @mock.patch('pulp.server.managers.schedule.utils.validate_updated_schedule_options')
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_validate_options(self, mock_get_distributor, mock_validate_options, mock_update):
+        mock_get_distributor.return_value = {'id': self.distributor}
+
+        RepoPublishScheduleManager.update(self.repo, self.distributor, self.schedule_id, self.updates)
+
+        mock_validate_options.assert_called_once_with(self.updates)
+
+    @mock.patch('pulp.server.managers.schedule.utils.update')
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_update(self, mock_get_distributor, mock_update):
+        mock_get_distributor.return_value = {'id': self.distributor}
+
+        RepoPublishScheduleManager.update(self.repo, self.distributor, self.schedule_id, self.updates)
+
+        mock_update.assert_called_once_with(self.schedule_id, self.updates)
+
+    @mock.patch('pulp.server.managers.schedule.utils.update')
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_update_overrides(self, mock_get_distributor, mock_update):
+        mock_get_distributor.return_value = None
+
+        RepoPublishScheduleManager.update(self.repo, self.distributor, self.schedule_id,
+                                       {'override_config': {'foo': 'bar'}})
+
+        mock_update.assert_called_once_with(self.schedule_id,
+                                            {'kwargs': {'overrides': {'foo': 'bar'}}})
+
+
+class TestPublishDelete(unittest.TestCase):
+    repo = 'repo1'
+    distributor = 'distributor1'
+    schedule_id = 'schedule1'
+
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_validate_distributor(self, mock_get_distributor):
+        mock_get_distributor.side_effect = exceptions.MissingResource
+
+        self.assertRaises(exceptions.MissingResource, RepoPublishScheduleManager.delete,
+                          self.repo, self.distributor, self.schedule_id)
+
+    @mock.patch('pulp.server.managers.schedule.utils.delete')
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_delete(self, mock_get_distributor, mock_delete):
+        mock_get_distributor.return_value = None
+
+        RepoPublishScheduleManager.delete(self.repo, self.distributor, self.schedule_id)
+
+        mock_delete.assert_called_once_with(self.schedule_id)
+
+
+class TestValidateDistributor(unittest.TestCase):
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_matching_distributor(self, mock_get_distributor):
+        mock_get_distributor.return_value = None
+
+        RepoPublishScheduleManager.validate_distributor('repo1', 'distributor1')
+
+        mock_get_distributor.assert_called_once_with('repo1', 'distributor1')
+
+    @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')
+    def test_wrong_distributor(self, mock_get_distributor):
+        mock_get_distributor.side_effect = exceptions.MissingResource
+
+        self.assertRaises(exceptions.MissingResource,
+                          RepoPublishScheduleManager.validate_distributor, 'repo1', 'distributor1')
 
 
 SCHEDULES = [

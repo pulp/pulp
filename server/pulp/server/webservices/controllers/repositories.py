@@ -418,13 +418,19 @@ class SyncScheduleCollection(JSONController):
     def POST(self, repo_id, importer_id):
         manager = manager_factory.repo_sync_schedule_manager()
 
-        schedule_options = self.params()
-        sync_options = {'override_config': schedule_options.pop('override_config', {})}
+        params = self.params()
+        sync_options = {'override_config': params.pop('override_config', {})}
+        schedule = params.pop('schedule', None)
+        failure_threshold = params.pop('failure_threshold', None)
+        enabled = params.pop('enabled', True)
+        if params:
+            raise exceptions.UnsupportedValue(params.keys())
 
-        schedule = manager.create(repo_id, importer_id, sync_options, schedule_options)
+        scheduled_call = manager.create(repo_id, importer_id, sync_options,
+                                        schedule, failure_threshold, enabled)
 
-        ret = schedule.for_display()
-        ret.update(serialization.link.child_link_obj(schedule.id))
+        ret = scheduled_call.for_display()
+        ret.update(serialization.link.child_link_obj(scheduled_call.id))
         return self.created(ret['_href'], ret)
 
 
@@ -576,10 +582,16 @@ class PublishScheduleCollection(JSONController):
     def POST(self, repo_id, distributor_id):
         manager = manager_factory.repo_publish_schedule_manager()
 
-        schedule_options = self.params()
-        publish_options = {'override_config': schedule_options.pop('override_config', {})}
+        params = self.params()
+        publish_options = {'override_config': params.pop('override_config', {})}
+        schedule = params.pop('schedule', None)
+        failure_threshold = params.pop('failure_threshold', None)
+        enabled = params.pop('enabled', True)
+        if params:
+            raise exceptions.UnsupportedValue(params.keys())
 
-        schedule = manager.create(repo_id, distributor_id, publish_options, schedule_options)
+        schedule = manager.create(repo_id, distributor_id, publish_options,
+                                  schedule, failure_threshold, enabled)
 
         ret = schedule.for_display()
         ret.update(serialization.link.child_link_obj(schedule.id))

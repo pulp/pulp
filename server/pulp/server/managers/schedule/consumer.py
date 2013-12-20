@@ -12,10 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import copy
+import itertools
 
-from pulp.server import exceptions
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.db.model.dispatch import ScheduledCall
+from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
 from pulp.server.tasks import consumer
@@ -40,51 +41,85 @@ class ConsumerScheduleManager(object):
     """
     @staticmethod
     def _validate_consumer(consumer_id):
+        """
+        Determines if a given consumer_id is valid by checking its existence
+        in the database.
+
+        :param consumer_id: a unique ID for a consumer
+        :type  consumer_id: basestring
+
+        :raises:    pulp.server.exceptions.MissingResource
+        """
         consumer_manager = managers_factory.consumer_manager()
         consumer_manager.get_consumer(consumer_id)
 
     @staticmethod
     def get(consumer_id, action=None):
+        """
+        Get a collection of schedules for the given consumer and action. If no
+        action is specified, then all actions will be included.
+
+        :param consumer_id: a unique ID for a consumer
+        :type  consumer_id: basestring
+        :param action:      a unique identified for an action, one of
+                            UNIT_INSTALL_ACTION, UNIT_UPDATE_ACTION,
+                            UNIT_UNINSTALL_ACTION
+        :type  action:      basestring
+
+        :return:    iterator of ScheduledCall instances
+        :rtype:     iterator
+        """
         results = utils.get_by_resource(Consumer.build_resource_tag(consumer_id))
         if action:
             task = ACTIONS_TO_TASKS[action]
-            return filter(lambda schedule: schedule.task == task.name, results)
+            return itertools.ifilter(lambda schedule: schedule.task == task.name, results)
         else:
             return results
 
     @classmethod
-    def create_schedule(cls, action_name, consumer_id, units, options,
-                         schedule_data):
+    def create_schedule(cls, action, consumer_id, units, options,
+                        schedule, failure_threshold, enabled):
         """
+        Creates a new schedule for a consumer action
 
-        :param action_name:
-        :param consumer_id:
-        :param units:
-        :param options:
+        :param action:          a unique identified for an action, one of
+                                UNIT_INSTALL_ACTION, UNIT_UPDATE_ACTION,
+                                UNIT_UNINSTALL_ACTION
+        :type  action:          basestring
+        :param consumer_id:     a unique ID for a consumer
+        :type  consumer_id:     basestring
+        :param units:           A list of content units to be installed, each as
+                                a dict in the form:
+                                    { type_id:<str>, unit_key:<dict> }
+        :type  units:           list
+        :param options:         a dictionary that will be passed to the
+                                action-appropriate task as the "options"
+                                argument
+        :type  options:         dict
         :param schedule_data:
         :return:
         :rtype:     pulp.server.db.models.dispatch.ScheduledCall
         """
         cls._validate_consumer(consumer_id)
         utils.validate_keys(options, _UNIT_OPTION_KEYS)
-        if 'schedule' not in schedule_data:
-            raise exceptions.MissingValue(['schedule'])
-        utils.validate_initial_schedule_options(schedule_data)
+        utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
+        if not units:
+            raise MissingResource(['units'])
 
-        task = ACTIONS_TO_TASKS[action_name]
+        task = ACTIONS_TO_TASKS[action]
         args = [consumer_id]
-        kwargs = {'units': units,
-                  'options': options.get('options', {})}
+        kwargs = {'units': units, 'options': options}
         resource = Consumer.build_resource_tag(consumer_id)
 
-        schedule = ScheduledCall(schedule_data['schedule'], task, args=args,
-                                 kwargs=kwargs, resource=resource)
+        schedule = ScheduledCall(schedule, task, args=args, kwargs=kwargs,
+                                 resource=resource, failure_threshold=failure_threshold,
+                                 enabled=enabled)
         schedule.save()
         return schedule
 
     @staticmethod
     def update_schedule(consumer_id, schedule_id, units=None, options=None,
-                         schedule_data=None):
+                        schedule_data=None):
         """
 
         :param consumer_id:

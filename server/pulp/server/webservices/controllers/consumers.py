@@ -22,7 +22,7 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed
+from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, UnsupportedValue
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
@@ -702,18 +702,21 @@ class UnitActionScheduleCollection(JSONController):
 
     @auth_required(CREATE)
     def POST(self, consumer_id):
-        schedule_data = self.params()
-        units = schedule_data.pop('units', None)
-        options = {'options': schedule_data.pop('options', {})}
+        params = self.params()
+        units = params.pop('units', None)
+        options = params.pop('options', {})
+        schedule = params.pop('schedule', None)
+        failure_threshold = params.pop('failure_threshold', None)
+        enabled = params.pop('enabled', True)
+        if params:
+            raise UnsupportedValue(params.keys())
 
-        if not units:
-            raise MissingValue(['units'])
+        scheduled_call = self.manager.create_schedule(
+            self.ACTION, consumer_id, units, options, schedule, failure_threshold, enabled)
 
-        schedule = self.manager.create_schedule(self.ACTION, consumer_id, units,
-                                                options, schedule_data)
-
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(schedule.for_display())
-        scheduled_obj.update(serialization.link.child_link_obj(schedule.id))
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(
+            scheduled_call.for_display())
+        scheduled_obj.update(serialization.link.child_link_obj(scheduled_call.id))
         return self.created(scheduled_obj['_href'], scheduled_obj)
 
 
