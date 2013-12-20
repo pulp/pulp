@@ -187,14 +187,14 @@ class ReplyHandler(Listener):
         self.consumer.start(self, watchdog=watchdog)
         log.info('Task reply handler, started.')
 
-    def started(self, status):
+    def started(self, reply):
         """
         Notification that an RMI has started executing in the agent.
         The task status is updated in the pulp DB.
-        :param status: A RMi status object.
-        :type status: gofer.rmi.async.Started
+        :param reply: A status reply object.
+        :type reply: gofer.rmi.async.Started
         """
-        call_context = status.any
+        call_context = reply.any
         task_id = call_context['task_id']
         TaskStatusManager.set_task_started(task_id)
 

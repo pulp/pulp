@@ -17,7 +17,8 @@ from unittest import TestCase
 
 from mock import patch, Mock
 from gofer.messaging import Envelope
-from gofer.rmi.async import Succeeded, Failed
+from gofer.messaging.broker import URL, Broker
+from gofer.rmi.async import Started, Succeeded, Failed
 
 from base import PulpServerTests
 from pulp.devel import mock_agent
@@ -161,6 +162,15 @@ class TestAgent(PulpServerTests):
 
 class TestReplyHandler(TestCase):
 
+    @patch('gofer.rmi.async.ReplyConsumer.start')
+    def test_start(self, mock_start):
+        url = 'http://broker'
+        handler = ReplyHandler(url)
+        watchdog = Mock()
+        handler.start(watchdog)
+        mock_start.start_called_with(watchdog)
+
+
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
     def test_agent_succeeded(self, task_succeeded):
         dispatch_report = Envelope(succeeded=True)
@@ -182,6 +192,28 @@ class TestReplyHandler(TestCase):
 
         # validate task updated
         task_succeeded.assert_called_with(task_id, dispatch_report)
+
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_started')
+    def test_started(self, task_started):
+        dispatch_report = Envelope(succeeded=True)
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        result = Envelope(retval=dispatch_report)
+        envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
+        reply = Started(envelope)
+        handler = ReplyHandler('')
+        handler.started(reply)
+
+        # validate task updated
+        task_started.assert_called_with(task_id)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
     def test_agent_raised_exception(self, task_failed):
@@ -345,3 +377,25 @@ class TestReplyHandler(TestCase):
         task_failed.assert_called_with(task_id, 'stack-trace')
         # validate bind action updated
         update_action.called_with(task_id, call_context, False)
+
+
+class TestServices(TestCase):
+
+    def test_init(self):
+        Services.init()
+        url = pulp_conf.get('messaging', 'url')
+        ca_cert = pulp_conf.get('messaging', 'cacert')
+        client_cert = pulp_conf.get('messaging', 'clientcert')
+        broker = Broker(url)
+        self.assertEqual(broker.url, URL(url))
+        self.assertEqual(broker.cacert, ca_cert)
+        self.assertEqual(broker.clientcert, client_cert)
+
+    @patch('pulp.server.agent.direct.services.ReplyHandler')
+    @patch('pulp.server.agent.direct.services.HeartbeatListener')
+    @patch('gofer.rmi.async.WatchDog')
+    def test_start(self, watchdog, heartbeat_listener, reply_handler):
+        Services.start()
+        watchdog.assert_called()
+        heartbeat_listener.assert_called()
+        reply_handler.assert_called()
