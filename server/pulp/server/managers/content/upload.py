@@ -267,4 +267,5 @@ class ContentUploadManager(object):
 
         return upload_storage_dir
 
+
 import_uploaded_unit = task(ContentUploadManager.import_uploaded_unit, base=Task)

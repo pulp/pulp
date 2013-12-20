@@ -923,7 +923,7 @@ class RepoAssociate(JSONController):
                 action_tag('associate')]
 
         async_result = associate_from_repo.apply_async_with_reservation(
-                                                [source_repo_id, dest_repo_id],
+                                                dest_repo_id,
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)

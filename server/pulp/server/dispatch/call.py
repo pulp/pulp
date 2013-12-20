@@ -338,27 +338,21 @@ class CallReport(object):
         """
         Factory method that forms a CallReport using existing TaskStatus for given task id.
 
-        @param cls: CallReport class
-        @type cls: type
-        @param task_id: task id to be used to lookup task status
-        @type task_id: basestring
-        @return: CallReport instance
-        @rtype: L{CallReport}
+        :param cls: CallReport class
+        :type cls: type
+        :param task_id: task id to be used to lookup task status
+        :type task_id: basestring
+        :return: CallReport instance
+        :rtype: CallReport
         """
         task_status = TaskStatusManager.find_by_task_id(task_id)
         if task_status:
-            task_result = None
-            task_traceback = None
-            if 'result' in task_status:
-                task_result = task_status['result']
-            if 'traceback' in task_status:
-                task_traceback = task_status['traceback']
             call_report = cls(task_id,
                               call_request_group_id = None,
                               call_request_tags = task_status['tags'],
                               state = task_status['state'],
-                              result = task_result,
-                              traceback = task_traceback)
+                              result = task_status.get('result', None),
+                              traceback = task_status.get('traceback', None))
         else:
             call_report = cls(task_id)
         return call_report
