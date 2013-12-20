@@ -342,7 +342,7 @@ class TestIncrementFailureCount(unittest.TestCase):
     @mock.patch('pulp.server.db.connection.PulpCollection.update')
     def test_disable_schedule(self, mock_update, mock_find):
         schedule = SCHEDULES[0].copy()
-        schedule['failure_threshold'] = 1
+        schedule['consecutive_failures'] = 2
         mock_find.return_value = schedule
         mock_find.__name__ = 'find_and_modify'
         mock_update.__name__ = 'update'
@@ -351,8 +351,14 @@ class TestIncrementFailureCount(unittest.TestCase):
 
         self.assertEqual(mock_find.call_count, 1)
 
-        # make sure we didn't disable the schedule, since it's already disabled
+        # make sure we disable the schedule
         self.assertEqual(mock_update.call_count, 1)
+        self.assertEqual(mock_update.call_args[0][0], {'_id': 'schedule1'})
+        self.assertTrue(mock_update.call_args[0][1]['$set']['enabled'] is False)
+        last_updated = mock_update.call_args[0][1]['$set']['last_updated']
+        # make sure the last_updated value is within the last tenth of a second
+        self.assertTrue(time.time() - last_updated < .1)
+
 
 
 
@@ -413,7 +419,5 @@ SCHEDULES = [
         u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
         u'total_run_count': 1087,
-        },
-    ]
-
-
+    },
+]

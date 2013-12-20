@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2012 Red Hat, Inc.
+# Copyright © 2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -26,6 +26,18 @@ _SYNC_OPTION_KEYS = ('override_config',)
 class RepoSyncScheduleManager(object):
     @classmethod
     def list(cls, repo_id, importer_id):
+        """
+        Returns an iterator of ScheduledCall instances that represent schedules
+        for the specified repo and importer.
+
+        :param repo_id:     unique ID for a repository
+        :type  repo_id:     basestring
+        :param importer_id: unique ID for an importer
+        :type  importer_id: basestring
+
+        :return:    iterator of ScheduledCall instances
+        :rtype:     iterator
+        """
         cls.validate_importer(repo_id, importer_id)
 
         return utils.get_by_resource(RepoImporter.build_resource_tag(repo_id, importer_id))
@@ -35,17 +47,28 @@ class RepoSyncScheduleManager(object):
         """
         Create a new sync schedule for a given repository using the given importer.
 
-        :param repo_id:
-        :param importer_id:
-        :param sync_options:
-        :param schedule_data:
-        :return:    new schedule
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param importer_id:     unique ID for an importer
+        :type  importer_id:     basestring
+        :param sync_options:    dictionary that contains the key 'override_config',
+                                whose value should be passed as the 'overrides'
+                                parameter to the sync task. This wasn't originally
+                                documented, so it isn't clear why overrides value
+                                couldn't be passed directly.
+        :type  sync_options:    dict
+        :param schedule_data:   dictionary that contains the key 'schedule', whose
+                                value is an ISO8601 string. This wasn't originally
+                                documented, so it isn't clear why the string itself
+                                couldn't have been passed directly.
+        :type  schedule_data:   dict
+
+        :return:    new schedule instance
         :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
         # validate the input
         cls.validate_importer(repo_id, importer_id)
         utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
-
         utils.validate_initial_schedule_options(schedule_data)
 
         task = sync_with_auto_publish.name
@@ -69,15 +92,18 @@ class RepoSyncScheduleManager(object):
         """
         Update an existing sync schedule.
 
-        :param repo_id:
-        :param importer_id:
-        :param schedule_id:
-        :param sync_options:
-        :param schedule_data:
-        :return:
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param importer_id:     unique ID for an importer
+        :type  importer_id:     basestring
+        :param schedule_id:     unique ID for a schedule
+        :type  schedule_id:     basestring
+        :param updates:         dictionary of updates to apply
+        :type  updates:         dict
         """
         cls.validate_importer(repo_id, importer_id)
 
+        # legacy logic that can't be explained
         if 'override_config' in updates:
             updates['kwargs'] = {'overrides': updates.pop('override_config')}
 
@@ -90,10 +116,12 @@ class RepoSyncScheduleManager(object):
         """
         Delete a scheduled sync from a given repository and importer.
 
-        :param repo_id:
-        :param importer_id:
-        :param schedule_id:
-        :return:
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param importer_id:     unique ID for an importer
+        :type  importer_id:     basestring
+        :param schedule_id:     unique ID for a schedule
+        :type  schedule_id:     basestring
         """
         # validate the input
         cls.validate_importer(repo_id, importer_id)
@@ -103,6 +131,16 @@ class RepoSyncScheduleManager(object):
 
     @staticmethod
     def validate_importer(repo_id, importer_id):
+        """
+        Validate that the importer exists for the specified repo
+
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param importer_id:     unique ID for an importer
+        :type  importer_id:     basestring
+
+        :raise: pulp.server.exceptions.MissingResource
+        """
         # make sure the passed in importer id matches the current importer on the repo
         importer_manager = managers_factory.repo_importer_manager()
         importer = importer_manager.get_importer(repo_id)
@@ -113,6 +151,18 @@ class RepoSyncScheduleManager(object):
 class RepoPublishScheduleManager(object):
     @classmethod
     def list(cls, repo_id, distributor_id):
+        """
+        Returns an iterator of ScheduledCall instances that represent schedules
+        for the specified repo and distributor.
+
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for an distributor
+        :type  distributor_id:  basestring
+
+        :return:    iterator of ScheduledCall instances
+        :rtype:     iterator
+        """
         cls.validate_distributor(repo_id, distributor_id)
 
         return utils.get_by_resource(RepoDistributor.build_resource_tag(repo_id, distributor_id))
@@ -122,11 +172,24 @@ class RepoPublishScheduleManager(object):
         """
         Create a new scheduled publish for the given repository and distributor.
 
-        :param repo_id:
-        :param distributor_id:
-        :param publish_options:
-        :param schedule_data:
-        :return:
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for an distributor
+        :type  distributor_id:  basestring
+        :param publish_options: dictionary that contains the key 'override_config',
+                                whose value should be passed as the 'overrides'
+                                parameter to the publish task. This wasn't originally
+                                documented, so it isn't clear why overrides value
+                                couldn't be passed directly.
+        :type  sync_options:    dict
+        :param schedule_data:   dictionary that contains the key 'schedule', whose
+                                value is an ISO8601 string. This wasn't originally
+                                documented, so it isn't clear why the string itself
+                                couldn't have been passed directly.
+        :type  schedule_data:   dict
+
+        :return:    new schedule instance
+        :rtype:     pulp.server.db.model.dispatch.ScheduledCall
         """
         # validate the input
         cls.validate_distributor(repo_id, distributor_id)
@@ -142,6 +205,13 @@ class RepoPublishScheduleManager(object):
                                  kwargs=kwargs, resource=resource)
         schedule.save()
 
+        try:
+            cls.validate_distributor(repo_id, distributor_id)
+        except exceptions.MissingResource:
+            # back out of this whole thing, since the distributor disappeared
+            utils.delete(schedule.id)
+            raise
+
         return schedule
 
     @classmethod
@@ -149,12 +219,14 @@ class RepoPublishScheduleManager(object):
         """
         Update an existing scheduled publish for the given repository and distributor.
 
-        :param repo_id:
-        :param distributor_id:
-        :param schedule_id:
-        :param publish_options:
-        :param schedule_data:
-        :return:
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for a distributor
+        :type  distributor_id:  basestring
+        :param schedule_id:     unique ID for a schedule
+        :type  schedule_id:     basestring
+        :param updates:         dictionary of updates to apply
+        :type  updates:         dict
         """
 
         cls.validate_distributor(repo_id, distributor_id)
@@ -170,10 +242,12 @@ class RepoPublishScheduleManager(object):
         """
         Delete an existing scheduled publish from the given repository and distributor.
 
-        :param repo_id:
-        :param distributor_id:
-        :param schedule_id:
-        :return:
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for a distributor
+        :type  distributor_id:  basestring
+        :param schedule_id:     unique ID for a schedule
+        :type  schedule_id:     basestring
         """
         # validate the input
         cls.validate_distributor(repo_id, distributor_id)
@@ -183,5 +257,15 @@ class RepoPublishScheduleManager(object):
 
     @staticmethod
     def validate_distributor(repo_id, distributor_id):
+        """
+        Validate that the distributor exists for the specified repo
+
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for a distributor
+        :type  distributor_id:  basestring
+
+        :raise: pulp.server.exceptions.MissingResource
+        """
         distributor_manager = managers_factory.repo_distributor_manager()
         distributor_manager.get_distributor(repo_id, distributor_id)
