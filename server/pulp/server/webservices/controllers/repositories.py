@@ -287,6 +287,7 @@ class RepoResource(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('update')]
         async_result = update_repo_and_plugins.apply_async_with_reservation(
+                                                            dispatch_constants.RESOURCE_REPOSITORY_TYPE,
                                                             repo_id,
                                                             [repo_id, delta],
                                                             {'importer_config': importer_config,
@@ -327,7 +328,8 @@ class RepoImporters(JSONController):
 
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('add_importer')]
-        async_result = set_importer.apply_async_with_reservation(repo_id,
+        async_result = set_importer.apply_async_with_reservation(dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                                 repo_id,
                                                                  [repo_id, importer_type],
                                                                  {'repo_plugin_config': importer_config},
                                                                  tags=tags)
@@ -360,9 +362,11 @@ class RepoImporter(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('delete_importer')]
 
-        async_result = remove_importer.apply_async_with_reservation(repo_id,
-                                                                    [repo_id],
-                                                                    tags=tags)
+        async_result = remove_importer.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                repo_id,
+                                                [repo_id],
+                                                tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
@@ -382,10 +386,11 @@ class RepoImporter(JSONController):
                 action_tag('update_importer')]
 
         async_result = update_importer_config.apply_async_with_reservation(
-                                                            repo_id,
-                                                            [repo_id],
-                                                            {'importer_config': importer_config},
-                                                            tags=tags)
+                                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                    repo_id,
+                                                    [repo_id],
+                                                    {'importer_config': importer_config},
+                                                    tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
@@ -557,12 +562,13 @@ class RepoDistributors(JSONController):
                                      distributor_id))
 
         async_result = add_distributor.apply_async_with_reservation(
-                                                        repo_id,
-                                                        [repo_id, distributor_type],
-                                                        {'repo_plugin_config': distributor_config,
-                                                         'auto_publish': auto_publish,
-                                                         'distributor_id': distributor_id},
-                                                        tags=tags)
+                                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                    repo_id,
+                                                    [repo_id, distributor_type],
+                                                    {'repo_plugin_config': distributor_config,
+                                                     'auto_publish': auto_publish,
+                                                     'distributor_id': distributor_id},
+                                                    tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
@@ -923,6 +929,7 @@ class RepoAssociate(JSONController):
                 action_tag('associate')]
 
         async_result = associate_from_repo.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
                                                 dest_repo_id,
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
@@ -953,10 +960,11 @@ class RepoUnassociate(JSONController):
                 action_tag('unassociate')]
 
         async_result = unassociate_by_criteria.apply_async_with_reservation(
-                    repo_id,
-                    [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
-                     manager_factory.principal_manager().get_principal()['login']],
-                    tags=tags)
+                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                    repo_id,
+                                    [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
+                                     manager_factory.principal_manager().get_principal()['login']],
+                                    tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
@@ -985,6 +993,7 @@ class RepoImportUpload(JSONController):
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('import_upload')]
         async_result = import_uploaded_unit.apply_async_with_reservation(
+                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
                                     repo_id,
                                     [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
                                     tags=tags)
@@ -1087,9 +1096,10 @@ class ContentApplicabilityRegeneration(JSONController):
 
         regeneration_tag = action_tag('content_applicability_regeneration')
         async_result = regenerate_applicability_for_repos.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-            (repo_criteria.as_dict(),),
-            tags=[regeneration_tag])
+                            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                            dispatch_constants.RESOURCE_ANY_ID,
+                            (repo_criteria.as_dict(),),
+                            tags=[regeneration_tag])
         call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 

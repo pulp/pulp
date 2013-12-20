@@ -302,6 +302,7 @@ class PublishAction(JSONController):
         ]
 
         async_result = publish.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE,
                                                 repo_group_id,
                                                 args=[repo_group_id, distributor_id],
                                                 kwargs={'publish_config_override' : overrides},

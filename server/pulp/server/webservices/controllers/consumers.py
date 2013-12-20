@@ -672,9 +672,10 @@ class ContentApplicabilityRegeneration(JSONController):
 
         tags = [action_tag('content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-            (consumer_criteria.as_dict(),),
-            tags=tags)
+                                dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                dispatch_constants.RESOURCE_ANY_ID,
+                                (consumer_criteria.as_dict(),),
+                                tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 

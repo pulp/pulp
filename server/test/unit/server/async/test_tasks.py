@@ -446,15 +446,18 @@ class TestTask(ResourceReservationTests):
         some_args = [1, 'b', 'iii']
         some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': RESERVED_WORKER_1}
         resource_id = 'three_to_get_ready'
+        resource_type = 'reserve_me'
         task = tasks.Task()
 
-        async_result = task.apply_async_with_reservation(resource_id, *some_args, **some_kwargs)
+        async_result = task.apply_async_with_reservation(resource_type, resource_id,
+                                                         *some_args, **some_kwargs)
 
         self.assertEqual(async_result, mock_async_result)
-        _reserve_resource.assert_called_once_with((resource_id,),
+        expected_resource_id = ":".join([resource_type, resource_id])
+        _reserve_resource.assert_called_once_with((expected_resource_id,),
                                                   queue=tasks.RESOURCE_MANAGER_QUEUE)
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
-        _queue_release_resource.apply_async.assert_called_once_with((resource_id,),
+        _queue_release_resource.apply_async.assert_called_once_with((expected_resource_id,),
                                                                     queue=RESERVED_WORKER_1)
 
     @mock.patch('pulp.server.async.tasks.Task.request')
