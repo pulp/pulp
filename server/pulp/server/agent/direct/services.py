@@ -36,8 +36,8 @@ log = getLogger(__name__)
 class Services:
     """
     Agent services.
-    :cvar CTAG: The RMI correlation.
-    :type CTAG: str
+    :cvar REPLY_QUEUE: The agent RMI reply queue.
+    :type REPLY_QUEUE: str
     :cvar watchdog: Asynchronous RMI watchdog.
     :type watchdog: WatchDog
     :cvar reply_handler: Asynchronous RMI reply listener.
@@ -50,7 +50,7 @@ class Services:
     reply_handler = None
     heartbeat_listener = None
 
-    CTAG = 'pulp.task'
+    REPLY_QUEUE = 'pulp.task'
 
     @staticmethod
     def init():
@@ -175,7 +175,7 @@ class ReplyHandler(Listener):
             manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
 
     def __init__(self, url):
-        queue = Queue(Services.CTAG)
+        queue = Queue(Services.REPLY_QUEUE)
         self.consumer = ReplyConsumer(queue, url=url)
 
     def start(self, watchdog):

@@ -69,7 +69,7 @@ class TestContext(TestCase):
         self.assertEqual(context.url, pulp_conf.get('messaging', 'url'))
         self.assertEqual(context.secret, secret)
         self.assertEqual(context.details, CONTEXT_DETAILS)
-        self.assertEqual(context.ctag, Services.CTAG)
+        self.assertEqual(context.reply_queue, Services.REPLY_QUEUE)
         self.assertEqual(context.watchdog, Services.watchdog)
 
 

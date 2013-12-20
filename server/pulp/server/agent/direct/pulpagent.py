@@ -13,6 +13,22 @@
 
 """
 Contains (proxy) classes that represent the pulp agent.
+The purpose of the proxy is the insulate pulp from the implementation
+of making agent requests.  The context bundles together all of the information
+needed to invoke the remote method on the agent and where the asynchronous reply
+is to be sent.  Further, gofer supports including arbitrary information to be
+round tripped.  This is contextual information that the asynchronous reply handler
+will need to process the reply.  We include such things as: The task_id and in
+some cases DB entity IDs so we can update the DB based on the result of the
+operation on the agent.  The context also generates the shared secret which is
+included in the RMI request.  Shared secret authentication one of the built-in
+authentication mechanisms supported by gofer.
+
+Agent request flow:
+- Invoke the RMI
+- Work performed on the consumer.
+- The agent sends the RMI result to the reply queue.
+- The pulp reply consumer updates the DB as needed.
 """
 
 from logging import getLogger
@@ -124,7 +140,7 @@ class Consumer(object):
             url=context.url,
             timeout=context.get_timeout('bind_timeout'),
             secret=context.secret,
-            ctag=context.ctag,
+            ctag=context.reply_queue,
             watchdog=context.watchdog,
             any=context.details)
         consumer = agent.Consumer()
@@ -149,7 +165,7 @@ class Consumer(object):
             url=context.url,
             timeout=context.get_timeout('unbind_timeout'),
             secret=context.secret,
-            ctag=context.ctag,
+            ctag=context.reply_queue,
             watchdog=context.watchdog,
             any=context.details)
         consumer = agent.Consumer()
@@ -180,7 +196,7 @@ class Content(object):
             url=context.url,
             timeout=context.get_timeout('install_timeout'),
             secret=context.secret,
-            ctag=context.ctag,
+            ctag=context.reply_queue,
             watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
@@ -205,7 +221,7 @@ class Content(object):
             url=context.url,
             timeout=context.get_timeout('update_timeout'),
             secret=context.secret,
-            ctag=context.ctag,
+            ctag=context.reply_queue,
             watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
@@ -230,7 +246,7 @@ class Content(object):
             url=context.url,
             timeout=context.get_timeout('uninstall_timeout'),
             secret=context.secret,
-            ctag=context.ctag,
+            ctag=context.reply_queue,
             watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()

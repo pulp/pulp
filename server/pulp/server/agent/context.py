@@ -20,8 +20,16 @@ from pulp.server.agent.direct.services import Services
 
 class Context(object):
     """
-    The remote method invocation context provides call
-    context sensitive options and settings.
+    The context bundles together all of the information needed to invoke the
+    remote method on the agent and where the asynchronous reply is to be sent.
+    Further, gofer supports including arbitrary information to be round tripped.
+    This is contextual information that the asynchronous reply handler will need
+    to process the reply.  The content also determines the agent UUID based on the
+    consumer ID.  It also generates the shared secret based on the SHA256 hex
+    digest of the consumer certificate. We include such things as: The task_id and in
+    some cases DB entity IDs so we can update the DB based on the result of the
+    operation on the agent.
+
     :ivar uuid: The agent UUID.
     :type uiud: str
     :ivar url: The broker URL.
@@ -33,8 +41,8 @@ class Context(object):
     :type round_tripped: object
     :ivar watchdog: A gofer watchdog object.  Used to track overdue requests.
     :type watchdog: gofer.rmi.async.Watchdog
-    :ivar ctag: The reply correlation tag.
-    :type ctag: str
+    :ivar reply_queue: The reply queue name.
+    :type reply_queue: str
     """
 
     def __init__(self, consumer, **details):
@@ -50,7 +58,7 @@ class Context(object):
         self.secret = hash.hexdigest()
         self.details = details
         self.watchdog = Services.watchdog
-        self.ctag = Services.CTAG
+        self.reply_queue = Services.REPLY_QUEUE
 
     @staticmethod
     def get_timeout(option):
