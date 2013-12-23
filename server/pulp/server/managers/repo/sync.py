@@ -33,7 +33,7 @@ from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
-from pulp.server.async.tasks import graceful_cancel, Task
+from pulp.server.async.tasks import register_sigterm_handler, Task
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
@@ -156,10 +156,10 @@ class RepoSyncManager(object):
         result = None
 
         try:
-            # Replace the Importer's sync_repo() method with our graceful_cancel decorator, which
-            # will set up cancel_sync_repo() as the target for the signal handler
-            sync_repo = graceful_cancel(importer_instance.sync_repo,
-                                        importer_instance.cancel_sync_repo)
+            # Replace the Importer's sync_repo() method with our register_sigterm_handler decorator,
+            # which will set up cancel_sync_repo() as the target for the signal handler
+            sync_repo = register_sigterm_handler(importer_instance.sync_repo,
+                                                 importer_instance.cancel_sync_repo)
             sync_report = sync_repo(transfer_repo, conduit, call_config)
 
         except Exception, e:

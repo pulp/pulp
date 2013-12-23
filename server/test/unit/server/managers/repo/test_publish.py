@@ -58,8 +58,10 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Setup
         publish_config = {'foo' : 'bar'}
         self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config, False, distributor_id='dist-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config, False, distributor_id='dist-2')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config,
+                                                 False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config,
+                                                 False, distributor_id='dist-2')
 
         # Test
         self.publish_manager.publish('repo-1', 'dist-1', None)
@@ -67,7 +69,8 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Verify
 
         #   Database
-        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'dist-1'})
+        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' :'repo-1',
+                                                                      'id' :'dist-1'})
         self.assertTrue(repo_distributor['last_publish'] is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
@@ -621,18 +624,18 @@ class TestDoPublish(base.PulpAsyncServerTests):
         RepoDistributor.get_collection().remove()
         RepoPublishResult.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo.publish.graceful_cancel',
-                side_effect=tasks.graceful_cancel)
-    def test_wraps_publish_in_graceful_cancel(self, graceful_cancel):
+    @mock.patch('pulp.server.managers.repo.publish.register_sigterm_handler',
+                side_effect=tasks.register_sigterm_handler)
+    def test_wraps_publish_in_register_sigterm_handler(self, register_sigterm_handler):
         """
         Assert that the distributor's publish_repo() method is wrapped by
-        pulp.server.async.tasks.graceful_cancel.
+        pulp.server.async.tasks.register_sigterm_handler.
         """
         def publish_repo(self, *args, **kwargs):
             """
             This method will be attached to the distributor_instance, and will allow us to assert
-            that the graceful_cancel is called before the publish_repo is called. We can tell
-            because inside here the SIGTERM handler has been altered.
+            that the register_sigterm_handler is called before the publish_repo is called. We can
+            tell because inside here the SIGTERM handler has been altered.
             """
             signal_handler = signal.getsignal(signal.SIGTERM)
             self.assertNotEqual(signal_handler, starting_term_handler)
@@ -661,7 +664,7 @@ class TestDoPublish(base.PulpAsyncServerTests):
         publish_manager.RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
                                                        transfer_repo, conduit, call_config)
 
-        graceful_cancel.assert_called_once_with(publish_repo,
+        register_sigterm_handler.assert_called_once_with(publish_repo,
                                                 distributor_instance.cancel_publish_repo)
         # Make sure the TERM handler is set back to normal
         self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)

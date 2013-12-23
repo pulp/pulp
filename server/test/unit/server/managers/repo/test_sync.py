@@ -611,17 +611,17 @@ class TestDoSync(base.PulpAsyncServerTests):
         RepoSyncResult.get_collection().remove()
         MockRepoPublishManager.reset()
 
-    @mock.patch('pulp.server.managers.repo.sync.graceful_cancel',
-                side_effect=tasks.graceful_cancel)
-    def test_wraps_publish_in_graceful_cancel(self, graceful_cancel):
+    @mock.patch('pulp.server.managers.repo.sync.register_sigterm_handler',
+                side_effect=tasks.register_sigterm_handler)
+    def test_wraps_publish_in_register_sigterm_handler(self, register_sigterm_handler):
         """
-        Assert that the importer's sync_repo() method gets wrapped by the graceful_cancel decorator
-        before it is run.
+        Assert that the importer's sync_repo() method gets wrapped by the register_sigterm_handler
+        decorator before it is run.
         """
         def sync_repo(self, *args, **kwargs):
             """ 
             This method will be attached to the importer_instance, and will allow us to assert
-            that the graceful_cancel is called before the sync_repo is called. We can tell
+            that the register_sigterm_handler is called before the sync_repo is called. We can tell
             because inside here the SIGTERM handler has been altered.
             """
             signal_handler = signal.getsignal(signal.SIGTERM)
@@ -649,7 +649,7 @@ class TestDoSync(base.PulpAsyncServerTests):
         repo_sync_manager.RepoSyncManager._do_sync(repo, importer_instance,
                                                    transfer_repo, conduit, call_config)
 
-        graceful_cancel.assert_called_once_with(sync_repo,
+        register_sigterm_handler.assert_called_once_with(sync_repo,
                                                 importer_instance.cancel_sync_repo)
         # Make sure the TERM handler is set back to normal
         self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
@@ -666,7 +666,8 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),
-                                       dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '',
-                                       RepoSyncResult.RESULT_SUCCESS)
+    r = RepoSyncResult.expected_result(
+        repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),
+        dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '',
+        RepoSyncResult.RESULT_SUCCESS)
     RepoSyncResult.get_collection().save(r, safe=True)

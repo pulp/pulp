@@ -572,13 +572,13 @@ class TestCancel(PulpServerTests):
         self.assertTrue(task_id in logger.info.mock_calls[0][1][0])
 
 
-class TestGracefulCancel(unittest.TestCase):
+class TestRegisterSigtermHandler(unittest.TestCase):
     """
-    Test the graceful_cancel() decorator.
+    Test the register_sigterm_handler() decorator.
     """
     def test_error_case(self):
         """
-        Make sure that graceful_cancel() does the right thing during the error case.
+        Make sure that register_sigterm_handler() does the right thing during the error case.
         """
         class FakeException(Exception):
             """
@@ -601,8 +601,9 @@ class TestGracefulCancel(unittest.TestCase):
             self.assertEqual(args, some_args)
             self.assertEqual(kwargs, some_kwargs)
             # We can't assert that our mock cancel method below is the handler, because the real
-            # handler is the cancel inside of graceful_cancel. What we can do is to assert that the
-            # signal handler has changed, and that calling the signal handler calls our mock cancel.
+            # handler is the cancel inside of register_sigterm_handler. What we can do is to assert
+            # that the signal handler has changed, and that calling the signal handler calls our
+            # mock cancel.
             signal_handler = signal.getsignal(signal.SIGTERM)
             self.assertNotEqual(signal_handler, starting_term_handler)
             # Now let's call the signal handler and make sure that cancel() gets called.
@@ -615,7 +616,7 @@ class TestGracefulCancel(unittest.TestCase):
         f = mock.MagicMock(side_effect=f)
         cancel = mock.MagicMock()
         starting_term_handler = signal.getsignal(signal.SIGTERM)
-        wrapped_f = tasks.graceful_cancel(f, cancel)
+        wrapped_f = tasks.register_sigterm_handler(f, cancel)
         # So far, the signal handler should still be the starting one
         self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
         some_args = (1, 'b', 4)
@@ -633,7 +634,7 @@ class TestGracefulCancel(unittest.TestCase):
 
     def test_normal_case(self):
         """
-        Make sure that graceful_cancel() does the right thing during the normal case.
+        Make sure that register_sigterm_handler() does the right thing during the normal case.
         """
         def f(*args, **kwargs):
             """
@@ -643,8 +644,9 @@ class TestGracefulCancel(unittest.TestCase):
             self.assertEqual(args, some_args)
             self.assertEqual(kwargs, some_kwargs)
             # We can't assert that our mock cancel method below is the handler, because the real
-            # handler is the cancel inside of graceful_cancel. What we can do is to assert that the
-            # signal handler has changed, and that calling the signal handler calls our mock cancel.
+            # handler is the cancel inside of register_sigterm_handler. What we can do is to assert
+            # that the signal handler has changed, and that calling the signal handler calls our
+            # mock cancel.
             signal_handler = signal.getsignal(signal.SIGTERM)
             self.assertNotEqual(signal_handler, starting_term_handler)
             # Now let's call the signal handler and make sure that cancel() gets called.
@@ -657,7 +659,7 @@ class TestGracefulCancel(unittest.TestCase):
         f = mock.MagicMock(side_effect=f)
         cancel = mock.MagicMock()
         starting_term_handler = signal.getsignal(signal.SIGTERM)
-        wrapped_f = tasks.graceful_cancel(f, cancel)
+        wrapped_f = tasks.register_sigterm_handler(f, cancel)
         # So far, the signal handler should still be the starting one
         self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
         some_args = (1, 'b', 4)
