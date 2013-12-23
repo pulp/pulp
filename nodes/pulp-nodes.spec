@@ -134,10 +134,13 @@ Pulp nodes common modules.
 %dir %{python_sitelib}/pulp_node
 %dir %{python_sitelib}/pulp_node/extensions
 %{_bindir}/pulp-gen-nodes-certificate
-%config(noreplace) %{_sysconfdir}/pulp/nodes.conf
 %{python_sitelib}/pulp_node/extensions/__init__.py*
 %{python_sitelib}/pulp_node/*.py*
 %{python_sitelib}/pulp_node_common*.egg-info
+%defattr(640,root,apache,-)
+# The nodes.conf file contains OAuth secrets, so we don't want it to be world readable
+%config(noreplace) %{_sysconfdir}/pulp/nodes.conf
+%defattr(-,root,root,-)
 %doc
 
 %post common
@@ -164,14 +167,15 @@ Pulp parent nodes support.
 
 %files parent
 %defattr(-,root,root,-)
-%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
-%defattr(-,apache,apache,-)
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
 %{python_sitelib}/pulp_node/profilers/
 %{python_sitelib}/pulp_node/distributors/
 %{python_sitelib}/pulp_node_parent*.egg-info
+%defattr(-,apache,apache,-)
 %{_var}/lib/pulp/nodes
 %{_var}/www/pulp/nodes
+%defattr(-,root,root,-)
 %doc
 
 
@@ -195,7 +199,10 @@ Pulp child nodes support.
 %{python_sitelib}/pulp_node_child*.egg-info
 %{_usr}/lib/pulp/plugins/types/nodes.json
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
+%defattr(640,root,apache,-)
+# We don't want the importer config to be world readable, since it can contain proxy passwords
 %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/
+%defattr(-,root,root,-)
 %doc
 
 

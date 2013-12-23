@@ -202,38 +202,41 @@ Obsoletes: pulp
 Pulp provides replication, access, and accounting for software repositories.
 
 %files server
-# root
+# - root:root
 %defattr(-,root,root,-)
-%{python_sitelib}/%{name}/server/
-%{python_sitelib}/%{name}/plugins/
-%{python_sitelib}/pulp_server*.egg-info
-%config(noreplace) %{_sysconfdir}/%{name}/server.conf
-%config(noreplace) %{_sysconfdir}/%{name}/logging/
+%config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
-%dir %{_sysconfdir}/%{name}/vhosts80
+%dir %{_sysconfdir}/pki/%{name}
+%dir %{_sysconfdir}/%{name}/content/sources/conf.d
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
-%dir %{_sysconfdir}/%{name}/content/sources/conf.d
+%config(noreplace) %{_sysconfdir}/%{name}/logging/
+%dir %{_sysconfdir}/%{name}/vhosts80
+%dir /srv/%{name}
+/srv/%{name}/webservices.wsgi
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
-%defattr(700,root,root,-)
-%config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
-%ghost %{_sysconfdir}/pki/%{name}/ca.key
-%ghost %{_sysconfdir}/pki/%{name}/ca.crt
-# apache
-%defattr(-,apache,apache,-)
-%dir /srv/%{name}
-%dir %{_var}/log/%{name}
-%dir %{_sysconfdir}/pki/%{name}
-%{_var}/lib/%{name}/
 %{_usr}/lib/%{name}/plugins/distributors
 %{_usr}/lib/%{name}/plugins/importers
 %{_usr}/lib/%{name}/plugins/profilers
 %{_usr}/lib/%{name}/plugins/catalogers
 %{_usr}/lib/%{name}/plugins/types
-/srv/%{name}/webservices.wsgi
+%{python_sitelib}/%{name}/server/
+%{python_sitelib}/%{name}/plugins/
+%{python_sitelib}/pulp_server*.egg-info
+# 640 root:apache
+%defattr(640,root,apache,-)
+%ghost %{_sysconfdir}/pki/%{name}/ca.key
+%ghost %{_sysconfdir}/pki/%{name}/ca.crt
+%config(noreplace) %{_sysconfdir}/%{name}/server.conf
+# - apache:apache
+%defattr(-,apache,apache,-)
+%dir %{_var}/log/%{name}
+%{_var}/lib/%{name}/
+# Install the docs
+%defattr(-,root,root,-)
 %doc README LICENSE
 
 %post server
