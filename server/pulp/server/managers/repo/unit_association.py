@@ -60,6 +60,7 @@ _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 logger = logging.getLogger(__name__)
 
 
+
 class RepoUnitAssociationManager(object):
     """
     Manager used to handle the associations between repositories and content
@@ -275,7 +276,8 @@ class RepoUnitAssociationManager(object):
                 transfer_source_repo, transfer_dest_repo, conduit, call_config,
                 units=transfer_units)
             unit_ids = [u.to_id_dict() for u in copied_units]
-            return unit_ids
+            return {'units_successful': unit_ids}
+
         except Exception:
             msg = _('Exception from importer [%(i)s] while importing units into repository [%(r)s]')
             msg = msg % {'i': dest_repo_importer['importer_type_id'], 'r': dest_repo_id}
@@ -370,12 +372,18 @@ class RepoUnitAssociationManager(object):
 
         if len(unassociate_units) is 0:
             return []
+        unit_map = {}  # maps unit_type_id to a list of unit_ids
 
-        unit_map = {} # maps unit_type_id to a list of unit_ids
-
+        units_without_permissions = []
+        units_with_permissions = []
+        # Filter out based on the owner so we can give a useful error
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
-            id_list.append(unit['unit_id'])
+            if unit['owner_id'] == owner_id and unit['owner_type'] == owner_type:
+                id_list.append(unit['unit_id'])
+                units_with_permissions.append(unit)
+            else:
+                units_without_permissions.append(unit)
 
         collection = RepoContentUnit.get_collection()
         repo_manager = manager_factory.repo_manager()
@@ -398,15 +406,21 @@ class RepoUnitAssociationManager(object):
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,
-        unit_type_ids = calculate_associated_type_ids(repo_id, unassociate_units)
-        transfer_units = create_transfer_units(unassociate_units, unit_type_ids)
+        unit_type_ids = calculate_associated_type_ids(repo_id, units_with_permissions)
+        transfer_units = create_transfer_units(units_with_permissions, unit_type_ids)
 
         if notify_plugins:
             remove_from_importer(repo_id, transfer_units)
 
         # Match the return type/format as copy
         serializable_units = [u.to_id_dict() for u in transfer_units]
-        return serializable_units
+
+        # Calculate the list of units that they don't have permission to update
+        bad_unit_type_ids = calculate_associated_type_ids(repo_id, units_without_permissions)
+        bad_transfer_units = create_transfer_units(units_without_permissions, bad_unit_type_ids)
+        non_removable_units = [u.to_id_dict() for u in bad_transfer_units]
+
+        return {'units_successful': serializable_units, 'units_failed': non_removable_units}
 
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):
