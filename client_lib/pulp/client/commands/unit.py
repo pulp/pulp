@@ -12,12 +12,12 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
-import functools
 
 from okaara.cli import CommandUsage
 import sys
 
 from pulp.client.extensions.core import COLOR_FAILURE
+from pulp.common import util
 from pulp.common.constants import DISPLAY_UNITS_DEFAULT_MAXIMUM
 from pulp.bindings.exceptions import BadRequestException
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand
@@ -163,7 +163,7 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
             if len(units_failed) > 0:
                 func_args = []
                 func_kwargs = {'color': COLOR_FAILURE}
-                error_prompt = functools.partial(self.prompt.write, *func_args, **func_kwargs)
+                error_prompt = util.partial(self.prompt.write, *func_args, **func_kwargs)
                 error_prompt(error_string)
                 # Display the units we were unable to remove
                 if unit_threshold_reached:
