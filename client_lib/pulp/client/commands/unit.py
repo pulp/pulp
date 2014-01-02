@@ -54,9 +54,25 @@ RETURN_COPY_ERROR_STRING = _('Error Copying Units:')
 
 
 class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
+    """
+    Generic command for removing units from a repository.  This provides the basis for
+    the remove actions that are performed by each repository type.
+    """
 
     def __init__(self, context, name='remove', description=DESC_REMOVE, method=None,
                  type_id=None, **kwargs):
+        """
+        :param context: client context
+        :type  context: pulp.client.extensions.core.ClientContext
+        :param name: The name of the command
+        :type name: str
+        :param description: the textual discription that will be displayed in the shell
+        :type description: str
+        :param method: method that will be fun when the command is invoked
+        :type  method: function
+        :param type_id: The type of units that this remove command supports
+        :type type_id: str
+        """
 
         # Handle odd constructor in UnitAssociationCriteriaCommand
         kwargs['name'] = name
@@ -74,6 +90,9 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
         self.max_units_displayed = DISPLAY_UNITS_DEFAULT_MAXIMUM
 
     def run(self, **kwargs):
+        """
+        Hook used to run the command.
+        """
         self.ensure_criteria(kwargs)
 
         repo_id = kwargs.pop(OPTION_REPO_ID.keyword)
@@ -106,6 +125,11 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
             user_input['type_ids'] = [self.type_id]
 
     def succeeded(self, task):
+        """
+        Hook that is called when a task completes successfully.
+        :param task: The task that was executing
+        :type task: task
+        """
         self.display_task_results(task, RETURN_REMOVE_SUCCESS_STRING, RETURN_REMOVE_ERROR_STRING)
 
     def display_task_results(self, task, success_string, error_string):
@@ -202,20 +226,40 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
 
 
 class UnitCopyCommand(UnitRemoveCommand):
+    """
+    Generic command for copying units from one repository to another
+    """
 
-    def __init__(self, context, name=None, description=DESC_COPY, method=None,
+    def __init__(self, context, name='copy', description=DESC_COPY, method=None,
                  type_id=None, **kwargs):
-        if name is None:
-            name = 'copy'
+        """
+        :param context: client context
+        :type  context: pulp.client.extensions.core.ClientContext
+        :param name: The name of the command
+        :type name: str
+        :param description: the textual discription that will be displayed in the shell
+        :type description: str
+        :param method: method that will be fun when the command is invoked
+        :type  method: function
+        :param type_id: The type of units that this remove command supports
+        :type type_id: str
+        """
         UnitRemoveCommand.__init__(self, context, name, description, method, type_id, **kwargs)
 
         self.add_option(OPTION_FROM_REPO)
         self.add_option(OPTION_TO_REPO)
 
     def add_repo_id_option(self):
+        """
+        Override the method from the criteria command so that we can prevent the
+        --repo-id option from being displayed as it is not relevant to this command
+        """
         pass  # use from-repo-id and to-repo-id instead
 
     def run(self, **kwargs):
+        """
+        Hook used to run the command.
+        """
         from_repo = kwargs['from-repo-id']
         to_repo = kwargs['to-repo-id']
 
@@ -238,6 +282,12 @@ class UnitCopyCommand(UnitRemoveCommand):
             raise e, None, sys.exc_info()[2]
 
     def succeeded(self, task):
+        """
+        Hook that is called when a task completes successfully.
+
+        :param task: The task that was executing
+        :type task: task
+        """
         self.display_task_results(task, RETURN_COPY_SUCCESS_STRING, RETURN_COPY_ERROR_STRING)
 
     def generate_override_config(self, **kwargs):
