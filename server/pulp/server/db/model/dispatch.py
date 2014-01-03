@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2013 Red Hat, Inc.
+# Copyright © 2011-2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -82,7 +82,7 @@ class ScheduledCall(Model):
     """
     Serialized scheduled call request
     """
-    USER_UPDATE_FIELDS = set(['iso_schedule', 'args', 'kwargs', 'enabled',
+    USER_UPDATE_FIELDS = frozenset(['iso_schedule', 'args', 'kwargs', 'enabled',
                           'failure_threshold'])
 
     collection_name = 'scheduled_calls'
