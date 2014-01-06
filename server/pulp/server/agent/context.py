@@ -24,7 +24,7 @@ class Context(object):
     remote method on the agent and where the asynchronous reply is to be sent.
     Further, gofer supports including arbitrary information to be round tripped.
     This is contextual information that the asynchronous reply handler will need
-    to process the reply.  The content also determines the agent UUID based on the
+    to process the reply.  The context also determines the agent UUID based on the
     consumer ID.  It also generates the shared secret based on the SHA256 hex
     digest of the consumer certificate. We include such things as: The task_id and in
     some cases DB entity IDs so we can update the DB based on the result of the
