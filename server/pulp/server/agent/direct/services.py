@@ -11,23 +11,15 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
-from threading import RLock
-from datetime import datetime as dt
-from datetime import timedelta
 from logging import getLogger
 
-from pulp.common import dateutils
 from pulp.server.config import config
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.managers import factory as managers
 from gofer.messaging.broker import Broker
-from gofer.messaging import Topic
-from gofer.messaging.consumer import Consumer
 from gofer.messaging import Queue
 from gofer.rmi.async import ReplyConsumer, Listener
 from gofer.rmi.async import WatchDog, Journal
-
 
 
 log = getLogger(__name__)
@@ -68,83 +60,10 @@ class Services:
         cls.watchdog = WatchDog(url=url, journal=journal)
         cls.watchdog.start()
         log.info('AMQP watchdog started')
-        # heartbeat
-        cls.heartbeat_listener = HeartbeatListener(url)
-        cls.heartbeat_listener.start()
-        log.info('AMQP heartbeat listener started')
         # asynchronous reply
         cls.reply_handler = ReplyHandler(url)
         cls.reply_handler.start(cls.watchdog)
         log.info('AMQP reply handler started')
-
-
-class HeartbeatListener(Consumer):
-    """
-    Agent heartbeat listener.
-    """
-
-    __status = {}
-    __mutex = RLock()
-
-    @classmethod
-    def status(cls, uuids=[]):
-        """
-        Get the agent heartbeat status.
-        :param uuids: An (optional) list of uuids to query.
-        :return: A tuple (status,last-heartbeat)
-        """
-        cls.__lock()
-        try:
-            now = dt.now(dateutils.utc_tz())
-            if not uuids:
-                uuids = cls.__status.keys()
-            d = {}
-            for uuid in uuids:
-                last = cls.__status.get(uuid)
-                if last:
-                    status = ( last[1] > now )
-                    heartbeat = last[0].isoformat()
-                    any = last[2]
-                else:
-                    status = False
-                    heartbeat = None
-                    any = {}
-                d[uuid] = (status, heartbeat, any)
-            return d
-        finally:
-            cls.__unlock()
-
-    @classmethod
-    def __lock(cls):
-        cls.__mutex.acquire()
-
-    @classmethod
-    def __unlock(cls):
-        cls.__mutex.release()
-
-    def __init__(self, url):
-        topic = Topic('heartbeat')
-        Consumer.__init__(self, topic, url=url)
-
-    def dispatch(self, envelope):
-        try:
-            self.__update(envelope.heartbeat)
-        except:
-            log.error(envelope, exec_info=True)
-        self.ack()
-
-    def __update(self, body):
-        self.__lock()
-        try:
-            log.debug(body)
-            uuid = body.pop('uuid')
-            next = body.pop('next')
-            last = dt.now(dateutils.utc_tz())
-            next = int(next*1.20)
-            next = last+timedelta(seconds=next)
-            self.__status[uuid] = (last, next, body)
-        finally:
-            self.__unlock()
 
 
 class ReplyHandler(Listener):

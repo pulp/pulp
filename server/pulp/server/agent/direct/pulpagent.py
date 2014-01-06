@@ -75,17 +75,6 @@ class PulpAgent(object):
         """
         return Profile()
 
-    @classmethod
-    def status(cls, uuids):
-        """
-        Get the status of the agent.
-        Relies on heartbeat.
-        :param uuids: A list of uuids.
-        :type uuids: list
-        :return: {}
-        """
-        return Services.heartbeat_listener.status(uuids)
-
     @staticmethod
     def cancel(context, task_id):
         """

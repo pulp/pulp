@@ -150,45 +150,6 @@ class Conduit(HandlerConduit):
 # --- actions ----------------------------------------------------------------
 
 
-class Heartbeat:
-    """
-    Provide agent heartbeat.
-    """
-
-    __producer = None
-
-    @classmethod
-    def producer(cls):
-        """
-        Get the cached producer.
-        :return: A producer.
-        :rtype: Producer
-        """
-        if not cls.__producer:
-            broker = plugin.getbroker()
-            url = str(broker.url)
-            cls.__producer = Producer(url=url)
-        return cls.__producer
-
-    @remote
-    @action(seconds=cfg.heartbeat.seconds)
-    def send(self):
-        """
-        Send the heartbeat.
-        The delay defines when the next heartbeat
-        should be expected.
-        """
-        topic = Topic('heartbeat')
-        delay = int(cfg.heartbeat.seconds)
-        bundle = ConsumerX509Bundle()
-        consumer_id = bundle.cn()
-        if consumer_id:
-            p = self.producer()
-            body = dict(uuid=consumer_id, next=delay)
-            p.send(topic, ttl=delay, heartbeat=body)
-        return consumer_id
-
-
 class RegistrationMonitor:
     """
     Monitor the registration (consumer) certificate for changes.

@@ -25,7 +25,7 @@ from pulp.devel import mock_agent
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
-from pulp.server.agent.direct.services import HeartbeatListener, Services, ReplyHandler
+from pulp.server.agent.direct.services import Services, ReplyHandler
 
 
 REPO_ID = 'repo_1'
@@ -129,26 +129,6 @@ class TestAgent(PulpServerTests):
         print agent.profile.send(CONTEXT)
         # Verify
         mock_agent.Profile.send.assert_called_once_with()
-
-    def test_status(self):
-        # Setup
-        listener = HeartbeatListener('queue')
-        envelope = Envelope(heartbeat=dict(uuid='A', next=10))
-        listener.dispatch(envelope)
-        # Test
-        result = PulpAgent.status(['A','B'])
-        # Verify
-        self.assertEqual(len(result), 2)
-        # A
-        alive, next_heartbeat, details = result['A']
-        self.assertTrue(alive)
-        self.assertTrue(isinstance(next_heartbeat, basestring))
-        self.assertTrue(isinstance(details, dict))
-        # B
-        alive, last_heartbeat, details = result['B']
-        self.assertFalse(alive)
-        self.assertTrue(last_heartbeat is None)
-        self.assertTrue(isinstance(details, dict))
 
     def test_cancel(self):
         # Test
@@ -392,10 +372,8 @@ class TestServices(TestCase):
         self.assertEqual(broker.clientcert, client_cert)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler')
-    @patch('pulp.server.agent.direct.services.HeartbeatListener')
     @patch('gofer.rmi.async.WatchDog')
-    def test_start(self, mock_watchdog, mock_heartbeat_listener, mock_reply_handler):
+    def test_start(self, mock_watchdog, mock_reply_handler):
         Services.start()
         mock_watchdog.start.assert_called()
-        mock_heartbeat_listener.start.assert_called()
         mock_reply_handler.start.assert_called()
