@@ -23,7 +23,6 @@ from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpDataException, PulpExecutionException
-from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.server.managers import factory
 
 

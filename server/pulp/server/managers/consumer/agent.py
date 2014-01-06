@@ -350,14 +350,10 @@ class AgentManager(object):
         agent_bindings = []
         for binding in bindings:
             manager = managers.repo_distributor_manager()
-            try:
-                distributor = manager.get_distributor(
-                    binding['repo_id'],
-                    binding['distributor_id'])
-                type_id = distributor['distributor_type_id']
-            except MissingResource:
-                # may have been deleted
-                type_id = None
+            distributor = manager.get_distributor(
+                binding['repo_id'],
+                binding['distributor_id'])
+            type_id = distributor['distributor_type_id']
             agent_binding = dict(type_id=type_id, repo_id=binding['repo_id'])
             agent_bindings.append(agent_binding)
         return agent_bindings
