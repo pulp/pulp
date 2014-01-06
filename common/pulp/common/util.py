@@ -46,3 +46,10 @@ def ensure_utf_8(s):
         s = s.decode('iso-8859-1')
     u = s.encode('utf-8')
     return u
+
+
+def partial(func, *args, **kwds):
+    """
+    Python 2.4 doesn't provide functools so provide our own version of the partial method
+    """
+    return lambda *fargs, **fkwds: func(*(args+fargs), **dict(kwds, **fkwds))

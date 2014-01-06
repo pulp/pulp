@@ -13,7 +13,7 @@
 
 import mock
 
-import base
+from ....base import PulpServerTests
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -41,9 +41,7 @@ TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
 MOCK_TYPE_DEF = model.TypeDefinition('mock-type', 'Mock Type', 'Used by the mock importer',
                                      ['key-1'], [], [])
 
-# -- cud test cases -----------------------------------------------------------
-
-class RepoUnitAssociationManagerTests(base.PulpServerTests):
+class RepoUnitAssociationManagerTests(PulpServerTests):
 
     def clean(self):
         super(RepoUnitAssociationManagerTests, self).clean()
@@ -215,7 +213,8 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_IMPORTER.import_units.return_value = [Unit('mock-type', {'k' : 'v'}, {}, '')]
 
         # Test
-        associated = self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+        results = self.manager.associate_from_repo(source_repo_id, dest_repo_id)
+        associated = results['units_successful']
 
         # Verify
         self.assertEqual(1, len(associated))
@@ -266,8 +265,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         criteria = UnitAssociationCriteria(type_ids=['mock-type'],
                                            unit_filters={'key-1' : 'unit-2'},
                                            unit_fields=['key-1', 'key-2'])
-        associated = self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria,
+        results = self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria,
                                                       import_config_override=overrides)
+        associated = results['units_successful']
 
         # Verify
         self.assertEqual(1, len(associated))
@@ -463,9 +463,10 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertEqual(4, len(list(unit_coll.find({'repo_id' : self.repo_id}))))
 
         # Test
-        unassociated = self.manager.unassociate_all_by_ids(self.repo_id, self.unit_type_id,
+        results = self.manager.unassociate_all_by_ids(self.repo_id, self.unit_type_id,
                                                            [self.unit_id, self.unit_id_2],
                                                            OWNER_TYPE_USER, 'admin')
+        unassociated = results['units_successful']
 
         # Verify
         self.assertEqual(len(unassociated), 2)

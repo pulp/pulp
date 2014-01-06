@@ -31,8 +31,7 @@ def filter_available_queues(criteria):
     """
     available_queues = resources.AvailableQueue.get_collection().query(criteria)
     for q in available_queues:
-        yield resources.AvailableQueue(name=q['_id'],
-                                       num_reservations=q['num_reservations'])
+        yield resources.AvailableQueue.from_bson(q)
 
 
 def get_least_busy_available_queue():
@@ -50,8 +49,7 @@ def get_least_busy_available_queue():
         msg = _('There are no available queues in the system for reserved task work.')
         raise NoAvailableQueues(msg)
 
-    return resources.AvailableQueue(name=available_queue['_id'],
-                                    num_reservations=available_queue['num_reservations'])
+    return resources.AvailableQueue.from_bson(available_queue)
 
 
 def get_or_create_available_queue(name):
@@ -65,10 +63,10 @@ def get_or_create_available_queue(name):
     :rtype:      pulp.server.db.model.resources.AvailableQueue
     """
     available_queue = resources.AvailableQueue.get_collection().find_and_modify(
-        query={'_id': name}, update={'$setOnInsert': {'num_reservations': 0}},
+        query={'_id': name},
+        update={'$setOnInsert': {'num_reservations': 0, 'missing_since': None}},
         upsert=True, new=True)
-    return resources.AvailableQueue(name=available_queue['_id'],
-                                    num_reservations=available_queue['num_reservations'])
+    return resources.AvailableQueue.from_bson(available_queue)
 
 
 def get_or_create_reserved_resource(name):

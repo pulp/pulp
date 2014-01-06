@@ -30,3 +30,6 @@ REPO_HISTORY_FILTER_LIMIT = 'limit'
 REPO_HISTORY_FILTER_SORT = 'sort'
 REPO_HISTORY_FILTER_START_DATE = 'start_date'
 REPO_HISTORY_FILTER_END_DATE = 'end_date'
+
+# Maximum number of units that should be displayed at one time by the command line
+DISPLAY_UNITS_DEFAULT_MAXIMUM = 100

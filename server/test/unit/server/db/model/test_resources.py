@@ -13,6 +13,7 @@
 """
 This module contains tests for the pulp.server.db.model.resources module.
 """
+from datetime import datetime
 import mock
 
 from ....base import ResourceReservationTests
@@ -29,13 +30,16 @@ class TestAvailableQueue(ResourceReservationTests):
         """
         Test the __init__() method.
         """
-        aq = resources.AvailableQueue('some_name', 7)
+        now = datetime.utcnow()
+
+        aq = resources.AvailableQueue('some_name', 7, now)
 
         # The superclass __init__ should have been called
         super_init.assert_called_once_with(aq)
         # Make sure the attributes are correct
         self.assertEqual(aq.name, 'some_name')
         self.assertEqual(aq.num_reservations, 7)
+        self.assertEqual(aq.missing_since, now)
         self.assertEqual('_id' in aq, False)
         self.assertEqual('id' in aq, False)
 
@@ -53,6 +57,8 @@ class TestAvailableQueue(ResourceReservationTests):
         self.assertEqual(aq.name, 'some_name')
         # num_reservations should default to False
         self.assertEqual(aq.num_reservations, 0)
+        # missing_since defaults to None (meaning that it is not missing)
+        self.assertEqual(aq.missing_since, None)
         self.assertEqual('_id' in aq, False)
         self.assertEqual('id' in aq, False)
 
@@ -97,6 +103,31 @@ class TestAvailableQueue(ResourceReservationTests):
         self.assertEqual(aqc.count(), 1)
         self.assertEqual(aqc.find_one({'_id': 'a_queue'})['num_reservations'], 0)
 
+    def test_decrement_num_reservations_updates_attributes(self):
+        """
+        Test decrement_num_reservations() when num_reservations is 1, while simulating another
+        process setting it to 5. It should decrement to 4, and it should update the attributes on
+        the instance.
+        """
+        aq = resources.AvailableQueue('a_queue', 1)
+        aq.save()
+        # Now let's simulate another process setting the num_reservations and missing_since
+        # attributes to other values
+        aqc = resources.AvailableQueue.get_collection()
+        missing_since = datetime(2013, 12, 16)
+        aqc.update({'_id': 'a_queue'}, {'num_reservations': 5, 'missing_since': missing_since})
+
+        aq.decrement_num_reservations()
+
+        # The instance should have been updated
+        self.assertEqual(aq.num_reservations, 4)
+        self.assertEqual(aq.missing_since, missing_since)
+        # The database should have also been updated
+        self.assertEqual(aqc.count(), 1)
+        aq_bson = aqc.find_one({'_id': 'a_queue'})
+        self.assertEqual(aq_bson['num_reservations'], 4)
+        self.assertEqual(aq_bson['missing_since'], missing_since)
+
     def test_delete(self):
         """
         Test delete().
@@ -109,6 +140,52 @@ class TestAvailableQueue(ResourceReservationTests):
         aq.delete()
 
         self.assertEqual(aqc.count(), 0)
+
+    def test_delete_with_reserved_resources(self):
+        """
+        Test delete() for a queue with a ReservedResource referencing it.
+        """
+        aq = resources.AvailableQueue('queue_with_a_reserved_resource')
+        aq.save()
+        aqc = resources.AvailableQueue.get_collection()
+        self.assertEqual(aqc.find({'_id': 'queue_with_a_reserved_resource'}).count(), 1)
+
+        # Create 3 resources, 2 referencing the queue to be deleted and the other with no queue references
+        rr1 = resources.ReservedResource('reserved_resource1', assigned_queue='queue_with_a_reserved_resource',
+                                        num_reservations=1)
+        rr2 = resources.ReservedResource('reserved_resource2', assigned_queue='queue_with_a_reserved_resource',
+                                        num_reservations=1)
+        rr = resources.ReservedResource('reserved_resource_no_queue', num_reservations=0)
+        rr1.save()
+        rr2.save()
+        rr.save()
+        rrc = resources.ReservedResource.get_collection()
+        self.assertEqual(rrc.count(), 3)
+        self.assertEqual(rrc.find({'assigned_queue':'queue_with_a_reserved_resource'}).count(), 2)
+
+        aq.delete()
+
+        # Make sure that only the resource with reference to the deleted queue is deleted
+        self.assertEqual(aqc.count(), 0)
+        self.assertEqual(rrc.count(), 1)
+        self.assertFalse(rrc.find_one({'_id':'reserved_resource_no_queue', 'num_reservations':0}) is None)
+
+    def test_from_bson(self):
+        """
+        Test from_bson().
+        """
+        missing_since = datetime(2013, 12, 16)
+        aq = resources.AvailableQueue('a_queue', 13, missing_since)
+        aq.save()
+        aqc = resources.AvailableQueue.get_collection()
+        aq_bson = aqc.find_one({'_id': 'a_queue'})
+
+        # Replace the aq reference with a newly instantiated AvailableQueue from our bson
+        aq = resources.AvailableQueue.from_bson(aq_bson)
+
+        self.assertEqual(aq.name, 'a_queue')
+        self.assertEqual(aq.num_reservations, 13)
+        self.assertEqual(aq.missing_since, missing_since)
 
     def test_increment_num_reservations(self):
         """
@@ -133,18 +210,47 @@ class TestAvailableQueue(ResourceReservationTests):
 
         self.assertRaises(base.DoesNotExist, aq.increment_num_reservations)
 
+    def test_increment_num_reservations_updates_attributes(self):
+        """
+        Test increment_num_reservations() when num_reservations is 1, while simulating another
+        process setting it to 5. It should increment to 6, and it should update the attributes on
+        the instance.
+        """
+        aq = resources.AvailableQueue('a_queue', 1)
+        aq.save()
+        # Now let's simulate another process setting the num_reservations and missing_since
+        # attributes to other values
+        aqc = resources.AvailableQueue.get_collection()
+        missing_since = datetime(2013, 12, 16)
+        aqc.update({'_id': 'a_queue'}, {'num_reservations': 5, 'missing_since': missing_since})
+
+        aq.increment_num_reservations()
+
+        # The instance should have been updated
+        self.assertEqual(aq.num_reservations, 6)
+        self.assertEqual(aq.missing_since, missing_since)
+        # The database should have also been updated
+        self.assertEqual(aqc.count(), 1)
+        aq_bson = aqc.find_one({'_id': 'a_queue'})
+        self.assertEqual(aq_bson['num_reservations'], 6)
+        self.assertEqual(aq_bson['missing_since'], missing_since)
+
     def test_save(self):
         """
         Test the save() method.
         """
-        aq = resources.AvailableQueue('a_queue', 13)
+        missing_since = datetime(2013, 12, 16)
+
+        aq = resources.AvailableQueue('a_queue', 13, missing_since)
 
         aq.save()
 
         # Make sure the DB has the correct data
         aqc = resources.AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 1)
-        self.assertEqual(aqc.find_one({'_id': 'a_queue'})['num_reservations'], 13)
+        saved_queue = aqc.find_one({'_id': 'a_queue'})
+        self.assertEqual(saved_queue['num_reservations'], 13)
+        self.assertEqual(saved_queue['missing_since'], missing_since)
 
 
 class TestReservedResource(ResourceReservationTests):
