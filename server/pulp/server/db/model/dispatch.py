@@ -311,8 +311,7 @@ class ScheduledCall(Model):
         Calculates and returns several time-related values that tend to be needed
         at the same time.
 
-        :return:    tuple of numbers, each of which is a float, except the last
-                    value which is an int
+        :return:    tuple of numbers described below...
                     now_s: current time as seconds since the epoch
                     first_run_s: time of the first run as seconds since the epoch,
                         calculated based on self.first_run

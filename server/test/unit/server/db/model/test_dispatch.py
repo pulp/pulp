@@ -15,6 +15,7 @@ Tests for the pulp.server.db.model.dispatch module.
 """
 from datetime import datetime, timedelta
 import pickle
+import time
 import unittest
 
 import bson
@@ -265,8 +266,90 @@ class TestScheduledCallForDisplay(unittest.TestCase):
         self.assertEqual(result['schedule'], as_dict['iso_schedule'])
 
 
-# TODO: finish testing this class
+@mock.patch('pulp.server.db.model.base.Model.get_collection')
+class TestScheduledCallSave(unittest.TestCase):
+    def test_existing(self, mock_get_collection):
+        mock_update = mock_get_collection.return_value.update
+        fake_id = bson.ObjectId()
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething', id=fake_id)
 
+        call.save()
+
+        mock_update.assert_called_once_with({'_id': fake_id}, call.as_dict())
+
+    def test_new(self, mock_get_collection):
+        mock_insert = mock_get_collection.return_value.insert
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
+
+        call.save()
+
+        mock_insert.assert_called_once_with(call.as_dict(), safe=True)
+        self.assertFalse(call._new)
+
+
+class TestScheduledCallCalculateTimes(unittest.TestCase):
+    def test_now(self):
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
+
+        now = call._calculate_times()[0]
+
+        # make sure this gives us a timestamp that reasonably represents "now"
+        self.assertTrue(time.time() - now < 1)
+
+    def test_first_run_now(self):
+        call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
+
+        first_run_s = call._calculate_times()[1]
+
+        # make sure this gives us a timestamp that reasonably represents "now"
+        self.assertTrue(time.time() - first_run_s < 1)
+
+    def test_first_run_scheduled(self):
+        call = ScheduledCall('2014-01-03T10:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        first_run_s = call._calculate_times()[1]
+
+        # make sure this gives us a timestamp for the date and time
+        # specified above
+        self.assertEqual(first_run_s, 1388744100)
+
+    def test_first_run_saved(self):
+        """
+        Test that when the first run is passed in from historical data.
+        """
+        call = ScheduledCall('PT1H', 'pulp.tasks.dosomething', first_run='2014-01-03T10:15Z')
+
+        first_run_s = call._calculate_times()[1]
+
+        # make sure this gives us a timestamp for the date and time
+        # specified above
+        self.assertEqual(first_run_s, 1388744100)
+
+    def test_since_first(self):
+        call = ScheduledCall('2014-01-03T10:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        since_first = call._calculate_times()[2]
+        now = time.time()
+
+        self.assertTrue(since_first + 1388744100 - now < 1)
+
+    def test_run_every(self):
+        call = ScheduledCall('2014-01-03T10:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        run_every_s = call._calculate_times()[3]
+
+        # 1 hour, as specified in the ISO8601 string above
+        self.assertEqual(run_every_s, 3600)
+
+    def test_last_scheduled_run(self):
+        pass
+
+    def test_expected_runs_zero(self):
+        call = ScheduledCall('PT1H', 'pulp.tasks.dosomething')
+
+        expected_runs = call._calculate_times()[5]
+
+        self.assertEqual(expected_runs, 0)
 
 
 SCHEDULE = {
