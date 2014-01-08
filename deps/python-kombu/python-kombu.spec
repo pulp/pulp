@@ -24,10 +24,14 @@ BuildRequires:  python3-devel
 BuildRequires:  python3-nose
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-anyjson
-# for python3 tests
+# for python3 tests. These require setuptools >= 0.7, so they cannot be run in F18
+%if 0%{?fedora} > 18
 BuildRequires:  python3-mock
 BuildRequires:  python3-nose-cover3
 BuildRequires:  python3-coverage
+BuildRequires:  python3-nose
+BuildRequires:  python3-mock
+%endif
 %endif # if with_python3
 
 BuildRequires:  python-setuptools
@@ -44,10 +48,6 @@ BuildRequires: python-amqp
 
 %if 0%{?with_python3}
 BuildRequires: python3-amqp
-
-# tests:
-BuildRequires: python3-nose
-BuildRequires: python3-mock
 %endif
 
 # For documentation
@@ -129,7 +129,7 @@ popd
 %check
 %{__python} setup.py test
 # tests with py3 are failing currently
-%if 0%{?with_python3}
+%if 0%{?with_python3} && 0%{?fedora} > 18
 pushd %{py3dir}
 %{__python3} setup.py test
 popd
