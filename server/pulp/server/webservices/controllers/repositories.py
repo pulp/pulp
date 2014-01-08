@@ -554,23 +554,14 @@ class RepoDistributors(JSONController):
         distributor_id = params.get('distributor_id', None)
         auto_publish = params.get('auto_publish', False)
 
-        # Update the repo
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('add_distributor')]
-        if distributor_id is not None:
-            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                     distributor_id))
-
-        async_result = add_distributor.apply_async_with_reservation(
-                                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
-                                                    repo_id,
-                                                    [repo_id, distributor_type],
-                                                    {'repo_plugin_config': distributor_config,
-                                                     'auto_publish': auto_publish,
-                                                     'distributor_id': distributor_id},
-                                                    tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        distributor_manager = manager_factory.repo_distributor_manager()
+        distributor = distributor_manager.add_distributor(repo_id,
+                                                          distributor_type,
+                                                          distributor_config,
+                                                          auto_publish,
+                                                          distributor_id)
+        distributor.update(serialization.link.child_link_obj(distributor['id']))
+        return self.created(distributor['_href'], distributor)
 
 
 class RepoDistributor(JSONController):

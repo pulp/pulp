@@ -871,62 +871,58 @@ class RepoDistributorsTests(RepoPluginsTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('celery.Task.apply_async')
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_create_distributor(self, _reserve_resource, mock_apply_async):
+    def test_create_distributor(self):
         """
         Tests creating a distributor on a repo.
         """
+
         # Setup
-        repo_id = 'tea'
-        self.repo_manager.create_repo(repo_id)
-        task_id = str(uuid.uuid4())
-        mock_apply_async.return_value = AsyncResult(task_id)
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
-        # Test
+        self.repo_manager.create_repo('tea')
+
         req_body = {
             'distributor_type_id' : 'dummy-distributor',
             'distributor_config' : {'a' : 'b'},
         }
+
+        # Test
         status, body = self.post('/v2/repositories/tea/distributors/', params=req_body)
 
         # Verify
-        self.assertEqual(202, status)
-        self.assertEqual(body['task_id'], task_id)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        call_args, call_kwargs = mock_apply_async.call_args[0]
-        self.assertTrue(repo_id in call_args)
-        self.assertTrue('dummy-distributor' in call_args)
-        self.assertEqual(call_kwargs['repo_plugin_config'], {'a': 'b'}) 
-        self.assertEqual(call_kwargs['auto_publish'], False)
+        self.assertEqual(201, status)
+        self.assertEqual(body['repo_id'], 'tea')
+        self.assertEqual(body['config'], req_body['distributor_config'])
+        self.assertEqual(body['auto_publish'], False)
+        self.assertTrue('id' in body)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_create_distributor_missing_repo(self, _reserve_resource):
+    def test_create_distributor_missing_repo(self):
         """
         Tests creating a distributor on a repo that doesn't exist.
         """
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+
         # Test
         req_body = {
             'distributor_type_id' : 'dummy-distributor',
             'distributor_config' : {'a' : 'b'},
         }
         status, body = self.post('/v2/repositories/not_there/distributors/', params=req_body)
-        # Verify
-        self.assertEqual(202, status)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_create_distributor_invalid_data(self, _reserve_resource):
+        # Verify
+        self.assertEqual(404, status)
+
+    def test_create_distributor_invalid_data(self):
         """
         Tests creating a distributor but not passing in all the required data.
         """
+
         # Setup
         self.repo_manager.create_repo('invalid')
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+
         # Test
         status, body = self.post('/v2/repositories/invalid/distributors/', params={})
+
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(400, status)
+
 
 class RepoDistributorTests(RepoPluginsTests):
 
