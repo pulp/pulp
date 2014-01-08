@@ -24,7 +24,7 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
 from pulp.server.db.model.consumer import Bind
-from pulp.server.exceptions import (MissingResource, PulpExecutionException, PulpDataException)
+from pulp.server.exceptions import PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as managers
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.agent import Context
@@ -66,6 +66,8 @@ class AgentManager(object):
         :type distributor_id: str
         :param options: The options are handler specific.
         :type options: dict
+        :return: A task ID that may be used to track the agent request.
+        :rtype: str
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -96,6 +98,8 @@ class AgentManager(object):
             Bind.Action.BIND,
             task_id)
 
+        return task_id
+
     @staticmethod
     def unbind(consumer_id, repo_id, distributor_id, options):
         """
@@ -108,6 +112,8 @@ class AgentManager(object):
         :type distributor_id: str
         :param options: The options are handler specific.
         :type options: dict
+        :return: A task ID that may be used to track the agent request.
+        :rtype: str
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -137,6 +143,8 @@ class AgentManager(object):
             Bind.Action.UNBIND,
             task_id)
 
+        return task_id
+
     @staticmethod
     def install_content(consumer_id, units, options):
         """
@@ -148,6 +156,8 @@ class AgentManager(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
+        :return: A task ID that may be used to track the agent request.
+        :rtype: str
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -173,6 +183,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.install(context, units, options)
+        return task_id
 
     @staticmethod
     def update_content(consumer_id, units, options):
@@ -185,6 +196,8 @@ class AgentManager(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Update options; based on unit type.
         :type options: dict
+        :return: A task ID that may be used to track the agent request.
+        :rtype: str
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -210,6 +223,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.update(context, units, options)
+        return task_id
 
     @staticmethod
     def uninstall_content(consumer_id, units, options):
@@ -222,6 +236,8 @@ class AgentManager(object):
             { type_id:<str>, type_id:<dict> }
         :param options: Uninstall options; based on unit type.
         :type options: dict
+        :return: A task ID that may be used to track the agent request.
+        :rtype: str
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -247,6 +263,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.uninstall(context, units, options)
+        return task_id
 
     def cancel_request(self, consumer_id, task_id):
         """
