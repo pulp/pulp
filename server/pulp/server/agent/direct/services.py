@@ -73,29 +73,65 @@ class ReplyHandler(Listener):
     :type consumer: ReplyConsumer
     """
 
+    # --- action post-processing ---------------------------------------------
+
     @staticmethod
-    def _update_bind_action(action_id, call_context, succeeded):
+    def _bind_succeeded(action_id, call_context):
         """
+        Bind succeeded.
         Update the bind action.
         :param action_id: The action ID (basically the task_id).
         :type action_id: str
         :param call_context: The information about the bind call that was
             passed to the agent to be round tripped back here.
-        :param succeeded: The bind action status.
-        :type succeeded: bool
+        :type call_context: dict
         """
         manager = managers.consumer_bind_manager()
         consumer_id = call_context['consumer_id']
         repo_id = call_context['repo_id']
         distributor_id = call_context['distributor_id']
-        if succeeded:
-            manager.action_succeeded(consumer_id, repo_id, distributor_id, action_id)
-        else:
-            manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
+        manager.action_succeeded(consumer_id, repo_id, distributor_id, action_id)
+
+    @staticmethod
+    def _unbind_succeeded(call_context):
+        """
+        Update the bind action.
+        :param call_context: The information about the bind call that was
+            passed to the agent to be round tripped back here.
+        :type call_context: dict
+        """
+        manager = managers.consumer_bind_manager()
+        consumer_id = call_context['consumer_id']
+        repo_id = call_context['repo_id']
+        distributor_id = call_context['distributor_id']
+        manager.delete(consumer_id, repo_id, distributor_id, force=True)
+
+    @staticmethod
+    def _bind_failed(action_id, call_context):
+        """
+        The bind failed.
+        Update the bind action.
+        :param action_id: The action ID (basically the task_id).
+        :type action_id: str
+        :param call_context: The information about the bind call that was
+            passed to the agent to be round tripped back here.
+        :type call_context: dict
+        """
+        manager = managers.consumer_bind_manager()
+        consumer_id = call_context['consumer_id']
+        repo_id = call_context['repo_id']
+        distributor_id = call_context['distributor_id']
+        manager.action_failed(consumer_id, repo_id, distributor_id, action_id)
+
+    # added for clarity
+    _unbind_failed = _bind_failed
 
     def __init__(self, url):
         queue = Queue(Services.REPLY_QUEUE)
         self.consumer = ReplyConsumer(queue, url=url)
+
+
+    # --- agent replies ------------------------------------------------------
 
     def start(self, watchdog):
         """
@@ -125,13 +161,26 @@ class ReplyHandler(Listener):
         :type reply: gofer.rmi.async.Succeeded
         """
         log.info('Task RMI (succeeded)\n%s', reply)
-        result = reply.retval
-        call_context = reply.any
-        task_id = call_context['task_id']
-        TaskStatusManager.set_task_succeeded(task_id, result)
+
+        call_context = dict(reply.any)
         action = call_context.get('action')
-        if action in ('bind', 'unbind'):
-            ReplyHandler._update_bind_action(task_id, call_context, result['succeeded'])
+        task_id = call_context['task_id']
+        result = dict(reply.retval)
+
+        TaskStatusManager.set_task_succeeded(task_id, result)
+
+        if action == 'bind':
+            if result['succeeded']:
+                ReplyHandler._bind_succeeded(task_id, call_context)
+            else:
+                ReplyHandler._bind_failed(task_id, call_context)
+            return
+        if action == 'unbind':
+            if result['succeeded']:
+                ReplyHandler._unbind_succeeded(call_context)
+            else:
+                ReplyHandler._unbind_failed(task_id, call_context)
+            return
 
     def failed(self, reply):
         """
@@ -141,13 +190,20 @@ class ReplyHandler(Listener):
         :type reply: gofer.rmi.async.Failed
         """
         log.info('Task RMI (failed)\n%s', reply)
-        traceback = reply.xstate['trace']
-        call_context = reply.any
-        task_id = call_context['task_id']
-        TaskStatusManager.set_task_failed(task_id, traceback)
+
+        call_context = dict(reply.any)
         action = call_context.get('action')
-        if action in ('bind', 'unbind'):
-            ReplyHandler._update_bind_action(task_id, call_context, False)
+        task_id = call_context['task_id']
+        traceback = reply.xstate['trace']
+
+        TaskStatusManager.set_task_failed(task_id, traceback)
+
+        if action == 'bind':
+            ReplyHandler._bind_failed(task_id, call_context)
+            return
+        if action == 'unbind':
+            ReplyHandler._unbind_failed(task_id, call_context)
+            return
 
     def progress(self, reply):
         """

@@ -153,7 +153,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
     def test_agent_succeeded(self, mock_task_succeeded):
-        dispatch_report = Envelope(succeeded=True)
+        dispatch_report = dict(succeeded=True)
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -164,7 +164,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        result = Envelope(retval=dispatch_report)
+        result = dict(retval=dispatch_report)
         envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
         reply = Succeeded(envelope)
         handler = ReplyHandler('')
@@ -175,7 +175,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_started')
     def test_started(self, mock_task_started):
-        dispatch_report = Envelope(succeeded=True)
+        dispatch_report = dict(succeeded=True)
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -207,7 +207,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        raised = Envelope(
+        raised = dict(
             exval='Boom',
             xmodule='foo.py',
             xclass=ValueError,
@@ -223,7 +223,7 @@ class TestReplyHandler(TestCase):
         mock_task_failed.assert_called_with(task_id, 'stack-trace')
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
-    def test_update_bind_action(self, mock_get_manager):
+    def test__bind_succeeded(self, mock_get_manager):
         bind_manager = Mock()
         mock_get_manager.return_value = bind_manager
         task_id = 'task_1'
@@ -238,13 +238,67 @@ class TestReplyHandler(TestCase):
             'distributor_id': dist_id
         }
         # handler report: succeeded
-        ReplyHandler._update_bind_action(task_id, call_context, True)
+        ReplyHandler._bind_succeeded(task_id, call_context)
         bind_manager.action_succeeded.assert_called_with(consumer_id, repo_id, dist_id, task_id)
+
+    @patch('pulp.server.managers.factory.consumer_bind_manager')
+    def test__bind_failed(self, mock_get_manager):
+        bind_manager = Mock()
+        mock_get_manager.return_value = bind_manager
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'bind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
         # handler report: failed
-        ReplyHandler._update_bind_action(task_id, call_context, False)
+        ReplyHandler._bind_failed(task_id, call_context)
         bind_manager.action_failed.assert_called_with(consumer_id, repo_id, dist_id, task_id)
 
-    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.managers.factory.consumer_bind_manager')
+    def test__unbind_succeeded(self, mock_get_manager):
+        bind_manager = Mock()
+        mock_get_manager.return_value = bind_manager
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'unbind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        # handler report: succeeded
+        ReplyHandler._unbind_succeeded(call_context)
+        bind_manager.delete.assert_called_with(consumer_id, repo_id, dist_id, force=True)
+
+    @patch('pulp.server.managers.factory.consumer_bind_manager')
+    def test__unbind_failed(self, mock_get_manager):
+        bind_manager = Mock()
+        mock_get_manager.return_value = bind_manager
+        task_id = 'task_1'
+        consumer_id = 'consumer_1'
+        repo_id = 'repo_1'
+        dist_id = 'dist_1'
+        call_context = {
+            'action': 'bind',
+            'task_id': task_id,
+            'consumer_id': consumer_id,
+            'repo_id': repo_id,
+            'distributor_id': dist_id
+        }
+        # handler report: failed
+        ReplyHandler._unbind_failed(task_id, call_context)
+        bind_manager.action_failed.assert_called_with(consumer_id, repo_id, dist_id, task_id)
+
+    @patch('pulp.server.agent.direct.services.ReplyHandler._bind_succeeded')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
     def test_bind_succeeded(self, mock_task_succeeded, mock_update_action):
         task_id = 'task_1'
@@ -258,7 +312,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        dispatch_report = Envelope(succeeded=True)
+        dispatch_report = dict(succeeded=True)
         result = Envelope(retval=dispatch_report)
         envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
         reply = Succeeded(envelope)
@@ -270,7 +324,7 @@ class TestReplyHandler(TestCase):
         # validate bind action updated
         mock_update_action.called_with(task_id, call_context, True)
 
-    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_succeeded')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
     def test_unbind_succeeded(self, mock_task_succeeded, mock_update_action):
         task_id = 'task_1'
@@ -284,7 +338,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        dispatch_report = Envelope(succeeded=True)
+        dispatch_report = dict(succeeded=True)
         result = Envelope(retval=dispatch_report)
         envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
         reply = Succeeded(envelope)
@@ -296,7 +350,7 @@ class TestReplyHandler(TestCase):
         # validate bind action updated
         mock_update_action.called_with(task_id, call_context, True)
 
-    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.agent.direct.services.ReplyHandler._bind_failed')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
     def test_bind_failed(self, mock_task_failed, mock_update_action):
         task_id = 'task_1'
@@ -310,7 +364,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        raised = Envelope(
+        raised = dict(
             exval='Boom',
             xmodule='foo.py',
             xclass=ValueError,
@@ -327,7 +381,7 @@ class TestReplyHandler(TestCase):
         # validate bind action updated
         mock_update_action.called_with(task_id, call_context, False)
 
-    @patch('pulp.server.agent.direct.services.ReplyHandler._update_bind_action')
+    @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_failed')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
     def test_unbind_failed(self, mock_task_failed, mock_update_action):
         task_id = 'task_1'
@@ -341,7 +395,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        raised = Envelope(
+        raised = dict(
             exval='Boom',
             xmodule='foo.py',
             xclass=ValueError,
