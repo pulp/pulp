@@ -341,8 +341,47 @@ class TestScheduledCallCalculateTimes(unittest.TestCase):
         # 1 hour, as specified in the ISO8601 string above
         self.assertEqual(run_every_s, 3600)
 
-    def test_last_scheduled_run(self):
-        pass
+    def test_last_scheduled_run_no_first_run(self):
+        call = ScheduledCall('PT1H', 'pulp.tasks.dosomething')
+
+        last_scheduled_run_s = call._calculate_times()[4]
+        first_run_s = call._calculate_times()[1]
+
+        self.assertEqual(last_scheduled_run_s, first_run_s)
+
+    @mock.patch('time.time')
+    def test_last_scheduled_run_with_first_run(self, mock_time):
+        # specify a start time and current time such that we know the difference
+        mock_time.return_value = 1389307330.966561
+        call = ScheduledCall('2014-01-09T17:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        last_scheduled_run_s = call._calculate_times()[4]
+
+        self.assertEqual(last_scheduled_run_s, 1389305700)
+
+    @mock.patch('time.time')
+    def test_expected_runs_positive(self, mock_time):
+        # specify a start time and current time such that we know the difference
+        mock_time.return_value = 1389307330.966561
+        call = ScheduledCall('2014-01-09T17:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        expected_runs = call._calculate_times()[5]
+
+        # we know that it's been more than 5 hours since the first scheduled run
+        self.assertEqual(expected_runs, 5)
+
+    @mock.patch('time.time')
+    def test_expected_runs_future(self, mock_time):
+        # specify a start time and current time such that the start appears to
+        # be in the future
+        mock_time.return_value = 1389307330.966561
+        call = ScheduledCall('2014-01-19T17:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        expected_runs = call._calculate_times()[5]
+
+        # the first run is scheduled in the future (relative to the mock time),
+        # so there should not be any runs.
+        self.assertEqual(expected_runs, 0)
 
     def test_expected_runs_zero(self):
         call = ScheduledCall('PT1H', 'pulp.tasks.dosomething')
@@ -350,6 +389,33 @@ class TestScheduledCallCalculateTimes(unittest.TestCase):
         expected_runs = call._calculate_times()[5]
 
         self.assertEqual(expected_runs, 0)
+
+
+class TestCalculateNextRun(unittest.TestCase):
+    @mock.patch('time.time')
+    def test_future(self, mock_time):
+        mock_time.return_value = 1389307330.966561
+        call = ScheduledCall('2014-01-19T17:15Z/PT1H', 'pulp.tasks.dosomething')
+
+        next_run = call.calculate_next_run()
+
+        # make sure the next run is equal to the specified first run.
+        # don't want to compare a generated ISO8601 string directly, because there
+        # could be subtle variations that are valid but break string equality.
+        self.assertEqual(dateutils.parse_iso8601_interval(call.iso_schedule)[1],
+                         dateutils.parse_iso8601_datetime('2014-01-19T17:15Z'))
+
+    def test_now(self):
+        call = ScheduledCall('PT1H', 'pulp.tasks.dosomething')
+
+        now = datetime.utcnow().replace(tzinfo=dateutils.utc_tz())
+        next_run = dateutils.parse_iso8601_datetime(call.calculate_next_run())
+        print next_run - now
+        print next_run
+        print now
+
+        self.assertTrue(next_run - now < timedelta(seconds=1))
+
 
 
 SCHEDULE = {
