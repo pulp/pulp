@@ -130,7 +130,6 @@ class ReplyHandler(Listener):
         queue = Queue(Services.REPLY_QUEUE)
         self.consumer = ReplyConsumer(queue, url=url)
 
-
     # --- agent replies ------------------------------------------------------
 
     def start(self, watchdog):
