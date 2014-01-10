@@ -1,0 +1,12 @@
+# Configuration file for Pulp's Celerybeat worker
+
+# Configure the log level for the Celerybeat worker here. DEBUG, INFO, WARNING, ERROR, CRITICAL, and FATAL are the
+# allowed values.
+CELERYBEAT_LOG_LEVEL="INFO"
+
+# Feel free to adjust the PID file or LOG file settings if you please.
+# CELERYBEAT_LOG_FILE="/var/log/pulp/celerybeat.log"
+# CELERYBEAT_PID_FILE="/var/run/pulp/celerybeat.pid"
+
+# The user that Celerybeat runs as must be able to write to this folder
+CELERYBEAT_OPTS="--workdir=/var/lib/pulp/celery/"
