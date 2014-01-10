@@ -354,10 +354,11 @@ class ScheduledCall(Model):
         now_s, first_run_s, since_first_s, run_every_s, \
                 last_scheduled_run_s, expected_runs = self._calculate_times()
 
+        # if first run is in the future, return that time
         if first_run_s > now_s:
             next_run_s = first_run_s
-        # if there is no start date
-        elif first_run_s == -1:
+        # if I've never run before and my first run is not in the future, run now!
+        elif self.total_run_count == 0:
             next_run_s = now_s
         else:
             next_run_s = last_scheduled_run_s + run_every_s
@@ -407,8 +408,13 @@ class ScheduleEntry(beat.ScheduleEntry):
         """
         Determines if this schedule entry should be executed right now
 
-        :return:    True if this entry should be run right now, else False
-        :rtype:     bool
+        :return:    tuple where the first item is:
+                        - True if this entry should be run right now, else False
+                    and the second item is:
+                        - number of seconds before this entry should next run,
+                          not including an immediate run. Put another way, this
+                          should never be 0
+        :rtype:     tuple of (bool, number)
         """
         now_s, first_run_s, since_first_s, run_every_s, \
                 last_scheduled_run_s, expected_runs = self._scheduled_call._calculate_times()

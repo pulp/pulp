@@ -391,7 +391,7 @@ class TestScheduledCallCalculateTimes(unittest.TestCase):
         self.assertEqual(expected_runs, 0)
 
 
-class TestCalculateNextRun(unittest.TestCase):
+class TestScheduledCallCalculateNextRun(unittest.TestCase):
     @mock.patch('time.time')
     def test_future(self, mock_time):
         mock_time.return_value = 1389307330.966561
@@ -403,19 +403,145 @@ class TestCalculateNextRun(unittest.TestCase):
         # don't want to compare a generated ISO8601 string directly, because there
         # could be subtle variations that are valid but break string equality.
         self.assertEqual(dateutils.parse_iso8601_interval(call.iso_schedule)[1],
-                         dateutils.parse_iso8601_datetime('2014-01-19T17:15Z'))
+                         dateutils.parse_iso8601_datetime(next_run))
 
     def test_now(self):
         call = ScheduledCall('PT1H', 'pulp.tasks.dosomething')
 
         now = datetime.utcnow().replace(tzinfo=dateutils.utc_tz())
         next_run = dateutils.parse_iso8601_datetime(call.calculate_next_run())
-        print next_run - now
-        print next_run
-        print now
 
         self.assertTrue(next_run - now < timedelta(seconds=1))
 
+    @mock.patch('time.time')
+    def test_with_past_runs(self, mock_time):
+        # setup an hourly call that first ran not quite 2 hours ago, ran again
+        # less than one hour ago, and should be scheduled to run at the end of
+        # this hour
+        mock_time.return_value = 1389389758.547976
+        call = ScheduledCall('2014-01-10T20:00Z/PT1H', 'pulp.tasks.dosomething',
+                             total_run_count=2, last_run_at='2014-01-10T21:00Z')
+
+        next_run = call.calculate_next_run()
+
+        self.assertEqual(dateutils.parse_iso8601_datetime('2014-01-10T22:00Z'),
+                         dateutils.parse_iso8601_datetime(next_run))
+
+
+class TestScheduleEntryInit(unittest.TestCase):
+    def test_captures_scheduled_call(self):
+        call = ScheduledCall('2014-01-19T17:15Z/PT1H', 'pulp.tasks.dosomething')
+        entry = call.as_schedule_entry()
+
+        self.assertTrue(hasattr(entry, '_scheduled_call'))
+        self.assertTrue(entry._scheduled_call is call)
+
+
+@mock.patch.object(ScheduledCall, 'save')
+class TestScheduleEntryNextInstance(unittest.TestCase):
+    def setUp(self):
+        super(TestScheduleEntryNextInstance, self).setUp()
+        self.call = ScheduledCall('2014-01-19T17:15Z/PT1H', 'pulp.tasks.dosomething',
+                                  remaining_runs=5)
+        self.entry = self.call.as_schedule_entry()
+
+    def test_increments_last_run(self, mock_save):
+        next_entry = next(self.entry)
+        now = datetime.utcnow().replace(tzinfo=dateutils.utc_tz())
+
+        self.assertTrue(now - next_entry.last_run_at < timedelta(seconds=1))
+
+    def test_increments_run_count(self, mock_save):
+        next_entry = next(self.entry)
+
+        self.assertEqual(self.entry.total_run_count + 1, next_entry.total_run_count)
+
+    def test_decrements_remaining_runs(self, mock_save):
+        remaining = self.call.remaining_runs
+
+        next_entry = next(self.entry)
+
+        self.assertEqual(remaining - 1, self.call.remaining_runs)
+
+    def test_disables_for_remaining_runs(self, mock_save):
+        self.call.remaining_runs = 1
+        # just verify that we have the correct starting state
+        self.assertTrue(self.call.enabled)
+
+        next_entry = next(self.entry)
+
+        # call should have been disabled because the remaining_runs hit 0
+        self.assertFalse(self.call.enabled)
+
+    def test_calls_save(self, mock_save):
+        next_entry = next(self.entry)
+
+        mock_save.assert_called_once_with()
+
+    def test_returns_entry(self, mock_save):
+        next_entry = next(self.entry)
+
+        self.assertTrue(isinstance(next_entry, ScheduleEntry))
+        self.assertEqual(self.entry.name, next_entry.name)
+        self.assertFalse(self.entry is next_entry)
+
+
+class TestScheduleEntryIsDue(unittest.TestCase):
+    def setUp(self):
+        super(TestScheduleEntryIsDue, self).setUp()
+        self.call = ScheduledCall('2014-01-19T17:15Z/PT1H', 'pulp.tasks.dosomething',
+                                  remaining_runs=5)
+        self.entry = self.call.as_schedule_entry()
+
+    @mock.patch('time.time')
+    def test_first_run_future(self, mock_time):
+        mock_time.return_value = 1389307330
+
+        is_due, seconds = self.entry.is_due()
+
+        self.assertFalse(is_due)
+        self.assertEqual(seconds, 844370)
+
+    def test_no_runs(self):
+        call = ScheduledCall('PT1H', 'pulp.tasks.dosomething')
+        entry = call.as_schedule_entry()
+
+        is_due, seconds = entry.is_due()
+
+        self.assertTrue(is_due)
+        # make sure this is very close to one hour
+        self.assertTrue(3600 - seconds < 1)
+
+    @mock.patch('time.time')
+    def test_past_runs_due(self, mock_time):
+        mock_time.return_value = 1389389758 # 2014-01-10T21:35:58
+        # This call did not run at the top of the hour, so it is overdue and should
+        # run now. Its next run will be back on the normal hourly schedule, at
+        # the top of the next hour.
+        call = ScheduledCall('2014-01-10T20:00Z/PT1H', 'pulp.tasks.dosomething',
+                             last_run_at='2014-01-10T20:00Z', total_run_count= 1)
+        entry = call.as_schedule_entry()
+
+        is_due, seconds = entry.is_due()
+
+        self.assertTrue(is_due)
+        # this was hand-calculated as the remaining time until the next hourly run
+        self.assertEqual(seconds, 1442)
+
+    @mock.patch('time.time')
+    def test_past_runs_not_due(self, mock_time):
+        mock_time.return_value = 1389389758 # 2014-01-10T21:35:58
+        # This call ran at the top of the hour, so it does not need to run again
+        # until the top of the next hour.
+        call = ScheduledCall('2014-01-10T20:00Z/PT1H', 'pulp.tasks.dosomething',
+                             last_run_at='2014-01-10T21:00Z', total_run_count=2)
+        entry = call.as_schedule_entry()
+
+        is_due, seconds = entry.is_due()
+
+        self.assertFalse(is_due)
+        # this was hand-calculated as the remaining time until the next hourly run
+        self.assertEqual(seconds, 1442)
 
 
 SCHEDULE = {
