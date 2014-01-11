@@ -14,21 +14,12 @@
 """
 Itinerary creation for complex repository operations.
 """
-import logging
-
-from celery import current_task
-import celery
 
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
-from pulp.server.constants import REPO_RESOURCE_PREFIX
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.repo import publish
-
-
-logger = logging.getLogger(__name__)
 
 
 def sync_with_auto_publish_itinerary(repo_id, overrides=None):

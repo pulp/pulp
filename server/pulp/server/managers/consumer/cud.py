@@ -27,6 +27,7 @@ from pulp.server import config
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.managers import factory
+from pulp.server.managers.schedule import utils as schedule_utils
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException, MissingValue
 
@@ -121,8 +122,10 @@ class ConsumerManager(object):
         group_manager.remove_consumer_from_groups(consumer_id)
 
         # delete any scheduled unit installs
-        # TODO this
-        raise NotImplemented
+        schedule_manager = factory.consumer_schedule_manager()
+        for schedule in schedule_manager.get(consumer_id):
+            # using "delete" on utils skips validation that the consumer exists.
+            schedule_utils.delete(schedule.id)
 
         # Database Updates
         try:
@@ -153,6 +156,10 @@ class ConsumerManager(object):
         :type   id:              str
         :param  delta:           list of attributes and their new values to change
         :type   delta:           dict
+
+        :return:    document from the database representing the updated consumer
+        :rtype:     dict
+
         :raises MissingResource: if there is no consumer with given id
         :raises InvalidValue:    if notes are provided in unacceptable (non-dict) form
         :raises MissingValue:    if delta provided is empty
@@ -184,8 +191,15 @@ class ConsumerManager(object):
         """
         Returns a consumer with given ID.
 
-        :param  id:              consumer ID
-        :type   id:              str
+        :param id:              consumer ID
+        :type  id:              basestring
+        :param fields:          optional list of field names that should be returned.
+                                defaults to all fields.
+        :type  fields:          list
+
+        :return:    document from the database representing a consumer
+        :rtype:     dict
+
         :raises MissingResource: if a consumer with given id does not exist
         """
         consumer_coll = Consumer.get_collection()
