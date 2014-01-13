@@ -67,6 +67,7 @@ DIRS = (
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
+    '/var/lib/pulp/celery',
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
@@ -90,6 +91,9 @@ LINKS = (
     ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
     ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
     ('server/etc/pulp/logging', '/etc/pulp/logging'),
+    ('server/etc/default/pulp_celerybeat', '/etc/default/pulp_celerybeat'),
+    ('server/etc/default/pulp_celery_workers', '/etc/default/pulp_celery_workers'),
+    ('server/etc/default/pulp_resource_manager', '/etc/default/pulp_resource_manager'),
 
     # Server Web Configuration
     ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
@@ -105,6 +109,7 @@ LINKS = (
     ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
     ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 )
+
 
 def parse_cmdline():
     """
@@ -182,7 +187,22 @@ def getlinks():
             src, dst = apache_22_conf
 
         links.append((src, dst))
-    
+
+    lsb_vendor = subprocess.Popen(['lsb_release', '-si'],
+                                  stdout=subprocess.PIPE).communicate()[0].strip()
+    if lsb_vendor not in ('RedHatEnterpriseServer', 'Fedora'):
+        print 'Your Linux vendor is not supported by this script: %s' % lsb_vendor
+        sys.exit(1)
+
+    lsb_version = float(subprocess.Popen(['lsb_release', '-sr'],
+                                         stdout=subprocess.PIPE).communicate()[0])
+    if lsb_version < 7.0:
+        links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
+        links.append(('server/etc/rc.d/init.d/pulp_celery_workers',
+                      '/etc/rc.d/init.d/pulp_celery_workers'))
+        links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
+                      '/etc/rc.d/init.d/pulp_resource_manager'))
+
     return links
 
 
@@ -199,6 +219,11 @@ def install(opts):
     # packages dir
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
+
+    # The Celery init script will get angry if /etc/default things aren't root owned
+    os.system('chown root:root /etc/default/pulp_celerybeat')
+    os.system('chown root:root /etc/default/pulp_celery_workers')
+    os.system('chown root:root /etc/default/pulp_resource_manager')
 
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
