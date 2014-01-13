@@ -1517,8 +1517,10 @@ class ScheduledSyncTests(RepoPluginsTests):
         status, body = self.put(self.resource_uri_path(schedule_id), updates)
         self.assertTrue(status == httplib.OK, '\n'.join((str(status), pformat(body))))
         self.assertTrue(schedule_id == body['_id'])
-        for key in updates:
-            self.assertTrue(updates[key] == body[key], key)
+        self.assertEqual(body['schedule'], updates['schedule'])
+        self.assertEqual(body['failure_threshold'], updates['failure_threshold'])
+        self.assertEqual(body['enabled'], updates['enabled'])
+        self.assertEqual(body['kwargs']['overrides'], updates['override_config'])
 
 # scheduled publish api --------------------------------------------------------
 

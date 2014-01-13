@@ -457,6 +457,8 @@ class SyncScheduleResource(ScheduleResource):
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id, schedule_id):
         updates = self.params()
+        if 'schedule' in updates:
+            updates['iso_schedule'] = updates.pop('schedule')
         self.manager.update(repo_id, importer_id, schedule_id, updates)
         return self._get(schedule_id)
 

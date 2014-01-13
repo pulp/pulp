@@ -244,7 +244,7 @@ class NextRunCommand(PulpCliCommand):
         else:
             msg_data = {
                 'next_run' : next_schedule['next_run'],
-                'schedule' : next_schedule['iso_schedule'],
+                'schedule' : next_schedule['schedule'],
             }
             template = _('The next scheduled run is at %(next_run)s driven by the '
                          'schedule %(schedule)s')
