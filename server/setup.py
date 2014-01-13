@@ -9,11 +9,13 @@
 # along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp import __version__
+
 from setuptools import setup, find_packages
 
 setup(
     name='pulp-server',
-    version='2.3.0',
+    version=__version__,
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',

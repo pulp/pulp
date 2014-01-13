@@ -17,14 +17,24 @@ Unauthenticated status API so that other can make sure we're up (to no good).
 
 import web
 
+from pulp import __version__
+
 from pulp.server.webservices.controllers.base import JSONController
 
 # status controller ------------------------------------------------------------
 
 class StatusController(JSONController):
 
+    #: Always the full version. Ex: 2.3.1
+    _server_version = __version__
+    #: Always the current supported api version in x.y format. Ex: 2.3
+    _api_version = ".".join(__version__.split('.')[0:2])
+
     def GET(self):
-        status_data = {'api_version': '2'}
+        status_data = {
+            'api_version': self._api_version,
+            'server_version': self._server_version,
+        }
         return self.ok(status_data)
 
 # web.py application -----------------------------------------------------------
