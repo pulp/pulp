@@ -61,7 +61,7 @@ class ConsumerScheduleManager(object):
 
         :param consumer_id: a unique ID for a consumer
         :type  consumer_id: basestring
-        :param action:      a unique identified for an action, one of
+        :param action:      a unique identifier for an action, one of
                             UNIT_INSTALL_ACTION, UNIT_UPDATE_ACTION,
                             UNIT_UNINSTALL_ACTION
         :type  action:      basestring
@@ -78,7 +78,7 @@ class ConsumerScheduleManager(object):
 
     @classmethod
     def create_schedule(cls, action, consumer_id, units, options,
-                        schedule, failure_threshold, enabled):
+                        schedule, failure_threshold=None, enabled=True):
         """
         Creates a new schedule for a consumer action
 
@@ -96,9 +96,20 @@ class ConsumerScheduleManager(object):
                                 action-appropriate task as the "options"
                                 argument
         :type  options:         dict
-        :param schedule_data:
-        :return:
+        :param schedule:        ISO8601 string representation of the schedule
+        :type  schedule:        basestring
+        :param failure_threshold:   optional positive integer indicating how
+                                many times this schedule's execution can fail
+                                before being automatically disabled.
+        :type  failure_threshold:   int or NoneType
+        :param enabled:         boolean indicating if this schedule should
+                                be actively loaded and executed by the
+                                scheduler. Defaults to True.
+        :type  enabled:         bool
+        :return:    instance of the new ScheduledCal
         :rtype:     pulp.server.db.models.dispatch.ScheduledCall
+
+        :raise:     pulp.server.exceptions.MissingResource
         """
         cls._validate_consumer(consumer_id)
         utils.validate_keys(options, _UNIT_OPTION_KEYS)
@@ -122,12 +133,23 @@ class ConsumerScheduleManager(object):
                         schedule_data=None):
         """
 
-        :param consumer_id:
-        :param schedule_id:
-        :param units:
-        :param options:
-        :param schedule_data:
-        :return:
+        :param consumer_id:     a unique ID for a consumer
+        :type  consumer_id:     basestring
+        :param schedule_id:     a unique ID for the schedule being updated
+        :type  schedule_id:     basestring
+        :param units:           A list of content units to be installed, each as
+                                a dict in the form:
+                                    { type_id:<str>, unit_key:<dict> }
+        :type  units:           list
+        :param options:         a dictionary that will be passed to the
+                                action-appropriate task as the "options"
+                                argument
+        :type  options:         dict
+        :param schedule_data:   dictionary of keys and values that should be
+                                applied as updates to the schedule. Keys must
+                                be in ScheduledCall.USER_UPDATE_FIELDS
+
+        :return:    instance of ScheduledCall representing the post-update state
         :rtype:     pulp.server.db.models.dispatch.ScheduledCall
         """
         ConsumerScheduleManager._validate_consumer(consumer_id)
@@ -142,6 +164,14 @@ class ConsumerScheduleManager(object):
 
     @staticmethod
     def delete_schedule(consumer_id, schedule_id):
+        """
+        Permanently deletes the schedule specified
+
+        :param consumer_id:     a unique ID for a consumer
+        :type  consumer_id:     basestring
+        :param schedule_id:     a unique ID for the schedule being updated
+        :type  schedule_id:     basestring
+        """
         ConsumerScheduleManager._validate_consumer(consumer_id)
 
         utils.delete(schedule_id)
