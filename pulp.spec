@@ -26,6 +26,13 @@
 %define moduletype apps
 %endif
 
+# Determine whether we should target Upstart or SystemD for this build
+%if 0%{?rhel} < 7
+%define pulp_systemd 0
+%else
+%define pulp_systemd 1
+%endif
+
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
@@ -75,6 +82,7 @@ done
 
 # Directories
 mkdir -p /srv
+mkdir -p %{buildroot}/%{_sysconfdir}/default/
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
@@ -105,6 +113,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
@@ -122,6 +131,12 @@ cp server/etc/httpd/conf.d/pulp_apache_24.conf %{buildroot}/%{_sysconfdir}/httpd
 %else
 cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %endif
+
+# Server init scripts and environments files
+%if %{pulp_systemd} == 0
+cp -R server/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
+%endif
+cp -R server/etc/default/* %{buildroot}/%{_sysconfdir}/default/
 
 # Pulp Web Services
 cp -R server/srv %{buildroot}
@@ -206,6 +221,9 @@ Pulp provides replication, access, and accounting for software repositories.
 # - root:root
 %defattr(-,root,root,-)
 %config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
+%config(noreplace) %{_sysconfdir}/default/pulp_celerybeat
+%config(noreplace) %{_sysconfdir}/default/pulp_celery_workers
+%config(noreplace) %{_sysconfdir}/default/pulp_resource_manager
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %dir %{_sysconfdir}/pki/%{name}
 %dir %{_sysconfdir}/%{name}/content/sources/conf.d
@@ -227,6 +245,13 @@ Pulp provides replication, access, and accounting for software repositories.
 %{python_sitelib}/%{name}/server/
 %{python_sitelib}/%{name}/plugins/
 %{python_sitelib}/pulp_server*.egg-info
+%if %{pulp_systemd} == 0
+# If this is not a systemd system, we need to install the init scripts
+%defattr(755,root,root,-)
+%config %{_initddir}/pulp_celerybeat
+%config %{_initddir}/pulp_celery_workers
+%config %{_initddir}/pulp_resource_manager
+%endif
 # 640 root:apache
 %defattr(640,root,apache,-)
 %ghost %{_sysconfdir}/pki/%{name}/ca.key
@@ -234,8 +259,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 # - apache:apache
 %defattr(-,apache,apache,-)
-%dir %{_var}/log/%{name}
 %{_var}/lib/%{name}/
+%dir %{_var}/log/%{name}
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE
