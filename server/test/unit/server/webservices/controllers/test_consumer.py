@@ -1685,10 +1685,10 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
         self.assertEqual(status, 404)
 
     def test_update_scheduled_update(self):
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
+        unit_key = {'name': 'zsh'}
+        unit = {'type_id': 'rpm', 'unit_key': unit_key}
         units = [unit,]
-        options = dict(importkeys=True)
+        options = {'importkeys': True}
 
         path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
         body = {'schedule': 'R1/PT1H',

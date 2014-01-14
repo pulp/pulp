@@ -22,7 +22,7 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, UnsupportedValue
+from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, UnsupportedValue, MissingResource
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
@@ -729,7 +729,10 @@ class UnitActionScheduleResource(JSONController):
 
     @auth_required(READ)
     def GET(self, consumer_id, schedule_id):
-        scheduled_call = self.manager.get(consumer_id, self.ACTION)
+        try:
+            scheduled_call = list(self.manager.get(consumer_id, self.ACTION))[0]
+        except IndexError:
+            raise MissingResource
 
         scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
         scheduled_obj.update(serialization.link.current_link_obj())
@@ -740,9 +743,6 @@ class UnitActionScheduleResource(JSONController):
         schedule_data = self.params()
         options = None
         units = schedule_data.pop('units', None)
-
-        if 'options' in schedule_data:
-            options = {'options': schedule_data.pop('options')}
 
         if 'schedule' in schedule_data:
             schedule_data['iso_schedule'] = schedule_data.pop('schedule')

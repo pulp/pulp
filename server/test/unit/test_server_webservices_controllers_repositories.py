@@ -1473,7 +1473,7 @@ class ScheduledSyncTests(RepoPluginsTests):
         self.assertTrue(status == httplib.CREATED, '\n'.join((str(status), pformat(body))))
         for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
                       'consecutive_failures', 'remaining_runs', 'first_run',
-                      'last_run', 'next_run', 'override_config'):
+                      'last_run_at', 'next_run', 'args', 'kwargs'):
             self.assertTrue(field in body, 'missing field: %s' % field)
 
     def test_create_missing_schedule(self):
@@ -1497,8 +1497,12 @@ class ScheduledSyncTests(RepoPluginsTests):
         self.assertTrue(body is None)
 
     def test_delete_non_existent(self):
+        """
+        make sure it doesn't return an error if the schedule doesn't exist. That's
+        what the client wanted anyway!
+        """
         status, body = self.delete(self.resource_uri_path('not-there'))
-        self.assertTrue(status == httplib.NOT_FOUND)
+        self.assertTrue(status == httplib.OK)
 
     def test_update_schedule(self):
         schedule = {'schedule': 'PT1H',
@@ -1557,7 +1561,7 @@ class ScheduledPublishTests(RepoPluginsTests):
         self.assertTrue(params['schedule'] == body['schedule'])
         for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
                       'consecutive_failures', 'remaining_runs', 'first_run',
-                      'last_run', 'next_run', 'override_config'):
+                      'last_run_at', 'next_run', 'args', 'kwargs'):
             self.assertTrue(field in body, 'missing field: %s' % field)
 
     def test_create_missing_schedule(self):
@@ -1581,8 +1585,12 @@ class ScheduledPublishTests(RepoPluginsTests):
         self.assertTrue(body is None)
 
     def test_delete_non_existent(self):
+        """
+        make sure it doesn't return an error if the schedule doesn't exist. That's
+        what the client wanted anyway!
+        """
         status, body = self.delete(self.resource_uri_path('not-there'))
-        self.assertTrue(status == httplib.NOT_FOUND)
+        self.assertTrue(status == httplib.OK)
 
     def test_update_schedule(self):
         schedule = {'schedule': 'PT1H',
@@ -1601,8 +1609,11 @@ class ScheduledPublishTests(RepoPluginsTests):
         status, body = self.put(self.resource_uri_path(schedule_id), updates)
         self.assertTrue(status == httplib.OK, '\n'.join((str(status), pformat(body))))
         self.assertTrue(schedule_id == body['_id'])
-        for key in updates:
-            self.assertTrue(updates[key] == body[key], key)
+        self.assertEqual(body['schedule'], updates['schedule'])
+        self.assertEqual(body['failure_threshold'], updates['failure_threshold'])
+        self.assertEqual(body['enabled'], updates['enabled'])
+        self.assertEqual(body['kwargs']['overrides'], updates['override_config'])
+
 
 class UnitCriteriaTests(unittest.TestCase):
 

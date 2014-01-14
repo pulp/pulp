@@ -22,8 +22,6 @@ from pulp.server.managers.schedule import utils
 from pulp.server.tasks import consumer
 
 
-_UNIT_OPTION_KEYS = ('options',)
-
 UNIT_INSTALL_ACTION = 'scheduled_unit_install'
 UNIT_UPDATE_ACTION = 'scheduled_unit_update'
 UNIT_UNINSTALL_ACTION = 'scheduled_unit_uninstall'
@@ -112,7 +110,6 @@ class ConsumerScheduleManager(object):
         :raise:     pulp.server.exceptions.MissingResource
         """
         cls._validate_consumer(consumer_id)
-        utils.validate_keys(options, _UNIT_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
         if not units:
             raise MissingResource(['units'])
