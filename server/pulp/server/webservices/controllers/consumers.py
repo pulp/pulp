@@ -698,6 +698,10 @@ class UnitActionScheduleCollection(JSONController):
                 schedule.for_display())
             obj.update(serialization.link.child_link_obj(obj['_id']))
             schedule_objs.append(obj)
+
+        # this behavior is debatable, but I'm keeping it for backward-compatibility.
+        if not schedule_objs:
+            raise MissingResource
         return self.ok(schedule_objs)
 
     @auth_required(CREATE)
@@ -757,7 +761,7 @@ class UnitActionScheduleResource(JSONController):
     @auth_required(DELETE)
     def DELETE(self, consumer_id, schedule_id):
         self.manager.delete_schedule(consumer_id, schedule_id)
-        return self.ok()
+        return self.ok(None)
 
 
 class UnitInstallScheduleCollection(UnitActionScheduleCollection):
