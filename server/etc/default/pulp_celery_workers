@@ -1,14 +1,15 @@
 # Configuration file for Pulp's Celery workers
 
-# This template defines where each Celery worker's log will be written. %n is filled in with the name of the worker.
+# This template defines where each Celery worker's log will be written. %n is filled in with the
+# name of the worker.
 CELERYD_LOG_FILE="/var/log/pulp/%n.log"
 
-# Configure the log level for the Celery workers here. DEBUG, INFO, WARNING, ERROR, CRITICAL, and FATAL are the
-# allowed values.
+# Configure the log level for the Celery workers here. DEBUG, INFO, WARNING, ERROR, CRITICAL, and
+# FATAL are the allowed values.
 CELERYD_LOG_LEVEL="INFO"
 
-# This template defines where each Celery worker will store its process ID. %n is filled in with the name of the
-# worker.
+# This template defines where each Celery worker will store its process ID. %n is filled in with the
+# name of the worker.
 CELERYD_PID_FILE="/var/run/pulp/%n.pid"
 
 # Define the number of worker nodes you wish to have here

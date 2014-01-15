@@ -26,7 +26,7 @@
 %define moduletype apps
 %endif
 
-# Determine whether we should target Upstart or SystemD for this build
+# Determine whether we should target Upstart or systemd for this build
 %if 0%{?rhel} < 7
 %define pulp_systemd 0
 %else
