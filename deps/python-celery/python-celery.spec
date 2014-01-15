@@ -20,6 +20,7 @@ BuildRequires:  python-setuptools
 Requires:       python-anyjson
 Requires:       python-dateutil
 Requires:       python-kombu >= 3.0.5
+Requires:       python-setuptools
 Requires:       pyparsing
 Requires:       python-billiard >= 3.3.0.7
 Requires:       python-amqp
