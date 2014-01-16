@@ -54,3 +54,7 @@ PLP0007 = Error("PLP0007",
                 _("Error occurred while cascading delete of repository %(repo_id to distributor"
                   "bindings associated with it."),
                 ['repo_id'])
+PLP0008 = Error("PLP0008",
+                _("Error raising error %(code).  "
+                  "The field [%(field)s] was not included in the error_data."),
+                ['code', 'field'])

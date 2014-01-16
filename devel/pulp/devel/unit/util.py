@@ -34,7 +34,10 @@ def compare_dict(source, target):
     target_keys = set(target.keys())
 
     if source_keys != target_keys:
-        raise AssertionError("Dictionaries do not match.  Keys are different")
+        keys_info = {'source': ', '.join(map(str, source_keys)),
+                     'target': ', '.join(map(str, target_keys))}
+        raise AssertionError("Dictionaries do not match.  Keys are different: "
+                             "[%(source)s] vs [%(target)s]" % keys_info)
 
     for key in source_keys:
         if source[key] != target[key]:

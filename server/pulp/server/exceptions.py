@@ -30,7 +30,7 @@ class PulpException(Exception):
 
     def __init__(self, *args):
         super(PulpException, self).__init__(*args)
-        self.error_code = error_codes.PLP0001
+        self.error_code = error_codes.PLP0000
         self.error_data = {}
 
         # child exceptions are those that are wrapped within this exception, validation errors
@@ -43,9 +43,14 @@ class PulpException(Exception):
         self.child_exceptions.append(exception)
 
     def to_dict(self):
+        """
+        The to_dict method is used to provide a standarized dictionary
+        of the exception information for useage storing to the database
+        or converting to json to send back via an API call
+        """
         result = {
             'code': self.error_code.code,
-            'description': self.error_code.msg % self.error_data,
+            'description': str(self),
             'data': self.error_data,
             'sub_errors': []
         }
@@ -55,8 +60,8 @@ class PulpException(Exception):
             else:
                 result['sub_errors'].append({'code': 'PLP0000',
                                              'description': str(error),
-                                             'data': [],
-                                             'sub_errors:': []})
+                                             'data': {},
+                                             'sub_errors': []})
         return result
 
     def __str__(self):
@@ -91,10 +96,20 @@ class PulpCodedException(PulpException):
     Base class for exceptions that put the error_code and data as init arguments
     """
     def __init__(self, error_code=error_codes.PLP0001, error_data=None):
-        super(PulpException, self).__init__()
+        super(PulpCodedException, self).__init__()
         self.error_code = error_code
         if error_data:
             self.error_data = error_data
+        # Validate that the coded exception was raised with all the error_data fields that
+        # are required
+        for key in self.error_code.required_fields:
+            if not key in self.error_data:
+                raise PulpCodedException(error_codes.PLP0008, {'code': self.error_code.code,
+                                                               'field': key})
+
+    def __str__(self):
+        msg = self.error_code.message % self.error_data
+        return msg.encode('utf-8')
 
 
 class MissingResource(PulpExecutionException):
