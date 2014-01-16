@@ -13,15 +13,18 @@
 
 import mock
 
-import base
-
+from .... import base
 from pulp.devel import mock_plugins
+from pulp.devel.unit.base import PulpWebservicesTests
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.exceptions import OperationPostponed
 from pulp.server.managers import factory as managers
 from pulp.server.itineraries.consumer_group import *
+from pulp.server.webservices.controllers import consumer_groups
 
 GROUP_ID = 'group_1'
 CONSUMER_IDS = ('test_1', 'test_2', 'test_3')
@@ -150,6 +153,57 @@ class ContentTest(base.PulpWebserviceTests):
         mock_itinerary.assert_called_with(GROUP_ID, units, options)
 
 
+class BindTestNoWSGI(PulpWebservicesTests):
+    """
+    Tests that have been converted to no longer require the full web.py stack
+    """
+
+    @mock.patch('pulp.server.tasks.consumer_group.bind', autospec=True)
+    def test_bind(self, mock_bind_task):
+        bindings = consumer_groups.ConsumerGroupBindings()
+        bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
+                                                  'distributor_id': 'bar-distributor',
+                                                  'notify_agent': True})
+        mock_bind_task.apply_async.return_value.id = 'foo'
+
+        self.assertRaises(OperationPostponed, bindings.POST, 'consumer-group-id')
+        mock_bind_task.apply_async.assert_called_once_with(('consumer-group-id',
+                                                            'foo-repo',
+                                                            'bar-distributor',
+                                                            True, mock.ANY, mock.ANY))
+
+        #validate the permissions
+        self.validate_auth(authorization.CREATE)
+
+    @mock.patch('pulp.server.tasks.consumer_group.bind', autospec=True)
+    def test_bind_no_agent_notification(self, mock_bind_task):
+        bindings = consumer_groups.ConsumerGroupBindings()
+        bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
+                                                  'distributor_id': 'bar-distributor',
+                                                  'notify_agent': False})
+        mock_bind_task.apply_async.return_value.id = 'foo'
+
+        self.assertRaises(OperationPostponed, bindings.POST, 'consumer-group-id')
+        mock_bind_task.apply_async.assert_called_once_with(('consumer-group-id',
+                                                            'foo-repo',
+                                                            'bar-distributor',
+                                                            False, mock.ANY, mock.ANY))
+
+    @mock.patch('pulp.server.tasks.consumer_group.unbind', autospec=True)
+    def test_unbind(self, mock_bind_task):
+        binding = consumer_groups.ConsumerGroupBinding()
+        mock_bind_task.apply_async.return_value.id = 'foo'
+
+        self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-group-id', 'repo-id',
+                          'dist-id')
+        mock_bind_task.apply_async.assert_called_once_with(('consumer-group-id',
+                                                            'repo-id',
+                                                            'dist-id', mock.ANY))
+
+        #validate the permissions
+        self.validate_auth(authorization.DELETE)
+
+
 class BindTest(base.PulpWebserviceTests):
 
     def setUp(self):
@@ -190,45 +244,6 @@ class BindTest(base.PulpWebserviceTests):
             True,
             distributor_id=DISTRIBUTOR_ID)
 
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group_bind_itinerary', wraps=consumer_group_bind_itinerary)
-    def test_bind(self, mock_itinerary):
-        # Setup
-        self.populate()
-        # Test
-        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
-        body = dict(
-            repo_id=REPO_ID,
-            distributor_id=DISTRIBUTOR_TYPE_ID,
-            binding_config=BINDING_CONFIG,
-            notify_agent=NOTIFY_AGENT,
-            options={})
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), len(CONSUMER_IDS) * 2)
-        mock_itinerary.assert_called_with(
-            group_id=GROUP_ID,
-            repo_id=REPO_ID,
-            distributor_id=DISTRIBUTOR_TYPE_ID,
-            notify_agent=NOTIFY_AGENT,
-            binding_config=BINDING_CONFIG,
-            agent_options={})
-
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group_unbind_itinerary', wraps=consumer_group_unbind_itinerary)
-    def test_unbind(self, mock_itinerary):
-        # Setup
-        self.populate()
-        manager = managers.consumer_bind_manager()
-        for consumer_id in CONSUMER_IDS:
-            manager.bind(consumer_id, REPO_ID, DISTRIBUTOR_ID, NOTIFY_AGENT, BINDING_CONFIG)
-        # Test
-        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
-        status, body = self.delete(path)
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), len(CONSUMER_IDS) * 3)
-        mock_itinerary.assert_called_with(GROUP_ID, REPO_ID, DISTRIBUTOR_ID, {})
-
     @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
     def test_bindings_get_auth(self, mock_headers):
         """
@@ -237,16 +252,6 @@ class BindTest(base.PulpWebserviceTests):
         """
         path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
         call_status, call_body = self.get(path)
-        self.assertEqual(401, call_status)
-
-    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
-    def test_bindings_post_auth(self, mock_headers):
-        """
-        Test that when the proper authentication information is missing, the server returns a 401 error
-        when ConsumerGroupBindings.POST is called
-        """
-        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
-        call_status, call_body = self.post(path)
         self.assertEqual(401, call_status)
 
     @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
@@ -259,12 +264,3 @@ class BindTest(base.PulpWebserviceTests):
         call_status, call_body = self.get(path)
         self.assertEqual(401, call_status)
 
-    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
-    def test_binding_delete_auth(self, mock_headers):
-        """
-        Test that when the proper authentication information is missing, the server returns a 401 error
-        when ConsumerGroupBinding.DELETE is called
-        """
-        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
-        call_status, call_body = self.delete(path)
-        self.assertEqual(401, call_status)

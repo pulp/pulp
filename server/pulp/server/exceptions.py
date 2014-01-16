@@ -16,7 +16,9 @@ from datetime import timedelta
 from gettext import gettext as _
 from pprint import pformat
 
+from pulp.common import error_codes
 # base exception class ---------------------------------------------------------
+
 
 class PulpException(Exception):
     """
@@ -25,6 +27,37 @@ class PulpException(Exception):
     Provides base class __str__ and data_dict implementations
     """
     http_status_code = httplib.INTERNAL_SERVER_ERROR
+
+    def __init__(self, *args):
+        super(PulpException, self).__init__(*args)
+        self.error_code = error_codes.PLP0001
+        self.error_data = {}
+
+        # child exceptions are those that are wrapped within this exception, validation errors
+        # for example would have one overall validation error and then a separate sub error
+        # for each validation that failed
+
+        self.child_exceptions = []
+
+    def add_child_exception(self, exception):
+        self.child_exceptions.append(exception)
+
+    def to_dict(self):
+        result = {
+            'code': self.error_code.code,
+            'description': self.error_code.msg % self.error_data,
+            'data': self.error_data,
+            'sub_errors': []
+        }
+        for error in self.child_exceptions:
+            if isinstance(error, PulpException):
+                result['sub_errors'].append(error.to_dict())
+            else:
+                result['sub_errors'].append({'code': 'PLP0000',
+                                             'description': str(error),
+                                             'data': [],
+                                             'sub_errors:': []})
+        return result
 
     def __str__(self):
         class_name = self.__class__.__name__
@@ -38,6 +71,7 @@ class PulpException(Exception):
 
 # execution exceptions ---------------------------------------------------------
 
+
 class PulpExecutionException(PulpException):
     """
     Base class of exceptions raised during the execution of Pulp.
@@ -50,6 +84,17 @@ class PulpExecutionException(PulpException):
     """
     # NOTE intermediate exception class, no overrides will be provided
     pass
+
+
+class PulpCodedException(PulpException):
+    """
+    Base class for exceptions that put the error_code and data as init arguments
+    """
+    def __init__(self, error_code=error_codes.PLP0001, error_data=None):
+        super(PulpException, self).__init__()
+        self.error_code = error_code
+        if error_data:
+            self.error_data = error_data
 
 
 class MissingResource(PulpExecutionException):
@@ -69,6 +114,7 @@ class MissingResource(PulpExecutionException):
             resources['resource_id'] = args[0]
         PulpExecutionException.__init__(self, resources)
         self.resources = resources
+        self.error_data = {'resources': resources}
 
     def __str__(self):
         resources_str = ', '.join('%s=%s' % (k, v) for k, v in self.resources.items())
@@ -93,6 +139,7 @@ class ConflictingOperation(PulpExecutionException):
         @type  reasons: list
         """
         PulpExecutionException.__init__(self, reasons)
+        self.error_data = {'reasons': reasons}
         self.reasons = reasons
 
     def __str__(self):
@@ -118,6 +165,7 @@ class OperationTimedOut(PulpExecutionException):
         if isinstance(timeout, timedelta):
             timeout = str(timeout)
         PulpExecutionException.__init__(self, timeout)
+        self.error_data = {'timeout': timeout}
         self.timeout = timeout
 
     def __str__(self):
@@ -141,6 +189,7 @@ class OperationPostponed(PulpExecutionException):
         """
         PulpExecutionException.__init__(self, call_report)
         self.call_report = call_report
+        self.error_data = {'call_report': call_report}
 
     def __str__(self):
         msg = _('Operation postponed')
@@ -164,6 +213,7 @@ class MultipleOperationsPostponed(PulpExecutionException):
         """
         PulpExecutionException.__init__(self, call_report_list)
         self.call_report_list = call_report_list
+        self.error_data = {'call_report_list': call_report_list}
 
     def __str__(self):
         msg = _('Multiple Operations')
@@ -187,6 +237,7 @@ class NotImplemented(PulpExecutionException):
         """
         PulpExecutionException.__init__(self, operation_name)
         self.operation_name = operation_name
+        self.error_data = {'operation_name': operation_name}
 
     def __str__(self):
         msg = _('Operation not implemented: %(o)s') % {'o': self.operation_name}
@@ -218,6 +269,7 @@ class InvalidValue(PulpDataException):
         @type  property_names: list
         """
         PulpDataException.__init__(self, property_names)
+        self.error_data = {'property_names': property_names}
 
         if not isinstance(property_names, (list, tuple)):
             property_names = [property_names]
@@ -243,6 +295,7 @@ class MissingValue(PulpDataException):
         @type  property_names: list
         """
         PulpDataException.__init__(self, property_names)
+        self.error_data = {'property_names': property_names}
 
         if not isinstance(property_names, (list, tuple)):
             property_names = [property_names]
@@ -264,6 +317,7 @@ class UnsupportedValue(PulpDataException):
 
     def __init__(self, property_names):
         PulpDataException.__init__(self, property_names)
+        self.error_data = {'property_names': property_names}
 
         if not isinstance(property_names, (list, tuple)):
             property_names = [property_names]
@@ -289,6 +343,7 @@ class DuplicateResource(PulpDataException):
         @type  resource_id: str
         """
         PulpDataException.__init__(self, resource_id)
+        self.error_data = {'resource_id': resource_id}
         self.resource_id = resource_id
 
     def __str__(self):
@@ -306,6 +361,7 @@ class InputEncodingError(PulpDataException):
 
     def __init__(self, value):
         PulpDataException.__init__(self, value)
+        self.error_data = {'value': value}
         self.value = value
 
     def __str__(self):
