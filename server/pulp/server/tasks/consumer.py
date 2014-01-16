@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2013 Red Hat, Inc.
+# Copyright © 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -17,6 +17,7 @@ from pulp.common.tags import (action_tag, resource_tag, ACTION_AGENT_BIND, ACTIO
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch.call import CallReport
 from pulp.server.managers import factory as managers
+
 
 @celery.task
 def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):

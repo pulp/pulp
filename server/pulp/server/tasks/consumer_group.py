@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2013 Red Hat, Inc.
+# Copyright © 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -18,7 +18,7 @@ from pulp.common.error_codes import PLP0004, PLP0005
 from pulp.server.async.tasks import TaskResult
 from pulp.server.exceptions import MissingResource, PulpCodedException
 from pulp.server.managers import factory as managers
-from pulp.server.tasks.consumer import bind, unbind
+from pulp.server.tasks.consumer import bind as bind_task, unbind as unbind_task
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,8 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
 
     for consumer_id in group['consumer_ids']:
         try:
-            report = bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config,
-                          agent_options)
+            report = bind_task(consumer_id, repo_id, distributor_id, notify_agent, binding_config,
+                               agent_options)
             if report:
                 additional_tasks.append(report.call_request_id)
         except MissingResource, e:
@@ -97,7 +97,7 @@ def unbind(group_id, repo_id, distributor_id, options):
 
     for consumer_id in group['consumer_ids']:
         try:
-            report = unbind(consumer_id, repo_id, distributor_id, options)
+            report = unbind_task(consumer_id, repo_id, distributor_id, options)
             if report:
                 reports.append(report)
         except MissingResource, e:

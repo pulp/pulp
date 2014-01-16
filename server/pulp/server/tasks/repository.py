@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2013 Red Hat, Inc.
+# Copyright © 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -15,13 +15,10 @@ import logging
 
 import celery
 
-from pulp.common.tags import resource_tag, action_tag
 from pulp.common.error_codes import PLP0002, PLP0003, PLP0007
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.async.tasks import Task, TaskResult
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers
-from pulp.server.managers.repo import publish as publish_manager
 from pulp.server.tasks import consumer
 
 
@@ -65,8 +62,8 @@ def delete(repo_id):
         error = PulpCodedException(error_code=PLP0007, error_data={'repo_id': repo_id})
         error.child_exceptions = errors
 
-
     return TaskResult({}, error, additional_tasks)
+
 
 @celery.task(base=Task)
 def distributor_delete(repo_id, distributor_id):
@@ -74,12 +71,12 @@ def distributor_delete(repo_id, distributor_id):
     Get the itinerary for deleting a repository distributor.
       1. Delete the distributor on the sever.
       2. Unbind any bound consumers.
-    @param repo_id: A repository ID.
-    @type repo_id: str
-    @param distributor_id: A distributor id
-    @type distributor_id: str
-    @return: Any errors that may have occurred and the list of tasks spawned for each consumer
-    @rtype TaskResult
+    :param repo_id: A repository ID.
+    :type repo_id: str
+    :param distributor_id: A distributor id
+    :type distributor_id: str
+    :return: Any errors that may have occurred and the list of tasks spawned for each consumer
+    :rtype TaskResult
     """
     # delete distributor
 
@@ -123,8 +120,8 @@ def distributor_update(repo_id, distributor_id, config, delta):
     :type  repo_id:         str
     :param distributor_id:  A unique distributor id
     :type  distributor_id:  str
-    :param config:          A configuration dictionary for a distributor instance. The contents of this
-                            dict depends on the type of distributor.
+    :param config:          A configuration dictionary for a distributor instance. The contents of
+                            this dict depends on the type of distributor.
     :type  config:          dict
     :param delta:           A dictionary used to change other saved configuration values for a
                             distributor instance. This currently only supports the 'auto_publish'
@@ -177,6 +174,7 @@ def distributor_update(repo_id, distributor_id, config, delta):
 @celery.task
 def publish(repo_id, distributor_id, overrides=None):
     pass
+
 
 @celery.task
 def sync_with_auto_publish(repo_id, overrides=None):
