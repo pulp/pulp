@@ -17,7 +17,6 @@ import web
 from web.webapi import BadRequest
 
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
@@ -63,7 +62,7 @@ def expand_consumers(options, consumers):
     if options.get('bindings', False):
         ids = [c['id'] for c in consumers]
         manager = managers.consumer_bind_manager()
-        criteria = Criteria({'consumer_id':{'$in':ids}})
+        criteria = Criteria({'consumer_id': {'$in': ids}})
         bindings = manager.find_by_criteria(criteria)
         collated = {}
         for b in bindings:
@@ -97,23 +96,10 @@ class Consumers(JSONController):
         notes = body.get('notes')
 
         manager = managers.consumer_manager()
-        args = [id, display_name, description, notes]
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-                action_tag('create')]
-
-        call_request = CallRequest(manager.register, # rbarlow_converted
-                                   args,
-                                   weight=weight,
-                                   tags=tags)
-        call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
-
-        call_report = CallReport.from_call_request(call_request)
-        call_report.serialize_result = False
-
-        consumer = execution.execute_sync(call_request, call_report)
+        consumer = manager.register(id, display_name, description, notes)
         consumer.update({'_href': serialization.link.child_link_obj(consumer['id'])})
         return self.created(consumer['_href'], consumer)
+
 
 class Consumer(JSONController):
 
@@ -130,32 +116,14 @@ class Consumer(JSONController):
     @auth_required(DELETE)
     def DELETE(self, id):
         manager = managers.consumer_manager()
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-            action_tag('delete'),
-        ]
-        call_request = CallRequest( # rbarlow_converted
-            manager.unregister,
-            [id],
-            tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
-        return self.ok(execution.execute(call_request))
+        return self.ok(manager.unregister(id))
 
     @auth_required(UPDATE)
     def PUT(self, id):
         body = self.params()
         delta = body.get('delta')
         manager = managers.consumer_manager()
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-            action_tag('update')
-        ]
-        call_request = CallRequest( # rbarlow_converted
-            manager.update,
-            [id, delta],
-            tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
-        consumer = execution.execute(call_request)
+        consumer = manager.update(id, delta)
         href = serialization.link.current_link_obj()
         consumer.update(href)
         return self.ok(consumer)
@@ -249,7 +217,8 @@ class Bindings(JSONController):
         managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
 
         # bind
-        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
+        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent,
+                                       binding_config, options)
         execution.execute_multiple(call_requests)
 
 
@@ -396,6 +365,7 @@ class Content(JSONController):
         result = execution.execute_async(self, call_request)
         return result
 
+
 class ConsumerHistory(JSONController):
 
     @auth_required(READ)
@@ -429,8 +399,12 @@ class ConsumerHistory(JSONController):
         if event_type:
             event_type = event_type[0]
 
-        results = managers.consumer_history_manager().query(consumer_id=id, event_type=event_type, limit=limit,
-                                    sort=sort, start_date=start_date, end_date=end_date)
+        results = managers.consumer_history_manager().query(consumer_id=id,
+                                                            event_type=event_type,
+                                                            limit=limit,
+                                                            sort=sort,
+                                                            start_date=start_date,
+                                                            end_date=end_date)
         return self.ok(results)
 
 
@@ -475,7 +449,7 @@ class Profiles(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
                 action_tag('profile_create')]
 
-        call_request = CallRequest(manager.create, # rbarlow_converted
+        call_request = CallRequest(manager.create,  # rbarlow_converted
                                    [consumer_id, content_type],
                                    {'profile': profile},
                                    tags=tags,
@@ -527,22 +501,8 @@ class Profile(JSONController):
         profile = body.get('profile')
 
         manager = managers.consumer_profile_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
-                action_tag('profile_update')]
+        consumer = manager.update(consumer_id, content_type, profile)
 
-        call_request = CallRequest(manager.update, # rbarlow_converted
-                                   [consumer_id, content_type],
-                                   {'profile': profile},
-                                   tags=tags,
-                                   weight=0,
-                                   kwarg_blacklist=['profile'])
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        call_report = CallReport.from_call_request(call_request)
-        call_report.serialize_result = False
-
-        consumer = execution.execute_sync(call_request, call_report)
         link = serialization.link.child_link_obj(consumer_id, content_type)
         consumer.update(link)
 
@@ -563,18 +523,7 @@ class Profile(JSONController):
         @rtype: dict
         """
         manager = managers.consumer_profile_manager()
-        args = [
-            consumer_id,
-            content_type,
-        ]
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-        ]
-        call_request = CallRequest(manager.delete, # rbarlow_converted
-                                   args=args,
-                                   tags=tags)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        return self.ok(execution.execute(call_request))
+        return self.ok(manager.delete(consumer_id, content_type))
 
 
 class ContentApplicability(JSONController):
@@ -745,7 +694,7 @@ class UnitActionScheduleResource(JSONController):
     @auth_required(UPDATE)
     def PUT(self, consumer_id, schedule_id):
         schedule_data = self.params()
-        options = None
+        options = schedule_data.pop('options', None)
         units = schedule_data.pop('units', None)
 
         if 'schedule' in schedule_data:

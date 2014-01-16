@@ -326,19 +326,8 @@ class RepoCollectionTests(RepoControllersTests):
 
         self.assertEqual(body['id'], 'repo-1')
 
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
         self.assertTrue(repo is not None)
-
-        # test that the create call request has some black listed keyword arguments
-
-        repo_tag = tags.resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'repo-1')
-        create_tag = tags.action_tag('create')
-        coordinator = dispatch_factory.coordinator()
-        task = coordinator._find_tasks(tags=[repo_tag, create_tag])[0]
-        kwargs_reprs = task.call_request.callable_kwargs_reprs()
-
-        self.assertEqual(kwargs_reprs['importer_repo_plugin_config'], OBFUSCATED_VALUE)
-        self.assertEqual(kwargs_reprs['distributor_list'], OBFUSCATED_VALUE)
 
     def test_post_bad_data(self):
         """
