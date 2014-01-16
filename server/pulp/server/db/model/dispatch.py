@@ -24,6 +24,7 @@ from celery.utils.timeutils import timedelta_seconds
 import isodate
 
 from pulp.common import dateutils
+from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model.base import Model
 from pulp.server.managers import factory
 
@@ -377,6 +378,7 @@ class ScheduleEntry(beat.ScheduleEntry):
         :type  scheduled_call:  pulp.server.db.model.dispatch.ScheduledCall
         """
         self._scheduled_call = kwargs.pop('scheduled_call')
+        kwargs['app'] = app
         super(ScheduleEntry, self).__init__(*args, **kwargs)
 
     def _next_instance(self, last_run_at=None):

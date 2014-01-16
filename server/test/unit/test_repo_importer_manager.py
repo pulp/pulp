@@ -232,7 +232,8 @@ class RepoManagerTests(base.PulpServerTests):
 
     # -- remove ---------------------------------------------------------------
 
-    def test_remove_importer(self):
+    @mock.patch('pulp.server.managers.schedule.repo.RepoSyncScheduleManager.delete_by_importer_id')
+    def test_remove_importer(self, mock_delete_schedules):
         """
         Tests the successful case of removing an importer.
         """
@@ -249,6 +250,7 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertTrue(importer is None)
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
+        mock_delete_schedules.assert_called_once_with('whiterun', 'mock-importer')
 
     def test_remove_importer_missing_repo(self):
         """
@@ -527,47 +529,6 @@ class RepoManagerTests(base.PulpServerTests):
         # Test - Set Fake Repo
         self.importer_manager.set_importer_scratchpad('fake', 'bar') # should not error
 
-    # -- sync schedules --------------------------------------------------------
-
-    def test_sync_schedule(self):
-
-        # setup
-        repo_id = 'scheduled_repo'
-        importer_type_id = 'mock-importer'
-        schedule_id = 'scheduled_repo_sync'
-        self.repo_manager.create_repo(repo_id)
-        self.importer_manager.set_importer(repo_id, importer_type_id, {})
-
-        # pre-condition
-        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 0)
-
-        # add the schedule
-        self.importer_manager.add_sync_schedule(repo_id, schedule_id)
-        self.assertTrue(schedule_id in self.importer_manager.list_sync_schedules(repo_id))
-        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 1)
-
-        # idempotent add
-        self.importer_manager.add_sync_schedule(repo_id, schedule_id)
-        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 1)
-
-        # remove the schedule
-        self.importer_manager.remove_sync_schedule(repo_id, schedule_id)
-        self.assertFalse(schedule_id in self.importer_manager.list_sync_schedules(repo_id))
-        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 0)
-
-        # idempotent remove
-        self.importer_manager.remove_sync_schedule(repo_id, schedule_id)
-        self.assertEqual(len(self.importer_manager.list_sync_schedules(repo_id)), 0)
-
-        # errors
-        self.importer_manager.remove_importer(repo_id)
-        self.assertRaises(exceptions.MissingResource,
-                          self.importer_manager.add_sync_schedule,
-                          repo_id, schedule_id)
-        self.assertRaises(exceptions.MissingResource,
-                          self.importer_manager.remove_sync_schedule,
-                          repo_id, schedule_id)
-
     @mock.patch.object(RepoImporter, 'get_collection')
     def test_find_by_repo_list(self, mock_get_collection):
         EXPECT = {'repo_id': {'$in': ['repo-1']}}
@@ -581,15 +542,3 @@ class RepoManagerTests(base.PulpServerTests):
         EXPECT = {"id": {"$in": []}}
         self.importer_manager.find_by_repo_list(['repo-1'])
         self.assertFalse(mock_get_collection.return_value.find.called)
-
-    @mock.patch.object(ScheduledCall, 'get_collection')
-    def test_find_by_repo_list_with_scheduled_sync(self, mock_get_collection):
-        repo_id = 'scheduled_repo'
-        importer_type_id = 'mock-importer'
-        schedule_id = 'scheduled_repo_sync'
-        self.repo_manager.create_repo(repo_id)
-        self.importer_manager.set_importer(repo_id, importer_type_id, {})
-        self.importer_manager.add_sync_schedule(repo_id, schedule_id)
-        self.importer_manager.find_by_repo_list([repo_id])
-        EXPECT = {"id": {"$in": [schedule_id]}}
-        mock_get_collection.return_value.find.assert_called_once_with(EXPECT)

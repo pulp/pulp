@@ -17,8 +17,12 @@ import unittest
 from celery.beat import ScheduleEntry
 import mock
 
+from pulp.server.managers.factory import initialize
 from pulp.server.async import scheduler
 from pulp.server.db.model import dispatch
+
+
+initialize()
 
 
 class TestFailureWatcherLen(unittest.TestCase):
@@ -357,7 +361,8 @@ class TestSchedulerApplyAsync(unittest.TestCase):
     @mock.patch('celery.beat.Scheduler.apply_async')
     def test_celery_entry(self, mock_apply_async, mock_setup_schedule):
         sched_instance = scheduler.Scheduler()
-        entry = ScheduleEntry()
+        call = dispatch.ScheduledCall('PT1H', 'fake.task')
+        entry = call.as_schedule_entry()
 
         ret = sched_instance.apply_async(entry)
 

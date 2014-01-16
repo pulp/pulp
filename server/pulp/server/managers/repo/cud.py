@@ -30,7 +30,6 @@ import pymongo
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, \
     PulpExecutionException, MultipleOperationsPostponed
 from pulp.server.itineraries.repository import distributor_update_itinerary
@@ -219,20 +218,8 @@ class RepoManager(object):
         # will have to look at the server logs for more information.
         error_tuples = [] # tuple of failed step and exception arguments
 
-        # Remove any scheduled activities
-        scheduler = dispatch_factory.scheduler()
-
         importer_manager = manager_factory.repo_importer_manager()
-        importers = importer_manager.get_importers(repo_id)
-        if importers:
-            for schedule_id in importer_manager.list_sync_schedules(repo_id):
-                scheduler.remove(schedule_id)
-
         distributor_manager = manager_factory.repo_distributor_manager()
-        for distributor in distributor_manager.get_distributors(repo_id):
-            for schedule_id in distributor_manager.list_publish_schedules(repo_id,
-                                                                          distributor['id']):
-                scheduler.remove(schedule_id)
 
         # Inform the importer
         importer_coll = RepoImporter.get_collection()

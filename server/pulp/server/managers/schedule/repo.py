@@ -132,6 +132,16 @@ class RepoSyncScheduleManager(object):
         utils.delete(schedule_id)
 
     @staticmethod
+    def delete_by_importer_id(repo_id, importer_id):
+        """
+        Delete all schedules for the specified repo and importer.
+
+        :param importer_id:     unique ID for an importer
+        :type  importer_id:     basestring
+        """
+        utils.delete_by_resource(RepoImporter.build_resource_tag(repo_id, importer_id))
+
+    @staticmethod
     def validate_importer(repo_id, importer_id):
         """
         Validate that the importer exists for the specified repo
@@ -257,6 +267,16 @@ class RepoPublishScheduleManager(object):
 
         # remove from the scheduler
         utils.delete(schedule_id)
+
+    @staticmethod
+    def delete_by_distributor_id(repo_id, distributor_id):
+        """
+        Delete all schedules for the specified repo and distributor.
+
+        :param distributor_id:  unique ID for an distributor
+        :type  distributor_id:  basestring
+        """
+        utils.delete_by_resource(RepoDistributor.build_resource_tag(repo_id, distributor_id))
 
     @staticmethod
     def validate_distributor(repo_id, distributor_id):

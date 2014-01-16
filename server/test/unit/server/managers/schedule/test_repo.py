@@ -161,6 +161,19 @@ class TestSyncDelete(unittest.TestCase):
         mock_delete.assert_called_once_with(self.schedule_id)
 
 
+class TestSyncDeleteByImporterId(unittest.TestCase):
+    repo = 'repo1'
+    importer = 'importer1'
+
+    @mock.patch('pulp.server.managers.schedule.utils.delete_by_resource')
+    def test_calls_delete_resource(self, mock_delete_by):
+        resource = RepoImporter.build_resource_tag(self.repo, self.importer)
+
+        RepoSyncScheduleManager.delete_by_importer_id(self.repo, self.importer)
+
+        mock_delete_by.assert_called_once_with(resource)
+
+
 class TestValidateImporter(unittest.TestCase):
     @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
     def test_matching_importer(self, mock_get_importer):
@@ -325,6 +338,19 @@ class TestPublishDelete(unittest.TestCase):
         RepoPublishScheduleManager.delete(self.repo, self.distributor, self.schedule_id)
 
         mock_delete.assert_called_once_with(self.schedule_id)
+
+
+class TestPublishDeleteByImporterId(unittest.TestCase):
+    repo = 'repo1'
+    distributor = 'distributor1'
+
+    @mock.patch('pulp.server.managers.schedule.utils.delete_by_resource')
+    def test_calls_delete_resource(self, mock_delete_by):
+        resource = RepoDistributor.build_resource_tag(self.repo, self.distributor)
+
+        RepoPublishScheduleManager.delete_by_distributor_id(self.repo, self.distributor)
+
+        mock_delete_by.assert_called_once_with(resource)
 
 
 class TestValidateDistributor(unittest.TestCase):

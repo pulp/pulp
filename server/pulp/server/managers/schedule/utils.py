@@ -99,6 +99,16 @@ def delete(schedule_id):
     ScheduledCall.get_collection().remove({'_id': schedule_id}, safe=True)
 
 
+def delete_by_resource(resource):
+    """
+    Deletes all schedules for the specified resource
+
+    :param resource:    string indicating a unique resource
+    :type  resource:    basestring
+    """
+    ScheduledCall.get_collection().remove({'resource': resource}, safe=True)
+
+
 def update(schedule_id, delta):
     """
     Updates the schedule with unique ID schedule_id. This only allows updating

@@ -208,6 +208,17 @@ class TestDelete(unittest.TestCase):
         mock_get_collection.assert_called_once_with()
 
 
+class TestDeleteByResource(unittest.TestCase):
+    @mock.patch('pulp.server.db.connection.PulpCollection.remove')
+    def test_calls_remove(self, mock_remove):
+        mock_remove.return_value = None
+        mock_remove.__name__ = 'remove'
+
+        utils.delete_by_resource('resource1')
+
+        mock_remove.assert_called_once_with({'resource': 'resource1'}, safe=True)
+
+
 class TestUpdate(unittest.TestCase):
     @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
     def test_update(self, mock_find):

@@ -98,12 +98,10 @@ class RepoPublishManager(object):
 
         # Fire events describing the publish state
         fire_manager = manager_factory.event_fire_manager()
-        # TODO: re-enable this after fixing it
-        #fire_manager.fire_repo_publish_started(repo_id, distributor_id)
+        fire_manager.fire_repo_publish_started(repo_id, distributor_id)
         result = RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
                                                 transfer_repo, conduit, call_config)
-        # TODO: re-enable this after fixing it
-        #fire_manager.fire_repo_publish_finished(result)
+        fire_manager.fire_repo_publish_finished(result)
 
         return result
 

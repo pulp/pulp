@@ -89,10 +89,13 @@ class TestCreate(unittest.TestCase):
 
         mock_validate.assert_called_once_with('consumer1')
 
+    @mock.patch.object(ScheduledCall, 'save')
     @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.get_consumer')
-    def test_validate_options(self, mock_get_consumer):
-        self.assertRaises(InvalidValue, self.manager.create_schedule, UNIT_INSTALL_ACTION, 'consumer1',
-                          self.units, {'not_a_valid_option': True}, 'PT1H')
+    def test_allows_arbitrary_options(self, mock_get_consumer, mock_save):
+        self.manager.create_schedule(UNIT_INSTALL_ACTION, 'consumer1',
+                                     self.units, {'arbitrary_option': True}, 'PT1H')
+
+        mock_save.assert_called_once_with()
 
     @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.get_consumer')
     def test_validate_schedule(self, mock_get_consumer):

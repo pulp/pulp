@@ -152,6 +152,7 @@ class Scheduler(beat.Scheduler):
         thread.daemon = True
         thread.start()
 
+        kwargs['app'] = app
         super(Scheduler, self).__init__(*args, **kwargs)
 
     def tick(self):
