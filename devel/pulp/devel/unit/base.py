@@ -114,7 +114,7 @@ class PulpWebservicesTests(unittest.TestCase):
         return "/mock/"
 
 
-class MockTaskResult():
+class MockTaskResult(object):
     """
     Mock object for returning an async task result
     """
