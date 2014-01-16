@@ -50,7 +50,6 @@ class Repo(Model):
                     either set by the user or by an importer or distributor
     @type metadata: dict
     """
-    RESOURCE_PREFIX = 'pulp:repository:'
 
     collection_name = 'repos'
     unique_indices = ('id',)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2013 Red Hat, Inc.
+# Copyright © 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -369,8 +369,6 @@ class TestIncrementFailureCount(unittest.TestCase):
         last_updated = mock_update.call_args[0][1]['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second
         self.assertTrue(time.time() - last_updated < .1)
-
-
 
 
 SCHEDULES = [

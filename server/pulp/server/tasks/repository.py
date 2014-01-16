@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2013 Red Hat, Inc.
+# Copyright © 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -53,6 +53,8 @@ def publish(repo_id, distributor_id, overrides=None):
     :return: list of call requests
     :rtype: list
     """
+    # TODO: test this as part of finishing implementation of this module
+
     resource_id = REPO_RESOURCE_PREFIX + repo_id
     kwargs = {
         'repo_id': repo_id,
