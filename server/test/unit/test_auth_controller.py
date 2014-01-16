@@ -225,7 +225,7 @@ class UserResourceTests(AuthControllersTests):
 
         # Verify that permissions are removed
         self.assertEqual(200, status)
-        permission = Permission.get_collection().find_one({'resource' : '/v2/users/user-1/'})
+        permission = Permission.get_collection().find_one({'resource': '/v2/users/user-1/'})
         self.assertTrue(permission is None)
 
     def test_delete_missing_user(self):
