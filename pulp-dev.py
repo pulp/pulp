@@ -91,9 +91,6 @@ LINKS = (
     ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
     ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
     ('server/etc/pulp/logging', '/etc/pulp/logging'),
-    ('server/etc/default/pulp_celerybeat', '/etc/default/pulp_celerybeat'),
-    ('server/etc/default/pulp_celery_workers', '/etc/default/pulp_celery_workers'),
-    ('server/etc/default/pulp_resource_manager', '/etc/default/pulp_resource_manager'),
 
     # Server Web Configuration
     ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
@@ -198,10 +195,27 @@ def getlinks():
                                          stdout=subprocess.PIPE).communicate()[0])
     if lsb_version < 7.0:
         links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
-        links.append(('server/etc/rc.d/init.d/pulp_celery_workers',
-                      '/etc/rc.d/init.d/pulp_celery_workers'))
+        links.append(('server/etc/rc.d/init.d/pulp_workers',
+                      '/etc/rc.d/init.d/pulp_workers'))
         links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
                       '/etc/rc.d/init.d/pulp_resource_manager'))
+        links.append(('server/etc/default/upstart_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
+        links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))
+        links.append(('server/etc/default/upstart_pulp_resource_manager',
+                      '/etc/default/pulp_resource_manager'))
+    else:
+        links.append(('server/etc/default/systemd_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
+        links.append(('server/etc/default/systemd_pulp_workers', '/etc/default/pulp_workers'))
+        links.append(('server/etc/default/systemd_pulp_resource_manager',
+                      '/etc/default/pulp_resource_manager'))
+        links.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
+                      '/usr/lib/systemd/system/pulp_celerybeat.service'))
+        links.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
+                      '/usr/lib/systemd/system/pulp_resource_manager.service'))
+        links.append(('server/usr/lib/systemd/system/pulp_workers.service',
+                      '/usr/lib/systemd/system/pulp_workers.service'))
+        links.append(('server/usr/libexec/pulp_manage_workers',
+                      '/usr/libexec/pulp_manage_workers'))
 
     return links
 
@@ -222,7 +236,7 @@ def install(opts):
 
     # The Celery init script will get angry if /etc/default things aren't root owned
     os.system('chown root:root /etc/default/pulp_celerybeat')
-    os.system('chown root:root /etc/default/pulp_celery_workers')
+    os.system('chown root:root /etc/default/pulp_workers')
     os.system('chown root:root /etc/default/pulp_resource_manager')
 
     # Guarantee apache always has write permissions
