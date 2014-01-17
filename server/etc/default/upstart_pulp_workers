@@ -14,7 +14,6 @@ CELERYD_PID_FILE="/var/run/pulp/%n.pid"
 
 # Define the number of worker nodes you wish to have here. This defaults to the number of processors
 # that are detected on the system.
-# TODO: Make the init script able to default this setting
 # PULP_CONCURRENCY=4
 
 ######################################################################

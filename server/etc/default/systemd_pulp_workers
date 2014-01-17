@@ -11,11 +11,3 @@ CELERYD_LOG_LEVEL="INFO"
 # Define the number of worker nodes you wish to have here. This defaults to the number of processors
 # that are detected on the system if left commented here.
 # PULP_CONCURRENCY=4
-
-######################################################################
-# Please do not edit any of the settings below this mark in this file!
-######################################################################
-CELERY_APP="pulp.server.async.app"
-
-# Set the concurrency of each worker node to 1. DO NOT CHANGE THE CONCURRENCY!
-CELERYD_OPTS="-c 1 --events"

@@ -53,6 +53,7 @@ DEFAULT_LOG_FILE="/var/log/celery/%n.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_NODES="celery"
 DEFAULT_CELERYD="-m celery worker --detach"
+DEFAULT_PULP_CONCURRENCY=$(nproc --all)
 
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 
@@ -145,6 +146,7 @@ fi
 
 
 CELERYD_NODES=${CELERYD_NODES:-$DEFAULT_NODES}
+PULP_CONCURRENCY=${PULP_CONCURRENCY:-$DEFAULT_PULP_CONCURRENCY}
 # If the user has specified a concurrency setting, we will add that many reserved_resource_workers to the
 #  CELERYD_NODES string here
 if [ $PULP_CONCURRENCY -ge 1 ]; then

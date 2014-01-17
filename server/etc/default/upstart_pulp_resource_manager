@@ -21,7 +21,7 @@ CELERY_CREATE_DIRS=1
 CELERYD_NODES="resource_manager"
 
 # Set the concurrency of each worker node to 1. DO NOT CHANGE THIS SETTING!
-CELERYD_OPTS="-c 1"
+CELERYD_OPTS="-c 1 --events"
 
 CELERYD_USER="apache"
 
