@@ -14,6 +14,7 @@
 This module contains tests for the pulp.server.async.celery_instance module.
 """
 from datetime import timedelta
+from functools import partial
 import unittest
 
 import mock
@@ -71,19 +72,20 @@ class TestCelerybeatSchedule(unittest.TestCase):
                          celery_instance.CELERYBEAT_SCHEDULE)
 
 
-def fake_get(section, key):
+def fake_get(config, section, key):
     """
     Fake version of the get() method from pulp's config object. This is useful
     so we can have concrete values to test for.
     """
-    if key == 'name':
-        return 'database_name'
-    elif key == 'seeds':
-        return 'host1:27017,host2:27017'
-    elif key == 'user':
-        return 'someguy'
-    elif key == 'password':
-        return 'letmein'
+    return config.get(key)
+
+
+CONFIG = {
+    'name': 'database_name',
+    'seeds': 'host1:27017,host2:27017',
+    'user': 'someguy',
+    'password': 'letmein',
+}
 
 
 class TestMongoBackendConfig(unittest.TestCase):
@@ -98,29 +100,55 @@ class TestMongoBackendConfig(unittest.TestCase):
         self.assertTrue(conf.get('database') is not None)
 
     @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
-    @mock.patch('pulp.server.async.celery_instance.config.get', new=fake_get)
     def test_create_config(self):
-        conf = celery_instance.create_mongo_config()
+        custom_fake_get = partial(fake_get, CONFIG)
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
 
-        self.assertEqual(conf['host'], 'host1:27017,host2:27017')
-        self.assertEqual(conf['database'], 'database_name')
-        self.assertEqual(conf['user'], 'someguy')
-        self.assertEqual(conf['password'], 'letmein')
+            self.assertEqual(result['host'], 'host1')
+            self.assertEqual(result['port'], '27017')
+            self.assertEqual(result['database'], 'database_name')
+            self.assertEqual(result['user'], 'someguy')
+            self.assertEqual(result['password'], 'letmein')
+
+    @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
+    def test_create_config_one_seed(self):
+        config = CONFIG.copy()
+        config['seeds'] = config['seeds'].split(',')[0]
+        custom_fake_get = partial(fake_get, config)
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
+
+            self.assertEqual(result['host'], 'host1')
+            self.assertEqual(result['port'], '27017')
+
+    @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
+    def test_create_config_no_port(self):
+        config = CONFIG.copy()
+        config['seeds'] = 'host1'
+        custom_fake_get = partial(fake_get, config)
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
+
+            self.assertEqual(result['host'], 'host1')
+            self.assertTrue('port' not in result)
 
     @mock.patch('pulp.server.config.config.has_option',
                 new=lambda x, y: False if y == 'password' else True)
-    @mock.patch('pulp.server.config.config.get', new=fake_get)
     def test_no_password(self):
-        conf = celery_instance.create_mongo_config()
+        custom_fake_get = partial(fake_get, CONFIG)
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
 
-        self.assertTrue('user' not in conf)
-        self.assertTrue('password' not in conf)
+            self.assertTrue('user' not in result)
+            self.assertTrue('password' not in result)
 
     @mock.patch('pulp.server.config.config.has_option',
                 new=lambda x, y: False if y == 'user' else True)
-    @mock.patch('pulp.server.config.config.get', new=fake_get)
     def test_no_user(self):
-        conf = celery_instance.create_mongo_config()
+        custom_fake_get = partial(fake_get, CONFIG)
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
 
-        self.assertTrue('user' not in conf)
-        self.assertTrue('password' not in conf)
+            self.assertTrue('user' not in result)
+            self.assertTrue('password' not in result)
