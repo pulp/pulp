@@ -58,3 +58,16 @@ PLP0008 = Error("PLP0008",
                 _("Error raising error %(code).  "
                   "The field [%(field)s] was not included in the error_data."),
                 ['code', 'field'])
+PLP0009 = Error("PLP0009", _("Missing resource(s): %(resources)s"), ['resources'])
+PLP0010 = Error("PLP0010", _("Conflicting operation reasons: %(r)s"), ['reasons'])
+PLP0011 = Error("PLP0011", _("Operation timed out after: %(timeout)s"), ['timeout'])
+PLP0012 = Error("PLP0012", _("Operation postponed"), [])
+PLP0013 = Error("PLP0013", _("Multiple Operations"), [])
+PLP0014 = Error("PLP0014", _('Operation not implemented: %(operation_name)s'), ['operation_name'])
+PLP0015 = Error("PLP0015", _('Invalid properties: %(properties)s'), ['properties'])
+PLP0016 = Error("PLP0016", _('Missing values for: %(properties)s'), ['properties'])
+PLP0017 = Error("PLP0017", _('Unsupported properties: %(properties)s'), ['properties'])
+PLP0018 = Error("PLP0018", _('Duplicate resource: %(resource_id)s'), ['resource_id'])
+PLP0019 = Error("PLP0019", _('Pulp only accepts input encoded in UTF-8: %(value)s'), ['value'])
+
+
