@@ -679,6 +679,23 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
+    @mock.patch('celery.Task.apply_async')
+    def test_apply_async_task_canceled(self, apply_async):
+        """
+        Assert that apply_async() honors 'canceled' task status.
+        """
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags']}
+        task_id = 'test_task_id'
+        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue'), state=CALL_CANCELED_STATE)
+        apply_async.return_value = celery.result.AsyncResult(task_id)
+
+        task = tasks.Task()
+        task.apply_async(*args, **kwargs)
+
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], 'canceled')
+        self.assertEqual(task_status['start_time'], None)
 
 class TestCancel(PulpServerTests):
     """

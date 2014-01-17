@@ -275,7 +275,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Updates start_time and sets the task state to 'running' for asynchronous tasks.
+        # Check task status and skip running the task if task state is 'canceled'.
+        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
+            logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+            return
+        # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Skip updating status for eagerly executed tasks, since we don't want to track
         # synchronous tasks in our database.
         if not self.request.called_directly:
@@ -284,7 +289,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             TaskStatus.get_collection().update(
                 {'task_id': self.request.id},
                 {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
-                          'start_time':  dateutils.now_utc_timestamp()}},
+                          'start_time': dateutils.now_utc_timestamp()}},
                 upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
