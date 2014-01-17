@@ -40,6 +40,11 @@ CELERYBEAT_SCHEDULE = {
         'schedule': timedelta(days=config.getfloat('data_reaping', 'reaper_interval')),
         'args': tuple(),
     },
+    'monthly_maintenance': {
+        'task': 'pulp.server.maintenance.monthly.monthly_maintenance',
+        'schedule': timedelta(days=30),
+        'args': tuple(),
+    },
 }
 
 
