@@ -54,8 +54,15 @@ def create_mongo_config():
     :rtype:     dict
     """
     db_name = config.get('database', 'name')
+
+    # celery 3.1 doesn't support multiple seeds, so we just use the first one
     seeds = config.get('database', 'seeds')
-    mongo_config = {'host': seeds, 'database': db_name}
+    seed = seeds.split(',')[0].strip()
+    host = seed.split(':')[0]
+    port = seed.split(':')[1] if ':' in seed else None
+    mongo_config = {'host': host, 'database': db_name}
+    if port:
+        mongo_config['port'] = port
     if config.has_option('database', 'user') and config.has_option('database', 'password'):
         mongo_config['user'] = config.get('database', 'user')
         mongo_config['password'] = config.get('database', 'password')
