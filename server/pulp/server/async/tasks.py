@@ -331,12 +331,19 @@ class Task(CeleryTask, ReservedTaskMixin):
 
 def cancel(task_id):
     """
-    Cancel the task that is represented by the given task_id.
+    Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+    This also updates task's state to 'canceled' state.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
     """
-    controller.revoke(task_id, terminate=True)
-    msg = _('Task canceled: %(task_id)s.')
-    msg = msg % {'task_id': task_id}
+    task_status = TaskStatusManager.find_by_task_id(task_id)
+    if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+        controller.revoke(task_id, terminate=True)
+        TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
+        msg = _('Task canceled: %(task_id)s.')
+        msg = msg % {'task_id': task_id}
+    else:
+        msg = _('Task [%(task_id)s] cannot be canceled since it is already in a complete state.')
+        msg = msg % {'task_id': task_id}
     logger.info(msg)

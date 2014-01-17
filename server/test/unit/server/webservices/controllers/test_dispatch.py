@@ -19,6 +19,7 @@ import mock
 from .... import base
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.db.model.resources import AvailableQueue
 
 class TestTaskResource(base.PulpWebserviceTests):
     """
@@ -32,6 +33,8 @@ class TestTaskResource(base.PulpWebserviceTests):
         """
         task_id = '1234abcd'
         url = '/v2/tasks/%s/'
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name)
 
         self.delete(url % task_id)
 
