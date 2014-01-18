@@ -20,124 +20,258 @@ from gofer.messaging import Envelope
 from gofer.messaging.broker import URL, Broker
 from gofer.rmi.async import Started, Succeeded, Failed
 
-from base import PulpServerTests
-from pulp.devel import mock_agent
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent import Context
-from pulp.server.agent.direct.pulpagent import PulpAgent
+from pulp.server.agent.direct.pulpagent import PulpAgent, Consumer, Content, Profile
 from pulp.server.agent.direct.services import Services, ReplyHandler
-
-
-REPO_ID = 'repo_1'
-DETAILS = {}
-BINDINGS = [
-    {'type_id': 'yum',
-     'repo_id': REPO_ID,
-     'details': DETAILS}
-]
-CONSUMER = {
-    'id': 'gc',
-    'certificate': 'XXX',
-}
-UNIT = {
-    'type_id': 'rpm',
-    'unit_key': {
-        'name': 'zsh',
-    }
-}
-UNITS = [UNIT]
-OPTIONS = {
-    'xxx': True,
-}
-
-TASK_ID = 'TASK-123'
-
-CONTEXT_DETAILS = {
-    'task_id': TASK_ID
-}
-
-CONTEXT = Context(CONSUMER, **CONTEXT_DETAILS)
 
 
 class TestContext(TestCase):
 
     def test_context(self):
+        consumer = {'id': 'gc', 'certificate': 'XXX'}
         h = hashlib.sha256()
-        h.update(CONSUMER['certificate'])
+        h.update(consumer['certificate'])
         secret = h.hexdigest()
-        context = Context(CONSUMER, **CONTEXT_DETAILS)
-        self.assertEqual(context.uuid, CONSUMER['id'])
+        details = {'task_id': '3456'}
+        context = Context(consumer, **details)
+        self.assertEqual(context.uuid, consumer['id'])
         self.assertEqual(context.url, pulp_conf.get('messaging', 'url'))
         self.assertEqual(context.secret, secret)
-        self.assertEqual(context.details, CONTEXT_DETAILS)
+        self.assertEqual(context.details, details)
         self.assertEqual(context.reply_queue, Services.REPLY_QUEUE)
         self.assertEqual(context.watchdog, Services.watchdog)
 
 
-class TestAgent(PulpServerTests):
-    
-    def setUp(self):
-        PulpServerTests.setUp(self)
-        mock_agent.install()
-        mock_agent.reset()
+class TestConsumerCapability(TestCase):
 
-    def test_unregistered(self):
-        # Test
-        agent = PulpAgent()
-        agent.consumer.unregistered(CONTEXT)
-        # Verify
-        mock_agent.Consumer.unregistered.assert_called_once_with()
-        
-    def test_bind(self):
-        # Test
-        agent = PulpAgent()
-        result = agent.consumer.bind(CONTEXT, BINDINGS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.bind.assert_called_once_with(BINDINGS, OPTIONS)
-        
-    def test_unbind(self):
-        # Test
-        agent = PulpAgent()
-        result = agent.consumer.unbind(CONTEXT, BINDINGS, OPTIONS)
-        # Verify
-        mock_agent.Consumer.unbind.assert_called_once_with(BINDINGS, OPTIONS)
-        
-    def test_install_content(self):
-        # Test
-        agent = PulpAgent()
-        result = agent.content.install(CONTEXT, UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.install.assert_called_once_with(UNITS, OPTIONS)
-        
-    def test_update_content(self):
-        # Test
-        agent = PulpAgent()
-        result = agent.content.update(CONTEXT, UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.update.assert_called_once_with(UNITS, OPTIONS)
-        
-    def test_uninstall_content(self):
-        # Test
-        agent = PulpAgent()
-        result = agent.content.uninstall(CONTEXT, UNITS, OPTIONS)
-        # Verify
-        mock_agent.Content.uninstall.assert_called_once_with(UNITS, OPTIONS)
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_unregistered(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
 
-    def test_profile_send(self):
-        # Test
-        agent = PulpAgent()
-        print agent.profile.send(CONTEXT)
-        # Verify
-        mock_agent.Profile.send.assert_called_once_with()
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_consumer = Mock()
+        mock_agent.Consumer = Mock(return_value=mock_consumer)
 
-    def test_cancel(self):
-        # Test
-        task_id = '123'
-        agent = PulpAgent()
-        agent.cancel(CONTEXT, task_id)
-        # Verify
+        Consumer.unregistered(context)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid, url=context.url, secret=context.secret, async=True)
+
+        mock_consumer.unregistered.assert_called_with()
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_bind(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+        context.details = {'task_id': '4567'}
+        context.get_timeout = Mock(return_value=90)
+        context.reply_queue = 'pulp.task'
+        context.watchdog = 'pulp-watchdog'
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_consumer = Mock()
+        mock_agent.Consumer = Mock(return_value=mock_consumer)
+
+        bindings = []
+        options = {}
+
+        Consumer.bind(context, bindings, options)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid,
+            ctag=context.reply_queue,
+            url=context.url,
+            secret=context.secret,
+            timeout=context.get_timeout(),
+            watchdog=context.watchdog,
+            any=context.details)
+
+        mock_consumer.bind.assert_called_with(bindings, options)
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_unbind(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+        context.details = {'task_id': '4567'}
+        context.get_timeout = Mock(return_value=90)
+        context.reply_queue = 'pulp.task'
+        context.watchdog = 'pulp-watchdog'
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_consumer = Mock()
+        mock_agent.Consumer = Mock(return_value=mock_consumer)
+
+        bindings = []
+        options = {}
+
+        Consumer.unbind(context, bindings, options)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid,
+            ctag=context.reply_queue,
+            url=context.url,
+            secret=context.secret,
+            timeout=context.get_timeout(),
+            watchdog=context.watchdog,
+            any=context.details)
+
+        mock_consumer.unbind.assert_called_with(bindings, options)
+
+
+class TestContentCapability(TestCase):
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_install(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+        context.details = {'task_id': '4567'}
+        context.get_timeout = Mock(return_value=90)
+        context.reply_queue = 'pulp.task'
+        context.watchdog = 'pulp-watchdog'
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_content = Mock()
+        mock_agent.Content = Mock(return_value=mock_content)
+
+        units = []
+        options = {}
+
+        Content.install(context, units, options)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid,
+            ctag=context.reply_queue,
+            url=context.url,
+            secret=context.secret,
+            timeout=context.get_timeout(),
+            watchdog=context.watchdog,
+            any=context.details)
+
+        mock_content.install.assert_called_with(units, options)
+
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_update(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+        context.details = {'task_id': '4567'}
+        context.get_timeout = Mock(return_value=90)
+        context.reply_queue = 'pulp.task'
+        context.watchdog = 'pulp-watchdog'
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_content = Mock()
+        mock_agent.Content = Mock(return_value=mock_content)
+
+        units = []
+        options = {}
+
+        Content.update(context, units, options)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid,
+            ctag=context.reply_queue,
+            url=context.url,
+            secret=context.secret,
+            timeout=context.get_timeout(),
+            watchdog=context.watchdog,
+            any=context.details)
+
+        mock_content.update.assert_called_with(units, options)
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_uninstall(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+        context.details = {'task_id': '4567'}
+        context.get_timeout = Mock(return_value=90)
+        context.reply_queue = 'pulp.task'
+        context.watchdog = 'pulp-watchdog'
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_content = Mock()
+        mock_agent.Content = Mock(return_value=mock_content)
+
+        units = []
+        options = {}
+
+        Content.uninstall(context, units, options)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid,
+            ctag=context.reply_queue,
+            url=context.url,
+            secret=context.secret,
+            timeout=context.get_timeout(),
+            watchdog=context.watchdog,
+            any=context.details)
+
+        mock_content.uninstall.assert_called_with(units, options)
+
+
+class TestProfileCapability(TestCase):
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_send(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_profile = Mock()
+        mock_agent.Profile = Mock(return_value=mock_profile)
+
+        Profile.send(context)
+
+        mock_gofer_agent.assert_called_with(context.uuid, url=context.url, secret=context.secret)
+        mock_profile.send.assert_called_with()
+
+
+class TestAdminCapability(TestCase):
+
+    @patch('pulp.server.agent.direct.pulpagent.Agent')
+    def test_send(self, mock_gofer_agent):
+        context = Mock()
+        context.uuid = '123'
+        context.url = 'http://broker.com'
+        context.secret = '123-secret'
+
+        task_id = '5678'
         criteria = {'match': {'task_id': task_id}}
-        mock_agent.Admin.cancel.assert_called_once_with(criteria=criteria)
+
+        mock_agent = Mock()
+        mock_gofer_agent.return_value = mock_agent
+        mock_admin = Mock()
+        mock_agent.Admin = Mock(return_value=mock_admin)
+
+        agent = PulpAgent()
+        agent.cancel(context, task_id)
+
+        mock_gofer_agent.assert_called_with(
+            context.uuid, url=context.url, secret=context.secret, async=True)
+        mock_admin.cancel.assert_called_with(criteria=criteria)
 
 
 class TestReplyHandler(TestCase):
@@ -148,7 +282,7 @@ class TestReplyHandler(TestCase):
         handler = ReplyHandler(url)
         watchdog = Mock()
         handler.start(watchdog)
-        mock_start.start_called_with(watchdog)
+        mock_start.assert_called_with(handler, watchdog=watchdog)
 
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')

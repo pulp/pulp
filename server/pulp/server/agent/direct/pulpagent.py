@@ -35,8 +35,6 @@ from logging import getLogger
 
 from gofer.proxy import Agent
 
-from pulp.server.agent.direct.services import Services
-
 
 log = getLogger(__name__)
 
@@ -73,7 +71,7 @@ class PulpAgent(object):
         :return: Profile API.
         :rtype: Profile
         """
-        return Profile()
+        return Profile
 
     @staticmethod
     def cancel(context, task_id):
@@ -257,6 +255,6 @@ class Profile(object):
         :return: The RMI request serial number.
         :rtype: str
         """
-        agent = Agent(context.uuid, secret=context.secret)
+        agent = Agent(context.uuid, url=context.url, secret=context.secret)
         profile = agent.Profile()
         return profile.send()
