@@ -311,10 +311,10 @@ class AgentManager(object):
         """
         Get a profiler consumer model object.
 
-        :param id: A consumer ID.
-        :type  id: str
-        :return:   A populated profiler consumer model object.
-        :rtype:    pulp.plugins.model.Consumer
+        :param consumer_id: A consumer ID.
+        :type  consumer_id: str
+        :return: A populated profiler consumer model object.
+        :rtype:  pulp.plugins.model.Consumer
         """
         profiles = {}
         manager = managers.consumer_profile_manager()
@@ -332,7 +332,6 @@ class AgentManager(object):
 
         :param bindings: a list of binding object retrieved from the database
         :type  bindings: list
-
         :return: list of binding objects to send to the agent
         :rtype: list
         """

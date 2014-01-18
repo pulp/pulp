@@ -11,294 +11,497 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base
+import itertools
 
-from mock import patch, Mock
+from unittest import TestCase
 
-from pulp.devel import mock_plugins
-from pulp.devel import mock_agent
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.profiler import InvalidUnitsRequested
-from pulp.server.db.model.consumer import Consumer, Bind
-from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.exceptions import PulpDataException, PulpExecutionException
-from pulp.server.managers import factory
+from mock import patch, Mock, ANY
 
-
-CONSUMER_PAYLOAD = dict(A=1, B=2, C=3)
+from pulp.server.db.model.consumer import Bind
+from pulp.server.managers.consumer.agent import AgentManager, Units
+from pulp.server.exceptions import PulpExecutionException, PulpDataException
+from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
+from pulp.plugins.loader import exceptions as plugin_exceptions
+from pulp.plugins.model import Consumer as ProfiledConsumer
 
 
-# -- test cases ---------------------------------------------------------------
+class TestAgentManager(TestCase):
 
-class AgentManagerTests(base.PulpServerTests):
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Consumer')
+    def test_unregistered(self, mock_agent, mock_context, mock_factory):
+        consumer = {'id': 'xyz'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
 
-    CONSUMER_ID = 'test-consumer'
-    REPO_ID = 'test-repo'
-    DISTRIBUTOR_ID = 'mock-distributor'
-    NOTIFY_AGENT = True
-    BINDING_CONFIG = {}
+        mock_context.return_value = {}
 
-    REPOSITORY = {'id': REPO_ID}
-    DETAILS = {}
-    OPTIONS = {'xxx': 123}
+        # test manager
 
-    def setUp(self):
-        base.PulpServerTests.setUp(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        TaskStatus.get_collection().remove()
-        plugin_api._create_manager()
-        mock_plugins.install()
-        mock_agent.install()
+        agent_manager = AgentManager()
+        consumer_id = 'abc'
+        agent_manager.unregistered(consumer_id)
 
-    def tearDown(self):
-        base.PulpServerTests.tearDown(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
-        TaskStatus.get_collection().remove()
-        mock_plugins.reset()
+        # validations
 
-    def populate(self):
-        config = {'key1': 'value1', 'key2': None}
-        manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
-        manager = factory.repo_distributor_manager()
-        manager.add_distributor(
-            self.REPO_ID,
-            'mock-distributor',
-            config,
-            True,
-            distributor_id=self.DISTRIBUTOR_ID)
-        manager = factory.consumer_manager()
-        manager.register(self.CONSUMER_ID)
+        mock_context.assert_called_with(consumer)
+        mock_agent.unregistered.assert_called_with(mock_context.return_value)
 
-    def test_unregistered(self):
-        # Setup
-        self.populate()
-        # Test
-        manager = factory.consumer_agent_manager()
-        manager.unregistered(self.CONSUMER_ID)
-        # verify
-        mock_agent.Consumer.unregistered.assert_called_once_with()
+    @patch('pulp.server.managers.consumer.agent.uuid4')
+    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._bindings')
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Consumer')
+    def test_bind(self, *mocks):
 
-    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload')
-    def test_bind(self, mock_payload):
-        mock_payload.return_value = CONSUMER_PAYLOAD
-        # Setup
-        self.populate()
-        manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
-        # Test
-        manager = factory.consumer_agent_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
-        # verify
+        mock_agent = mocks[0]
+        mock_context = mocks[1]
+        mock_factory = mocks[2]
+        mock_bindings = mocks[3]
+        mock_task_status_manager = mocks[4]
+        mock_uuid = mocks[5]
+
+        consumer = {'id': '1234'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
+
+        binding = {}
+        mock_bind_manager = Mock()
+        mock_bind_manager.get_bind = Mock(return_value=binding)
+        mock_bind_manager.action_pending = Mock()
+        mock_factory.consumer_bind_manager = Mock(return_value=mock_bind_manager)
+
+        agent_bindings = []
+        mock_bindings.return_value = agent_bindings
+
+        task_id = '2345'
+        mock_task_status_manager.create_task_status = Mock()
+
+        mock_context.return_value = {}
+
+        mock_uuid.return_value = task_id
+
+        # test manager
+
+        repo_id = '100'
+        distributor_id = '200'
+        options = {}
+        agent_manager = AgentManager()
+        agent_manager.bind(consumer['id'], repo_id, distributor_id, options)
+
+        # validations
+
+        mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
+        mock_bind_manager.get_bind.assert_called_with(consumer['id'], repo_id, distributor_id)
+        mock_bindings.assert_called_with([binding])
+
+        mock_context.assert_called_with(
+            consumer,
+            task_id=task_id,
+            action='bind',
+            consumer_id=consumer['id'],
+            repo_id=repo_id,
+            distributor_id=distributor_id)
+
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_agent.bind.assert_called_with(mock_context.return_value, agent_bindings, options)
+        mock_bind_manager.action_pending.assert_called_with(
+            consumer['id'], repo_id, distributor_id, Bind.Action.BIND, task_id)
+
+    @patch('pulp.server.managers.consumer.agent.uuid4')
+    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._unbindings')
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Consumer')
+    def test_unbind(self, *mocks):
+        mock_agent = mocks[0]
+        mock_context = mocks[1]
+        mock_factory = mocks[2]
+        mock_unbindings = mocks[3]
+        mock_task_status_manager = mocks[4]
+        mock_uuid = mocks[5]
+
+        consumer = {'id': '1234'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
+
+        repo_id = '100'
+        distributor_id = '200'
+        binding = {'repo_id': repo_id, 'distributor_id': distributor_id}
+        mock_bind_manager = Mock()
+        mock_bind_manager.action_pending = Mock()
+        mock_factory.consumer_bind_manager = Mock(return_value=mock_bind_manager)
+
+        agent_bindings = []
+        mock_unbindings.return_value = agent_bindings
+
+        task_id = '2345'
+        mock_task_status_manager.create_task_status = Mock()
+
+        mock_context.return_value = {}
+
+        mock_uuid.return_value = task_id
+
+        # test manager
+
+        options = {}
+        agent_manager = AgentManager()
+        agent_manager.unbind(consumer['id'], repo_id, distributor_id, options)
+
+        # validations
+
+        mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
+        mock_unbindings.assert_called_with([binding])
+
+        mock_context.assert_called_with(
+            consumer,
+            task_id=task_id,
+            action='unbind',
+            consumer_id=consumer['id'],
+            repo_id=repo_id,
+            distributor_id=distributor_id)
+
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_agent.unbind.assert_called_with(mock_context.return_value, agent_bindings, options)
+        mock_bind_manager.action_pending.assert_called_with(
+            consumer['id'], repo_id, distributor_id, Bind.Action.UNBIND, task_id)
+
+    @patch('pulp.server.managers.consumer.agent.uuid4')
+    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._profiled_consumer')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._profiler')
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Content')
+    def test_install_content(self, *mocks):
+        mock_agent = mocks[0]
+        mock_context = mocks[1]
+        mock_factory = mocks[2]
+        mock_get_profiler = mocks[3]
+        mock_get_profiled_consumer = mocks[4]
+        mock_task_status_manager = mocks[5]
+        mock_uuid = mocks[6]
+
+        unit = {'type_id': 'xyz', 'unit_key': {}}
+
+        consumer = {'id': '1234'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
+
+        mock_get_profiled_consumer.return_value = consumer
+
+        mock_profiler = Mock()
+        mock_profiler.install_units = Mock(return_value=[unit])
+        mock_get_profiler.return_value = (mock_profiler, {})
+
+        task_id = '2345'
+        mock_task_status_manager.create_task_status = Mock()
+
+        mock_context.return_value = {}
+
+        mock_uuid.return_value = task_id
+
+        # test manager
+
+        options = {'a': 1}
+        agent_manager = AgentManager()
+        agent_manager.install_content(consumer['id'], [unit], options)
+
+        # validations
+
+        mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
+        mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_profiler.install_units.assert_called_with(consumer, [unit], options, {}, ANY)
+        mock_agent.install.assert_called_with(mock_context.return_value, [unit], options)
+
+    @patch('pulp.server.managers.consumer.agent.uuid4')
+    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._profiled_consumer')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._profiler')
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Content')
+    def test_update_content(self, *mocks):
+        mock_agent = mocks[0]
+        mock_context = mocks[1]
+        mock_factory = mocks[2]
+        mock_get_profiler = mocks[3]
+        mock_get_profiled_consumer = mocks[4]
+        mock_task_status_manager = mocks[5]
+        mock_uuid = mocks[6]
+
+        unit = {'type_id': 'xyz', 'unit_key': {}}
+
+        consumer = {'id': '1234'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
+
+        mock_get_profiled_consumer.return_value = consumer
+
+        mock_profiler = Mock()
+        mock_profiler.update_units = Mock(return_value=[unit])
+        mock_get_profiler.return_value = (mock_profiler, {})
+
+        task_id = '2345'
+        mock_task_status_manager.create_task_status = Mock()
+
+        mock_context.return_value = {}
+
+        mock_uuid.return_value = task_id
+
+        # test manager
+
+        options = {'a': 1}
+        agent_manager = AgentManager()
+        agent_manager.update_content(consumer['id'], [unit], options)
+
+        # validations
+
+        mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
+        mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_profiler.update_units.assert_called_with(consumer, [unit], options, {}, ANY)
+        mock_agent.update.assert_called_with(mock_context.return_value, [unit], options)
+
+    @patch('pulp.server.managers.consumer.agent.uuid4')
+    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._profiled_consumer')
+    @patch('pulp.server.managers.consumer.agent.AgentManager._profiler')
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Content')
+    def test_uninstall_content(self, *mocks):
+        mock_agent = mocks[0]
+        mock_context = mocks[1]
+        mock_factory = mocks[2]
+        mock_get_profiler = mocks[3]
+        mock_get_profiled_consumer = mocks[4]
+        mock_task_status_manager = mocks[5]
+        mock_uuid = mocks[6]
+
+        unit = {'type_id': 'xyz', 'unit_key': {}}
+
+        consumer = {'id': '1234'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
+
+        mock_get_profiled_consumer.return_value = consumer
+
+        mock_profiler = Mock()
+        mock_profiler.uninstall_units = Mock(return_value=[unit])
+        mock_get_profiler.return_value = (mock_profiler, {})
+
+        task_id = '2345'
+        mock_task_status_manager.create_task_status = Mock()
+
+        mock_context.return_value = {}
+
+        mock_uuid.return_value = task_id
+
+        # test manager
+
+        options = {'a': 1}
+        agent_manager = AgentManager()
+        agent_manager.uninstall_content(consumer['id'], [unit], options)
+
+        # validations
+
+        mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
+        mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_profiler.uninstall_units.assert_called_with(consumer, [unit], options, {}, ANY)
+        mock_agent.uninstall.assert_called_with(mock_context.return_value, [unit], options)
+
+    @patch('pulp.server.managers.consumer.agent.managers')
+    @patch('pulp.server.managers.consumer.agent.Context')
+    @patch('pulp.server.agent.direct.pulpagent.Consumer')
+    def test_cancel(self, mock_agent, mock_context, mock_factory):
+        consumer = {'id': 'xyz'}
+        mock_consumer_manager = Mock()
+        mock_consumer_manager.get_consumer = Mock(return_value=consumer)
+        mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
+
+        mock_context.return_value = {}
+
+        # test manager
+
+        task_id = '1234'
+        agent_manager = AgentManager()
+        consumer_id = 'abc'
+        agent_manager.cancel_request(consumer_id, task_id)
+
+        # validations
+
+        mock_context.assert_called_with(consumer)
+        mock_agent.cancel.assert_called_with(mock_context.return_value, task_id)
+
+    def test_invoke_plugin(self):
+        method = Mock()
+        args = 1, 2, 3
+        kwargs = {'a': 1, 'b': 2}
+        # test manager
+        AgentManager._invoke_plugin(method, *args, **kwargs)
+        # validate
+        method.assert_called_once_with(*args, **kwargs)
+
+    def test_invoke_plugin_invalid_units_raised(self):
+        method = Mock(side_effect=InvalidUnitsRequested([], ''))
+        self.assertRaises(PulpDataException, AgentManager._invoke_plugin, method)
+
+    def test_invoke_plugin_invalid_exception_raised(self):
+        method = Mock(side_effect=Exception())
+        self.assertRaises(PulpExecutionException, AgentManager._invoke_plugin, method)
+
+    @patch('pulp.server.managers.consumer.agent.plugin_api')
+    def test_find_profiler(self, mock_plugins):
+        type_id = '2344'
+        plugin = Mock()
+        mock_plugins.get_profiler_by_type.return_value = (plugin, {})
+
+        # test manager
+
+        _plugin, cfg = AgentManager._profiler(type_id)
+
+        # validation
+
+        mock_plugins.get_profiler_by_type.assert_called_with(type_id)
+        self.assertEqual(plugin, _plugin)
+        self.assertEqual(cfg, {})
+
+    @patch('pulp.server.managers.consumer.agent.plugin_api')
+    def test_find_profiler_not_found(self, mock_plugins):
+        type_id = '2344'
+        mock_plugins.get_profiler_by_type.side_effect = plugin_exceptions.PluginNotFound()
+
+        # test manager
+
+        plugin, cfg = AgentManager._profiler(type_id)
+
+        # validation
+
+        mock_plugins.get_profiler_by_type.assert_called_with(type_id)
+        self.assertTrue(isinstance(plugin, Profiler))
+        self.assertEqual(cfg, {})
+
+    @patch('pulp.server.managers.consumer.agent.managers')
+    def test_profiled_consumer(self, mock_factory):
+        consumer_id = '2345'
+        type_id = 123
+        profile = {'a': 1}
+        profiles = [{'content_type': type_id, 'profile': profile}]
+        mock_profile_manager = Mock()
+        mock_profile_manager.get_profiles = Mock(return_value=profiles)
+        mock_factory.consumer_profile_manager = Mock(return_value=mock_profile_manager)
+
+        # test manager
+
+        profiled = AgentManager._profiled_consumer(consumer_id)
+
+        # validation
+
+        mock_profile_manager.get_profiles.assert_called_once_with(consumer_id)
+        self.assertTrue(isinstance(profiled, ProfiledConsumer))
+        self.assertEqual(profiled.id, consumer_id)
+        self.assertEqual(profiled.profiles, {type_id: profile})
+
+    @patch('pulp.server.managers.consumer.agent.managers')
+    def test_get_agent_bindings(self, mock_factory):
+        bind_payload = {'a': 1, 'b': 2}
+        distributor = {'distributor_type_id': '3838'}
+        mock_distributor_manager = Mock()
+        mock_distributor_manager.get_distributor = Mock(return_value=distributor)
+        mock_distributor_manager.create_bind_payload = Mock(return_value=bind_payload)
+        mock_factory.repo_distributor_manager = Mock(return_value=mock_distributor_manager)
+
+        # test manager
+
         bindings = [
-            dict(type_id=self.DISTRIBUTOR_ID,
-                 repo_id=self.REPO_ID,
-                 details=CONSUMER_PAYLOAD)
+            {'consumer_id': '10', 'repo_id': '20', 'distributor_id': '30', 'binding_config': {}},
+            {'consumer_id': '40', 'repo_id': '50', 'distributor_id': '60', 'binding_config': {}},
         ]
-        args = mock_agent.Consumer.bind.call_args[0]
-        self.assertEquals(args[0], bindings)
-        self.assertEquals(args[1], self.OPTIONS)
-        manager = factory.consumer_bind_manager()
-        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 1)
-        self.assertFalse(actions[0]['id'] is None)
-        self.assertEqual(actions[0]['status'], 'pending')
+        agent_bindings = AgentManager._bindings(bindings)
 
-    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager.create_bind_payload')
-    def test_unbind(self, mock_payload):
-        mock_payload.return_value = CONSUMER_PAYLOAD
-        # Setup
-        self.populate()
-        manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
-        # Test
-        manager = factory.consumer_agent_manager()
-        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID, self.OPTIONS)
-        # verify
+        # validation
+
+        for binding in bindings:
+            mock_distributor_manager.get_distributor.assert_any_call(
+                binding['repo_id'], binding['distributor_id'])
+            mock_distributor_manager.create_bind_payload.assert_any_call(
+                binding['repo_id'], binding['distributor_id'], binding['binding_config'])
+
+        self.assertEqual(len(agent_bindings), 2)
+        for binding, agent_binding in itertools.izip(bindings, agent_bindings):
+            self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
+            self.assertEqual(distributor['distributor_type_id'], agent_binding['type_id'])
+            self.assertEqual(bind_payload, agent_binding['details'])
+
+    @patch('pulp.server.managers.consumer.agent.managers')
+    def test_get_agent_unbindings(self, mock_factory):
+        distributor = {'distributor_type_id': '3838'}
+        mock_distributor_manager = Mock()
+        mock_distributor_manager.get_distributor = Mock(return_value=distributor)
+        mock_factory.repo_distributor_manager = Mock(return_value=mock_distributor_manager)
+
+        # test manager
+
         bindings = [
-            dict(type_id=self.DISTRIBUTOR_ID, repo_id=self.REPO_ID)
+            {'consumer_id': '10', 'repo_id': '20', 'distributor_id': '30', 'binding_config': {}},
+            {'consumer_id': '40', 'repo_id': '50', 'distributor_id': '60', 'binding_config': {}},
         ]
-        args = mock_agent.Consumer.unbind.call_args[0]
-        self.assertEquals(args[0], bindings)
-        self.assertEquals(args[1], self.OPTIONS)
-        manager = factory.consumer_bind_manager()
-        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        actions = bind['consumer_actions']
-        self.assertEqual(len(actions), 1)
-        self.assertFalse(actions[0]['id'] is None)
-        self.assertEqual(actions[0]['status'], 'pending')
+        agent_bindings = AgentManager._unbindings(bindings)
 
-    def test_content_install(self):
-        # Setup
-        self.populate()
-        # Test
+        # validation
+
+        for binding in bindings:
+            mock_distributor_manager.get_distributor.assert_any_call(
+                binding['repo_id'], binding['distributor_id'])
+
+        self.assertEqual(len(agent_bindings), 2)
+        for binding, agent_binding in itertools.izip(bindings, agent_bindings):
+            self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
+            self.assertEqual(distributor['distributor_type_id'], agent_binding['type_id'])
+
+
+class TestUnits(TestCase):
+
+    def test_collation(self):
         units = [
-            {'type_id':'rpm',
-             'unit_key':{'name':'zsh', 'version':'1.0'}},
-            {'type_id':'rpm',
-             'unit_key':{'name':'bar', 'version':'1.0'}},
-            {'type_id':'rpm',
-             'unit_key':{'name':'abc', 'version':'1.0'}},
-            {'type_id':'mock-type',
-             'unit_key':{'name':'monster', 'version':'5.0'}},
-            {'type_id':'unsupported',
-             'unit_key':{'name':'xxx', 'version':'1.0'}},
+            {'type_id': '10', 'unit_key': {'A': 1}},
+            {'type_id': '10', 'unit_key': {'A': 2}},
+            {'type_id': '20', 'unit_key': {'B': 10}},
+            {'type_id': '30', 'unit_key': {'B': 20}},
+            {'type_id': '30', 'unit_key': {'B': 30}},
         ]
-        options = dict(importkeys=True)
-        manager = factory.consumer_agent_manager()
-        manager.install_content(self.CONSUMER_ID, units, options)
-        # Verify
-        # agent call
-        params = mock_agent.Content.install.call_args[0]
-        self.assertEqual(sorted(params[0]), sorted(units))
-        self.assertEqual(params[1], options)
-        # profiler call
-        profiler = plugin_api.get_profiler_by_type('rpm')[0]
-        pargs = profiler.install_units.call_args[0]
-        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
-        self.assertEquals(pargs[0].profiles, {})
-        self.assertEquals(pargs[1], units[:3])
-        self.assertEquals(pargs[2], options)
-        profiler = plugin_api.get_profiler_by_type('mock-type')[0]
-        pargs = profiler.install_units.call_args[0]
-        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
-        self.assertEquals(pargs[0].profiles, {})
-        self.assertEquals(pargs[1], units[3:4])
-        self.assertEquals(pargs[2], options)
 
-    def test_install_invalid_units(self):
-        # Setup
-        self.populate()
+        # test units
 
-        invalid_units = [{'type_id' : 'mock-type', 'unit_key' : 'key'}]
-        message = 'cannot install this'
-        mock_plugins.MOCK_PROFILER.install_units.side_effect = \
-            InvalidUnitsRequested(invalid_units, message)
-        # Test
-        try:
-            manager = factory.consumer_agent_manager()
-            manager.install_content(self.CONSUMER_ID, invalid_units, {})
-            self.fail()
-        except PulpDataException, e:
-            self.assertEqual(e.message, message)
+        collated = Units(units)
 
-    def test_content_update(self):
-        # Setup
-        self.populate()
-        # Test
-        unit = dict(type_id='rpm', unit_key=dict(name='zsh'))
-        units = [unit,]
-        options = {}
-        manager = factory.consumer_agent_manager()
-        manager.update_content(self.CONSUMER_ID, units, options)
-        # Verify
-        # # agent call
-        params = mock_agent.Content.update.call_args[0]
-        self.assertEqual(params[0], units)
-        self.assertEqual(params[1], options)
-        # profiler call
-        profiler = plugin_api.get_profiler_by_type('rpm')[0]
-        pargs = profiler.update_units.call_args[0]
-        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
-        self.assertEquals(pargs[0].profiles, {})
-        self.assertEquals(pargs[1], units[:3])
-        self.assertEquals(pargs[2], options)
+        # validation
 
-    def test_update_invalid_units(self):
-        # Setup
-        self.populate()
+        self.assertEqual(len(collated), 3)
 
-        invalid_units = [{'type_id' : 'mock-type', 'unit_key' : 'key'}]
-        message = 'cannot install this'
-        mock_plugins.MOCK_PROFILER.update_units.side_effect = \
-            InvalidUnitsRequested(invalid_units, message)
-        # Test
-        try:
-            manager = factory.consumer_agent_manager()
-            manager.update_content(self.CONSUMER_ID, invalid_units, {})
-            self.fail()
-        except PulpDataException, e:
-            self.assertEqual(e.message, message)
+        # type_id: 10 collated
+        type_id = '10'
+        self.assertEqual(len(collated[type_id]), 2)
+        self.assertEqual(collated[type_id], units[0:2])
 
-    def test_content_uninstall(self):
-        # Setup
-        self.populate()
-        # Test
-        manager = factory.consumer_agent_manager()
-        unit = dict(type_id='rpm', unit_key=dict(name='zsh'))
-        units = [unit,]
-        options = {}
-        manager.uninstall_content(self.CONSUMER_ID, units, options)
-        # Verify
-        # agent call
-        params = mock_agent.Content.uninstall.call_args[0]
-        self.assertEqual(params[0], units)
-        self.assertEqual(params[1], options)
-        # profiler call
-        profiler = plugin_api.get_profiler_by_type('rpm')[0]
-        pargs = profiler.uninstall_units.call_args[0]
-        self.assertEquals(pargs[0].id, self.CONSUMER_ID)
-        self.assertEquals(pargs[0].profiles, {})
-        self.assertEquals(pargs[1], units[:3])
-        self.assertEquals(pargs[2], options)
+        # type_id: 20 collated
+        type_id = '20'
+        self.assertEqual(len(collated[type_id]), 1)
+        self.assertEqual(collated[type_id], units[2:3])
 
-    def test_uninstall_invalid_units(self):
-        # Setup
-        self.populate()
-
-        invalid_units = [{'type_id' : 'mock-type', 'unit_key' : 'key'}]
-        message = 'cannot install this'
-        mock_plugins.MOCK_PROFILER.uninstall_units.side_effect = \
-            InvalidUnitsRequested(invalid_units, message)
-        # Test
-        try:
-            manager = factory.consumer_agent_manager()
-            manager.uninstall_content(self.CONSUMER_ID, invalid_units, {})
-            self.fail()
-        except PulpDataException, e:
-            self.assertEqual(e.message, message)
-
-    def test_cancel(self):
-        # Setup
-        self.populate()
-
-        # Test
-        manager = factory.consumer_agent_manager()
-        manager.cancel_request(self.CONSUMER_ID, 'task_1')
-
-        # validate cancel called on agent.
-        mock_agent.Admin.cancel.assert_called_with(criteria={'match': {'task_id': 'task_1'}})
-
-    def test_invoke_plugin_exception(self):
-        manager = factory.consumer_agent_manager()
-        call = Mock(side_effect=KeyError)
-        self.assertRaises(PulpExecutionException, manager._invoke_plugin, call)
-
-    @patch('pulp.server.managers.consumer.profile.ProfileManager.get_profiles')
-    def test_profiled_consumer(self,  mock_get_profiles):
-        # Setup
-        rpm_profile = {'A': 1, 'B': 2}
-        puppet_profile = {'C': 3, 'D': 4}
-        profiles = [
-            {'content_type': 'rpm', 'profile': rpm_profile},
-            {'content_type': 'puppet', 'profile': puppet_profile},
-        ]
-        mock_get_profiles.return_value = profiles
-
-        # Test
-        manager = factory.consumer_agent_manager()
-        consumer = manager._profiled_consumer(self.CONSUMER_ID)
-        self.assertEqual(consumer.id, self.CONSUMER_ID)
-        self.assertEqual(len(consumer.profiles), 2)
-        self.assertEqual(consumer.profiles['rpm'], rpm_profile)
-        self.assertEqual(consumer.profiles['puppet'], puppet_profile)
+        # type_id: 30 collated
+        type_id = '30'
+        self.assertEqual(len(collated[type_id]), 2)
+        self.assertEqual(collated[type_id], units[3:])
