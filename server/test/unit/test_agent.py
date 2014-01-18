@@ -434,7 +434,7 @@ class TestReplyHandler(TestCase):
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._bind_succeeded')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
-    def test_bind_succeeded(self, mock_task_succeeded, mock_update_action):
+    def test_bind_succeeded(self, mock_task_succeeded, mock_bind_succeeded):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -456,11 +456,11 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_succeeded.assert_called_with(task_id, dispatch_report)
         # validate bind action updated
-        mock_update_action.called_with(task_id, call_context, True)
+        mock_bind_succeeded.assert_called_with(task_id, call_context)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_succeeded')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_succeeded')
-    def test_unbind_succeeded(self, mock_task_succeeded, mock_update_action):
+    def test_unbind_succeeded(self, mock_task_succeeded, mock_unbind_succeeded):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -482,11 +482,11 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_succeeded.assert_called_with(task_id, dispatch_report)
         # validate bind action updated
-        mock_update_action.called_with(task_id, call_context, True)
+        mock_unbind_succeeded.assert_called_with(call_context)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._bind_failed')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
-    def test_bind_failed(self, mock_task_failed, mock_update_action):
+    def test_bind_failed(self, mock_task_failed, mock_bind_failed):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -513,11 +513,11 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_failed.assert_called_with(task_id, 'stack-trace')
         # validate bind action updated
-        mock_update_action.called_with(task_id, call_context, False)
+        mock_bind_failed.assert_called_with(task_id, call_context)
 
     @patch('pulp.server.agent.direct.services.ReplyHandler._unbind_failed')
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
-    def test_unbind_failed(self, mock_task_failed, mock_update_action):
+    def test_unbind_failed(self, mock_task_failed, mock_unbind_failed):
         task_id = 'task_1'
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
@@ -544,7 +544,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_failed.assert_called_with(task_id, 'stack-trace')
         # validate bind action updated
-        mock_update_action.called_with(task_id, call_context, False)
+        mock_unbind_failed.assert_called_with(task_id, call_context)
 
 
 class TestServices(TestCase):
