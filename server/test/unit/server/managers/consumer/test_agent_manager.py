@@ -324,14 +324,20 @@ class TestAgentManager(TestCase):
 
     @patch('pulp.server.managers.consumer.agent.managers')
     @patch('pulp.server.managers.consumer.agent.Context')
-    @patch('pulp.server.agent.direct.pulpagent.Consumer')
-    def test_cancel(self, mock_agent, mock_context, mock_factory):
+    @patch('pulp.server.managers.consumer.agent.PulpAgent')
+    def test_cancel(self, agent, context, mock_factory):
         consumer = {'id': 'xyz'}
         mock_consumer_manager = Mock()
         mock_consumer_manager.get_consumer = Mock(return_value=consumer)
         mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
 
-        mock_context.return_value = {}
+        mock_context = Mock()
+        mock_context.uuid = 'test-uuid'
+        mock_context.url = 'http://broker.com'
+        context.return_value = mock_context
+
+        mock_agent = Mock()
+        agent.return_value = mock_agent
 
         # test manager
 
@@ -342,8 +348,7 @@ class TestAgentManager(TestCase):
 
         # validations
 
-        mock_context.assert_called_with(consumer)
-        mock_agent.cancel.assert_called_with(mock_context.return_value, task_id)
+        mock_agent.cancel.assert_called_with(mock_context, task_id)
 
     def test_invoke_plugin(self):
         method = Mock()
