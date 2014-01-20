@@ -197,7 +197,7 @@ def getlinks():
         links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
         links.append(('server/etc/rc.d/init.d/pulp_workers',
                       '/etc/rc.d/init.d/pulp_workers'))
-        links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
+        links.append(('/etc/rc.d/init.d/pulp_workers',
                       '/etc/rc.d/init.d/pulp_resource_manager'))
         links.append(('server/etc/default/upstart_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
         links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))

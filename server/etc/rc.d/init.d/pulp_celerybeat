@@ -4,7 +4,7 @@
 # ================================================================
 #
 # :Usage: /etc/init.d/pulp_celerybeat {start|stop|force-reload|restart|try-restart|status}
-# :Configuration file: /etc/default/pulp_celerybeat or /etc/default/pulp_celery_workers
+# :Configuration file: /etc/default/pulp_celerybeat or /etc/default/pulp_workers
 #
 # See http://docs.celeryproject.org/en/latest/tutorials/daemonizing.html#generic-init-scripts
 
@@ -84,10 +84,10 @@ _config_sanity() {
 
 scripts=""
 
-if test -f /etc/default/pulp_celery_workers; then
-    scripts="/etc/default/pulp_celery_workers"
-    _config_sanity /etc/default/pulp_celery_workers
-    . /etc/default/pulp_celery_workers
+if test -f /etc/default/pulp_workers; then
+    scripts="/etc/default/pulp_workers"
+    _config_sanity /etc/default/pulp_workers
+    . /etc/default/pulp_workers
 fi
 
 EXTRA_CONFIG="/etc/default/${SCRIPT_NAME}"
