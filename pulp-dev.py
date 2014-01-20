@@ -214,8 +214,6 @@ def getlinks():
                       '/usr/lib/systemd/system/pulp_resource_manager.service'))
         links.append(('server/usr/lib/systemd/system/pulp_workers.service',
                       '/usr/lib/systemd/system/pulp_workers.service'))
-        links.append(('server/usr/libexec/pulp_manage_workers',
-                      '/usr/libexec/pulp_manage_workers'))
 
     return links
 

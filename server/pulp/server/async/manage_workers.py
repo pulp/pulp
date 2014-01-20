@@ -1,4 +1,15 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright © 2013 Red Hat, Inc.
+#
+# This software is licensed to you under the GNU General Public
+# License as published by the Free Software Foundation; either version
+# 2 of the License (GPLv2) or (at your option) any later version.
+# There is NO WARRANTY for this software, express or implied,
+# including the implied warranties of MERCHANTABILITY,
+# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
+# have received a copy of GPLv2 along with this software; if not, see
+# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module manages creation, deletion, starting, and stopping of the systemd unit files for Pulp's
 Celery workers. It accepts one parameter, which must be start or stop.
@@ -86,13 +97,16 @@ def _stop_workers():
         print pipe.communicate()[0]
 
 
-if len(sys.argv) < 2 or sys.argv[1] not in ('start', 'stop'):
-    print 'This script may only be called with "start" or "stop" as an argument.'
-    sys.exit(1)
-_action = sys.argv[1]
+def main():
+    """
+    This is the entry point method that becomes pulp-manage-workers.
+    """
+    if len(sys.argv) < 2 or sys.argv[1] not in ('start', 'stop'):
+        print 'This script may only be called with "start" or "stop" as an argument.'
+        sys.exit(1)
+    _action = sys.argv[1]
 
-
-if _action == 'start':
-    _start_workers()
-elif _action == 'stop':
-    _stop_workers()
+    if _action == 'start':
+        _start_workers()
+    elif _action == 'stop':
+        _stop_workers()

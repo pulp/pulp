@@ -20,6 +20,7 @@ setup(
     author_email='pulp-list@redhat.com',
     entry_points={
         'console_scripts': [
+            '/usr/libexec/pulp-manage-workers = pulp.server.async.manage_workers:main',
             'pulp-manage-db = pulp.server.db.manage:main',
             'pulp-monthly = pulp.server.maintenance.monthly:main',
         ]

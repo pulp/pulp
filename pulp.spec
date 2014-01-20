@@ -146,7 +146,6 @@ cp server/etc/default/systemd_pulp_workers %{buildroot}/%{_sysconfdir}/default/p
 mkdir -p %{buildroot}/%{_usr}/lib/systemd/system/
 mkdir -p %{buildroot}/%{_libexecdir}
 cp server/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
-cp server/usr/libexec/pulp_manage_workers %{buildroot}/%{_libexecdir}
 %endif
 
 # Pulp Web Services
@@ -267,7 +266,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %defattr(-,root,root,-)
 %{_usr}/lib/systemd/system/*
 %defattr(755,root,root,-)
-%{_libexecdir}/pulp_manage_workers
+%{_libexecdir}/pulp-manage-workers
 %endif
 # 640 root:apache
 %defattr(640,root,apache,-)
