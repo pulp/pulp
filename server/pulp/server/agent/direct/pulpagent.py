@@ -101,12 +101,10 @@ class Consumer(object):
         Registration artifacts are cleaned up.
         :param context: The call context.
         :type context: pulp.server.agent.context.Context
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(context.uuid, url=context.url, secret=context.secret, async=True)
         consumer = agent.Consumer()
-        return consumer.unregistered()
+        consumer.unregistered()
 
     @staticmethod
     def bind(context, bindings, options):
@@ -120,8 +118,6 @@ class Consumer(object):
         :type bindings: list
         :param options: Bind options.
         :type options: dict
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(
             context.uuid,
@@ -132,7 +128,7 @@ class Consumer(object):
             watchdog=context.watchdog,
             any=context.details)
         consumer = agent.Consumer()
-        return consumer.bind(bindings, options)
+        consumer.bind(bindings, options)
 
     @staticmethod
     def unbind(context, bindings, options):
@@ -145,8 +141,6 @@ class Consumer(object):
         :type bindings: list
         :param options: Unbind options.
         :type options: dict
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(
             context.uuid,
@@ -157,7 +151,7 @@ class Consumer(object):
             watchdog=context.watchdog,
             any=context.details)
         consumer = agent.Consumer()
-        return consumer.unbind(bindings, options)
+        consumer.unbind(bindings, options)
 
 
 class Content(object):
@@ -176,8 +170,6 @@ class Content(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(
             context.uuid,
@@ -188,7 +180,7 @@ class Content(object):
             watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
-        return content.install(units, options)
+        content.install(units, options)
 
     @staticmethod
     def update(context, units, options):
@@ -201,8 +193,6 @@ class Content(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Update options; based on unit type.
         :type options: dict
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(
             context.uuid,
@@ -213,7 +203,7 @@ class Content(object):
             watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
-        return content.update(units, options)
+        content.update(units, options)
 
     @staticmethod
     def uninstall(context, units, options):
@@ -226,8 +216,6 @@ class Content(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Uninstall options; based on unit type.
         :type options: dict
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(
             context.uuid,
@@ -238,7 +226,7 @@ class Content(object):
             watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
-        return content.uninstall(units, options)
+        content.uninstall(units, options)
 
 
 class Profile(object):
@@ -252,9 +240,7 @@ class Profile(object):
         Request the agent to send the package profile.
         :param context: The call context.
         :type context: pulp.server.agent.context.Context
-        :return: The RMI request serial number.
-        :rtype: str
         """
         agent = Agent(context.uuid, url=context.url, secret=context.secret)
         profile = agent.Profile()
-        return profile.send()
+        profile.send()
