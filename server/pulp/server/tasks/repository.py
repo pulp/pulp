@@ -25,16 +25,16 @@ from pulp.server.tasks import consumer
 logger = logging.getLogger(__name__)
 
 
-@celery.task
+@celery.task(base=Task)
 def delete(repo_id):
     """
     Get the itinerary for deleting a repository.
       1. Delete the repository on the sever.
       2. Unbind any bound consumers.
-    @param repo_id: A repository ID.
-    @type repo_id: str
-    @return: A list of call_requests known as an itinerary.
-    @rtype list
+    :param repo_id: A repository ID.
+    :type repo_id: str
+    :return: A TaskRequest object with the details of any errors or spawned tasks
+    :rtype TaskRequest
     """
     # delete repository
     manager = managers.repo_manager()
@@ -53,7 +53,7 @@ def delete(repo_id):
                                      bind['distributor_id'],
                                      options)
             if report:
-                additional_tasks.append(report.call_request_id)
+                additional_tasks.extend(report.spawned_tasks)
         except Exception, e:
             errors.append(e)
 
@@ -85,7 +85,7 @@ def distributor_delete(repo_id, distributor_id):
 
     # append unbind itineraries foreach bound consumer
 
-    bind_errors = []
+    unbind_errors = []
     additional_tasks = []
     options = {}
     manager = managers.consumer_bind_manager()
@@ -96,16 +96,16 @@ def distributor_delete(repo_id, distributor_id):
                                      bind['distributor_id'],
                                      options)
             if report:
-                additional_tasks.append(report.call_request_id)
+                additional_tasks.extend(report.spawned_tasks)
         except Exception, e:
-            bind_errors.append(e)
+            unbind_errors.append(e)
 
     bind_error = None
-    if len(bind_errors) > 0:
+    if len(unbind_errors) > 0:
         bind_error = PulpCodedException(error_code=PLP0003,
                                         error_data={'repo_id': repo_id,
                                                     'distributor_id': distributor_id})
-        bind_error.child_exceptions = bind_errors
+        bind_error.child_exceptions = unbind_errors
     return TaskResult({}, bind_error, additional_tasks)
 
 
@@ -126,9 +126,9 @@ def distributor_update(repo_id, distributor_id, config, delta):
     :param delta:           A dictionary used to change other saved configuration values for a
                             distributor instance. This currently only supports the 'auto_publish'
                             keyword, which should have a value of type bool
-    :type  delta:           dict
+    :type  delta:           dict or None
 
-    :return: task result y.
+    :return: Any errors that may have occurred and the list of tasks spawned for each consumer
     :rtype: TaskResult
     """
 
@@ -157,8 +157,8 @@ def distributor_update(repo_id, distributor_id, config, delta):
                                    bind['notify_agent'],
                                    bind['binding_config'],
                                    options)
-            if report:
-                additional_tasks.append(report.call_request_id)
+            if report.spawned_tasks:
+                additional_tasks.extend(report.spawned_tasks)
         except Exception, e:
             bind_errors.append(e)
 

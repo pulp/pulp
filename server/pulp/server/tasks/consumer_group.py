@@ -15,15 +15,15 @@ import celery
 import logging
 
 from pulp.common.error_codes import PLP0004, PLP0005
-from pulp.server.async.tasks import TaskResult
-from pulp.server.exceptions import MissingResource, PulpCodedException
+from pulp.server.async.tasks import Task, TaskResult
+from pulp.server.exceptions import PulpCodedException, PulpException
 from pulp.server.managers import factory as managers
 from pulp.server.tasks.consumer import bind as bind_task, unbind as unbind_task
 
 logger = logging.getLogger(__name__)
 
 
-@celery.task
+@celery.task(base=Task)
 def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
     """
     Bind the members of the specified consumer group.
@@ -52,11 +52,11 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
         try:
             report = bind_task(consumer_id, repo_id, distributor_id, notify_agent, binding_config,
                                agent_options)
-            if report:
-                additional_tasks.append(report.call_request_id)
-        except MissingResource, e:
+            if report.spawned_tasks:
+                additional_tasks.extend(report.spawned_tasks)
+        except PulpException, e:
             #Log a message so that we can debug but don't throw
-            logger.warn(e.message)
+            logger.debug(e.message)
             bind_errors.append(e)
         except Exception, e:
             logger.exception(e, exc_info=True)
@@ -74,7 +74,7 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
     return TaskResult({}, bind_error, additional_tasks)
 
 
-@celery.task
+@celery.task(base=Task)
 def unbind(group_id, repo_id, distributor_id, options):
     """
     Unbind the members of the specified consumer group.
@@ -86,10 +86,9 @@ def unbind(group_id, repo_id, distributor_id, options):
     :type distributor_id: str
     :param options: Bind options passed to the agent handler.
     :type options: dict
-    :return: Details for the agent unbind tasks
+    :return: TaskResult containing the ids of all the spawned tasks & bind errors
     :rtype: TaskResult
     """
-    reports = []
     manager = managers.consumer_group_query_manager()
     group = manager.get_group(group_id)
     bind_errors = []
@@ -99,8 +98,8 @@ def unbind(group_id, repo_id, distributor_id, options):
         try:
             report = unbind_task(consumer_id, repo_id, distributor_id, options)
             if report:
-                reports.append(report)
-        except MissingResource, e:
+                additional_tasks.extend(report.spawned_tasks)
+        except PulpException, e:
             #Log a message so that we can debug but don't throw
             logger.warn(e.message)
             bind_errors.append(e)
@@ -119,16 +118,16 @@ def unbind(group_id, repo_id, distributor_id, options):
     return TaskResult({}, bind_error, additional_tasks)
 
 
-@celery.task
+@celery.task(base=Task)
 def install_content(consumer_id, units, options):
     pass
 
 
-@celery.task
+@celery.task(base=Task)
 def update_content(consumer_id, units, options):
     pass
 
 
-@celery.task
+@celery.task(base=Task)
 def uninstall_content(consumer_id, units, options):
     pass

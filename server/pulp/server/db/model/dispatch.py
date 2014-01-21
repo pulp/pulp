@@ -138,13 +138,17 @@ class TaskStatus(Model):
     :type finish_time: datetime.datetime
     :ivar queue:       The queue that the Task was queued in
     :type queue:       basestring
+    :ivar error: Any errors or collections of errors that occurred while this task was running
+    :type error: dict (created from a PulpException)
+    :ivar spawned_tasks: List of tasks that were spawned during the running of this task
+    :type spawned_tasks: list of str
     """
 
     collection_name = 'task_status'
     unique_indices = ('task_id',)
     search_indices = ('task_id', 'tags', 'state')
 
-    def __init__(self, task_id, queue, tags=None, state=None):
+    def __init__(self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None):
         super(TaskStatus, self).__init__()
 
         self.task_id = task_id
@@ -155,3 +159,5 @@ class TaskStatus(Model):
         self.traceback = None
         self.start_time = None
         self.finish_time = None
+        self.error = error
+        self.spawned_tasks = spawned_tasks

@@ -23,6 +23,7 @@ from pulp.devel import mock_plugins
 from pulp.devel.unit.base import PulpWebservicesTests
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.auth import authorization
+from pulp.server.async.tasks import TaskResult
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicability,
                                            UnitProfile)
@@ -508,6 +509,7 @@ class BindTestNoWSGI(PulpWebservicesTests):
     def test_unbind_with_postponed(self, mock_unbind):
         binding = consumers.Binding()
         binding.params = mock.Mock(return_value={})
+        mock_unbind.return_value = TaskResult(spawned_tasks=['foo-id'])
         self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-id', 'foo-repo',
                           'bar-distributor')
         mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
@@ -524,6 +526,7 @@ class BindTestNoWSGI(PulpWebservicesTests):
     def test_unbind_force_with_postponed(self, mock_unbind):
         binding = consumers.Binding()
         binding.params = mock.Mock(return_value={'force': True})
+        mock_unbind.return_value = TaskResult(spawned_tasks=['foo-id'])
         self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-id', 'foo-repo',
                           'bar-distributor')
         mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)

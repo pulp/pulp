@@ -16,6 +16,12 @@ from datetime import datetime
 from pulp.common import dateutils
 
 
+def task_result_href(task):
+    if task.get('task_id'):
+        return {'_href': '/pulp/api/v2/tasks/%s/' % task['task_id']}
+    return {}
+
+
 def task_href(call_report):
     if call_report.call_request_id is None:
         return {}

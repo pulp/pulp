@@ -203,13 +203,12 @@ class OperationPostponed(PulpExecutionException):
     def __init__(self, call_report):
         """
         @param call_report:  call report for postponed operation
-        @type  call_report: CallReport
+        @type  call_report: CallReport or pulp.server.async.task.TaskResult
         """
         super(OperationPostponed, self).__init__(self, call_report)
         self.error_code = error_codes.PLP0012
         self.call_report = call_report
-        self.error_data = {'call_report': call_report,
-                           'task_id': call_report.call_request_id}
+        self.error_data = {'call_report': call_report}
 
     def __str__(self):
         msg = self.error_code.message % self.error_data

@@ -19,6 +19,7 @@ from web.webapi import BadRequest
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -294,12 +295,12 @@ class Binding(JSONController):
         forced = body.get('force', False)
         options = body.get('options', {})
         if forced:
-            call_request = consumer.force_unbind(consumer_id, repo_id, distributor_id, options)
+            result = consumer.force_unbind(consumer_id, repo_id, distributor_id, options)
         else:
-            call_request = consumer.unbind(consumer_id, repo_id, distributor_id, options)
+            result = consumer.unbind(consumer_id, repo_id, distributor_id, options)
 
-        if call_request:
-            raise OperationPostponed(call_request)
+        if isinstance(result, TaskResult):
+            raise OperationPostponed(result)
 
 
 class BindingSearch(SearchController):

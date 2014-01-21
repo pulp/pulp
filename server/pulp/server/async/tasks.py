@@ -205,23 +205,30 @@ class TaskResult(object):
     Errors that don't affect the current task status might be related to secondary actions
     where the primary action of the async-task was successful
 
-    Spawened tasks are items such as the individual tasks for updating the bindings on
+    Spawned tasks are items such as the individual tasks for updating the bindings on
     each consumer when a repo distributor is updated.
     """
 
-    def __init__(self, return_value, error=None, spawned_tasks=None):
+    def __init__(self, result=None, error=None, spawned_tasks=None):
         """
-        :param return_value: The return value from the task
-        :type return_value: dict
-        :param error: The PulpException for the error & sub-errors taht occured that were non
-        :type error: PulpException
-        :param spawned_tasks: A list of task ids for tasks that were created by this task and are
-                          tracked through the pulp database
-        :type spawned_tasks: list of str
+        :param result: The return value from the task
+        :type result: dict
+        :param error: The PulpException for the error & sub-errors that occured
+        :type error: pulp.server.exception.PulpException
+        :param spawned_tasks: A list of task status objects for tasks that were created by this
+                              task and are tracked through the pulp database
+        :type spawned_tasks: list of TaskStatus objects
         """
-        self.return_value = return_value
+        self.return_value = result
         self.error = error
         self.spawned_tasks = spawned_tasks
+
+    def serialize(self):
+        data = {
+            'result': self.return_value,
+            'error': self.error,
+            'spawned_tasks': self.spawned_tasks}
+        return data
 
 
 class ReservedTaskMixin(object):
@@ -339,7 +346,8 @@ class Task(CeleryTask, ReservedTaskMixin):
                 if retval.error:
                     delta['error'] = retval.error.to_dict()
                 if retval.spawned_tasks:
-                    delta['spawned_tasks'] = retval.spawned_tasks
+                    task_list = [spawned_task['task_id'] for spawned_task in retval.spawned_tasks]
+                    delta['spawned_tasks'] = task_list
 
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 

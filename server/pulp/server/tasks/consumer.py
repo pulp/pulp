@@ -13,13 +13,10 @@
 
 import celery
 
-from pulp.common.tags import (action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND)
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport
+from pulp.server.async.tasks import TaskResult
 from pulp.server.managers import factory as managers
 
 
-@celery.task
 def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
     """
     Bind a repo to a consumer:
@@ -37,35 +34,30 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
     :type  notify_agent: bool
     :param binding_config: configuration options to use when generating the payload for this binding
 
-    :returns CallReport for additional calls that need to be executed or None if no calls
-    :rtype: CallReport
+    :returns TaskResult containing the result of the bind & any spawned tasks or a dictionary
+             of the bind result if no tasks were spawned.
+    :rtype: TaskResult
 
     :raises pulp.server.exceptions.MissingResource: when given consumer does not exist
     """
-    response = None
     # Create the binding on the server
     bind_manager = managers.consumer_bind_manager()
-    bind_manager.bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
+    binding = bind_manager.bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
+
+    response = binding
 
     # Notify the agents of the binding - return a 202 with the list of task ids
     if notify_agent:
         agent_manager = managers.consumer_agent_manager()
-        task_id = agent_manager.bind(consumer_id, repo_id, distributor_id, agent_options)
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag(ACTION_AGENT_BIND)
-        ]
-        response = CallReport(call_request_id=task_id, call_request_tags=tags)
+        task = agent_manager.bind(consumer_id, repo_id, distributor_id, agent_options)
+        response = TaskResult(result=binding, spawned_tasks=[task])
 
     return response
 
 
-@celery.task
 def unbind(consumer_id, repo_id, distributor_id, options):
     """
-    Unbinda  consumer.
+    Unbind a  consumer.
 
     A forced unbind immediately deletes the binding instead
     of marking it deleted and going through that lifecycle.
@@ -82,27 +74,20 @@ def unbind(consumer_id, repo_id, distributor_id, options):
     :type distributor_id: str
     :param options: Unbind options passed to the agent handler.
     :type options: dict
-    :return: A list of call_requests
-    :rtype list
-    :raises pulp.server.exceptions.MissingResource: when given consumer does not exist
+    :returns TaskResult containing the result of the unbind & any spawned tasks or a dictionary
+             of the unbind result if no tasks were spawned.
+    :rtype: TaskResult
     """
-    response = None
 
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
+    response = None
 
     if binding['notify_agent']:
         # The agent notification handler will delete the binding from the server
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag(ACTION_AGENT_UNBIND)
-        ]
         agent_manager = managers.consumer_agent_manager()
-
-        task_id = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        response = CallReport(call_request_id=task_id, call_request_tags=tags)
+        task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
+        response = TaskResult(result=binding, spawned_tasks=[task])
     else:
         # Since there was no agent notification, perform the delete immediately
         bind_manager.delete(consumer_id, repo_id, distributor_id, True)
@@ -110,7 +95,6 @@ def unbind(consumer_id, repo_id, distributor_id, options):
     return response
 
 
-@celery.task
 def force_unbind(consumer_id, repo_id, distributor_id, options):
     """
     Get the unbind itinerary.
@@ -121,34 +105,28 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
     The itinerary is:
       1. Delete the binding on the server.
       2. Request that the consumer (agent) perform the unbind.
-    @param consumer_id: A consumer ID.
-    @type consumer_id: str
-    @param repo_id: A repository ID.
-    @type repo_id: str
-    @param distributor_id: A distributor ID.
-    @type distributor_id: str
-    @param options: Unbind options passed to the agent handler.
-    @type options: dict
-    @return: A list of call_requests
-    @rtype list
+    :param consumer_id: A consumer ID.
+    :type consumer_id: str
+    :param repo_id: A repository ID.
+    :type repo_id: str
+    :param distributor_id: A distributor ID.
+    :type distributor_id: str
+    :param options: Unbind options passed to the agent handler.
+    :type options: dict
+    :returns TaskResult containing the result of the unbind & any spawned tasks or a dictionary
+             of the unbind result if no tasks were spawned.
+    :rtype: TaskResult
     """
-    response = None
 
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
     bind_manager.delete(consumer_id, repo_id, distributor_id, True)
+    response = None
 
     if binding['notify_agent']:
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag(ACTION_AGENT_UNBIND)
-        ]
         agent_manager = managers.consumer_agent_manager()
-
-        task_id = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        response = CallReport(call_request_id=task_id, call_request_tags=tags)
+        task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
+        response = TaskResult(spawned_tasks=[task])
 
     return response
 
