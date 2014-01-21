@@ -101,8 +101,8 @@ def main():
     """
     This is the entry point method that becomes pulp-manage-workers.
     """
-    if len(sys.argv) < 2 or sys.argv[1] not in ('start', 'stop'):
-        print 'This script may only be called with "start" or "stop" as an argument.'
+    if len(sys.argv) != 2 or sys.argv[1] not in ('start', 'stop'):
+        sys.stderr.write('This script may only be called with "start" or "stop" as an argument.\n')
         sys.exit(1)
     _action = sys.argv[1]
 
