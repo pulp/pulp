@@ -29,6 +29,7 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
+from pulp.server.async import celery_instance
 from pulp.server.config import config as pulp_conf
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
@@ -52,6 +53,9 @@ class ServerTests(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # This will make Celery tasks run synchronously
+        celery_instance.celery.conf.CELERY_ALWAYS_EAGER = True
+
         if not os.path.exists(cls.TMP_ROOT):
             os.makedirs(cls.TMP_ROOT)
         stop_logging()

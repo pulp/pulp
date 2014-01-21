@@ -22,6 +22,10 @@ serialized call report (see below) that contains metadata about the call,
 its progress, and resolution. Additionally, an href is provided that can be used
 to poll for updates to this information.
 
+A postponed response may also indicate that a portion of the command was executed successfully
+and a portion of the command has been queued to run in the future.  In this case a Task Result
+object will be returned.
+
 More information on retrieving and displaying task information can be found
 :ref:`in the Task Management API documentation <task_management>`.
 
@@ -30,6 +34,26 @@ be unserviceable now or at any point in the future. An example of such a situati
 is the case where an update operation is requested after a delete operation has
 been queued for the resource. The body of this response is Pulp's standard
 exception format including the reasons for the response.
+
+.. _task_result:
+
+Task Result
+-----------
+
+A 202 ACCEPTED response returns a **task result** JSON object as the response body
+that has the following fields:
+
+* **result** *(Object)* - the return value of the call, if any
+* **error** *(Object)* - error details if an error occurred.  See :ref:`error_details`.
+* **spawned_tasks** *(array)* - list of :ref:`call_report`
+
+Example Task Result::
+
+ {
+  "result": {},
+  "error": {},
+  "spawned_tasks": []
+ }
 
 .. _call_report:
 
@@ -53,6 +77,8 @@ that has the following fields:
 * **start_time** *(null or string)* - the time the call started executing
 * **finish_time** *(null or string)* - the time the call stopped executing
 * **tags** *(array)* - arbitrary tags useful for looking up the call report
+* **spawned_tasks** *(null or array)* - List of uri for any tasks that were spawned by this task.
+* **error** *(null or object)* - Any, errors that occurred that did not cause the overall call to fail.  See :ref:`error_details`.
 
 Example Call Report::
 
@@ -74,6 +100,7 @@ Example Call Report::
   "progress": { <contents depend on the operation> },
   "response": "accepted",
   "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/"
+  "error": null
  }
 
 

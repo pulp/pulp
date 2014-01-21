@@ -45,6 +45,7 @@ class AuthenticationFailed(PulpException):
         """
         :param error_code: one of the error codes in pulp.common.auth_utils
         """
+        super(AuthenticationFailed, self).__init__()
         self.error_doc = auth_utils.generate_failure_response(error_code)
 
     def data_dict(self):

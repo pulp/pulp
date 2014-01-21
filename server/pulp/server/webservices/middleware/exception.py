@@ -58,6 +58,10 @@ class ExceptionHandlerMiddleware(object):
                 if record_exception_and_traceback:
                     error_obj['exception'] = traceback.format_exception_only(t, e)
                     error_obj['traceback'] = traceback.format_tb(tb)
+                # Always dump the error using the standard format if it is a pulp exception
+                # This is the future format that we are migrating to
+                error_obj['error'] = e.to_dict()
+
             else:
                 msg = _('Unhandled Exception')
                 _LOG.exception(msg)

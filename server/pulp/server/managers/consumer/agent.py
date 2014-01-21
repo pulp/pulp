@@ -17,6 +17,7 @@ import sys
 from logging import getLogger
 from uuid import uuid4
 
+from pulp.common.tags import (action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND)
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -24,6 +25,7 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
 from pulp.server.db.model.consumer import Bind
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as managers
 from pulp.server.async.task_status_manager import TaskStatusManager
@@ -66,12 +68,18 @@ class AgentManager(object):
         :type distributor_id: str
         :param options: The options are handler specific.
         :type options: dict
-        :return: A task ID that may be used to track the agent request.
-        :rtype: str
+        :return: The task created by the bind
+        :rtype: dict
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
-        TaskStatusManager.create_task_status(task_id, 'agent')
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag(ACTION_AGENT_BIND)
+        ]
+        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -98,7 +106,7 @@ class AgentManager(object):
             Bind.Action.BIND,
             task_id)
 
-        return task_id
+        return task
 
     @staticmethod
     def unbind(consumer_id, repo_id, distributor_id, options):
@@ -117,7 +125,13 @@ class AgentManager(object):
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
-        TaskStatusManager.create_task_status(task_id, 'agent')
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag(ACTION_AGENT_UNBIND)
+        ]
+        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -143,7 +157,7 @@ class AgentManager(object):
             Bind.Action.UNBIND,
             task_id)
 
-        return task_id
+        return task
 
     @staticmethod
     def install_content(consumer_id, units, options):

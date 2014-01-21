@@ -22,15 +22,15 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
+from pulp.server.dispatch.call import CallRequest, CallReport
 from pulp.server.managers import factory as managers_factory
+from pulp.server.tasks import consumer_group
 from pulp.server.webservices import execution, serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.itineraries.consumer_group import (consumer_group_content_install_itinerary,
-     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary,
-     consumer_group_bind_itinerary, consumer_group_unbind_itinerary)
+     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary)
 
 # consumer group collection ----------------------------------------------------
 
@@ -273,14 +273,10 @@ class ConsumerGroupBindings(JSONController):
         binding_config = body.get('binding_config', None)
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
-        call_requests = consumer_group_bind_itinerary(
-            group_id=group_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id,
-            notify_agent=notify_agent,
-            binding_config=binding_config,
-            agent_options=options)
-        execution.execute_multiple(call_requests)
+        async_task = consumer_group.bind.apply_async((group_id, repo_id, distributor_id,
+                                                      notify_agent, binding_config, options))
+        call_report = CallReport(call_request_id=async_task.id)
+        raise pulp_exceptions.OperationPostponed(call_report)
 
 
 class ConsumerGroupBinding(JSONController):
@@ -329,8 +325,9 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        call_requests = consumer_group_unbind_itinerary(group_id, repo_id, distributor_id, {})
-        execution.execute_multiple(call_requests)
+        async_task = consumer_group.unbind.apply_async((group_id, repo_id, distributor_id, {}))
+        call_report = CallReport(call_request_id=async_task.id)
+        raise pulp_exceptions.OperationPostponed(call_report)
 
 
 # web.py application -----------------------------------------------------------

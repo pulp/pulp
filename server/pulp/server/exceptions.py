@@ -16,7 +16,9 @@ from datetime import timedelta
 from gettext import gettext as _
 from pprint import pformat
 
+from pulp.common import error_codes
 # base exception class ---------------------------------------------------------
+
 
 class PulpException(Exception):
     """
@@ -25,6 +27,42 @@ class PulpException(Exception):
     Provides base class __str__ and data_dict implementations
     """
     http_status_code = httplib.INTERNAL_SERVER_ERROR
+
+    def __init__(self, *args):
+        super(PulpException, self).__init__(*args)
+        self.error_code = error_codes.PLP0000
+        self.error_data = {}
+
+        # child exceptions are those that are wrapped within this exception, validation errors
+        # for example would have one overall validation error and then a separate sub error
+        # for each validation that failed
+
+        self.child_exceptions = []
+
+    def add_child_exception(self, exception):
+        self.child_exceptions.append(exception)
+
+    def to_dict(self):
+        """
+        The to_dict method is used to provide a standarized dictionary
+        of the exception information for useage storing to the database
+        or converting to json to send back via an API call
+        """
+        result = {
+            'code': self.error_code.code,
+            'description': str(self),
+            'data': self.error_data,
+            'sub_errors': []
+        }
+        for error in self.child_exceptions:
+            if isinstance(error, PulpException):
+                result['sub_errors'].append(error.to_dict())
+            else:
+                result['sub_errors'].append({'code': 'PLP0000',
+                                             'description': str(error),
+                                             'data': {},
+                                             'sub_errors': []})
+        return result
 
     def __str__(self):
         class_name = self.__class__.__name__
@@ -38,6 +76,7 @@ class PulpException(Exception):
 
 # execution exceptions ---------------------------------------------------------
 
+
 class PulpExecutionException(PulpException):
     """
     Base class of exceptions raised during the execution of Pulp.
@@ -50,6 +89,27 @@ class PulpExecutionException(PulpException):
     """
     # NOTE intermediate exception class, no overrides will be provided
     pass
+
+
+class PulpCodedException(PulpException):
+    """
+    Base class for exceptions that put the error_code and data as init arguments
+    """
+    def __init__(self, error_code=error_codes.PLP0001, error_data=None):
+        super(PulpCodedException, self).__init__()
+        self.error_code = error_code
+        if error_data:
+            self.error_data = error_data
+        # Validate that the coded exception was raised with all the error_data fields that
+        # are required
+        for key in self.error_code.required_fields:
+            if not key in self.error_data:
+                raise PulpCodedException(error_codes.PLP0008, {'code': self.error_code.code,
+                                                               'field': key})
+
+    def __str__(self):
+        msg = self.error_code.message % self.error_data
+        return msg.encode('utf-8')
 
 
 class MissingResource(PulpExecutionException):
@@ -67,12 +127,14 @@ class MissingResource(PulpExecutionException):
         # backward compatibility for for previous 'resource_id' positional argument
         if args:
             resources['resource_id'] = args[0]
-        PulpExecutionException.__init__(self, resources)
+        super(MissingResource, self).__init__(self, resources)
+        self.error_code = error_codes.PLP0009
         self.resources = resources
+        self.error_data = {'resources': resources}
 
     def __str__(self):
         resources_str = ', '.join('%s=%s' % (k, v) for k, v in self.resources.items())
-        msg = _('Missing resource(s): %(r)s') % {'r': resources_str}
+        msg = self.error_code.message % {'resources': resources_str}
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -92,11 +154,13 @@ class ConflictingOperation(PulpExecutionException):
                this is retrieved from the call report instance that indicated the conflict
         @type  reasons: list
         """
-        PulpExecutionException.__init__(self, reasons)
+        super(ConflictingOperation, self).__init__(self, reasons)
+        self.error_code = error_codes.PLP0010
+        self.error_data = {'reasons': reasons}
         self.reasons = reasons
 
     def __str__(self):
-        msg = _('Conflicting operation reasons: %(r)s') % {'r': self.reasons}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -117,11 +181,13 @@ class OperationTimedOut(PulpExecutionException):
         """
         if isinstance(timeout, timedelta):
             timeout = str(timeout)
-        PulpExecutionException.__init__(self, timeout)
+        super(OperationTimedOut, self).__init__(self, timeout)
+        self.error_code = error_codes.PLP0011
+        self.error_data = {'timeout': timeout}
         self.timeout = timeout
 
     def __str__(self):
-        msg = _('Operation timed out after: %(t)s') % {'t': self.timeout}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -137,13 +203,15 @@ class OperationPostponed(PulpExecutionException):
     def __init__(self, call_report):
         """
         @param call_report:  call report for postponed operation
-        @type  call_report: CallReport
+        @type  call_report: CallReport or pulp.server.async.task.TaskResult
         """
-        PulpExecutionException.__init__(self, call_report)
+        super(OperationPostponed, self).__init__(self, call_report)
+        self.error_code = error_codes.PLP0012
         self.call_report = call_report
+        self.error_data = {'call_report': call_report}
 
     def __str__(self):
-        msg = _('Operation postponed')
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -162,11 +230,13 @@ class MultipleOperationsPostponed(PulpExecutionException):
         @param call_report_list: list of call reports, one for each operation
         @type call_report_list: list
         """
-        PulpExecutionException.__init__(self, call_report_list)
+        super(MultipleOperationsPostponed, self).__init__(self, call_report_list)
+        self.error_code = error_codes.PLP0013
         self.call_report_list = call_report_list
+        self.error_data = {'call_report_list': call_report_list}
 
     def __str__(self):
-        msg = _('Multiple Operations')
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -185,11 +255,13 @@ class NotImplemented(PulpExecutionException):
         @param operation_name: the name of the operation that is not implemented
         @type  operation_name: str
         """
-        PulpExecutionException.__init__(self, operation_name)
+        super(NotImplemented, self).__init__(self, operation_name)
         self.operation_name = operation_name
+        self.error_code = error_codes.PLP0013
+        self.error_data = {'operation_name': operation_name}
 
     def __str__(self):
-        msg = _('Operation not implemented: %(o)s') % {'o': self.operation_name}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -217,14 +289,18 @@ class InvalidValue(PulpDataException):
         @param property_names: list of all properties that were invalid
         @type  property_names: list
         """
-        PulpDataException.__init__(self, property_names)
-
+        super(InvalidValue, self).__init__(self, property_names)
         if not isinstance(property_names, (list, tuple)):
             property_names = [property_names]
+
+        self.error_code = error_codes.PLP0015
+        self.error_data = {'property_names': property_names,
+                           'properties': pformat(property_names)}
+
         self.property_names = property_names
 
     def __str__(self):
-        msg = _('Invalid properties: %(p)s') % {'p': pformat(self.property_names)}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -242,14 +318,16 @@ class MissingValue(PulpDataException):
         @param property_names: list of all properties that were missing
         @type  property_names: list
         """
-        PulpDataException.__init__(self, property_names)
-
+        super(MissingValue, self).__init__(self, property_names)
         if not isinstance(property_names, (list, tuple)):
             property_names = [property_names]
+        self.error_code = error_codes.PLP0016
+        self.error_data = {'property_names': property_names,
+                           'properties': pformat(property_names)}
         self.property_names = property_names
 
     def __str__(self):
-        msg = _('Missing values for: %(v)s') % {'v': pformat(self.property_names)}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -263,14 +341,18 @@ class UnsupportedValue(PulpDataException):
     """
 
     def __init__(self, property_names):
-        PulpDataException.__init__(self, property_names)
-
+        super(UnsupportedValue, self).__init__(self, property_names)
         if not isinstance(property_names, (list, tuple)):
             property_names = [property_names]
+
+        self.error_code = error_codes.PLP0017
+        self.error_data = {'property_names': property_names,
+                           'properties': pformat(property_names)}
+
         self.property_names = property_names
 
     def __str__(self):
-        msg = _('Unsupported properties: %(v)s') % {'v': pformat(self.property_names)}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -288,11 +370,13 @@ class DuplicateResource(PulpDataException):
         @param resource_id: ID of the resource that was duplicated
         @type  resource_id: str
         """
-        PulpDataException.__init__(self, resource_id)
+        super(DuplicateResource, self).__init__(self, resource_id)
+        self.error_code = error_codes.PLP0018
+        self.error_data = {'resource_id': resource_id}
         self.resource_id = resource_id
 
     def __str__(self):
-        msg = _('Duplicate resource: %(r)s') % {'r': self.resource_id}
+        msg = self.error_code.message % self.error_data
         return msg.encode('utf-8')
 
     def data_dict(self):
@@ -305,11 +389,13 @@ class InputEncodingError(PulpDataException):
     """
 
     def __init__(self, value):
-        PulpDataException.__init__(self, value)
+        super(DuplicateResource, self).__init__(self, value)
+        self.error_code = error_codes.PLP0019
+        self.error_data = {'value': value}
         self.value = value
 
     def __str__(self):
-        return _('Pulp only accepts input encoded in UTF-8: %(v)s') % {'v': self.value}
+        return self.error_code.message % self.error_data
 
     def data_dict(self):
         return {'value': self.value}

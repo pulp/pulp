@@ -16,10 +16,16 @@ import re
 import traceback
 import unittest
 
+
+import mock
 from pulp.common import dateutils, tags, constants
 from pulp.devel import dummy_plugins, mock_plugins
+from pulp.devel.unit.base import PulpWebservicesTests, MockTaskResult
+from pulp.devel.unit.util import compare_dict
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import SyncReport
+from pulp.server.auth import authorization
+from pulp.server.dispatch.call import CallReport
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import UnitProfile, Consumer, Bind, RepoProfileApplicability
@@ -29,15 +35,15 @@ from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor
                                              RepoSyncResult)
 from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch.call import OBFUSCATED_VALUE
-from pulp.server.itineraries.repository import (
-    repo_delete_itinerary, distributor_delete_itinerary, distributor_update_itinerary,
-    bind_itinerary, unbind_itinerary)
+from pulp.server.exceptions import MissingResource, OperationPostponed
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
+from pulp.server.async.tasks import TaskResult
 from pulp.server.webservices.controllers import repositories
-import base
-import mock
+
+
+from .... import base
 
 
 class RepoControllersTests(base.PulpWebserviceTests):
@@ -371,6 +377,59 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(409, status)
 
 
+class RepoResourceTestsNoWSGI(PulpWebservicesTests):
+    """
+    Tests that have been converted to not require a running web.py stack
+    """
+
+    @mock.patch('pulp.server.managers.factory.repo_query_manager')
+    @mock.patch('pulp.server.tasks.repository.delete', autospec=True)
+    def test_delete(self, mock_delete_task, mock_manager_factory):
+        repo_distributor = repositories.RepoResource()
+
+        mock_delete_task.apply_async.return_value = MockTaskResult('foo-id')
+        self.assertRaises(OperationPostponed, repo_distributor.DELETE, "foo-repo")
+
+        #result = repo_distributor.DELETE("foo-repo")
+
+        #Validate that the check was made to ensure the repo exists
+        mock_manager_factory.return_value.get_repository.assert_called_once_with('foo-repo')
+
+        #validate that the task was called with the appropriate tags
+        task_tags = ['pulp:repository:foo-repo',
+                     'pulp:action:delete']
+        mock_delete_task.apply_async.assert_called_once_with(('foo-repo',),
+                                                             tags=task_tags)
+        #validate the permissions
+        self.validate_auth(authorization.DELETE)
+
+        try:
+            repo_distributor.DELETE("foo-repo")
+        except OperationPostponed, op:
+            self.assertEquals(op.call_report.call_request_id, 'foo-id')
+
+
+    @mock.patch('pulp.server.managers.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.factory.repo_manager', autospec=True)
+    def test_put(self, mock_repo_manager, mock_manager_factory):
+        repo_distributor = repositories.RepoResource()
+        params = mock.Mock(return_value={
+            'delta': 'foo',
+            'importer_config': 'bar',
+            'distributor_configs': 'baz'
+        })
+        repo_distributor.params = params
+        mock_update_task = mock_repo_manager.return_value.update_repo_and_plugins
+        mock_update_task.return_value = TaskResult({'repo_id': 'repo-foo'})
+        repo_distributor.ok = mock.Mock()
+        repo_distributor.PUT("foo-repo")
+        mock_update_task.assert_called_once_with('foo-repo', 'foo', 'bar', 'baz')
+        compare_dict(repo_distributor.ok.call_args_list[0][0][0],
+                     {'repo_id': 'repo-foo', '_href': self.get_mock_uri_path()})
+
+        self.validate_auth(authorization.UPDATE)
+
+
 class RepoResourceTests(RepoControllersTests):
 
     def test_get(self):
@@ -451,88 +510,6 @@ class RepoResourceTests(RepoControllersTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.webservices.controllers.repositories.repo_delete_itinerary', wraps=repo_delete_itinerary)
-    @mock.patch('pulp.server.itineraries.repository.unbind_itinerary', wraps=unbind_itinerary)
-    @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_repo')
-    @mock.patch('pulp.server.managers.consumer.bind.BindManager.get_bind')
-    def test_delete(self, mock_get, mock_find, mock_unbind_itinerary, mock_delete_itinerary):
-        """
-        Tests deleting an existing repository.
-        """
-
-        consumer_id = 'xxx'
-        repo_id = 'doomed'
-        distributor_id='yyy'
-
-        bind = dict(
-            _id='bind_1',
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id,
-            notify_agent=True)
-
-        mock_get.return_value = bind
-        mock_find.return_value = [bind]
-
-        # Setup
-        self.repo_manager.create_repo('doomed')
-
-        # Test
-        status, body = self.delete('/v2/repositories/%s/' % repo_id)
-
-        # Verify
-        self.assertEqual(202, status)
-        self.assertEqual(len(body), 4)
-        for call in body:
-            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-
-        # verify itineraries called
-        mock_delete_itinerary.assert_called_with(repo_id)
-        mock_unbind_itinerary.assert_called_with(consumer_id, repo_id, distributor_id, {})
-
-    def test_delete_missing_repo(self):
-        """
-        Tests deleting a repo that isn't there.
-        """
-
-        # Test
-        status, body = self.delete('/v2/repositories/fake/')
-
-        # Verify
-        self.assertEqual(404, status)
-
-    def test_put(self):
-        """
-        Tests using put to update a repo.
-        """
-
-        # Setup
-        self.repo_manager.create_repo('turkey', display_name='hungry')
-
-        req_body = {'delta' : {'display_name' : 'thanksgiving'}}
-
-        # Test
-        status, body = self.put('/v2/repositories/turkey/', params=req_body)
-
-        # Verify
-        self.assertEqual(200, status)
-
-        self.assertEqual(body['display_name'], req_body['delta']['display_name'])
-
-        repo = Repo.get_collection().find_one({'id' : 'turkey'})
-        self.assertEqual(repo['display_name'], req_body['delta']['display_name'])
-
-    def test_put_missing_repo(self):
-        """
-        Tests updating a repo that doesn't exist.
-        """
-
-        # Test
-        req_body = {'delta' : {'pie' : 'apple'}}
-        status, body = self.put('/v2/repositories/not-there/', params=req_body)
-
-        # Verify
-        self.assertEqual(404, status)
 
 
 class RepoPluginsTests(RepoControllersTests):
@@ -823,6 +800,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Verify
         self.assertEqual(400, status)
 
+
 class RepoDistributorsTests(RepoPluginsTests):
 
     def test_get_distributors(self):
@@ -920,6 +898,69 @@ class RepoDistributorsTests(RepoPluginsTests):
         # Verify
         self.assertEqual(400, status)
 
+
+class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
+    """
+    Tests that have been converted to not require a running web.py stack
+    """
+
+    @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
+    @mock.patch('pulp.server.tasks.repository.distributor_delete', autospec=True)
+    def test_delete(self, mock_delete_task, mock_manager_factory):
+        repo_distributor = repositories.RepoDistributor()
+
+        mock_delete_task.apply_async.return_value = MockTaskResult('foo-id')
+        self.assertRaises(OperationPostponed, repo_distributor.DELETE,
+                          "foo-repo", "foo-distributor")
+        task_tags = ['pulp:repository:foo-repo',
+                     'pulp:repository_distributor:foo-distributor',
+                     'pulp:action:remove_distributor']
+        mock_delete_task.apply_async.assert_called_once_with(('foo-repo', 'foo-distributor'),
+                                                             tags=task_tags)
+
+        #validate the permissions
+        self.validate_auth(authorization.UPDATE)
+
+        try:
+            repo_distributor.DELETE("foo-repo", "foo-distributor")
+        except OperationPostponed, op:
+            self.assertEquals(op.call_report.call_request_id, 'foo-id')
+
+    @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
+    @mock.patch('pulp.server.tasks.repository.distributor_update', autospec=True)
+    def test_put(self, mock_update_task, mock_manager):
+        repo_distributor = repositories.RepoDistributor()
+        new_config = {'key': 'updated'}
+        repo_distributor.params = mock.Mock(return_value={'distributor_config': new_config,
+                                                          'delta': {}})
+
+        mock_update_task.apply_async.return_value = MockTaskResult('foo-id')
+        self.assertRaises(OperationPostponed, repo_distributor.PUT, "foo-repo", "foo-distributor")
+
+        task_tags = ['pulp:repository:foo-repo',
+                     'pulp:repository_distributor:foo-distributor',
+                     'pulp:action:update_distributor']
+        mock_update_task.apply_async.assert_called_once_with(('foo-repo', 'foo-distributor',
+                                                              new_config, {}),
+                                                             tags=task_tags)
+
+        #validate the permissions
+        self.validate_auth(authorization.UPDATE)
+
+        try:
+            repo_distributor.PUT("foo-repo", "foo-distributor")
+        except OperationPostponed, op:
+            self.assertEquals(op.call_report.call_request_id, 'foo-id')
+
+
+
+    @mock.patch('pulp.server.tasks.repository.distributor_update', autospec=True)
+    def test_put_missing_config_raises_exception(self, mock_update_task):
+        repo_distributor = repositories.RepoDistributor()
+        repo_distributor.params = mock.Mock(return_value={'distributor_config': None})
+        self.assertRaises(MissingResource, repo_distributor.PUT, 'foo', 'bar')
+
+
 class RepoDistributorTests(RepoPluginsTests):
 
     def test_get(self):
@@ -948,159 +989,6 @@ class RepoDistributorTests(RepoPluginsTests):
 
         # Test
         status, body = self.get('/v2/repositories/repo-1/distributors/foo/')
-
-        # Verify
-        self.assertEqual(404, status)
-
-    @mock.patch('pulp.server.webservices.controllers.repositories.distributor_delete_itinerary', wraps=distributor_delete_itinerary)
-    @mock.patch('pulp.server.itineraries.repository.unbind_itinerary', wraps=unbind_itinerary)
-    @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_distributor')
-    @mock.patch('pulp.server.managers.consumer.bind.BindManager.get_bind')
-    def test_delete(self, mock_get, mock_find, mock_unbind_itinerary, mock_delete_itinerary):
-        """
-        Tests unassociating a distributor from a repo.
-        """
-
-        consumer_id = 'xxx'
-        repo_id = 'doomed'
-        distributor_id='yyy'
-
-        bind = dict(
-            _id='bind_1',
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id,
-            notify_agent=True)
-
-        mock_find.return_value = [bind]
-        mock_get.return_value = bind
-
-        # Setup
-        self.repo_manager.create_repo(repo_id)
-        self.distributor_manager.add_distributor(
-            repo_id,
-            'dummy-distributor',
-            {},
-            True,
-            distributor_id)
-
-        # Test
-        path = '/v2/repositories/%s/distributors/%s/' % (repo_id, distributor_id)
-        status, body = self.delete(path)
-
-        # Verify
-        self.assertEqual(202, status)
-        self.assertEqual(len(body), 4)
-        for call in body:
-            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-
-        # verify itineraries called
-        mock_delete_itinerary.assert_called_with(repo_id, distributor_id)
-        mock_unbind_itinerary.assert_called_with(consumer_id, repo_id, distributor_id, {})
-
-    def test_delete_missing_distributor(self):
-        """
-        Tests deleting a distributor that isn't there.
-        """
-
-        # Setup
-        self.repo_manager.create_repo('repo-1')
-
-        # Test
-        status, body = self.delete('/v2/repositories/repo-1/distributors/foo/')
-
-        # Verify
-        self.assertEqual(404, status)
-
-    @mock.patch('pulp.server.webservices.controllers.repositories.distributor_update_itinerary',
-                wraps=distributor_update_itinerary)
-    @mock.patch('pulp.server.itineraries.repository.bind_itinerary', wraps=bind_itinerary)
-    @mock.patch('pulp.server.managers.consumer.bind.BindManager.find_by_distributor')
-    def test_update(self, mock_find, mock_bind_itinerary, mock_update_itinerary):
-        """
-        Tests updating a distributor's configuration.
-        """
-
-        consumer_id = 'xxx'
-        repo_id = 'test-repo'
-        distributor_id='yyy'
-        notify_agent = True
-        binding_config = {'c' : 'c'}
-
-        bind = dict(
-            consumer_id=consumer_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id,
-            notify_agent=notify_agent,
-            binding_config=binding_config)
-
-        mock_find.return_value = [bind, bind]
-
-        # Setup
-        self.repo_manager.create_repo(repo_id)
-        self.distributor_manager.add_distributor(repo_id, 'dummy-distributor', {}, True,
-                                                 distributor_id)
-
-        # Test
-        new_config = {'key' : 'updated'}
-        body = {'distributor_config' : new_config}
-        path = '/v2/repositories/%s/distributors/%s/' % (repo_id, distributor_id)
-        status, body = self.put(path, params=body)
-
-        # Verify
-        self.assertEqual(202, status)
-        self.assertEqual(len(body), 5)
-        for call in body:
-            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-
-        # verify itineraries called
-        mock_update_itinerary.assert_called_with(repo_id, distributor_id, new_config, None)
-        mock_bind_itinerary.assert_called_with(consumer_id, repo_id, distributor_id, notify_agent,
-                                               binding_config, {})
-
-    @mock.patch('pulp.server.webservices.controllers.repositories.distributor_update_itinerary',
-                wraps=distributor_update_itinerary)
-    def test_update_auto_publish(self, mock_update_itinerary):
-
-        # Setup
-        repo_id = 'test-repo'
-        distributor_id = 'test-distributor'
-        self.repo_manager.create_repo(repo_id)
-        self.distributor_manager.add_distributor(repo_id, 'dummy-distributor', {}, True,
-                                                 distributor_id)
-        new_config = {'key': 'updated'}
-        delta = {'auto_publish': False}
-        body = {'distributor_config': new_config, 'delta': delta}
-        path = '/v2/repositories/%s/distributors/%s/' % (repo_id, distributor_id)
-
-        # Test
-        status, body = self.put(path, params=body)
-        mock_update_itinerary.assert_called_once_with(repo_id, distributor_id, new_config, delta)
-        self.assertEqual(202, status)
-
-    def test_update_bad_request(self):
-        """
-        Tests updating a distributor with a bad request.
-        """
-
-        # Setup
-        self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'dummy-distributor', {'key' : 'orig'}, True, 'dist-1')
-
-        # Test
-        status, body = self.put('/v2/repositories/repo-1/distributors/dist-1/', params={})
-
-        # Verify
-        self.assertEqual(400, status)
-
-    def test_update_missing_repo(self):
-        """
-        Tests updating a distributor on a repo that doesn't exist.
-        """
-
-        # Test
-        req_body = {'distributor_config' : {'key' : 'updated'}}
-        status, body = self.put('/v2/repositories/foo/distributors/dist-1/', params=req_body)
 
         # Verify
         self.assertEqual(404, status)
