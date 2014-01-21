@@ -11,12 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import time
 import unittest
 
+from bson import ObjectId
 import mock
-import time
-from pulp.server import exceptions
 
+from pulp.server import exceptions
 from pulp.server.db.connection import initialize
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
@@ -27,18 +28,21 @@ initialize()
 
 
 class TestGet(unittest.TestCase):
+    schedule_id1 = str(ObjectId())
+    schedule_id2 = str(ObjectId())
+
     @mock.patch('pulp.server.db.connection.PulpCollection.query')
     def test_query(self, mock_query):
         mock_query.return_value = SCHEDULES
 
-        ret = list(utils.get(['id1', 'id2']))
+        ret = list(utils.get([self.schedule_id1, self.schedule_id2]))
 
         self.assertEqual(mock_query.call_count, 1)
         # there should only be 1 argument, a criteria
         self.assertEqual(len(mock_query.call_args[0]), 1)
         criteria = mock_query.call_args[0][0]
         self.assertTrue(isinstance(criteria, Criteria))
-        self.assertEqual(criteria.filters, {'_id': {'$in': ['id1', 'id2']}})
+        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1), ObjectId(self.schedule_id2)]}})
 
         # three instances of ScheduledCall should be returned
         self.assertEqual(len(ret), 3)
@@ -49,7 +53,7 @@ class TestGet(unittest.TestCase):
     def test_empty_result(self, mock_query):
         mock_query.return_value = []
 
-        ret = list(utils.get(['id1', 'id2']))
+        ret = list(utils.get([self.schedule_id1, self.schedule_id2]))
 
         self.assertEqual(mock_query.call_count, 1)
 
@@ -186,24 +190,26 @@ class TestGetEnabled(unittest.TestCase):
 
 
 class TestDelete(unittest.TestCase):
+    schedule_id = str(ObjectId())
+
     @mock.patch('pulp.server.db.connection.PulpCollection.remove')
     def test_delete(self, mock_remove):
         mock_remove.return_value = None
         mock_remove.__name__ = 'remove'
 
-        utils.delete('schedule1')
+        utils.delete(self.schedule_id)
 
         self.assertEqual(mock_remove.call_count, 1)
         # there should only be 1 argument, a criteria
         self.assertEqual(len(mock_remove.call_args[0]), 1)
-        self.assertEqual(mock_remove.call_args[0][0], {'_id': 'schedule1'})
+        self.assertEqual(mock_remove.call_args[0][0], {'_id': ObjectId(self.schedule_id)})
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     def test_gets_correct_collection(self, mock_get_collection):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.delete('schedule1')
+        ret = utils.delete(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
 
@@ -220,16 +226,18 @@ class TestDeleteByResource(unittest.TestCase):
 
 
 class TestUpdate(unittest.TestCase):
+    schedule_id = str(ObjectId())
+
     @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
     def test_update(self, mock_find):
         mock_find.return_value = SCHEDULES[0]
         mock_find.__name__ = 'find_and_modify'
 
-        ret = utils.update('schedule1', {'enabled': True})
+        ret = utils.update(self.schedule_id, {'enabled': True})
 
         self.assertEqual(mock_find.call_count, 1)
         self.assertEqual(len(mock_find.call_args[0]), 0)
-        self.assertEqual(mock_find.call_args[1]['query'], {'_id': 'schedule1'})
+        self.assertEqual(mock_find.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
         self.assertTrue(mock_find.call_args[1]['update']['$set']['enabled'] is True)
         last_updated = mock_find.call_args[1]['update']['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second
@@ -246,13 +254,13 @@ class TestUpdate(unittest.TestCase):
         """
         mock_get_collection.return_value.find_and_modify.return_value = SCHEDULES[0]
 
-        ret = utils.update('schedule1', {'enabled': True})
+        ret = utils.update(self.schedule_id, {'enabled': True})
 
         mock_get_collection.assert_called_once_with()
 
     def test_unknown_key(self):
         self.assertRaises(exceptions.UnsupportedValue, utils.update,
-                          'schedule1', {'foo': 'bar'})
+                          self.schedule_id, {'foo': 'bar'})
 
     @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
     def test_missing(self, mock_find):
@@ -260,19 +268,21 @@ class TestUpdate(unittest.TestCase):
         mock_find.return_value = None
         mock_find.__name__ = 'find_and_modify'
 
-        self.assertRaises(exceptions.MissingResource, utils.update, 'schedule1', {'enabled': True})
+        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id, {'enabled': True})
 
 
 class TestResetFailureCount(unittest.TestCase):
+    schedule_id = str(ObjectId())
+
     @mock.patch('pulp.server.db.connection.PulpCollection.update')
     def test_reset(self, mock_update):
         mock_update.__name__ = 'update'
 
-        utils.reset_failure_count('schedule1')
+        utils.reset_failure_count(self.schedule_id)
 
         self.assertEqual(mock_update.call_count, 1)
         self.assertEqual(len(mock_update.call_args[0]), 0)
-        self.assertEqual(mock_update.call_args[1]['spec'], {'_id': 'schedule1'})
+        self.assertEqual(mock_update.call_args[1]['spec'], {'_id': ObjectId(self.schedule_id)})
         self.assertEqual(mock_update.call_args[1]['document']['$set']['consecutive_failures'], 0)
         last_updated = mock_update.call_args[1]['document']['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second
@@ -283,12 +293,14 @@ class TestResetFailureCount(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.reset_failure_count('schedule1')
+        ret = utils.reset_failure_count(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
 
 
 class TestIncrementFailureCount(unittest.TestCase):
+    schedule_id = str(ObjectId())
+
     @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
     @mock.patch('pulp.server.db.connection.PulpCollection.update')
     def test_update(self, mock_update, mock_find):
@@ -296,11 +308,11 @@ class TestIncrementFailureCount(unittest.TestCase):
         mock_find.__name__ = 'find_and_modify'
         mock_update.__name__ = 'update'
 
-        utils.increment_failure_count('schedule1')
+        utils.increment_failure_count(self.schedule_id)
 
         self.assertEqual(mock_find.call_count, 1)
         self.assertEqual(len(mock_find.call_args[0]), 0)
-        self.assertEqual(mock_find.call_args[1]['query'], {'_id': 'schedule1'})
+        self.assertEqual(mock_find.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
         self.assertEqual(mock_find.call_args[1]['update']['$inc']['consecutive_failures'], 1)
         last_updated = mock_find.call_args[1]['update']['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second
@@ -314,7 +326,7 @@ class TestIncrementFailureCount(unittest.TestCase):
         mock_find.return_value = None
         mock_find.__name__ = 'find_and_modify'
 
-        utils.increment_failure_count('schedule1')
+        utils.increment_failure_count(self.schedule_id)
 
         # from_db() gets called if find_and_modify returns anything.
         self.assertEqual(mock_from_db.call_count, 0)
@@ -326,7 +338,7 @@ class TestIncrementFailureCount(unittest.TestCase):
         mock_find.__name__ = 'find_and_modify'
         mock_update.__name__ = 'update'
 
-        utils.increment_failure_count('schedule1')
+        utils.increment_failure_count(self.schedule_id)
 
         self.assertEqual(mock_find.call_count, 1)
 
@@ -342,7 +354,7 @@ class TestIncrementFailureCount(unittest.TestCase):
         mock_find.__name__ = 'find_and_modify'
         mock_update.__name__ = 'update'
 
-        utils.increment_failure_count('schedule1')
+        utils.increment_failure_count(self.schedule_id)
 
         self.assertEqual(mock_find.call_count, 1)
 
@@ -358,13 +370,13 @@ class TestIncrementFailureCount(unittest.TestCase):
         mock_find.__name__ = 'find_and_modify'
         mock_update.__name__ = 'update'
 
-        utils.increment_failure_count('schedule1')
+        utils.increment_failure_count(self.schedule_id)
 
         self.assertEqual(mock_find.call_count, 1)
 
         # make sure we disable the schedule
         self.assertEqual(mock_update.call_count, 1)
-        self.assertEqual(mock_update.call_args[0][0], {'_id': 'schedule1'})
+        self.assertEqual(mock_update.call_args[0][0], {'_id': ObjectId(self.schedule_id)})
         self.assertTrue(mock_update.call_args[0][1]['$set']['enabled'] is False)
         last_updated = mock_update.call_args[0][1]['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second

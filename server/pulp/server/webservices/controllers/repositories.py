@@ -448,8 +448,10 @@ class SyncScheduleResource(ScheduleResource):
         updates = self.params()
         if 'schedule' in updates:
             updates['iso_schedule'] = updates.pop('schedule')
-        self.manager.update(repo_id, importer_id, schedule_id, updates)
-        return self._get(schedule_id)
+        schedule = self.manager.update(repo_id, importer_id, schedule_id, updates)
+        ret = schedule.for_display()
+        ret.update(serialization.link.current_link_obj())
+        return self.ok(ret)
 
 
 class RepoDistributors(JSONController):
@@ -615,8 +617,10 @@ class PublishScheduleResource(ScheduleResource):
         updates = self.params()
         if 'schedule' in updates:
             updates['iso_schedule'] = updates.pop('schedule')
-        self.manager.update(repo_id, distributor_id, schedule_id, updates)
-        return self._get(schedule_id)
+        schedule = self.manager.update(repo_id, distributor_id, schedule_id, updates)
+        ret = schedule.for_display()
+        ret.update(serialization.link.current_link_obj())
+        return self.ok(ret)
 
 
 class RepoSyncHistory(JSONController):

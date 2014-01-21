@@ -302,10 +302,13 @@ class ScheduledCall(Model):
         """
         if self._new:
             as_dict = self.as_dict()
+            as_dict['_id'] = ObjectId(as_dict['_id'])
             self.get_collection().insert(as_dict, safe=True)
             self._new = False
         else:
-            self.get_collection().update({'_id': self.id}, self.as_dict())
+            as_dict = self.as_dict()
+            del as_dict['_id']
+            self.get_collection().update({'_id': ObjectId(self.id)}, as_dict)
 
     def _calculate_times(self):
         """

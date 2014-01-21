@@ -123,9 +123,12 @@ class TestSyncUpdate(unittest.TestCase):
     def test_update(self, mock_get_importer, mock_update):
         mock_get_importer.return_value = {'id': self.importer}
 
-        RepoSyncScheduleManager.update(self.repo, self.importer, self.schedule_id, self.updates)
+        ret = RepoSyncScheduleManager.update(self.repo, self.importer,
+                                             self.schedule_id, self.updates)
 
         mock_update.assert_called_once_with(self.schedule_id, self.updates)
+        # make sure it passes through the return value from utils.update
+        self.assertEqual(ret, mock_update.return_value)
 
     @mock.patch('pulp.server.managers.schedule.utils.update')
     @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.get_importer')
@@ -302,9 +305,11 @@ class TestPublishUpdate(unittest.TestCase):
     def test_update(self, mock_get_distributor, mock_update):
         mock_get_distributor.return_value = {'id': self.distributor}
 
-        RepoPublishScheduleManager.update(self.repo, self.distributor, self.schedule_id, self.updates)
+        ret = RepoPublishScheduleManager.update(self.repo, self.distributor, self.schedule_id, self.updates)
 
         mock_update.assert_called_once_with(self.schedule_id, self.updates)
+        # make sure it passes through the return value from utils.update
+        self.assertEqual(ret, mock_update.return_value)
 
     @mock.patch('pulp.server.managers.schedule.utils.update')
     @mock.patch('pulp.server.managers.repo.distributor.RepoDistributorManager.get_distributor')

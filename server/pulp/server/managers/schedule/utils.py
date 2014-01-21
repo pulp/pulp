@@ -16,6 +16,8 @@ import itertools
 import logging
 import time
 
+from bson import ObjectId
+from bson.errors import InvalidId
 import isodate
 
 from pulp.common import dateutils
@@ -40,7 +42,8 @@ def get(schedule_ids):
     :return:    iterator of ScheduledCall instances
     :rtype:     iterator
     """
-    criteria = Criteria(filters={'_id': {'$in': schedule_ids}})
+    object_ids = map(ObjectId, schedule_ids)
+    criteria = Criteria(filters={'_id': {'$in': object_ids}})
     schedules = ScheduledCall.get_collection().query(criteria)
     return itertools.imap(ScheduledCall.from_db, schedules)
 
@@ -96,7 +99,10 @@ def delete(schedule_id):
     :param schedule_id: a unique ID for a schedule
     :type  schedule_id: basestring
     """
-    ScheduledCall.get_collection().remove({'_id': schedule_id}, safe=True)
+    try:
+        ScheduledCall.get_collection().remove({'_id': ObjectId(schedule_id)}, safe=True)
+    except InvalidId:
+        raise exceptions.InvalidValue(['schedule_id'])
 
 
 def delete_by_resource(resource):
@@ -132,7 +138,7 @@ def update(schedule_id, delta):
 
     delta['last_updated'] = time.time()
 
-    spec = {'_id': schedule_id}
+    spec = {'_id': ObjectId(schedule_id)}
     schedule = ScheduledCall.get_collection().find_and_modify(
         query=spec, update={'$set': delta}, safe=True, new=True)
     if schedule is None:
@@ -148,7 +154,7 @@ def reset_failure_count(schedule_id):
     :param schedule_id: ID of the schedule whose count should be reset
     :type  schedule_id: str
     """
-    spec = {'_id': schedule_id}
+    spec = {'_id': ObjectId(schedule_id)}
     delta = {'$set': {
         'consecutive_failures': 0,
         'last_updated': time.time(),
@@ -164,7 +170,7 @@ def increment_failure_count(schedule_id):
     :param schedule_id: ID of the schedule whose count should be incremented
     :type  schedule_id: str
     """
-    spec = {'_id': schedule_id}
+    spec = {'_id': ObjectId(schedule_id)}
     delta = {
         '$inc': {'consecutive_failures': 1},
         '$set': {'last_updated': time.time()},

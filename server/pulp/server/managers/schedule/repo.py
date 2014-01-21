@@ -102,6 +102,9 @@ class RepoSyncScheduleManager(object):
         :type  schedule_id:     basestring
         :param updates:         dictionary of updates to apply
         :type  updates:         dict
+
+        :return ScheduledCall instance as it appears after the update
+        :rtype  pulp.server.db.model.dispatch.ScheduledCall
         """
         cls.validate_importer(repo_id, importer_id)
 
@@ -111,7 +114,7 @@ class RepoSyncScheduleManager(object):
 
         utils.validate_updated_schedule_options(updates)
 
-        utils.update(schedule_id, updates)
+        return utils.update(schedule_id, updates)
 
     @classmethod
     def delete(cls, repo_id, importer_id, schedule_id):
@@ -240,6 +243,9 @@ class RepoPublishScheduleManager(object):
         :type  schedule_id:     basestring
         :param updates:         dictionary of updates to apply
         :type  updates:         dict
+
+        :return ScheduledCall instance as it appears after the update
+        :rtype  pulp.server.db.model.dispatch.ScheduledCall
         """
 
         cls.validate_distributor(repo_id, distributor_id)
@@ -248,7 +254,7 @@ class RepoPublishScheduleManager(object):
 
         utils.validate_updated_schedule_options(updates)
 
-        utils.update(schedule_id, updates)
+        return utils.update(schedule_id, updates)
 
     @classmethod
     def delete(cls, repo_id, distributor_id, schedule_id):

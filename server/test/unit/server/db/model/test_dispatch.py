@@ -275,7 +275,9 @@ class TestScheduledCallSave(unittest.TestCase):
 
         call.save()
 
-        mock_update.assert_called_once_with({'_id': fake_id}, call.as_dict())
+        expected = call.as_dict()
+        del expected['_id']
+        mock_update.assert_called_once_with({'_id': fake_id}, expected)
 
     def test_new(self, mock_get_collection):
         mock_insert = mock_get_collection.return_value.insert
@@ -283,7 +285,9 @@ class TestScheduledCallSave(unittest.TestCase):
 
         call.save()
 
-        mock_insert.assert_called_once_with(call.as_dict(), safe=True)
+        expected = call.as_dict()
+        expected['_id'] = bson.ObjectId(expected['_id'])
+        mock_insert.assert_called_once_with(expected, safe=True)
         self.assertFalse(call._new)
 
 
