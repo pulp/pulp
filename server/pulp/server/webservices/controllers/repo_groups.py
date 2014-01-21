@@ -61,13 +61,7 @@ class RepoGroupCollection(JSONController):
         manager = managers_factory.repo_group_manager()
         args = [group_id, display_name, description, repo_ids, notes]
         kwargs = {'distributor_list': distributors}
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)]
-
-        call_request = CallRequest(manager.create_and_configure_repo_group, args, kwargs, weight=weight, # rbarlow_converted
-                                   tags=tags)
-        call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, group_id)
-        group = execution.execute_sync(call_request)
+        group = manager.create_and_configure_repo_group(*args, **kwargs)
         group.update(serialization.link.child_link_obj(group['id']))
         group['distributors'] = distributors or []
         return self.created(group['_href'], group)
@@ -107,25 +101,14 @@ class RepoGroupResource(JSONController):
     @auth_required(authorization.DELETE)
     def DELETE(self, repo_group_id):
         manager = managers_factory.repo_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)]
-        call_request = CallRequest(manager.delete_repo_group, # rbarlow_converted
-                                   [repo_group_id],
-                                   tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        result = execution.execute(call_request)
+        result = manager.delete_repo_group(repo_group_id)
         return self.ok(result)
 
     @auth_required(authorization.UPDATE)
     def PUT(self, repo_group_id):
         update_data = self.params()
         manager = managers_factory.repo_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)]
-        call_request = CallRequest(manager.update_repo_group, # rbarlow_converted
-                                   args=[repo_group_id],
-                                   kwargs=update_data,
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        group = execution.execute(call_request)
+        group = manager.update_repo_group(repo_group_id, **update_data)
         group.update(serialization.link.current_link_obj())
         return self.ok(group)
 
@@ -136,13 +119,7 @@ class RepoGroupAssociateAction(JSONController):
     def POST(self, repo_group_id):
         criteria = Criteria.from_client_input(self.params().get('criteria', {}))
         manager = managers_factory.repo_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                action_tag('repo_group_associate')]
-        call_request = CallRequest(manager.associate, # rbarlow_converted
-                                   [repo_group_id, criteria],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        execution.execute(call_request)
+        manager.associate(repo_group_id, criteria)
         collection = RepoGroup.get_collection()
         group = collection.find_one({'id': repo_group_id})
         return self.ok(group['repo_ids'])
@@ -154,18 +131,13 @@ class RepoGroupUnassociateAction(JSONController):
     def POST(self, repo_group_id):
         criteria = Criteria.from_client_input(self.params().get('criteria', {}))
         manager = managers_factory.repo_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                action_tag('repo_group_unassociate')]
-        call_request = CallRequest(manager.unassociate, # rbarlow_converted
-                                   [repo_group_id, criteria],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        execution.execute(call_request)
+        manager.unassociate(repo_group_id, criteria)
         collection = RepoGroup.get_collection()
         group = collection.find_one({'id': repo_group_id})
         return self.ok(group['repo_ids'])
 
 # distributor controllers -----------------------------------------------------
+
 
 class RepoGroupDistributors(JSONController):
 
@@ -194,23 +166,14 @@ class RepoGroupDistributors(JSONController):
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                action_tag('add_distributor')]
-        if distributor_id is not None:
-            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id))
-
-        call_request = CallRequest(distributor_manager.add_distributor, # rbarlow_converted
-                                   [repo_group_id, distributor_type_id, distributor_config, distributor_id],
-                                   weight=weight,
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        created = execution.execute(call_request)
+        created = distributor_manager.add_distributor(repo_group_id, distributor_type_id,
+                                                      distributor_config, distributor_id)
 
         href = serialization.link.child_link_obj(created['id'])
         created.update(href)
 
         return self.created(href['_href'], created)
+
 
 class RepoGroupDistributor(JSONController):
 
@@ -235,20 +198,7 @@ class RepoGroupDistributor(JSONController):
         force = params.get('force', False)
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('remove_distributor')
-               ]
-        call_request = CallRequest(distributor_manager.remove_distributor, # rbarlow_converted
-                                   args=[repo_group_id, distributor_id],
-                                   kwargs={'force' : force},
-                                   tags=tags,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id)
-
-        execution.execute(call_request)
+        distributor_manager.remove_distributor(repo_group_id, distributor_id, force=force)
         return self.ok(None)
 
     @auth_required(authorization.UPDATE)
@@ -262,19 +212,8 @@ class RepoGroupDistributor(JSONController):
 
         distributor_manager = managers_factory.repo_group_distributor_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('update_distributor')
-        ]
-
-        call_request = CallRequest(distributor_manager.update_distributor_config, # rbarlow_converted
-                                   args=[repo_group_id, distributor_id, distributor_config],
-                                   tags=tags,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id)
-
-        result = execution.execute(call_request)
+        result = distributor_manager.update_distributor_config(repo_group_id, distributor_id,
+                                                               distributor_config)
 
         href = serialization.link.current_link_obj()
         result.update(href)
@@ -297,10 +236,9 @@ class PublishAction(JSONController):
             raise MissingValue(['id'])
 
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id),
-                action_tag('publish')
-        ]
-
+                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE,
+                             distributor_id),
+                action_tag('publish')]
         async_result = publish.apply_async_with_reservation(
                                                 dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE,
                                                 repo_group_id,
@@ -313,7 +251,7 @@ class PublishAction(JSONController):
 # web.py application -----------------------------------------------------------
 
 _URLS = ('/$', RepoGroupCollection,
-         '/search/$', RepoGroupSearch, # resource search
+         '/search/$', RepoGroupSearch,  # resource search
          '/([^/]+)/$', RepoGroupResource,
 
          '/([^/]+)/distributors/$', RepoGroupDistributors,
@@ -321,7 +259,6 @@ _URLS = ('/$', RepoGroupCollection,
 
          '/([^/]+)/actions/associate/$', RepoGroupAssociateAction,
          '/([^/]+)/actions/unassociate/$', RepoGroupUnassociateAction,
-         '/([^/]+)/actions/publish/$', PublishAction,
-        )
+         '/([^/]+)/actions/publish/$', PublishAction)
 
 application = web.application(_URLS, globals())

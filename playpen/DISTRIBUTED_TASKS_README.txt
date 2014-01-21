@@ -56,7 +56,7 @@ order to get up and running.
      This first one is the general celeryd that takes on "normal" tasks. You only need to start one
      of these, and it will default to a concurrency level equal to the number of cores you have.
 
-     $ celeryd -A pulp.server.async.app --loglevel INFO
+     $ celery worker -A pulp.server.async.app --loglevel INFO
 
      Secondly, you will need at least one celeryd to do the work of the reserved tasks. This is very
      important, as reserved tasks will just pile up if there isn't at least one process around to
@@ -70,15 +70,15 @@ order to get up and running.
      general Celery queue. I (rbarlow) recommend leaving the -Q flag off so they can perform work
      from both queues, but feel free to do as you please. This will start two of them, for example:
 
-     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_resource_worker-1
+     $ celery worker -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_resource_worker-1
 
-     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_resource_worker-2
+     $ celery worker -A pulp.server.async.app --loglevel INFO -c 1 -n reserved_resource_worker-2
 
      The last one is the ReservationManager. It is very important, as its job is to route tasks
      that reserve resources to the correct workers. You can adjust the -n flag to whatever you like,
      but it is critical that you do not change the -c or -Q flags on this command.
 
-     $ celeryd -A pulp.server.async.app --loglevel INFO -c 1 -n resource_manager -Q resource_manager
+     $ celery worker -A pulp.server.async.app --loglevel INFO -c 1 -n resource_manager -Q resource_manager
 
 5) Lastly, you need to run a Celery Beat. This is similar to a crond for Celery. It is important
    that only one Celery Beat be run across the entire application, no matter how many Pulp servers

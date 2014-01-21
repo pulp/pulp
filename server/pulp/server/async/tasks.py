@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from datetime import datetime, timedelta
 from gettext import gettext as _
 import logging
 import random
@@ -42,7 +43,14 @@ def babysit():
     """
     # Inspect the available workers to build our state variables
     active_queues = controller.inspect().active_queues()
-    reserved_queues = []
+    # Now we need the entire list of AvailableQueues from the database, though we only need their
+    # _id and missing_since attributes. This is preferrable to using a Map/Reduce operation to get
+    # Mongo to tell us which workers Celery knows about that aren't found in the database.
+    all_queues_criteria = Criteria(filters={}, fields=('_id', 'missing_since'))
+    all_queues = list(resources.filter_available_queues(all_queues_criteria))
+    all_queues_set = set([q.name for q in all_queues])
+
+    active_queues_set = set()
     for worker, queues in active_queues.items():
         # If this worker is a reserved task worker, let's make sure we know about it in our
         # available_queues collection, and make sure it is processing a queue with its own name
@@ -51,27 +59,65 @@ def babysit():
             # subscribe him to one
             if not worker in [queue['name'] for queue in queues]:
                 controller.add_consumer(queue=worker, destination=(worker,))
-            # Now let's make sure this worker's queue is included in our available_queues
-            # collection
-            resources.get_or_create_available_queue(worker)
-            reserved_queues.append(worker)
+            active_queues_set.add(worker)
 
-    # Now we must delete queues for workers that don't exist anymore
-    missing_queue_criteria = Criteria(filters={'_id': {'$nin': reserved_queues}})
-    available_queues_missing_workers = resources.filter_available_queues(
-        missing_queue_criteria)
-    for queue in available_queues_missing_workers:
-        # Cancel all of the tasks that were assigned to this queue
-        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-        msg = msg % {'name': queue.name}
-        logger.error(msg)
-        for task in TaskStatusManager.find_by_criteria(
-                Criteria(filters={'queue': queue.name,
-                                  'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
-            cancel(task['task_id'])
+    # Determine which queues are in active_queues_set that aren't in all_queues_set. These are new
+    # workers and we need to add them to the database.
+    for worker in (active_queues_set - all_queues_set):
+        resources.get_or_create_available_queue(worker)
 
-        # Finally, delete the queue
-        queue.delete()
+    # If there are any AvalailableQueues that have their missing_since attribute set and they are
+    # present now, let's set their missing_since attribute back to None.
+    missing_since_queues = set([q.name for q in all_queues if q.missing_since is not None])
+    for queue in (active_queues_set & missing_since_queues):
+        active_queue = resources.get_or_create_available_queue(queue)
+        active_queue.missing_since = None
+        active_queue.save()
+
+    # Now we must delete queues for workers that don't exist anymore, but only if they've been
+    # missing for at least five minutes.
+    for queue in (all_queues_set - active_queues_set):
+        active_queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
+
+        # We only want to delete this queue if it has been missing for at least 5 minutes. If this
+        # AvailableQueue doesn't have a missing_since attribute, that means it has just now gone
+        # missing. Let's mark its missing_since attribute and continue.
+        if active_queue.missing_since is None:
+            active_queue.missing_since = datetime.utcnow()
+            active_queue.save()
+            continue
+
+        # This queue has been missing for some time. Let's check to see if it's been 5 minutes yet,
+        # and if it has, let's delete it.
+        if active_queue.missing_since < datetime.utcnow() - timedelta(minutes=5):
+            _delete_queue.apply_async(args=(queue,), queue=RESOURCE_MANAGER_QUEUE)
+
+
+@task
+def _delete_queue(queue):
+    """
+    Delete the AvailableQueue with _id queue from the database. This Task can only safely be
+    performed by the resource manager at this time, so be sure to queue it in the
+    RESOURCE_MANAGER_QUEUE.
+
+    :param queue: The name of the queue you wish to delete. In the database, the _id field is the
+                  name.
+    :type  queue: basestring
+    """
+    queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
+
+    # Cancel all of the tasks that were assigned to this queue
+    msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
+    msg = msg % {'name': queue.name}
+    logger.error(msg)
+    for task in TaskStatusManager.find_by_criteria(
+            Criteria(
+                filters={'queue': queue.name,
+                         'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
+        cancel(task['task_id'])
+
+    # Finally, delete the queue
+    queue.delete()
 
 
 @task
