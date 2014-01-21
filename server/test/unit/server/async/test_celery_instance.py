@@ -23,6 +23,7 @@ from pulp.server.async import celery_instance
 from pulp.server.async.tasks import babysit
 from pulp.server.config import config
 from pulp.server.db.reaper import reap_expired_documents
+from pulp.server.maintenance.monthly import monthly_maintenance
 
 
 class TestCelerybeatSchedule(unittest.TestCase):
@@ -38,7 +39,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         # Please read the docblock to this test if you find yourself needing to adjust this
         # assertion.
-        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 2)
+        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 3)
 
     def test_babysit(self):
         """
@@ -63,6 +64,18 @@ class TestCelerybeatSchedule(unittest.TestCase):
             'args': tuple(),
         }
         self.assertEqual(reap, expected_reap)
+
+    def test_monthly_maintenance(self):
+        """
+        Make sure the monthly maintenance Task is present and properly configured.
+        """
+        expected_monthly_maintenance = {
+            'task': monthly_maintenance.name,
+            'schedule': timedelta(days=30),
+            'args': tuple(),
+        }
+        self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['monthly_maintenance'],
+                         expected_monthly_maintenance)
 
     def test_celery_conf_updated(self):
         """

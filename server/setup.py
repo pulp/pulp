@@ -21,7 +21,6 @@ setup(
     entry_points={
         'console_scripts': [
             'pulp-manage-db = pulp.server.db.manage:main',
-            'pulp-monthly = pulp.server.maintenance.monthly:main',
         ]
     }
 )
