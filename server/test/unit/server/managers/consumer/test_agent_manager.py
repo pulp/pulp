@@ -17,9 +17,11 @@ from unittest import TestCase
 
 from mock import patch, Mock, ANY
 
+from pulp.common.tags import action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND
 from pulp.server.db.model.consumer import Bind
 from pulp.server.managers.consumer.agent import AgentManager, Units
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
@@ -79,7 +81,8 @@ class TestAgentManager(TestCase):
         mock_bindings.return_value = agent_bindings
 
         task_id = '2345'
-        mock_task_status_manager.create_task_status = Mock()
+        mock_task = {'task_id': task_id}
+        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -91,9 +94,16 @@ class TestAgentManager(TestCase):
         distributor_id = '200'
         options = {}
         agent_manager = AgentManager()
-        agent_manager.bind(consumer['id'], repo_id, distributor_id, options)
+        task = agent_manager.bind(consumer['id'], repo_id, distributor_id, options)
 
         # validations
+
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag(ACTION_AGENT_BIND)
+        ]
 
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_bind_manager.get_bind.assert_called_with(consumer['id'], repo_id, distributor_id)
@@ -107,7 +117,8 @@ class TestAgentManager(TestCase):
             repo_id=repo_id,
             distributor_id=distributor_id)
 
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        self.assertEqual(task, mock_task)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
         mock_agent.bind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.BIND, task_id)
@@ -142,7 +153,8 @@ class TestAgentManager(TestCase):
         mock_unbindings.return_value = agent_bindings
 
         task_id = '2345'
-        mock_task_status_manager.create_task_status = Mock()
+        mock_task = {'task_id': task_id}
+        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -152,9 +164,16 @@ class TestAgentManager(TestCase):
 
         options = {}
         agent_manager = AgentManager()
-        agent_manager.unbind(consumer['id'], repo_id, distributor_id, options)
+        task = agent_manager.unbind(consumer['id'], repo_id, distributor_id, options)
 
         # validations
+
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag(ACTION_AGENT_UNBIND)
+        ]
 
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_unbindings.assert_called_with([binding])
@@ -167,7 +186,8 @@ class TestAgentManager(TestCase):
             repo_id=repo_id,
             distributor_id=distributor_id)
 
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        self.assertEqual(task, mock_task)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
         mock_agent.unbind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.UNBIND, task_id)
@@ -202,7 +222,8 @@ class TestAgentManager(TestCase):
         mock_get_profiler.return_value = (mock_profiler, {})
 
         task_id = '2345'
-        mock_task_status_manager.create_task_status = Mock()
+        mock_task = {'task_id': task_id}
+        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -212,13 +233,19 @@ class TestAgentManager(TestCase):
 
         options = {'a': 1}
         agent_manager = AgentManager()
-        agent_manager.install_content(consumer['id'], [unit], options)
+        task = agent_manager.install_content(consumer['id'], [unit], options)
 
         # validations
 
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
+            action_tag('unit_install')
+        ]
+
+        self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
         mock_profiler.install_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.install.assert_called_with(mock_context.return_value, [unit], options)
 
@@ -252,7 +279,8 @@ class TestAgentManager(TestCase):
         mock_get_profiler.return_value = (mock_profiler, {})
 
         task_id = '2345'
-        mock_task_status_manager.create_task_status = Mock()
+        mock_task = {'task_id': task_id}
+        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -262,13 +290,19 @@ class TestAgentManager(TestCase):
 
         options = {'a': 1}
         agent_manager = AgentManager()
-        agent_manager.update_content(consumer['id'], [unit], options)
+        task = agent_manager.update_content(consumer['id'], [unit], options)
 
         # validations
 
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
+            action_tag('unit_update')
+        ]
+
+        self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
         mock_profiler.update_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.update.assert_called_with(mock_context.return_value, [unit], options)
 
@@ -302,7 +336,8 @@ class TestAgentManager(TestCase):
         mock_get_profiler.return_value = (mock_profiler, {})
 
         task_id = '2345'
-        mock_task_status_manager.create_task_status = Mock()
+        mock_task = {'task_id': task_id}
+        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -312,13 +347,19 @@ class TestAgentManager(TestCase):
 
         options = {'a': 1}
         agent_manager = AgentManager()
-        agent_manager.uninstall_content(consumer['id'], [unit], options)
+        task = agent_manager.uninstall_content(consumer['id'], [unit], options)
 
         # validations
 
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
+            action_tag('unit_uninstall')
+        ]
+
+        self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent')
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
         mock_profiler.uninstall_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.uninstall.assert_called_with(mock_context.return_value, [unit], options)
 

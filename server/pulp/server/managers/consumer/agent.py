@@ -170,12 +170,16 @@ class AgentManager(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
-        :return: A task ID that may be used to track the agent request.
-        :rtype: str
+        :return: A task used to track the agent request.
+        :rtype: dict
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
-        TaskStatusManager.create_task_status(task_id, 'agent')
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            action_tag('unit_install')
+        ]
+        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -197,7 +201,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.install(context, units, options)
-        return task_id
+        return task
 
     @staticmethod
     def update_content(consumer_id, units, options):
@@ -210,12 +214,16 @@ class AgentManager(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Update options; based on unit type.
         :type options: dict
-        :return: A task ID that may be used to track the agent request.
-        :rtype: str
+        :return: A task used to track the agent request.
+        :rtype: dict
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
-        TaskStatusManager.create_task_status(task_id, 'agent')
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            action_tag('unit_update')
+        ]
+        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -237,7 +245,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.update(context, units, options)
-        return task_id
+        return task
 
     @staticmethod
     def uninstall_content(consumer_id, units, options):
@@ -251,11 +259,15 @@ class AgentManager(object):
         :param options: Uninstall options; based on unit type.
         :type options: dict
         :return: A task ID that may be used to track the agent request.
-        :rtype: str
+        :rtype: dict
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
-        TaskStatusManager.create_task_status(task_id, 'agent')
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
+            action_tag('unit_uninstall')
+        ]
+        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -277,7 +289,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.uninstall(context, units, options)
-        return task_id
+        return task
 
     def cancel_request(self, consumer_id, task_id):
         """
