@@ -139,12 +139,13 @@ cp server/etc/default/upstart_pulp_resource_manager %{buildroot}/%{_sysconfdir}/
 cp server/etc/default/upstart_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
 ln -s %{_initddir}/pulp_workers %{buildroot}/%{_initddir}/pulp_resource_manager
 cp -d server/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
+# We don't want to install pulp-manage-workers in upstart systems
+rm -rf %{buildroot}/%{_libexecdir}
 %else
 cp server/etc/default/systemd_pulp_celerybeat %{buildroot}/%{_sysconfdir}/default/pulp_celerybeat
 cp server/etc/default/systemd_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
 cp server/etc/default/systemd_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
 mkdir -p %{buildroot}/%{_usr}/lib/systemd/system/
-mkdir -p %{buildroot}/%{_libexecdir}
 cp server/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
 %endif
 
