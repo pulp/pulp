@@ -10,16 +10,10 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from celery import task
 import web
 
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
-from pulp.server.async.tasks import Task
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE, operation_to_name
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
-from pulp.server.webservices import execution, serialization
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 import pulp.server.exceptions as exceptions
@@ -59,17 +53,7 @@ class RolesCollection(JSONController):
 
         # Creation
         manager = managers.role_manager()
-        args = [role_id, display_name, description]
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
-                action_tag('create')]
-        call_request = CallRequest(manager.create_role, # rbarlow_converted
-                                   args,
-                                   weight=weight,
-                                   tags=tags)
-        call_request.creates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
-
-        role = execution.execute_sync(call_request)
+        role = manager.create_role(role_id, display_name, description)
         role_link = serialization.link.child_link_obj(role_id)
         role.update(role_link)
 
@@ -105,15 +89,8 @@ class RoleResource(JSONController):
     def DELETE(self, role_id):
 
         manager = managers.role_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, role_id),
-                action_tag('delete')]
-        call_request = CallRequest(manager.delete_role, # rbarlow_converted
-                                   [role_id],
-                                   tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
-
-        return self.ok(execution.execute(call_request))
+        result = manager.delete_role(role_id)
+        return self.ok(result)
 
     @auth_required(UPDATE)
     def PUT(self, role_id):
@@ -122,16 +99,9 @@ class RoleResource(JSONController):
         role_data = self.params()
         delta = role_data.get('delta', None)
 
-        # Perform update        
         manager = managers.role_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
-                action_tag('update')]
-        call_request = CallRequest(manager.update_role, # rbarlow_converted
-                                   [role_id, delta],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
+        role = manager.update_role(role_id, delta)
 
-        role = execution.execute(call_request)
         role.update(serialization.link.current_link_obj())
         return self.ok(role)
 
@@ -159,14 +129,7 @@ class RoleUsers(JSONController):
             raise exceptions.InvalidValue(login)
 
         role_manager = managers.role_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
-                action_tag('add_user_to_role')]
-
-        call_request = CallRequest(role_manager.add_user_to_role, # rbarlow_converted
-                                   [role_id, login],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
-        return self.ok(execution.execute_sync(call_request))
+        return self.ok(role_manager.add_user_to_role(role_id, login))
 
 
 class RoleUser(JSONController):
@@ -178,16 +141,7 @@ class RoleUser(JSONController):
     def DELETE(self, role_id, login):
 
         role_manager = managers.role_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_ROLE_TYPE, role_id),
-                action_tag('remove_user_from_role')]
-        call_request = CallRequest(role_manager.remove_user_from_role, # rbarlow_converted
-                                   [role_id, login],
-                                   tags=tags,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
-        call_request.reads_resource(dispatch_constants.RESOURCE_ROLE_TYPE, role_id)
-        return  self.ok(execution.execute_sync(call_request))
-
+        return self.ok(role_manager.remove_user_from_role(role_id, login))
 
 
 # -- web.py application -------------------------------------------------------

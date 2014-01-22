@@ -59,13 +59,9 @@ class ConsumerGroupCollection(JSONController):
         if group_data:
             raise pulp_exceptions.InvalidValue(group_data.keys())
         manager = managers_factory.consumer_group_manager()
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, group_id)]
-        call_request = CallRequest(manager.create_consumer_group, # rbarlow_converted
-           [group_id, display_name, description, consumer_ids, notes],
-           weight=weight, tags=tags)
-        call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, group_id)
-        group = execution.execute_sync(call_request)
+
+        group = manager.create_consumer_group(group_id, display_name, description, consumer_ids,
+                                              notes)
         group.update(serialization.link.child_link_obj(group['id']))
         return self.created(group['_href'], group)
 
@@ -87,6 +83,7 @@ class ConsumerGroupSearch(SearchController):
             item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
+
 class ConsumerGroupResource(JSONController):
 
     @auth_required(authorization.READ)
@@ -101,27 +98,17 @@ class ConsumerGroupResource(JSONController):
     @auth_required(authorization.DELETE)
     def DELETE(self, consumer_group_id):
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)]
-        call_request = CallRequest(manager.delete_consumer_group, # rbarlow_converted
-                                   [consumer_group_id],
-                                   tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        result = execution.execute(call_request)
+        result = manager.delete_consumer_group(consumer_group_id)
         return self.ok(result)
 
     @auth_required(authorization.UPDATE)
     def PUT(self, consumer_group_id):
         update_data = self.params()
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)]
-        call_request = CallRequest(manager.update_consumer_group, # rbarlow_converted
-                                   args=[consumer_group_id],
-                                   kwargs=update_data,
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        group = execution.execute(call_request)
+        group = manager.update_consumer_group(consumer_group_id, **update_data)
         group.update(serialization.link.current_link_obj())
         return self.ok(group)
+
 
 class ConsumerGroupAssociateAction(JSONController):
 
@@ -129,16 +116,11 @@ class ConsumerGroupAssociateAction(JSONController):
     def POST(self, consumer_group_id):
         criteria = Criteria.from_client_input(self.params().get('criteria', {}))
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id),
-                action_tag('consumer_group_associate')]
-        call_request = CallRequest(manager.associate, # rbarlow_converted
-                                   [consumer_group_id, criteria],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        execution.execute(call_request)
+        manager.associate(consumer_group_id, criteria)
         query_manager = managers_factory.consumer_group_query_manager()
         group = query_manager.get_group(consumer_group_id)
         return self.ok(group['consumer_ids'])
+
 
 class ConsumerGroupUnassociateAction(JSONController):
 
@@ -146,13 +128,7 @@ class ConsumerGroupUnassociateAction(JSONController):
     def POST(self, consumer_group_id):
         criteria = Criteria.from_client_input(self.params().get('criteria', {}))
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id),
-                action_tag('consumer_group_unassociate')]
-        call_request = CallRequest(manager.unassociate, # rbarlow_converted
-                                   [consumer_group_id, criteria],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        execution.execute(call_request)
+        manager.unassociate(consumer_group_id, criteria)
         query_manager = managers_factory.consumer_group_query_manager()
         group = query_manager.get_group(consumer_group_id)
         return self.ok(group['consumer_ids'])
