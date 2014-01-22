@@ -150,7 +150,6 @@ class RepoManagerTests(base.PulpAsyncServerTests):
             self.fail('Invalid ID did not raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue(e.property_names[0], 'repo_id')
-            print(e) # for coverage
 
     def test_create_duplicate_id(self):
         """
@@ -167,8 +166,7 @@ class RepoManagerTests(base.PulpAsyncServerTests):
             self.manager.create_repo(id)
             self.fail('Repository with an existing ID did not raise an exception')
         except exceptions.DuplicateResource, e:
-            self.assertTrue(id in e)
-            print(e) # for coverage
+            self.assertEquals(e.resource_id, id)
 
     def test_create_invalid_notes(self):
         """
@@ -186,7 +184,6 @@ class RepoManagerTests(base.PulpAsyncServerTests):
             self.fail('Invalid notes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue('notes' in e.data_dict()['property_names'])
-            print(e) # for coverage
 
     def test_create_and_configure_repo(self):
         """
@@ -474,8 +471,8 @@ class RepoManagerTests(base.PulpAsyncServerTests):
             'dist-1' : {'key-d1' : 'updated-1'},
         } # only update one of the two distributors
 
-        repo = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config, new_distributor_configs)
-
+        result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config, new_distributor_configs)
+        repo = result.return_value
         # Verify
         self.assertEqual(repo['id'], 'repo-1')
         self.assertEqual(repo['display_name'], 'Updated')
@@ -505,7 +502,8 @@ class RepoManagerTests(base.PulpAsyncServerTests):
         distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'}, True, distributor_id='dist-1')
 
         # Test
-        repo = self.manager.update_repo_and_plugins('repo-1', None, None, None)
+        result = self.manager.update_repo_and_plugins('repo-1', None, None, None)
+        repo = result.return_value
 
         # Verify
         self.assertEqual(repo['display_name'], 'Original')

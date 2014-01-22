@@ -12,13 +12,18 @@
 Test the pulp.server.webservices.controllers.consumer module.
 """
 import logging
+import unittest
 
 import mock
+from web.webapi import BadRequest
 
 from .... import base
 from pulp.devel import mock_agent
 from pulp.devel import mock_plugins
+from pulp.devel.unit.base import PulpWebservicesTests
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.auth import authorization
+from pulp.server.async.tasks import TaskResult
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicability,
                                            UnitProfile)
@@ -26,9 +31,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.exceptions import InvalidValue
-from pulp.server.itineraries.bind import (
-    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
+from pulp.server.exceptions import InvalidValue, OperationPostponed
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary,
     consumer_content_update_itinerary,
@@ -37,6 +40,7 @@ from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.server.webservices.controllers.consumers import ContentApplicability
+from pulp.server.webservices.controllers import consumers
 
 
 class ConsumerTest(base.PulpWebserviceTests):
@@ -454,6 +458,80 @@ class TestSearch(ConsumersTest):
         self.validate(body, True)
 
 
+class BindTestNoWSGI(PulpWebservicesTests):
+
+    @mock.patch('pulp.server.tasks.consumer.bind')
+    def test_bind(self, mock_bind_task):
+        # Setup
+        bindings = consumers.Bindings()
+        bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
+                                                  'distributor_id': 'bar-distributor',
+                                                  'notify_agent': False})
+        mock_bind_task.return_value = None
+
+        # Test
+        bindings.POST('consumer-id')
+        mock_bind_task.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor',
+                                               False, mock.ANY, mock.ANY)
+
+        self.validate_auth(authorization.CREATE)
+
+    @mock.patch('pulp.server.tasks.consumer.bind')
+    def test_bind_with_postponed(self, mock_bind_task):
+        bindings = consumers.Bindings()
+        bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
+                                                  'distributor_id': 'bar-distributor',
+                                                  'notify_agent': True})
+        self.assertRaises(OperationPostponed, bindings.POST, 'consumer-id')
+        mock_bind_task.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor',
+                                               True, mock.ANY, mock.ANY)
+
+    @mock.patch('pulp.server.tasks.consumer.bind')
+    def test_bind_raises_bad_request_if_binding_config_not_dict(self, mock_bind_task):
+        bindings = consumers.Bindings()
+        bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
+                                                  'distributor_id': 'bar-distributor',
+                                                  'notify_agent': True,
+                                                  'binding_config': False})
+        self.assertRaises(BadRequest, bindings.POST, 'consumer-id')
+        self.assertFalse(mock_bind_task.called)
+
+    @mock.patch('pulp.server.tasks.consumer.unbind')
+    def test_unbind(self, mock_unbind):
+        binding = consumers.Binding()
+        binding.params = mock.Mock(return_value={})
+        mock_unbind.return_value = None
+        binding.DELETE('consumer-id', 'foo-repo', 'bar-distributor')
+        mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
+        self.validate_auth(authorization.DELETE)
+
+    @mock.patch('pulp.server.tasks.consumer.unbind')
+    def test_unbind_with_postponed(self, mock_unbind):
+        binding = consumers.Binding()
+        binding.params = mock.Mock(return_value={})
+        mock_unbind.return_value = TaskResult(spawned_tasks=['foo-id'])
+        self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-id', 'foo-repo',
+                          'bar-distributor')
+        mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
+
+    @mock.patch('pulp.server.tasks.consumer.force_unbind')
+    def test_unbind_force(self, mock_unbind):
+        binding = consumers.Binding()
+        binding.params = mock.Mock(return_value={'force': True})
+        mock_unbind.return_value = None
+        binding.DELETE('consumer-id', 'foo-repo', 'bar-distributor')
+        mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
+
+    @mock.patch('pulp.server.tasks.consumer.force_unbind')
+    def test_unbind_force_with_postponed(self, mock_unbind):
+        binding = consumers.Binding()
+        binding.params = mock.Mock(return_value={'force': True})
+        mock_unbind.return_value = TaskResult(spawned_tasks=['foo-id'])
+        self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-id', 'foo-repo',
+                          'bar-distributor')
+        mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
+
+
 class BindTest(base.PulpWebserviceTests):
 
     CONSUMER_ID = 'test-consumer'
@@ -575,143 +653,6 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(bind['_href'].count(self.DISTRIBUTOR_ID), 1)
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
-
-    @mock.patch('pulp.server.webservices.controllers.consumers.bind_itinerary', wraps=bind_itinerary)
-    def test_bind(self, mock_bind_itinerary):
-
-        # Setup
-        self.populate()
-
-        # Test
-        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
-        body = dict(repo_id=self.REPO_ID, distributor_id=self.DISTRIBUTOR_ID,
-                    notify_agent=self.NOTIFY_AGENT, binding_config=self.BINDING_CONFIG)
-        status, body = self.post(path, body)
-
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), 2)
-        for call in body:
-            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-
-        # verify itinerary called
-        mock_bind_itinerary.assert_called_with(
-                self.CONSUMER_ID,
-                self.REPO_ID,
-                self.DISTRIBUTOR_ID,
-                self.NOTIFY_AGENT,
-                self.BINDING_CONFIG,
-                {})
-
-    def test_bind_missing_consumer(self):
-        # Setup
-        self.populate()
-        collection = Consumer.get_collection()
-        collection.remove({})
-        # Test
-        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
-        body = dict(
-            repo_id=self.REPO_ID,
-            distributor_id=self.DISTRIBUTOR_ID,)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 404)
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 0)
-
-    def test_bind_missing_distributor(self):
-        # Setup
-        self.populate()
-        collection = RepoDistributor.get_collection()
-        collection.remove({})
-        # Test
-        path = '/v2/consumers/%s/bindings/' % self.CONSUMER_ID
-        body = dict(
-            repo_id=self.REPO_ID,
-            distributor_id=self.DISTRIBUTOR_ID,)
-        status, body = self.post(path, body)
-        # Verify
-        manager = factory.consumer_bind_manager()
-        self.assertEquals(status, 404)
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 0)
-
-    @mock.patch('pulp.server.webservices.controllers.consumers.unbind_itinerary', wraps=unbind_itinerary)
-    def test_unbind(self, mock_unbind_itinerary):
-
-        # Setup
-        self.populate()
-        manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
-
-        # Test
-        path = '/v2/consumers/%s/bindings/%s/%s/' % \
-            (self.CONSUMER_ID,
-             self.REPO_ID,
-             self.DISTRIBUTOR_ID)
-        status, body = self.delete(path)
-
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), 3)
-        for call in body:
-            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-
-        # verify itinerary called
-        mock_unbind_itinerary.assert_called_with(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID,
-            {})
-
-    @mock.patch('pulp.server.webservices.controllers.consumers.forced_unbind_itinerary', wraps=forced_unbind_itinerary)
-    def test_forced_unbind(self, mock_unbind_itinerary):
-
-        # Setup
-        self.populate()
-        manager = factory.consumer_bind_manager()
-        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
-
-        # Test
-        path = '/v2/consumers/%s/bindings/%s/%s/' %\
-               (self.CONSUMER_ID,
-                self.REPO_ID,
-                self.DISTRIBUTOR_ID)
-        body = {'force':True}
-        status, body = self.delete(path, body)
-
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), 2)
-        for call in body:
-            self.assertNotEqual(call['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-
-        # verify itinerary called
-        mock_unbind_itinerary.assert_called_with(
-            self.CONSUMER_ID,
-            self.REPO_ID,
-            self.DISTRIBUTOR_ID,
-            {})
-
-    def test_unbind_missing_consumer(self):
-        # Setup
-        self.populate()
-        collection = Consumer.get_collection()
-        collection.remove({})
-        # Test
-        path = '/v2/consumers/%s/bindings/%s/%s/' %\
-               (self.CONSUMER_ID,
-                self.REPO_ID,
-                self.DISTRIBUTOR_ID)
-        status, body = self.delete(path)
-        # Verify
-        self.assertEquals(status, 404)
-        manager = factory.consumer_bind_manager()
-        binds = manager.find_by_consumer(self.CONSUMER_ID)
-        self.assertEquals(len(binds), 0)
 
     def test_search(self):
         # Setup

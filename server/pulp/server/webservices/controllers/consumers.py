@@ -18,6 +18,7 @@ from web.webapi import BadRequest
 
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -26,10 +27,9 @@ from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, 
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
-from pulp.server.itineraries.bind import (
-    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
+from pulp.server.tasks import consumer
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -198,10 +198,6 @@ class Bindings(JSONController):
         @return: The list of call_reports
         @rtype: list
         """
-        # validate consumer
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
         # get other options and validate them
         body = self.params()
         repo_id = body.get('repo_id')
@@ -213,13 +209,10 @@ class Bindings(JSONController):
         if not isinstance(binding_config, dict):
             raise BadRequest()
 
-        managers.repo_query_manager().get_repository(repo_id)
-        managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
-
-        # bind
-        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent,
-                                       binding_config, options)
-        execution.execute_multiple(call_requests)
+        call_request = consumer.bind(consumer_id, repo_id, distributor_id, notify_agent,
+                                     binding_config, options)
+        if call_request:
+            raise OperationPostponed(call_request)
 
 
 class Binding(JSONController):
@@ -267,24 +260,15 @@ class Binding(JSONController):
         @rtype: list
         """
         body = self.params()
-        # validate resources
-        manager = managers.consumer_bind_manager()
-        # delete (unbind)
         forced = body.get('force', False)
         options = body.get('options', {})
         if forced:
-            call_requests = forced_unbind_itinerary(
-                consumer_id,
-                repo_id,
-                distributor_id,
-                options)
+            result = consumer.force_unbind(consumer_id, repo_id, distributor_id, options)
         else:
-            call_requests = unbind_itinerary(
-                consumer_id,
-                repo_id,
-                distributor_id,
-                options)
-        execution.execute_multiple(call_requests)
+            result = consumer.unbind(consumer_id, repo_id, distributor_id, options)
+
+        if isinstance(result, TaskResult):
+            raise OperationPostponed(result)
 
 
 class BindingSearch(SearchController):
