@@ -17,7 +17,9 @@ from unittest import TestCase
 
 from mock import patch, Mock, ANY
 
-from pulp.common.tags import action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND
+from pulp.common.tags import (
+    action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND,
+    ACTION_AGENT_UNIT_INSTALL, ACTION_AGENT_UNIT_UPDATE, ACTION_AGENT_UNIT_UNINSTALL)
 from pulp.server.db.model.consumer import Bind
 from pulp.server.managers.consumer.agent import AgentManager, Units
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
@@ -239,7 +241,7 @@ class TestAgentManager(TestCase):
 
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
-            action_tag('unit_install')
+            action_tag(ACTION_AGENT_UNIT_INSTALL)
         ]
 
         self.assertEqual(task, mock_task)
@@ -296,7 +298,7 @@ class TestAgentManager(TestCase):
 
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
-            action_tag('unit_update')
+            action_tag(ACTION_AGENT_UNIT_UPDATE)
         ]
 
         self.assertEqual(task, mock_task)
@@ -353,7 +355,7 @@ class TestAgentManager(TestCase):
 
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer['id']),
-            action_tag('unit_uninstall')
+            action_tag(ACTION_AGENT_UNIT_UNINSTALL)
         ]
 
         self.assertEqual(task, mock_task)

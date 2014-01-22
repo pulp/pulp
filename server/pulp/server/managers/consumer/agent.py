@@ -17,7 +17,9 @@ import sys
 from logging import getLogger
 from uuid import uuid4
 
-from pulp.common.tags import (action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND)
+from pulp.common.tags import (
+    action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND,
+    ACTION_AGENT_UNIT_INSTALL, ACTION_AGENT_UNIT_UPDATE, ACTION_AGENT_UNIT_UNINSTALL)
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -177,7 +179,7 @@ class AgentManager(object):
         task_id = str(uuid4())
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            action_tag('unit_install')
+            action_tag(ACTION_AGENT_UNIT_INSTALL)
         ]
         task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
@@ -221,7 +223,7 @@ class AgentManager(object):
         task_id = str(uuid4())
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            action_tag('unit_update')
+            action_tag(ACTION_AGENT_UNIT_UPDATE)
         ]
         task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
@@ -265,7 +267,7 @@ class AgentManager(object):
         task_id = str(uuid4())
         tags = [
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-            action_tag('unit_uninstall')
+            action_tag(ACTION_AGENT_UNIT_UNINSTALL)
         ]
         task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
 
