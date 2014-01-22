@@ -171,14 +171,66 @@ class TestStartWorkers(unittest.TestCase):
     @mock.patch('pulp.server.async.manage_workers.os.path.exists',
                 mock.MagicMock(return_value=True))
     @mock.patch('pulp.server.async.manage_workers.subprocess.Popen')
+    @mock.patch('pulp.server.async.manage_workers.sys.exit')
+    @mock.patch('sys.stderr')
+    @mock.patch('sys.stdout')
+    def test_systemctl_non_zero_exit_code(self, stdout, stderr, exit, Popen):
+        """
+        _start_workers() uses systemctl. This test ensures that a non-zero exit code from systemctl
+        is handled appropriately.
+        """
+        class SysExit(Exception):
+            pass
+        exit.side_effect = SysExit()
+        pipe_output = ('some output', 'some errors')
+        Popen.return_value = mock.MagicMock()
+        Popen.return_value.returncode = 42
+        Popen.return_value.communicate.return_value = pipe_output
+        expected_read_data = manage_workers._WORKER_TEMPLATE % {
+            'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
+        mock_open = mock.mock_open(read_data=expected_read_data)
+
+        with mock.patch('__builtin__.open', mock_open):
+            self.assertRaises(SysExit, manage_workers._start_workers)
+
+        # Make sure open was called correctly
+        unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
+        expected_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
+        mock_open.assert_called_once_with(expected_path)
+        file_handle = mock_open()
+        file_handle.__enter__.assert_called_once_with()
+        file_handle.read.assert_called_once_with()
+        file_handle.__exit__.assert_called_once_with(None, None, None)
+
+        # Make sure we started the worker correctly
+        Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
+                                      shell=True)
+        pipe = Popen()
+        pipe.communicate.assert_called_once_with()
+
+        # Make sure we printed the output of the pipe
+        self.assertEqual(stdout.write.call_count, 2)
+        self.assertEqual(stdout.write.mock_calls[0][1][0], pipe_output[0])
+        self.assertEqual(stdout.write.mock_calls[1][1][0], '\n')
+        # And the errors
+        self.assertEqual(stderr.write.call_count, 1)
+        self.assertEqual(stderr.write.mock_calls[0][1][0], pipe_output[1])
+        # Make sure the exit code was passed on
+        exit.assert_called_once_with(42)
+
+    @mock.patch('pulp.server.async.manage_workers._get_concurrency', mock.MagicMock(return_value=1))
+    @mock.patch('pulp.server.async.manage_workers.os.path.exists',
+                mock.MagicMock(return_value=True))
+    @mock.patch('pulp.server.async.manage_workers.subprocess.Popen')
     @mock.patch('sys.stdout')
     def test_unit_path_does_exist_correctly(self, stdout, Popen):
         """
         Test the case for when the unit path does exist, and its contents are correct. It should
         start it, but should not write it again.
         """
-        pipe_output = ('some output',)
+        pipe_output = ('some output', None)
         Popen.return_value = mock.MagicMock()
+        Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
         expected_read_data = manage_workers._WORKER_TEMPLATE % {
             'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
@@ -217,8 +269,9 @@ class TestStartWorkers(unittest.TestCase):
         Test the case for when the unit path does exist, but its contents are incorrect. It should
         write it and then start it.
         """
-        pipe_output = ('some output',)
+        pipe_output = ('some output', None)
         Popen.return_value = mock.MagicMock()
+        Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
         # Set up the unit file to have the incorrect contents
         mock_open = mock.mock_open(read_data='This file has the wrong contents.')
@@ -269,8 +322,9 @@ class TestStartWorkers(unittest.TestCase):
         """
         Test the case for when the unit path does not exist. It should write it and start it.
         """
-        pipe_output = ('some output',)
+        pipe_output = ('some output', None)
         Popen.return_value = mock.MagicMock()
+        Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
         mock_open = mock.mock_open()
 
@@ -312,8 +366,9 @@ class TestStopWorkers(unittest.TestCase):
         """
         Test _stop_workers() with one worker.
         """
-        pipe_output = ('some output',)
+        pipe_output = ('some output', None)
         Popen.return_value = mock.MagicMock()
+        Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
         unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
         unit_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
@@ -330,3 +385,41 @@ class TestStopWorkers(unittest.TestCase):
         self.assertEqual(stdout.write.call_count, 2)
         self.assertEqual(stdout.write.mock_calls[0][1][0], pipe_output[0])
         self.assertEqual(stdout.write.mock_calls[1][1][0], '\n')
+
+    @mock.patch('pulp.server.async.manage_workers.glob')
+    @mock.patch('pulp.server.async.manage_workers.subprocess.Popen')
+    @mock.patch('pulp.server.async.manage_workers.sys.exit')
+    @mock.patch('sys.stderr')
+    @mock.patch('sys.stdout')
+    def test_systemctl_non_zero_exit_code(self, stdout, stderr, exit, Popen, glob):
+        """
+        _start_workers() uses systemctl. This test ensures that a non-zero exit code from systemctl
+        is handled appropriately.
+        """
+        class SysExit(Exception):
+            pass
+        exit.side_effect = SysExit()
+        pipe_output = ('some output', 'some errors')
+        Popen.return_value = mock.MagicMock()
+        Popen.return_value.returncode = 42
+        Popen.return_value.communicate.return_value = pipe_output
+        unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
+        unit_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
+        glob.return_value = (unit_path,)
+
+        self.assertRaises(SysExit, manage_workers._stop_workers)
+
+        Popen.assert_called_once_with('systemctl stop %s' % unit_filename, stdout=subprocess.PIPE,
+                                      shell=True)
+        pipe = Popen()
+        pipe.communicate.assert_called_once_with()
+
+        # Make sure we printed the output of the pipe
+        self.assertEqual(stdout.write.call_count, 2)
+        self.assertEqual(stdout.write.mock_calls[0][1][0], pipe_output[0])
+        self.assertEqual(stdout.write.mock_calls[1][1][0], '\n')
+        # And the errors
+        self.assertEqual(stderr.write.call_count, 1)
+        self.assertEqual(stderr.write.mock_calls[0][1][0], pipe_output[1])
+        # Make sure the exit code was passed on
+        exit.assert_called_once_with(42)

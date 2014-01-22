@@ -83,7 +83,11 @@ def _start_workers():
         # Start the worker
         pipe = subprocess.Popen('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
                                 shell=True)
-        print pipe.communicate()[0]
+        stdout, stderr = pipe.communicate()
+        print stdout
+        if pipe.returncode != 0:
+            sys.stderr.write(str(stderr))
+            sys.exit(pipe.returncode)
 
 
 def _stop_workers():
@@ -94,7 +98,11 @@ def _stop_workers():
     for worker in glob(glob_path):
         pipe = subprocess.Popen('systemctl stop %s' % os.path.basename(worker),
                                 stdout=subprocess.PIPE, shell=True)
-        print pipe.communicate()[0]
+        stdout, stderr = pipe.communicate()
+        print stdout
+        if pipe.returncode != 0:
+            sys.stderr.write(str(stderr))
+            sys.exit(pipe.returncode)
 
 
 def main():
