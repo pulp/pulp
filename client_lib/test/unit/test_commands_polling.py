@@ -13,7 +13,7 @@
 import mock
 
 
-from pulp.bindings.responses import (STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
+from pulp.bindings.responses import (Task, STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
                                      STATE_RUNNING, STATE_SKIPPED, RESPONSE_POSTPONED, RESPONSE_REJECTED)
 from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED, FLAG_BACKGROUND, RESULT_BACKGROUND
 from pulp.devel.unit import base
@@ -117,6 +117,99 @@ class PollingCommandTests(base.PulpClientTests):
                          # states_3
                          'header', 'delayed-spinner', 'running-spinner', 'running-spinner',
                          'running-spinner', 'running-spinner', 'succeeded',
+                         ]
+        found_tags = self.prompt.get_write_tags()
+        self.assertEqual(expected_tags, found_tags)
+
+        self.assertTrue(isinstance(completed_tasks, list))
+        self.assertEqual(3, len(completed_tasks))
+        for i in range(0, 3):
+            self.assertEqual(STATE_FINISHED, completed_tasks[i].state)
+
+    def test_poll_spawned_tasks_list(self):
+        """
+        Test the structure where a command has both synchronous and asynchronous sections
+        and returns a task structure with a result and a spawned_tasks list
+
+        Task Count: 3
+        Statuses: None; normal progression
+        Result: All Success
+        """
+
+        # Setup
+        sim = TaskSimulator()
+        sim.install(self.bindings)
+
+        states_1 = [STATE_WAITING, STATE_RUNNING, STATE_FINISHED]
+        states_2 = [STATE_WAITING, STATE_WAITING, STATE_RUNNING, STATE_FINISHED]
+        states_3 = [STATE_WAITING, STATE_RUNNING, STATE_RUNNING, STATE_RUNNING, STATE_FINISHED]
+
+        sim.add_task_states('1', states_1)
+        sim.add_task_states('2', states_2)
+        sim.add_task_states('3', states_3)
+
+        container_task = Task({})
+
+        # Test
+        container_task.spawned_tasks = sim.get_all_tasks().response_body
+        completed_tasks = self.command.poll(container_task, {})
+
+        expected_tags = ['abort', # default, always displayed
+                         # states_1
+                         'header', 'delayed-spinner', 'running-spinner', 'running-spinner', 'succeeded',
+                         # states_2
+                         'header', 'delayed-spinner', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'succeeded',
+                         # states_3
+                         'header', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'running-spinner', 'running-spinner', 'succeeded',
+                         ]
+        found_tags = self.prompt.get_write_tags()
+        self.assertEqual(expected_tags, found_tags)
+
+        self.assertTrue(isinstance(completed_tasks, list))
+        self.assertEqual(3, len(completed_tasks))
+        for i in range(0, 3):
+            self.assertEqual(STATE_FINISHED, completed_tasks[i].state)
+
+    def test_poll_additional_spawned_tasks_list(self):
+        """
+        Test polling over a list where a task has spawned additional tasks that need to be
+        added to the polling list
+
+        Task Count: 3
+        Statuses: None; normal progression
+        Result: All Success
+        """
+
+        # Setup
+        sim = TaskSimulator()
+        sim.install(self.bindings)
+
+        states_1 = [STATE_WAITING, STATE_RUNNING, STATE_FINISHED]
+        states_2 = [STATE_WAITING, STATE_WAITING, STATE_RUNNING, STATE_FINISHED]
+        states_3 = [STATE_WAITING, STATE_RUNNING, STATE_RUNNING, STATE_RUNNING, STATE_FINISHED]
+
+        task_1_states = sim.add_task_states('1', states_1)
+        sim.add_task_states('2', states_2)
+        sim.add_task_states('3', states_3)
+
+        container_task = Task({})
+        task_list = sim.get_all_tasks().response_body
+        task_1_states[2].spawned_tasks = task_list[1:]
+        # Test
+        container_task.spawned_tasks = sim.get_all_tasks().response_body
+        completed_tasks = self.command.poll(task_list[:1], {})
+
+        expected_tags = ['abort', # default, always displayed
+                         # states_1
+                         'delayed-spinner', 'running-spinner', 'succeeded',
+                         # states_2
+                         'header', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'succeeded',
+                         # states_3
+                         'header', 'delayed-spinner', 'running-spinner', 'running-spinner',
+                         'running-spinner',  'succeeded',
                          ]
         found_tags = self.prompt.get_write_tags()
         self.assertEqual(expected_tags, found_tags)

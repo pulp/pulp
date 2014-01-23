@@ -17,8 +17,8 @@ import web
 from web.webapi import BadRequest
 
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -27,10 +27,9 @@ from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, 
 from pulp.server.itineraries.consumer import (
     consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
     consumer_content_update_itinerary)
-from pulp.server.itineraries.bind import (
-    bind_itinerary, unbind_itinerary, forced_unbind_itinerary)
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
+from pulp.server.tasks import consumer
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -63,7 +62,7 @@ def expand_consumers(options, consumers):
     if options.get('bindings', False):
         ids = [c['id'] for c in consumers]
         manager = managers.consumer_bind_manager()
-        criteria = Criteria({'consumer_id':{'$in':ids}})
+        criteria = Criteria({'consumer_id': {'$in': ids}})
         bindings = manager.find_by_criteria(criteria)
         collated = {}
         for b in bindings:
@@ -97,23 +96,10 @@ class Consumers(JSONController):
         notes = body.get('notes')
 
         manager = managers.consumer_manager()
-        args = [id, display_name, description, notes]
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-                action_tag('create')]
-
-        call_request = CallRequest(manager.register, # rbarlow_converted
-                                   args,
-                                   weight=weight,
-                                   tags=tags)
-        call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
-
-        call_report = CallReport.from_call_request(call_request)
-        call_report.serialize_result = False
-
-        consumer = execution.execute_sync(call_request, call_report)
+        consumer = manager.register(id, display_name, description, notes)
         consumer.update({'_href': serialization.link.child_link_obj(consumer['id'])})
         return self.created(consumer['_href'], consumer)
+
 
 class Consumer(JSONController):
 
@@ -130,32 +116,14 @@ class Consumer(JSONController):
     @auth_required(DELETE)
     def DELETE(self, id):
         manager = managers.consumer_manager()
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-            action_tag('delete'),
-        ]
-        call_request = CallRequest( # rbarlow_converted
-            manager.unregister,
-            [id],
-            tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
-        return self.ok(execution.execute(call_request))
+        return self.ok(manager.unregister(id))
 
     @auth_required(UPDATE)
     def PUT(self, id):
         body = self.params()
         delta = body.get('delta')
         manager = managers.consumer_manager()
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, id),
-            action_tag('update')
-        ]
-        call_request = CallRequest( # rbarlow_converted
-            manager.update,
-            [id, delta],
-            tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, id)
-        consumer = execution.execute(call_request)
+        consumer = manager.update(id, delta)
         href = serialization.link.current_link_obj()
         consumer.update(href)
         return self.ok(consumer)
@@ -230,10 +198,6 @@ class Bindings(JSONController):
         @return: The list of call_reports
         @rtype: list
         """
-        # validate consumer
-        consumer_manager = managers.consumer_manager()
-        consumer_manager.get_consumer(consumer_id)
-
         # get other options and validate them
         body = self.params()
         repo_id = body.get('repo_id')
@@ -245,12 +209,10 @@ class Bindings(JSONController):
         if not isinstance(binding_config, dict):
             raise BadRequest()
 
-        managers.repo_query_manager().get_repository(repo_id)
-        managers.repo_distributor_manager().get_distributor(repo_id, distributor_id)
-
-        # bind
-        call_requests = bind_itinerary(consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
-        execution.execute_multiple(call_requests)
+        call_request = consumer.bind(consumer_id, repo_id, distributor_id, notify_agent,
+                                     binding_config, options)
+        if call_request:
+            raise OperationPostponed(call_request)
 
 
 class Binding(JSONController):
@@ -298,24 +260,15 @@ class Binding(JSONController):
         @rtype: list
         """
         body = self.params()
-        # validate resources
-        manager = managers.consumer_bind_manager()
-        # delete (unbind)
         forced = body.get('force', False)
         options = body.get('options', {})
         if forced:
-            call_requests = forced_unbind_itinerary(
-                consumer_id,
-                repo_id,
-                distributor_id,
-                options)
+            result = consumer.force_unbind(consumer_id, repo_id, distributor_id, options)
         else:
-            call_requests = unbind_itinerary(
-                consumer_id,
-                repo_id,
-                distributor_id,
-                options)
-        execution.execute_multiple(call_requests)
+            result = consumer.unbind(consumer_id, repo_id, distributor_id, options)
+
+        if isinstance(result, TaskResult):
+            raise OperationPostponed(result)
 
 
 class BindingSearch(SearchController):
@@ -396,6 +349,7 @@ class Content(JSONController):
         result = execution.execute_async(self, call_request)
         return result
 
+
 class ConsumerHistory(JSONController):
 
     @auth_required(READ)
@@ -429,8 +383,12 @@ class ConsumerHistory(JSONController):
         if event_type:
             event_type = event_type[0]
 
-        results = managers.consumer_history_manager().query(consumer_id=id, event_type=event_type, limit=limit,
-                                    sort=sort, start_date=start_date, end_date=end_date)
+        results = managers.consumer_history_manager().query(consumer_id=id,
+                                                            event_type=event_type,
+                                                            limit=limit,
+                                                            sort=sort,
+                                                            start_date=start_date,
+                                                            end_date=end_date)
         return self.ok(results)
 
 
@@ -475,7 +433,7 @@ class Profiles(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
                 action_tag('profile_create')]
 
-        call_request = CallRequest(manager.create, # rbarlow_converted
+        call_request = CallRequest(manager.create,  # rbarlow_converted
                                    [consumer_id, content_type],
                                    {'profile': profile},
                                    tags=tags,
@@ -527,22 +485,8 @@ class Profile(JSONController):
         profile = body.get('profile')
 
         manager = managers.consumer_profile_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
-                action_tag('profile_update')]
+        consumer = manager.update(consumer_id, content_type, profile)
 
-        call_request = CallRequest(manager.update, # rbarlow_converted
-                                   [consumer_id, content_type],
-                                   {'profile': profile},
-                                   tags=tags,
-                                   weight=0,
-                                   kwarg_blacklist=['profile'])
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        call_report = CallReport.from_call_request(call_request)
-        call_report.serialize_result = False
-
-        consumer = execution.execute_sync(call_request, call_report)
         link = serialization.link.child_link_obj(consumer_id, content_type)
         consumer.update(link)
 
@@ -563,18 +507,7 @@ class Profile(JSONController):
         @rtype: dict
         """
         manager = managers.consumer_profile_manager()
-        args = [
-            consumer_id,
-            content_type,
-        ]
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-        ]
-        call_request = CallRequest(manager.delete, # rbarlow_converted
-                                   args=args,
-                                   tags=tags)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        return self.ok(execution.execute(call_request))
+        return self.ok(manager.delete(consumer_id, content_type))
 
 
 class ContentApplicability(JSONController):
@@ -654,7 +587,6 @@ class ContentApplicabilityRegeneration(JSONController):
     """
     Content applicability regeneration for updated consumers.
     """
-
     @auth_required(CREATE)
     def POST(self):
         """
@@ -673,10 +605,11 @@ class ContentApplicabilityRegeneration(JSONController):
 
         tags = [action_tag('content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-            (consumer_criteria.as_dict(),),
-            tags=tags)
-        call_report = CallReport(call_request_id=async_result.id)
+                                dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                dispatch_constants.RESOURCE_ANY_ID,
+                                (consumer_criteria.as_dict(),),
+                                tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
         raise OperationPostponed(call_report)
 
 
@@ -714,18 +647,8 @@ class UnitInstallScheduleCollection(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag('create_unit_install_schedule')]
-
-        call_request = CallRequest(schedule_manager.create_unit_install_schedule, # rbarlow_converted
-                                   [consumer_id, units, install_options, schedule_data],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        schedule_id = execution.execute_sync(call_request)
+        schedule_id = schedule_manager.create_unit_install_schedule(consumer_id, units,
+                                                                    install_options, schedule_data)
 
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
@@ -766,18 +689,8 @@ class UnitInstallScheduleResource(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_unit_install_schedule')]
-
-        call_request = CallRequest(schedule_manager.update_unit_install_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id, units, install_options, schedule_data],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        execution.execute(call_request)
+        schedule_manager.update_unit_install_schedule(consumer_id, schedule_id, units,
+                                                      install_options, schedule_data)
 
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
@@ -793,18 +706,7 @@ class UnitInstallScheduleResource(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_unit_install_schedule')]
-
-        call_request = CallRequest(schedule_manager.delete_unit_install_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        result = execution.execute(call_request)
+        result = schedule_manager.delete_unit_install_schedule(consumer_id, schedule_id)
         return self.ok(result)
 
 
@@ -842,18 +744,8 @@ class UnitUpdateScheduleCollection(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag('create_unit_update_schedule')]
-
-        call_request = CallRequest(schedule_manager.create_unit_update_schedule, # rbarlow_converted
-                                   [consumer_id, units, update_options, schedule_data],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        schedule_id = execution.execute_sync(call_request)
+        schedule_id = schedule_manager.create_unit_update_schedule(consumer_id, units,
+                                                                   update_options, schedule_data)
 
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
@@ -894,18 +786,8 @@ class UnitUpdateScheduleResource(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_unit_update_schedule')]
-
-        call_request = CallRequest(schedule_manager.update_unit_update_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id, units, install_options, schedule_data],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        execution.execute(call_request)
+        schedule_manager.update_unit_update_schedule(consumer_id, schedule_id, units,
+                                                     install_options, schedule_data)
 
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
@@ -921,17 +803,7 @@ class UnitUpdateScheduleResource(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_unit_update_schedule')]
-
-        call_request = CallRequest(schedule_manager.delete_unit_update_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-        result = execution.execute(call_request)
+        result = schedule_manager.delete_unit_update_schedule(consumer_id, schedule_id)
         return self.ok(result)
 
 
@@ -969,18 +841,9 @@ class UnitUninstallScheduleCollection(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                action_tag('create_unit_uninstall_schedule')]
-
-        call_request = CallRequest(schedule_manager.create_unit_uninstall_schedule, # rbarlow_converted
-                                   [consumer_id, units, uninstall_options, schedule_data],
-                                   weight=weight,
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        schedule_id = execution.execute_sync(call_request)
+        schedule_id = schedule_manager.create_unit_uninstall_schedule(consumer_id, units,
+                                                                      uninstall_options,
+                                                                      schedule_data)
 
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
@@ -1021,18 +884,8 @@ class UnitUninstallScheduleResource(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('update_unit_uninstall_schedule')]
-
-        call_request = CallRequest(schedule_manager.update_unit_uninstall_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id, units, install_options, schedule_data],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        execution.execute(call_request)
+        schedule_manager.update_unit_uninstall_schedule(consumer_id, schedule_id, units,
+                                                        install_options, schedule_data)
 
         scheduler = dispatch_factory.scheduler()
         scheduled_call = scheduler.get(schedule_id)
@@ -1048,18 +901,7 @@ class UnitUninstallScheduleResource(JSONController):
 
         schedule_manager = managers.schedule_manager()
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id),
-                action_tag('delete_unit_uninstall_schedule')]
-
-        call_request = CallRequest(schedule_manager.delete_unit_uninstall_schedule, # rbarlow_converted
-                                   [consumer_id, schedule_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_SCHEDULE_TYPE, schedule_id)
-
-        result = execution.execute(call_request)
+        result = schedule_manager.delete_unit_uninstall_schedule(consumer_id, schedule_id)
         return self.ok(result)
 
 # -- web.py application -------------------------------------------------------

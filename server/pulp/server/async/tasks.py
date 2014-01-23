@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from datetime import datetime, timedelta
 from gettext import gettext as _
 import logging
 import random
@@ -42,7 +43,14 @@ def babysit():
     """
     # Inspect the available workers to build our state variables
     active_queues = controller.inspect().active_queues()
-    reserved_queues = []
+    # Now we need the entire list of AvailableQueues from the database, though we only need their
+    # _id and missing_since attributes. This is preferrable to using a Map/Reduce operation to get
+    # Mongo to tell us which workers Celery knows about that aren't found in the database.
+    all_queues_criteria = Criteria(filters={}, fields=('_id', 'missing_since'))
+    all_queues = list(resources.filter_available_queues(all_queues_criteria))
+    all_queues_set = set([q.name for q in all_queues])
+
+    active_queues_set = set()
     for worker, queues in active_queues.items():
         # If this worker is a reserved task worker, let's make sure we know about it in our
         # available_queues collection, and make sure it is processing a queue with its own name
@@ -51,27 +59,65 @@ def babysit():
             # subscribe him to one
             if not worker in [queue['name'] for queue in queues]:
                 controller.add_consumer(queue=worker, destination=(worker,))
-            # Now let's make sure this worker's queue is included in our available_queues
-            # collection
-            resources.get_or_create_available_queue(worker)
-            reserved_queues.append(worker)
+            active_queues_set.add(worker)
 
-    # Now we must delete queues for workers that don't exist anymore
-    missing_queue_criteria = Criteria(filters={'_id': {'$nin': reserved_queues}})
-    available_queues_missing_workers = resources.filter_available_queues(
-        missing_queue_criteria)
-    for queue in available_queues_missing_workers:
-        # Cancel all of the tasks that were assigned to this queue
-        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-        msg = msg % {'name': queue.name}
-        logger.error(msg)
-        for task in TaskStatusManager.find_by_criteria(
-                Criteria(filters={'queue': queue.name,
-                                  'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
-            cancel(task['task_id'])
+    # Determine which queues are in active_queues_set that aren't in all_queues_set. These are new
+    # workers and we need to add them to the database.
+    for worker in (active_queues_set - all_queues_set):
+        resources.get_or_create_available_queue(worker)
 
-        # Finally, delete the queue
-        queue.delete()
+    # If there are any AvalailableQueues that have their missing_since attribute set and they are
+    # present now, let's set their missing_since attribute back to None.
+    missing_since_queues = set([q.name for q in all_queues if q.missing_since is not None])
+    for queue in (active_queues_set & missing_since_queues):
+        active_queue = resources.get_or_create_available_queue(queue)
+        active_queue.missing_since = None
+        active_queue.save()
+
+    # Now we must delete queues for workers that don't exist anymore, but only if they've been
+    # missing for at least five minutes.
+    for queue in (all_queues_set - active_queues_set):
+        active_queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
+
+        # We only want to delete this queue if it has been missing for at least 5 minutes. If this
+        # AvailableQueue doesn't have a missing_since attribute, that means it has just now gone
+        # missing. Let's mark its missing_since attribute and continue.
+        if active_queue.missing_since is None:
+            active_queue.missing_since = datetime.utcnow()
+            active_queue.save()
+            continue
+
+        # This queue has been missing for some time. Let's check to see if it's been 5 minutes yet,
+        # and if it has, let's delete it.
+        if active_queue.missing_since < datetime.utcnow() - timedelta(minutes=5):
+            _delete_queue.apply_async(args=(queue,), queue=RESOURCE_MANAGER_QUEUE)
+
+
+@task
+def _delete_queue(queue):
+    """
+    Delete the AvailableQueue with _id queue from the database. This Task can only safely be
+    performed by the resource manager at this time, so be sure to queue it in the
+    RESOURCE_MANAGER_QUEUE.
+
+    :param queue: The name of the queue you wish to delete. In the database, the _id field is the
+                  name.
+    :type  queue: basestring
+    """
+    queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
+
+    # Cancel all of the tasks that were assigned to this queue
+    msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
+    msg = msg % {'name': queue.name}
+    logger.error(msg)
+    for task in TaskStatusManager.find_by_criteria(
+            Criteria(
+                filters={'queue': queue.name,
+                         'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
+        cancel(task['task_id'])
+
+    # Finally, delete the queue
+    queue.delete()
 
 
 @task
@@ -151,25 +197,65 @@ def _reserve_resource(resource_id):
     return reserved_resource.assigned_queue
 
 
+class TaskResult(object):
+    """
+    The TaskResult object is used for returning errors and spawned tasks that do not affect the
+    primary status of the task.
+
+    Errors that don't affect the current task status might be related to secondary actions
+    where the primary action of the async-task was successful
+
+    Spawned tasks are items such as the individual tasks for updating the bindings on
+    each consumer when a repo distributor is updated.
+    """
+
+    def __init__(self, result=None, error=None, spawned_tasks=None):
+        """
+        :param result: The return value from the task
+        :type result: dict
+        :param error: The PulpException for the error & sub-errors that occured
+        :type error: pulp.server.exception.PulpException
+        :param spawned_tasks: A list of task status objects for tasks that were created by this
+                              task and are tracked through the pulp database
+        :type spawned_tasks: list of TaskStatus objects
+        """
+        self.return_value = result
+        self.error = error
+        self.spawned_tasks = spawned_tasks
+
+    def serialize(self):
+        data = {
+            'result': self.return_value,
+            'error': self.error,
+            'spawned_tasks': self.spawned_tasks}
+        return data
+
+
 class ReservedTaskMixin(object):
-    def apply_async_with_reservation(self, resource_id, *args, **kwargs):
+    def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
         Celery's apply_async(), while also making the named resource. No two tasks that claim the
-        same resource reservation can execute concurrently.
+        same resource reservation can execute concurrently. It accepts type and id of a resource 
+        and combines them to form a resource id.
 
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
         docblock for the apply_async() method.
 
-        :param resource_id: A string that identifies some named resource, guaranteeing that only one
-                            task reserving this same string can happen at a time.
-        :type  resource_id: basestring
-        :param tags:        A list of tags (strings) to place onto the task, used for searching for
-                            tasks by tag
-        :type  tags:        list
-        :return:            An AsyncResult instance as returned by Celery's apply_async
-        :rtype:             celery.result.AsyncResult
+        :param resource_type: A string that identifies type of a resource
+        :type resource_type:  basestring
+        :param resource_id:   A string that identifies some named resource, guaranteeing that only one
+                              task reserving this same string can happen at a time.
+        :type  resource_id:   basestring
+        :param tags:          A list of tags (strings) to place onto the task, used for searching for
+                              tasks by tag
+        :type  tags:          list
+        :return:              An AsyncResult instance as returned by Celery's apply_async
+        :rtype:               celery.result.AsyncResult
         """
+        # Form a resource_id for reservation by combining given resource type and id. This way,
+        # two different resources having the same id will not block each other.
+        resource_id = ":".join((resource_type, resource_id))
         queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
 
         kwargs['queue'] = queue
@@ -229,7 +315,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Updates start_time and sets the task state to 'running' for asynchronous tasks.
+        # Check task status and skip running the task if task state is 'canceled'.
+        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
+            logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+            return
+        # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Skip updating status for eagerly executed tasks, since we don't want to track
         # synchronous tasks in our database.
         if not self.request.called_directly:
@@ -238,7 +329,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             TaskStatus.get_collection().update(
                 {'task_id': self.request.id},
                 {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
-                          'start_time':  dateutils.now_utc_timestamp()}},
+                          'start_time': dateutils.now_utc_timestamp()}},
                 upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
@@ -261,6 +352,14 @@ class Task(CeleryTask, ReservedTaskMixin):
             delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
                      'finish_time': dateutils.now_utc_timestamp(),
                      'result': retval}
+            if isinstance(retval, TaskResult):
+                delta['result'] = retval.return_value
+                if retval.error:
+                    delta['error'] = retval.error.to_dict()
+                if retval.spawned_tasks:
+                    task_list = [spawned_task['task_id'] for spawned_task in retval.spawned_tasks]
+                    delta['spawned_tasks'] = task_list
+
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -285,12 +384,19 @@ class Task(CeleryTask, ReservedTaskMixin):
 
 def cancel(task_id):
     """
-    Cancel the task that is represented by the given task_id.
+    Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+    This also updates task's state to 'canceled' state.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
     """
-    controller.revoke(task_id, terminate=True)
-    msg = _('Task canceled: %(task_id)s.')
-    msg = msg % {'task_id': task_id}
+    task_status = TaskStatusManager.find_by_task_id(task_id)
+    if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+        controller.revoke(task_id, terminate=True)
+        TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
+        msg = _('Task canceled: %(task_id)s.')
+        msg = msg % {'task_id': task_id}
+    else:
+        msg = _('Task [%(task_id)s] cannot be canceled since it is already in a complete state.')
+        msg = msg % {'task_id': task_id}
     logger.info(msg)

@@ -15,6 +15,7 @@ The document will contain the following:
 * **exception** *(string)* - Message extracted from the exception if one occurred on
   the server; may be empty if the error was due to a data validation instead of an exception.
 * **traceback** *(string)* - Traceback of the exception if one occurred; may be empty for the same reasons as exception.
+* **error** *(object)* - error details and nested errors.  :ref:`error_details`
 
 All methods have the potential to raise a 500 response code in the event of an
 unexpected server-side error. Again, for simplicity that has not been listed on
@@ -29,5 +30,39 @@ Example serialized exception::
   "resource_id": "missing-repo",
   "error_message": "Missing resource: missing-repo",
   "http_request_method": "DELETE",
-  "http_status": 404
+  "http_status": 404,
+  "error": {
+            "code": "PLP0009",
+            "description": "Missing resource(s): foo",
+            "data": {"resource": "foo",
+            "sub_errors": []
  }
+
+
+.. _error_details:
+
+Error Details
+==================
+Pulp is moving to provide more programmatically useful results when errors occur.
+One of the primary ways we are doing this is through the new "error" object. This object
+will be included in the body for all JSON calls that have errors.  The error object will contain
+the following fields.
+
+* **code** *(string)* - A 7 digit string uniquely identifying this error.  The first 3 characters
+                        are [A-Z] and identify the project in which the error occurred.
+                        Today the possible values are "PLP", "PPT", and "RPM" for the pulp, pulp_puppet
+                        and pulp_rpm projects.  The last 4 digits are numeric to identify the error.
+* **description** *(string)* - A user readable message describing the error that occurred
+* **data** *(object)* - The data specific to this error.  Each error code specifies the fields that
+                        will be included in this object.
+* **sub_errors** *(array)* - An array of error details objects that contributed to this error.
+
+Example serialized error details::
+
+ {
+            "code": "PLP0018",
+            "description": "Duplicate resource: foo",
+            "data": {"resource_id": "foo",
+            "sub_errors": []
+ }
+

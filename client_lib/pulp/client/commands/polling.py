@@ -19,6 +19,7 @@ import time
 from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
+from pulp.bindings.responses import Task
 
 
 # Returned from the poll command if one or more of the tasks in the given list
@@ -102,6 +103,12 @@ class PollingCommand(PulpCliCommand):
         :return: the final task reports for all of the tasks
         """
 
+        if isinstance(task_list, Task):
+            #If this task is just a container for other tasks we will only iterate over the
+            # spawned tasks
+            if not task_list.task_id:
+                task_list = task_list.spawned_tasks
+
         # I'm not sure the server has the potential to return an empty list of tasks if nothing
         # was queued, but in case it does account for it here so the caller doesn't have to
         # check anything about the task list before calling this.
@@ -135,6 +142,9 @@ class PollingCommand(PulpCliCommand):
                     self.task_header(task)
 
                 task = self._poll_task(task)
+                if isinstance(task.spawned_tasks, list):
+                    task_list.extend(task.spawned_tasks)
+
                 completed_task_list.append(task)
 
                 # Display the appropriate message based on the result of the task

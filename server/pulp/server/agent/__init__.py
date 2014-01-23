@@ -10,5 +10,11 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+"""
+The purpose of the agent package is to insulate the pulp manager layer from the
+specifics of agent client library.
+"""
 
+from pulp.server.agent.context import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
+from pulp.server.agent.direct.services import ReplyHandler

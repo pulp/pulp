@@ -209,10 +209,6 @@ def install(opts):
     os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
     os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
-    # Update for certs
-    os.system('chown -R apache:apache /etc/pki/pulp')
-    os.system('chmod 644 /etc/pki/pulp/ca.*')
-
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"
         for w in warnings:

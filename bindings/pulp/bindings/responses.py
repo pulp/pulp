@@ -90,27 +90,35 @@ class Task(object):
         else:
             self.href = None
 
-        self.task_id = response_body['call_request_id']
-        self.task_group_id = response_body['call_request_group_id']
-        self.tags = response_body['call_request_tags']
+        self.task_id = response_body.get('call_request_id')
+        if not self.task_id:
+            self.task_id = response_body.get('task_id')
+        self.task_group_id = response_body.get('call_request_group_id')
+        self.tags = response_body.get('call_request_tags', [])
 
-        self.start_time = response_body['start_time']
-        self.finish_time = response_body['finish_time']
+        self.start_time = response_body.get('start_time')
+        self.finish_time = response_body.get('finish_time')
 
         # Task acceptance data
-        self.response = response_body['response']
+        self.response = response_body.get('response')
 
-        if response_body['reasons'] is not None:
+        if response_body.get('reasons') is not None:
             self.reasons = [BlockingReason(r['resource_id'], r['resource_type'], r['operation']) for r in response_body['reasons']]
         else:
             self.reasons = []
 
         # Related to the callable being executed
-        self.state = response_body['state']
-        self.progress = response_body['progress']
-        self.result = response_body['result']
-        self.exception = response_body['exception']
-        self.traceback = response_body['traceback']
+        self.state = response_body.get('state')
+        self.progress = response_body.get('progress')
+        self.result = response_body.get('result')
+        self.exception = response_body.get('exception')
+        self.traceback = response_body.get('traceback')
+        self.error = response_body.get('error')
+        self.spawned_tasks = []
+        spawned_tasks = response_body.get('spawned_tasks')
+        if spawned_tasks:
+            for task in spawned_tasks:
+                self.spawned_tasks.append(Task(task))
 
     def is_rejected(self):
         """

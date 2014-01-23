@@ -82,20 +82,14 @@ class TaskCollection(JSONController):
 class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
-    def GET(self, call_request_id):
-        link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % call_request_id)
-        coordinator = dispatch_factory.coordinator()
-        call_reports = coordinator.find_call_reports(call_request_id=call_request_id)
-        if call_reports:
-            serialized_call_report = call_reports[0].serialize()
-            serialized_call_report.update(link)
-            return self.ok(serialized_call_report)
-        archived_calls = dispatch_history.find_archived_calls(call_request_id=call_request_id)
-        if archived_calls.count() > 0:
-            serialized_call_report = archived_calls[0]['serialized_call_report']
-            serialized_call_report.update(link)
-            return self.ok(serialized_call_report)
-        raise TaskNotFound(call_request_id)
+    def GET(self, task_id):
+        task = TaskStatusManager.find_by_task_id(task_id)
+        if task is None:
+            raise TaskNotFound(task_id)
+        else:
+            link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
+            task.update(link)
+            return self.ok(task)
 
     @auth_required(authorization.DELETE)
     def DELETE(self, call_request_id):

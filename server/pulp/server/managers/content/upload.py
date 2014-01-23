@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from celery import task
 from gettext import gettext as _
 from uuid import uuid4
 import logging
@@ -20,6 +21,7 @@ from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.server import config as pulp_config
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
                                     PulpException)
@@ -264,3 +266,6 @@ class ContentUploadManager(object):
             os.makedirs(upload_storage_dir)
 
         return upload_storage_dir
+
+
+import_uploaded_unit = task(ContentUploadManager.import_uploaded_unit, base=Task)

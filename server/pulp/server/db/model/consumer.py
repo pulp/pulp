@@ -110,7 +110,7 @@ class Bind(Model):
         :type distributor_id: str
         :ivar notify_agent: controls whether or not the consumer agent will be sent a message
                             about the binding
-        ;type notify_agent: bool
+        :type notify_agent: bool
         :ivar binding_config: configuration to pass the distributor during payload creation for this
                               binding
         :type binding_config: object

@@ -26,25 +26,36 @@ class AvailableQueue(Model):
     :type name:             unicode
     :ivar num_reservations: The number of outstanding reservations on the queue
     :type num_reservations: int
+    :ivar missing_since:    A timestamp representing the time when the babysitter noticed that this
+                            AvailableQueue's worker was missing. Set to None when the AvailableQueue
+                            is not missing.
+    :type missing_since:    datetime.datetime
     """
     collection_name = 'available_queues'
-    unique_indices = ('_id',)
-    search_indices = ('num_reservations',)
+    unique_indices = tuple()
+    # The compound index with _id and missing since will help the babysit() Task to be able to
+    # retrieve the data it needs without accessing the disk
+    search_indices = ('num_reservations', ('_id', 'missing_since'))
 
-    def __init__(self, name, num_reservations=0):
+    def __init__(self, name, num_reservations=0, missing_since=None):
         """
-        Initialize the AvailabeQueue. A new AvailableQueue always has a num_reservations of 0.
+        Initialize the AvailableQueue. A new AvailableQueue always has a num_reservations of 0.
 
         :param name:             The name of the AvailableQueue, which should correspond to the name
                                  of a queue that a worker is assigned to.
         :type  name:             basestring
         :param num_reservations: The number of reservations in the AvailableQueue. Defaults to 0.
         :type  num_reservations: int
+        :param missing_since:    A timestamp representing the time when the babysitter noticed that
+                                 this AvailableQueue's worker was missing. Set to None when the
+                                 AvailableQueue is not missing. Defaults to None.
+        :type  missing_since:    datetime.datetime or None
         """
         super(AvailableQueue, self).__init__()
 
         self.name = name
         self.num_reservations = num_reservations
+        self.missing_since = missing_since
 
         # We don't need these
         del self['_id']
@@ -71,14 +82,34 @@ class AvailableQueue(Model):
                 # Now we can be sure that no queue exists with this name
                 raise DoesNotExist('AvailableQueue with name %s does not exist.' % self.name)
 
-        # Update the num_reservations attribute to reflect the value in the database
+        # Update the attributes to match what was in the database
         self.num_reservations = new_queue['num_reservations']
+        self.missing_since = new_queue['missing_since']
 
     def delete(self):
         """
         Delete this AvailableQueue from the database. Take no prisoners.
         """
         self.get_collection().remove({'_id': self.name})
+        # Also delete ReservedResources referencing this queue. This will prevent new tasks
+        # using existing reservations to enter this deleted queue.
+        ReservedResource.get_collection().remove({'assigned_queue': self.name})
+
+    @classmethod
+    def from_bson(cls, bson_queue):
+        """
+        Instantiate an AvailableQueue from the given bson. A Python dict can also be used in place
+        of bson_queue.
+
+        :param bson_queue: A bson object representing an AvailableQueue from the Mongo DB.
+        :type  bson_queue: bson.BSON or dict
+        :return:           An AvailableQueue representing the given bson
+        :rtype:            pulp.server.db.model.resources.AvailableQueue
+        """
+        return cls(
+            name=bson_queue['_id'],
+            num_reservations=bson_queue.get('num_reservations', None),
+            missing_since=bson_queue.get('missing_since', None))
 
     def increment_num_reservations(self):
         """
@@ -95,8 +126,9 @@ class AvailableQueue(Model):
             # We were asked to increment a queue that doesn't exist in the database.
             raise DoesNotExist('AvailableQueue with name %s does not exist.' % self.name)
 
-        # Update the num_reservations attribute to reflect the value in the database
+        # Update the attributes to match what was in the database
         self.num_reservations = new_queue['num_reservations']
+        self.missing_since = new_queue['missing_since']
 
     def save(self):
         """
@@ -104,7 +136,8 @@ class AvailableQueue(Model):
         new record to represent it.
         """
         self.get_collection().save(
-            {'_id': self.name, 'num_reservations': self.num_reservations},
+            {'_id': self.name, 'num_reservations': self.num_reservations,
+             'missing_since': self.missing_since},
             manipulate=False, safe=True)
 
 
@@ -121,7 +154,7 @@ class ReservedResource(Model):
     :type num_reservations: int
     """
     collection_name = 'reserved_resources'
-    unique_indices = ('_id',)
+    unique_indices = tuple()
 
     def __init__(self, name, assigned_queue=None, num_reservations=1):
         """

@@ -28,7 +28,11 @@ class PulpAuthorizationError(PulpException):
 
 # operations api --------------------------------------------------------------
 
-CREATE, READ, UPDATE, DELETE, EXECUTE = range(5)
+CREATE = 0
+READ = 1
+UPDATE = 2
+DELETE = 3
+EXECUTE = 4
 
 # Temporarily moved this out of db into here; this is the only place using it
 # and it's going to be deleted.
