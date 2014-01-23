@@ -315,7 +315,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Updates start_time and sets the task state to 'running' for asynchronous tasks.
+        # Check task status and skip running the task if task state is 'canceled'.
+        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
+            logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+            return
+        # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Skip updating status for eagerly executed tasks, since we don't want to track
         # synchronous tasks in our database.
         if not self.request.called_directly:
@@ -324,7 +329,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             TaskStatus.get_collection().update(
                 {'task_id': self.request.id},
                 {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
-                          'start_time':  dateutils.now_utc_timestamp()}},
+                          'start_time': dateutils.now_utc_timestamp()}},
                 upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
@@ -379,12 +384,19 @@ class Task(CeleryTask, ReservedTaskMixin):
 
 def cancel(task_id):
     """
-    Cancel the task that is represented by the given task_id.
+    Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+    This also updates task's state to 'canceled' state.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
     """
-    controller.revoke(task_id, terminate=True)
-    msg = _('Task canceled: %(task_id)s.')
-    msg = msg % {'task_id': task_id}
+    task_status = TaskStatusManager.find_by_task_id(task_id)
+    if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+        controller.revoke(task_id, terminate=True)
+        TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
+        msg = _('Task canceled: %(task_id)s.')
+        msg = msg % {'task_id': task_id}
+    else:
+        msg = _('Task [%(task_id)s] cannot be canceled since it is already in a complete state.')
+        msg = msg % {'task_id': task_id}
     logger.info(msg)

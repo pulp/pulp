@@ -24,6 +24,7 @@ import mock
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.dispatch.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
                                             CALL_RUNNING_STATE, CALL_WAITING_STATE)
@@ -681,18 +682,63 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
+    @mock.patch('celery.Task.apply_async')
+    def test_apply_async_task_canceled(self, apply_async):
+        """
+        Assert that apply_async() honors 'canceled' task status.
+        """
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags']}
+        task_id = 'test_task_id'
+        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue'), state=CALL_CANCELED_STATE)
+        apply_async.return_value = celery.result.AsyncResult(task_id)
+
+        task = tasks.Task()
+        task.apply_async(*args, **kwargs)
+
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], 'canceled')
+        self.assertEqual(task_status['start_time'], None)
 
 class TestCancel(PulpServerTests):
     """
     Test the tasks.cancel() function.
     """
+    def setUp(self):
+        PulpServerTests.setUp(self)
+        TaskStatus.get_collection().remove()
+
+    def tearDown(self):
+        PulpServerTests.tearDown(self)
+        TaskStatus.get_collection().remove()
+
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
-    def test_cancel(self, logger, revoke):
+    def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
-
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name)
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
         self.assertEqual(logger.info.call_count, 1)
-        self.assertTrue(task_id in logger.info.mock_calls[0][1][0])
+        log_msg = logger.info.mock_calls[0][1][0]
+        self.assertTrue(task_id in log_msg)
+        self.assertTrue('Task canceled' in log_msg)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
+
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
+    def test_cancel_completed_task(self, logger, revoke):
+        task_id = '1234abcd'
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
+        tasks.cancel(task_id)
+
+        self.assertEqual(logger.info.call_count, 1)
+        log_msg = logger.info.mock_calls[0][1][0]
+        self.assertTrue(task_id in log_msg)
+        self.assertTrue('cannot be canceled since it is already in a complete state' in log_msg)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
