@@ -107,3 +107,22 @@ class TestTaskCollection(base.PulpWebserviceTests):
         self.assertEquals(body['state'], state2)
         self.assertEqual(body['queue'], queue_2)
         self.assertEquals(body['tags'], tags)
+
+    def test_GET_celery_task_by_missing_id(self):
+        """
+        Test the GET() method to get a current task with given id.
+        """
+        # Populate a couple of task statuses
+        task_id1 = str(uuid.uuid4())
+        queue_1 = 'queue_1'
+        state1 = 'waiting'
+        tags = ['random', 'tags']
+
+        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
+        status, body = self.get('/v2/tasks/%s/' % str(uuid.uuid4()))
+
+        # Validate
+        self.assertEqual(404, status)
+        self.assertIsInstance(body, dict)
+        self.assertTrue('Task Not Found' in body['error_message'])
+        self.assertTrue(task_id1 in body['error_message'])
