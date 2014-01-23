@@ -79,3 +79,47 @@ class TestTaskCollection(base.PulpWebserviceTests):
                 self.assertEquals(task['state'], state2)
                 self.assertEqual(task['queue'], queue_2)
         self.assertEquals(task['tags'], tags)
+
+    def test_GET_celery_tasks_by_tags(self):
+        """
+        Test the GET() method to get all current tasks.
+        """
+        # Populate a few of task statuses
+        task_id1 = str(uuid.uuid4())
+        queue_1 = 'queue_1'
+        state1 = 'waiting'
+        tags1 = ['random', 'tags']
+
+        task_id2 = str(uuid.uuid4())
+        queue_2 = 'queue_2'
+        state2 = 'running'
+        tags2 = ['random', 'tags']
+
+        task_id3 = str(uuid.uuid4())
+        queue_3 = 'queue_3'
+        state3 = 'running'
+        tags3 = ['random']
+
+        TaskStatusManager.create_task_status(task_id1, queue_1, tags1, state1)
+        TaskStatusManager.create_task_status(task_id2, queue_2, tags2, state2)
+        TaskStatusManager.create_task_status(task_id3, queue_3, tags3, state3)
+
+        # Validate for tags
+        status, body = self.get('/v2/tasks/?tag=random&tag=tags')
+        self.assertEqual(200, status)
+        self.assertTrue(len(body) == 2)
+        for task in body:
+            if task['task_id'] == task_id1:
+                self.assertEquals(task['state'], state1)
+                self.assertEqual(task['queue'], queue_1)
+                self.assertEqual(task['tags'], tags1)
+            else:
+                self.assertEquals(task['state'], state2)
+                self.assertEqual(task['queue'], queue_2)
+                self.assertEquals(task['tags'], tags2)
+
+        # Negative test
+        status, body = self.get('/v2/tasks/?tag=non_existent')
+        self.assertEqual(200, status)
+        self.assertTrue(len(body) == 0)
+

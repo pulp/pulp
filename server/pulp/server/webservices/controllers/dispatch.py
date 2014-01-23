@@ -68,14 +68,12 @@ class TaskCollection(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self):
-        valid_filters = ['tag', 'id']
+        valid_filters = ['tag']
         filters = self.filters(valid_filters)
         criteria_filters = {}
         tags = filters.get('tag', [])
         if tags:
-            criteria_filters['tags'] = { '$all':  filters.get('tag', [])}
-        if 'id' in filters:
-            criteria_filters['task_id'] = filters['id']
+            criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
         criteria = Criteria.from_client_input({'filters': criteria_filters})
         serialized_task_statuses = list(TaskStatusManager.find_by_criteria(criteria))
         return self.ok(serialized_task_statuses)
