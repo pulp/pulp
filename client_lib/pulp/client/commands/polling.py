@@ -108,10 +108,6 @@ class PollingCommand(PulpCliCommand):
             # spawned tasks
             if not task_list.task_id:
                 task_list = task_list.spawned_tasks
-        else:
-            # The task list is the full list of items we want to process
-            #polling_list = task_list
-            pass
 
         # I'm not sure the server has the potential to return an empty list of tasks if nothing
         # was queued, but in case it does account for it here so the caller doesn't have to
