@@ -21,9 +21,10 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
-from pulp.server.exceptions import MissingValue
+from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.exceptions import MissingValue, OperationPostponed
 from pulp.server.managers import factory as managers_factory
+from pulp.server.managers.repo.publish import publish
 from pulp.server.webservices import execution, serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -234,28 +235,18 @@ class PublishAction(JSONController):
         if distributor_id is None:
             raise MissingValue(['id'])
 
-        publish_manager = managers_factory.repo_group_publish_manager()
-
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE,
                              distributor_id),
                 action_tag('publish')]
-        weight = pulp_config.config.getint('tasks', 'publish_weight')
-
-        call_request = CallRequest(publish_manager.publish,  # rbarlow_converted
-                                   args=[repo_group_id, distributor_id],
-                                   kwargs={'publish_config_override': overrides},
-                                   tags=tags,
-                                   weight=weight,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE,
-                                      repo_group_id)
-        call_request.updates_resource(
-            dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE, distributor_id)
-        call_request.add_life_cycle_callback(dispatch_constants.CALL_ENQUEUE_LIFE_CYCLE_CALLBACK,
-                                             publish_manager.prep_publish)
-
-        return execution.execute_async(self, call_request)
+        async_result = publish.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE,
+                                                repo_group_id,
+                                                args=[repo_group_id, distributor_id],
+                                                kwargs={'publish_config_override' : overrides},
+                                                tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise OperationPostponed(call_report)
 
 # web.py application -----------------------------------------------------------
 
