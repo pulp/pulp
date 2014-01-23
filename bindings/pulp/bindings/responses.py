@@ -94,7 +94,7 @@ class Task(object):
         if not self.task_id:
             self.task_id = response_body.get('task_id')
         self.task_group_id = response_body.get('call_request_group_id')
-        self.tags = response_body.get('call_request_tags')
+        self.tags = response_body.get('call_request_tags', [])
 
         self.start_time = response_body.get('start_time')
         self.finish_time = response_body.get('finish_time')
