@@ -24,6 +24,7 @@ from pulp.common.util import encode_unicode
 from pulp.server.db.model.auth import User
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as managers_factory
+from pulp.server.async.task_status_manager import TaskStatusManager
 
 
 _LOG = logging.getLogger(__name__)
@@ -332,6 +333,30 @@ class CallReport(object):
                           call_request.schedule_id)
         return call_report
 
+    @classmethod
+    def from_task_status(cls, task_id):
+        """
+        Factory method that forms a CallReport using existing TaskStatus for given task id.
+
+        :param cls: CallReport class
+        :type cls: type
+        :param task_id: task id to be used to lookup task status
+        :type task_id: basestring
+        :return: CallReport instance
+        :rtype: CallReport
+        """
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        if task_status:
+            call_report = cls(task_id,
+                              call_request_group_id = None,
+                              call_request_tags = task_status['tags'],
+                              state = task_status['state'],
+                              result = task_status.get('result', None),
+                              traceback = task_status.get('traceback', None))
+        else:
+            call_report = cls(task_id)
+        return call_report
+
     def __init__(self,
                  call_request_id=None,
                  call_request_group_id=None,
@@ -357,7 +382,7 @@ class CallReport(object):
         assert isinstance(state, (NoneType, basestring))
         assert isinstance(progress, (NoneType, dict))
         assert isinstance(exception, (NoneType, Exception))
-        assert isinstance(traceback, (NoneType, TracebackType))
+        assert isinstance(traceback, (NoneType, TracebackType, basestring))
         assert isinstance(serialize_result, bool)
 
         self.call_request_id = call_request_id
@@ -423,7 +448,7 @@ class CallReport(object):
         tb = getattr(self, 'traceback')
 
         if tb is not None:
-            if isinstance(tb, (str, list, tuple)):
+            if isinstance(tb, (basestring, list, tuple)):
                 data['traceback'] = str(tb)
             else:
                 data['traceback'] = traceback.format_tb(tb)

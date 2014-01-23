@@ -232,24 +232,30 @@ class TaskResult(object):
 
 
 class ReservedTaskMixin(object):
-    def apply_async_with_reservation(self, resource_id, *args, **kwargs):
+    def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
         Celery's apply_async(), while also making the named resource. No two tasks that claim the
-        same resource reservation can execute concurrently.
+        same resource reservation can execute concurrently. It accepts type and id of a resource 
+        and combines them to form a resource id.
 
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
         docblock for the apply_async() method.
 
-        :param resource_id: A string that identifies some named resource, guaranteeing that only one
-                            task reserving this same string can happen at a time.
-        :type  resource_id: basestring
-        :param tags:        A list of tags (strings) to place onto the task, used for searching for
-                            tasks by tag
-        :type  tags:        list
-        :return:            An AsyncResult instance as returned by Celery's apply_async
-        :rtype:             celery.result.AsyncResult
+        :param resource_type: A string that identifies type of a resource
+        :type resource_type:  basestring
+        :param resource_id:   A string that identifies some named resource, guaranteeing that only one
+                              task reserving this same string can happen at a time.
+        :type  resource_id:   basestring
+        :param tags:          A list of tags (strings) to place onto the task, used for searching for
+                              tasks by tag
+        :type  tags:          list
+        :return:              An AsyncResult instance as returned by Celery's apply_async
+        :rtype:               celery.result.AsyncResult
         """
+        # Form a resource_id for reservation by combining given resource type and id. This way,
+        # two different resources having the same id will not block each other.
+        resource_id = ":".join((resource_type, resource_id))
         queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
 
         kwargs['queue'] = queue

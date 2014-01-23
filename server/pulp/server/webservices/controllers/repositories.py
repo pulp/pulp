@@ -15,17 +15,19 @@ from gettext import gettext as _
 import logging
 import sys
 
-from celery import task
 import web
 
 from pulp.common import constants
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.dispatch.call import CallReport
+from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
+from pulp.server.managers.content.upload import import_uploaded_unit
+from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
+from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publish_itinerary
 from pulp.server.tasks import repository
 from pulp.server.webservices import execution
@@ -309,19 +311,15 @@ class RepoImporters(JSONController):
         # Note: If the plugin raises an exception during initialization, let it
         #  bubble up and be handled like any other 500.
 
-        importer_manager = manager_factory.repo_importer_manager()
-        weight = pulp_config.config.getint('tasks', 'create_weight')
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('add_importer')]
-
-        call_request = CallRequest(importer_manager.set_importer,  # rbarlow_converted
-                                   [repo_id, importer_type],
-                                   {'repo_plugin_config': importer_config},
-                                   weight=weight,
-                                   tags=tags,
-                                   kwarg_blacklist=['repo_plugin_config'])
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        return execution.execute_sync_created(self, call_request, 'importer')
+        async_result = set_importer.apply_async_with_reservation(dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                                 repo_id,
+                                                                 [repo_id, importer_type],
+                                                                 {'repo_plugin_config': importer_config},
+                                                                 tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoImporter(JSONController):
@@ -345,19 +343,16 @@ class RepoImporter(JSONController):
     @auth_required(UPDATE)
     def DELETE(self, repo_id, importer_id):
 
-        importer_manager = manager_factory.repo_importer_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('delete_importer')]
-        call_request = CallRequest(importer_manager.remove_importer,  # rbarlow_converted
-                                   [repo_id],
-                                   tags=tags,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE,
-                                      importer_id)
-        result = execution.execute(call_request)
-        return self.ok(result)
+        async_result = remove_importer.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                repo_id,
+                                                [repo_id],
+                                                tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -370,21 +365,17 @@ class RepoImporter(JSONController):
             logger.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
-        importer_manager = manager_factory.repo_importer_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('update_importer')]
-        call_request = CallRequest(importer_manager.update_importer_config,  # rbarlow_converted
-                                   [repo_id],
-                                   {'importer_config': importer_config},
-                                   tags=tags,
-                                   archive=True,
-                                   kwarg_blacklist=['importer_config'])
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE,
-                                      importer_id)
-        result = execution.execute(call_request)
-        return self.ok(result)
+        async_result = update_importer_config.apply_async_with_reservation(
+                                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                    repo_id,
+                                                    [repo_id],
+                                                    {'importer_config': importer_config},
+                                                    tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class SyncScheduleCollection(JSONController):
@@ -513,28 +504,14 @@ class RepoDistributors(JSONController):
         distributor_id = params.get('distributor_id', None)
         auto_publish = params.get('auto_publish', False)
 
-        # Update the repo
         distributor_manager = manager_factory.repo_distributor_manager()
-
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('add_distributor')]
-        if distributor_id is not None:
-            tags.append(resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                     distributor_id))
-        call_request = CallRequest(distributor_manager.add_distributor,  # rbarlow_converted
-                                   [repo_id, distributor_type],
-                                   {'repo_plugin_config': distributor_config,
-                                    'auto_publish': auto_publish,
-                                    'distributor_id': distributor_id},
-                                   weight=weight,
-                                   tags=tags,
-                                   kwarg_blacklist=['repo_plugin_config'])
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-        if distributor_id is not None:
-            call_request.creates_resource(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                          distributor_id)
-        return execution.execute_created(self, call_request, distributor_id)
+        distributor = distributor_manager.add_distributor(repo_id,
+                                                          distributor_type,
+                                                          distributor_config,
+                                                          auto_publish,
+                                                          distributor_id)
+        distributor.update(serialization.link.child_link_obj(distributor['id']))
+        return self.created(distributor['_href'], distributor)
 
 
 class RepoDistributor(JSONController):
@@ -868,19 +845,17 @@ class RepoAssociate(JSONController):
                 logger.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
-        association_manager = manager_factory.repo_unit_association_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id),
                 action_tag('associate')]
-        call_request = CallRequest(association_manager.associate_from_repo,  # rbarlow_converted
-                                   [source_repo_id, dest_repo_id],
-                                   {'criteria': criteria, 'import_config_override': overrides},
-                                   tags=tags,
-                                   archive=True,
-                                   kwarg_blacklist=['criteria', 'import_config_override'])
-        call_request.reads_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id)
-        return execution.execute_async(self, call_request)
+        async_result = associate_from_repo.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                dest_repo_id,
+                                                [source_repo_id, dest_repo_id],
+                                                {'criteria': criteria, 'import_config_override': overrides},
+                                                tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoUnassociate(JSONController):
@@ -901,18 +876,16 @@ class RepoUnassociate(JSONController):
                 logger.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
-        association_manager = manager_factory.repo_unit_association_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('unassociate')]
-
-        call_request = CallRequest(association_manager.unassociate_by_criteria,  # rbarlow_converted
-                                   [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
-                                    manager_factory.principal_manager().get_principal()['login']],
-                                   tags=tags,
-                                   archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-
-        return execution.execute_async(self, call_request)
+        async_result = unassociate_by_criteria.apply_async_with_reservation(
+                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                    repo_id,
+                                    [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
+                                     manager_factory.principal_manager().get_principal()['login']],
+                                    tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoImportUpload(JSONController):
@@ -936,18 +909,15 @@ class RepoImportUpload(JSONController):
         unit_key = params['unit_key']
         unit_metadata = params.pop('unit_metadata', None)
 
-        # Coordinator configuration
         tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
                 action_tag('import_upload')]
-
-        upload_manager = manager_factory.content_upload_manager()
-        call_request = CallRequest(upload_manager.import_uploaded_unit,  # rbarlow_converted
-                                   [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
-                                   tags=tags, archive=True)
-        call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-
-        report = execution.execute(call_request)
-        return self.ok(report)
+        async_result = import_uploaded_unit.apply_async_with_reservation(
+                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                    repo_id,
+                                    [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
+                                    tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoResolveDependencies(JSONController):
@@ -1036,16 +1006,14 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise exceptions.InvalidValue('repo_criteria')
 
-        manager = manager_factory.applicability_regeneration_manager()
-        regeneration_tag = action_tag('applicability_regeneration')
-        call_request = CallRequest(manager.regenerate_applicability_for_repos,  # rbarlow_converted
-                                   [repo_criteria],
-                                   tags=[regeneration_tag])
-        # allow only one applicability regeneration task at a time
-        call_request.updates_resource(
-            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-            dispatch_constants.RESOURCE_ANY_ID)
-        return execution.execute_async(self, call_request)
+        regeneration_tag = action_tag('content_applicability_regeneration')
+        async_result = regenerate_applicability_for_repos.apply_async_with_reservation(
+                            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                            dispatch_constants.RESOURCE_ANY_ID,
+                            (repo_criteria.as_dict(),),
+                            tags=[regeneration_tag])
+        call_report = CallReport.from_task_status(async_result.id)
+        raise exceptions.OperationPostponed(call_report)
 
 
 # These are defined under /v2/repositories/ (see application.py to double-check)

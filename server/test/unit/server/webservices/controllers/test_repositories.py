@@ -8,13 +8,14 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from celery.result import AsyncResult
 from pprint import pformat
 import datetime
 import httplib
 import re
 import traceback
 import unittest
+import uuid
 
 
 import mock
@@ -57,14 +58,24 @@ class RepoControllersTests(base.PulpWebserviceTests):
         Repo.get_collection().remove(safe=True)
 
 
+class ReservedResourceApplyAsync(object):
+    """
+    This object allows us to mock the return value of _reserve_resource.apply_async.get().
+    """
+    def get(self):
+        return 'some_queue'
+
+
 class RepoImportUploadTests(RepoControllersTests):
     """
     Test the RepoImportUpload class.
     """
     URL = '/v2/repositories/%s/actions/import_upload/'
 
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     @mock.patch('pulp.server.managers.content.upload.ContentUploadManager.import_uploaded_unit')
-    def test_POST_returns_report(self, import_uploaded_unit):
+    def test_POST_returns_report(self, import_uploaded_unit, _reserve_resource, mock_apply_async):
         """
         Assert that the POST() method returns the appropriate report dictionary, based on the return
         value of the import_uploaded_unit() method.
@@ -74,13 +85,20 @@ class RepoImportUploadTests(RepoControllersTests):
         details = 'Some details'
         upload_report = {'success_flag': success_flag, 'summary': summary, 'details': details}
         import_uploaded_unit.return_value = upload_report
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         params = {'upload_id': 'upload_id', 'unit_type_id': 'unit_type_id', 'unit_key': 'unit_key'}
 
-        response = self.post(self.URL % 'repo_id', params)
-
-        self.assertEqual(response[0], 200)
-        self.assertEqual(response[1],
-                         {'success_flag': success_flag, 'summary': summary, 'details': details})
+        status, body = self.post(self.URL % 'repo_id', params)
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        expected_args = mock_apply_async.call_args[0][0]
+        self.assertTrue('repo_id' in expected_args)
+        self.assertTrue('unit_type_id' in expected_args)
+        self.assertTrue('unit_key' in expected_args)
+        self.assertTrue('upload_id' in expected_args)
 
 
 class RepoSearchTests(RepoControllersTests):
@@ -500,7 +518,6 @@ class RepoResourceTests(RepoControllersTests):
         self.assertEqual(404, status)
 
 
-
 class RepoPluginsTests(RepoControllersTests):
 
     def setUp(self):
@@ -532,14 +549,11 @@ class RepoImportersTests(RepoPluginsTests):
         """
         Tests getting the list of importers for a valid repo with importers.
         """
-
         # Setup
         self.repo_manager.create_repo('stuffing')
         self.importer_manager.set_importer('stuffing', 'dummy-importer', {})
-
         # Test
         status, body = self.get('/v2/repositories/stuffing/importers/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(1, len(body))
@@ -548,13 +562,10 @@ class RepoImportersTests(RepoPluginsTests):
         """
         Tests an empty list is returned for a repo with no importers.
         """
-
         # Setup
         self.repo_manager.create_repo('potatoes')
-
         # Test
         status, body = self.get('/v2/repositories/potatoes/importers/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
@@ -563,85 +574,80 @@ class RepoImportersTests(RepoPluginsTests):
         """
         Tests getting importers for a repo that doesn't exist.
         """
-
         # Test
         status, body = self.get('/v2/repositories/not_there/importers/')
-
         # Verify
         self.assertEqual(404, status)
 
-    def test_post(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_post(self, _reserve_resource, mock_apply_async):
         """
         Tests adding an importer to a repo.
         """
-
         # Setup
         self.repo_manager.create_repo('gravy')
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
 
+        # Test
         req_body = {
             'importer_type_id' : 'dummy-importer',
             'importer_config' : {'foo' : 'bar'},
         }
-
-        # Test
         status, body = self.post('/v2/repositories/gravy/importers/', params=req_body)
 
         # Verify
-        self.assertEqual(201, status)
-        self.assertEqual(body['importer_type_id'], req_body['importer_type_id'])
-        self.assertEqual(body['repo_id'], 'gravy')
-        self.assertEqual(body['config'], req_body['importer_config'])
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args, call_kwargs = mock_apply_async.call_args[0]
+        self.assertEqual(call_args, ['gravy', 'dummy-importer'])
+        self.assertEqual(call_kwargs, {'repo_plugin_config': {'foo': 'bar'}})
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : 'gravy'})
-        self.assertTrue(importer is not None)
-        self.assertEqual(importer['importer_type_id'], req_body['importer_type_id'])
-        self.assertEqual(importer['config'], req_body['importer_config'])
-
-    def test_post_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_post_missing_repo(self, _reserve_resource):
         """
         Tests adding an importer to a repo that doesn't exist.
         """
-
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
         req_body = {
             'importer_type_id' : 'dummy-importer',
             'importer_config' : {'foo' : 'bar'},
         }
         status, body = self.post('/v2/repositories/blah/importers/', params=req_body)
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
     def test_post_bad_request_missing_data(self):
         """
         Tests adding an importer but not specifying the required data.
         """
-
         # Setup
         self.repo_manager.create_repo('icecream')
-
         # Test
         status, body = self.post('/v2/repositories/icecream/importers/', params={})
-
         # Verify
         self.assertEqual(400, status)
 
-    def test_post_bad_request_invalid_data(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_post_bad_request_invalid_data(self, _reserve_resource):
         """
         Tests adding an importer but specifying incorrect metadata.
         """
-
         # Setup
         self.repo_manager.create_repo('walnuts')
         req_body = {
             'importer_type_id' : 'not-a-real-importer'
         }
-
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
         status, body = self.post('/v2/repositories/walnuts/importers/', params=req_body)
-
         # Verify
-        self.assertEqual(400, status)
+        self.assertEqual(202, status)
+
 
 class RepoImporterTests(RepoPluginsTests):
 
@@ -649,14 +655,11 @@ class RepoImporterTests(RepoPluginsTests):
         """
         Tests getting an importer that exists.
         """
-
         # Setup
         self.repo_manager.create_repo('pie')
         self.importer_manager.set_importer('pie', 'dummy-importer', {})
-
         # Test
         status, body = self.get('/v2/repositories/pie/importers/dummy-importer/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(body['id'], 'dummy-importer')
@@ -665,10 +668,8 @@ class RepoImporterTests(RepoPluginsTests):
         """
         Tests getting the importer for a repo that doesn't exist.
         """
-
         # Test
         status, body = self.get('/v2/repositories/not-there/importers/irrelevant')
-
         # Verify
         self.assertEqual(404, status)
 
@@ -676,116 +677,121 @@ class RepoImporterTests(RepoPluginsTests):
         """
         Tests getting the importer for a repo that doesn't have one.
         """
-
         # Setup
         self.repo_manager.create_repo('cherry_pie')
-
         # Test
         status, body = self.get('/v2/repositories/cherry_pie/importers/not_there/')
-
         # Verify
         self.assertEqual(404, status)
 
-    def test_delete(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_delete(self, _reserve_resource, mock_apply_async):
         """
         Tests removing an importer from a repo.
         """
-
         # Setup
-        self.repo_manager.create_repo('blueberry_pie')
-        self.importer_manager.set_importer('blueberry_pie', 'dummy-importer', {})
+        repo_id = 'blueberry_pie'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, 'dummy-importer', {})
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
 
         # Test
         status, body = self.delete('/v2/repositories/blueberry_pie/importers/dummy-importer/')
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args = mock_apply_async.call_args[0]
+        self.assertTrue([repo_id] in call_args)
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : 'blueberry_pie'})
-        self.assertTrue(importer is None)
-
-    def test_delete_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_delete_missing_repo(self, _reserve_resource):
         """
         Tests deleting the importer from a repo that doesn't exist.
         """
-
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
         status, body = self.delete('/v2/repositories/bad_pie/importers/dummy-importer/')
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_delete_missing_importer(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_delete_missing_importer(self, _reserve_resource):
         """
         Tests deleting an importer from a repo that doesn't have one.
         """
-
         # Setup
         self.repo_manager.create_repo('apple_pie')
-
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
         status, body = self.delete('/v2/repositories/apple_pie/importers/dummy-importer/')
-
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_update_importer_config(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_update_importer_config(self, _reserve_resource, mock_apply_async):
         """
         Tests successfully updating an importer's config.
         """
-
         # Setup
-        self.repo_manager.create_repo('pumpkin_pie')
-        self.importer_manager.set_importer('pumpkin_pie', 'dummy-importer', {})
-
+        repo_id = 'pumpkin_pie'
+        self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, 'dummy-importer', {})
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
         new_config = {'importer_config' : {'ice_cream' : True}}
-        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/', params=new_config)
-
+        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/', 
+                                params=new_config)
         # Verify
-        self.assertEqual(200, status)
-        self.assertEqual(body['id'], 'dummy-importer')
+        self.assertEqual(202, status)
+        self.assertEqual(body['task_id'], task_id)
+        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        call_args, call_kwargs = mock_apply_async.call_args[0]
+        self.assertTrue(repo_id in call_args)
+        self.assertEqual(call_kwargs['importer_config'], {'ice_cream' : True})
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : 'pumpkin_pie'})
-        self.assertTrue(importer is not None)
-
-    def test_update_missing_repo(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_update_missing_repo(self, _reserve_resource):
         """
         Tests updating an importer config on a repo that doesn't exist.
         """
-
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
-        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/', params={'importer_config' : {}})
-
+        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/', 
+                                params={'importer_config' : {}})
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
-    def test_update_missing_importer(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_update_missing_importer(self, _reserve_resource):
         """
         Tests updating a repo that doesn't have an importer.
         """
-
         # Setup
         self.repo_manager.create_repo('pie')
-
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
-        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', params={'importer_config' : {}})
-
+        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', 
+                                params={'importer_config' : {}})
         # Verify
-        self.assertEqual(404, status)
+        self.assertEqual(202, status)
 
     def test_update_bad_request(self):
         """
         Tests updating with incorrect parameters.
         """
-
         # Setup
         self.repo_manager.create_repo('pie')
         self.importer_manager.set_importer('pie', 'dummy-importer', {})
-
         # Test
         status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', params={})
-
         # Verify
         self.assertEqual(400, status)
 
@@ -796,15 +802,12 @@ class RepoDistributorsTests(RepoPluginsTests):
         """
         Tests retrieving all distributors for a repo.
         """
-
         # Setup
         self.repo_manager.create_repo('coffee')
         self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True, distributor_id='dist-1')
         self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True, distributor_id='dist-2')
-
         # Test
         status, body = self.get('/v2/repositories/coffee/distributors/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(2, len(body))
@@ -813,13 +816,10 @@ class RepoDistributorsTests(RepoPluginsTests):
         """
         Tests retrieving distributors for a repo that has none.
         """
-
         # Setup
         self.repo_manager.create_repo('dark-roast')
-
         # Test
         status, body = self.get('/v2/repositories/dark-roast/distributors/')
-
         # Verify
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
@@ -828,10 +828,8 @@ class RepoDistributorsTests(RepoPluginsTests):
         """
         Tests retrieving distributors for a repo that doesn't exist.
         """
-
         # Test
         status, body = self.get('/v2/repositories/not-there/distributors/')
-
         # Verify
         self.assertEqual(404, status)
 
@@ -1597,8 +1595,10 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    def test_regenerate_applicability(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_regenerate_applicability(self, _reserve_resource):
         # Setup
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         self.populate()
         self.populate_bindings()
         # Test
@@ -1608,19 +1608,22 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        self.assertTrue('pulp:action:applicability_regeneration' in body['tags'])
 
-    def test_regenerate_applicability_no_consumer(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_regenerate_applicability_no_consumer(self, _reserve_resource):
         # Test
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body)
         self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        
-    def test_regenerate_applicability_no_bindings(self):
+
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_regenerate_applicability_no_bindings(self, _reserve_resource):
         # Setup
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         self.populate()
         # Test
         request_body = dict(repo_criteria={'filters':self.REPO_FILTER})

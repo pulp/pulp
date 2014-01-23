@@ -177,6 +177,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
     def tearDown(self):
         super(PulpWebserviceTests, self).tearDown()
         User.get_collection().remove()
+        TaskStatus.get_collection().remove()
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers, serialize_json=False)
