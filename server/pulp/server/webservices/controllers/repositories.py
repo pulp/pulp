@@ -15,28 +15,21 @@ from gettext import gettext as _
 import logging
 import sys
 
-from celery import task
-
 import web
 
 from pulp.common import constants
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import OperationPostponed
-from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publish_itinerary
-from pulp.server.itineraries.repository import (repo_delete_itinerary, distributor_delete_itinerary,
-                                                distributor_update_itinerary)
+from pulp.server.dispatch.call import CallReport
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
-from pulp.server.managers.repo.cud import update_repo_and_plugins
-from pulp.server.managers.repo.distributor import add_distributor
 from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
+from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary, publish_itinerary
+from pulp.server.tasks import repository
 from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -257,12 +250,18 @@ class RepoResource(JSONController):
         return self.ok(repo)
 
     @auth_required(DELETE)
-    def DELETE(self, id):
+    def DELETE(self, repo_id):
         # validate
-        manager_factory.repo_query_manager().get_repository(id)
+        manager_factory.repo_query_manager().get_repository(repo_id)
+
         # delete
-        call_requests = repo_delete_itinerary(id)
-        execution.execute_multiple(call_requests)
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            action_tag('delete')
+        ]
+        # TODO change this to reserve the repo before applying the delete
+        async_result = repository.delete.apply_async((repo_id,), tags=tags)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
 
     @auth_required(UPDATE)
     def PUT(self, repo_id):
@@ -271,17 +270,16 @@ class RepoResource(JSONController):
         importer_config = parameters.get('importer_config', None)
         distributor_configs = parameters.get('distributor_configs', None)
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('update')]
-        async_result = update_repo_and_plugins.apply_async_with_reservation(
-                                                            dispatch_constants.RESOURCE_REPOSITORY_TYPE,
-                                                            repo_id,
-                                                            [repo_id, delta],
-                                                            {'importer_config': importer_config,
-                                                             'distributor_configs': distributor_configs},
-                                                            tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        repo_manager = manager_factory.repo_manager()
+
+        # TODO figure out a way to return information about the other tasks spawned (likely need new return format)
+        task_result = repo_manager.update_repo_and_plugins(repo_id, delta, importer_config, distributor_configs)
+        # TODO Old CallRequest used to kwarg_blacklist the importer_config and distributor_config
+        # TODO Do we need to filter those out here?
+        repo = task_result.return_value
+        repo.update(serialization.link.current_link_obj())
+
+        return self.ok(repo)
 
 
 class RepoImporters(JSONController):
@@ -321,7 +319,7 @@ class RepoImporters(JSONController):
                                                                  {'repo_plugin_config': importer_config},
                                                                  tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoImporter(JSONController):
@@ -354,7 +352,7 @@ class RepoImporter(JSONController):
                                                 [repo_id],
                                                 tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -377,7 +375,7 @@ class RepoImporter(JSONController):
                                                     {'importer_config': importer_config},
                                                     tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class SyncScheduleCollection(JSONController):
@@ -536,8 +534,17 @@ class RepoDistributor(JSONController):
         manager = manager_factory.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
         # delete
-        call_requests = distributor_delete_itinerary(repo_id, distributor_id)
-        execution.execute_multiple(call_requests)
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag('remove_distributor')
+        ]
+
+        # TODO change this to reserve the repo before applying the delete
+        async_result = repository.distributor_delete.apply_async((repo_id, distributor_id),
+                                                                 tags=tags)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
+
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, distributor_id):
@@ -567,8 +574,15 @@ class RepoDistributor(JSONController):
                 repo_id)
             raise exceptions.MissingValue(['distributor_config'])
         # update
-        call_requests = distributor_update_itinerary(repo_id, distributor_id, config, delta)
-        execution.execute_multiple(call_requests)
+        tags = [
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            action_tag('update_distributor')
+        ]
+        # TODO change this to reserve the repo before applying the update
+        async_result = repository.distributor_update.apply_async((repo_id, distributor_id, config,
+                                                                  delta), tags=tags)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
 
 
 class PublishScheduleCollection(JSONController):
@@ -841,7 +855,7 @@ class RepoAssociate(JSONController):
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoUnassociate(JSONController):
@@ -871,7 +885,7 @@ class RepoUnassociate(JSONController):
                                      manager_factory.principal_manager().get_principal()['login']],
                                     tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoImportUpload(JSONController):
@@ -903,7 +917,7 @@ class RepoImportUpload(JSONController):
                                     [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
                                     tags=tags)
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
 
 class RepoResolveDependencies(JSONController):
@@ -999,7 +1013,7 @@ class ContentApplicabilityRegeneration(JSONController):
                             (repo_criteria.as_dict(),),
                             tags=[regeneration_tag])
         call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(call_report)
 
 
 # These are defined under /v2/repositories/ (see application.py to double-check)

@@ -197,6 +197,40 @@ def _reserve_resource(resource_id):
     return reserved_resource.assigned_queue
 
 
+class TaskResult(object):
+    """
+    The TaskResult object is used for returning errors and spawned tasks that do not affect the
+    primary status of the task.
+
+    Errors that don't affect the current task status might be related to secondary actions
+    where the primary action of the async-task was successful
+
+    Spawned tasks are items such as the individual tasks for updating the bindings on
+    each consumer when a repo distributor is updated.
+    """
+
+    def __init__(self, result=None, error=None, spawned_tasks=None):
+        """
+        :param result: The return value from the task
+        :type result: dict
+        :param error: The PulpException for the error & sub-errors that occured
+        :type error: pulp.server.exception.PulpException
+        :param spawned_tasks: A list of task status objects for tasks that were created by this
+                              task and are tracked through the pulp database
+        :type spawned_tasks: list of TaskStatus objects
+        """
+        self.return_value = result
+        self.error = error
+        self.spawned_tasks = spawned_tasks
+
+    def serialize(self):
+        data = {
+            'result': self.return_value,
+            'error': self.error,
+            'spawned_tasks': self.spawned_tasks}
+        return data
+
+
 class ReservedTaskMixin(object):
     def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
         """
@@ -313,6 +347,14 @@ class Task(CeleryTask, ReservedTaskMixin):
             delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
                      'finish_time': dateutils.now_utc_timestamp(),
                      'result': retval}
+            if isinstance(retval, TaskResult):
+                delta['result'] = retval.return_value
+                if retval.error:
+                    delta['error'] = retval.error.to_dict()
+                if retval.spawned_tasks:
+                    task_list = [spawned_task['task_id'] for spawned_task in retval.spawned_tasks]
+                    delta['spawned_tasks'] = task_list
+
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):

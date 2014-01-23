@@ -19,16 +19,15 @@
 #
 
 from mock import Mock
+
 from gofer.rmi import mock as mock
 
-from pulp.server.agent.direct.services import Services, HeartbeatListener
 from pulp.agent.lib.report import DispatchReport
 from pulp.common.compat import json
 
 
 def install():
     reset()
-    Services.heartbeat_listener = HeartbeatListener(None)
     mock.install()
     mock.reset()
     mock.register(Admin=Admin, Consumer=Consumer, Content=Content, Profile=Profile)
