@@ -214,8 +214,6 @@ Requires: python-gofer >= 0.77
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
-Requires: mongodb
-Requires: mongodb-server
 Requires: qpid-cpp-server
 Requires: m2crypto >= 0.21.1.pulp-7
 Requires: genisoimage
