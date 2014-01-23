@@ -8,7 +8,8 @@ Server
   This is the main application server that stores data and distributes content.
 
 Agent
-  This component runs on consumers and communicates with the server to provide remote content management.
+  This component runs on consumers and communicates with the server to provide remote content
+  management.
 
 Client
   This is a command line component that comes as two pieces: admin-client,
@@ -25,14 +26,14 @@ Supported Operating Systems
 Server
 
 * RHEL 6
-* Fedora 18 & 19
+* Fedora 19 & 20
 * CentOS 6
 
 Consumer
 
 * RHEL 5 & 6
-* Fedora 18 & 19
-* CentOS 6
+* Fedora 19 & 20
+* CentOS 5 & 6
 
 Prerequisites
 -------------
@@ -94,62 +95,143 @@ Repositories
 Server
 ------
 
-1. Install the Pulp server and its dependencies.
+#. You must provide a running MongoDB instance for Pulp to use. You can use the same host that you
+   will run Pulp on, or you can give MongoDB its own separate host if you like. You can even use
+   MongoDB replica sets if you'd like to have higher availability. For yum based systems, you can
+   install MongoDB with this command::
 
-::
+    $ sudo yum install mongodb-server
 
-  $ sudo yum groupinstall pulp-server
+   After installing MongoDB, you should configure it to start at boot and start it. For Upstart
+   based systems::
 
-2. Update ``/etc/pulp/server.conf`` to reflect the hostname of the server.
+    $ sudo service mongod start
+    $ sudo chkconfig mongod on
 
-::
+   For systemd based systems::
 
-   [messaging]
-   url: tcp://localhost:5672
+    $ sudo systemctl enable mongod
+    $ sudo systemctl start mongod
 
-3. Configure the server in /etc/pulp/server.conf. Most defaults will work, but these are sections you might consider looking at before proceeding. Each section is documented in-line.
+   .. warning::
+      On new MongoDB installations, the start call may exit before the database is
+      accepting connections. MongoDB takes some time to preallocate large files, and will not accept
+      connections until it finishes. When this happens, it is possible for Pulp to fail to start.
+      If this occurs, give MongoDB a few minutes to finish initializing and start Pulp again.
 
-  * **email** if you intend to have the server send email (off by default)
-  * **database** if you want to use non-default database settings
-  * **messaging** if your Qpid server is on a different host or if you want to use SSL
-  * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use Pulp in production
-  * **server** if you want to change the server's URL components or default credentials
+#. You must also provide a running Qpid instance for Pulp to use. This can also be on the same host
+   that you will run Pulp on, or it can be elsewhere as you please. For yum based systems, you can
+   install Qpid with this command::
+    
+    $ sudo yum install qpid-cpp-server
 
-4. Configure the Qpid broker in /etc/qpidd.conf and either add or change the auth setting
+   Configure the Qpid broker in ``/etc/qpidd.conf`` and either add or change the auth setting
    to be off by having ``auth=no`` on its own line.  The server can be *optionally* configured
    so that it will connect to the broker using SSL by following the steps defined in the
    :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.  By default, the server
    will connect using a plain TCP connection.
 
-5. Start Mongo and Qpid, and set them to start at boot.
+   After installing and configuring Qpid, you should configure it to start at boot and start it. For
+   Upstart based systems::
 
-::
+    $ sudo service qpidd start
+    $ sudo chkconfig qpidd on
 
-  $ sudo service mongod start
-  $ sudo chkconfig mongod on
-  $ sudo service qpidd start
-  $ sudo chkconfig qpidd on
+   For systemd based systems::
 
+    $ sudo systemctl enable qpidd
+    $ sudo systemctl start qpidd
 
-.. warning::
-  On new MongoDB installations, the start call may exit before the database is
-  actually running. In these cases, this call will fail with an error about
-  the connection failing. If this occurs, give MongoDB a few minutes to finish
-  initializing and attempt this call again.
+#. Install the Pulp server, task workers, and their dependencies. This step may be performed on more
+   than one host if you wish to scale out either Pulp's task workers, or its HTTP interface with a
+   load balancer::
 
-6. Initialize Pulp's database. It's important to do this before starting Apache. If Apache is already running, just restart it in step 7.
+    $ sudo yum groupinstall pulp-server
 
-::
+#. For each host that you've installed the Pulp server on, edit ``/etc/pulp/server.conf``. Most
+   defaults will work, but these are sections you might consider looking at before proceeding. Each
+   section is documented in-line.
 
-  $ sudo pulp-manage-db
+   * **email** if you intend to have the server send email (off by default)
+   * **database** if your database resides on a different host or port
+   * **messaging** if your Qpid server is on a different host or if you want to use SSL
+   * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use
+     Pulp in production
+   * **server** if you want to change the server's URL components, hostname, or default credentials
 
+#. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
+   but you only need to perform this step on one host that has the server package installed. If
+   Apache or the workers are already running, just restart them::
 
-7. Start Apache and set it to start on boot.
+   $ sudo pulp-manage-db
 
-::
+#. For each Pulp host that you wish to handle HTTP requests, start Apache httpd and set it to start
+   on boot. For Upstart based systems::
 
-  $ sudo service httpd start
-  $ sudo chkconfig httpd on
+    $ sudo service httpd start
+    $ sudo chkconfig httpd on
+
+   For systemd based systems::
+
+    $ sudo systemctl enable httpd
+    $ sudo systemctl start httpd
+
+#. Pulp has a distributed task system that uses `Celery <http://www.celeryproject.org/>`_.
+   Begin by configuring, enabling and starting the Pulp workers on each host that you wish to
+   perform distributed tasks with. To configure the workers, edit ``/etc/default/pulp_workers``.
+   That file has inline comments that explain how to use each setting. After you've configured the
+   workers, it's time to enable and start them. For Upstart systems::
+
+      $ sudo chkconfig pulp_workers on
+      $ sudo service pulp_workers start
+
+   For systemd systems::
+
+      $ sudo systemctl enable pulp_workers
+      $ sudo systemctl start pulp_workers
+
+   .. note::
+
+      The pulp_workers systemd unit does not actually correspond to the workers, but it runs a
+      script that dynamically generates units for each worker, based on the configured concurrency
+      level. You can check on the status of those generated workers by using the
+      ``systemctl status`` command. The workers are named with the template
+      ``pulp_worker-<number>``, and they are numbered beginning with 0 and up to
+      ``PULP_CONCURRENCY - 1``. For example, you can use ``sudo systemctl status pulp_worker-1`` to
+      see how the second worker is doing.
+
+#. There are two more services that need to be running, but it is important that these two only run
+   once each (i.e., do not enable either of these on any more than one Pulp server!)
+
+   .. warning::
+      
+      ``pulp_celerybeat`` and ``pulp_resource_manager`` must both be singletons, so be sure that you
+      only enable each of these on one host. They do not have to run on the same host, however.
+
+   One some Pulp system, configure, start and enable the Celerybeat process. This process performs a
+   job similar to a cron daemon for Pulp. Edit ``/etc/default/pulp_celerybeat`` to your liking, and
+   then enable and start it. Again, do not enable this on more than one host. For Upstart::
+
+      $ sudo chkconfig pulp_celerybeat on
+      $ sudo service pulp_celerybeat start
+
+   For systemd::
+
+      $ sudo systemctl enable pulp_celerybeat
+      $ sudo systemctl start pulp_celerybeat
+
+   Lastly, we also need one ``pulp_resource_manager`` process running in the installation. This
+   process acts as a task router, deciding which worker should perform certain types of tasks.
+   Apologies for the repetitive message, but it is important that this process only be enabled on
+   one host. Edit ``/etc/default/pulp_resource_manager`` to your liking. Then, for upstart::
+
+      $ sudo chkconfig pulp_resource_manager on
+      $ sudo service pulp_resource_manager start
+
+   For systemd::
+
+      $ sudo systemctl enable pulp_resource_manager
+      $ sudo systemctl start pulp_resource_manager
 
 Admin Client
 ------------
@@ -250,7 +332,7 @@ If you want to use SSL with Qpid, see the
 :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
 
 MongoDB Authentication
------------------
+----------------------
 
 To configure pulp for connecting to the MongoDB with username/password authentication, use the
 following steps:
