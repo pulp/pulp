@@ -113,9 +113,6 @@ def convert_schedules(save_func, call):
             break
 
     save_func(call)
-    foo = bson.BSON.decode(bson.BSON.encode(call))
-    print json.dumps(foo, indent=4, default=json_util.default)
-    print ScheduledCall.from_db(call)
 
 
 NAMES_TO_TASKS = {
