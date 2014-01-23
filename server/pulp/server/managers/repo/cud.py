@@ -447,7 +447,7 @@ class RepoManager(object):
         error = None
         if len(errors) > 0:
             error = PulpCodedException(error_code=error_codes.PLP0006,
-                                       error_data={'repo_id': repo_id})
+                                       repo_id=repo_id)
             error.child_exceptions = errors
         return TaskResult(repo, error, additional_tasks)
 

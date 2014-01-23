@@ -33,9 +33,10 @@ class TestServices(TestCase):
         self.assertEqual(broker.cacert, ca_cert)
         self.assertEqual(broker.clientcert, client_cert)
 
+    @patch('pulp.server.agent.direct.services.Journal')
     @patch('pulp.server.agent.direct.services.ReplyHandler')
     @patch('gofer.rmi.async.WatchDog')
-    def test_start(self, mock_watchdog, mock_reply_handler):
+    def test_start(self, mock_watchdog, mock_reply_handler, mock_journal):
         Services.start()
         mock_watchdog.start.assert_called()
         mock_reply_handler.start.assert_called()
