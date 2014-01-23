@@ -59,7 +59,7 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
             logger.debug(e.message)
             bind_errors.append(e)
         except Exception, e:
-            logger.exception(e, exc_info=True)
+            logger.exception(e)
             #Don't do anything else since we still want to process all the other consumers
             bind_errors.append(e)
 
@@ -104,7 +104,7 @@ def unbind(group_id, repo_id, distributor_id, options):
             logger.warn(e.message)
             bind_errors.append(e)
         except Exception, e:
-            logger.exception(e, exc_info=True)
+            logger.exception(e)
             bind_errors.append(e)
             #Don't do anything else since we still want to process all the other consumers
 

@@ -394,10 +394,8 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
     def test_delete(self, mock_delete_task, mock_manager_factory):
         repo_distributor = repositories.RepoResource()
 
-        mock_delete_task.apply_async.return_value = MockTaskResult('foo-id')
+        mock_delete_task.apply_async_with_reservation.return_value = MockTaskResult('foo-id')
         self.assertRaises(OperationPostponed, repo_distributor.DELETE, "foo-repo")
-
-        #result = repo_distributor.DELETE("foo-repo")
 
         #Validate that the check was made to ensure the repo exists
         mock_manager_factory.return_value.get_repository.assert_called_once_with('foo-repo')
@@ -405,8 +403,9 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
         #validate that the task was called with the appropriate tags
         task_tags = ['pulp:repository:foo-repo',
                      'pulp:action:delete']
-        mock_delete_task.apply_async.assert_called_once_with(('foo-repo',),
-                                                             tags=task_tags)
+        mock_delete_task.apply_async_with_reservation.\
+            assert_called_once_with(dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                    'foo-repo', ['foo-repo', ], tags=task_tags)
         #validate the permissions
         self.validate_auth(authorization.DELETE)
 

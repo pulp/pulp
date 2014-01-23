@@ -259,8 +259,10 @@ class RepoResource(JSONController):
             resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('delete')
         ]
-        # TODO change this to reserve the repo before applying the delete
-        async_result = repository.delete.apply_async((repo_id,), tags=tags)
+        async_result = repository.delete.apply_async_with_reservation(
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
+            [repo_id], tags=tags)
+
         raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
 
     @auth_required(UPDATE)
