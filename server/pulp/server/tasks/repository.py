@@ -59,7 +59,7 @@ def delete(repo_id):
 
     error = None
     if len(errors) > 0:
-        error = PulpCodedException(error_code=PLP0007, error_data={'repo_id': repo_id})
+        error = PulpCodedException(PLP0007, repo_id=repo_id)
         error.child_exceptions = errors
 
     return TaskResult({}, error, additional_tasks)
@@ -102,9 +102,7 @@ def distributor_delete(repo_id, distributor_id):
 
     bind_error = None
     if len(unbind_errors) > 0:
-        bind_error = PulpCodedException(error_code=PLP0003,
-                                        error_data={'repo_id': repo_id,
-                                                    'distributor_id': distributor_id})
+        bind_error = PulpCodedException(PLP0003, repo_id=repo_id, distributor_id=distributor_id)
         bind_error.child_exceptions = unbind_errors
     return TaskResult({}, bind_error, additional_tasks)
 
@@ -164,9 +162,7 @@ def distributor_update(repo_id, distributor_id, config, delta):
 
     bind_error = None
     if len(bind_errors) > 0:
-        bind_error = PulpCodedException(error_code=PLP0002,
-                                        error_data={'repo_id': repo_id,
-                                                    'distributor_id': distributor_id})
+        bind_error = PulpCodedException(PLP0002, repo_id=repo_id, distributor_id=distributor_id)
         bind_error.child_exceptions = bind_errors
     return TaskResult(distributor, bind_error, additional_tasks)
 

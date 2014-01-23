@@ -65,10 +65,10 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
 
     bind_error = None
     if len(bind_errors) > 0:
-        bind_error = PulpCodedException(error_code=PLP0004,
-                                        error_data={'repo_id': repo_id,
-                                                    'distributor_id': distributor_id,
-                                                    'group_id': group_id})
+        bind_error = PulpCodedException(PLP0004,
+                                        repo_id=repo_id,
+                                        distributor_id=distributor_id,
+                                        group_id=group_id)
         bind_error.child_exceptions = bind_errors
 
     return TaskResult({}, bind_error, additional_tasks)
@@ -110,10 +110,10 @@ def unbind(group_id, repo_id, distributor_id, options):
 
     bind_error = None
     if len(bind_errors) > 0:
-        bind_error = PulpCodedException(error_code=PLP0005,
-                                        error_data={'repo_id': repo_id,
-                                                    'distributor_id': distributor_id,
-                                                    'group_id': group_id})
+        bind_error = PulpCodedException(PLP0005,
+                                        repo_id=repo_id,
+                                        distributor_id=distributor_id,
+                                        group_id=group_id)
         bind_error.child_exceptions = bind_errors
     return TaskResult({}, bind_error, additional_tasks)
 

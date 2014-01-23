@@ -146,6 +146,9 @@ class PollingCommand(PulpCliCommand):
                     self.task_header(task)
 
                 task = self._poll_task(task)
+                if isinstance(task.spawned_tasks, list):
+                    task_list.extend(task.spawned_tasks)
+
                 completed_task_list.append(task)
 
                 # Display the appropriate message based on the result of the task

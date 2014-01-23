@@ -95,17 +95,17 @@ class PulpCodedException(PulpException):
     """
     Base class for exceptions that put the error_code and data as init arguments
     """
-    def __init__(self, error_code=error_codes.PLP0001, error_data=None):
+    def __init__(self, error_code=error_codes.PLP0001, **kwargs):
         super(PulpCodedException, self).__init__()
         self.error_code = error_code
-        if error_data:
-            self.error_data = error_data
+        if kwargs:
+            self.error_data = kwargs
         # Validate that the coded exception was raised with all the error_data fields that
         # are required
         for key in self.error_code.required_fields:
             if not key in self.error_data:
-                raise PulpCodedException(error_codes.PLP0008, {'code': self.error_code.code,
-                                                               'field': key})
+                raise PulpCodedException(error_codes.PLP0008, code=self.error_code.code,
+                                         field=key)
 
     def __str__(self):
         msg = self.error_code.message % self.error_data

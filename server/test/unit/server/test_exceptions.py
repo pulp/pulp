@@ -75,18 +75,18 @@ class TestPulpCodedException(unittest.TestCase):
         Test to ensure that the fields required by the error code are available in the error
         data.
         """
-        PulpCodedException(error_codes.PLP0000, {'message': 'foo message', 'extra_field': 'bar'})
+        PulpCodedException(error_codes.PLP0000, message='foo message', extra_field='bar')
 
     def test_field_validation_fails(self):
         """
         Test to ensure that the fields required by the error code are available in the error
         data.
         """
-        self.assertRaises(PulpCodedException, PulpCodedException, error_codes.PLP0000, {})
+        self.assertRaises(PulpCodedException, PulpCodedException, error_codes.PLP0000, baz='q')
 
     def test_field_validation_fails_data_none(self):
         """
         Test to ensure that the fields required by the error code are available in the error
         data.
         """
-        self.assertRaises(PulpCodedException, PulpCodedException, error_codes.PLP0000, None)
+        self.assertRaises(PulpCodedException, PulpCodedException, error_codes.PLP0000)
