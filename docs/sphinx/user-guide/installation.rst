@@ -64,11 +64,6 @@ exceeds the amount of data actually stored in the database. This is normal
 (but admittedly surprising) behavior for MongoDB. As such, make sure you
 allocate plenty of storage within ``/var/lib/mongodb``.
 
-To host Pulp's content units on an **NFS share**, please mount that share at
-``/var/lib/pulp/content``, and not at ``/var/lib/pulp``. Because parts of Pulp
-use transient sqlite databases, and sqlite is known to have problems working over
-NFS, it is important to mount an NFS share only in the ``content`` directory.
-
 Repositories
 ------------
 
@@ -148,6 +143,10 @@ Server
 
     $ sudo yum groupinstall pulp-server
 
+   .. warning::
+      Each host that participates in the distributed Pulp application will need to have access to a
+      shared /var/lib/pulp filesystem, including both the web servers and the task workers.
+
 #. For each host that you've installed the Pulp server on, edit ``/etc/pulp/server.conf``. Most
    defaults will work, but these are sections you might consider looking at before proceeding. Each
    section is documented in-line.
@@ -175,6 +174,8 @@ Server
 
     $ sudo systemctl enable httpd
     $ sudo systemctl start httpd
+
+   .. _distributed_workers_installation:
 
 #. Pulp has a distributed task system that uses `Celery <http://www.celeryproject.org/>`_.
    Begin by configuring, enabling and starting the Pulp workers on each host that you wish to
