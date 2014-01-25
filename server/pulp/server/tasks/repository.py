@@ -16,7 +16,6 @@ import logging
 import celery
 
 from pulp.common.tags import resource_tag, action_tag
-from pulp.server.async.tasks import Task
 from pulp.server.constants import REPO_RESOURCE_PREFIX
 from pulp.server.dispatch.constants import RESOURCE_REPOSITORY_TYPE
 from pulp.server.managers.repo import publish as publish_manager

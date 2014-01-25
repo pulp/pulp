@@ -20,9 +20,7 @@ import time
 from celery.schedules import schedule
 
 from pulp.common import dateutils
-from pulp.server.compat import json, json_util
 from pulp.server.db import connection
-from pulp.server.db.model.dispatch import ScheduledCall
 
 
 def migrate(*args, **kwargs):
@@ -30,12 +28,23 @@ def migrate(*args, **kwargs):
     importer_collection = connection.get_collection('repo_importers')
     distributor_collection = connection.get_collection('repo_distributors')
 
-    map(functools.partial(convert_schedules, schedule_collection.save), schedule_collection.find())
+    map(functools.partial(convert_schedule, schedule_collection.save), schedule_collection.find())
     move_scheduled_syncs(importer_collection, schedule_collection)
     move_scheduled_publishes(distributor_collection, schedule_collection)
 
 
 def move_scheduled_syncs(importer_collection, schedule_collection):
+    """
+    Searches importers to determine which have references to a schedule,
+    removes those references, and adds the appropriate resource_id to the
+    schedule.
+
+    :param importer_collection: collection where importers are stored
+    :type  importer_collection: pulp.server.db.connection.PulpCollection
+    :param schedule_collection: collection where schedules are stored
+    :type  schedule_collection: pulp.server.db.connection.PulpCollection
+    """
+
     # iterate over all importers looking for those with scheduled syncs
     for importer in importer_collection.find(fields=['scheduled_syncs', 'id', 'repo_id']):
         scheduled_syncs = importer.get('scheduled_syncs')
@@ -53,6 +62,17 @@ def move_scheduled_syncs(importer_collection, schedule_collection):
 
 
 def move_scheduled_publishes(distributor_collection, schedule_collection):
+    """
+    Searches distributors to determine which have references to a schedule,
+    removes those references, and adds the appropriate resource_id to the
+    schedule.
+
+    :param distributor_collection:  collection where distributors are stored
+    :type  distributor_collection:  pulp.server.db.connection.PulpCollection
+    :param schedule_collection:     collection where schedules are stored
+    :type  schedule_collection:     pulp.server.db.connection.PulpCollection
+    """
+
     # iterate over all distributors looking for those with scheduled publishes
     for distributor in distributor_collection.find(fields=['scheduled_publishes', 'id', 'repo_id']):
         scheduled_publishes = distributor.get('scheduled_publishes')
@@ -69,7 +89,18 @@ def move_scheduled_publishes(distributor_collection, schedule_collection):
     distributor_collection.update({}, {'$unset': {'scheduled_publishes': ''}}, multi=True)
 
 
-def convert_schedules(save_func, call):
+def convert_schedule(save_func, call):
+    """
+    Converts one scheduled call from the old schema to the new
+
+    :param save_func:   a function that takes one parameter, a dictionary that
+                        represents the scheduled call in its new schema. This
+                        function should save the call to the database.
+    :type  save_func:   function
+    :param call:        dictionary representing the scheduled call in its old
+                        schema
+    :type  call:        dict
+    """
     call.pop('call_exit_states', None)
     call['total_run_count'] = call.pop('call_count')
 
@@ -115,8 +146,9 @@ def convert_schedules(save_func, call):
     save_func(call)
 
 
+# keys are old names, values are new names
+# these are the only tasks that have been possible to schedule
 NAMES_TO_TASKS = {
-    # these are the only tasks that have been possible to schedule
     'publish_itinerary': 'pulp.server.tasks.repository.publish',
     'sync_with_auto_publish_itinerary': 'pulp.server.tasks.repository.sync_with_auto_publish',
     'consumer_content_install_itinerary': 'pulp.server.tasks.consumer.install_content',
@@ -125,46 +157,7 @@ NAMES_TO_TASKS = {
 }
 
 
+# in case someone needs to apply this manually
 if __name__ == '__main__':
     connection.initialize()
     migrate()
-
-
-OLD_FORMAT = """
-{
-	"_id" : ObjectId("525844f3e19a001d665f97ea"),
-	"serialized_call_request" : {
-		"control_hooks" : "(lp0\nNa.",
-		"weight" : 0,
-		"tags" : [
-			"pulp:schedule:525844f3e19a001d665f97ea"
-		],
-		"archive" : false,
-		"args" : "(lp0\nVdemo\np1\naVpuppet_distributor\np2\na.",
-		"callable_name" : "publish_itinerary",
-		"schedule_id" : null,
-		"asynchronous" : false,
-		"kwargs" : "(dp0\nS'overrides'\np1\n(dp2\ns.",
-		"execution_hooks" : "(lp0\n(lp1\na(lp2\na(lp3\na(lp4\na(lp5\na(lp6\na(lp7\na.",
-		"call" : "cpulp.server.itineraries.repo\npublish_itinerary\np0\n.",
-		"group_id" : null,
-		"id" : "0220e35a-5dcc-4e0b-a8c7-f332080c0c96",
-		"resources" : {
-
-		},
-		"principal" : "(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns."
-	},
-	"next_run" : ISODate("2013-10-12T13:00:00Z"),
-	"remaining_runs" : null,
-	"first_run" : ISODate("2013-10-12T13:00:00Z"),
-	"schedule" : "2013-10-01T13:00:00Z/P1D",
-	"_ns" : "scheduled_calls",
-	"enabled" : true,
-	"last_run" : null,
-	"failure_threshold" : null,
-	"call_exit_states" : [ ],
-	"consecutive_failures" : 0,
-	"id" : "525844f3e19a001d665f97ea",
-	"call_count" : 0
-}
-"""
