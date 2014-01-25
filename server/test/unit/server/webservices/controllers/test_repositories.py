@@ -8,35 +8,24 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from celery.result import AsyncResult
-from pprint import pformat
 import datetime
 import httplib
+from pprint import pformat
 import re
 import traceback
 import unittest
 import uuid
 
-
-<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
-import mock
-from pulp.common import dateutils, tags, constants
-=======
 from bson import ObjectId
+from celery.result import AsyncResult
 import mock
 
 from pulp.common import dateutils
->>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 from pulp.devel import dummy_plugins, mock_plugins
 from pulp.devel.unit.base import PulpWebservicesTests, MockTaskResult
 from pulp.devel.unit.util import compare_dict
 from pulp.plugins.loader import api as plugin_api
-<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
-from pulp.plugins.model import SyncReport
 from pulp.server.auth import authorization
-from pulp.server.dispatch.call import CallReport
-=======
->>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import UnitProfile, Consumer, Bind, RepoProfileApplicability
@@ -44,28 +33,15 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
                                              RepoSyncResult)
-<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
-from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.dispatch.call import OBFUSCATED_VALUE
 from pulp.server.exceptions import MissingResource, OperationPostponed
-=======
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.itineraries.repository import (
-    repo_delete_itinerary, distributor_delete_itinerary, distributor_update_itinerary,
-    bind_itinerary, unbind_itinerary)
->>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 from pulp.server.async.tasks import TaskResult
 from pulp.server.webservices.controllers import repositories
-<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
-
 
 from .... import base
-=======
-import base
->>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 
 
 class RepoControllersTests(base.PulpWebserviceTests):

@@ -121,7 +121,9 @@ class TestScheduledCallInit(unittest.TestCase):
     def test_create_principal(self):
         call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
 
-        self.assertTrue(isinstance(call.principal, User))
+        # See PrincipalManager.get_principal(). It returns either a User or
+        # a dict. Not my idea.
+        self.assertTrue(isinstance(call.principal, (User, dict)))
 
     def test_no_first_run(self):
         call = ScheduledCall('PT1M', 'pulp.tasks.dosomething')
