@@ -23,7 +23,6 @@ import logging
 from pulp.server.db.model.event import EventListener
 from pulp.server.event import notifiers
 from pulp.server.event import data as e
-from pulp.server.managers import factory
 
 _LOG = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ class EventFireManager(object):
         Fires an event indicating the given repository's distributor has started
         a publish.
         """
-        payload = {'repo_id' : repo_id, 'distributor_id' : distributor_id}
+        payload = {'repo_id': repo_id, 'distributor_id': distributor_id}
         self._do_fire(e.Event(e.TYPE_REPO_PUBLISH_STARTED, payload))
 
     def fire_repo_publish_finished(self, publish_result):

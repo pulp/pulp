@@ -18,15 +18,25 @@ import unittest
 import uuid
 
 
+<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
 import mock
 from pulp.common import dateutils, tags, constants
+=======
+from bson import ObjectId
+import mock
+
+from pulp.common import dateutils
+>>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 from pulp.devel import dummy_plugins, mock_plugins
 from pulp.devel.unit.base import PulpWebservicesTests, MockTaskResult
 from pulp.devel.unit.util import compare_dict
 from pulp.plugins.loader import api as plugin_api
+<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
 from pulp.plugins.model import SyncReport
 from pulp.server.auth import authorization
 from pulp.server.dispatch.call import CallReport
+=======
+>>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import UnitProfile, Consumer, Bind, RepoProfileApplicability
@@ -34,17 +44,28 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
                                              RepoSyncResult)
+<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
 from pulp.server.dispatch import constants as dispatch_constants, factory as dispatch_factory
 from pulp.server.dispatch.call import OBFUSCATED_VALUE
 from pulp.server.exceptions import MissingResource, OperationPostponed
+=======
+from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.itineraries.repository import (
+    repo_delete_itinerary, distributor_delete_itinerary, distributor_update_itinerary,
+    bind_itinerary, unbind_itinerary)
+>>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 from pulp.server.async.tasks import TaskResult
 from pulp.server.webservices.controllers import repositories
+<<<<<<< HEAD:server/test/unit/server/webservices/controllers/test_repositories.py
 
 
 from .... import base
+=======
+import base
+>>>>>>> mhrivnak-sched:server/test/unit/test_server_webservices_controllers_repositories.py
 
 
 class RepoControllersTests(base.PulpWebserviceTests):
@@ -1347,7 +1368,7 @@ class ScheduledSyncTests(RepoPluginsTests):
         self.assertTrue(status == httplib.CREATED, '\n'.join((str(status), pformat(body))))
         for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
                       'consecutive_failures', 'remaining_runs', 'first_run',
-                      'last_run', 'next_run', 'override_config'):
+                      'last_run_at', 'next_run', 'args', 'kwargs'):
             self.assertTrue(field in body, 'missing field: %s' % field)
 
     def test_create_missing_schedule(self):
@@ -1370,9 +1391,17 @@ class ScheduledSyncTests(RepoPluginsTests):
         self.assertTrue(status == httplib.OK)
         self.assertTrue(body is None)
 
-    def test_delete_non_existent(self):
+    def test_delete_schedule_does_not_exist(self):
+        """
+        make sure it doesn't return an error if the schedule doesn't exist. That's
+        what the client wanted anyway!
+        """
+        status, body = self.delete(self.resource_uri_path(str(ObjectId())))
+        self.assertTrue(status == httplib.OK, msg=status)
+
+    def test_delete_invalid_schedule_id(self):
         status, body = self.delete(self.resource_uri_path('not-there'))
-        self.assertTrue(status == httplib.NOT_FOUND)
+        self.assertTrue(status == httplib.BAD_REQUEST, msg=status)
 
     def test_update_schedule(self):
         schedule = {'schedule': 'PT1H',
@@ -1391,8 +1420,10 @@ class ScheduledSyncTests(RepoPluginsTests):
         status, body = self.put(self.resource_uri_path(schedule_id), updates)
         self.assertTrue(status == httplib.OK, '\n'.join((str(status), pformat(body))))
         self.assertTrue(schedule_id == body['_id'])
-        for key in updates:
-            self.assertTrue(updates[key] == body[key], key)
+        self.assertEqual(body['schedule'], updates['schedule'])
+        self.assertEqual(body['failure_threshold'], updates['failure_threshold'])
+        self.assertEqual(body['enabled'], updates['enabled'])
+        self.assertEqual(body['kwargs']['overrides'], updates['override_config'])
 
 # scheduled publish api --------------------------------------------------------
 
@@ -1429,7 +1460,7 @@ class ScheduledPublishTests(RepoPluginsTests):
         self.assertTrue(params['schedule'] == body['schedule'])
         for field in ('_id', '_href', 'schedule', 'failure_threshold', 'enabled',
                       'consecutive_failures', 'remaining_runs', 'first_run',
-                      'last_run', 'next_run', 'override_config'):
+                      'last_run_at', 'next_run', 'args', 'kwargs'):
             self.assertTrue(field in body, 'missing field: %s' % field)
 
     def test_create_missing_schedule(self):
@@ -1453,8 +1484,16 @@ class ScheduledPublishTests(RepoPluginsTests):
         self.assertTrue(body is None)
 
     def test_delete_non_existent(self):
+        """
+        make sure it doesn't return an error if the schedule doesn't exist. That's
+        what the client wanted anyway!
+        """
+        status, body = self.delete(self.resource_uri_path(str(ObjectId())))
+        self.assertTrue(status == httplib.OK)
+
+    def test_delete_invalid_schedule_id(self):
         status, body = self.delete(self.resource_uri_path('not-there'))
-        self.assertTrue(status == httplib.NOT_FOUND)
+        self.assertTrue(status == httplib.BAD_REQUEST)
 
     def test_update_schedule(self):
         schedule = {'schedule': 'PT1H',
@@ -1473,8 +1512,11 @@ class ScheduledPublishTests(RepoPluginsTests):
         status, body = self.put(self.resource_uri_path(schedule_id), updates)
         self.assertTrue(status == httplib.OK, '\n'.join((str(status), pformat(body))))
         self.assertTrue(schedule_id == body['_id'])
-        for key in updates:
-            self.assertTrue(updates[key] == body[key], key)
+        self.assertEqual(body['schedule'], updates['schedule'])
+        self.assertEqual(body['failure_threshold'], updates['failure_threshold'])
+        self.assertEqual(body['enabled'], updates['enabled'])
+        self.assertEqual(body['kwargs']['overrides'], updates['override_config'])
+
 
 class UnitCriteriaTests(unittest.TestCase):
 

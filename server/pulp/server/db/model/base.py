@@ -118,8 +118,8 @@ class Model(dict):
     def get_collection(cls):
         """
         Get the document collection for this data model.
-        @rtype: pymongo.collection.Collection instance or None
-        @return: the document collection if associated with one, None otherwise
+        :return: the document collection if associated with one, None otherwise
+        :rtype: pymongo.collection.Collection instance or None
         """
         # not all data models are associated with a document collection
         # provide mechanism for sub-documents by not defining the

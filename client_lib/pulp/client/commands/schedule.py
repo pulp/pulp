@@ -232,7 +232,7 @@ class NextRunCommand(PulpCliCommand):
     def run(self, **kwargs):
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
 
-        if len(schedules) is 0:
+        if len(schedules) == 0:
             self.context.prompt.render_paragraph(_('There are no schedules defined for this operation.'))
             return
 
