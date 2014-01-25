@@ -18,7 +18,6 @@ need to execute syncs asynchronously must be handled at a higher layer.
 """
 
 import datetime
-import pickle
 import isodate
 import logging
 import sys
@@ -34,7 +33,6 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils

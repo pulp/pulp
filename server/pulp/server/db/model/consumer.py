@@ -61,6 +61,14 @@ class Consumer(Model):
 
     @classmethod
     def build_resource_tag(cls, consumer_id):
+        """
+        :param consumer_id: unique ID for a consumer
+        :type  consumer_id: basestring
+
+        :return:    a globally unique identifier for the consumer that can be
+                    used in cross-type comparisons.
+        :rtype:     basestring
+        """
         return cls.RESOURCE_TEMPLATE % consumer_id
 
 

@@ -50,7 +50,6 @@ class Repo(Model):
                     either set by the user or by an importer or distributor
     @type metadata: dict
     """
-    RESOURCE_TEMPLATE = 'pulp:repo:%s:%s'
 
     collection_name = 'repos'
     unique_indices = ('id',)
@@ -123,6 +122,16 @@ class RepoImporter(Model):
 
     @classmethod
     def build_resource_tag(cls, repo_id, importer_id):
+        """
+        :param repo_id:     unique ID for a repository
+        :type  repo_id:     basestring
+        :param importer_id: unique ID for the importer
+        :type  importer_id: basestring
+
+        :return:    a globally unique identifier for the repo and importer that
+                    can be used in cross-type comparisons.
+        :rtype:     basestring
+        """
         return cls.RESOURCE_TEMPLATE % (repo_id, importer_id)
 
 
@@ -179,6 +188,16 @@ class RepoDistributor(Model):
 
     @classmethod
     def build_resource_tag(cls, repo_id, distributor_id):
+        """
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for the importer
+        :type  distributor_id:  basestring
+
+        :return:    a globally unique identifier for the repo and distributor that
+                    can be used in cross-type comparisons.
+        :rtype:     basestring
+        """
         return cls.RESOURCE_TEMPLATE % (repo_id, distributor_id)
 
 

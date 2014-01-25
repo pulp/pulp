@@ -11,11 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from datetime import datetime
-import pickle
-
-from pulp.common import dateutils
-
 
 def task_result_href(task):
     if task.get('task_id'):

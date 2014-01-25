@@ -37,9 +37,7 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'qpid-cpp-server',
     'qpid-cpp-client',
     'qpid-cpp-client-ssl',
-    'qpid-cpp-client-rdma',
-    'rabbitmq-server'
-  ]
+    'qpid-cpp-client-rdma']
 
   $pulp_server_packages = [
     'acl',
