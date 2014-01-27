@@ -8,6 +8,8 @@ Pulp 2.4.0
 New Features
 ------------
 
+#. An all-new distributed task system based on `Celery <http://celeryproject.org>`_.
+#. All of ``/var/lib/pulp`` can now be a shared filesystem.
 #. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
    version 2.5.2.
 #. Publishing Puppet repositories to flattened directories.
@@ -42,8 +44,52 @@ The ScheduledCall model has changed a lot. TODO: add details
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
 
-To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the latest RPMs
-from the Pulp repository and run the database migrations::
+To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
+latest RPMs from the Pulp repository and run the database migrations::
 
     $ sudo yum upgrade
     $ sudo pulp-manage-db
+
+Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
+about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need
+to enable Pulp's workers on at least one machine. Edit ``/etc/default/pulp_workers`` to your liking,
+and that enable and start the ``pulp_workers`` service. For Upstart systems::
+
+    $ sudo chkconfig pulp_workers on
+    $ sudo service pulp_workers start
+
+For systemd systems::
+
+    $ sudo systemctl enable pulp_workers
+    $ sudo systemctl start pulp_workers
+
+.. warning::
+   If you distribute Pulp across more than one server either through load balancing the HTTP
+   requests, or through running pulp_workers on more than one machine, it is very important that you
+   provide ``/var/lib/pulp`` as a shared filesystem to each host that is participating in the Pulp
+   installation.
+
+There are two more services that need to be running, but it is very important that only one instance
+of each of these runs across the entire Pulp installation.
+
+.. warning::
+   ``pulp_celerybeat`` and ``pulp_resource_manager`` must both be singletons, so be sure that
+   you only enable each of these on one host. They do not have to run on the same host, however.
+   Note that each Pulp child node will also need its own instance of each of these services, as
+   a Pulp child node is technically a separate distributed application from its parent.
+
+One the host(s) that will run these two services (they do not have to run on the same host), edit
+``/etc/default/pulp_celerybeat`` and ``/etc/default/pulp_resource_manager`` to your liking. Then
+enable and start the services. For Upstart::
+
+    $ sudo chkconfig pulp_celerybeat on
+    $ sudo service pulp_celerybeat start
+    $ sudo chkconfig pulp_resource_manager on
+    $ sudo service pulp_resource_manager start
+
+For systemd::
+
+    $ sudo systemctl enable pulp_celerybeat
+    $ sudo systemctl start pulp_celerybeat
+    $ sudo systemctl enable pulp_resource_manager
+    $ sudo systemctl start pulp_resource_manager

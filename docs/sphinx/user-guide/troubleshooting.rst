@@ -5,11 +5,20 @@ Troubleshooting
 Log File Locations
 ------------------
 
-/var/log/pulp/pulp.log
-  Pulp server logs its activity here
+/var/log/pulp/celerybeat.log
+  Celery beat log
 
 /var/log/pulp/db.log
   Database log
+
+/var/log/pulp/pulp.log
+  Pulp server logs its activity here
+
+/var/log/pulp/reserved_resource_worker-\*.log
+  There will be one of these per task worker
+
+/var/log/pulp/resource_manager.log
+  The special resource manager worker's log
 
 /var/log/httpd/error_log
   This is where Apache will log errors that the Pulp server itself did not
