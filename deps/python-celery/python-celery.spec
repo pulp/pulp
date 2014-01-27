@@ -144,6 +144,9 @@ popd
 
 
 %changelog
+* Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.1.7-1
+- new package built with tito
+
 * Tue Jan 07 2014 Randy Barlow <rbarlow@redhat.com> - 3.1.7-1
 - update to 3.1.7, add dependency on pytz, and adapt for Pulp usage.
 
