@@ -34,11 +34,16 @@ def compare_dict(source, target):
     target_keys = set(target.keys())
 
     if source_keys != target_keys:
-        raise AssertionError("Dictionaries do not match.  Keys are different")
+        keys_info = {'source': ', '.join(map(str, source_keys)),
+                     'target': ', '.join(map(str, target_keys))}
+        raise AssertionError("Dictionaries do not match.  Keys are different: "
+                             "[%(source)s] vs [%(target)s]" % keys_info)
 
     for key in source_keys:
         if source[key] != target[key]:
-            raise AssertionError("Dictionaries do not match.  Value mismatch for key %s" % key)
+            raise AssertionError("Dictionaries do not match.  Value mismatch for key %(key)s.  "
+                                 "%(value1)s is not equal to %(value2)s" %
+                                 {'key': key, 'value1': source[key], 'value2': target[key]})
 
 
 def compare_element(source, target):

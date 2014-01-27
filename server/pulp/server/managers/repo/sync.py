@@ -171,7 +171,7 @@ class RepoSyncManager(object):
 
             logger.exception(
                 _('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
-            raise PulpExecutionException(), None, sys.exc_info()[2]
+            raise
 
         else:
             sync_end_timestamp = _now_timestamp()

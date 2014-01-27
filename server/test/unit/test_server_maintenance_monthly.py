@@ -26,10 +26,10 @@ class TestMain(unittest.TestCase):
     Test the main() function.
     """
     @mock.patch('pulp.server.maintenance.monthly.RepoProfileApplicabilityManager.remove_orphans')
-    def test_main_calls_remove_orphans(self, remove_orphans):
+    def test_monthly_maintenance_calls_remove_orphans(self, remove_orphans):
         """
         Assert that the main() function calls remove_orphans.
         """
-        monthly.main()
+        monthly.monthly_maintenance()
 
         remove_orphans.assert_called_once_with()

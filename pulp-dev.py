@@ -182,7 +182,7 @@ def getlinks():
             src, dst = apache_22_conf
 
         links.append((src, dst))
-    
+
     return links
 
 
@@ -209,9 +209,10 @@ def install(opts):
     os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
     os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
-    # Update for certs
-    os.system('chown -R apache:apache /etc/pki/pulp')
+    # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
+    # those world readable. Until we fix this, we cannot close #1048297
     os.system('chmod 644 /etc/pki/pulp/ca.*')
+    os.system('chown apache:apache /etc/pki/pulp/content')
 
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2011-2013 Red Hat, Inc.
+# Copyright © 2011-2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -11,12 +11,25 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import calendar
 from datetime import datetime
+import logging
+import pickle
+import time
+
+from bson import ObjectId
+from celery import beat
+from celery.schedules import schedule as CelerySchedule
+from celery.utils.timeutils import timedelta_seconds
+import isodate
 
 from pulp.common import dateutils
-from pulp.common.tags import resource_tag
+from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model.base import Model
-from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.managers import factory
+
+
+logger = logging.getLogger(__name__)
 
 
 class CallResource(Model):
@@ -70,35 +83,371 @@ class ScheduledCall(Model):
     """
     Serialized scheduled call request
     """
+    USER_UPDATE_FIELDS = frozenset(['iso_schedule', 'args', 'kwargs', 'enabled',
+                          'failure_threshold'])
 
     collection_name = 'scheduled_calls'
     unique_indices = ()
-    search_indices = ('serialized_call_request.tags', 'last_run', 'next_run')
+    search_indices = ('resource', 'last_updated')
 
-    def __init__(self, call_request, schedule, failure_threshold=None, last_run=None, enabled=True):
-        super(ScheduledCall, self).__init__()
 
-        # add custom scheduled call tag to call request
-        schedule_tag = resource_tag(dispatch_constants.RESOURCE_SCHEDULE_TYPE, str(self._id))
-        call_request.tags.append(schedule_tag)
+    def __init__(self, iso_schedule, task, total_run_count=0, next_run=None,
+                 schedule=None, args=None, kwargs=None, principal=None, last_updated=None,
+                 consecutive_failures=0, enabled=True, failure_threshold=None,
+                 last_run_at=None, first_run=None, remaining_runs=None, id=None,
+                 tags=None, name=None, options=None, resource=None):
+        """
+        :param iso_schedule:        string representing the schedule in ISO8601 format
+        :type  iso_schedule:        basestring
+        :param task:                the task that should be run on a schedule. This
+                                    can be an instance of a celery task or the name
+                                    of the task, as taken from a task's "name" attribute
+        :type  task:                basestring or celery.Task
+        :param total_run_count:     total number of times this schedule has run
+        :type  total_run_count:     int
+        :param next_run:            ignored, because it is always re-calculated at instantiation
+        :param schedule:            pickled instance of celery.schedules.schedule,
+                                    representing the schedule that should be run.
+                                    This is optional.
+        :type  schedule:            basestring or None
+        :param args:                list of arguments that should be passed to the
+                                    task's apply_async function as its "args" argument
+        :type  args:                list
+        :param kwargs:              dict of keyword arguments that should be passed to the task's apply_async
+                                    function as its "kwargs" argument
+        :type  kwargs:              dict
+        :param principal:           pickled instance of pulp.server.db.model.auth.User
+                                    representing the pulp user who the task
+                                    should be run as. This is optional.
+        :type  principal:           basestring or None
+        :param last_updated:        timestamp for the last time this schedule was updated in the database as
+                                    seconds since the epoch
+        :type  last_updated:        float
+        :param consecutive_failures:    number of times this task has failed consecutively. This gets reset to
+                                        zero if the task succeeds.
+        :type  consecutive_failures:    int
+        :param enabled:             boolean indicating whether this schedule should be actively run by the
+                                    scheduler. If False, the schedule will be ignored.
+        :type  enabled:             bool
+        :param failure_threshold:   number of consecutive failures after which this task should be
+                                    automatically disabled. Because these tasks run asynchronously, they may
+                                    finish in a different order than they were queued in. Thus, it is possible
+                                    that n consecutive failures will be reported by jobs that were not queued
+                                    consecutively. So do not depend on the queuing order when using this
+                                    feature. If this value is 0, no automatic disabling will occur.
+        :type  failure_threshold:   int
+        :param last_run_at:         ISO8601 string representing when this schedule last ran.
+        :type  last_run_at:         basestring
+        :param first_run:           ISO8601 string or datetime instance (in UTC timezone) representing when
+                                    this schedule should run or should have been run for the first time. If
+                                    the schedule has a specified date and time to start, this will be that
+                                    value. If not, the value from the first time the schedule was actually run
+                                    will be used.
+        :type  first_run:           basestring or datetime.datetime or NoneType
+        :param remaining_runs:      number of runs remaining until this schedule will be automatically
+                                    disabled.
+        :type  remaining_runs:      int or NoneType
+        :param id:                  unique ID used by mongodb to identify this schedule
+        :type  id:                  basestring
+        :param tags:                ignored, but allowed to exist as historical
+                                    data for now
+        :param name:                ignored, because the "id" value is used for this now. The value is here
+                                    for backward compatibility.
+        :param options:             dictionary that should be passed to the apply_async function as its
+                                    "options" argument.
+        :type  options:             dict
+        :param resource:            optional string indicating a unique resource that should be used to find
+                                    this schedule. For example, to find all schedules for a given repository,
+                                    a resource string will be derived for that repo, and this collection will
+                                    be searched for that resource string.
+        :type  resource:            basestring
+        """
+        if id is None:
+            # this creates self._id and self.id
+            super(ScheduledCall, self).__init__()
+            self._new = True
+        else:
+            self.id = id
+            self._id = ObjectId(id)
+            self._new = False
 
-        self.serialized_call_request = call_request.serialize()
+        if hasattr(task, 'name'):
+            task = task.name
 
-        self.schedule = schedule
+        # generate this if it wasn't passed in
+        if schedule is None:
+            interval, start_time, occurrences = dateutils.parse_iso8601_interval(iso_schedule)
+            schedule = pickle.dumps(CelerySchedule(interval))
+
+        # generate this if it wasn't passed in
+        principal = principal or factory.principal_manager().get_principal()
+
+        self.args = args or []
+        self.consecutive_failures = consecutive_failures
         self.enabled = enabled
-
         self.failure_threshold = failure_threshold
-        self.consecutive_failures = 0
+        self.iso_schedule = iso_schedule
+        self.kwargs = kwargs or {}
+        self.last_run_at = last_run_at
+        self.last_updated = last_updated or time.time()
+        self.name = id
+        self.options = options or {}
+        self.principal = principal
+        self.resource = resource
+        self.schedule = schedule
+        self.task = task
+        self.total_run_count = total_run_count
 
-        # scheduling fields
-        self.first_run = None # will be calculated and set by the scheduler
-        self.last_run = last_run and dateutils.to_naive_utc_datetime(last_run)
-        self.next_run = None # will be calculated and set by the scheduler
-        self.remaining_runs = dateutils.parse_iso8601_interval(schedule)[2]
+        if first_run is None:
+            # get the date and time from the iso_schedule value, and if it does not have a date and time, use
+            # the current date and time
+            self.first_run = dateutils.format_iso8601_datetime(
+                dateutils.parse_iso8601_interval(iso_schedule)[1] or
+                datetime.utcnow().replace(tzinfo=isodate.UTC))
+        elif isinstance(first_run, datetime):
+            self.first_run = dateutils.format_iso8601_datetime(first_run)
+        else:
+            self.first_run = first_run
+        if remaining_runs is None:
+            self.remaining_runs = dateutils.parse_iso8601_interval(iso_schedule)[2]
+        else:
+            self.remaining_runs = remaining_runs
 
-        # run-time call group metadata for tracking success or failure
-        self.call_count = 0
-        self.call_exit_states = []
+        self.next_run = self.calculate_next_run()
+
+    @classmethod
+    def from_db(cls, call):
+        """
+        Creates an instance of this class based on a document retrieved from
+        the database
+
+        :param call:    document retrieved directly from the database
+        :type  call:    bson.BSON
+
+        :return:    An instance of ScheduledCall based on the values passed in
+                    the "call" object.
+        :rtype:     ScheduledCall
+        """
+        _id = call.pop('_id', None)
+        if _id:
+            call['id'] = str(_id)
+        call.pop('_ns', None)
+        return cls(**call)
+
+    def as_schedule_entry(self):
+        """
+        Creates a ScheduleEntry instance that can be used by the base scheduler
+        class that comes with celery.
+
+        :return:    a ScheduleEntry instance based on this object
+        :rtype:     celery.beat.ScheduleEntry
+        """
+        if not self.last_run_at:
+            last_run = None
+        else:
+            last_run = dateutils.parse_iso8601_datetime(self.last_run_at)
+        return ScheduleEntry(self.name, self.task, last_run, self.total_run_count,
+                             pickle.loads(self.schedule), self.args, self.kwargs,
+                             self.options, False, scheduled_call=self)
+
+    def as_dict(self):
+        """
+        Represent this object as a dictionary, which is useful for serialization.
+
+        :return:    dictionary of public keys and values
+        :rtype:     dict
+        """
+        return {
+            '_id': str(self._id),
+            'args': self.args,
+            'consecutive_failures': self.consecutive_failures,
+            'enabled': self.enabled,
+            'failure_threshold': self.failure_threshold,
+            'first_run': self.first_run,
+            'kwargs': self.kwargs,
+            'iso_schedule': self.iso_schedule,
+            'last_run_at': self.last_run_at,
+            'last_updated': self.last_updated,
+            'next_run': self.calculate_next_run(),
+            'principal': self.principal,
+            'remaining_runs': self.remaining_runs,
+            'resource': self.resource,
+            'schedule': self.schedule,
+            'task': self.task,
+            'total_run_count': self.total_run_count,
+        }
+
+    def for_display(self):
+        """
+        Represent this object as a dictionary, which is useful for serializing
+        to json, such as when returning this record through a REST API. This also
+        removes the "principal" for security and renames "iso_schedule" to
+        "schedule" for historical compatibility.
+
+        :return:    dictionary of public keys and values minus the "principal",
+                    which may be sensitive from a security standpoint, and
+                    renaming "iso_schedule" to "schedule" for historical
+                    compatibility.
+        :rtype:     dict
+        """
+        ret = self.as_dict()
+        del ret['principal']
+        # preserving external API compatibility
+        ret['schedule'] = ret.pop('iso_schedule')
+        return ret
+
+    def save(self):
+        """
+        Saves the current instance to the database
+        """
+        if self._new:
+            as_dict = self.as_dict()
+            as_dict['_id'] = ObjectId(as_dict['_id'])
+            self.get_collection().insert(as_dict, safe=True)
+            self._new = False
+        else:
+            as_dict = self.as_dict()
+            del as_dict['_id']
+            self.get_collection().update({'_id': ObjectId(self.id)}, as_dict)
+
+    def _calculate_times(self):
+        """
+        Calculates and returns several time-related values that tend to be needed
+        at the same time.
+
+        :return:    tuple of numbers described below...
+                    now_s: current time as seconds since the epoch
+                    first_run_s: time of the first run as seconds since the epoch,
+                        calculated based on self.first_run
+                    since_first_s: how many seconds have elapsed since the first
+                        run
+                    run_every_s: how many seconds should elapse between runs of
+                        this schedule
+                    last_scheduled_run_s: the most recent time at which this
+                        schedule should have run based on its schedule, as
+                        seconds since the epoch
+                    expected_runs: number of runs that should have happened based
+                        on the first_run time and the interval
+        :rtype:     tuple
+
+        """
+        now_s = time.time()
+        first_run_dt = dateutils.to_utc_datetime(dateutils.parse_iso8601_datetime(self.first_run))
+        first_run_s = calendar.timegm(first_run_dt.utctimetuple())
+        since_first_s = now_s - first_run_s
+        run_every_s = timedelta_seconds(self.as_schedule_entry().schedule.run_every)
+        # don't want this to be negative
+        expected_runs = max(int(since_first_s/run_every_s), 0)
+        last_scheduled_run_s = first_run_s + expected_runs * run_every_s
+
+        return now_s, first_run_s, since_first_s, run_every_s, last_scheduled_run_s, expected_runs
+
+    def calculate_next_run(self):
+        """
+        This algorithm starts by determining when the first call was or should
+        have been. If that is in the future, it just returns that time. If not,
+        it adds as many intervals as it can without exceeding the current time,
+        adds one more interval, and returns the result.
+
+        For a schedule with no historically-recorded or scheduled start time,
+        it will run immediately.
+
+        :return:    ISO8601 string representing the next time this call should run.
+        :rtype:     str
+        """
+        now_s, first_run_s, since_first_s, run_every_s, \
+                last_scheduled_run_s, expected_runs = self._calculate_times()
+
+        # if first run is in the future, return that time
+        if first_run_s > now_s:
+            next_run_s = first_run_s
+        # if I've never run before and my first run is not in the future, run now!
+        elif self.total_run_count == 0:
+            next_run_s = now_s
+        else:
+            next_run_s = last_scheduled_run_s + run_every_s
+
+        return dateutils.format_iso8601_utc_timestamp(next_run_s)
+
+
+class ScheduleEntry(beat.ScheduleEntry):
+    def __init__(self, *args, **kwargs):
+        """
+        This saves the "scheduled_call" argument on the current instance,
+        removes it from kwargs, and passes what is left into the superclass
+        constructor.
+
+        :param scheduled_call:  the scheduled call that produced this instance
+        :type  scheduled_call:  pulp.server.db.model.dispatch.ScheduledCall
+        """
+        self._scheduled_call = kwargs.pop('scheduled_call')
+        kwargs['app'] = app
+        super(ScheduleEntry, self).__init__(*args, **kwargs)
+
+    def _next_instance(self, last_run_at=None):
+        """
+        Returns an instance of this class with the appropriate fields incremented
+        and updated to reflect that its task has been queued. The parent
+        ScheduledCall gets saved to the database with these updated values.
+
+        :param last_run_at: not used here, but it is part of the superclass
+                            function signature
+
+        :return:    a new instance of the same class, but with
+                    its date and count fields updated.
+        :rtype:     pulp.server.db.model.dispatch.ScheduleEntry
+        """
+        self._scheduled_call.last_run_at = dateutils.format_iso8601_utc_timestamp(time.time())
+        self._scheduled_call.total_run_count += 1
+        if self._scheduled_call.remaining_runs:
+            self._scheduled_call.remaining_runs -= 1
+        if self._scheduled_call.remaining_runs == 0:
+            logger.info('disabling schedule with 0 remaining runs: %s' % self._scheduled_call.id)
+            self._scheduled_call.enabled = False
+        self._scheduled_call.save()
+        return self._scheduled_call.as_schedule_entry()
+
+    __next__ = next = _next_instance
+
+    def is_due(self):
+        """
+        Determines if this schedule entry should be executed right now
+
+        :return:    tuple where the first item is:
+                        - True if this entry should be run right now, else False
+                    and the second item is:
+                        - number of seconds before this entry should next run,
+                          not including an immediate run. Put another way, this
+                          should never be 0
+        :rtype:     tuple of (bool, number)
+        """
+        now_s, first_run_s, since_first_s, run_every_s, \
+                last_scheduled_run_s, expected_runs = self._scheduled_call._calculate_times()
+
+        # seconds remaining until the next time this should run, not counting
+        # whether it gets run now or not
+        remaining_s = last_scheduled_run_s + run_every_s - now_s
+
+        # if the first run is in the future, don't run it now
+        if since_first_s < 0:
+            logger.debug('not running task %s: first run is in the future' % self.name)
+            return False, -since_first_s
+        # if it hasn't run before, run it now
+        if not (self.total_run_count and self.last_run_at):
+            logger.debug('running task %s: it has never run before' % self.name)
+            return True, remaining_s
+
+        last_run_s = calendar.timegm(self.last_run_at.utctimetuple())
+
+        # is this hasn't run since the most recent scheduled run, then run now
+        if last_run_s < last_scheduled_run_s:
+            logger.debug('running task %s: it has been %d seconds since last run' % (
+                         self.name, now_s - last_run_s))
+            return True, remaining_s
+        else:
+            logger.debug('not running task %s: %d seconds remaining' % (
+                         self.name, remaining_s))
+            return False, remaining_s
 
 
 class ArchivedCall(Model):
@@ -138,13 +487,17 @@ class TaskStatus(Model):
     :type finish_time: datetime.datetime
     :ivar queue:       The queue that the Task was queued in
     :type queue:       basestring
+    :ivar error: Any errors or collections of errors that occurred while this task was running
+    :type error: dict (created from a PulpException)
+    :ivar spawned_tasks: List of tasks that were spawned during the running of this task
+    :type spawned_tasks: list of str
     """
 
     collection_name = 'task_status'
     unique_indices = ('task_id',)
     search_indices = ('task_id', 'tags', 'state')
 
-    def __init__(self, task_id, queue, tags=None, state=None):
+    def __init__(self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None):
         super(TaskStatus, self).__init__()
 
         self.task_id = task_id
@@ -155,3 +508,5 @@ class TaskStatus(Model):
         self.traceback = None
         self.start_time = None
         self.finish_time = None
+        self.error = error
+        self.spawned_tasks = spawned_tasks

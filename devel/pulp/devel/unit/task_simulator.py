@@ -72,7 +72,8 @@ class TaskSimulator(object):
 
     # -- configuration methods ------------------------------------------------------------------------------
 
-    def add_task_state(self, task_id, state, response=responses.RESPONSE_ACCEPTED, progress_report=None):
+    def add_task_state(self, task_id, state, response=responses.RESPONSE_ACCEPTED,
+                       progress_report=None, spawned_tasks=None):
         """
         Adds a new state entry for the given task ID. If the there are currently no states listed for
         the given ID, this call will cause the new task ID to be created and thus returned from the
@@ -92,6 +93,10 @@ class TaskSimulator(object):
         new_task_dict['progress'] = progress_report
 
         new_task = responses.Task(new_task_dict)
+
+        if isinstance(spawned_tasks, list):
+            new_task.spawned_tasks = copy.copy(spawned_tasks)
+
         task_list_for_id = self.tasks_by_id.setdefault(task_id, [])
         task_list_for_id.insert(0, new_task) # reverse order because popping from the end is more efficient and it will make jconnor happy
 

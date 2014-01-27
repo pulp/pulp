@@ -27,14 +27,13 @@ import sys
 from celery import task
 import pymongo
 
-from pulp.server.async.tasks import Task
+from pulp.server.exceptions import error_codes
+from pulp.server.async.tasks import Task, TaskResult
+from pulp.server.tasks import repository
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, \
-    PulpExecutionException, MultipleOperationsPostponed
-from pulp.server.itineraries.repository import distributor_update_itinerary
-from pulp.server.webservices import execution
+    PulpExecutionException, PulpCodedException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
@@ -219,20 +218,8 @@ class RepoManager(object):
         # will have to look at the server logs for more information.
         error_tuples = [] # tuple of failed step and exception arguments
 
-        # Remove any scheduled activities
-        scheduler = dispatch_factory.scheduler()
-
         importer_manager = manager_factory.repo_importer_manager()
-        importers = importer_manager.get_importers(repo_id)
-        if importers:
-            for schedule_id in importer_manager.list_sync_schedules(repo_id):
-                scheduler.remove(schedule_id)
-
         distributor_manager = manager_factory.repo_distributor_manager()
-        for distributor in distributor_manager.get_distributors(repo_id):
-            for schedule_id in distributor_manager.list_publish_schedules(repo_id,
-                                                                          distributor['id']):
-                scheduler.remove(schedule_id)
 
         # Inform the importer
         importer_coll = RepoImporter.get_collection()
@@ -243,7 +230,7 @@ class RepoManager(object):
             except Exception, e:
                 logger.exception('Error received removing importer [%s] from repo [%s]' % (
                     repo_importer['importer_type_id'], repo_id))
-                error_tuples.append( (_('Importer Delete Error'), e.args) )
+                error_tuples.append(e)
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
@@ -254,7 +241,7 @@ class RepoManager(object):
             except Exception, e:
                 logger.exception('Error received removing distributor [%s] from repo [%s]' % (
                     repo_distributor['id'], repo_id))
-                error_tuples.append( (_('Distributor Delete Error'), e.args))
+                error_tuples.append(e)
 
         # Delete the repository working directory
         repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)
@@ -264,7 +251,7 @@ class RepoManager(object):
             except Exception, e:
                 logger.exception('Error while deleting repo working dir [%s] for repo [%s]' % (
                     repo_working_dir, repo_id))
-                error_tuples.append( (_('Filesystem Cleanup Error'), e.args))
+                error_tuples.append(e)
 
         # Database Updates
         try:
@@ -286,14 +273,16 @@ class RepoManager(object):
             msg = _('Error updating one or more database collections while removing repo [%(r)s]')
             msg = msg % {'r': repo_id}
             logger.exception(msg)
-            error_tuples.append( (_('Database Removal Error'), e.args))
+            error_tuples.append(e)
 
         # remove the repo from any groups it was a member of
         group_manager = manager_factory.repo_group_manager()
         group_manager.remove_repo_from_groups(repo_id)
 
         if len(error_tuples) > 0:
-            raise PulpExecutionException(error_tuples)
+            pe = PulpExecutionException()
+            pe.child_exceptions = error_tuples
+            raise pe
 
     @staticmethod
     def update_repo(repo_id, delta):
@@ -422,6 +411,7 @@ class RepoManager(object):
         :type  distributor_configs: dict, None
 
         :return: updated repository object, same as returned from update_repo
+        :rtype: TaskResult
         """
 
         # Repo Update
@@ -434,25 +424,21 @@ class RepoManager(object):
             importer_manager = manager_factory.repo_importer_manager()
             importer_manager.update_importer_config(repo_id, importer_config)
 
+        errors = []
+        additional_tasks = []
         # Distributor Update
         if distributor_configs is not None:
-            distributor_manager = manager_factory.repo_distributor_manager()
             for dist_id, dist_config in distributor_configs.items():
-                # Update the distributor config to ensure that errors are reported immediately
-                distributor_manager.update_distributor_config(repo_id, dist_id, dist_config)
-                # Use the itinerary to update the bindings on the consumers.
-                # This will duplicate the distributor update command.
-                # The duplication should be removed once we have a tasking system that
-                # supports a better method of tracking grouped tasks
-                call_requests = distributor_update_itinerary(repo_id, dist_id, dist_config)
-                # The requests may not run immediately which is fine.  Since we have
-                # no overall tracking of these requests we  have to eat the exception.
-                try:
-                    execution.execute_multiple(call_requests)
-                except MultipleOperationsPostponed:
-                    pass
+                update_result = repository.distributor_update(repo_id, dist_id, dist_config, None)
+                additional_tasks.extend(update_result.spawned_tasks)
+                errors.append(update_result.error)
 
-        return repo
+        error = None
+        if len(errors) > 0:
+            error = PulpCodedException(error_code=error_codes.PLP0006,
+                                       repo_id=repo_id)
+            error.child_exceptions = errors
+        return TaskResult(repo, error, additional_tasks)
 
     def get_repo_scratchpad(self, repo_id):
         """

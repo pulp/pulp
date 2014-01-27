@@ -25,7 +25,7 @@ from pulp.server.config import config
 
 
 broker_url = config.get('tasks', 'broker_url')
-celery = Celery('tasks', backend='amqp', broker=broker_url)
+celery = Celery('tasks', broker=broker_url)
 
 
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
@@ -34,11 +34,15 @@ CELERYBEAT_SCHEDULE = {
         'task': 'pulp.server.async.tasks.babysit',
         'schedule': timedelta(seconds=60),
         'args': tuple(),
-        'options': {'queue': RESOURCE_MANAGER_QUEUE,},
     },
     'reap_expired_documents': {
         'task': 'pulp.server.db.reaper.reap_expired_documents',
         'schedule': timedelta(days=config.getfloat('data_reaping', 'reaper_interval')),
+        'args': tuple(),
+    },
+    'monthly_maintenance': {
+        'task': 'pulp.server.maintenance.monthly.monthly_maintenance',
+        'schedule': timedelta(days=30),
         'args': tuple(),
     },
 }
@@ -55,8 +59,15 @@ def create_mongo_config():
     :rtype:     dict
     """
     db_name = config.get('database', 'name')
+
+    # celery 3.1 doesn't support multiple seeds, so we just use the first one
     seeds = config.get('database', 'seeds')
-    mongo_config = {'host': seeds, 'database': db_name}
+    seed = seeds.split(',')[0].strip()
+    host = seed.split(':')[0]
+    port = seed.split(':')[1] if ':' in seed else None
+    mongo_config = {'host': host, 'database': db_name}
+    if port:
+        mongo_config['port'] = port
     if config.has_option('database', 'user') and config.has_option('database', 'password'):
         mongo_config['user'] = config.get('database', 'user')
         mongo_config['password'] = config.get('database', 'password')
@@ -64,5 +75,6 @@ def create_mongo_config():
 
 
 celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
+celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())

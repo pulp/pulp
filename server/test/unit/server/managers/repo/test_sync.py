@@ -270,10 +270,12 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.repo_manager.create_repo('gonna-bail')
         self.importer_manager.set_importer('gonna-bail', 'mock-importer', {})
 
-        self.assertRaises(repo_sync_manager.PulpExecutionException, self.sync_manager.sync,
-                          'gonna-bail')
+        # Test
+        self.assertRaises(Exception, self.sync_manager.sync, 'gonna-bail')
 
-        #    Database
+        # Verify
+
+        # Database
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'mock-importer'})
 
         self.assertTrue(repo_importer['last_sync'] is not None)

@@ -289,17 +289,25 @@ class PluginTestBase(WebTest):
 
 class AgentHandlerTest(PluginTestBase):
 
-    @patch('pulp_node.handlers.model.RepositoryBinding.fetch_all',
-           side_effect=error.GetBindingsError(500))
-    def test_node_handler_get_bindings_failed(self, *unused):
+    @patch('pulp_node.handlers.model.RepositoryBinding.fetch_all')
+    def test_node_handler_get_bindings_failed(self, mock_fetch):
         # Setup
         handler = NodeHandler({})
-        # Test & Verify
+        mock_fetch.side_effect = error.GetBindingsError(500)
+        # Test
         options = {
             constants.PARENT_SETTINGS: self.PARENT_SETTINGS,
             constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
         }
-        self.assertRaises(error.GetBindingsError, handler.update, AgentConduit(), [], options)
+        conduit = AgentConduit()
+        report = handler.update(conduit, [], options)
+        # Verify
+        details = report.details
+        errors = details['errors']
+        self.assertFalse(report.succeeded)
+        self.assertEqual(len(errors), 1)
+        self.assertEqual(errors[0]['error_id'], error.GetBindingsError.ERROR_ID)
+        self.assertTrue(errors[0]['details']['http_code'], 500)
 
     @patch('pulp_node.handlers.model.RepositoryBinding.fetch',
            side_effect=error.GetBindingsError(500))

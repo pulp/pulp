@@ -13,13 +13,8 @@
 
 import web
 
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.auth import Permission
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
-from pulp.server.webservices import execution
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
@@ -77,21 +72,15 @@ class UsersCollection(JSONController):
         args = [login]
         kwargs = {'password': password,
                   'name': name}
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
-                action_tag('create')]
-        call_request = CallRequest(manager.create_user, # rbarlow_converted
-                                   args,
-                                   kwargs,
-                                   weight=weight,
-                                   tags=tags,
-                                   kwarg_blacklist=['password'])
-        call_request.creates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
-        user = execution.execute_sync(call_request)
+
+        user = manager.create_user(*args, **kwargs)
+
+        # Add the link to the user
         user_link = serialization.link.child_link_obj(login)
         user.update(user_link)
 
         # Grant permissions
+        user_link = serialization.link.child_link_obj(login)
         permission_manager = managers.permission_manager()
         permission_manager.grant_automatic_permissions_for_resource(user_link['_href'])
 
@@ -117,30 +106,32 @@ class UserResource(JSONController):
         self.process_dictionary_against_whitelist(user, USER_WHITELIST)
         return self.ok(user)
 
-
     @auth_required(DELETE)
     def DELETE(self, login):
+        """
+        Delete a given user object
+        :param login: the login id of the user to delete
+        :type login: str
+        """
 
         manager = managers.user_manager()
-
-        tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
-                action_tag('delete')]
-        call_request = CallRequest(manager.delete_user, # rbarlow_converted
-                                   [login],
-                                   tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
-        result = execution.execute(call_request)
+        result = manager.delete_user(login)
 
         # Delete any existing user permissions given to the creator of the user
         user_link = serialization.link.current_link_obj()['_href']
-        if Permission.get_collection().find_one({'resource' : user_link}):
-            Permission.get_collection().remove({'resource' : user_link}, safe=True)
+        if Permission.get_collection().find_one({'resource': user_link}):
+            Permission.get_collection().remove({'resource': user_link}, safe=True)
 
         return self.ok(result)
 
-
     @auth_required(UPDATE)
     def PUT(self, login):
+        """
+        Update a user
+
+        :param login: the login id of the user to update
+        :type login: str
+        """
 
         # Pull all the user update data
         user_data = self.params()
@@ -148,14 +139,7 @@ class UserResource(JSONController):
 
         # Perform update
         manager = managers.user_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_USER_TYPE, login),
-                action_tag('update')]
-        call_request = CallRequest(manager.update_user, # rbarlow_converted
-                                   [login, delta],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_USER_TYPE, login)
-        result = execution.execute(call_request)
-        result.update(serialization.link.current_link_obj())
+        result = manager.update_user(login, delta)
         self.process_dictionary_against_whitelist(result, USER_WHITELIST)
         return self.ok(result)
 
@@ -171,7 +155,6 @@ class UserSearch(SearchController):
         UsersCollection._process_users(users)
 
         return self.ok(users)
-
 
     @auth_required(READ)
     def POST(self):

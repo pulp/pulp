@@ -10,6 +10,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from celery import task
 
 from pulp.server.db import connection
 from pulp.server.managers.consumer.applicability import RepoProfileApplicabilityManager
@@ -18,8 +19,8 @@ from pulp.server.managers.consumer.applicability import RepoProfileApplicability
 # This module is generally called from the pulp-monthly script, so let's set up the DB connection
 connection.initialize()
 
-
-def main():
+@task
+def monthly_maintenance():
     """
     Perform tasks that should happen on a monthly basis.
     """

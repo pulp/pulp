@@ -93,7 +93,7 @@ class TestContent(PulpItineraryTests):
         self.cancel(call_report.call_request_id)
 
         # verify agent called
-        mock_agent.Admin.cancel.assert_called_with(criteria={'eq': call_report.call_request_id})
+        mock_agent.Admin.cancel.assert_called_with(criteria={'match': {'task_id': call_report.call_request_id}})
 
     def test_update(self):
         # Setup
@@ -150,7 +150,8 @@ class TestContent(PulpItineraryTests):
         self.cancel(call_report.call_request_id)
 
         # verify agent called
-        mock_agent.Admin.cancel.assert_called_with(criteria={'eq': call_report.call_request_id})
+        match_criteria = {'match': {'task_id': call_report.call_request_id}}
+        mock_agent.Admin.cancel.assert_called_with(criteria=match_criteria)
 
     def test_uninstall(self):
         # Setup
@@ -207,4 +208,5 @@ class TestContent(PulpItineraryTests):
         self.cancel(call_report.call_request_id)
 
         # verify agent called
-        mock_agent.Admin.cancel.assert_called_with(criteria={'eq': call_report.call_request_id})
+        match_criteria = {'match': {'task_id': call_report.call_request_id}}
+        mock_agent.Admin.cancel.assert_called_with(criteria=match_criteria)
