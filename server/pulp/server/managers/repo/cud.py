@@ -230,7 +230,7 @@ class RepoManager(object):
             except Exception, e:
                 logger.exception('Error received removing importer [%s] from repo [%s]' % (
                     repo_importer['importer_type_id'], repo_id))
-                error_tuples.append( (_('Importer Delete Error'), e.args) )
+                error_tuples.append(e)
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
@@ -241,7 +241,7 @@ class RepoManager(object):
             except Exception, e:
                 logger.exception('Error received removing distributor [%s] from repo [%s]' % (
                     repo_distributor['id'], repo_id))
-                error_tuples.append( (_('Distributor Delete Error'), e.args))
+                error_tuples.append(e)
 
         # Delete the repository working directory
         repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)
@@ -251,7 +251,7 @@ class RepoManager(object):
             except Exception, e:
                 logger.exception('Error while deleting repo working dir [%s] for repo [%s]' % (
                     repo_working_dir, repo_id))
-                error_tuples.append( (_('Filesystem Cleanup Error'), e.args))
+                error_tuples.append(e)
 
         # Database Updates
         try:
@@ -273,14 +273,16 @@ class RepoManager(object):
             msg = _('Error updating one or more database collections while removing repo [%(r)s]')
             msg = msg % {'r': repo_id}
             logger.exception(msg)
-            error_tuples.append( (_('Database Removal Error'), e.args))
+            error_tuples.append(e)
 
         # remove the repo from any groups it was a member of
         group_manager = manager_factory.repo_group_manager()
         group_manager.remove_repo_from_groups(repo_id)
 
         if len(error_tuples) > 0:
-            raise PulpExecutionException(error_tuples)
+            pe = PulpExecutionException()
+            pe.child_exceptions = error_tuples
+            raise pe
 
     @staticmethod
     def update_repo(repo_id, delta):

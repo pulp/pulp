@@ -27,9 +27,7 @@ from pulp.server.managers.consumer.applicability import regenerate_applicability
 from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
-from pulp.server.itineraries.repo import sync_with_auto_publish_itinerary
 from pulp.server.tasks import repository
-from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -506,9 +504,10 @@ class RepoDistributor(JSONController):
             action_tag('remove_distributor')
         ]
 
-        # TODO change this to reserve the repo before applying the delete
-        async_result = repository.distributor_delete.apply_async((repo_id, distributor_id),
-                                                                 tags=tags)
+        async_result = repository.distributor_delete.apply_async_with_reservation(
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
+            tags=tags)
+
         raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
 
 
@@ -545,10 +544,11 @@ class RepoDistributor(JSONController):
             resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             action_tag('update_distributor')
         ]
-        # TODO change this to reserve the repo before applying the update
-        async_result = repository.distributor_update.apply_async((repo_id, distributor_id, config,
-                                                                  delta), tags=tags)
-        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
+        async_result = repository.distributor_update.apply_async_with_reservation(
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
+            [repo_id, distributor_id, config, delta], tags=tags)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
+                                                       call_request_tags=tags))
 
 
 class PublishScheduleCollection(JSONController):
@@ -703,8 +703,6 @@ class RepoSync(JSONController):
     @auth_required(EXECUTE)
     def POST(self, repo_id):
 
-        # TODO: Add timeout support
-
         # Params
         params = self.params()
         overrides = params.get('override_config', None)
@@ -713,12 +711,16 @@ class RepoSync(JSONController):
         manager_factory.repo_query_manager().get_repository(repo_id)
 
         # Execute the sync asynchronously
-
-        call_requests = sync_with_auto_publish_itinerary(repo_id, overrides)
+        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                action_tag('sync')]
+        async_result = repository.sync_with_auto_publish.apply_async_with_reservation(
+                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                repo_id, [repo_id, overrides], {}, tags=tags)
 
         # this raises an exception that is handled by the middleware,
         # so no return is needed
-        execution.execute_multiple(call_requests)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
+                                                       call_request_tags=tags))
 
 
 class RepoPublish(JSONController):
@@ -728,7 +730,6 @@ class RepoPublish(JSONController):
 
     @auth_required(EXECUTE)
     def POST(self, repo_id):
-
         # validation
         manager = manager_factory.repo_query_manager()
         manager.get_repository(repo_id)
@@ -737,8 +738,9 @@ class RepoPublish(JSONController):
         params = self.params()
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
-
-        return self.ok(repository.publish(repo_id, distributor_id, overrides).id)
+        async_result = repository.publish(repo_id, distributor_id, overrides)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
+                                                       call_requiest_tags=async_result.tags))
 
 
 class RepoAssociate(JSONController):
@@ -785,7 +787,7 @@ class RepoAssociate(JSONController):
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
+        call_report = CallReport.from_task_status(async_result.id, call_request_tags=tags)
         raise exceptions.OperationPostponed(call_report)
 
 

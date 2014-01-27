@@ -892,14 +892,15 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
     def test_delete(self, mock_delete_task, mock_manager_factory):
         repo_distributor = repositories.RepoDistributor()
 
-        mock_delete_task.apply_async.return_value = MockTaskResult('foo-id')
+        mock_delete_task.apply_async_with_reservation.return_value = MockTaskResult('foo-id')
         self.assertRaises(OperationPostponed, repo_distributor.DELETE,
                           "foo-repo", "foo-distributor")
         task_tags = ['pulp:repository:foo-repo',
                      'pulp:repository_distributor:foo-distributor',
                      'pulp:action:remove_distributor']
-        mock_delete_task.apply_async.assert_called_once_with(('foo-repo', 'foo-distributor'),
-                                                             tags=task_tags)
+        mock_delete_task.apply_async_with_reservation.assert_called_once_with(
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
+            ['foo-repo', 'foo-distributor'], tags=task_tags)
 
         #validate the permissions
         self.validate_auth(authorization.UPDATE)
@@ -917,15 +918,15 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
         repo_distributor.params = mock.Mock(return_value={'distributor_config': new_config,
                                                           'delta': {}})
 
-        mock_update_task.apply_async.return_value = MockTaskResult('foo-id')
+        mock_update_task.apply_async_with_reservation.return_value = MockTaskResult('foo-id')
         self.assertRaises(OperationPostponed, repo_distributor.PUT, "foo-repo", "foo-distributor")
 
         task_tags = ['pulp:repository:foo-repo',
                      'pulp:repository_distributor:foo-distributor',
                      'pulp:action:update_distributor']
-        mock_update_task.apply_async.assert_called_once_with(('foo-repo', 'foo-distributor',
-                                                              new_config, {}),
-                                                             tags=task_tags)
+        mock_update_task.apply_async_with_reservation.assert_called_once_with(
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
+            ['foo-repo', 'foo-distributor', new_config, {}], tags=task_tags)
 
         #validate the permissions
         self.validate_auth(authorization.UPDATE)

@@ -16,9 +16,9 @@ import logging
 import celery
 
 from pulp.common.error_codes import PLP0002, PLP0003, PLP0007
-from pulp.common.tags import resource_tag, action_tag, RESOURCE_REPOSITORY_TYPE
-from pulp.server.exceptions import PulpCodedException
+from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.server.async.tasks import Task, TaskResult
+from pulp.server.exceptions import PulpCodedException
 from pulp.server.managers import factory as managers
 from pulp.server.tasks import consumer
 
@@ -196,6 +196,31 @@ def publish(repo_id, distributor_id, overrides=None):
         RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
 
 
-@celery.task
+@celery.task(base=Task)
 def sync_with_auto_publish(repo_id, overrides=None):
-    pass
+    """
+    Sync a repository and upon successful completion, publish
+    any distributors that are configured for auto publish.
+
+    :param repo_id: id of the repository to create a sync call request list for
+    :type repo_id: str
+    :param overrides: dictionary of configuration overrides for this sync
+    :type overrides: dict or None
+    :return: list of call request instances
+    :rtype: list
+    """
+    sync_result = managers.repo_sync_manager().sync(repo_id, sync_config_override=overrides)
+
+    result = TaskResult(sync_result)
+
+    repo_publish_manager = managers.repo_publish_manager()
+    auto_distributors = repo_publish_manager.auto_distributors(repo_id)
+
+    spawned_tasks = []
+    for distributor in auto_distributors:
+        distributor_id = distributor['id']
+        spawned_tasks.append(publish(repo_id, distributor_id))
+
+    result.spawned_tasks = spawned_tasks
+
+    return result

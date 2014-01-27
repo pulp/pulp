@@ -22,6 +22,7 @@ from celery.app import control, defaults
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.exceptions import PulpException
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
@@ -259,9 +260,10 @@ class ReservedTaskMixin(object):
         queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
 
         kwargs['queue'] = queue
-
-        async_result = self.apply_async(*args, **kwargs)
-        _queue_release_resource.apply_async((resource_id,), queue=queue)
+        try:
+            async_result = self.apply_async(*args, **kwargs)
+        finally:
+            _queue_release_resource.apply_async((resource_id,), queue=queue)
 
         return async_result
 
@@ -271,7 +273,8 @@ class Chain(chain, ReservedTaskMixin):
     This is a custom Pulp subclass of the Celery chain class. It allows us to inject resource
     locking behaviors into the Chain.
     """
-    pass
+    def __call__(self, *args, **kwargs):
+        return super(Chain, self).__call__(*args, **kwargs)
 
 
 class Task(CeleryTask, ReservedTaskMixin):
@@ -298,6 +301,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         queue = kwargs.get('queue', defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
         tags = kwargs.pop('tags', [])
         async_result = super(Task, self).apply_async(*args, **kwargs)
+        async_result.tags = tags
 
         # Create a new task status with the task id and tags.
         # To avoid the race condition where __call__ method below is called before
@@ -379,6 +383,12 @@ class Task(CeleryTask, ReservedTaskMixin):
             delta = {'state': dispatch_constants.CALL_ERROR_STATE,
                      'finish_time': dateutils.now_utc_timestamp(),
                      'traceback': einfo.traceback}
+            if isinstance(exc, PulpException):
+                delta['error'] = exc.to_dict()
+            else:
+                pulp_exception = PulpException(str(exc))
+                delta['error'] = pulp_exception.to_dict()
+
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
 
