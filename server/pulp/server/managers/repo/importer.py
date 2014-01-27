@@ -20,11 +20,10 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
                                     PulpDataException)
-import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.schedule.repo import RepoSyncScheduleManager
 
 
 logger = logging.getLogger(__name__)
@@ -82,14 +81,6 @@ class RepoImporterManager(object):
         spec = {'repo_id' : {'$in' : repo_id_list}}
         projection = {'scratchpad' : 0}
         importers = list(RepoImporter.get_collection().find(spec, projection))
-
-        # Process any scheduled syncs and get schedule details using schedule id
-        for importer in importers:
-            scheduled_sync_ids = importer.get('scheduled_syncs', None)
-            if scheduled_sync_ids is not None:
-                scheduled_sync_details = list(
-                    ScheduledCall.get_collection().find({"id": {"$in": scheduled_sync_ids}}))
-                importer['scheduled_syncs'] = [s["schedule"] for s in scheduled_sync_details]
 
         return importers
 
@@ -202,6 +193,9 @@ class RepoImporterManager(object):
 
         if repo_importer is None:
             raise MissingResource(repo_id)
+
+        # remove schedules
+        RepoSyncScheduleManager().delete_by_importer_id(repo_id, repo_importer['id'])
 
         # Call the importer's cleanup method
         importer_type_id = repo_importer['importer_type_id']
@@ -342,52 +336,6 @@ class RepoImporterManager(object):
         # Update
         repo_importer['scratchpad'] = contents
         importer_coll.save(repo_importer, safe=True)
-
-    def add_sync_schedule(self, repo_id, schedule_id):
-        """
-        Adds a sync schedule for a repo to the importer.
-        @param repo_id:
-        @param schedule_id:
-        @return:
-        """
-        collection = RepoImporter.get_collection()
-        importer = collection.find_one({'repo_id': repo_id})
-        if importer is None:
-            raise MissingResource(importer=repo_id)
-        if schedule_id in importer['scheduled_syncs']:
-            return
-        collection.update({'_id': importer['_id']},
-                          {'$push': {'scheduled_syncs': schedule_id}},
-                          safe=True)
-
-    def remove_sync_schedule(self, repo_id, schedule_id):
-        """
-        Removes a sync schedule for a repo from the importer.
-        @param repo_id:
-        @param schedule_id:
-        @return:
-        """
-        collection = RepoImporter.get_collection()
-        importer = collection.find_one({'repo_id': repo_id})
-        if importer is None:
-            raise MissingResource(importer=repo_id)
-        if schedule_id not in importer['scheduled_syncs']:
-            return
-        collection.update({'_id': importer['_id']},
-                          {'$pull': {'scheduled_syncs': schedule_id}},
-                          safe=True)
-
-    def list_sync_schedules(self, repo_id):
-        """
-        List the sync schedules currently defined for the repo.
-        @param repo_id:
-        @return:
-        """
-        collection = RepoImporter.get_collection()
-        importer = collection.find_one({'repo_id': repo_id})
-        if importer is None:
-            raise MissingResource(importer=repo_id)
-        return importer['scheduled_syncs']
 
 
 remove_importer = task(RepoImporterManager.remove_importer, base=Task, ignore_result=True)

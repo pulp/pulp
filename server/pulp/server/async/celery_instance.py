@@ -25,7 +25,7 @@ from pulp.server.config import config
 
 
 broker_url = config.get('tasks', 'broker_url')
-celery = Celery('tasks', backend='amqp', broker=broker_url)
+celery = Celery('tasks', broker=broker_url)
 
 
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
@@ -75,5 +75,6 @@ def create_mongo_config():
 
 
 celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
+celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())

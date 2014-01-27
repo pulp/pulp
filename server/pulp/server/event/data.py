@@ -15,11 +15,12 @@
 Contains DTOs to describe events.
 """
 
-from pulp.server.dispatch import factory as dispatch_factory
+import celery
+
+from pulp.server.async.task_status_manager import TaskStatusManager
 
 # -- constants ----------------------------------------------------------------
 
-# Many more types will be added as this functionality is flushed out.
 # These types are used to form AMQP message topic names, so they must be
 # dot-delimited.
 
@@ -41,19 +42,14 @@ class Event(object):
     def __init__(self, event_type, payload):
         self.event_type = event_type
         self.payload = payload
-        self.call_report = self._get_call_report()
+        try:
+            task_id = celery.current_task.request.id
+            self.call_report = TaskStatusManager.find_by_task_id(task_id)
+        except AttributeError:
+            self.call_report = None
 
     def __str__(self):
         return 'Event: Type [%s] Payload [%s]' % (self.event_type, self.payload)
-
-    @staticmethod
-    def _get_call_report():
-        context = dispatch_factory.context()
-        coordinator = dispatch_factory.coordinator()
-        call_report_list = coordinator.find_call_reports(call_request_id=context.call_request_id)
-        if not call_report_list:
-            return None
-        return call_report_list[0].serialize()
 
     def data(self):
         """

@@ -68,33 +68,3 @@ def sync_with_auto_publish_itinerary(repo_id, overrides=None):
         call_requests.append(publish_call_request)
 
     return call_requests
-
-
-def publish_itinerary(repo_id, distributor_id, overrides=None):
-    """
-    Create an itinerary for repo publish.
-    @param repo_id: id of the repo to publish
-    @type repo_id: str
-    @param distributor_id: id of the distributor to use for the repo publish
-    @type distributor_id: str
-    @param overrides: dictionary of options to pass to the publish manager
-    @type overrides: dict or None
-    @return: list of call requests
-    @rtype: list
-    """
-
-    repo_publish_manager = manager_factory.repo_publish_manager()
-    weight = pulp_config.config.getint('tasks', 'publish_weight')
-    tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            action_tag('publish')]
-
-    call_request = CallRequest(repo_publish_manager.publish, # rbarlow_converted
-                               [repo_id, distributor_id],
-                               {'publish_config_override': overrides},
-                               weight=weight,
-                               tags=tags,
-                               archive=True)
-
-    call_request.updates_resource(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id)
-
-    return [call_request]

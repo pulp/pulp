@@ -33,7 +33,6 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -66,9 +65,8 @@ class RepoPublishManager(object):
         @type  publish_config_override: dict, None
 
         :return: report of the details of the publish
-        :rtype: pulp.server.plugins.model.PublishReport
+        :rtype: pulp.server.db.model.repository.RepoPublishResult
         """
-
         repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
 
@@ -87,9 +85,6 @@ class RepoPublishManager(object):
         if distributor_instance is None:
             raise MissingResource(repo_id), None, sys.exc_info()[2]
 
-        dispatch_context = dispatch_factory.context()
-        dispatch_context.set_cancel_control_hook(distributor_instance.cancel_publish_repo)
-
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id)
 
@@ -105,8 +100,6 @@ class RepoPublishManager(object):
         result = RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
                                                 transfer_repo, conduit, call_config)
         fire_manager.fire_repo_publish_finished(result)
-
-        dispatch_context.clear_cancel_control_hook()
 
         return result
 
@@ -363,7 +356,7 @@ class RepoPublishManager(object):
         return auto_distributors
 
 
-publish = task(RepoPublishManager.publish, base=Task, ignore_result=True)
+publish = task(RepoPublishManager.publish, base=Task)
 
 
 def _now_timestamp():

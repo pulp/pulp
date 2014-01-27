@@ -235,7 +235,7 @@ class SyncReport(object):
 class PublishReport(object):
     """
     Returned to the Pulp server at the end of a publish call. This is used by the
-    plugin to decrive what took place during the publish run.
+    plugin to derive what took place during the publish run.
 
     @ivar success_flag: if true, the sync was successful; false indicates a
           gracefully handled failure
@@ -247,7 +247,7 @@ class PublishReport(object):
 
     @ivar details: potentially longer log that will have to be specifically
                    retrieved through the Pulp REST APIs
-    @type details: just about any serializable object (likley str or dict)
+    @type details: just about any serializable object (likely str or dict)
     """
 
     def __init__(self, success_flag, summary, details):
