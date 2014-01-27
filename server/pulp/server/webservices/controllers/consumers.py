@@ -634,7 +634,7 @@ class UnitActionScheduleCollection(JSONController):
 
         # this behavior is debatable, but I'm keeping it for backward-compatibility.
         if not schedule_objs:
-            raise MissingResource
+            raise MissingResource(schedule=None)
         return self.ok(schedule_objs)
 
     @auth_required(CREATE)
@@ -669,7 +669,7 @@ class UnitActionScheduleResource(JSONController):
         try:
             scheduled_call = list(self.manager.get(consumer_id, self.ACTION))[0]
         except IndexError:
-            raise MissingResource
+            raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
 
         scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
         scheduled_obj.update(serialization.link.current_link_obj())
