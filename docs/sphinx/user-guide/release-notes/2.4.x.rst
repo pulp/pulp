@@ -29,6 +29,16 @@ You can see the complete list of bugs that were
 API Changes
 -----------
 
+* Schedule delete no longer returns a 404 when the schedule is not found. It will
+  return a 200, because this is exactly the condition the user asked for.
+
+ScheduledCall
+^^^^^^^^^^^^^
+
+The ScheduledCall model has changed a lot. TODO: add details
+* ``last_run`` is now ``last_run_at``
+
+
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
 

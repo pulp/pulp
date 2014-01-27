@@ -26,6 +26,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
                                     PulpDataException)
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.schedule.repo import RepoPublishScheduleManager
 
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
@@ -227,6 +228,9 @@ class RepoDistributorManager(object):
         repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
         if repo_distributor is None:
             raise MissingResource(distributor=distributor_id)
+
+        # remove schedules
+        RepoPublishScheduleManager().delete_by_distributor_id(repo_id, repo_distributor['id'])
 
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']

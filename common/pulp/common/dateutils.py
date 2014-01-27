@@ -15,6 +15,7 @@
 Common utilities for date and time representation for Pulp.
 """
 
+import calendar
 import datetime
 import re
 import sys
@@ -301,7 +302,7 @@ def format_iso8601_utc_timestamp(timestamp):
     @rtype: str
     @return: iso8601 representation of the passed in timestamp
     """
-    dt = datetime.datetime.fromtimestamp(timestamp).replace(tzinfo=utc_tz())
+    dt = datetime.datetime.utcfromtimestamp(timestamp).replace(tzinfo=utc_tz())
     return format_iso8601_datetime(dt)
 
 # timestamp functions ----------------------------------------------------------
@@ -314,8 +315,8 @@ def datetime_to_utc_timestamp(dt):
     @return: UNIX time stamp corresponding to the given datetime instance
     @rtype: float
     """
-    udt = to_naive_utc_datetime(dt)
-    return time.mktime(udt.timetuple())
+    udt = to_utc_datetime(dt)
+    return calendar.timegm(udt.utctimetuple())
 
 
 def now_utc_timestamp():

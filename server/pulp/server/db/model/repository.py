@@ -103,6 +103,8 @@ class RepoImporter(Model):
     @type last_sync: str
     """
 
+    RESOURCE_TEMPLATE = 'pulp:importer:%s:%s'
+
     collection_name = 'repo_importers'
     unique_indices = ( ('repo_id', 'id'), )
 
@@ -117,6 +119,20 @@ class RepoImporter(Model):
         self.scratchpad = None
         self.last_sync = None
         self.scheduled_syncs = []
+
+    @classmethod
+    def build_resource_tag(cls, repo_id, importer_id):
+        """
+        :param repo_id:     unique ID for a repository
+        :type  repo_id:     basestring
+        :param importer_id: unique ID for the importer
+        :type  importer_id: basestring
+
+        :return:    a globally unique identifier for the repo and importer that
+                    can be used in cross-type comparisons.
+        :rtype:     basestring
+        """
+        return cls.RESOURCE_TEMPLATE % (repo_id, importer_id)
 
 
 class RepoDistributor(Model):
@@ -153,6 +169,7 @@ class RepoDistributor(Model):
                         in ISO8601 format
     @type last_publish: str
     """
+    RESOURCE_TEMPLATE = 'pulp:distributor:%s:%s'
 
     collection_name = 'repo_distributors'
     unique_indices = ( ('repo_id', 'id'), )
@@ -168,6 +185,20 @@ class RepoDistributor(Model):
         self.scratchpad = None
         self.last_publish = None
         self.scheduled_publishes = []
+
+    @classmethod
+    def build_resource_tag(cls, repo_id, distributor_id):
+        """
+        :param repo_id:         unique ID for a repository
+        :type  repo_id:         basestring
+        :param distributor_id:  unique ID for the importer
+        :type  distributor_id:  basestring
+
+        :return:    a globally unique identifier for the repo and distributor that
+                    can be used in cross-type comparisons.
+        :rtype:     basestring
+        """
+        return cls.RESOURCE_TEMPLATE % (repo_id, distributor_id)
 
 
 class RepoContentUnit(Model):

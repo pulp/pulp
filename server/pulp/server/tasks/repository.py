@@ -16,7 +16,7 @@ import logging
 import celery
 
 from pulp.common.error_codes import PLP0002, PLP0003, PLP0007
-from pulp.common.tags import action_tag, resource_tag
+from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import PulpCodedException
@@ -172,7 +172,30 @@ def distributor_update(repo_id, distributor_id, config, delta):
 
 @celery.task
 def publish(repo_id, distributor_id, overrides=None):
-    pass
+    """
+    Create an itinerary for repo publish.
+    :param repo_id: id of the repo to publish
+    :type repo_id: str
+    :param distributor_id: id of the distributor to use for the repo publish
+    :type distributor_id: str
+    :param overrides: dictionary of options to pass to the publish manager
+    :type overrides: dict or None
+    :return: list of call requests
+    :rtype: list
+    """
+    # TODO: test this as part of finishing implementation of this module
+
+    kwargs = {
+        'repo_id': repo_id,
+        'distributor_id': distributor_id,
+        'publish_config_override': overrides
+    }
+
+    tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
+            action_tag('publish')]
+
+    return managers.repo_publish_manager().publish.apply_async_with_reservation(
+        RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
 
 
 @celery.task(base=Task)
