@@ -301,6 +301,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         queue = kwargs.get('queue', defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
         tags = kwargs.pop('tags', [])
         async_result = super(Task, self).apply_async(*args, **kwargs)
+        async_result.tags = tags
 
         # Create a new task status with the task id and tags.
         # To avoid the race condition where __call__ method below is called before

@@ -27,11 +27,7 @@ from pulp.server.managers.consumer.applicability import regenerate_applicability
 from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
-from pulp.server.managers.repo.publish import publish
-from pulp.server.itineraries.repo import publish_itinerary
-from pulp.server.managers.repo.publish import publish
 from pulp.server.tasks import repository
-from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -510,7 +506,7 @@ class RepoDistributor(JSONController):
 
         async_result = repository.distributor_delete.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
-            {}, tags=tags)
+            tags=tags)
 
         raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
 
@@ -550,7 +546,7 @@ class RepoDistributor(JSONController):
         ]
         async_result = repository.distributor_update.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id, distributor_id, config, delta], {}, tags=tags)
+            [repo_id, distributor_id, config, delta], tags=tags)
         raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
                                                        call_request_tags=tags))
 
@@ -742,8 +738,9 @@ class RepoPublish(JSONController):
         params = self.params()
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
-
-        return self.ok(repository.publish(repo_id, distributor_id, overrides).id)
+        async_result = repository.publish(repo_id, distributor_id, overrides)
+        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
+                                                       call_requiest_tags=async_result.tags))
 
 
 class RepoAssociate(JSONController):

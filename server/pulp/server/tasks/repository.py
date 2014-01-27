@@ -216,17 +216,13 @@ def sync_with_auto_publish(repo_id, overrides=None):
     result = TaskResult(sync_result)
 
     repo_publish_manager = managers.repo_publish_manager()
-    auto_publish_tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                         action_tag('auto_publish'), action_tag('publish')]
     auto_distributors = repo_publish_manager.auto_distributors(repo_id)
 
     spawned_tasks = []
     for distributor in auto_distributors:
         distributor_id = distributor['id']
-        spawned = publish_manager.publish.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE,
-            repo_id, [repo_id, distributor_id], {}, tags=auto_publish_tags)
-        spawned_tasks.append(spawned)
+        spawned_tasks.append(publish(repo_id, distributor_id))
+
     result.spawned_tasks = spawned_tasks
 
     return result

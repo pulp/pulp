@@ -17,7 +17,7 @@ import shutil
 
 import mock
 
-import base
+from .... import base
 from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
 from pulp.plugins.model import SyncReport
@@ -277,10 +277,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.importer_manager.set_importer('gonna-bail', 'mock-importer', {})
 
         # Test
-        try:
-            self.sync_manager.sync('gonna-bail')
-        except repo_sync_manager.PulpExecutionException, e:
-            print(e) # for coverage
+        self.assertRaises(Exception, self.sync_manager.sync, 'gonna-bail')
 
         # Verify
 
