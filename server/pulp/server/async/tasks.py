@@ -16,7 +16,7 @@ import logging
 import re
 import signal
 
-from celery import chain, task, Task as CeleryTask
+from celery import task, Task as CeleryTask
 from celery.app import control, defaults
 
 from pulp.common import dateutils
@@ -266,15 +266,6 @@ class ReservedTaskMixin(object):
             _queue_release_resource.apply_async((resource_id,), queue=queue)
 
         return async_result
-
-
-class Chain(chain, ReservedTaskMixin):
-    """
-    This is a custom Pulp subclass of the Celery chain class. It allows us to inject resource
-    locking behaviors into the Chain.
-    """
-    def __call__(self, *args, **kwargs):
-        return super(Chain, self).__call__(*args, **kwargs)
 
 
 class Task(CeleryTask, ReservedTaskMixin):
