@@ -147,6 +147,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.0.8-1
+- new package built with tito
+
 * Tue Jan 07 2014 Randy Barlow <rbarlow@redhat.com> - 3.0.8-1
 - update to 3.0.8.
 
