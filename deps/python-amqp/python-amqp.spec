@@ -129,6 +129,9 @@ Documentation for python-amqp
 
 
 %changelog
+* Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 1.3.3-1
+- new package built with tito
+
 * Fri Nov 15 2013 Eric Harney <eharney@redhat.com> - 1.3.3-1
 - Update to 1.3.3
 
