@@ -96,8 +96,8 @@ class DeleteRepositoryCommand(PollingCommand):
         self.repo_id = kwargs[OPTION_REPO_ID.keyword]
 
         try:
-            task_list = self.context.server.repo.delete(self.repo_id).response_body
-            delete_task = task_list[0]  # ignore the unbind tasks for the purposes of this command
+            delete_task = self.context.server.repo.delete(self.repo_id).response_body
+            # delete_task = task_list[0]  # ignore the unbind tasks for the purposes of this command
             self.poll([delete_task], kwargs)
 
         except NotFoundException:
