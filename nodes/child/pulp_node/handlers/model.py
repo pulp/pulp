@@ -303,7 +303,11 @@ class Repository(Entity):
         http = bindings.repo_actions.sync(self.repo_id, configuration)
         if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
-        task = http.response_body[0]
+        #TODO When everything is converted to celery the response_body will never be a list
+        if isinstance(http.response_body, list):
+            task = http.response_body[0]
+        else:
+            task = http.response_body
         result = poller.join(task.task_id, progress, cancelled)
         if cancelled():
             self._cancel_synchronization(task)

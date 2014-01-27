@@ -23,7 +23,6 @@ setup(
         'console_scripts': [
             '../libexec/pulp-manage-workers = pulp.server.async.manage_workers:main',
             'pulp-manage-db = pulp.server.db.manage:main',
-            'pulp-monthly = pulp.server.maintenance.monthly:main',
         ]
     }
 )

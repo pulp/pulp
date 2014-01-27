@@ -13,8 +13,8 @@
 from datetime import datetime, timedelta
 from gettext import gettext as _
 import logging
-import random
 import re
+import signal
 
 from celery import chain, task, Task as CeleryTask
 from celery.app import control, defaults
@@ -22,6 +22,7 @@ from celery.app import control, defaults
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.exceptions import PulpException
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
@@ -197,31 +198,72 @@ def _reserve_resource(resource_id):
     return reserved_resource.assigned_queue
 
 
+class TaskResult(object):
+    """
+    The TaskResult object is used for returning errors and spawned tasks that do not affect the
+    primary status of the task.
+
+    Errors that don't affect the current task status might be related to secondary actions
+    where the primary action of the async-task was successful
+
+    Spawned tasks are items such as the individual tasks for updating the bindings on
+    each consumer when a repo distributor is updated.
+    """
+
+    def __init__(self, result=None, error=None, spawned_tasks=None):
+        """
+        :param result: The return value from the task
+        :type result: dict
+        :param error: The PulpException for the error & sub-errors that occured
+        :type error: pulp.server.exception.PulpException
+        :param spawned_tasks: A list of task status objects for tasks that were created by this
+                              task and are tracked through the pulp database
+        :type spawned_tasks: list of TaskStatus objects
+        """
+        self.return_value = result
+        self.error = error
+        self.spawned_tasks = spawned_tasks
+
+    def serialize(self):
+        data = {
+            'result': self.return_value,
+            'error': self.error,
+            'spawned_tasks': self.spawned_tasks}
+        return data
+
+
 class ReservedTaskMixin(object):
-    def apply_async_with_reservation(self, resource_id, *args, **kwargs):
+    def apply_async_with_reservation(self, resource_type, resource_id, *args, **kwargs):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
         Celery's apply_async(), while also making the named resource. No two tasks that claim the
-        same resource reservation can execute concurrently.
+        same resource reservation can execute concurrently. It accepts type and id of a resource 
+        and combines them to form a resource id.
 
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
         docblock for the apply_async() method.
 
-        :param resource_id: A string that identifies some named resource, guaranteeing that only one
-                            task reserving this same string can happen at a time.
-        :type  resource_id: basestring
-        :param tags:        A list of tags (strings) to place onto the task, used for searching for
-                            tasks by tag
-        :type  tags:        list
-        :return:            An AsyncResult instance as returned by Celery's apply_async
-        :rtype:             celery.result.AsyncResult
+        :param resource_type: A string that identifies type of a resource
+        :type resource_type:  basestring
+        :param resource_id:   A string that identifies some named resource, guaranteeing that only one
+                              task reserving this same string can happen at a time.
+        :type  resource_id:   basestring
+        :param tags:          A list of tags (strings) to place onto the task, used for searching for
+                              tasks by tag
+        :type  tags:          list
+        :return:              An AsyncResult instance as returned by Celery's apply_async
+        :rtype:               celery.result.AsyncResult
         """
+        # Form a resource_id for reservation by combining given resource type and id. This way,
+        # two different resources having the same id will not block each other.
+        resource_id = ":".join((resource_type, resource_id))
         queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
 
         kwargs['queue'] = queue
-
-        async_result = self.apply_async(*args, **kwargs)
-        _queue_release_resource.apply_async((resource_id,), queue=queue)
+        try:
+            async_result = self.apply_async(*args, **kwargs)
+        finally:
+            _queue_release_resource.apply_async((resource_id,), queue=queue)
 
         return async_result
 
@@ -231,7 +273,8 @@ class Chain(chain, ReservedTaskMixin):
     This is a custom Pulp subclass of the Celery chain class. It allows us to inject resource
     locking behaviors into the Chain.
     """
-    pass
+    def __call__(self, *args, **kwargs):
+        return super(Chain, self).__call__(*args, **kwargs)
 
 
 class Task(CeleryTask, ReservedTaskMixin):
@@ -258,6 +301,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         queue = kwargs.get('queue', defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
         tags = kwargs.pop('tags', [])
         async_result = super(Task, self).apply_async(*args, **kwargs)
+        async_result.tags = tags
 
         # Create a new task status with the task id and tags.
         # To avoid the race condition where __call__ method below is called before
@@ -275,7 +319,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Updates start_time and sets the task state to 'running' for asynchronous tasks.
+        # Check task status and skip running the task if task state is 'canceled'.
+        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
+            logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+            return
+        # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Skip updating status for eagerly executed tasks, since we don't want to track
         # synchronous tasks in our database.
         if not self.request.called_directly:
@@ -284,7 +333,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             TaskStatus.get_collection().update(
                 {'task_id': self.request.id},
                 {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
-                          'start_time':  dateutils.now_utc_timestamp()}},
+                          'start_time': dateutils.now_utc_timestamp()}},
                 upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
@@ -307,6 +356,14 @@ class Task(CeleryTask, ReservedTaskMixin):
             delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
                      'finish_time': dateutils.now_utc_timestamp(),
                      'result': retval}
+            if isinstance(retval, TaskResult):
+                delta['result'] = retval.return_value
+                if retval.error:
+                    delta['error'] = retval.error.to_dict()
+                if retval.spawned_tasks:
+                    task_list = [spawned_task['task_id'] for spawned_task in retval.spawned_tasks]
+                    delta['spawned_tasks'] = task_list
+
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
@@ -326,17 +383,81 @@ class Task(CeleryTask, ReservedTaskMixin):
             delta = {'state': dispatch_constants.CALL_ERROR_STATE,
                      'finish_time': dateutils.now_utc_timestamp(),
                      'traceback': einfo.traceback}
+            if isinstance(exc, PulpException):
+                delta['error'] = exc.to_dict()
+            else:
+                pulp_exception = PulpException(str(exc))
+                delta['error'] = pulp_exception.to_dict()
+
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
 
 def cancel(task_id):
     """
-    Cancel the task that is represented by the given task_id.
+    Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+    This also updates task's state to 'canceled' state.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
     """
-    controller.revoke(task_id, terminate=True)
-    msg = _('Task canceled: %(task_id)s.')
-    msg = msg % {'task_id': task_id}
+    task_status = TaskStatusManager.find_by_task_id(task_id)
+    if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+        controller.revoke(task_id, terminate=True)
+        TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
+        msg = _('Task canceled: %(task_id)s.')
+        msg = msg % {'task_id': task_id}
+    else:
+        msg = _('Task [%(task_id)s] cannot be canceled since it is already in a complete state.')
+        msg = msg % {'task_id': task_id}
     logger.info(msg)
+
+
+def register_sigterm_handler(f, handler):
+    """
+    register_signal_handler is a method or function decorator. It will register a special signal
+    handler for SIGTERM that will call handler() with no arguments if SIGTERM is received during the
+    operation of f. Once f has completed, the signal handler will be restored to the handler that
+    was in place before the method began.
+
+    :param f:       The method or function that should be wrapped.
+    :type  f:       instancemethod or function
+    :param handler: The method or function that should be called when we receive SIGTERM.
+                    handler will be called with no arguments.
+    :type  handler: instancemethod or function
+    :return:        A wrapped version of f that performs the signal registering and unregistering.
+    :rtype:         instancemethod or function
+    """
+    def sigterm_handler(signal_number, stack_frame):
+        """
+        This is the signal handler that gets installed to handle SIGTERM. We don't wish to pass the
+        signal_number or the stack_frame on to handler, so its only purpose is to avoid
+        passing these arguments onward. It calls handler().
+
+        :param signal_number: The signal that is being handled. Since we have registered for
+                              SIGTERM, this will be signal.SIGTERM.
+        :type  signal_number: int
+        :param stack_frame:   The current execution stack frame
+        :type  stack_frame:   None or frame
+        """
+        handler()
+
+    def wrap_f(*args, **kwargs):
+        """
+        This function is a wrapper around f. It replaces the signal handler for SIGTERM with
+        signerm_handler(), calls f, sets the SIGTERM handler back to what it was before, and then
+        returns the return value from f.
+
+        :param args:   The positional arguments to be passed to f
+        :type  args:   tuple
+        :param kwargs: The keyword arguments to be passed to f
+        :type  kwargs: dict
+        :return:       The return value from calling f
+        :rtype:        Could be anything!
+        """
+        old_signal = signal.signal(signal.SIGTERM, sigterm_handler)
+        try:
+            return f(*args, **kwargs)
+        finally:
+            signal.signal(signal.SIGTERM, old_signal)
+
+    return wrap_f

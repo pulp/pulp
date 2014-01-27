@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -14,13 +12,15 @@
 import datetime
 import os
 import shutil
+import signal
 
 import mock
 
-import base
+from .... import base
 from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
 from pulp.plugins.model import SyncReport
+from pulp.server.async import tasks
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
 from pulp.server.exceptions import PulpExecutionException, InvalidValue
 import pulp.server.managers.factory as manager_factory
@@ -205,7 +205,6 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
             self.sync_manager.sync('fake-repo')
         except repo_sync_manager.MissingResource, e:
             self.assertTrue('fake-repo' == e.resources['resource_id'])
-            print(e) # for coverage
 
     def test_sync_no_importer_set(self):
         """
@@ -216,10 +215,8 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.repo_manager.create_repo('importer-less') # don't set importer
 
         # Test
-        try:
-            self.sync_manager.sync('importer-less')
-        except repo_sync_manager.PulpExecutionException, e:
-            print(e) # for coverage
+        self.assertRaises(repo_sync_manager.PulpExecutionException, self.sync_manager.sync,
+                          'importer-less')
 
     def test_sync_bad_importer(self):
         """
@@ -239,9 +236,9 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Test
         try:
             self.sync_manager.sync('old-repo')
+            self.fail('An Exception should have been raised.')
         except repo_sync_manager.MissingResource, e:
             self.assertTrue('old-repo' == e.resources['resource_id'])
-            print(e) # for coverage
 
     def test_sync_bad_database(self):
         """
@@ -256,11 +253,8 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         RepoImporter.get_collection().remove()
 
-        # Test
-        try:
-            self.sync_manager.sync('good-repo')
-        except repo_sync_manager.PulpExecutionException, e:
-            print(e) # for coverage
+        self.assertRaises(repo_sync_manager.PulpExecutionException, self.sync_manager.sync,
+                          'good-repo')
 
     def test_sync_with_error(self):
         """
@@ -277,14 +271,11 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.importer_manager.set_importer('gonna-bail', 'mock-importer', {})
 
         # Test
-        try:
-            self.sync_manager.sync('gonna-bail')
-        except repo_sync_manager.PulpExecutionException, e:
-            print(e) # for coverage
+        self.assertRaises(Exception, self.sync_manager.sync, 'gonna-bail')
 
         # Verify
 
-        #    Database
+        # Database
         repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'mock-importer'})
 
         self.assertTrue(repo_importer['last_sync'] is not None)
@@ -601,7 +592,70 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(dir, temp_dir + '/test-repo')
         self.assertTrue(os.path.exists(dir))
 
-# -- testing utilities --------------------------------------------------------
+
+class TestDoSync(base.PulpAsyncServerTests):
+    """
+    Assert correct behavior from the _do_sync() method.
+    """
+    def setUp(self):
+        super(TestDoSync, self).setUp()
+        mock_plugins.install()
+        self.repo_manager = repo_manager.RepoManager()
+        self.importer_manager = repo_importer_manager.RepoImporterManager()
+        self.sync_manager = repo_sync_manager.RepoSyncManager()
+
+    def tearDown(self):
+        super(TestDoSync, self).tearDown()
+        mock_plugins.reset()
+        manager_factory.reset()
+        Repo.get_collection().remove()
+        RepoImporter.get_collection().remove()
+        RepoSyncResult.get_collection().remove()
+        MockRepoPublishManager.reset()
+
+    @mock.patch('pulp.server.managers.repo.sync.register_sigterm_handler',
+                side_effect=tasks.register_sigterm_handler)
+    def test_wraps_publish_in_register_sigterm_handler(self, register_sigterm_handler):
+        """
+        Assert that the importer's sync_repo() method gets wrapped by the register_sigterm_handler
+        decorator before it is run.
+        """
+        def sync_repo(self, *args, **kwargs):
+            """ 
+            This method will be attached to the importer_instance, and will allow us to assert
+            that the register_sigterm_handler is called before the sync_repo is called. We can tell
+            because inside here the SIGTERM handler has been altered.
+            """
+            signal_handler = signal.getsignal(signal.SIGTERM)
+            self.assertNotEqual(signal_handler, starting_term_handler)
+
+            # Make sure that the signal handler is the importer's cancel method
+            self.assertEqual(importer_instance.cancel_sync_repo.call_count, 0)
+            signal_handler(signal.SIGTERM, None)
+            self.assertEqual(importer_instance.cancel_sync_repo.call_count, 1)
+
+        sync_config = {'foo' : 'bar'}
+        importer_id = 'dist-1'
+        repo_id = 'repo-1'
+        repo = self.repo_manager.create_repo(repo_id)
+        self.importer_manager.set_importer(repo_id, 'mock-importer', sync_config)
+        importer_instance, importer_config = \
+            repo_sync_manager.RepoSyncManager._get_importer_instance_and_config(repo_id)
+        # Set our special sync_repo() from above to the instance so we can make our assertions
+        importer_instance.sync_repo = sync_repo
+        transfer_repo = mock.MagicMock()
+        conduit = mock.MagicMock()
+        call_config = mock.MagicMock()
+        starting_term_handler = signal.getsignal(signal.SIGTERM)
+
+        repo_sync_manager.RepoSyncManager._do_sync(repo, importer_instance,
+                                                   transfer_repo, conduit, call_config)
+
+        register_sigterm_handler.assert_called_once_with(sync_repo,
+                                                importer_instance.cancel_sync_repo)
+        # Make sure the TERM handler is set back to normal
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+
 
 def assert_last_sync_time(time_in_iso):
     now = datetime.datetime.now(dateutils.local_tz())
@@ -614,7 +668,8 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, offset):
     started = datetime.datetime.now(dateutils.local_tz())
     completed = started + datetime.timedelta(days=offset)
-    r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),
-                                       dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '',
-                                       RepoSyncResult.RESULT_SUCCESS)
+    r = RepoSyncResult.expected_result(
+        repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),
+        dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '',
+        RepoSyncResult.RESULT_SUCCESS)
     RepoSyncResult.get_collection().save(r, safe=True)

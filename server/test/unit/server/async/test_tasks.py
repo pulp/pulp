@@ -15,6 +15,8 @@ This module contains tests for the pulp.server.async.tasks module.
 """
 from copy import deepcopy
 from datetime import datetime, timedelta
+import signal
+import unittest
 import uuid
 
 from celery.app import defaults
@@ -24,6 +26,7 @@ import mock
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.dispatch.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
                                             CALL_RUNNING_STATE, CALL_WAITING_STATE)
@@ -571,15 +574,18 @@ class TestTask(ResourceReservationTests):
         some_args = [1, 'b', 'iii']
         some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': RESERVED_WORKER_1}
         resource_id = 'three_to_get_ready'
+        resource_type = 'reserve_me'
         task = tasks.Task()
 
-        async_result = task.apply_async_with_reservation(resource_id, *some_args, **some_kwargs)
+        async_result = task.apply_async_with_reservation(resource_type, resource_id,
+                                                         *some_args, **some_kwargs)
 
         self.assertEqual(async_result, mock_async_result)
-        _reserve_resource.assert_called_once_with((resource_id,),
+        expected_resource_id = ":".join([resource_type, resource_id])
+        _reserve_resource.assert_called_once_with((expected_resource_id,),
                                                   queue=tasks.RESOURCE_MANAGER_QUEUE)
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
-        _queue_release_resource.apply_async.assert_called_once_with((resource_id,),
+        _queue_release_resource.apply_async.assert_called_once_with((expected_resource_id,),
                                                                     queue=RESERVED_WORKER_1)
 
     @mock.patch('pulp.server.async.tasks.Task.request')
@@ -678,18 +684,168 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
+    @mock.patch('celery.Task.apply_async')
+    def test_apply_async_task_canceled(self, apply_async):
+        """
+        Assert that apply_async() honors 'canceled' task status.
+        """
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags']}
+        task_id = 'test_task_id'
+        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue'), state=CALL_CANCELED_STATE)
+        apply_async.return_value = celery.result.AsyncResult(task_id)
+
+        task = tasks.Task()
+        task.apply_async(*args, **kwargs)
+
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], 'canceled')
+        self.assertEqual(task_status['start_time'], None)
 
 class TestCancel(PulpServerTests):
     """
     Test the tasks.cancel() function.
     """
+    def setUp(self):
+        PulpServerTests.setUp(self)
+        TaskStatus.get_collection().remove()
+
+    def tearDown(self):
+        PulpServerTests.tearDown(self)
+        TaskStatus.get_collection().remove()
+
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
-    def test_cancel(self, logger, revoke):
+    def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
-
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name)
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
         self.assertEqual(logger.info.call_count, 1)
-        self.assertTrue(task_id in logger.info.mock_calls[0][1][0])
+        log_msg = logger.info.mock_calls[0][1][0]
+        self.assertTrue(task_id in log_msg)
+        self.assertTrue('Task canceled' in log_msg)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
+
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
+    def test_cancel_completed_task(self, logger, revoke):
+        task_id = '1234abcd'
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
+        tasks.cancel(task_id)
+
+        self.assertEqual(logger.info.call_count, 1)
+        log_msg = logger.info.mock_calls[0][1][0]
+        self.assertTrue(task_id in log_msg)
+        self.assertTrue('cannot be canceled since it is already in a complete state' in log_msg)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
+
+
+class TestRegisterSigtermHandler(unittest.TestCase):
+    """
+    Test the register_sigterm_handler() decorator.
+    """
+    def test_error_case(self):
+        """
+        Make sure that register_sigterm_handler() does the right thing during the error case.
+        """
+        class FakeException(Exception):
+            """
+            This Exception gets raised by f(). It's better to raise this instead of Exception, so we
+            can assert it with self.assertRaises without missing the Exceptions that could be raised
+            by the other assertions in f().
+            """
+
+        def f(*args, **kwargs):
+            """
+            This function will be wrapped by the decorator during this test. It asserts that the
+            signal handler is correct and then raises Exception.
+
+            :param args:   positional arguments that will be asserted to be correct
+            :type  args:   tuple
+            :param kwargs: keyword argumets that will be asserted to be correct
+            :type  kwargs: dict
+            """
+            # Make sure the correct params were passed
+            self.assertEqual(args, some_args)
+            self.assertEqual(kwargs, some_kwargs)
+            # We can't assert that our mock cancel method below is the handler, because the real
+            # handler is the cancel inside of register_sigterm_handler. What we can do is to assert
+            # that the signal handler has changed, and that calling the signal handler calls our
+            # mock cancel.
+            signal_handler = signal.getsignal(signal.SIGTERM)
+            self.assertNotEqual(signal_handler, starting_term_handler)
+            # Now let's call the signal handler and make sure that cancel() gets called.
+            self.assertEqual(cancel.call_count, 0)
+            signal_handler(signal.SIGTERM, None)
+            self.assertEqual(cancel.call_count, 1)
+
+            raise FakeException()
+
+        f = mock.MagicMock(side_effect=f)
+        cancel = mock.MagicMock()
+        starting_term_handler = signal.getsignal(signal.SIGTERM)
+        wrapped_f = tasks.register_sigterm_handler(f, cancel)
+        # So far, the signal handler should still be the starting one
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+        some_args = (1, 'b', 4)
+        some_kwargs = {'key': 'value'}
+
+        # Now, let's call wrapped_f(). This should raise the Exception, but the signal handler
+        # should be restored to its initial value. f() also asserts that during the operation the
+        # signal handler is cancel.
+        self.assertRaises(FakeException, wrapped_f, *some_args, **some_kwargs)
+
+        # Assert that f() was called with the right params
+        f.assert_called_once_with(*some_args, **some_kwargs)
+        # Assert that the signal handler has been restored
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+
+    def test_normal_case(self):
+        """
+        Make sure that register_sigterm_handler() does the right thing during the normal case.
+        """
+        def f(*args, **kwargs):
+            """
+            This function will be wrapped by the decorator during this test. It asserts that the
+            signal handler is correct and then returns 42.
+            """
+            self.assertEqual(args, some_args)
+            self.assertEqual(kwargs, some_kwargs)
+            # We can't assert that our mock cancel method below is the handler, because the real
+            # handler is the cancel inside of register_sigterm_handler. What we can do is to assert
+            # that the signal handler has changed, and that calling the signal handler calls our
+            # mock cancel.
+            signal_handler = signal.getsignal(signal.SIGTERM)
+            self.assertNotEqual(signal_handler, starting_term_handler)
+            # Now let's call the signal handler and make sure that cancel() gets called.
+            self.assertEqual(cancel.call_count, 0)
+            signal_handler(signal.SIGTERM, None)
+            self.assertEqual(cancel.call_count, 1)
+
+            return 42
+
+        f = mock.MagicMock(side_effect=f)
+        cancel = mock.MagicMock()
+        starting_term_handler = signal.getsignal(signal.SIGTERM)
+        wrapped_f = tasks.register_sigterm_handler(f, cancel)
+        # So far, the signal handler should still be the starting one
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+        some_args = (1, 'b', 4)
+        some_kwargs = {'key': 'value'}
+
+        # Now, let's call wrapped_f(). This should raise the Exception, but the signal handler
+        # should be restored to its initial value. f() also asserts that during the operation the
+        # signal handler is cancel.
+        return_value = wrapped_f(*some_args, **some_kwargs)
+
+        self.assertEqual(return_value, 42)
+        # Assert that f() was called with the right params
+        f.assert_called_once_with(*some_args, **some_kwargs)
+        # Assert that the signal handler has been restored
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)

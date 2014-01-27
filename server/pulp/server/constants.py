@@ -13,4 +13,3 @@
 #
 
 LOCAL_STORAGE="/var/lib/pulp/"
-

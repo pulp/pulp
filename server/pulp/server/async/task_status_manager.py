@@ -13,7 +13,9 @@
 
 from pymongo.errors import DuplicateKeyError
 
+from pulp.common import dateutils
 from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 
 
@@ -63,6 +65,51 @@ class TaskStatusManager(object):
         return created
 
     @staticmethod
+    def set_task_started(task_id):
+        """
+        Update a task's state to reflect that it has started running.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        """
+        delta = {
+            'state': dispatch_constants.CALL_RUNNING_STATE,
+            'start_time': dateutils.now_utc_timestamp(),
+        }
+        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+    @staticmethod
+    def set_task_succeeded(task_id, result=None):
+        """
+        Update a task's state to reflect that it succeeded.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        :param result: The optional value returned by the task execution.
+        :type result: anything
+        """
+        delta = {
+            'state': dispatch_constants.CALL_FINISHED_STATE,
+            'finish_time': dateutils.now_utc_timestamp(),
+            'result': result
+        }
+        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+    @staticmethod
+    def set_task_failed(task_id, traceback):
+        """
+        Update a task's state to reflect that it succeeded.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        :ivar traceback: A string representation of the traceback resulting from the task execution.
+        :type traceback: basestring
+        """
+        delta = {
+            'state': dispatch_constants.CALL_ERROR_STATE,
+            'finish_time': dateutils.now_utc_timestamp(),
+            'traceback': traceback
+        }
+        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+    @staticmethod
     def update_task_status(task_id, delta):
         """
         Updates status of the task with given task id. Only the following
@@ -72,6 +119,8 @@ class TaskStatusManager(object):
         * traceback
         * start_time
         * finish_time
+        * error
+        * spawned_tasks
         Other fields found in delta will be ignored.
 
         :param task_id: identity of the task this status corresponds to
@@ -87,7 +136,8 @@ class TaskStatusManager(object):
         if task_status is None:
             raise MissingResource(task_id)
 
-        updatable_attributes = ['state', 'result', 'traceback', 'start_time', 'finish_time']
+        updatable_attributes = ['state', 'result', 'traceback', 'start_time', 'finish_time',
+                                'error', 'spawned_tasks']
         for key, value in delta.items():
             if key in updatable_attributes:
                 task_status[key] = value

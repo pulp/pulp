@@ -29,6 +29,7 @@ from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import PulpCli, ClientContext, PulpPrompt
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
+from pulp.server.async import celery_instance
 from pulp.server.config import config as pulp_conf
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
@@ -52,6 +53,13 @@ class ServerTests(TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # This will make Celery tasks run synchronously
+        celery_instance.celery.conf.CELERY_ALWAYS_EAGER = True
+        cls.reserve_resources_patch = mock.patch('pulp.server.async.tasks._reserve_resource.'
+                                                 'apply_async')
+        mock_patch = cls.reserve_resources_patch.start()
+        mock_patch.return_value.get.return_value = 'some_queue'
+
         if not os.path.exists(cls.TMP_ROOT):
             os.makedirs(cls.TMP_ROOT)
         stop_logging()
@@ -73,6 +81,7 @@ class ServerTests(TestCase):
     def tearDownClass(cls):
         name = pulp_conf.get('database', 'name')
         connection._CONNECTION.drop_database(name)
+        cls.reserve_resources_patch.stop()
 
     def setUp(self):
         QueuedCall.get_collection().remove()

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011-2013 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
@@ -12,13 +10,15 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import datetime
+import signal
 
 import mock
 
-import base
+from .... import base
 from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
 from pulp.plugins.model import PublishReport
+from pulp.server.async import tasks
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 from pulp.server.exceptions import InvalidValue, PulpExecutionException
 import pulp.server.managers.repo.cud as repo_manager
@@ -58,8 +58,10 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Setup
         publish_config = {'foo' : 'bar'}
         self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config, False, distributor_id='dist-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config, False, distributor_id='dist-2')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config,
+                                                 False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config,
+                                                 False, distributor_id='dist-2')
 
         # Test
         self.publish_manager.publish('repo-1', 'dist-1', None)
@@ -67,7 +69,8 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         # Verify
 
         #   Database
-        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'dist-1'})
+        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' :'repo-1',
+                                                                      'id' :'dist-1'})
         self.assertTrue(repo_distributor['last_publish'] is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
@@ -171,7 +174,6 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('not-here' == e.resources['resource_id'])
-            print(e) # for coverage
 
     def test_publish_no_distributor(self):
         """
@@ -187,7 +189,6 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('no-dist' == e.resources['repository'])
-            print(e) # for coverage
 
     def test_publish_bad_distributor(self):
         """
@@ -208,7 +209,6 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('repo' == e.resources['resource_id'])
-            print(e) # for coverage
 
     def test_publish_bad_database(self):
         """
@@ -228,7 +228,6 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
             self.fail('Expected exception was not raised')
         except publish_manager.MissingResource, e:
             self.assertTrue('repo' == e.resources['repository'])
-            print(e) # for coverage
 
     def test_publish_with_error(self):
         """
@@ -241,12 +240,8 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.repo_manager.create_repo('gonna-bail')
         self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', {}, False, distributor_id='bad-dist')
 
-        # Test
-        try:
-            self.publish_manager.publish('gonna-bail', 'bad-dist')
-            self.fail('Expected exception was not raised')
-        except publish_manager.PulpExecutionException, e:
-            print(e) # for coverage
+        self.assertRaises(publish_manager.PulpExecutionException, self.publish_manager.publish,
+                          'gonna-bail', 'bad-dist')
 
         # Verify
         repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'bad-dist'})
@@ -323,8 +318,6 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
             #self.assertEqual(1, len(e.dist_traceback_tuples))
             #self.assertEqual('auto-1', e.dist_traceback_tuples[0][0])
             #self.assertTrue(e.dist_traceback_tuples[0][1] is not None)
-            #print(e) # for coverage
-            #print(e.dist_traceback_tuples[0][1]) # for curiosity of the exception format
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
@@ -612,7 +605,70 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
 
         self.assertEqual(0, len(repo3_dists))
 
-# -- testing utilities --------------------------------------------------------
+
+class TestDoPublish(base.PulpAsyncServerTests):
+    """
+    Assert correct behavior from the _do_publish() method.
+    """
+    def setUp(self):
+        super(TestDoPublish, self).setUp()
+        mock_plugins.install()
+        self.repo_manager = repo_manager.RepoManager()
+        self.distributor_manager = distributor_manager.RepoDistributorManager()
+        self.publish_manager = publish_manager.RepoPublishManager()
+
+    def tearDown(self):
+        super(TestDoPublish, self).tearDown()
+        mock_plugins.reset()
+        Repo.get_collection().remove()
+        RepoDistributor.get_collection().remove()
+        RepoPublishResult.get_collection().remove()
+
+    @mock.patch('pulp.server.managers.repo.publish.register_sigterm_handler',
+                side_effect=tasks.register_sigterm_handler)
+    def test_wraps_publish_in_register_sigterm_handler(self, register_sigterm_handler):
+        """
+        Assert that the distributor's publish_repo() method is wrapped by
+        pulp.server.async.tasks.register_sigterm_handler.
+        """
+        def publish_repo(self, *args, **kwargs):
+            """
+            This method will be attached to the distributor_instance, and will allow us to assert
+            that the register_sigterm_handler is called before the publish_repo is called. We can
+            tell because inside here the SIGTERM handler has been altered.
+            """
+            signal_handler = signal.getsignal(signal.SIGTERM)
+            self.assertNotEqual(signal_handler, starting_term_handler)
+
+            # Make sure that the signal handler is the distributor's cancel method
+            self.assertEqual(distributor_instance.cancel_publish_repo.call_count, 0)
+            signal_handler(signal.SIGTERM, None)
+            self.assertEqual(distributor_instance.cancel_publish_repo.call_count, 1)
+
+        publish_config = {'foo' : 'bar'}
+        distributor_id = 'dist-1'
+        repo_id = 'repo-1'
+        repo = self.repo_manager.create_repo(repo_id)
+        self.distributor_manager.add_distributor(repo_id, 'mock-distributor', publish_config, False,
+                                                 distributor_id=distributor_id)
+        distributor_instance, distributor_config = \
+            publish_manager.RepoPublishManager._get_distributor_instance_and_config(repo_id,
+                                                                                    distributor_id)
+        # Set our special publish_repo() from above to the instance so we can make our assertions
+        distributor_instance.publish_repo = publish_repo
+        transfer_repo = mock.MagicMock()
+        conduit = mock.MagicMock()
+        call_config = mock.MagicMock()
+        starting_term_handler = signal.getsignal(signal.SIGTERM)
+
+        publish_manager.RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
+                                                       transfer_repo, conduit, call_config)
+
+        register_sigterm_handler.assert_called_once_with(publish_repo,
+                                                distributor_instance.cancel_publish_repo)
+        # Make sure the TERM handler is set back to normal
+        self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
+
 
 def assert_last_sync_time(time_in_iso):
     now = datetime.datetime.now(dateutils.local_tz())

@@ -166,9 +166,6 @@ touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
 
-# Cron
-cp -R server/etc/cron.monthly %{buildroot}/%{_sysconfdir}
-
 %if %{pulp_selinux}
 # Install SELinux policy modules
 cd server/selinux/server
@@ -228,7 +225,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %files server
 # - root:root
 %defattr(-,root,root,-)
-%config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
 %config(noreplace) %{_sysconfdir}/default/pulp_celerybeat
 %config(noreplace) %{_sysconfdir}/default/pulp_workers
 %config(noreplace) %{_sysconfdir}/default/pulp_resource_manager
@@ -242,7 +238,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir /srv/%{name}
 /srv/%{name}/webservices.wsgi
 %{_bindir}/pulp-manage-db
-%{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
 %{_usr}/lib/%{name}/plugins/distributors

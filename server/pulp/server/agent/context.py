@@ -13,61 +13,64 @@
 
 import hashlib
 
-from pulp.server.dispatch import factory
-from pulp.server.config import config
+from pulp.server.config import config as pulp_conf
 
-
-class Capability:
-    """
-    Agent capabilities provide both namespacing and central
-    access to call context.
-    @ivar context: The context.
-    @type context: L{Context}
-    """
-
-    def __init__(self, context):
-        """
-        @param context: The capability context.
-        @type context: L{Context}
-        """
-        self.context = context
+from pulp.server.agent.direct.services import Services
 
 
 class Context(object):
     """
-    The remote method invocation context provides call
-    context sensitive options and settings.
-    @ivar uuid: The agent UUID.
-    @type uiud: str
-    @ivar url: The broker URL.
-    @type url: str
-    @ivar secret: The server agent shared secret for the consumer.
-    @type secret: str
-    @ivar call_request_id: The ID of the call request when
-        the call is being executed by the dispatch system.
-        This ID is round-tripped to the agent and used by the
-        reply listener for task lookup.
+    The context bundles together all of the information needed to invoke the
+    remote method on the agent and where the asynchronous reply is to be sent.
+    Further, gofer supports including arbitrary information to be round tripped.
+    This is contextual information that the asynchronous reply handler will need
+    to process the reply.  The context also determines the agent UUID based on the
+    consumer ID.  It also generates the shared secret based on the SHA256 hex
+    digest of the consumer certificate. We include such things as: The task_id and in
+    some cases DB entity IDs so we can update the DB based on the result of the
+    operation on the agent.
+
+    :ivar uuid: The agent UUID.
+    :type uiud: str
+    :ivar url: The broker URL.
+    :type url: str
+    :ivar secret: The shared secret for the consumer.
+    :type secret: str
+    :ivar round_tripped: Data round tripped to that agent and back.
+        Used by the reply consumer.
+    :type round_tripped: object
+    :ivar watchdog: A gofer watchdog object.  Used to track overdue requests.
+    :type watchdog: gofer.rmi.async.Watchdog
+    :ivar reply_queue: The reply queue name.
+    :type reply_queue: str
     """
 
-    def __init__(self, consumer):
+    def __init__(self, consumer, **details):
+        """
+        :param consumer: A consumer DB model object.
+        :type consumer: dict
+        """
         self.uuid = consumer['id']
-        self.url = config.get('messaging', 'url')
+        self.url = pulp_conf.get('messaging', 'url')
         certificate = consumer.get('certificate')
         hash = hashlib.sha256()
         hash.update(certificate.strip())
         self.secret = hash.hexdigest()
-        self.call_request_id = factory.context().call_request_id
+        self.details = details
+        self.watchdog = Services.watchdog
+        self.reply_queue = Services.REPLY_QUEUE
 
-    def get_timeout(self, option):
+    @staticmethod
+    def get_timeout(option):
         """
         Get a timeout option from the server configuration.
         The value is parsed and converted into a gofer
         timeout tuple.
-        @param option: The name of a config option.
-        @type option: str
-        @return: A gofer timeout tuple: (<initial>, <duration>).
-        @rtype tuple
+        :param option: The name of a config option.
+        :type option: str
+        :return: A gofer timeout tuple: (<initial>, <duration>).
+        :rtype tuple
         """
-        value = config.get('messaging', option)
+        value = pulp_conf.get('messaging', option)
         initial, duration = value.split(':')
         return initial, duration

@@ -149,14 +149,9 @@ class Distributor(object):
         """
         raise NotImplementedError()
 
-    def cancel_publish_repo(self, call_request, call_report):
+    def cancel_publish_repo(self):
         """
         Call cancellation control hook.
-
-        @param call_request: call request for the call to cancel
-        @type call_request: CallRequest
-        @param call_report: call report for the call to cancel
-        @type call_report: CallReport
         """
         raise NotImplementedError()
 

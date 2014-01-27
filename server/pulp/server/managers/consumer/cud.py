@@ -27,6 +27,7 @@ from pulp.server import config
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.managers import factory
+from pulp.server.managers.schedule import utils as schedule_utils
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException, MissingValue
 
@@ -121,10 +122,10 @@ class ConsumerManager(object):
         group_manager.remove_consumer_from_groups(consumer_id)
 
         # delete any scheduled unit installs
-        schedule_manager = factory.schedule_manager()
-        schedule_manager.delete_all_unit_install_schedules(consumer_id)
-        schedule_manager.delete_all_unit_update_schedules(consumer_id)
-        schedule_manager.delete_all_unit_uninstall_schedules(consumer_id)
+        schedule_manager = factory.consumer_schedule_manager()
+        for schedule in schedule_manager.get(consumer_id):
+            # using "delete" on utils skips validation that the consumer exists.
+            schedule_utils.delete(schedule.id)
 
         # Database Updates
         try:
@@ -155,6 +156,10 @@ class ConsumerManager(object):
         :type   id:              str
         :param  delta:           list of attributes and their new values to change
         :type   delta:           dict
+
+        :return:    document from the database representing the updated consumer
+        :rtype:     dict
+
         :raises MissingResource: if there is no consumer with given id
         :raises InvalidValue:    if notes are provided in unacceptable (non-dict) form
         :raises MissingValue:    if delta provided is empty
@@ -182,19 +187,70 @@ class ConsumerManager(object):
         return consumer
 
     @staticmethod
-    def get_consumer(id):
+    def get_consumer(id, fields=None):
         """
         Returns a consumer with given ID.
 
-        :param  id:              consumer ID
-        :type   id:              str
+        :param id:              consumer ID
+        :type  id:              basestring
+        :param fields:          optional list of field names that should be returned.
+                                defaults to all fields.
+        :type  fields:          list
+
+        :return:    document from the database representing a consumer
+        :rtype:     dict
+
         :raises MissingResource: if a consumer with given id does not exist
         """
         consumer_coll = Consumer.get_collection()
-        consumer = consumer_coll.find_one({'id' : id})
+        consumer = consumer_coll.find_one({'id' : id}, fields=fields)
         if not consumer:
             raise MissingResource(consumer=id)
         return consumer
+
+    @classmethod
+    def add_schedule(cls, operation, consumer_id, schedule_id):
+        """
+        Adds a install schedule for a repo to the importer.
+        @param repo_id:
+        @param schedule_id:
+        @return:
+        """
+        cls._validate_scheduled_operation(operation)
+        Consumer.get_collection().update(
+            {'_id': consumer_id},
+            {'$addToSet': {'schedules.%s' % operation: schedule_id}},
+            safe=True)
+
+    @classmethod
+    def remove_schedule(cls, operation, consumer_id, schedule_id):
+        """
+        Removes a install schedule for a repo from the importer.
+        @param repo_id:
+        @param schedule_id:
+        @return:
+        """
+        cls._validate_scheduled_operation(operation)
+        Consumer.get_collection().update(
+            {'_id': consumer_id},
+            {'$pull': {'schedules.%s' % operation: schedule_id}},
+            safe=True)
+
+    @classmethod
+    def list_schedules(cls, operation, consumer_id):
+        """
+        List the install schedules currently defined for the repo.
+        @param repo_id:
+        @return:
+        """
+        cls._validate_scheduled_operation(operation)
+        consumer = cls.get_consumer(consumer_id, ['schedules'])
+        return consumer.get('schedules', {}).get(operation, [])
+
+    @staticmethod
+    def _validate_scheduled_operation(operation):
+        if operation not in ['install', 'update', 'uninstall']:
+            raise ValueError('"%s" is not a valid operation' % operation)
 
 
 register = task(ConsumerManager.register, base=Task)

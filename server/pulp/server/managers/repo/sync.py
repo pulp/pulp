@@ -33,7 +33,7 @@ from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
-from pulp.server.async.tasks import Task
+from pulp.server.async.tasks import register_sigterm_handler, Task
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
@@ -156,7 +156,11 @@ class RepoSyncManager(object):
         result = None
 
         try:
-            sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
+            # Replace the Importer's sync_repo() method with our register_sigterm_handler decorator,
+            # which will set up cancel_sync_repo() as the target for the signal handler
+            sync_repo = register_sigterm_handler(importer_instance.sync_repo,
+                                                 importer_instance.cancel_sync_repo)
+            sync_report = sync_repo(transfer_repo, conduit, call_config)
 
         except Exception, e:
             sync_end_timestamp = _now_timestamp()
@@ -167,7 +171,7 @@ class RepoSyncManager(object):
 
             logger.exception(
                 _('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
-            raise PulpExecutionException(), None, sys.exc_info()[2]
+            raise
 
         else:
             sync_end_timestamp = _now_timestamp()
