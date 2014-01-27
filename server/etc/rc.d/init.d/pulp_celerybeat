@@ -276,7 +276,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|create-paths}"
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|create-paths|check-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
