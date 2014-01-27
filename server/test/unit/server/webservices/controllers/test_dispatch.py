@@ -117,6 +117,7 @@ class TestTaskCollection(base.PulpWebserviceTests):
                 self.assertEqual(task['queue'], queue_1)
                 self.assertEqual(task['tags'], tags1)
             else:
+                self.assertEqual(task['task_id'], task_id2)
                 self.assertEquals(task['state'], state2)
                 self.assertEqual(task['queue'], queue_2)
                 self.assertEquals(task['tags'], tags2)
@@ -162,10 +163,11 @@ class TestTaskCollection(base.PulpWebserviceTests):
         tags = ['random', 'tags']
 
         TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
-        status, body = self.get('/v2/tasks/%s/' % str(uuid.uuid4()))
+        non_existing_task_id = str(uuid.uuid4())
+        status, body = self.get('/v2/tasks/%s/' % non_existing_task_id)
 
         # Validate
         self.assertEqual(404, status)
         self.assertIsInstance(body, dict)
         self.assertTrue('Task Not Found' in body['error_message'])
-        self.assertTrue(task_id1 in body['error_message'])
+        self.assertTrue(non_existing_task_id in body['error_message'])
