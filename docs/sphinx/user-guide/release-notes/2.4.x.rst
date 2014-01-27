@@ -8,7 +8,7 @@ Pulp 2.4.0
 New Features
 ------------
 
-#. An all new distributed task system based on `Celery <http://celeryproject.org>`_.
+#. An all-new distributed task system based on `Celery <http://celeryproject.org>`_.
 #. All of ``/var/lib/pulp`` can now be a shared filesystem.
 #. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
    version 2.5.2.

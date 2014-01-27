@@ -110,7 +110,7 @@ Server
 
    .. warning::
       On new MongoDB installations, the start call may exit before the database is
-      accepting connections. MongoDB takes some time to preallocate large files, and will not accept
+      accepting connections. MongoDB takes some time to preallocate large files and will not accept
       connections until it finishes. When this happens, it is possible for Pulp to fail to start.
       If this occurs, give MongoDB a few minutes to finish initializing and start Pulp again.
 
