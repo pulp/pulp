@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.4.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -246,6 +246,12 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Tue Jan 28 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.2.alpha
+- 921743 - Adjust ownership and permissions for a variety of the RPM paths.
+  (rbarlow@redhat.com)
+- 1005899 - report errors fetching bindings from the parent in the report.
+  (jortel@redhat.com)
+
 * Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
 - 995076 - make sure to call finalize on the nectar config object
   (jason.connor@gmail.com)
