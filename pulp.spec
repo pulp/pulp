@@ -30,7 +30,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -488,6 +488,19 @@ exit 0
 %endif
 
 %changelog
+* Tue Jan 28 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.2.alpha
+- 1048297 - pulp-dev.py sets the CA cert and key world readable.
+  (rbarlow@redhat.com)
+- 921743 - Adjust ownership and permissions for a variety of the RPM paths.
+  (rbarlow@redhat.com)
+- 1034978 - Add visible errors to the unit associate and unassociate commands
+  and move formatting the cli output to the base class instead of each plugin
+  having to work independently (bcourt@redhat.com)
+- 1039619 - update output to account for qpidd.conf location changing in qpid
+  0.24 (jortel@redhat.com)
+- 1005899 - report errors fetching bindings from the parent in the report.
+  (jortel@redhat.com)
+
 * Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
 - 1031220 - raising an AttributeError when an attribute is missing on a Model
   (mhrivnak@redhat.com)
