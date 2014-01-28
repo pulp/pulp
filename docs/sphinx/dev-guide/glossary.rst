@@ -85,6 +85,6 @@ Glossary
     multiple invocations. Each scratchpad is scoped to an individual plugin on a repository.
 
   unit profile
-    An arrayt of :term:`content unit` installed on a :term:`consumer`.  The
+    An array of :term:`content unit` installed on a :term:`consumer`.  The
     structure and content of each item in the profile varies based on the
     unit type.

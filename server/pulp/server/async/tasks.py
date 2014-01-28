@@ -13,10 +13,10 @@
 from datetime import datetime, timedelta
 from gettext import gettext as _
 import logging
-import random
 import re
+import signal
 
-from celery import chain, task, Task as CeleryTask
+from celery import task, Task as CeleryTask
 from celery.app import control, defaults
 
 from pulp.common import dateutils
@@ -268,15 +268,6 @@ class ReservedTaskMixin(object):
         return async_result
 
 
-class Chain(chain, ReservedTaskMixin):
-    """
-    This is a custom Pulp subclass of the Celery chain class. It allows us to inject resource
-    locking behaviors into the Chain.
-    """
-    def __call__(self, *args, **kwargs):
-        return super(Chain, self).__call__(*args, **kwargs)
-
-
 class Task(CeleryTask, ReservedTaskMixin):
     """
     This is a custom Pulp subclass of the Celery Task object. It allows us to inject some custom
@@ -410,3 +401,54 @@ def cancel(task_id):
         msg = _('Task [%(task_id)s] cannot be canceled since it is already in a complete state.')
         msg = msg % {'task_id': task_id}
     logger.info(msg)
+
+
+def register_sigterm_handler(f, handler):
+    """
+    register_signal_handler is a method or function decorator. It will register a special signal
+    handler for SIGTERM that will call handler() with no arguments if SIGTERM is received during the
+    operation of f. Once f has completed, the signal handler will be restored to the handler that
+    was in place before the method began.
+
+    :param f:       The method or function that should be wrapped.
+    :type  f:       instancemethod or function
+    :param handler: The method or function that should be called when we receive SIGTERM.
+                    handler will be called with no arguments.
+    :type  handler: instancemethod or function
+    :return:        A wrapped version of f that performs the signal registering and unregistering.
+    :rtype:         instancemethod or function
+    """
+    def sigterm_handler(signal_number, stack_frame):
+        """
+        This is the signal handler that gets installed to handle SIGTERM. We don't wish to pass the
+        signal_number or the stack_frame on to handler, so its only purpose is to avoid
+        passing these arguments onward. It calls handler().
+
+        :param signal_number: The signal that is being handled. Since we have registered for
+                              SIGTERM, this will be signal.SIGTERM.
+        :type  signal_number: int
+        :param stack_frame:   The current execution stack frame
+        :type  stack_frame:   None or frame
+        """
+        handler()
+
+    def wrap_f(*args, **kwargs):
+        """
+        This function is a wrapper around f. It replaces the signal handler for SIGTERM with
+        signerm_handler(), calls f, sets the SIGTERM handler back to what it was before, and then
+        returns the return value from f.
+
+        :param args:   The positional arguments to be passed to f
+        :type  args:   tuple
+        :param kwargs: The keyword arguments to be passed to f
+        :type  kwargs: dict
+        :return:       The return value from calling f
+        :rtype:        Could be anything!
+        """
+        old_signal = signal.signal(signal.SIGTERM, sigterm_handler)
+        try:
+            return f(*args, **kwargs)
+        finally:
+            signal.signal(signal.SIGTERM, old_signal)
+
+    return wrap_f

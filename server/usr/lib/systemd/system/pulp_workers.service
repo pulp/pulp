@@ -1,0 +1,9 @@
+[Unit]
+Description=Pulp Celery Workers
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/libexec/pulp-manage-workers start
+ExecStop=/usr/libexec/pulp-manage-workers stop

@@ -67,6 +67,7 @@ DIRS = (
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
+    '/var/lib/pulp/celery',
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
@@ -105,6 +106,7 @@ LINKS = (
     ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
     ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 )
+
 
 def parse_cmdline():
     """
@@ -182,7 +184,37 @@ def getlinks():
             src, dst = apache_22_conf
 
         links.append((src, dst))
-    
+
+    lsb_vendor = subprocess.Popen(['lsb_release', '-si'],
+                                  stdout=subprocess.PIPE).communicate()[0].strip()
+    if lsb_vendor not in ('RedHatEnterpriseServer', 'Fedora'):
+        print 'Your Linux vendor is not supported by this script: %s' % lsb_vendor
+        sys.exit(1)
+
+    lsb_version = float(subprocess.Popen(['lsb_release', '-sr'],
+                                         stdout=subprocess.PIPE).communicate()[0])
+    if lsb_version < 7.0:
+        links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
+        links.append(('server/etc/rc.d/init.d/pulp_workers',
+                      '/etc/rc.d/init.d/pulp_workers'))
+        links.append(('/etc/rc.d/init.d/pulp_workers',
+                      '/etc/rc.d/init.d/pulp_resource_manager'))
+        links.append(('server/etc/default/upstart_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
+        links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))
+        links.append(('server/etc/default/upstart_pulp_resource_manager',
+                      '/etc/default/pulp_resource_manager'))
+    else:
+        links.append(('server/etc/default/systemd_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
+        links.append(('server/etc/default/systemd_pulp_workers', '/etc/default/pulp_workers'))
+        links.append(('server/etc/default/systemd_pulp_resource_manager',
+                      '/etc/default/pulp_resource_manager'))
+        links.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
+                      '/usr/lib/systemd/system/pulp_celerybeat.service'))
+        links.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
+                      '/usr/lib/systemd/system/pulp_resource_manager.service'))
+        links.append(('server/usr/lib/systemd/system/pulp_workers.service',
+                      '/usr/lib/systemd/system/pulp_workers.service'))
+
     return links
 
 
@@ -200,6 +232,11 @@ def install(opts):
     os.system('chown -R apache:apache /var/log/pulp')
     os.system('chown -R apache:apache /var/lib/pulp')
 
+    # The Celery init script will get angry if /etc/default things aren't root owned
+    os.system('chown root:root /etc/default/pulp_celerybeat')
+    os.system('chown root:root /etc/default/pulp_workers')
+    os.system('chown root:root /etc/default/pulp_resource_manager')
+
     # Guarantee apache always has write permissions
     os.system('chmod 3775 /var/log/pulp')
     os.system('chmod 3775 /var/lib/pulp')
@@ -208,6 +245,11 @@ def install(opts):
     print 'generating certificates'
     os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
     os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
+
+    # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
+    # those world readable. Until we fix this, we cannot close #1048297
+    os.system('chmod 644 /etc/pki/pulp/ca.*')
+    os.system('chown apache:apache /etc/pki/pulp/content')
 
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"

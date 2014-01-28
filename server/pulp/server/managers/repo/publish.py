@@ -36,7 +36,7 @@ from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishRe
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
-from pulp.server.async.tasks import Task
+from pulp.server.async.tasks import register_sigterm_handler, Task
 
 
 logger = logging.getLogger(__name__)
@@ -126,7 +126,11 @@ class RepoPublishManager(object):
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
         try:
-            publish_report = distributor_instance.publish_repo(transfer_repo, conduit, call_config)
+            # Add the register_sigterm_handler decorator to the publish_repo call, so that we can
+            # respond to signals by calling the Distributor's cancel_publish_repo() method.
+            publish_repo = register_sigterm_handler(
+                distributor_instance.publish_repo, distributor_instance.cancel_publish_repo)
+            publish_report = publish_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             publish_end_timestamp = _now_timestamp()
 
