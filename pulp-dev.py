@@ -15,8 +15,10 @@
 import optparse
 import os
 import re
+import shutil
 import subprocess
 import sys
+
 
 WARNING_COLOR = '\033[31m'
 WARNING_RESET = '\033[0m'
@@ -73,7 +75,6 @@ DIRS = (
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
 
-#
 # Str entry assumes same src and dst relative path.
 # Tuple entry is explicit (src, dst)
 #
@@ -107,6 +108,15 @@ LINKS = (
     ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 )
 
+LSB_VENDOR = subprocess.Popen(['lsb_release', '-si'],
+                              stdout=subprocess.PIPE).communicate()[0].strip()
+if LSB_VENDOR not in ('RedHatEnterpriseServer', 'Fedora'):
+    print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
+    sys.exit(1)
+
+LSB_VERSION = float(subprocess.Popen(['lsb_release', '-sr'],
+                    stdout=subprocess.PIPE).communicate()[0])
+
 
 def parse_cmdline():
     """
@@ -138,8 +148,10 @@ def parse_cmdline():
 
     return (opts, args)
 
+
 def warning(msg):
     print "%s%s%s" % (WARNING_COLOR, msg, WARNING_RESET)
+
 
 def debug(opts, msg):
     if not opts.debug:
@@ -154,6 +166,26 @@ def create_dirs(opts):
             continue
         debug(opts, 'creating directory: %s' % d)
         os.makedirs(d, 0777)
+
+
+def get_paths_to_copy():
+    """
+    Return a list of 2-tuples. Each 2-tuple is a (source, destination) indicating a source path
+    that should be copied to the given destination.
+
+    :return: List of (src, dst) tuples of paths to copy.
+    :rtype:  list
+    """
+    paths = []
+    if LSB_VERSION >= 7.0:
+        paths.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
+                      '/etc/systemd/system/pulp_celerybeat.service'))
+        paths.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
+                      '/etc/systemd/system/pulp_resource_manager.service'))
+        paths.append(('server/usr/lib/systemd/system/pulp_workers.service',
+                      '/etc/systemd/system/pulp_workers.service'))
+
+    return paths
 
 
 def getlinks():
@@ -185,15 +217,7 @@ def getlinks():
 
         links.append((src, dst))
 
-    lsb_vendor = subprocess.Popen(['lsb_release', '-si'],
-                                  stdout=subprocess.PIPE).communicate()[0].strip()
-    if lsb_vendor not in ('RedHatEnterpriseServer', 'Fedora'):
-        print 'Your Linux vendor is not supported by this script: %s' % lsb_vendor
-        sys.exit(1)
-
-    lsb_version = float(subprocess.Popen(['lsb_release', '-sr'],
-                                         stdout=subprocess.PIPE).communicate()[0])
-    if lsb_version < 7.0:
+    if LSB_VERSION < 7.0:
         links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
         links.append(('server/etc/rc.d/init.d/pulp_workers',
                       '/etc/rc.d/init.d/pulp_workers'))
@@ -208,12 +232,6 @@ def getlinks():
         links.append(('server/etc/default/systemd_pulp_workers', '/etc/default/pulp_workers'))
         links.append(('server/etc/default/systemd_pulp_resource_manager',
                       '/etc/default/pulp_resource_manager'))
-        links.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
-                      '/usr/lib/systemd/system/pulp_celerybeat.service'))
-        links.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
-                      '/usr/lib/systemd/system/pulp_resource_manager.service'))
-        links.append(('server/usr/lib/systemd/system/pulp_workers.service',
-                      '/usr/lib/systemd/system/pulp_workers.service'))
 
     return links
 
@@ -226,6 +244,13 @@ def install(opts):
         warning_msg = create_link(opts, os.path.join(currdir,src), dst)
         if warning_msg:
             warnings.append(warning_msg)
+
+    for src, dst in get_paths_to_copy():
+        msg = 'copying %(src)s to %(dst)s' % {'src': src, 'dst': dst}
+        debug(opts, msg)
+        shutil.copy2(src, dst)
+        os.system('chown root:root %s' % dst)
+        os.system('chmod 644 %s' % dst)
 
     # Grant apache write access to the pulp tools log file and pulp
     # packages dir
@@ -266,6 +291,12 @@ def uninstall(opts):
             continue
         os.unlink(dst)
 
+    for src, dst in get_paths_to_copy():
+        if os.path.exists(dst):
+            msg = 'removing %(dst)s' % {'dst': dst}
+            debug(opts, msg)
+            os.unlink(dst)
+
     # Link between pulp and apache
     if os.path.exists('/var/www/pub'):
         os.unlink('/var/www/pub')
@@ -304,15 +335,15 @@ def create_link(opts, src, dst):
         msg = "[%s] is pointing to [%s] which is different than the intended target [%s]" % (dst, os.readlink(dst), src)
         return msg
 
-def _create_link(opts, src, dst):
-        debug(opts, 'creating link: %s pointing to %s' % (dst, src))
-        try:
-            os.symlink(src, dst)
-        except OSError, e:
-            msg = "Unable to create symlink for [%s] pointing to [%s], received error: <%s>" % (dst, src, e)
-            return msg
 
-# -----------------------------------------------------------------------------
+def _create_link(opts, src, dst):
+    debug(opts, 'creating link: %s pointing to %s' % (dst, src))
+    try:
+        os.symlink(src, dst)
+    except OSError, e:
+        msg = "Unable to create symlink for [%s] pointing to [%s], received error: <%s>" % (dst, src, e)
+        return msg
+
 
 if __name__ == '__main__':
     # TODO add something to check for permissions
