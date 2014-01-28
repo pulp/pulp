@@ -106,12 +106,15 @@ class PulpWebservicesTests(unittest.TestCase):
         """
         self.mock_user_query_manager.return_value.is_authorized.assert_called_once_with(mock.ANY, mock.ANY, operation)
 
-    def get_mock_uri_path(self):
+    def get_mock_uri_path(self, *args):
         """
         :param object_id: the id of the object to get the uri for
         :type object_id: str
         """
-        return "/mock/"
+        path = "/mock/"
+        for arg in args:
+            path = path + "%s/" % arg
+        return path
 
 
 class MockTaskResult(object):

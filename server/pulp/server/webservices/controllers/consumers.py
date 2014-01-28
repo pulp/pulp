@@ -21,7 +21,7 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.dispatch.call import CallReport
 from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, \
     UnsupportedValue, MissingResource
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
@@ -32,10 +32,8 @@ from pulp.server.managers.schedule.consumer import UNIT_INSTALL_ACTION, UNIT_UNI
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 import pulp.server.managers.factory as managers
-from pulp.server.managers.consumer.profile import create as profile_create
 
 
 logger = logging.getLogger(__name__)
@@ -425,7 +423,7 @@ class Profiles(JSONController):
         manager = managers.consumer_profile_manager()
         new_profile = manager.create(consumer_id, content_type, profile)
         link = serialization.link.child_link_obj(consumer_id, content_type)
-        consumer.update(link)
+        new_profile.update(link)
         self.created(link['_href'], new_profile)
 
 

@@ -21,6 +21,7 @@ from .... import base
 from pulp.devel import mock_agent
 from pulp.devel import mock_plugins
 from pulp.devel.unit.base import PulpWebservicesTests
+from pulp.devel.unit.util import compare_dict
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.auth import authorization
 from pulp.server.async.tasks import TaskResult
@@ -718,6 +719,49 @@ class ContentTest(PulpWebservicesTests):
         mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
 
+class TestProfilesNoWSGI(PulpWebservicesTests):
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.Profiles.created')
+    @mock.patch('pulp.server.tasks.consumer.managers.consumer_profile_manager')
+    def test_post(self, mock_manager, mock_created):
+        # Setup
+        profiles = consumers.Profiles()
+        profiles.params = mock.Mock(return_value={'content_type': 'bar',
+                                                  'profile': 'baz'})
+        mock_manager.return_value.create.return_value = {'foo': 'bar'}
+
+        # Test
+        profiles.POST('consumer-foo')
+        mock_manager.return_value.create.assert_called_once_with('consumer-foo', 'bar', 'baz')
+        self.assertTrue(mock_created.called)
+        uri_path = self.get_mock_uri_path('consumer-foo', 'bar')
+        compare_dict(mock_created.mock_calls[0][1][1], {'foo': 'bar',
+                                                        '_href': uri_path})
+
+        self.validate_auth(authorization.CREATE)
+
+
+class TestProfileNoWSGI(PulpWebservicesTests):
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.Profile.ok')
+    @mock.patch('pulp.server.tasks.consumer.managers.consumer_profile_manager')
+    def test_put(self, mock_manager, mock_ok):
+        # Setup
+        profiles = consumers.Profile()
+        profiles.params = mock.Mock(return_value={'profile': 'baz'})
+        mock_manager.return_value.update.return_value = {'foo': 'bar'}
+
+        # Test
+        profiles.PUT('consumer-foo', 'content')
+        mock_manager.return_value.update.assert_called_once_with('consumer-foo', 'content', 'baz')
+        self.assertTrue(mock_ok.called)
+        uri_path = self.get_mock_uri_path('consumer-foo', 'content')
+        compare_dict(mock_ok.mock_calls[0][1][0], {'foo': 'bar',
+                                                   '_href': uri_path})
+
+        self.validate_auth(authorization.UPDATE)
+
+
 class TestProfiles(base.PulpWebserviceTests):
 
     CONSUMER_ID = 'test-consumer'
@@ -747,46 +791,6 @@ class TestProfiles(base.PulpWebserviceTests):
         for k in sorted(d.keys()):
             _sorted.append(d[k])
         return _sorted
-
-    def test_post(self):
-        # Setup
-        self.populate()
-        # Test
-        path = '/v2/consumers/%s/profiles/' % self.CONSUMER_ID
-        body = dict(content_type=self.TYPE_1, profile=self.PROFILE_1)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEqual(status, 201)
-        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
-        self.assertEqual(body['content_type'], self.TYPE_1)
-        self.assertEqual(body['profile'], self.PROFILE_1)
-        manager = factory.consumer_profile_manager()
-        profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_1)
-        for key in ('consumer_id', 'content_type', 'profile'):
-            self.assertEqual(body[key], profile[key])
-
-    def test_put(self):
-        # Setup
-        self.populate()
-        path = '/v2/consumers/%s/profiles/' % self.CONSUMER_ID
-        body = dict(content_type=self.TYPE_1, profile=self.PROFILE_1)
-        status, body = self.post(path, body)
-        self.assertEqual(status, 201)
-        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
-        self.assertEqual(body['content_type'], self.TYPE_1)
-        self.assertEqual(body['profile'], self.PROFILE_1)
-        # Test
-        path = '/v2/consumers/%s/profiles/%s/' % (self.CONSUMER_ID, self.TYPE_1)
-        body = dict(profile=self.PROFILE_2)
-        status, body = self.put(path, body)
-        self.assertEqual(body['consumer_id'], self.CONSUMER_ID)
-        self.assertEqual(body['content_type'], self.TYPE_1)
-        self.assertEqual(body['profile'], self.PROFILE_2)
-        manager = factory.consumer_profile_manager()
-        profile = manager.get_profile(self.CONSUMER_ID, self.TYPE_1)
-        for key in ('consumer_id', 'content_type', 'profile'):
-            self.assertEqual(body[key], profile[key])
-        self.assertEquals(profile['profile'], self.PROFILE_2)
 
     def test_delete(self):
         # Setup
