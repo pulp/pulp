@@ -31,7 +31,6 @@ Syncs content into a repository from a feed source using the repository's
 
 :sample_response:`202` ::
 
- [
   {"_href": "/pulp/api/v2/task_groupss/a4e8579d-6c41-4134-a150-cf65faeafdfe/",
    "response": "accepted",
    "reasons": [],
@@ -45,22 +44,7 @@ Syncs content into a repository from a feed source using the repository's
    "traceback": null,
    "start_time": null,
    "finish_time": null,
-   "tags": ["pulp:action:sync", "pulp:repository:<repo_id>"]},
-  {"_href": "/pulp/api/v2/task_groups/a4e8579d-6c41-4134-a150-cf65faeafdfe/",
-   "response": "postponed",
-   "reasons": [],
-   "state": "waiting",
-   "task_id": "a6b14cfd-dda3-4327-b02d-9609c9147920",
-   "task_group_id": "a4e8579d-6c41-4134-a150-cf65faeafdfe",
-   "schedule_id": null,
-   "progress": {},
-   "result": null,
-   "exception": null,
-   "traceback": null,
-   "start_time": null,
-   "finish_time": null,
-   "tags": ["pulp:action:publish", "pulp:action:auto_publish", "pulp:repository:<repo_id>"]},
- ]
+   "tags": ["pulp:action:sync", "pulp:repository:<repo_id>"]}
 
 
 
@@ -210,3 +194,4 @@ Retrieve sync history for a repository. Each sync performed on a repository crea
    "error_message": null,
   }
  ]
+
