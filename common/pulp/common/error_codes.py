@@ -69,5 +69,13 @@ PLP0016 = Error("PLP0016", _('Missing values for: %(properties)s'), ['properties
 PLP0017 = Error("PLP0017", _('Unsupported properties: %(properties)s'), ['properties'])
 PLP0018 = Error("PLP0018", _('Duplicate resource: %(resource_id)s'), ['resource_id'])
 PLP0019 = Error("PLP0019", _('Pulp only accepts input encoded in UTF-8: %(value)s'), ['value'])
-
+PLP0020 = Error("PLP0020",
+                _("Errors occurred installing content for the consumer group %(group_id)s."),
+                ['group_id'])
+PLP0021 = Error("PLP0021",
+                _("Errors occurred updating content for the consumer group %(group_id)s."),
+                ['group_id'])
+PLP0022 = Error("PLP0022",
+                _("Errors occurred uninstalling content for the consumer group %(group_id)s."),
+                ['group_id'])
 

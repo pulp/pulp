@@ -14,7 +14,7 @@
 import celery
 import logging
 
-from pulp.common.error_codes import PLP0004, PLP0005
+from pulp.common.error_codes import PLP0004, PLP0005, PLP0020, PLP0021, PLP0022
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.exceptions import PulpCodedException, PulpException
 from pulp.server.managers import factory as managers
@@ -118,16 +118,113 @@ def unbind(group_id, repo_id, distributor_id, options):
     return TaskResult({}, bind_error, additional_tasks)
 
 
-@celery.task(base=Task)
-def install_content(consumer_id, units, options):
-    pass
+def install_content(consumer_group_id, units, options):
+    """
+    Create an itinerary for consumer group content installation.
+    :param consumer_group_id: unique id of the consumer group
+    :type consumer_group_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :return: Details of the subtasks that were executed
+    :rtype: TaskResult
+    """
+    consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
+    agent_manager = managers.consumer_agent_manager()
+
+    errors = []
+    spawned_tasks = []
+    for consumer_id in consumer_group['consumer_ids']:
+        try:
+            task = agent_manager.install_content(consumer_id, units, options)
+            spawned_tasks.append(task)
+        except PulpException, e:
+            #Log a message so that we can debug but don't throw
+            logger.warn(e.message)
+            errors.append(e)
+        except Exception, e:
+            logger.exception(e)
+            errors.append(e)
+            #Don't do anything else since we still want to process all the other consumers
+
+    error = None
+    if len(errors) > 0:
+        error = PulpCodedException(PLP0020, group_id=consumer_group_id)
+        error.child_exceptions = errors
+    return TaskResult({}, error, spawned_tasks)
 
 
-@celery.task(base=Task)
-def update_content(consumer_id, units, options):
-    pass
+def update_content(consumer_group_id, units, options):
+    """
+    Create an itinerary for consumer group content update.
+    :param consumer_group_id: unique id of the consumer group
+    :type consumer_group_id: str
+    :param units: units to update
+    :type units: list or tuple
+    :param options: options to pass to the update manager
+    :type options: dict or None
+    :return: Details of the subtasks that were executed
+    :rtype: TaskResult
+    """
+    consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
+    agent_manager = managers.consumer_agent_manager()
+
+    errors = []
+    spawned_tasks = []
+    for consumer_id in consumer_group['consumer_ids']:
+        try:
+            task = agent_manager.update_content(consumer_id, units, options)
+            spawned_tasks.append(task)
+        except PulpException, e:
+            #Log a message so that we can debug but don't throw
+            logger.warn(e.message)
+            errors.append(e)
+        except Exception, e:
+            logger.exception(e)
+            errors.append(e)
+            #Don't do anything else since we still want to process all the other consumers
+
+    error = None
+    if len(errors) > 0:
+        error = PulpCodedException(PLP0021, group_id=consumer_group_id)
+        error.child_exceptions = errors
+    return TaskResult({}, error, spawned_tasks)
 
 
-@celery.task(base=Task)
-def uninstall_content(consumer_id, units, options):
-    pass
+def uninstall_content(consumer_group_id, units, options):
+    """
+    Create an itinerary for consumer group content uninstallation.
+    :param consumer_group_id: unique id of the consumer group
+    :type consumer_group_id: str
+    :param units: units to uninstall
+    :type units: list or tuple
+    :param options: options to pass to the uninstall manager
+    :type options: dict or None
+    :return: Details of the subtasks that were executed
+    :rtype: TaskResult
+    """
+    consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
+    agent_manager = managers.consumer_agent_manager()
+
+    errors = []
+    spawned_tasks = []
+    for consumer_id in consumer_group['consumer_ids']:
+        try:
+            task = agent_manager.uninstall_content(consumer_id, units, options)
+            spawned_tasks.append(task)
+        except PulpException, e:
+            #Log a message so that we can debug but don't throw
+            logger.warn(e.message)
+            errors.append(e)
+        except Exception, e:
+            logger.exception(e)
+            errors.append(e)
+            #Don't do anything else since we still want to process all the other consumers
+
+    error = None
+    if len(errors) > 0:
+        error = PulpCodedException(PLP0022, group_id=consumer_group_id)
+        error.child_exceptions = errors
+    return TaskResult({}, error, spawned_tasks)
+

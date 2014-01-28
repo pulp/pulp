@@ -133,14 +133,29 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
 
 @celery.task
 def install_content(consumer_id, units, options):
-    pass
+    """
+    Create an itinerary for consumer content installation.
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :returns AsyncResult containing the result of the install & any spawned tasks or a dictionary
+             of the install result if no tasks were spawned.
+    :rtype: AsyncResult
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.install_content(consumer_id, units, options)
 
 
 @celery.task
 def update_content(consumer_id, units, options):
-    pass
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.update_content(consumer_id, units, options)
 
 
 @celery.task
 def uninstall_content(consumer_id, units, options):
-    pass
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.uninstall_content(consumer_id, units, options)
