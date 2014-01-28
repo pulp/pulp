@@ -15,12 +15,13 @@ import unittest
 
 from mock import patch
 
+from pulp.devel.unit.base import PulpCeleryTaskTests
 from pulp.server.async.tasks import TaskResult
 from pulp.server.exceptions import MissingResource, PulpException, error_codes
 from pulp.server.tasks import consumer_group
 
 
-class TestBind(unittest.TestCase):
+class TestBind(PulpCeleryTaskTests):
 
     @patch('pulp.server.tasks.consumer_group.bind_task')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
@@ -66,7 +67,7 @@ class TestBind(unittest.TestCase):
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
 
 
-class TestUnbind(unittest.TestCase):
+class TestUnbind(PulpCeleryTaskTests):
 
     @patch('pulp.server.tasks.consumer_group.unbind_task')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
@@ -103,4 +104,160 @@ class TestUnbind(unittest.TestCase):
         result = consumer_group.unbind('foo_group_id', 'foo_repo_id', 'foo_distributor_id', options)
         self.assertTrue(isinstance(result.error, PulpException))
         self.assertEquals(result.error.error_code, error_codes.PLP0005)
+        self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+
+class TestInstallContent(unittest.TestCase):
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_install(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.install_content
+
+        mock_task.return_value = 'foo-request-id'
+        result = consumer_group.install_content(group_id, units, agent_options)
+
+        mock_task.assert_called_once_with('foo-consumer', units, agent_options)
+        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_install_with_missing_resource_errors(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.install_content
+        side_effect_exception = MissingResource()
+        mock_task.side_effect = side_effect_exception
+
+        result = consumer_group.install_content(group_id, units, agent_options)
+
+        self.assertTrue(isinstance(result.error, PulpException))
+        self.assertEquals(result.error.error_code, error_codes.PLP0020)
+        self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_install_with_general_error(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.install_content
+        side_effect_exception = ValueError()
+        mock_task.side_effect = side_effect_exception
+
+        result = consumer_group.install_content(group_id, units, agent_options)
+
+        self.assertTrue(isinstance(result.error, PulpException))
+        self.assertEquals(result.error.error_code, error_codes.PLP0020)
+        self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+
+class TestUnInstallContent(unittest.TestCase):
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_uninstall(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.uninstall_content
+
+        mock_task.return_value = 'foo-request-id'
+        result = consumer_group.uninstall_content(group_id, units, agent_options)
+
+        mock_task.assert_called_once_with('foo-consumer', units, agent_options)
+        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_uninstall_with_missing_resource_errors(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.uninstall_content
+        side_effect_exception = MissingResource()
+        mock_task.side_effect = side_effect_exception
+
+        result = consumer_group.uninstall_content(group_id, units, agent_options)
+
+        self.assertTrue(isinstance(result.error, PulpException))
+        self.assertEquals(result.error.error_code, error_codes.PLP0022)
+        self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_uninstall_with_general_error(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.uninstall_content
+        side_effect_exception = ValueError()
+        mock_task.side_effect = side_effect_exception
+
+        result = consumer_group.uninstall_content(group_id, units, agent_options)
+
+        self.assertTrue(isinstance(result.error, PulpException))
+        self.assertEquals(result.error.error_code, error_codes.PLP0022)
+        self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+
+class TestUpdateContent(unittest.TestCase):
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_update(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.update_content
+
+        mock_task.return_value = 'foo-request-id'
+        result = consumer_group.update_content(group_id, units, agent_options)
+
+        mock_task.assert_called_once_with('foo-consumer', units, agent_options)
+        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_update_with_missing_resource_errors(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.update_content
+        side_effect_exception = MissingResource()
+        mock_task.side_effect = side_effect_exception
+
+        result = consumer_group.update_content(group_id, units, agent_options)
+
+        self.assertTrue(isinstance(result.error, PulpException))
+        self.assertEquals(result.error.error_code, error_codes.PLP0021)
+        self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @patch('pulp.server.managers.factory.consumer_group_query_manager')
+    def test_update_with_general_error(self, mock_query_manager, mock_agent_manager):
+        mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
+        group_id = 'foo-group'
+        units = ['foo', 'bar']
+        agent_options = {'bar': 'baz'}
+        mock_task = mock_agent_manager.return_value.update_content
+        side_effect_exception = ValueError()
+        mock_task.side_effect = side_effect_exception
+
+        result = consumer_group.update_content(group_id, units, agent_options)
+
+        self.assertTrue(isinstance(result.error, PulpException))
+        self.assertEquals(result.error.error_code, error_codes.PLP0021)
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)

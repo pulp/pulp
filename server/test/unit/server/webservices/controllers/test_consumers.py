@@ -32,10 +32,6 @@ from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import InvalidValue, OperationPostponed
-from pulp.server.itineraries.consumer import (
-    consumer_content_install_itinerary,
-    consumer_content_update_itinerary,
-    consumer_content_uninstall_itinerary)
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
@@ -680,51 +676,46 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(len(body), 1)
 
 
-class ContentTest(base.PulpWebserviceTests):
+class ContentTest(PulpWebservicesTests):
 
-    CONSUMER_ID = 'test-consumer'
+    @mock.patch('pulp.server.webservices.controllers.consumers.managers')
+    def test_install(self, mock_factory):
+        # Setup
+        mock_task = mock_factory.consumer_agent_manager.return_value.install_content
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit',
+                                                    'options': 'bar'})
+        mock_task.return_value = 'baz'
 
-    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_install_itinerary', wraps=consumer_content_install_itinerary)
-    def test_install(self, mock_itinerary):
         # Test
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumers/%s/actions/content/install/' % self.CONSUMER_ID
-        body = dict(units=units, options=options)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
+        self.assertRaises(OperationPostponed, webservice.install, 'consumer-foo')
+        mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
-    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_update_itinerary', wraps=consumer_content_update_itinerary)
-    def test_update(self, mock_itinerary):
-        # Test
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumers/%s/actions/content/update/' % self.CONSUMER_ID
-        body = dict(units=units, options=options)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
+    @mock.patch('pulp.server.webservices.controllers.consumers.managers')
+    def test_uninstall(self, mock_factory):
+        # Setup
+        mock_task = mock_factory.consumer_agent_manager.return_value.uninstall_content
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit',
+                                                    'options': 'bar'})
+        mock_task.return_value = 'baz'
 
-    @mock.patch('pulp.server.webservices.controllers.consumers.consumer_content_uninstall_itinerary', wraps=consumer_content_uninstall_itinerary)
-    def test_uninstall(self, mock_itinerary):
         # Test
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumers/%s/actions/content/uninstall/' % self.CONSUMER_ID
-        body = dict(units=units, options=options)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        mock_itinerary.assert_called_with(self.CONSUMER_ID, units, options)
+        self.assertRaises(OperationPostponed, webservice.uninstall, 'consumer-foo')
+        mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.managers')
+    def test_update(self, mock_factory):
+        # Setup
+        mock_task = mock_factory.consumer_agent_manager.return_value.update_content
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit',
+                                                    'options': 'bar'})
+        mock_task.return_value = 'baz'
+
+        # Test
+        self.assertRaises(OperationPostponed, webservice.update, 'consumer-foo')
+        mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
 
 class TestProfiles(base.PulpWebserviceTests):
