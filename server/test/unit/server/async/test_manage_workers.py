@@ -87,18 +87,23 @@ class TestGetFileContents(unittest.TestCase):
         Simple test of _get_file_contents, mocking the open() call.
         """
         file_contents = 'Some contents.'
-        mock_open = mock.mock_open(read_data=file_contents)
 
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('__builtin__.open', autospec=True) as mock_open:
+            mock_file = mock.MagicMock(spec=file)
+            mock_file.read.return_value = file_contents
+            mock_context = mock.MagicMock()
+            mock_context.__enter__.return_value = mock_file
+            mock_open.return_value = mock_context
             contents = manage_workers._get_file_contents('/some/path')
 
         self.assertEqual(contents, file_contents)
         mock_open.assert_called_once_with('/some/path')
         # Make sure the file handle was treated properly
-        file_handle = mock_open()
-        file_handle.__enter__.assert_called_once_with()
+        file_context = mock_open()
+        file_context.__enter__.assert_called_once_with()
+        file_handle = file_context.__enter__()
         file_handle.read.assert_called_once_with()
-        file_handle.__exit__.assert_called_once_with(None, None, None)
+        file_context.__exit__.assert_called_once_with(None, None, None)
 
 
 class TestMain(unittest.TestCase):
@@ -188,19 +193,24 @@ class TestStartWorkers(unittest.TestCase):
         Popen.return_value.communicate.return_value = pipe_output
         expected_read_data = manage_workers._WORKER_TEMPLATE % {
             'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
-        mock_open = mock.mock_open(read_data=expected_read_data)
 
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('__builtin__.open', autospec=True) as mock_open:
+            mock_file = mock.MagicMock(spec=file)
+            mock_file.read.return_value = expected_read_data
+            mock_context = mock.MagicMock()
+            mock_context.__enter__.return_value = mock_file
+            mock_open.return_value = mock_context
             self.assertRaises(SysExit, manage_workers._start_workers)
 
         # Make sure open was called correctly
         unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
         expected_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
         mock_open.assert_called_once_with(expected_path)
-        file_handle = mock_open()
-        file_handle.__enter__.assert_called_once_with()
+        file_context = mock_open()
+        file_context.__enter__.assert_called_once_with()
+        file_handle = file_context.__enter__()
         file_handle.read.assert_called_once_with()
-        file_handle.__exit__.assert_called_once_with(None, None, None)
+        file_context.__exit__.assert_called_once_with(None, None, None)
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
@@ -234,19 +244,24 @@ class TestStartWorkers(unittest.TestCase):
         Popen.return_value.communicate.return_value = pipe_output
         expected_read_data = manage_workers._WORKER_TEMPLATE % {
             'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
-        mock_open = mock.mock_open(read_data=expected_read_data)
 
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('__builtin__.open', autospec=True) as mock_open:
+            mock_file = mock.MagicMock(spec=file)
+            mock_file.read.return_value = expected_read_data
+            mock_context = mock.MagicMock()
+            mock_context.__enter__.return_value = mock_file
+            mock_open.return_value = mock_context
             manage_workers._start_workers()
 
         # Make sure open was called correctly
         unit_filename = manage_workers._UNIT_FILENAME_TEMPLATE % 0
         expected_path = os.path.join(manage_workers._SYSTEMD_UNIT_PATH, unit_filename)
         mock_open.assert_called_once_with(expected_path)
-        file_handle = mock_open()
-        file_handle.__enter__.assert_called_once_with()
+        file_context = mock_open()
+        file_context.__enter__.assert_called_once_with()
+        file_handle = file_context.__enter__()
         file_handle.read.assert_called_once_with()
-        file_handle.__exit__.assert_called_once_with(None, None, None)
+        file_context.__exit__.assert_called_once_with(None, None, None)
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
@@ -273,10 +288,14 @@ class TestStartWorkers(unittest.TestCase):
         Popen.return_value = mock.MagicMock()
         Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
-        # Set up the unit file to have the incorrect contents
-        mock_open = mock.mock_open(read_data='This file has the wrong contents.')
 
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('__builtin__.open', autospec=True) as mock_open:
+            mock_file = mock.MagicMock(spec=file)
+            mock_file.read.return_value = 'This file has the wrong contents.'
+            mock_context = mock.MagicMock()
+            mock_context.__enter__.return_value = mock_file
+            mock_open.return_value = mock_context
+            # Set up the unit file to have the incorrect contents
             manage_workers._start_workers()
 
         # Make sure open was called correctly. It should be called twice, once for reading, and
@@ -289,17 +308,19 @@ class TestStartWorkers(unittest.TestCase):
         # Let's inspect the read call
         first_open = mock_open.mock_calls[0]
         self.assertEqual(first_open[1], (expected_path,))
-        file_handle = first_open()
-        file_handle.__enter__.assert_called_once_with()
+        file_context = first_open()
+        file_context.__enter__.assert_called_once_with()
+        file_handle = file_context.__enter__()
         file_handle.read.assert_called_once_with()
-        file_handle.__exit__.assert_called_once_with(None, None, None)
+        file_context.__exit__.assert_called_once_with(None, None, None)
         # Now, let's inspect the write call
         second_open = mock_open.mock_calls[4]
         self.assertEqual(second_open[1], (expected_path, 'w'))
-        file_handle = second_open()
-        file_handle.__enter__.assert_called_once_with()
+        file_context = second_open()
+        file_context.__enter__.assert_called_once_with()
+        file_handle = file_context.__enter__()
         file_handle.write.assert_called_once_with(expected_file_contents)
-        file_handle.__exit__.assert_called_once_with(None, None, None)
+        file_context.__exit__.assert_called_once_with(None, None, None)
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
@@ -326,9 +347,12 @@ class TestStartWorkers(unittest.TestCase):
         Popen.return_value = mock.MagicMock()
         Popen.return_value.returncode = 0
         Popen.return_value.communicate.return_value = pipe_output
-        mock_open = mock.mock_open()
 
-        with mock.patch('__builtin__.open', mock_open):
+        with mock.patch('__builtin__.open', autospec=True) as mock_open:
+            mock_file = mock.MagicMock(spec=file)
+            mock_context = mock.MagicMock()
+            mock_context.__enter__.return_value = mock_file
+            mock_open.return_value = mock_context
             manage_workers._start_workers()
 
         # Make sure open was called correctly. It should be called once for writing
@@ -338,10 +362,11 @@ class TestStartWorkers(unittest.TestCase):
             'num': 0, 'environment_file': manage_workers._ENVIRONMENT_FILE}
         # Now, let's inspect the write call
         mock_open.assert_called_once_with(expected_path, 'w')
-        file_handle = mock_open()
-        file_handle.__enter__.assert_called_once_with()
+        file_context = mock_open()
+        file_context.__enter__.assert_called_once_with()
+        file_handle = file_context.__enter__()
         file_handle.write.assert_called_once_with(expected_file_contents)
-        file_handle.__exit__.assert_called_once_with(None, None, None)
+        file_context.__exit__.assert_called_once_with(None, None, None)
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
