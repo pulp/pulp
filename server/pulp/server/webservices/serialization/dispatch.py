@@ -13,6 +13,7 @@
 
 from pulp.server.webservices.serialization.link import link_obj
 
+
 def task_result_href(task):
     if task.get('task_id'):
         return {'_href': '/pulp/api/v2/tasks/%s/' % task['task_id']}
@@ -38,6 +39,13 @@ def scheduled_unit_management_obj(scheduled_call):
 
 
 def spawned_tasks(task):
+    """
+    For a given Task dictionary convert the spawned tasks list of ids to
+    a list of link objects
+
+    :param task: The dictionary representation of a task object in the database
+    :type task: dict
+    """
     spawned = task.get('spawned_tasks')
     if spawned:
         spawned_tasks = []

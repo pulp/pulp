@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+
 import httplib
 from gettext import gettext as _
 
@@ -20,9 +21,7 @@ from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.dispatch import history as dispatch_history
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
