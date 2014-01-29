@@ -106,12 +106,12 @@ class PulpWebservicesTests(unittest.TestCase):
         """
         self.mock_user_query_manager.return_value.is_authorized.assert_called_once_with(mock.ANY, mock.ANY, operation)
 
-    def get_mock_uri_path(self):
+    def get_mock_uri_path(self, *args):
         """
         :param object_id: the id of the object to get the uri for
         :type object_id: str
         """
-        return "/mock/"
+        return os.path.join('/mock', *args) + '/'
 
 
 class MockTaskResult(object):
@@ -120,3 +120,17 @@ class MockTaskResult(object):
     """
     def __init__(self, task_id, ):
         self.id = task_id
+
+
+class PulpCeleryTaskTests(unittest.TestCase):
+    """
+    Base class for tests of webservice controllers.  This base is used to work around the
+    authentication tests for each each method
+    """
+
+    def setUp(self):
+        self.patch1 = mock.patch('pulp.server.async.tasks.TaskStatusManager')
+        self.patch1.start()
+
+    def tearDown(self):
+        self.patch1.stop()

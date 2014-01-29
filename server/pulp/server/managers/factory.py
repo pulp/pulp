@@ -178,7 +178,7 @@ def consumer_history_manager():
 
 def consumer_profile_manager():
     """
-    @rtype: L{pulp.server.managers.consumer.profile.ConsumerProfileManager}
+    @rtype: L{pulp.server.managers.consumer.profile.ProfileManager}
     """
     return get_manager(TYPE_CONSUMER_PROFILE)
 

@@ -33,7 +33,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`task_result` that lists each of the tasks that were spawned.
 
 :sample_request:`_` ::
 
@@ -81,7 +81,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`404,if the consumer group does not exist`
 
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`task_result` that lists each of the tasks that were spawned.
 
 :sample_request:`_` ::
 
@@ -129,7 +129,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`task_result` that lists each of the tasks that were spawned.
 
 :sample_request:`_` ::
 

@@ -347,14 +347,30 @@ class CallReport(object):
         """
         task_status = TaskStatusManager.find_by_task_id(task_id)
         if task_status:
-            call_report = cls(task_id,
-                              call_request_group_id = None,
-                              call_request_tags = task_status['tags'],
-                              state = task_status['state'],
-                              result = task_status.get('result', None),
-                              traceback = task_status.get('traceback', None))
+            return CallReport.from_task_status_dict(task_status)
         else:
             call_report = cls(task_id)
+        return call_report
+
+    @classmethod
+    def from_task_status_dict(cls, task_status):
+        """
+        Factory method that forms a CallReport using an existing TaskStatus dictionary
+        returned from the TaskStatusManager
+
+        :param cls: CallReport class
+        :type cls: type
+        :param task_id: dictionary representation of the task status.
+        :type task_id: dictionary
+        :return: CallReport instance
+        :rtype: CallReport
+        """
+        call_report = cls(task_status.get('task_id'),
+                          call_request_group_id=None,
+                          call_request_tags=task_status['tags'],
+                          state=task_status['state'],
+                          result=task_status.get('result', None),
+                          traceback=task_status.get('traceback', None))
         return call_report
 
     def __init__(self,

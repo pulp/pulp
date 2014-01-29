@@ -133,14 +133,53 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
 
 @celery.task
 def install_content(consumer_id, units, options):
-    pass
+    """
+    Install units on a consumer
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.install_content(consumer_id, units, options)
 
 
 @celery.task
 def update_content(consumer_id, units, options):
-    pass
+    """
+    Update units on a consumer.
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.update_content(consumer_id, units, options)
 
 
 @celery.task
 def uninstall_content(consumer_id, units, options):
-    pass
+    """
+    Uninstall content from a consumer.
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
+    agent_manager = managers.consumer_agent_manager()
+    return agent_manager.uninstall_content(consumer_id, units, options)

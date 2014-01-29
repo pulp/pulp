@@ -32,7 +32,8 @@ class TestBind(unittest.TestCase):
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
             False, binding_config)
 
-        self.assertEquals(mock_bind_manager.consumer_bind_manager.return_value.bind.return_value, result)
+        self.assertEquals(mock_bind_manager.consumer_bind_manager.return_value.bind.return_value,
+                          result)
 
         #Make sure we didn't process the agent
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
@@ -115,3 +116,39 @@ class TestForceUnbind(unittest.TestCase):
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options)
         self.assertTrue(isinstance(result, TaskResult))
         self.assertEquals(result.spawned_tasks, ['foo-id'])
+
+
+class TestInstallContent(unittest.TestCase):
+
+    @patch('pulp.server.tasks.consumer.managers')
+    def test_install_content(self, mock_factory):
+        # Setup
+        mock_task = mock_factory.consumer_agent_manager.return_value.install_content
+        mock_task.return_value = 'qux'
+        result = consumer.install_content('foo', 'bar', 'baz')
+        self.assertEquals('qux', result)
+        mock_task.assert_called_once_with('foo', 'bar', 'baz')
+
+
+class TestUpdateContent(unittest.TestCase):
+
+    @patch('pulp.server.tasks.consumer.managers')
+    def test_install_content(self, mock_factory):
+        # Setup
+        mock_task = mock_factory.consumer_agent_manager.return_value.update_content
+        mock_task.return_value = 'qux'
+        result = consumer.update_content('foo', 'bar', 'baz')
+        self.assertEquals('qux', result)
+        mock_task.assert_called_once_with('foo', 'bar', 'baz')
+
+
+class TestUninstallContent(unittest.TestCase):
+
+    @patch('pulp.server.tasks.consumer.managers')
+    def test_install_content(self, mock_factory):
+        # Setup
+        mock_task = mock_factory.consumer_agent_manager.return_value.uninstall_content
+        mock_task.return_value = 'qux'
+        result = consumer.uninstall_content('foo', 'bar', 'baz')
+        self.assertEquals('qux', result)
+        mock_task.assert_called_once_with('foo', 'bar', 'baz')

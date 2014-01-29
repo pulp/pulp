@@ -22,15 +22,14 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.dispatch.call import CallReport
 from pulp.server.managers import factory as managers_factory
 from pulp.server.tasks import consumer_group
-from pulp.server.webservices import execution, serialization
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
-from pulp.server.itineraries.consumer_group import (consumer_group_content_install_itinerary,
-     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary)
+
 
 # consumer group collection ----------------------------------------------------
 
@@ -161,8 +160,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_requests = consumer_group_content_install_itinerary(consumer_group_id, units, options)
-        execution.execute_multiple(call_requests)
+        task = consumer_group.install_content(consumer_group_id, units, options)
+        raise pulp_exceptions.OperationPostponed(task)
 
     def update(self, consumer_group_id):
         """
@@ -178,8 +177,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_requests = consumer_group_content_update_itinerary(consumer_group_id, units, options)
-        execution.execute_multiple(call_requests)
+        task = consumer_group.update_content(consumer_group_id, units, options)
+        raise pulp_exceptions.OperationPostponed(task)
 
     def uninstall(self, consumer_group_id):
         """
@@ -195,8 +194,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_requests = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
-        execution.execute_multiple(call_requests)
+        task = consumer_group.uninstall_content(consumer_group_id, units, options)
+        raise pulp_exceptions.OperationPostponed(task)
 
 
 class ConsumerGroupBindings(JSONController):

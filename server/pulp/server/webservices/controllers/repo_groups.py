@@ -21,11 +21,11 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest, CallReport
+from pulp.server.dispatch.call import CallReport
 from pulp.server.exceptions import MissingValue, OperationPostponed
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.repo.publish import publish
-from pulp.server.webservices import execution, serialization
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
