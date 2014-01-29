@@ -18,6 +18,7 @@ import signal
 
 from celery import task, Task as CeleryTask
 from celery.app import control, defaults
+from celery.result import AsyncResult
 
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
@@ -352,7 +353,12 @@ class Task(CeleryTask, ReservedTaskMixin):
                 if retval.error:
                     delta['error'] = retval.error.to_dict()
                 if retval.spawned_tasks:
-                    task_list = [spawned_task['task_id'] for spawned_task in retval.spawned_tasks]
+                    task_list = []
+                    for spawned_task in retval.spawned_tasks:
+                        if isinstance(spawned_task, AsyncResult):
+                            task_list.append(spawned_task.task_id)
+                        elif isinstance(spawned_task, dict):
+                            task_list.append(spawned_task['task_id'])
                     delta['spawned_tasks'] = task_list
 
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
