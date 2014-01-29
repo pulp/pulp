@@ -111,10 +111,7 @@ class PulpWebservicesTests(unittest.TestCase):
         :param object_id: the id of the object to get the uri for
         :type object_id: str
         """
-        path = "/mock/"
-        for arg in args:
-            path = path + "%s/" % arg
-        return path
+        return os.path.join('/mock', *args) + '/'
 
 
 class MockTaskResult(object):

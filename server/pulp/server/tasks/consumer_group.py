@@ -91,6 +91,7 @@ def unbind(group_id, repo_id, distributor_id, options):
     """
     manager = managers.consumer_group_query_manager()
     group = manager.get_group(group_id)
+
     bind_errors = []
     additional_tasks = []
 
@@ -133,26 +134,8 @@ def install_content(consumer_group_id, units, options):
     consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
     agent_manager = managers.consumer_agent_manager()
 
-    errors = []
-    spawned_tasks = []
-    for consumer_id in consumer_group['consumer_ids']:
-        try:
-            task = agent_manager.install_content(consumer_id, units, options)
-            spawned_tasks.append(task)
-        except PulpException, e:
-            #Log a message so that we can debug but don't throw
-            logger.warn(e.message)
-            errors.append(e)
-        except Exception, e:
-            logger.exception(e)
-            errors.append(e)
-            #Don't do anything else since we still want to process all the other consumers
-
-    error = None
-    if len(errors) > 0:
-        error = PulpCodedException(PLP0020, group_id=consumer_group_id)
-        error.child_exceptions = errors
-    return TaskResult({}, error, spawned_tasks)
+    return _process_group(consumer_group, PLP0020, {'group_id': consumer_group_id},
+                          agent_manager.install_content, units, options)
 
 
 def update_content(consumer_group_id, units, options):
@@ -170,26 +153,8 @@ def update_content(consumer_group_id, units, options):
     consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
     agent_manager = managers.consumer_agent_manager()
 
-    errors = []
-    spawned_tasks = []
-    for consumer_id in consumer_group['consumer_ids']:
-        try:
-            task = agent_manager.update_content(consumer_id, units, options)
-            spawned_tasks.append(task)
-        except PulpException, e:
-            #Log a message so that we can debug but don't throw
-            logger.warn(e.message)
-            errors.append(e)
-        except Exception, e:
-            logger.exception(e)
-            errors.append(e)
-            #Don't do anything else since we still want to process all the other consumers
-
-    error = None
-    if len(errors) > 0:
-        error = PulpCodedException(PLP0021, group_id=consumer_group_id)
-        error.child_exceptions = errors
-    return TaskResult({}, error, spawned_tasks)
+    return _process_group(consumer_group, PLP0021, {'group_id': consumer_group_id},
+                          agent_manager.update_content, units, options)
 
 
 def uninstall_content(consumer_group_id, units, options):
@@ -207,11 +172,33 @@ def uninstall_content(consumer_group_id, units, options):
     consumer_group = managers.consumer_group_query_manager().get_group(consumer_group_id)
     agent_manager = managers.consumer_agent_manager()
 
+    return _process_group(consumer_group, PLP0022, {'group_id': consumer_group_id},
+                          agent_manager.uninstall_content, units, options)
+
+
+def _process_group(consumer_group, error_code, error_kwargs, process_method, *args):
+    """
+    Process an action over a group of consumers
+
+    :param consumer_group: A consumer group dictionary
+    :type consumer_group: dict
+    :param error_code: The error code to wrap any consumer failures in
+    :type error_code: pulp.common.error_codes.Error
+    :param error_kwargs: The keyword arguments to pass to the error code when it is instantiated
+    :type error_kwargs: dict
+    :param process_method: The method to call on each consumer in the group
+    :type process_method: function
+    :param args: any additional arguments passed to this method will be passed to the
+                 process method function
+    :type args: list of arguments
+    :returns: A TaskResult with the overall results of the group
+    :rtype: TaskResult
+    """
     errors = []
     spawned_tasks = []
     for consumer_id in consumer_group['consumer_ids']:
         try:
-            task = agent_manager.uninstall_content(consumer_id, units, options)
+            task = process_method(consumer_id, *args)
             spawned_tasks.append(task)
         except PulpException, e:
             #Log a message so that we can debug but don't throw
@@ -224,7 +211,6 @@ def uninstall_content(consumer_group_id, units, options):
 
     error = None
     if len(errors) > 0:
-        error = PulpCodedException(PLP0022, group_id=consumer_group_id)
+        error = PulpCodedException(error_code, **error_kwargs)
         error.child_exceptions = errors
     return TaskResult({}, error, spawned_tasks)
-

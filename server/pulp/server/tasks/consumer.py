@@ -134,16 +134,16 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
 @celery.task
 def install_content(consumer_id, units, options):
     """
-    Create an itinerary for consumer content installation.
+    Install units on a consumer
+
     :param consumer_id: unique id of the consumer
     :type consumer_id: str
     :param units: units to install
     :type units: list or tuple
     :param options: options to pass to the install manager
     :type options: dict or None
-    :returns AsyncResult containing the result of the install & any spawned tasks or a dictionary
-             of the install result if no tasks were spawned.
-    :rtype: AsyncResult
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
     """
     agent_manager = managers.consumer_agent_manager()
     return agent_manager.install_content(consumer_id, units, options)
@@ -151,11 +151,35 @@ def install_content(consumer_id, units, options):
 
 @celery.task
 def update_content(consumer_id, units, options):
+    """
+    Update units on a consumer.
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
     agent_manager = managers.consumer_agent_manager()
     return agent_manager.update_content(consumer_id, units, options)
 
 
 @celery.task
 def uninstall_content(consumer_id, units, options):
+    """
+    Uninstall content from a consumer.
+
+    :param consumer_id: unique id of the consumer
+    :type consumer_id: str
+    :param units: units to install
+    :type units: list or tuple
+    :param options: options to pass to the install manager
+    :type options: dict or None
+    :returns Dictionary representation of a task status
+    :rtype: dictionary
+    """
     agent_manager = managers.consumer_agent_manager()
     return agent_manager.uninstall_content(consumer_id, units, options)
