@@ -740,7 +740,7 @@ class RepoPublish(JSONController):
         overrides = params.get('override_config', None)
         async_result = repository.publish(repo_id, distributor_id, overrides)
         raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
-                                                       call_requiest_tags=async_result.tags))
+                                                       call_request_tags=async_result.tags))
 
 
 class RepoAssociate(JSONController):

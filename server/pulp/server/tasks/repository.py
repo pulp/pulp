@@ -20,6 +20,7 @@ from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.managers import factory as managers
+from pulp.server.managers.repo.publish import publish as publish_task
 from pulp.server.tasks import consumer
 
 
@@ -132,7 +133,6 @@ def distributor_update(repo_id, distributor_id, config, delta):
     """
 
     # update the distributor
-
     manager = managers.repo_distributor_manager()
 
     # Retrieve configuration options from the delta
@@ -181,8 +181,6 @@ def publish(repo_id, distributor_id, overrides=None):
     :return: list of call requests
     :rtype: list
     """
-    # TODO: test this as part of finishing implementation of this module
-
     kwargs = {
         'repo_id': repo_id,
         'distributor_id': distributor_id,
@@ -192,7 +190,7 @@ def publish(repo_id, distributor_id, overrides=None):
     tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
             action_tag('publish')]
 
-    return managers.repo_publish_manager().publish.apply_async_with_reservation(
+    return publish_task.apply_async_with_reservation(
         RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
 
 

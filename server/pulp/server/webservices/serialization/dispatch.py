@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.server.webservices.serialization.link import link_obj
 
 def task_result_href(task):
     if task.get('task_id'):
@@ -34,3 +35,16 @@ def scheduled_unit_management_obj(scheduled_call):
     scheduled_call['options'] = scheduled_call['kwargs']['options']
     scheduled_call['units'] = scheduled_call['kwargs']['units']
     return scheduled_call
+
+
+def spawned_tasks(task):
+    spawned = task.get('spawned_tasks')
+    if spawned:
+        spawned_tasks = []
+        for spawned_task_id in spawned:
+            link = link_obj('/pulp/api/v2/tasks/%s/' % spawned_task_id)
+            link['task_id'] = spawned_task_id
+            spawned_tasks.append(link)
+        return {'spawned_tasks': spawned_tasks}
+    return {}
+

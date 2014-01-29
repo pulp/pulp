@@ -75,7 +75,10 @@ class TaskCollection(JSONController):
         if tags:
             criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
         criteria = Criteria.from_client_input({'filters': criteria_filters})
-        serialized_task_statuses = list(TaskStatusManager.find_by_criteria(criteria))
+        serialized_task_statuses = []
+        for task in TaskStatusManager.find_by_criteria(criteria):
+            task.update(serialization.dispatch.spawned_tasks(task))
+            serialized_task_statuses.append(task)
         return self.ok(serialized_task_statuses)
 
 
@@ -89,6 +92,7 @@ class TaskResource(JSONController):
         else:
             link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
             task.update(link)
+            task.update(serialization.dispatch.spawned_tasks(task))
             return self.ok(task)
 
     @auth_required(authorization.DELETE)
