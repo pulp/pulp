@@ -204,8 +204,8 @@ def sync_with_auto_publish(repo_id, overrides=None):
     :type repo_id: str
     :param overrides: dictionary of configuration overrides for this sync
     :type overrides: dict or None
-    :return: list of call request instances
-    :rtype: list
+    :return: A task result containing the details of the task executed and any spawned tasks
+    :rtype: TaskResult
     """
     sync_result = managers.repo_sync_manager().sync(repo_id, sync_config_override=overrides)
 

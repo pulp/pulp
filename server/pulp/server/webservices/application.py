@@ -61,12 +61,10 @@ URLS = (
     '/v2/events', events.application,
     '/v2/permissions', permissions.application,
     '/v2/plugins', plugins.application,
-    '/v2/queued_calls', dispatch.queued_call_application,
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
     '/v2/roles', roles.application,
     '/v2/status', status.application,
-    '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,
 )
