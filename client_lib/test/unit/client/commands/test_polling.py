@@ -219,6 +219,14 @@ class PollingCommandTests(base.PulpClientTests):
         for i in range(0, 3):
             self.assertEqual(STATE_FINISHED, completed_tasks[i].state)
 
+    def test_get_tasks_to_poll_duplicate_tasks(self):
+        sim = TaskSimulator()
+        sim.add_task_state('1', STATE_FINISHED)
+
+        task_list = sim.get_all_tasks().response_body
+        tasks_to_poll = self.command._get_tasks_to_poll([task_list[0], task_list[0]])
+        self.assertEquals(1, len(tasks_to_poll))
+
     def test_poll_background(self):
         # Setup
         sim = TaskSimulator()

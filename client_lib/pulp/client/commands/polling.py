@@ -73,6 +73,9 @@ class PollingCommand(PulpCliCommand):
 
         self.add_flag(FLAG_BACKGROUND)
 
+        #list of tasks we already know about
+        self.known_tasks = set()
+
     def poll(self, task_list, user_input):
         """
         Entry point to begin polling on the tasks in the given list. Each task will be polled
@@ -93,8 +96,8 @@ class PollingCommand(PulpCliCommand):
         There are a few cases where this list is unavailable, in which case the RESULT_*
         constants in this module will be returned.
 
-        :param task_list: list of task reports received from the initial call to the server
-        :type  task_list: list of pulp.bindings.responses.Task
+        :param task_list: list or single task report(s) received from the initial call to the server
+        :type  task_list: list of or a single pulp.bindings.responses.Task
 
         :param user_input: keyword arguments that was passed to the command's method; these contain
                            the user-specified options that may affect this method
@@ -103,11 +106,8 @@ class PollingCommand(PulpCliCommand):
         :return: the final task reports for all of the tasks
         """
 
-        if isinstance(task_list, Task):
-            #If this task is just a container for other tasks we will only iterate over the
-            # spawned tasks
-            if not task_list.task_id:
-                task_list = task_list.spawned_tasks
+        # Process the task_list to get the items we actually care about
+        task_list = self._get_tasks_to_poll(task_list)
 
         # I'm not sure the server has the potential to return an empty list of tasks if nothing
         # was queued, but in case it does account for it here so the caller doesn't have to
@@ -142,8 +142,9 @@ class PollingCommand(PulpCliCommand):
                     self.task_header(task)
 
                 task = self._poll_task(task)
-                if isinstance(task.spawned_tasks, list):
-                    task_list.extend(task.spawned_tasks)
+
+                # Look for new tasks that we need to start polling for
+                task_list.extend(self._get_tasks_to_poll(task))
 
                 completed_task_list.append(task)
 
@@ -171,6 +172,29 @@ class PollingCommand(PulpCliCommand):
         except KeyboardInterrupt:
             # Gracefully handle if the user aborts the polling.
             return RESULT_ABORTED
+
+    def _get_tasks_to_poll(self, task):
+        """
+        Recursively run through the tasks returned and add them to the list of
+        items to be processed if and only if they have a task_id
+
+        :param task: A single or a list of tasks
+        :type task: list or pulp.bindings.responses.Task
+        :returns: list of tasks to poll
+        :rtype list of list or pulp.bindings.responses.Task
+        """
+        result_list = []
+        if isinstance(task, list):
+            for item in task:
+                result_list.extend(self._get_tasks_to_poll(item))
+        elif isinstance(task, Task):
+            if task.task_id and task.task_id not in self.known_tasks:
+                self.known_tasks.add(task.task_id)
+                result_list.append(task)
+            for item in task.spawned_tasks:
+                result_list.extend(self._get_tasks_to_poll(item))
+
+        return result_list
 
     def _poll_task(self, task):
         """
