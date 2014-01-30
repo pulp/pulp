@@ -53,7 +53,7 @@ latest RPMs from the Pulp repository and run the database migrations::
 Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
 about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need
 to enable Pulp's workers on at least one machine. Edit ``/etc/default/pulp_workers`` to your liking,
-and that enable and start the ``pulp_workers`` service. For Upstart systems::
+and then enable and start the ``pulp_workers`` service. For Upstart systems::
 
     $ sudo chkconfig pulp_workers on
     $ sudo service pulp_workers start
@@ -78,7 +78,7 @@ of each of these runs across the entire Pulp installation.
    Note that each Pulp child node will also need its own instance of each of these services, as
    a Pulp child node is technically a separate distributed application from its parent.
 
-One the host(s) that will run these two services (they do not have to run on the same host), edit
+On the host(s) that will run these two services (they do not have to run on the same host), edit
 ``/etc/default/pulp_celerybeat`` and ``/etc/default/pulp_resource_manager`` to your liking. Then
 enable and start the services. For Upstart::
 
