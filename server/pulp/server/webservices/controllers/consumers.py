@@ -647,7 +647,7 @@ class UnitActionScheduleResource(JSONController):
         except IndexError:
             raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
 
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call.for_display())
         scheduled_obj.update(serialization.link.current_link_obj())
         return self.ok(scheduled_obj)
 

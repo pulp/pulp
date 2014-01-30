@@ -67,7 +67,6 @@ schedule options must be set on the repository's :term:`importer`.
 | :response_list:`_`
 
 * :response_code:`201,if the schedule was successfully created`
-* :response_code:`503,if the resources needed to create the schedule are temporarily unavailable`
 
 | :return:`schedule report representing the current state of the scheduled call`
 
@@ -82,18 +81,28 @@ schedule options must be set on the repository's :term:`importer`.
 :sample_response:`201` ::
 
  {
-  "_id": "4fa0208461577710b2000000",
-  "_href": "/pulp/api/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/4fa0208461577710b2000000/",
-  "schedule": "00:00:00Z/P1DT",
-  "failure_threshold": 3,
-  "consecutive_failures": 0,
-  "first_run": null,
-  "last_run": null,
-  "next_run": "2012-07-13T00:00:00Z",
-  "remaining_runs": null,
+  "next_run": "2014-01-27T21:41:50Z",
+  "task": "pulp.server.tasks.repository.sync_with_auto_publish",
+  "last_updated": 1390858910.292712,
+  "first_run": "2014-01-27T21:41:50Z",
+  "schedule": "PT1H",
+  "args": [
+    "demo"
+  ],
   "enabled": true,
-  "override_config": {},
+  "last_run_at": null,
+  "_id": "52e6d29edd01fb70bd0d9c37",
+  "total_run_count": 0,
+  "failure_threshold": 3,
+  "kwargs": {
+    "overrides": {}
+  },
+  "resource": "pulp:importer:demo:puppet_importer",
+  "remaining_runs": null,
+  "consecutive_failures": 0,
+  "_href": "/pulp/api/v2/repositories/demo/importers/puppet_importer/schedules/sync/52e6d29edd01fb70bd0d9c37/"
  }
+
 
 
 Updating a Scheduled Sync
@@ -113,8 +122,6 @@ The same parameters used to create a scheduled sync may be updated at any point.
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was successfully updated`
-* :response_code:`202,if the schedule is in use and the update is postponed`
-* :response_code:`503,if there is a conflicting operation in progress`
 
 | :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Sync for details)`
 
@@ -130,8 +137,6 @@ Delete a scheduled sync to remove it permanently from the importer.
 | :response_list:`_`
 
 * response_code:`200,if the schedule was deleted successfully`
-* response_code:`202,if the schedule is in use and the delete is postponed`
-* response_code:`503,if the schedule is already in the processes of being deleted`
 
 | :return:`null`
 

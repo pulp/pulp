@@ -37,9 +37,16 @@ API Changes
 ScheduledCall
 ^^^^^^^^^^^^^
 
-The ScheduledCall model has changed a lot. TODO: add details
-* ``last_run`` is now ``last_run_at``
+The ScheduledCall model has changed substantially.
 
+* ``last_run`` is now ``last_run_at``
+* ``args`` and ``kwargs`` are now top-level attributes of the object.
+* ``task`` is a new attribute that is the python path to the task this schedule will execute.
+* ``resource`` is a new attribute that is a globally-unique identifier for the object
+  this task will operate on. It is used internally to query schedules based on a given resource.
+
+CRUD operations on schedules no longer depend on resource locking, so these API
+operations will never return a 202 or 409.
 
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
