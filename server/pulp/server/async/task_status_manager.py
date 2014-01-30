@@ -121,6 +121,7 @@ class TaskStatusManager(object):
         * finish_time
         * error
         * spawned_tasks
+        * progress_report
         Other fields found in delta will be ignored.
 
         :param task_id: identity of the task this status corresponds to
@@ -132,12 +133,12 @@ class TaskStatusManager(object):
         :raise MissingResource: if there is no task status corresponding to the given task_id
         """
 
-        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
         if task_status is None:
             raise MissingResource(task_id)
 
         updatable_attributes = ['state', 'result', 'traceback', 'start_time', 'finish_time',
-                                'error', 'spawned_tasks']
+                                'error', 'spawned_tasks', 'progress_report']
         for key, value in delta.items():
             if key in updatable_attributes:
                 task_status[key] = value

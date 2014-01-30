@@ -538,10 +538,13 @@ class StatusMixinTests(unittest.TestCase):
         self.report_id = 'test-report'
         self.mixin = mixins.StatusMixin(self.report_id, mixins.ImporterConduitException)
 
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @mock.patch('pulp.server.dispatch.factory.context')
-    def test_set_progress(self, mock_call):
+    def test_set_progress(self, mock_call, mock_update):
         # Setup
+        task_id = 'test-id'
         mock_context = mock.Mock()
+        mock_context.call_request_id = task_id
         mock_call.return_value = mock_context
 
         # Test
@@ -557,6 +560,12 @@ class StatusMixinTests(unittest.TestCase):
             self.report_id : status,
         }
         self.assertEqual(call_args[0], expected_report)
+
+        self.assertEqual(1, mock_update.call_count)
+        delta = {'progress_report': expected_report}
+        call_args = mock_update.call_args[0]
+        self.assertEqual(call_args[0], task_id)
+        self.assertEqual(call_args[1], delta)
 
     @mock.patch('pulp.server.dispatch.factory.context')
     def test_set_progress_with_exception(self, mock_call):
