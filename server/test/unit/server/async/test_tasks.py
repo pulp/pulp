@@ -31,6 +31,7 @@ from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.dispatch.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
                                             CALL_RUNNING_STATE, CALL_WAITING_STATE)
+from pulp.server.dispatch import factory as dispatch_factory
 
 
 RESERVED_WORKER_1 = '%s1' % tasks.RESERVED_WORKER_NAME_PREFIX
@@ -727,6 +728,23 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['queue'], RESERVED_WORKER_1)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
+
+    def test_task_context(self):
+        """
+        Assert that the task context has task id correctly populated in it.
+        """
+        expected_task_id = 'test_task_id'
+
+        @celery.task(base=tasks.Task)
+        def fake_task():
+            task_context = dispatch_factory.context()
+            self.assertEqual(task_context.call_request_id, expected_task_id)
+
+        task = fake_task
+        task.request.id = expected_task_id
+        task.__call__()
+        task_context = dispatch_factory.context()
+        self.assertEqual(task_context.call_request_id, expected_task_id)
 
     @mock.patch('celery.Task.apply_async')
     def test_apply_async_task_status_default_queue(self, apply_async):
