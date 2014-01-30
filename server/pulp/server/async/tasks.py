@@ -28,6 +28,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import resources
 
 
@@ -311,6 +312,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
+        # Add task_id to the task context, so that agent and plugins have access to the task id.
+        # There are a few other attributes in the context as defined by old dispatch system.
+        # These are unused right now. These should be removed when we cleanup the dispatch folder
+        # after the migration to celery is complete.
+        task_context = dispatch_factory.context()
+        task_context.call_request_id = self.request.id
         # Check task status and skip running the task if task state is 'canceled'.
         task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
         if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
