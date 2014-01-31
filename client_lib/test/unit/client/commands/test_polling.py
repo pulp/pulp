@@ -227,6 +227,33 @@ class PollingCommandTests(base.PulpClientTests):
         tasks_to_poll = self.command._get_tasks_to_poll([task_list[0], task_list[0]])
         self.assertEquals(1, len(tasks_to_poll))
 
+    def test_get_tasks_to_poll_nested_tasks(self):
+        sim = TaskSimulator()
+        sim.add_task_state('1', STATE_FINISHED)
+        sim.add_task_state('2', STATE_FINISHED)
+
+        task_list = sim.get_all_tasks().response_body
+        source_task = task_list[0]
+        nested_task = task_list[1]
+        source_task.spawned_tasks = [nested_task]
+        tasks_to_poll = self.command._get_tasks_to_poll(source_task)
+        self.assertEquals(2, len(tasks_to_poll))
+
+    def test_get_tasks_to_poll_source_task_list(self):
+        sim = TaskSimulator()
+        sim.add_task_state('1', STATE_FINISHED)
+        sim.add_task_state('2', STATE_FINISHED)
+
+        task_list = sim.get_all_tasks().response_body
+        source_task = task_list[0]
+        nested_task = task_list[1]
+        source_task.spawned_tasks = [nested_task]
+        tasks_to_poll = self.command._get_tasks_to_poll([source_task])
+        self.assertEquals(2, len(tasks_to_poll))
+
+    def test_get_tasks_to_poll_raises_type_error(self):
+        self.assertRaises(TypeError, self.command._get_tasks_to_poll, 'foo')
+
     def test_poll_background(self):
         # Setup
         sim = TaskSimulator()

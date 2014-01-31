@@ -17,6 +17,7 @@ Contains base classes for commands that poll the server for asynchronous tasks.
 
 import time
 from gettext import gettext as _
+import collections
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
 from pulp.bindings.responses import Task
@@ -185,14 +186,17 @@ class PollingCommand(PulpCliCommand):
         """
         result_list = []
         if isinstance(task, list):
-            for item in task:
+            for item in list(task):
                 result_list.extend(self._get_tasks_to_poll(item))
         elif isinstance(task, Task):
+            #This isn't an list of tasks but that's ok, we will see if it is an individual task
             if task.task_id and task.task_id not in self.known_tasks:
                 self.known_tasks.add(task.task_id)
                 result_list.append(task)
             for item in task.spawned_tasks:
                 result_list.extend(self._get_tasks_to_poll(item))
+        else:
+            raise TypeError('task is not an list or a Task')
 
         return result_list
 
