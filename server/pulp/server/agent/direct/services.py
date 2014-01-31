@@ -211,4 +211,7 @@ class ReplyHandler(Listener):
         :param reply: A progress reply object.
         :type reply: gofer.rmi.async.Progress
         """
-        # TODO: not supported by TaskStats yet.
+        call_context = dict(reply.any)
+        task_id = call_context['task_id']
+        delta = {'progress_report': reply.details}
+        TaskStatusManager.update_task_status(task_id, delta)
