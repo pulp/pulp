@@ -69,23 +69,6 @@ def relevant_existing_task_group_id(existing_tasks):
     return None
 
 
-def sync_task_in_sync_task_group(task_list):
-    """
-    Grok through the tasks returned from the server's repo sync call and find
-    the task that pertains to the sync itself.
-
-    :param task_list: list of tasks
-    :type task_list: list
-    :return: task for the sync
-    :rtype: Task
-    """
-    sync_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
-    for t in task_list:
-        if sync_tag in t.tags:
-            return t
-    return None
-
-
 def publish_task_in_sync_task_group(task_list):
     """
     Grok through the tasks returned from the server's repo sync call and find
@@ -101,5 +84,3 @@ def publish_task_in_sync_task_group(task_list):
         if publish_tag in t.tags:
             return t
     return None
-
-

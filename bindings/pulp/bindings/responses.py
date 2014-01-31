@@ -13,7 +13,6 @@
 
 from gettext import gettext as _
 
-# -- constants ----------------------------------------------------------------
 
 RESPONSE_ACCEPTED = 'accepted'
 RESPONSE_POSTPONED = 'postponed'
@@ -28,7 +27,6 @@ STATE_SKIPPED = 'skipped'
 
 COMPLETED_STATES = (STATE_FINISHED, STATE_ERROR, STATE_CANCELED, STATE_SKIPPED)
 
-# -- model --------------------------------------------------------------------
 
 class Response(object):
     """
@@ -53,6 +51,7 @@ class Response(object):
         """
         return isinstance(self.response_body, Task)
 
+
 class Task(object):
     """
     Contains the data received from a call to the server that describes an
@@ -67,51 +66,41 @@ class Task(object):
 
     TASK_TEMPLATE = {
         "exception": None,
-        "call_request_group_id": 'default-group',
-        "call_request_id": 'default-id',
-        "call_request_tags": [],
-        "reasons": [],
+        "task_id": 'default-id',
+        "tags": [],
         "start_time": None,
         "traceback": None,
         "state": None,
         "finish_time": None,
         "schedule_id": None,
         "result": None,
-        "progress": {},
-        "response": None,
+        "progress_report": {},
     }
     """
 
     def __init__(self, response_body):
+        """
+        Initialized the Task based on the data returned from Pulp's task API.
 
+        :param response_body: The de-serialized response from Pulp's task API
+        :type  response_body: dict
+        """
         # Tasking identity information
         if '_href' in response_body:
             self.href = response_body['_href']
         else:
             self.href = None
 
-        self.task_id = response_body.get('call_request_id')
-        if not self.task_id:
-            self.task_id = response_body.get('task_id')
-        self.task_group_id = response_body.get('call_request_group_id')
-        self.tags = response_body.get('call_request_tags', [])
+        self.task_id = response_body.get('task_id')
+        self.tags = response_body.get('tags', [])
 
         self.start_time = response_body.get('start_time')
         self.finish_time = response_body.get('finish_time')
 
-        # Task acceptance data
-        self.response = response_body.get('response')
-
-        if response_body.get('reasons') is not None:
-            self.reasons = [BlockingReason(r['resource_id'], r['resource_type'], r['operation']) for r in response_body['reasons']]
-        else:
-            self.reasons = []
-
         # Related to the callable being executed
         self.state = response_body.get('state')
-        self.progress = response_body.get('progress')
+        self.progress_report = response_body.get('progress_report')
         self.result = response_body.get('result')
-        self.exception = response_body.get('exception')
         self.traceback = response_body.get('traceback')
         self.error = response_body.get('error')
         self.spawned_tasks = []
@@ -119,26 +108,6 @@ class Task(object):
         if spawned_tasks:
             for task in spawned_tasks:
                 self.spawned_tasks.append(Task(task))
-
-    def is_rejected(self):
-        """
-        Indicates if the response represents that the request was rejected.
-        The reasons attribute should be used to understand the cause for the
-        rejection.
-
-        :rtype: bool
-        """
-        return self.response == RESPONSE_REJECTED
-
-    def is_postponed(self):
-        """
-        Indicates if the task is postponed and has yet to begin. The reasons
-        attribute should be used to understand the operations that are blocking
-        this task from running.
-
-        :rtype: bool
-        """
-        return self.response == RESPONSE_POSTPONED and self.state == STATE_WAITING
 
     def is_waiting(self):
         """

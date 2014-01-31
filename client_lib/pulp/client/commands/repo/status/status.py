@@ -19,7 +19,6 @@ from gettext import gettext as _
 import sys
 import time
 
-# -- public -------------------------------------------------------------------
 
 def display_task_status(context, renderer, task_id):
     """
@@ -40,6 +39,7 @@ def display_task_status(context, renderer, task_id):
     task_list = [response.response_body]
 
     _display_status(context, renderer, task_list)
+
 
 def display_group_status(context, renderer, task_group_id):
     """
@@ -100,6 +100,7 @@ def _display_status(context, renderer, task_list):
         # exit gracefully
         return
 
+
 def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     """
     Poll an individual task and display the progress for it.
@@ -137,4 +138,3 @@ def _display_task_status(context, renderer, task_id, quiet_waiting=False):
         sys.exit(1)
 
     return response.response_body
-

@@ -18,14 +18,12 @@ commands.
 
 from gettext import gettext as _
 
-from pulp.client.commands import options
-from pulp.client.commands.repo.status import status, tasks
+from pulp.client.commands import options, polling
+from pulp.client.commands.repo.status import tasks
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup
 
-# -- constants ----------------------------------------------------------------
 
 # Command Descriptions
-
 DESC_SYNC_RUN = _('triggers an immediate sync of a repository')
 DESC_SYNC_STATUS = _('displays the status of a repository\'s sync tasks')
 
@@ -36,7 +34,6 @@ NAME_BACKGROUND = 'bg'
 DESC_BACKGROUND = _('if specified, the CLI process will end but the process will continue on '
                     'the server; the progress can be later displayed using the status command')
 
-# -- hooks --------------------------------------------------------------------
 
 class StatusRenderer(object):
 
@@ -47,9 +44,8 @@ class StatusRenderer(object):
     def display_report(self, progress_report):
         raise NotImplementedError()
 
-# -- commands -----------------------------------------------------------------
 
-class RunSyncRepositoryCommand(PulpCliCommand):
+class RunSyncRepositoryCommand(polling.PollingCommand):
     """
     Requests an immediate sync for a repository. If the sync begins (it is not
     postponed or rejected), the provided renderer will be used to track its
@@ -65,18 +61,15 @@ class RunSyncRepositoryCommand(PulpCliCommand):
         if method is None:
             method = self.run
 
-        super(RunSyncRepositoryCommand, self).__init__(name, description, method)
+        super(RunSyncRepositoryCommand, self).__init__(name, description, method, context)
 
-        self.context = context
-        self.prompt = context.prompt
         self.renderer = renderer
 
         self.add_option(options.OPTION_REPO_ID)
-        self.create_flag('--' + NAME_BACKGROUND, DESC_BACKGROUND)
 
     def run(self, **kwargs):
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
-        background = kwargs[NAME_BACKGROUND]
+        background = kwargs[polling.FLAG_BACKGROUND.keyword]
 
         self.prompt.render_title(_('Synchronizing Repository [%(r)s]') % {'r' : repo_id})
 
@@ -94,23 +87,24 @@ class RunSyncRepositoryCommand(PulpCliCommand):
         else:
             # Trigger the actual sync
             response = self.context.server.repo_actions.sync(repo_id, None)
-            sync_task = tasks.sync_task_in_sync_task_group(response.response_body)
-            task_group_id = sync_task.task_group_id
+            sync_task = response.response_body
+            self.poll([sync_task], kwargs)
 
-        if not background:
-            status.display_group_status(self.context, self.renderer, task_group_id)
-        else:
-            msg = _('The status of this sync can be displayed using the status command.')
-            self.context.prompt.render_paragraph(msg, 'background')
+    def progress(self, task, spinner):
+        if task.progress_report is not None:
+            self.renderer.display_report(task.progress_report)
+
+    def task_header(self, task):
+        print task.tags
 
 
-class SyncStatusCommand(PulpCliCommand):
+class SyncStatusCommand(polling.PollingCommand):
     def __init__(self, context, renderer, name='status', description=DESC_SYNC_STATUS, method=None):
 
         if method is None:
             method = self.run
 
-        super(SyncStatusCommand, self).__init__(name, description, method)
+        super(SyncStatusCommand, self).__init__(name, description, method, context)
 
         self.context = context
         self.prompt = context.prompt
@@ -133,7 +127,7 @@ class SyncStatusCommand(PulpCliCommand):
             status.display_group_status(self.context, self.renderer, task_group_id)
 
 
-class RunPublishRepositoryCommand(PulpCliCommand):
+class RunPublishRepositoryCommand(polling.PollingCommand):
     """
     Base class for repo publish operation. 
     
@@ -164,7 +158,7 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         if method is None:
             method = self.run
 
-        super(RunPublishRepositoryCommand, self).__init__(name, description, method)
+        super(RunPublishRepositoryCommand, self).__init__(name, description, method, context)
 
         self.context = context
         self.prompt = context.prompt
@@ -244,13 +238,13 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         return override_config
 
 
-class PublishStatusCommand(PulpCliCommand):
+class PublishStatusCommand(polling.PollingCommand):
     def __init__(self, context, renderer, name='status', description=DESC_PUBLISH_STATUS, method=None):
 
         if method is None:
             method = self.run
 
-        super(PublishStatusCommand, self).__init__(name, description, method)
+        super(PublishStatusCommand, self).__init__(name, description, method, context)
 
         self.context = context
         self.prompt = context.prompt
