@@ -5,5 +5,4 @@ Dispatch APIs
    :maxdepth: 3
 
    task
-   group
 

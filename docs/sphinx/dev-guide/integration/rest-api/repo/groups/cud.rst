@@ -64,11 +64,10 @@ simply removes the group and its relationship to all repositories.
 | :permission:`delete`
 | :response_list:`_`
 
-* :response_code:`200,if the delete executed immediately and was successful`
 * :response_code:`202,if the request was accepted by the server and will execute in the future`
 * :response_code:`404,if the specified group does not exist`
 
-| :return:`None or a call report describing the current state of the delete task`
+| :return:`None`
 
 Update a Repository Group
 -------------------------
@@ -93,7 +92,6 @@ remain unaffected. A note is removed by specifying its key with a value of null.
 | :response_list:`_`
 
 * :response_code:`200,if the update executed immediately and was successful`
-* :response_code:`202,if the update was postponed until the group is available to be updated`
 * :response_code:`400,if one of the parameters is invalid`
 * :response_code:`404,if the group does not exist`
 
@@ -120,3 +118,4 @@ remain unaffected. A note is removed by specifying its key with a value of null.
   "id": "demo-group",
   "_href": "/pulp/api/v2/repo_groups/demo-group/"
  }
+

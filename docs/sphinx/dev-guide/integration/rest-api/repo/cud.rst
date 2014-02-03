@@ -92,11 +92,12 @@ is centered around updating only that metadata.
 | :response_list:`_`
 
 * :response_code:`200,if the update was executed and successful`
-* :response_code:`202,if the update was postponed`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if there is no repository with the give ID`
 
-| :return:`database representation of the repository (after changes made by the update)`
+| :return:`a` :ref:`task_result` containing the database representation of the repository (after changes made by the update)
+ and a any tasks spawned to apply the consumer bindings for the repository.  See :ref:`bind` for details on the
+ bindings tasks that will be generated.
 
 :sample_request:`_` ::
 
@@ -114,18 +115,27 @@ is centered around updating only that metadata.
   }
  }
 
-:sample_response:`200` ::
+**Sample result value:**
+The result field of the :ref:`task_result` contains the database representation of the distributor (not the full repository details, just the distributor)
+::
 
  {
-  "display_name": "Updated",
-  "description": null,
-  "_ns": "repos",
-  "notes": {},
-  "content_unit_counts": {},
-  "_id": "harness_repo_1",
-  "id": "harness_repo_1"
+ ...
+ "result": {
+   "display_name": "Updated",
+   "description": null,
+   "_ns": "repos",
+   "notes": {},
+   "content_unit_counts": {},
+   "_id": "harness_repo_1",
+   "id": "harness_repo_1"
+  },
+  ...
  }
 
+**Tags:**
+The task created will have the following tags: ``"pulp:action:add_importer",
+"pulp:repository:<repo_id>"``
 
 Associate an Importer to a Repository
 -------------------------------------
@@ -168,7 +178,7 @@ The details of the added importer are returned from the call.
 * :response_code:`404,if there is no repository with the given ID`
 * :response_code:`500,if the importer raises an error during initialization`
 
-| :return:`database representation of the importer (not the full repository details, just the importer)`
+| :return:`a` :ref:`task_result` containing the database representation of the importer (not the full repository details, just the importer)
 
 :sample_request:`_` ::
 
@@ -180,7 +190,9 @@ The details of the added importer are returned from the call.
   }
  }
 
-:sample_response:`201` ::
+**Sample result value:**
+The result field of the :ref:`task_result` contains the database representation of the importer (not the full repository details, just the importer)
+::
 
  {
   "scratchpad": null,
@@ -195,6 +207,10 @@ The details of the added importer are returned from the call.
   },
   "id": "harness_importer"
  }
+
+**Tags:**
+The task created will have the following tags: ``"pulp:action:update_importer",
+"pulp:repository:<repo_id>", "pulp:repository_importer:<importer_type_id>``
 
 .. _distributor_associate:
 
@@ -293,14 +309,13 @@ Any importer configuration value that is not specified remains unchanged.
 
 | :response_list:`_`
 
-* :response_code:`200,if the update was executed`
 * :response_code:`202,if the request was accepted by the server to update the importer
   when the repository is available`
 * :response_code:`404,if there is no repository or importer with the specified IDs`
 * :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
   in the future`
 
-| :return:`A call report list`
+| :return:`a` :ref:`call_report`
 
 :sample_request:`_` ::
 
@@ -310,24 +325,29 @@ Any importer configuration value that is not specified remains unchanged.
   }
  }
 
-:sample_response:`200` ::
+**Sample result value:**
+The result field of the :ref:`task_result` contains the database representation of the importer (not the full repository details, just the importer)
+::
 
   {
-    "scratchpad": null, 
-    "_ns": "repo_importers", 
-    "importer_type_id": "demo_importer", 
-    "last_sync": "2013-10-03T14:08:35-04:00", 
-    "scheduled_syncs": [], 
-    "repo_id": "demo_repo", 
+    "scratchpad": null,
+    "_ns": "repo_importers",
+    "importer_type_id": "demo_importer",
+    "last_sync": "2013-10-03T14:08:35-04:00",
+    "scheduled_syncs": [],
+    "repo_id": "demo_repo",
     "_id": {
       "$oid": "524db282dd01fb194283e53f"
-    }, 
+    },
     "config": {
       "demo_key": "demo_value"
-    }, 
+    },
     "id": "demo_importer"
   }
 
+**Tags:**
+The task created will have the following tags: ``"pulp:action:update_importer",
+"pulp:repository:<repo_id>", "pulp:repository_importer:<importer_id>``
 
 Disassociate an Importer from a Repository
 --------------------------------------------
@@ -338,12 +358,14 @@ Disassociate an Importer from a Repository
 
 | :response_list:`_`
 
-* :response_code:`200,if the delete was executed`
 * :response_code:`202,if the request was accepted by the server to disassociate when the repository is available`
 * :response_code:`404,if there is no repository or importer with the specified IDs`
 
-| :return:`An empty body if the delete was executed immediately.  If the delete could not be executed
-    immediately the details of the task created to execute the delete will be returned.`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created will have the following tags: ``"pulp:action:delete_importer",
+"pulp:repository:<repo_id>", "pulp:repository_importer:<importer_id>``
 
 
 Update a Distributor Associated with a Repository
@@ -357,9 +379,10 @@ repository. This performs the following actions:
 
 Any distributor configuration value that is not specified remains unchanged.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
-However, each :ref:`bind` is itself performed in multiple steps.  The total number of returned
-call_requests depends on how many consumers are bound to the repository.
+The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
+spawned_tasks field will be populated with links to any tasks required complete step 2.
+Updating a distributor causes each binding associated with that repository to be updated as well.
+See :ref:`bind` for details.
 
 | :method:`put`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
@@ -373,7 +396,7 @@ call_requests depends on how many consumers are bound to the repository.
 * :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
   in the future`
 
-| :return:`A call report list`
+| :return:`a` :ref:`call_report`
 
 :sample_request:`_` ::
 
@@ -386,39 +409,10 @@ call_requests depends on how many consumers are bound to the repository.
   }
  }
 
-:sample_response:`202` ::
-
- [
-  {
-   "task_group_id": "bf828f3f-505f-4a1d-8a32-fb2c8b679d6d",
-   "call_request_id": "6c22d630-786a-492c-a2e3-db0dafabf160",
-   "exception": null,
-   "_href": "/pulp/api/v2/task_groups/bf828f3f-505f-4a1d-8a32-fb2c8b679d6d/",
-   "task_id": "6c22d630-786a-492c-a2e3-db0dafabf160",
-   "call_request_tags": [
-     "pulp:repository:demo-repo",
-     "pulp:repository_distributor:demo_distributor",
-     "pulp:action:update_distributor"
-   ],
-   "reasons": [],
-   "start_time": null,
-   "traceback": null,
-   "schedule_id": null,
-   "finish_time": null,
-   "state": "waiting",
-   "result": null,
-   "dependency_failures": {},
-   "call_request_group_id": "bf828f3f-505f-4a1d-8a32-fb2c8b679d6d",
-   "progress": {},
-   "principal_login": "admin",
-   "response": "accepted",
-   "tags": [
-     "pulp:repository:demo-repo",
-     "pulp:repository_distributor:demo_distributor",
-     "pulp:action:update_distributor"
-   ]
-  }
- ]
+**Tags:**
+The task created to update the distributor will have the following tags: ``"pulp:action:update_distributor",
+"pulp:repository:<repo_id>", "pulp:repository_distributor:<distributor_id>``
+Information about the binding tasks can be found at :ref:`bind`
 
 
 .. _distributor_disassociate:
@@ -431,9 +425,9 @@ Disassociating a distributor performs the following actions:
 1. Remove the association between the distributor and the repository.
 2. Unbind all bound consumers.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
-However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
-call_requests depends on how many consumers are bound to the repository.
+The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
+spawned_tasks field will be populated with links to any tasks required complete step 2.
+The total number of spawned :ref:`call_report` depends on how many consumers are bound to the repository.
 
 | :method:`delete`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
@@ -445,7 +439,11 @@ call_requests depends on how many consumers are bound to the repository.
 * :response_code:`404,if there is no repository or distributor with the specified IDs`
 * :response_code:`500,if the server raises an error during disassociation`
 
-| :return:`A call report list`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created to delete the distributor will have the following tags:
+``"pulp:action:remove_distributor","pulp:repository:<repo_id>", "pulp:repository_distributor:<distributor_id>``
 
 
 Delete a Repository
@@ -461,9 +459,9 @@ Deleting a repository is performed in the following major steps:
  1. Delete the repository.
  2. Unbind all bound consumers.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
-However, each :ref:`unbind` is itself performed in multiple steps.  The total number of returned
-call_requests depends on how many consumers are bound to the repository.
+The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
+spawned_tasks field will be populated with links to any tasks required complete step 2.
+The total number of spawned :ref:`call_report` depends on how many consumers are bound to the repository.
 
 
 | :method:`delete`
@@ -474,4 +472,8 @@ call_requests depends on how many consumers are bound to the repository.
 * :response_code:`202,if the update was executed and successful`
 * :response_code:`202,if the request was accepted by the server to delete when the repository is available`
 
-| :return:`A call report list`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created to delete the repository will have the following tags:
+``"pulp:action:delete","pulp:repository:<repo_id>"``

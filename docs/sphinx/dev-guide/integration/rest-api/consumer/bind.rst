@@ -13,8 +13,6 @@ in the following steps:
  1. Create the :term:`binding` on server.
  2. Optionally send a request to the consumer to create the binding.
 
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
-
 The distributor may support configuration options that it may use for that particular
 binding. These options would be used when generating the payload that is sent to consumers
 so they may access the repository. See the individual distributor's documentation for
@@ -46,6 +44,13 @@ more information on the format.
    "repo_id": "test-repo",
    "distributor_id": "dist-1"
  }
+
+**Tags:**
+Each task created to add the binding to a :term:`consumer`
+will be created with the following tags: ``"pulp:repository:<repo_id>",
+"pulp:consumer:<consumer_id>"
+"pulp:repository_distributor:<distributor-id>"
+"pulp:action:bind"``
 
 .. _unbind:
 
@@ -84,7 +89,12 @@ The steps for a forced unbind are as follows:
 
 | :return:`A` :ref:`task_result` if a task any tasks were spawned.
 
-
+**Tags:**
+Each task created to delete the binding from a :term:`consumer`
+will be created with the following tags: ``"pulp:repository:<repo_id>",
+"pulp:consumer:<consumer_id>"
+"pulp:repository_distributor:<distributor-id>"
+"pulp:action:unbind"``
 
 Retrieve a Single Binding
 -------------------------

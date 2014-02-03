@@ -60,9 +60,9 @@ the following fields.
 Example serialized error details::
 
  {
-            "code": "PLP0018",
-            "description": "Duplicate resource: foo",
-            "data": {"resource_id": "foo",
-            "sub_errors": []
+  "code": "PLP0018",
+  "description": "Duplicate resource: foo",
+  "data": {"resource_id": "foo",
+  "sub_errors": []
  }
 

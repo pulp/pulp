@@ -52,7 +52,8 @@ Example Task Result::
  {
   "result": {},
   "error": {},
-  "spawned_tasks": []
+  "spawned_tasks": [{"href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
+                     "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b" }]
  }
 
 .. _call_report:
@@ -64,54 +65,39 @@ A 202 ACCEPTED response returns a **call report** JSON object as the response bo
 that has the following fields:
 
 * **_href** *(string)* - uri path to retrieve subsequent call reports for this task.
-* **response** *(string)* - a response from Pulp's tasking system. The possible values include: 'accepted', 'postponed', and 'rejected'.
-* **reasons** *(array)* - a list of reasons for postponed or rejected responses
 * **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
-* **task_group_id** *(null or string)* - the unique id of the group the task is a part of
-* **schedule_id** *(null or string)* - the unique id of the schedule if the call is scheduled
 * **progress** *(object)* - arbitrary progress information, usually in the form of an object
 * **result** *(any)* - the return value of the call, if any
-* **exception** *(null or string)* - the error exception value, if any
-* **traceback** *(null or array)* - the resulting traceback if an exception was raised
+* **exception** *(null or string)* - **deprecated** the error exception value, if any
+* **traceback** *(null or array)* - **deprecated** the resulting traceback if an exception was raised
 * **start_time** *(null or string)* - the time the call started executing
 * **finish_time** *(null or string)* - the time the call stopped executing
 * **tags** *(array)* - arbitrary tags useful for looking up the call report
 * **spawned_tasks** *(null or array)* - List of uri for any tasks that were spawned by this task.
 * **error** *(null or object)* - Any, errors that occurred that did not cause the overall call to fail.  See :ref:`error_details`.
 
+.. note::
+  The **exception** and **traceback** fields have been deprecated as of Pulp 2.4.  The information about errors
+  that have occurred will be contained in the error block.  See :ref:`error_details` for more information.
+
 Example Call Report::
 
  {
-  "exception": null,
-  "task_group_id": null,
+  "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/",
+  "state": "running",
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
+  "progress": { <contents depend on the operation> },
+  "result": null,
+  "exception": null,
+  "traceback": null,
+  "start_time": "2012-05-17T16:48:00Z",
+  "finish_time": null,
   "tags": [
     "pulp:repository:f16",
     "pulp:action:sync"
   ],
-  "reasons": [],
-  "start_time": "2012-05-17T16:48:00Z",
-  "traceback": null,
-  "state": "running",
-  "finish_time": null,
-  "schedule_id": null,
-  "result": null,
-  "progress": { <contents depend on the operation> },
-  "response": "accepted",
-  "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/"
+  "spawned_tasks": [{"href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
+                     "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b" }],
   "error": null
  }
-
-
-.. _call_report_array:
-
-Call Report List
-----------------
-
-Sometimes a 202 ACCEPTED will return an array of call reports, where each call
-report is as described above. This happens when Pulp needs to kick off multiple
-tasks to handle the REST API call.
-
-More information on managing task groups can be found in the
-:ref:`task_group_management` section.

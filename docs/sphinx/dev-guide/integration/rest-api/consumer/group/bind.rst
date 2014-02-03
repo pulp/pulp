@@ -12,8 +12,9 @@ through the following steps:
 
  1. Create each :term:`binding` on server.
  2. Send a request to each consumer to create the binding.
+    A separate task is created for each unique combination of :term:`consumer`,
+    :term:`repository`, :term:`distributor`.
 
-Each step, for each consumer, is represented by
 The distributor may support configuration options that it may use for that particular
 binding. These options are used when generating the payload that is sent to consumers
 so they may access the repository. See the individual distributor's documentation for
@@ -36,7 +37,7 @@ more information on the format.
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group, repository or distributor does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report`
 
 :sample_request:`_` ::
 
@@ -44,6 +45,14 @@ more information on the format.
    "repo_id": "test-repo",
    "distributor_id": "dist-1"
  }
+
+**Tags:**
+Each task created to add the binding to a :term:`consumer`
+will be created with the following tags: ``"pulp:repository:<repo_id>",
+"pulp:consumer:<consumer_id>"
+"pulp:repository_distributor:<distributor-id>"
+"pulp:action:bind"``
+
 
 .. _group_unbind:
 
@@ -66,6 +75,10 @@ The steps for a forced unbind are as follows:
  2. Send a request to each consumer to remove the binding.  The result of each consumer
     request discarded.
 
+
+In either case step 2 results in a separate task is created for each unique combination of :term:`consumer`,
+:term:`repository`, :term:`distributor`.
+
 | :method:`delete`
 | :path:`/v2/consumer_groups/<group_id>/bindings/<repo_id>/<distributor_id>`
 | :permission:`delete`
@@ -81,4 +94,12 @@ The steps for a forced unbind are as follows:
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report`
+
+**Tags:**
+Each task created to remove the binding from a :term:`consumer`
+will be created with the following tags: ``"pulp:repository:<repo_id>",
+"pulp:consumer:<consumer_id>"
+"pulp:repository_distributor:<distributor-id>"
+"pulp:action:unbind"``
+

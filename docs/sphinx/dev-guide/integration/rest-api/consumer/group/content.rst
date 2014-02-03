@@ -48,6 +48,10 @@ content are handler specific.  The options drive how the handler performs the op
    }
  }
 
+**Tags:**
+Each task created to install content on a :term:`consumer`
+will be created with the following tags:
+``"pulp:consumer:<consumer_id>", "pulp:action:unit_install"``
 
 .. _group_content_update:
 
@@ -96,6 +100,10 @@ content are handler specific.  The options drive how the handler performs the op
    }
  }
 
+**Tags:**
+Each task created to update content on a :term:`consumer`
+will be created with the following tags:
+``"pulp:consumer:<consumer_id>", "pulp:action:unit_update"``
 
 .. _group_content_uninstall:
 
@@ -143,3 +151,8 @@ content are handler specific.  The options drive how the handler performs the op
      "apply": true, "reboot": false
    }
  }
+
+**Tags:**
+Each task created to uninstall content on a :term:`consumer`
+will be created with the following tags:
+``"pulp:consumer:<consumer_id>", "pulp:action:unit_uninstall"``

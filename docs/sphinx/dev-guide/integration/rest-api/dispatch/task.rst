@@ -23,27 +23,7 @@ executing. Polling returns a :ref:`call_report`
 * :response_code:`200, if the task is found`
 * :response_code:`404, if the task is not found`
 
-| :return:`call report representing the current state of the asynchronous call`
-
-:sample_response:`200` ::
-
- {
-  "_href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
-  "response": "postponed",
-  "reasons": [{"resource_type": "repository", "resource_id": "test-repo", "operation": "update"}],
-  "state": "running",
-  "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-  "task_group_id": null,
-  "schedule_id": null,
-  "progress": {},
-  "result": null,
-  "exception": null,
-  "traceback": null,
-  "start_time": "2012-05-13T23:00:02Z",
-  "finish_time": null,
-  "tags": ["pulp:repository:test-repo"],
- }
-
+| :return:`a` :ref:`call_report` representing the task queried
 
 Cancelling a Task
 -----------------
@@ -82,5 +62,5 @@ All currently running and waiting tasks may be listed. This returns an array of
 
 * :response_code:`200,containing an array of tasks`
 
-| :return:`array of call reports (see Polling Task Progress above for example)`
+| :return:`array of` :ref:`call_report`
 
