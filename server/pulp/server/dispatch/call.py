@@ -366,7 +366,6 @@ class CallReport(object):
         :rtype: CallReport
         """
         call_report = cls(task_status.get('task_id'),
-                          call_request_group_id=None,
                           call_request_tags=task_status['tags'],
                           state=task_status['state'],
                           result=task_status.get('result', None),

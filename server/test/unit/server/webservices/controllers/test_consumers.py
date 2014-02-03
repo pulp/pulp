@@ -686,7 +686,9 @@ class ContentTest(PulpWebservicesTests):
         webservice = consumers.Content()
         webservice.params = mock.Mock(return_value={'units': 'foo-unit',
                                                     'options': 'bar'})
-        mock_task.return_value = 'baz'
+        mock_task.return_value = {'task_id': 'foo',
+                                  'state': 'bar',
+                                  'tags': []}
 
         # Test
         self.assertRaises(OperationPostponed, webservice.install, 'consumer-foo')
@@ -699,7 +701,9 @@ class ContentTest(PulpWebservicesTests):
         webservice = consumers.Content()
         webservice.params = mock.Mock(return_value={'units': 'foo-unit',
                                                     'options': 'bar'})
-        mock_task.return_value = 'baz'
+        mock_task.return_value = {'task_id': 'foo',
+                                  'state': 'bar',
+                                  'tags': []}
 
         # Test
         self.assertRaises(OperationPostponed, webservice.uninstall, 'consumer-foo')
@@ -712,7 +716,9 @@ class ContentTest(PulpWebservicesTests):
         webservice = consumers.Content()
         webservice.params = mock.Mock(return_value={'units': 'foo-unit',
                                                     'options': 'bar'})
-        mock_task.return_value = 'baz'
+        mock_task.return_value = {'task_id': 'foo',
+                                  'state': 'bar',
+                                  'tags': []}
 
         # Test
         self.assertRaises(OperationPostponed, webservice.update, 'consumer-foo')
