@@ -1,13 +1,12 @@
 %if 0%{?fedora} > 12 || 0%{?rhel} > 6
-%global sphinx_docs 1
 # Since we do not support Python 3, we will not build Python 3 packages
 %global with_python3 0
+%global sphinx_docs 1
 %else
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")}
 %global sphinx_docs 0
 # These Sphinx docs do not build with python-sphinx 0.6 (el6)
 %endif
-
 
 %global srcname amqp
 
