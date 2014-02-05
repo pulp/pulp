@@ -87,7 +87,7 @@ Example Call Report::
   "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/",
   "state": "running",
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
-  "progress": { <contents depend on the operation> },
+  "progress": {}, # contents depend on the operation
   "result": null,
   "exception": null,
   "traceback": null,

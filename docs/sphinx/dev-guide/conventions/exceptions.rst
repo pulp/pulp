@@ -34,7 +34,7 @@ Example serialized exception::
   "error": {
             "code": "PLP0009",
             "description": "Missing resource(s): foo",
-            "data": {"resource": "foo",
+            "data": {"resource": "foo"},
             "sub_errors": []
  }
 
