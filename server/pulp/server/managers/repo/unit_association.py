@@ -374,16 +374,12 @@ class RepoUnitAssociationManager(object):
             return []
         unit_map = {}  # maps unit_type_id to a list of unit_ids
 
-        units_without_permissions = []
         units_with_permissions = []
         # Filter out based on the owner so we can give a useful error
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
-            if unit['owner_id'] == owner_id and unit['owner_type'] == owner_type:
-                id_list.append(unit['unit_id'])
-                units_with_permissions.append(unit)
-            else:
-                units_without_permissions.append(unit)
+            id_list.append(unit['unit_id'])
+            units_with_permissions.append(unit)
 
         collection = RepoContentUnit.get_collection()
         repo_manager = manager_factory.repo_manager()
@@ -415,12 +411,7 @@ class RepoUnitAssociationManager(object):
         # Match the return type/format as copy
         serializable_units = [u.to_id_dict() for u in transfer_units]
 
-        # Calculate the list of units that they don't have permission to update
-        bad_unit_type_ids = calculate_associated_type_ids(repo_id, units_without_permissions)
-        bad_transfer_units = create_transfer_units(units_without_permissions, bad_unit_type_ids)
-        non_removable_units = [u.to_id_dict() for u in bad_transfer_units]
-
-        return {'units_successful': serializable_units, 'units_failed': non_removable_units}
+        return {'units_successful': serializable_units}
 
     @staticmethod
     def association_exists(repo_id, unit_id, unit_type_id):
