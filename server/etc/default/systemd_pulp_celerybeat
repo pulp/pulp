@@ -4,4 +4,8 @@
 # FATAL are the allowed values.
 CELERYBEAT_LOG_LEVEL="INFO"
 
+# Path where Celery's beat process should write its log
 CELERYBEAT_LOG_FILE="/var/log/pulp/celerybeat.log"
+
+# Configure Python's encoding for writing all logs, stdout and stderr
+PYTHONIOENCODING="UTF-8"

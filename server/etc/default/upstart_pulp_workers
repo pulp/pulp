@@ -16,6 +16,9 @@ CELERYD_PID_FILE="/var/run/pulp/%n.pid"
 # that are detected on the system.
 # PULP_CONCURRENCY=4
 
+# Configure Python's encoding for writing all logs, stdout and stderr
+PYTHONIOENCODING="UTF-8"
+
 ######################################################################
 # Please do not edit any of the settings below this mark in this file!
 ######################################################################
