@@ -36,7 +36,7 @@ more information on the format.
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 
-| :return:`A` :ref:`task_result` if a task any tasks were spawned.  In the event of a 200 response the body will be be the binding that was created.
+| :return:`A` :ref:`call_report` if a task any tasks were spawned.  In the event of a 200 response the body will be be the binding that was created.
 
 :sample_request:`_` ::
 
@@ -70,7 +70,7 @@ The steps for a forced unbind are as follows:
 
  1. The :term:`binding` is deleted on the server. This happens synchronously with the call.
  2. Send a request to the consumer to remove the binding.  The ID of the request to the consumer
-    is returned via the spawned_tasks field of the :ref:`task_result`.
+    is returned via the spawned_tasks field of the :ref:`call_report`.
 
 | :method:`delete`
 | :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>`
@@ -87,7 +87,7 @@ The steps for a forced unbind are as follows:
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the binding does not exist`
 
-| :return:`A` :ref:`task_result` if a task any tasks were spawned.
+| :return:`A` :ref:`call_report` if a task any tasks were spawned.
 
 **Tags:**
 Each task created to delete the binding from a :term:`consumer`

@@ -15,16 +15,10 @@ Any REST API will return one of three responses:
 A success response indicates no conflicts were detected and the REST call
 executed. This is what is typically expected from a REST API call.
 
-A postponed response indicates a conflict was detected, however the call can be
-executed at a later point in time. The call will be carried out by an
-asynchronous task on the server. The response body to such a call is a
-serialized call report (see below) that contains metadata about the call,
-its progress, and resolution. Additionally, an href is provided that can be used
-to poll for updates to this information.
-
-A postponed response may also indicate that a portion of the command was executed successfully
-and a portion of the command has been queued to run in the future.  In this case a Task Result
-object will be returned.
+A postponed response indicates that some portion of the command has been
+queued to execute asynchronously.  In this case a :ref:`call_report` will be returned
+with the results of the synchronously executed portion of the command, if there are any,
+and a list of the tasks that have been spawned to complete the work in the future.
 
 More information on retrieving and displaying task information can be found
 :ref:`in the Task Management API documentation <task_management>`.
@@ -35,69 +29,24 @@ is the case where an update operation is requested after a delete operation has
 been queued for the resource. The body of this response is Pulp's standard
 exception format including the reasons for the response.
 
-.. _task_result:
-
-Task Result
------------
-
-A 202 ACCEPTED response returns a **task result** JSON object as the response body
-that has the following fields:
-
-* **result** *(Object)* - the return value of the call, if any
-* **error** *(Object)* - error details if an error occurred.  See :ref:`error_details`.
-* **spawned_tasks** *(array)* - list of :ref:`call_report`
-
-Example Task Result::
-
- {
-  "result": {},
-  "error": {},
-  "spawned_tasks": [{"href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
-                     "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b" }]
- }
-
 .. _call_report:
 
 Call Report
 -----------
 
-A 202 ACCEPTED response returns a **call report** JSON object as the response body
+A 202 ACCEPTED response returns a **Call Rreport** JSON object as the response body
 that has the following fields:
 
-* **_href** *(string)* - uri path to retrieve subsequent call reports for this task.
-* **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
-* **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
-* **progress** *(object)* - arbitrary progress information, usually in the form of an object
-* **result** *(any)* - the return value of the call, if any
-* **exception** *(null or string)* - **deprecated** the error exception value, if any
-* **traceback** *(null or array)* - **deprecated** the resulting traceback if an exception was raised
-* **start_time** *(null or string)* - the time the call started executing
-* **finish_time** *(null or string)* - the time the call stopped executing
-* **tags** *(array)* - arbitrary tags useful for looking up the call report
-* **spawned_tasks** *(null or array)* - List of uri for any tasks that were spawned by this task.
-* **error** *(null or object)* - Any, errors that occurred that did not cause the overall call to fail.  See :ref:`error_details`.
-
-.. note::
-  The **exception** and **traceback** fields have been deprecated as of Pulp 2.4.  The information about errors
-  that have occurred will be contained in the error block.  See :ref:`error_details` for more information.
+* **result** *(Object)* - the return value of the call, if any
+* **error** *(Object)* - error details if an error occurred.  See :ref:`error_details`.
+* **spawned_tasks** *(array)* - list of references to tasks that were spawned.  Each
+  task object contains the relative url to retrieve the task and the unique ID of the task.
 
 Example Call Report::
 
  {
-  "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/",
-  "state": "running",
-  "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
-  "progress": {}, # contents depend on the operation
-  "result": null,
-  "exception": null,
-  "traceback": null,
-  "start_time": "2012-05-17T16:48:00Z",
-  "finish_time": null,
-  "tags": [
-    "pulp:repository:f16",
-    "pulp:action:sync"
-  ],
-  "spawned_tasks": [{"href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
-                     "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b" }],
-  "error": null
+  "result": {},
+  "error": {},
+  "spawned_tasks": [{"_href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
+                     "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b" }]
  }

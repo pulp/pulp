@@ -95,7 +95,7 @@ is centered around updating only that metadata.
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if there is no repository with the give ID`
 
-| :return:`a` :ref:`task_result` containing the database representation of the repository (after changes made by the update)
+| :return:`a` :ref:`call_report` containing the database representation of the repository (after changes made by the update)
  and a any tasks spawned to apply the consumer bindings for the repository.  See :ref:`bind` for details on the
  bindings tasks that will be generated.
 
@@ -116,7 +116,7 @@ is centered around updating only that metadata.
  }
 
 **Sample result value:**
-The result field of the :ref:`task_result` contains the database representation of the distributor (not the full repository details, just the distributor)
+The result field of the :ref:`call_report` contains the database representation of the distributor (not the full repository details, just the distributor)
 ::
 
  {
@@ -178,7 +178,7 @@ The details of the added importer are returned from the call.
 * :response_code:`404,if there is no repository with the given ID`
 * :response_code:`500,if the importer raises an error during initialization`
 
-| :return:`a` :ref:`task_result` containing the database representation of the importer (not the full repository details, just the importer)
+| :return:`a` :ref:`call_report` containing the database representation of the importer (not the full repository details, just the importer)
 
 :sample_request:`_` ::
 
@@ -191,7 +191,7 @@ The details of the added importer are returned from the call.
  }
 
 **Sample result value:**
-The result field of the :ref:`task_result` contains the database representation of the importer (not the full repository details, just the importer)
+The result field of the :ref:`call_report` contains the database representation of the importer (not the full repository details, just the importer)
 ::
 
  {
@@ -326,7 +326,7 @@ Any importer configuration value that is not specified remains unchanged.
  }
 
 **Sample result value:**
-The result field of the :ref:`task_result` contains the database representation of the importer (not the full repository details, just the importer)
+The result field of the :ref:`call_report` contains the database representation of the importer (not the full repository details, just the importer)
 ::
 
   {
