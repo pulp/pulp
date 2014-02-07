@@ -261,11 +261,12 @@ class TestDeleteQueue(ResourceReservationTests):
     """
     Test the _delete_queue() Task.
     """
+    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
     @mock.patch('celery.app.control.Inspect.active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.cancel')
     @mock.patch('pulp.server.async.tasks.logger')
-    def test__delete_queue(self, logger, cancel, active_queues):
+    def test__delete_queue(self, logger, cancel, active_queues, mock_add_consumer):
         """
         Assert that the correct Tasks get canceled when their queue is deleted, and that the queue
         is removed from the database.
