@@ -15,14 +15,10 @@ import web
 
 from web.webapi import BadRequest
 
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport
 from pulp.server.managers import factory as managers_factory
 from pulp.server.tasks import consumer_group
 from pulp.server.webservices import serialization
@@ -250,8 +246,7 @@ class ConsumerGroupBindings(JSONController):
         notify_agent = body.get('notify_agent', True)
         async_task = consumer_group.bind.apply_async((group_id, repo_id, distributor_id,
                                                       notify_agent, binding_config, options))
-        call_report = CallReport(call_request_id=async_task.id)
-        raise pulp_exceptions.OperationPostponed(call_report)
+        raise pulp_exceptions.OperationPostponed(async_task)
 
 
 class ConsumerGroupBinding(JSONController):
@@ -301,8 +296,7 @@ class ConsumerGroupBinding(JSONController):
         @rtype: dict
         """
         async_task = consumer_group.unbind.apply_async((group_id, repo_id, distributor_id, {}))
-        call_report = CallReport(call_request_id=async_task.id)
-        raise pulp_exceptions.OperationPostponed(call_report)
+        raise pulp_exceptions.OperationPostponed(async_task)
 
 
 # web.py application -----------------------------------------------------------

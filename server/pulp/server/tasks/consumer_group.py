@@ -71,7 +71,7 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
                                         group_id=group_id)
         bind_error.child_exceptions = bind_errors
 
-    return TaskResult({}, bind_error, additional_tasks)
+    return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
 
 
 @celery.task(base=Task)
@@ -116,7 +116,7 @@ def unbind(group_id, repo_id, distributor_id, options):
                                         distributor_id=distributor_id,
                                         group_id=group_id)
         bind_error.child_exceptions = bind_errors
-    return TaskResult({}, bind_error, additional_tasks)
+    return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
 
 
 def install_content(consumer_group_id, units, options):

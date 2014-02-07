@@ -16,12 +16,11 @@ import logging
 import web
 from web.webapi import BadRequest
 
-from pulp.common.tags import action_tag, resource_tag
+from pulp.common.tags import action_tag
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport
 from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, \
     UnsupportedValue, MissingResource
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
@@ -307,7 +306,7 @@ class Content(JSONController):
         options = body.get('options')
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.install_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
+        raise OperationPostponed(TaskResult.from_task_status_dict(task))
 
     def update(self, consumer_id):
         """
@@ -323,7 +322,7 @@ class Content(JSONController):
         options = body.get('options')
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.update_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
+        raise OperationPostponed(TaskResult.from_task_status_dict(task))
 
     def uninstall(self, consumer_id):
         """
@@ -339,7 +338,7 @@ class Content(JSONController):
         options = body.get('options')
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.uninstall_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
+        raise OperationPostponed(TaskResult.from_task_status_dict(task))
 
 
 class ConsumerHistory(JSONController):
@@ -585,8 +584,7 @@ class ContentApplicabilityRegeneration(JSONController):
                                 dispatch_constants.RESOURCE_ANY_ID,
                                 (consumer_criteria.as_dict(),),
                                 tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise OperationPostponed(async_result)
 
 
 class UnitActionScheduleCollection(JSONController):

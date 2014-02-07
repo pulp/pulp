@@ -219,12 +219,43 @@ class TaskResult(object):
         :param error: The PulpException for the error & sub-errors that occured
         :type error: pulp.server.exception.PulpException
         :param spawned_tasks: A list of task status objects for tasks that were created by this
-                              task and are tracked through the pulp database
-        :type spawned_tasks: list of TaskStatus objects
+                              task and are tracked through the pulp database.
+                              Alternately an AsyncResult.
+        :type spawned_tasks: list of TaskStatus, AsyncResult, or str objects
         """
         self.return_value = result
         self.error = error
-        self.spawned_tasks = spawned_tasks
+        self.spawned_tasks = []
+        if spawned_tasks and isinstance(spawned_tasks, list):
+            for spawned_task in spawned_tasks:
+                if isinstance(spawned_task, dict):
+                    self.spawned_tasks.append({'task_id': spawned_task.get('task_id')})
+                if isinstance(spawned_task, AsyncResult):
+                    self.spawned_tasks.append({'task_id': spawned_task.id})
+
+    @classmethod
+    def from_async_result(cls, async_result):
+        """
+        Create a TaskResult object from a celery async_result type
+
+        :param async_result: The result object to use as a base
+        :type async_result: celery.result.AsyncResult
+        :returns: a TaskResult containing the async task in it's spawned_tasks list
+        :rtype: TaskResult
+        """
+        return cls(spawned_tasks=[{'task_id': async_result.id}])
+
+    @classmethod
+    def from_task_status_dict(cls, task_status):
+        """
+        Create a TaskResult object from a celery async_result type
+
+        :param task_status: The dictionary representation of a TaskStatus
+        :type task_status: dict
+        :returns: a TaskResult containing the task in it's spawned_tasks lsit
+        :rtype: TaskResult
+        """
+        return cls(spawned_tasks=[{'task_id': task_status.get('task_id')}])
 
     def serialize(self):
         data = {
