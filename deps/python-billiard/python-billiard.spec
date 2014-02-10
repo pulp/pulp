@@ -1,7 +1,8 @@
 %global srcname billiard
 
 %if 0%{?fedora} > 12 || 0%{?rhel} > 6
-%global with_python3 1
+# We do not support Python 3, so we will not build Python 3 packages.
+%global with_python3 0
 %else
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")}
 %endif
