@@ -196,7 +196,7 @@ Requires: python-pymongo >= 2.5.2
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.32
-Requires: python-oauth2 >= 1.5.170-2.pulp
+Requires: python-oauth2 >= 1.5.211
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup

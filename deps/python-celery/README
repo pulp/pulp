@@ -1,0 +1,1 @@
+Pulp requires celery 3.1, which is not available in Fedora or EPEL.
