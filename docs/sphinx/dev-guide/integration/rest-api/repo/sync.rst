@@ -5,8 +5,7 @@ Sync a Repository
 -----------------
 
 Syncs content into a repository from a feed source using the repository's
-:term:`importer`. This call always executes asynchronously and will return a
-:ref:`call_report_array`.
+:term:`importer`.
 
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/sync/`
@@ -20,7 +19,7 @@ Syncs content into a repository from a feed source using the repository's
 * :response_code:`202,if the sync is set to be executed`
 * :response_code:`409,if a conflicting operation is in progress`
 
-| :return:`call report representing the current state of they sync`
+| :return:`a` :ref:`call_report`
 
 :sample_request:`_` ::
 
@@ -29,23 +28,9 @@ Syncs content into a repository from a feed source using the repository's
                        "verify_size": false},
  }
 
-:sample_response:`202` ::
-
-  {"_href": "/pulp/api/v2/task_groupss/a4e8579d-6c41-4134-a150-cf65faeafdfe/",
-   "response": "accepted",
-   "reasons": [],
-   "state": "waiting",
-   "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-   "task_group_id": "a4e8579d-6c41-4134-a150-cf65faeafdfe",
-   "schedule_id": null,
-   "progress": {},
-   "result": null,
-   "exception": null,
-   "traceback": null,
-   "start_time": null,
-   "finish_time": null,
-   "tags": ["pulp:action:sync", "pulp:repository:<repo_id>"]}
-
+**Tags:**
+The task created will have the following tags:
+``"pulp:action:sync", "pulp:repository:<repo_id>"``
 
 
 Scheduling a Sync
@@ -136,7 +121,7 @@ Delete a scheduled sync to remove it permanently from the importer.
 
 | :response_list:`_`
 
-* response_code:`200,if the schedule was deleted successfully`
+* :response_code:`200,if the schedule was deleted successfully`
 
 | :return:`null`
 

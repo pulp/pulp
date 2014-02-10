@@ -4,7 +4,7 @@ Content Applicability
 Generate Content Applicability for Updated Consumers
 ----------------------------------------------------
 
-This API regenerates :ref:`applicability data` for a given set of consumers 
+This API regenerates :term:`applicability data` for a given set of consumers
 matched by a given :ref:`search_criteria` asynchronously and saves it 
 in the Pulp database. It should be used when a consumer profile is updated 
 or consumer-repository bindings are updated. Applicability data is regenerated 
@@ -12,8 +12,8 @@ for all unit profiles associated with given consumers and for all content types
 that define applicability. Generated applicability data can be queried using 
 the `Query Content Applicability` API described below.
 
-The API will return a :ref:`Call Report`. Users can check whether the applicability 
-generation is completed using task id in the :ref:`Call Report`. You can run 
+The API will return a :ref:`call_report`. Users can check whether the applicability
+generation is completed using task id in the :ref:`call_report`. You can run
 a single applicability generation task at a time. If an applicability generation 
 task is running, any new applicability generation tasks requested are queued 
 and postponed until the current task is completed.
@@ -30,7 +30,7 @@ and postponed until the current task is completed.
 * :response_code:`202,if applicability regeneration is set to be executed or queued up`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:`call report representing the current state of they applicability regeneration`
+| :return:`a` :ref:`call_report` representing the current state of they applicability regeneration
 
 :sample_request:`_` ::
 
@@ -40,40 +40,13 @@ and postponed until the current task is completed.
   }
  }
 
-
-:sample_response:`202` ::
-
- {
-  "task_group_id": null, 
-  "call_request_id": "0937cc05-69d4-400b-86e0-897fd94c3fad", 
-  "exception": null, 
-  "_href": "/pulp/api/v2/tasks/0937cc05-69d4-400b-86e0-897fd94c3fad/", 
-  "task_id": "0937cc05-69d4-400b-86e0-897fd94c3fad", 
-  "call_request_tags": [
-    "pulp:action:applicability_regeneration"
-  ], 
-  "reasons": [], 
-  "start_time": null, 
-  "traceback": null, 
-  "schedule_id": null, 
-  "finish_time": null, 
-  "state": "waiting", 
-  "result": null, 
-  "dependency_failures": {}, 
-  "call_request_group_id": null, 
-  "progress": {}, 
-  "principal_login": "admin", 
-  "response": "accepted", 
-  "tags": [
-    "pulp:action:applicability_regeneration"
-  ]
- }
-
+**Tags:**
+The task created will have the following tag: ``"pulp:action:applicability_regeneration"``
 
 Generate Content Applicability for Updated Repositories
 -------------------------------------------------------
 
-This API regenerates :ref:`applicability data` for a given set of repositories 
+This API regenerates :term:`applicability data` for a given set of repositories
 matched by a given :ref:`search_criteria` asynchronously and saves it 
 in the Pulp database. It should be used when a repository's content is updated. 
 Only `existing` applicability data is regenerated for given repositories. 
@@ -86,8 +59,8 @@ to the given repositories, applicability data is generated for them as well.
 Generated applicability data can be queried using 
 the `Query Content Applicability` API described below.
 
-The API will return a :ref:`Call Report`. Users can check whether the applicability 
-generation is completed using task id in the :ref:`Call Report`. You can run 
+The API will return a :ref:`call_report`. Users can check whether the applicability
+generation is completed using task id in the :ref:`call_report`. You can run
 a single applicability generation task at a time. If an applicability generation 
 task is running, any new applicability generation tasks requested are queued 
 and postponed until the current task is completed.
@@ -104,7 +77,7 @@ and postponed until the current task is completed.
 * :response_code:`202,if applicability regeneration is set to be executed or queued up`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:`call report representing the current state of they applicability regeneration`
+| :return:`a` :ref:`call_report` representing the current state of they applicability regeneration
 
 :sample_request:`_` ::
 
@@ -114,35 +87,8 @@ and postponed until the current task is completed.
   }
  }
 
-
-:sample_response:`202` ::
-
- {
-  "task_group_id": null, 
-  "call_request_id": "97b7f736-5084-45a9-bc8a-2d42d63b4204", 
-  "exception": null, 
-  "_href": "/pulp/api/v2/tasks/97b7f736-5084-45a9-bc8a-2d42d63b4204/", 
-  "task_id": "97b7f736-5084-45a9-bc8a-2d42d63b4204", 
-  "call_request_tags": [
-    "pulp:action:applicability_regeneration"
-  ], 
-  "reasons": [], 
-  "start_time": null, 
-  "traceback": null, 
-  "schedule_id": null, 
-  "finish_time": null, 
-  "state": "waiting", 
-  "result": null, 
-  "dependency_failures": {}, 
-  "call_request_group_id": null, 
-  "progress": {}, 
-  "principal_login": "admin", 
-  "response": "accepted", 
-  "tags": [
-    "pulp:action:applicability_regeneration"
-  ]
- }
-
+**Tags:**
+The task created will have the following tag: ``"pulp:action:applicability_regeneration"``
 
 Query Content Applicability
 ---------------------------
@@ -209,3 +155,4 @@ Each *applicability report* is an object:
         "applicability": {"type_1": ["unit_3_id"], "type_2": ["unit_4_id"]}
     }
  ]
+

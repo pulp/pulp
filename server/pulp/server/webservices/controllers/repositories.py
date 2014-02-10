@@ -272,7 +272,6 @@ class RepoResource(JSONController):
 
         repo_manager = manager_factory.repo_manager()
 
-        # TODO figure out a way to return information about the other tasks spawned (likely need new return format)
         task_result = repo_manager.update_repo_and_plugins(repo_id, delta, importer_config, distributor_configs)
         # TODO Old CallRequest used to kwarg_blacklist the importer_config and distributor_config
         # TODO Do we need to filter those out here?
@@ -739,8 +738,7 @@ class RepoPublish(JSONController):
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
         async_result = repository.publish(repo_id, distributor_id, overrides)
-        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
-                                                       call_request_tags=async_result.tags))
+        raise exceptions.OperationPostponed(CallReport.from_task_status_dict(async_result.id))
 
 
 class RepoAssociate(JSONController):
@@ -787,7 +785,7 @@ class RepoAssociate(JSONController):
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)
-        call_report = CallReport.from_task_status(async_result.id, call_request_tags=tags)
+        call_report = CallReport.from_task_status(async_result.id)
         raise exceptions.OperationPostponed(call_report)
 
 

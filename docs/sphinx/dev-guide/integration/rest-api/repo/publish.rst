@@ -22,7 +22,7 @@ call always executes asynchronously and will return a :term:`call report`.
 * :response_code:`202, if the publish is set to be executed`
 * :response_code:`409, if a conflicting operation is in progress`
 
-| :return:`call report representing the current state of they sync`
+| :return:`a` :ref:`call_report` representing the current state of they sync`
 
 :sample_request:`_` ::
 
@@ -31,25 +31,9 @@ call always executes asynchronously and will return a :term:`call report`.
    "override_config": {},
  }
 
-:sample_response:`202` ::
-
- {
-  "_href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
-  "response": "accepted",
-  "reasons": [],
-  "state": "waiting",
-  "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-  "task_group_id": null,
-  "schedule_id": null,
-  "progress": {},
-  "result": null,
-  "exception": null,
-  "traceback": null,
-  "start_time": null,
-  "finish_time": null,
-  "tags": ["pulp:action:publish", "pulp:repository:<repo_id>"],
- }
-
+**Tags:**
+The task created will have the following tags:
+``"pulp:action:publish","pulp:repository:<repo_id>"``
 
 
 Scheduling a Publish
@@ -139,7 +123,7 @@ Delete a scheduled publish to remove it permanently from the distributor.
 
 | :response_list:`_`
 
-* response_code:`200,if the schedule was deleted successfully`
+* :response_code:`200,if the schedule was deleted successfully`
 
 | :return:`null`
 
@@ -165,7 +149,7 @@ Each scheduled publish may be inspected.
 
 
 Retrieving Publish History
------------------------
+--------------------------
 Retrieve publish history for a repository. Each publish performed on a repository creates a history entry.
 
 | :method:`get`
@@ -202,3 +186,4 @@ Retrieve publish history for a repository. Each publish performed on a repositor
    "error_message": null,
   }
  ]
+

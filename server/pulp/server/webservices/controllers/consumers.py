@@ -307,7 +307,7 @@ class Content(JSONController):
         options = body.get('options')
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.install_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
+        raise OperationPostponed(CallReport.from_task_status_dict(task))
 
     def update(self, consumer_id):
         """
@@ -323,7 +323,7 @@ class Content(JSONController):
         options = body.get('options')
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.update_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
+        raise OperationPostponed(CallReport.from_task_status_dict(task))
 
     def uninstall(self, consumer_id):
         """
@@ -339,7 +339,7 @@ class Content(JSONController):
         options = body.get('options')
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.uninstall_content(consumer_id, units, options)
-        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
+        raise OperationPostponed(CallReport.from_task_status_dict(task))
 
 
 class ConsumerHistory(JSONController):

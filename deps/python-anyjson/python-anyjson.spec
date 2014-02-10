@@ -1,5 +1,6 @@
 %if 0%{?fedora} > 12 || 0%{?rhel} > 6
-%global with_python3 1
+# We don't want to build Python 3 versions of our dependencies, since we would not QE them
+%global with_python3 0
 %else
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")}
 %endif

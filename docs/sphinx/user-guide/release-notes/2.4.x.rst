@@ -38,6 +38,19 @@ API Changes
   the restriction that units could not be deleted from repositories that are synced via a feed.
   However, if a unit is deleted from a repo populated via a feed, syncing the repo again will
   recreate the unit.
+* The structure of the Call Report has been changed significantly.  It now returns a single
+  object under all conditions.  The spawned_tasks list within that object does not contain
+  the full list of all tasks that will be scheduled for a given call.  Each spawned task
+  is responsible for spawning whatever additional tasks are needed in order to complete processing
+  For example, the sync task with auto publishing enabled returns a Call Report that only lists
+  the task_id for the sync portion of the work.  When the sync task finishes it will have the
+  task created for publishing listed in the spawned_tasks field.
+* The exception & traceback fields have been deprecated from the Call Report & Task Status objects
+  In place of those fields a new "error" object has been created and will be returned.
+* TaskGroups are no longer supported.  All usages of the task_group_id have been removed.
+* When asynchronous tasks are created they will be returned in the waiting state.  The
+  postponed or rejected states are no longer supported.
+
 
 ScheduledCall
 ^^^^^^^^^^^^^

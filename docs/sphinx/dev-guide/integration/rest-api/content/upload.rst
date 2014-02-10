@@ -82,10 +82,13 @@ the repository itself and the URL reflects this accordingly.
 
 | :response_list:`_`
 
-* :response_code:`200,if the import completed successfully`
 * :response_code:`202,if the request for the import was accepted but postponed until later`
 
-| :return:`object with three attributes: success_flag, summary, and details. success_flag will be a boolean, and summary and details will be the values as returned by the Importer.`
+| :return:`a` :ref:`call_report`  The result field in the call report will be defined by the importer used
+
+**Tags:**
+The task created will have the following tags.  ``"pulp:repository:<repo_id>",
+"pulp:action:import_upload"``
 
 Delete an Upload Request
 ------------------------
