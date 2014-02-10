@@ -53,22 +53,6 @@ def relevant_existing_task_id(existing_sync_tasks):
     return None
 
 
-def relevant_existing_task_group_id(existing_tasks):
-    """
-    Grok through a list of existing tasks and look for the task_group_id
-    for the highest priority.
-    """
-    running_tasks = [t for t in existing_tasks if t.is_running()]
-    waiting_tasks = [t for t in existing_tasks if t.is_waiting()]
-
-    if running_tasks:
-        return running_tasks[0].task_group_id
-    elif waiting_tasks:
-        return waiting_tasks[0].task_group_id
-
-    return None
-
-
 def publish_task_in_sync_task_group(task_list):
     """
     Grok through the tasks returned from the server's repo sync call and find

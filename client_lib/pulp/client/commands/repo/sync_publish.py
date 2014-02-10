@@ -19,7 +19,7 @@ commands.
 from gettext import gettext as _
 
 from pulp.client.commands import options, polling
-from pulp.client.commands.repo.status import tasks
+from pulp.client.commands.repo.status import status, tasks
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup
 
 
@@ -76,13 +76,13 @@ class RunSyncRepositoryCommand(polling.PollingCommand):
         # See if an existing sync is running for the repo. If it is, resume
         # progress tracking.
         existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
-        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
 
-        if task_group_id is not None:
+        if existing_sync_tasks:
             msg = _('A sync task is already in progress for this repository. ')
             if not background:
                 msg += _('Its progress will be tracked below.')
             self.context.prompt.render_paragraph(msg, tag='in-progress')
+            self.poll([existing_sync_tasks[0]], kwargs)
 
         else:
             # Trigger the actual sync
@@ -95,7 +95,8 @@ class RunSyncRepositoryCommand(polling.PollingCommand):
             self.renderer.display_report(task.progress_report)
 
     def task_header(self, task):
-        print task.tags
+        # We don't want any task header printed for this task
+        pass
 
 
 class SyncStatusCommand(polling.PollingCommand):
@@ -118,13 +119,12 @@ class SyncStatusCommand(polling.PollingCommand):
 
         # Load the relevant task group
         existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
-        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
 
-        if task_group_id is None:
+        if not existing_sync_tasks:
             msg = _('The repository is not performing any operations')
             self.prompt.render_paragraph(msg, tag='no-tasks')
         else:
-            status.display_group_status(self.context, self.renderer, task_group_id)
+            self.poll(existing_sync_tasks, kwargs)
 
 
 class RunPublishRepositoryCommand(polling.PollingCommand):
@@ -217,18 +217,16 @@ class RunPublishRepositoryCommand(polling.PollingCommand):
             msg = _('The status of this publish can be displayed using the status command.')
             self.context.prompt.render_paragraph(msg, 'background')
 
-            
     def generate_override_config(self, **kwargs):
         """
         Check if any of the override config options is passed by the user and create override_config
         dictionary
 
         :param kwargs: all keyword arguments passed in by the user on the command line
-        :type kwargs: dict
-
-        :return: config option dictionary consisting of option values passed by user for valid publish config options
-                 (stored in override_config_keywords)
-        :rtype: dict
+        :type kwargs:  dict
+        :return:       config option dictionary consisting of option values passed by user for valid publish
+                       config options (stored in override_config_keywords)
+        :rtype:        dict
         """
         override_config = {}
         for option in self.override_config_keywords:
@@ -257,11 +255,10 @@ class PublishStatusCommand(polling.PollingCommand):
         self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
 
         # Load the relevant task group
-        existing_sync_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
+        existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
 
-        if task_group_id is None:
+        if not existing_publish_tasks:
             msg = _('The repository is not performing any operations')
             self.prompt.render_paragraph(msg, tag='no-tasks')
         else:
-            status.display_group_status(self.context, self.renderer, task_group_id)
+            status.display_group_status(self.context, self.renderer, existing_publish_tasks)

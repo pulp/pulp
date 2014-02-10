@@ -101,6 +101,7 @@ class Task(object):
         self.state = response_body.get('state')
         self.progress_report = response_body.get('progress_report')
         self.result = response_body.get('result')
+        self.exception = response_body.get('exception')
         self.traceback = response_body.get('traceback')
         self.error = response_body.get('error')
         self.spawned_tasks = []
