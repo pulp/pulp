@@ -96,7 +96,7 @@ is centered around updating only that metadata.
 * :response_code:`404,if there is no repository with the give ID`
 
 | :return:`a` :ref:`call_report` containing the database representation of the repository (after changes made by the update)
- and a any tasks spawned to apply the consumer bindings for the repository.  See :ref:`bind` for details on the
+ and any tasks spawned to apply the consumer bindings for the repository.  See :ref:`bind` for details on the
  bindings tasks that will be generated.
 
 :sample_request:`_` ::
@@ -293,7 +293,7 @@ The details of the added distributor are returned from the call.
 
 
 Update an Importer Associated with a Repository
--------------------------------------------------
+-----------------------------------------------
 
 Update the configuration for an :term:`importer` that has already been associated with a
 repository.
@@ -350,7 +350,7 @@ The task created will have the following tags: ``"pulp:action:update_importer",
 "pulp:repository:<repo_id>", "pulp:repository_importer:<importer_id>``
 
 Disassociate an Importer from a Repository
---------------------------------------------
+------------------------------------------
 
 | :method:`delete`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/`
@@ -380,7 +380,7 @@ repository. This performs the following actions:
 Any distributor configuration value that is not specified remains unchanged.
 
 The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
-spawned_tasks field will be populated with links to any tasks required complete step 2.
+spawned_tasks field will be populated with links to any tasks required to complete step 2.
 Updating a distributor causes each binding associated with that repository to be updated as well.
 See :ref:`bind` for details.
 
@@ -412,7 +412,7 @@ See :ref:`bind` for details.
 **Tags:**
 The task created to update the distributor will have the following tags: ``"pulp:action:update_distributor",
 "pulp:repository:<repo_id>", "pulp:repository_distributor:<distributor_id>``
-Information about the binding tasks can be found at :ref:`bind`
+Information about the binding tasks can be found at :ref:`bind`.
 
 
 .. _distributor_disassociate:
@@ -427,7 +427,7 @@ Disassociating a distributor performs the following actions:
 
 The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
 spawned_tasks field will be populated with links to any tasks required complete step 2.
-The total number of spawned :ref:`call_report` depends on how many consumers are bound to the repository.
+The total number of spawned tasks depends on how many consumers are bound to the repository.
 
 | :method:`delete`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
@@ -460,8 +460,8 @@ Deleting a repository is performed in the following major steps:
  2. Unbind all bound consumers.
 
 The first step is represented by a :ref:`call_report`.  Upon completion of step 1 the
-spawned_tasks field will be populated with links to any tasks required complete step 2.
-The total number of spawned :ref:`call_report` depends on how many consumers are bound to the repository.
+spawned_tasks field will be populated with links to any tasks required to complete step 2.
+The total number of spawned tasks depends on how many consumers are bound to the repository.
 
 
 | :method:`delete`

@@ -36,6 +36,7 @@ Example serialized exception::
             "description": "Missing resource(s): foo",
             "data": {"resource": "foo"},
             "sub_errors": []
+            }
  }
 
 
@@ -62,7 +63,7 @@ Example serialized error details::
  {
   "code": "PLP0018",
   "description": "Duplicate resource: foo",
-  "data": {"resource_id": "foo",
+  "data": {"resource_id": "foo"},
   "sub_errors": []
  }
 

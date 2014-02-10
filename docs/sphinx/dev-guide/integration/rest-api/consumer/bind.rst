@@ -32,11 +32,11 @@ more information on the format.
 | :response_list:`_`
 
 * :response_code:`200,if the bind request was fully processed on the server`
-* :response_code:`202,if an additional task was created to update consumer agents
+* :response_code:`202,if an additional task was created to update consumer agents`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 
-| :return:`A` :ref:`call_report` if a task any tasks were spawned.  In the event of a 200 response the body will be be the binding that was created.
+| :return:`A` :ref:`call_report` if any tasks were spawned.  In the event of a 200 response the body will be be the binding that was created.
 
 :sample_request:`_` ::
 
@@ -87,7 +87,7 @@ The steps for a forced unbind are as follows:
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the binding does not exist`
 
-| :return:`A` :ref:`call_report` if a task any tasks were spawned.
+| :return:`A` :ref:`call_report` if any tasks were spawned.
 
 **Tags:**
 Each task created to delete the binding from a :term:`consumer`

@@ -67,7 +67,7 @@ simply removes the group and its relationship to all repositories.
 * :response_code:`202,if the request was accepted by the server and will execute in the future`
 * :response_code:`404,if the specified group does not exist`
 
-| :return:`None`
+| :return:`a` :ref:`call_report`
 
 Update a Repository Group
 -------------------------

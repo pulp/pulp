@@ -13,7 +13,7 @@ through the following steps:
  1. Create each :term:`binding` on server.
  2. Send a request to each consumer to create the binding.
     A separate task is created for each unique combination of :term:`consumer`,
-    :term:`repository`, :term:`distributor`.
+    :term:`repository`, and :term:`distributor`.
 
 The distributor may support configuration options that it may use for that particular
 binding. These options are used when generating the payload that is sent to consumers
@@ -76,8 +76,8 @@ The steps for a forced unbind are as follows:
     request discarded.
 
 
-In either case step 2 results in a separate task is created for each unique combination of :term:`consumer`,
-:term:`repository`, :term:`distributor`.
+In either case step 2 results in a separate task created for each unique combination of :term:`consumer`,
+:term:`repository`, and :term:`distributor`.
 
 | :method:`delete`
 | :path:`/v2/consumer_groups/<group_id>/bindings/<repo_id>/<distributor_id>`
