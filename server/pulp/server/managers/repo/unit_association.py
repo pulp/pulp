@@ -374,12 +374,12 @@ class RepoUnitAssociationManager(object):
             return []
         unit_map = {}  # maps unit_type_id to a list of unit_ids
 
-        units_with_permissions = []
+        # units_with_permissions = []
         # Filter out based on the owner so we can give a useful error
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
             id_list.append(unit['unit_id'])
-            units_with_permissions.append(unit)
+            # units_with_permissions.append(unit)
 
         collection = RepoContentUnit.get_collection()
         repo_manager = manager_factory.repo_manager()
@@ -402,8 +402,8 @@ class RepoUnitAssociationManager(object):
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,
-        unit_type_ids = calculate_associated_type_ids(repo_id, units_with_permissions)
-        transfer_units = create_transfer_units(units_with_permissions, unit_type_ids)
+        unit_type_ids = calculate_associated_type_ids(repo_id, unassociate_units)
+        transfer_units = create_transfer_units(unassociate_units, unit_type_ids)
 
         if notify_plugins:
             remove_from_importer(repo_id, transfer_units)
