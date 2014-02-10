@@ -89,7 +89,15 @@ class AuthenticationManager(object):
         if config.has_option('ldap', 'filter'):
             ldap_filter = config.get('ldap', 'filter')
     
-        ldap_server = ldap_connection.LDAPConnection(server=ldap_uri, tls=ldap_tls)
+        ldap_admin = None
+        if config.has_option('ldap', 'binddn'):
+            ldap_admin = config.get('ldap', 'binddn')
+        ldap_passwd = None
+        if config.has_option('ldap', 'bindpw'):
+            ldap_passwd = config.get('ldap', 'bindpw')
+            ldap_server = ldap_connection.LDAPConnection(admin=ldap_admin,
+                                                         password=ldap_passwd,
+                                                         server=ldap_uri, tls=ldap_tls)
         ldap_server.connect()
         user = ldap_server.authenticate_user(ldap_base, username, password,
                                              filter=ldap_filter)
