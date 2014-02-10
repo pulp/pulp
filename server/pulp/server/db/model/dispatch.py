@@ -491,13 +491,16 @@ class TaskStatus(Model):
     :type error: dict (created from a PulpException)
     :ivar spawned_tasks: List of tasks that were spawned during the running of this task
     :type spawned_tasks: list of str
+    :ivar progress_report: A report containing information about task's progress
+    :type progress_report: dict
     """
 
     collection_name = 'task_status'
     unique_indices = ('task_id',)
     search_indices = ('task_id', 'tags', 'state')
 
-    def __init__(self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None):
+    def __init__(self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None,
+                 progress_report=None):
         super(TaskStatus, self).__init__()
 
         self.task_id = task_id
@@ -510,3 +513,4 @@ class TaskStatus(Model):
         self.finish_time = None
         self.error = error
         self.spawned_tasks = spawned_tasks
+        self.progress_report = progress_report or {}

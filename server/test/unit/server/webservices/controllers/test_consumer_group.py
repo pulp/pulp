@@ -23,7 +23,6 @@ from pulp.server.db.model.consumer import Consumer, ConsumerGroup, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import OperationPostponed
 from pulp.server.managers import factory as managers
-from pulp.server.itineraries.consumer_group import *
 from pulp.server.webservices.controllers import consumer_groups
 
 GROUP_ID = 'group_1'
@@ -49,7 +48,7 @@ class ConsumerGroupAssociationTests(base.PulpWebserviceTests):
     def test_associate(self, mock_associate, mock_from_client):
         self.manager.create_consumer_group('cg1')
 
-        post_data = {'criteria': {'filters':{'id':{'$in':['consumer1']}}}}
+        post_data = {'criteria': {'filters': {'id': {'$in': ['consumer1']}}}}
         status, body = self.post('/v2/consumer_groups/cg1/actions/associate/', post_data)
         self.assertEqual(status, 200)
 
@@ -59,14 +58,14 @@ class ConsumerGroupAssociationTests(base.PulpWebserviceTests):
         # verify that it created and used a Criteria instance
         self.assertEqual(call_args[1], mock_from_client.return_value)
         self.assertEqual(mock_from_client.call_args[0][0],
-                {'filters':{'id':{'$in':['consumer1']}}})
+                         {'filters': {'id': {'$in': ['consumer1']}}})
 
     @mock.patch.object(Criteria, 'from_client_input', return_value=Criteria())
     @mock.patch('pulp.server.managers.consumer.group.cud.ConsumerGroupManager.unassociate')
     def test_unassociate(self, mock_unassociate, mock_from_client):
         self.manager.create_consumer_group('cg1')
 
-        post_data = {'criteria': {'filters':{'id':{'$in':['consumer1']}}}}
+        post_data = {'criteria': {'filters': {'id': {'$in': ['consumer1']}}}}
         status, body = self.post('/v2/consumer_groups/cg1/actions/unassociate/', post_data)
         self.assertEqual(status, 200)
 
@@ -76,81 +75,47 @@ class ConsumerGroupAssociationTests(base.PulpWebserviceTests):
         # verify that it created and used a Criteria instance
         self.assertEqual(call_args[1], mock_from_client.return_value)
         self.assertEqual(mock_from_client.call_args[0][0],
-                {'filters':{'id':{'$in':['consumer1']}}})
+                         {'filters': {'id': {'$in': ['consumer1']}}})
         
 
-class ContentTest(base.PulpWebserviceTests):
+class ContentTest(PulpWebservicesTests):
 
-    def setUp(self):
-        super(self.__class__, self).setUp()
-        Consumer.get_collection().remove()
-        ConsumerGroup.get_collection().remove()
-
-    def tearDown(self):
-        super(self.__class__, self).tearDown()
-        Consumer.get_collection().remove()
-        ConsumerGroup.get_collection().remove()
-
-    def populate(self):
-        manager = managers.consumer_manager()
-        for consumer_id in CONSUMER_IDS:
-            manager.register(consumer_id)
-        manager = managers.consumer_group_manager()
-        manager.create_consumer_group(GROUP_ID)
-        for consumer_id in CONSUMER_IDS:
-            criteria = Criteria(filters={'id': consumer_id}, fields=['id'])
-            manager.associate(GROUP_ID, criteria)
-
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group_content_install_itinerary', wraps=consumer_group_content_install_itinerary)
-    def test_install(self, mock_itinerary):
+    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group.install_content')
+    def test_install(self, mock_task):
         # Setup
-        self.populate()
-        # Test
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumer_groups/%s/actions/content/install/' % GROUP_ID
-        body = dict(units=units, options=options)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), len(CONSUMER_IDS))
-        mock_itinerary.assert_called_with(GROUP_ID, units, options)
+        webservice = consumer_groups.ConsumerGroupContentAction()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit',
+                                                    'options': 'bar'})
+        mock_task.return_value = 'baz'
 
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group_content_update_itinerary', wraps=consumer_group_content_update_itinerary)
-    def test_update(self, mock_itinerary):
-        # Setup
-        self.populate()
         # Test
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumer_groups/%s/actions/content/update/' % GROUP_ID
-        body = dict(units=units, options=options)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), len(CONSUMER_IDS))
-        mock_itinerary.assert_called_with(GROUP_ID, units, options)
+        self.assertRaises(OperationPostponed, webservice.install, 'consumer-foo')
+        mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group_content_uninstall_itinerary', wraps=consumer_group_content_uninstall_itinerary)
-    def test_uninstall(self, mock_itinerary):
+    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group.update_content')
+    def test_update(self, mock_task):
         # Setup
-        self.populate()
+        webservice = consumer_groups.ConsumerGroupContentAction()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit',
+                                                    'options': 'bar'})
+        mock_task.return_value = 'baz'
+
         # Test
-        unit_key = dict(name='zsh')
-        unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
-        options = dict(importkeys=True)
-        path = '/v2/consumer_groups/%s/actions/content/uninstall/' % GROUP_ID
-        body = dict(units=units, options=options)
-        status, body = self.post(path, body)
-        # Verify
-        self.assertEquals(status, 202)
-        self.assertEqual(len(body), len(CONSUMER_IDS))
-        mock_itinerary.assert_called_with(GROUP_ID, units, options)
+        self.assertRaises(OperationPostponed, webservice.update, 'consumer-foo')
+        mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
+
+    @mock.patch('pulp.server.webservices.controllers.consumer_groups.'
+                'consumer_group.uninstall_content')
+    def test_uninstall(self, mock_task):
+        # Setup
+        webservice = consumer_groups.ConsumerGroupContentAction()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit',
+                                                    'options': 'bar'})
+        mock_task.return_value = 'baz'
+
+        # Test
+        self.assertRaises(OperationPostponed, webservice.uninstall, 'consumer-foo')
+        mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
 
 class BindTestNoWSGI(PulpWebservicesTests):
@@ -263,4 +228,3 @@ class BindTest(base.PulpWebserviceTests):
         path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
         call_status, call_body = self.get(path)
         self.assertEqual(401, call_status)
-

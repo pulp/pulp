@@ -11,17 +11,18 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import unittest
-
 from mock import patch, ANY
 
+
+from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.devel.unit import util
+from pulp.devel.unit.base import PulpCeleryTaskTests
 from pulp.server.async.tasks import TaskResult
 from pulp.server.exceptions import PulpException, error_codes
 from pulp.server.tasks import repository
 
 
-class TestDelete(unittest.TestCase):
+class TestDelete(PulpCeleryTaskTests):
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
     @patch('pulp.server.managers.factory.repo_manager')
@@ -56,7 +57,7 @@ class TestDelete(unittest.TestCase):
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
 
 
-class TestDistributorDelete(unittest.TestCase):
+class TestDistributorDelete(PulpCeleryTaskTests):
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
     @patch('pulp.server.managers.factory.repo_distributor_manager')
@@ -99,7 +100,7 @@ class TestDistributorDelete(unittest.TestCase):
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
 
 
-class TestDistributorUpdate(unittest.TestCase):
+class TestDistributorUpdate(PulpCeleryTaskTests):
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
     @patch('pulp.server.managers.factory.repo_distributor_manager')
@@ -166,3 +167,42 @@ class TestDistributorUpdate(unittest.TestCase):
         self.assertTrue(isinstance(result.error, PulpException))
         self.assertEquals(result.error.error_code, error_codes.PLP0002)
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
+
+
+class TestRepositoryPublish(PulpCeleryTaskTests):
+
+    @patch('pulp.server.tasks.repository.publish_task.apply_async_with_reservation')
+    def test_publish(self, mock_publish_task):
+        repo_id = 'foo'
+        distributor_id = 'bar'
+        overrides = 'baz'
+        repository.publish(repo_id, distributor_id, overrides)
+        kwargs = {
+            'repo_id': repo_id,
+            'distributor_id': distributor_id,
+            'publish_config_override': overrides
+        }
+        tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('publish')]
+        mock_publish_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
+                                             kwargs=kwargs)
+
+
+class TestRepositorySync(PulpCeleryTaskTests):
+
+    @patch('pulp.server.tasks.repository.managers')
+    def test_sync_alone(self, mock_managers):
+        mock_managers.repo_sync_manager.return_value.sync.return_value = 'baz'
+        result = repository.sync_with_auto_publish('foo', 'bar')
+        self.assertTrue(isinstance(result, TaskResult))
+        self.assertEquals(result.return_value, 'baz')
+
+    @patch('pulp.server.tasks.repository.publish_task.apply_async_with_reservation')
+    @patch('pulp.server.tasks.repository.managers')
+    def test_sync_with_publish(self, mock_managers, mock_publish):
+        mock_managers.repo_sync_manager.return_value.sync.return_value = 'baz'
+        mock_managers.repo_publish_manager.return_value.auto_distributors.return_value = \
+            [{'id': 'flux'}]
+        mock_publish.return_value = 'fish'
+        result = repository.sync_with_auto_publish('foo', 'bar')
+        self.assertTrue(isinstance(result, TaskResult))
+        self.assertEquals(result.spawned_tasks, ['fish', ])

@@ -18,6 +18,7 @@ import signal
 
 from celery import task, Task as CeleryTask
 from celery.app import control, defaults
+from celery.result import AsyncResult
 
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
@@ -27,6 +28,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
 from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import resources
 
 
@@ -310,6 +312,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
+        # Add task_id to the task context, so that agent and plugins have access to the task id.
+        # There are a few other attributes in the context as defined by old dispatch system.
+        # These are unused right now. These should be removed when we cleanup the dispatch folder
+        # after the migration to celery is complete.
+        task_context = dispatch_factory.context()
+        task_context.call_request_id = self.request.id
         # Check task status and skip running the task if task state is 'canceled'.
         task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
         if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
@@ -352,7 +360,12 @@ class Task(CeleryTask, ReservedTaskMixin):
                 if retval.error:
                     delta['error'] = retval.error.to_dict()
                 if retval.spawned_tasks:
-                    task_list = [spawned_task['task_id'] for spawned_task in retval.spawned_tasks]
+                    task_list = []
+                    for spawned_task in retval.spawned_tasks:
+                        if isinstance(spawned_task, AsyncResult):
+                            task_list.append(spawned_task.task_id)
+                        elif isinstance(spawned_task, dict):
+                            task_list.append(spawned_task['task_id'])
                     delta['spawned_tasks'] = task_list
 
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)

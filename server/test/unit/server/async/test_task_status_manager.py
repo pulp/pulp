@@ -154,17 +154,21 @@ class TaskStatusManagerTests(base.PulpServerTests):
         TaskStatusManager.create_task_status(task_id, queue, tags, state)
         delta = {'start_time': dateutils.now_utc_timestamp(),
                  'state': 'running',
-                 'disregard': 'ignored'}
+                 'disregard': 'ignored',
+                 'progress_report': {'report-id': 'my-progress'}}
 
         updated = TaskStatusManager.update_task_status(task_id, delta)
 
         task_status =  TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(task_status['start_time'], delta['start_time'])
         self.assertEqual(task_status['state'], delta['state'])
+        self.assertEqual(task_status['progress_report'], delta['progress_report'])
         self.assertEqual(task_status['queue'], queue)
         self.assertEqual(updated['start_time'], delta['start_time'])
         self.assertEqual(updated['state'], delta['state'])
+        self.assertEqual(updated['progress_report'], delta['progress_report'])
         self.assertTrue('disregard' not in updated)
+        self.assertTrue('disregard' not in task_status)
 
     def test_update_missing_task_status(self):
         """

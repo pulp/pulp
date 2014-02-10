@@ -18,6 +18,7 @@ import sys
 import pulp.plugins.conduits._common as common_utils
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
+from pulp.server.async.task_status_manager import TaskStatusManager
 import pulp.server.dispatch.factory as dispatch_factory
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
@@ -545,6 +546,8 @@ class StatusMixin(object):
         try:
             self.progress_report[self.report_id] = status
             context = dispatch_factory.context()
+            delta = {'progress_report': self.progress_report}
+            TaskStatusManager.update_task_status(context.call_request_id, delta)
             context.report_progress(self.progress_report)
         except Exception, e:
             _LOG.exception('Exception from server setting progress for report [%s]' % self.report_id)

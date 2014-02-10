@@ -13,23 +13,25 @@
 """
 This module contains tests for the pulp.server.async.tasks module.
 """
-from copy import deepcopy
 from datetime import datetime, timedelta
 import signal
 import unittest
 import uuid
 
 from celery.app import defaults
+from celery.result import AsyncResult
 import celery
 import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
+from pulp.server.exceptions import PulpException
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.dispatch.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
                                             CALL_RUNNING_STATE, CALL_WAITING_STATE)
+from pulp.server.dispatch import factory as dispatch_factory
 
 
 RESERVED_WORKER_1 = '%s1' % tasks.RESERVED_WORKER_NAME_PREFIX
@@ -552,6 +554,16 @@ def _reserve_resource_apply_async():
     return AsyncResult()
 
 
+class TestTaskResult(unittest.TestCase):
+
+    def test_serialize(self):
+        result = tasks.TaskResult('foo', 'bar', 'baz')
+        serialized = result.serialize()
+        self.assertEquals(serialized.get('result'), 'foo')
+        self.assertEquals(serialized.get('error'), 'bar')
+        self.assertEquals(serialized.get('spawned_tasks'), 'baz')
+
+
 class TestTask(ResourceReservationTests):
     """
     Test the pulp.server.tasks.Task class.
@@ -612,6 +624,61 @@ class TestTask(ResourceReservationTests):
         self.assertFalse(new_task_status['finish_time'] == None)
 
     @mock.patch('pulp.server.async.tasks.Task.request')
+    def test_on_success_handler_spawned_task_status(self, mock_request):
+        """
+        Make sure that overridden on_success handler updates task status correctly
+        """
+        async_result = AsyncResult('foo-id')
+
+        retval = tasks.TaskResult(spawned_tasks=[async_result],
+                                  error=PulpException('error-foo'),
+                                  result='bar')
+
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        mock_request.called_directly = False
+
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['finish_time'], None)
+
+        task = tasks.Task()
+        task.on_success(retval, task_id, args, kwargs)
+
+        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(new_task_status['state'], 'finished')
+        self.assertEqual(new_task_status['result'], 'bar')
+        self.assertEqual(new_task_status['error']['description'], 'error-foo')
+        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    def test_on_success_handler_spawned_task_dict(self, mock_request):
+        """
+        Make sure that overridden on_success handler updates task status correctly
+        """
+        retval = tasks.TaskResult(spawned_tasks=[{'task_id': 'foo-id'}], result='bar')
+
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        mock_request.called_directly = False
+
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['finish_time'], None)
+
+        task = tasks.Task()
+        task.on_success(retval, task_id, args, kwargs)
+
+        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(new_task_status['state'], 'finished')
+        self.assertEqual(new_task_status['result'], 'bar')
+        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_failure_handler(self, mock_request):
         """
         Make sure that overridden on_failure handler updates task status correctly
@@ -661,6 +728,23 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['queue'], RESERVED_WORKER_1)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
+
+    def test_task_context(self):
+        """
+        Assert that the task context has task id correctly populated in it.
+        """
+        expected_task_id = 'test_task_id'
+
+        @celery.task(base=tasks.Task)
+        def fake_task():
+            task_context = dispatch_factory.context()
+            self.assertEqual(task_context.call_request_id, expected_task_id)
+
+        task = fake_task
+        task.request.id = expected_task_id
+        task.__call__()
+        task_context = dispatch_factory.context()
+        self.assertEqual(task_context.call_request_id, expected_task_id)
 
     @mock.patch('celery.Task.apply_async')
     def test_apply_async_task_status_default_queue(self, apply_async):

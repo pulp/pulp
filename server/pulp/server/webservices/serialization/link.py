@@ -91,17 +91,3 @@ def search_safe_link_obj(resource_id):
     link = copy.copy(_LINK_OBJ_SKEL)
     link['_href'] = http.extend_uri_path(resource_id, uri_path)
     return link
-
-def sibling_link_obj(*path_replacements):
-    """
-    Create a link object that replaces the end elements in the current request
-    path with the provided replacements.
-    Example: current request path = '/fee/fie/foe/foo/'
-             path replacements = ['bar', 'baz']
-             returned path = '/fee/fie/bar/baz/'
-    @return: link object
-    @rtype:  dict
-    """
-    link = copy.copy(_LINK_OBJ_SKEL)
-    link['_href'] = http.sub_uri_path(*path_replacements)
-    return link

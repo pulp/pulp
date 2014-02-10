@@ -15,7 +15,7 @@ from unittest import TestCase
 from mock import patch, Mock
 from gofer.messaging import Envelope
 from gofer.messaging.broker import URL, Broker
-from gofer.rmi.async import Started, Succeeded, Failed
+from gofer.rmi.async import Started, Succeeded, Failed, Progress
 
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent.direct.services import Services, ReplyHandler
@@ -88,14 +88,27 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        result = Envelope(retval=dispatch_report)
-        envelope = Envelope(routing=['A', 'B'], result=result, any=call_context)
+        envelope = Envelope(routing=['A', 'B'], any=call_context)
         reply = Started(envelope)
         handler = ReplyHandler('')
         handler.started(reply)
 
         # validate task updated
         mock_task_started.assert_called_with(task_id)
+
+    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_progress_reported(self, mock_update_task_status):
+        task_id = 'task_1'
+        call_context = {'task_id': task_id}
+        progress_report = {'step': 'step-1'}
+        envelope = Envelope(routing=['A', 'B'], any=call_context, details=progress_report)
+        reply = Progress(envelope)
+        handler = ReplyHandler('')
+        handler.progress(reply)
+
+        # validate task updated
+        delta = {'progress_report': progress_report}
+        mock_update_task_status.assert_called_with(task_id, delta)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_failed')
     def test_agent_raised_exception(self, mock_task_failed):

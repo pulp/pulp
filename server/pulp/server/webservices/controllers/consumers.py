@@ -21,19 +21,17 @@ from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest, CallReport
-from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, UnsupportedValue, MissingResource
-from pulp.server.itineraries.consumer import (
-    consumer_content_install_itinerary, consumer_content_uninstall_itinerary,
-    consumer_content_update_itinerary)
+from pulp.server.dispatch.call import CallReport
+from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, \
+    UnsupportedValue, MissingResource
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
 from pulp.server.tasks import consumer
-from pulp.server.managers.schedule.consumer import UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION, UNIT_UPDATE_ACTION
+from pulp.server.managers.schedule.consumer import UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION, \
+    UNIT_UPDATE_ACTION
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices import execution
 from pulp.server.webservices import serialization
 import pulp.server.managers.factory as managers
 
@@ -285,69 +283,63 @@ class Content(JSONController):
     """
 
     @auth_required(CREATE)
-    def POST(self, id, action):
+    def POST(self, consumer_id, action):
         """
         Content actions.
         """
         method = getattr(self, action, None)
         if method:
-            return method(id)
+            return method(consumer_id)
         else:
             raise BadRequest()
 
-    def install(self, id):
+    def install(self, consumer_id):
         """
         Install content (units) on a consumer.
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of install options.
-        @param id: A consumer ID.
-        @type id: str
-        @return: TBD
-        @rtype: dict
+        :param consumer_id: A consumer ID.
+        :type consumer_id: str
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_request = consumer_content_install_itinerary(id, units, options)[0]
-        result = execution.execute_async(self, call_request)
-        return result
+        agent_manager = managers.consumer_agent_manager()
+        task = agent_manager.install_content(consumer_id, units, options)
+        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
 
-    def update(self, id):
+    def update(self, consumer_id):
         """
         Update content (units) on a consumer.
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of update options.
-        @param id: A consumer ID.
-        @type id: str
-        @return: TBD
-        @rtype: dict
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_request = consumer_content_update_itinerary(id, units, options)[0]
-        result = execution.execute_async(self, call_request)
-        return result
+        agent_manager = managers.consumer_agent_manager()
+        task = agent_manager.update_content(consumer_id, units, options)
+        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
 
-    def uninstall(self, id):
+    def uninstall(self, consumer_id):
         """
         Uninstall content (units) on a consumer.
         Expected body: {units:[], options:<dict>}
         where unit is: {type_id:<str>, unit_key={}} and the
         options is a dict of uninstall options.
-        @param id: A consumer ID.
-        @type id: str
-        @return: TBD
-        @rtype: dict
+        @param consumer_id: A consumer ID.
+        @type consumer_id: str
         """
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_request = consumer_content_uninstall_itinerary(id, units, options)[0]
-        result = execution.execute_async(self, call_request)
-        return result
+        agent_manager = managers.consumer_agent_manager()
+        task = agent_manager.uninstall_content(consumer_id, units, options)
+        raise OperationPostponed(TaskResult(spawned_tasks=[task]))
 
 
 class ConsumerHistory(JSONController):
@@ -429,26 +421,10 @@ class Profiles(JSONController):
         profile = body.get('profile')
 
         manager = managers.consumer_profile_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
-                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, content_type),
-                action_tag('profile_create')]
-
-        call_request = CallRequest(manager.create,  # rbarlow_converted
-                                   [consumer_id, content_type],
-                                   {'profile': profile},
-                                   tags=tags,
-                                   weight=0,
-                                   kwarg_blacklist=['profile'])
-        call_request.reads_resource(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id)
-
-        call_report = CallReport.from_call_request(call_request)
-        call_report.serialize_result = False
-
-        consumer = execution.execute_sync(call_request, call_report)
+        new_profile = manager.create(consumer_id, content_type, profile)
         link = serialization.link.child_link_obj(consumer_id, content_type)
-        consumer.update(link)
-
-        return self.created(link['_href'], consumer)
+        new_profile.update(link)
+        self.created(link['_href'], new_profile)
 
 
 class Profile(JSONController):
@@ -671,7 +647,7 @@ class UnitActionScheduleResource(JSONController):
         except IndexError:
             raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
 
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call)
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call.for_display())
         scheduled_obj.update(serialization.link.current_link_obj())
         return self.ok(scheduled_obj)
 
