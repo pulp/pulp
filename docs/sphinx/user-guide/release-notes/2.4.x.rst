@@ -33,6 +33,11 @@ API Changes
 
 * Schedule delete no longer returns a 404 when the schedule is not found. It will
   return a 200, because this is exactly the condition the user asked for.
+* Deleting units is no longer blocked if the user performing the delete is different
+  than the user that created the unit.  This most notably has the effect of eliminating
+  the restriction that units could not be deleted from repositories that are synced via a feed.
+  However, if a unit is deleted from a repo populated via a feed, syncing the repo again will
+  recreate the unit.
 
 ScheduledCall
 ^^^^^^^^^^^^^
