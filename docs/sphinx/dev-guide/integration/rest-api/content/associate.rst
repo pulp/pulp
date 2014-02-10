@@ -25,7 +25,7 @@ with an importer that supports the type of units being copied.
 
 * :response_code:`202,if the request was accepted by the server to execute asynchronously`
 
-| :return:`call report representing the current state of the association`
+| :return:`a` :ref:`call_report`
 
 :sample_request:`post` ::
 
@@ -45,6 +45,11 @@ with an importer that supports the type of units being copied.
     },
   }
 
+
+**Tags:**
+The task created will have the following tags.  ``"pulp:repository:<source_repo_id>",
+"pulp:consumer:<destination_repo_id>",
+"pulp:action:associate"``
 
 Unassociating Content Units from a Repository
 =============================================
@@ -67,4 +72,8 @@ same person that originally associated the units with the repository.
 
 * :response_code:`202,if the request was accepted by the server to execute asynchronously`
 
-| :return:`call report representing the current state of the unassociation`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created will have the following tags.  ``"pulp:repository:<repo_id>",
+"pulp:action:unassociate"``

@@ -21,7 +21,6 @@ changes are made and no error is raised.
 | :response_list:`_`
 
 * :response_code:`200,if the associate was successfully performed`
-* :response_code:`202,if the associate was postponed until the group is available`
 * :response_code:`400,if the criteria document is invalid`
 * :response_code:`404,if the group cannot be found`
 
@@ -60,7 +59,6 @@ association to the given group.
 | :response_list:`_`
 
 * :response_code:`200,if the removal was successfully performed`
-* :response_code:`202,if the removal was postponed until the group is available`
 * :response_code:`400,if the criteria document is invalid`
 * :response_code:`404,if the group cannot be found`
 
