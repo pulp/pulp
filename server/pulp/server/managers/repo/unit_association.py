@@ -374,12 +374,10 @@ class RepoUnitAssociationManager(object):
             return []
         unit_map = {}  # maps unit_type_id to a list of unit_ids
 
-        # units_with_permissions = []
         # Filter out based on the owner so we can give a useful error
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
             id_list.append(unit['unit_id'])
-            # units_with_permissions.append(unit)
 
         collection = RepoContentUnit.get_collection()
         repo_manager = manager_factory.repo_manager()
