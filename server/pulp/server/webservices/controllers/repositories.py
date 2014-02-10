@@ -271,7 +271,6 @@ class RepoResource(JSONController):
 
         repo_manager = manager_factory.repo_manager()
 
-        # TODO figure out a way to return information about the other tasks spawned (likely need new return format)
         task_result = repo_manager.update_repo_and_plugins(repo_id, delta, importer_config, distributor_configs)
         # TODO Old CallRequest used to kwarg_blacklist the importer_config and distributor_config
         # TODO Do we need to filter those out here?
