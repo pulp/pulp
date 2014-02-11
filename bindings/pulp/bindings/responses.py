@@ -80,7 +80,7 @@ class Task(object):
 
     def __init__(self, response_body):
         """
-        Initialized the Task based on the data returned from Pulp's task API.
+        Initialize the Task based on the data returned from Pulp's task API.
 
         :param response_body: The de-serialized response from Pulp's task API
         :type  response_body: dict

@@ -122,7 +122,7 @@ class BaseTasksSection(PulpCliSection):
             'start_time' : start_time,
             'finish_time' : finish_time,
             'result' : result,
-            'progress' : task.progress_report,
+            'progress_report' : task.progress_report,
         }
 
         if task.exception:
