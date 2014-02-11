@@ -116,12 +116,6 @@ class PollingCommand(PulpCliCommand):
         if len(task_list) == 0:
             return []
 
-        # If one task is rejected, they will all be marked as rejected, so we can simply
-        # check the first in the list.
-        if task_list[0].is_rejected():
-            self.rejected(task_list[0])
-            return RESULT_REJECTED
-
         # Punch out early if polling is disabled. This should be done after the rejected check
         # since the expectation is that the tasks were successfully queued but aren't being watched.
         if user_input.get(FLAG_BACKGROUND.keyword, False):
@@ -220,10 +214,7 @@ class PollingCommand(PulpCliCommand):
         first_run = True
         while not task.is_completed():
 
-            # Postponed is a more specific version of waiting and must be checked first.
-            if task.is_postponed():
-                self.postponed(task, delayed_spinner)
-            elif task.is_waiting():
+            if task.is_waiting():
                 self.waiting(task, delayed_spinner)
             else:
                 if first_run:
@@ -244,8 +235,6 @@ class PollingCommand(PulpCliCommand):
         self.progress(task, running_spinner)
 
         return task
-
-    # -- polling rendering ----------------------------------------------------------------------------------
 
     def task_header(self, task):
         """
@@ -277,21 +266,6 @@ class PollingCommand(PulpCliCommand):
         """
         msg = _('Waiting to begin...')
         spinner.next(msg)
-
-    def postponed(self, task, spinner):
-        """
-        Called when a task is postponed due to the resource being used.
-        Subclasses may override this to display a custom message to the user.
-
-        :param task: full task report for the task being displayed
-        :type  task: pulp.bindings.responses.Task
-
-        :param spinner: used to indicate progress is still taking place
-        :type  spinner: okaara.progress.Spinner
-        """
-        msg  = _('The request was accepted but postponed due to one or more previous requests '
-                 'against the resource. This request will proceed at the earliest possible time.')
-        spinner.next(message=msg)
 
     def progress(self, task, spinner):
         """

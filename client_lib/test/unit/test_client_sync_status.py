@@ -96,31 +96,6 @@ class StatusTests(base.PulpClientTests):
             expected_quiet = i > 0
             self.assertEqual(call_args[1]['quiet_waiting'], expected_quiet)
 
-    def test_display_status_rejected(self):
-        # Setup
-        rejected_task = Task(TASK_TEMPLATE)
-        rejected_task.response = RESPONSE_REJECTED
-
-        # Test
-        status._display_status(self.context, self.renderer, [rejected_task])
-
-        # Verify
-        expected_tags = ['ctrl-c', 'rejected-msg', 'rejected-desc']
-        self.assertEqual(expected_tags, self.prompt.get_write_tags())
-
-    def test_display_status_postponed(self):
-        # Setup
-        postponed_task = Task(TASK_TEMPLATE)
-        postponed_task.response = RESPONSE_POSTPONED
-        postponed_task.state = STATE_WAITING
-
-        # Test
-        status._display_status(self.context, self.renderer, [postponed_task])
-
-        # Verify
-        expected_tags = ['ctrl-c', 'postponed']
-        self.assertEqual(expected_tags, self.prompt.get_write_tags())
-
     @mock.patch('pulp.bindings.tasks.TasksAPI.get_task')
     @mock.patch('pulp.client.extensions.core.PulpPrompt.create_spinner')
     def test_internal_display_task_status(self, mock_create, mock_get):
