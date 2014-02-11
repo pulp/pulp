@@ -276,28 +276,6 @@ class PollingCommandTests(base.PulpClientTests):
         self.assertTrue(isinstance(completed_tasks, list))
         self.assertEqual(0, len(completed_tasks))
 
-    def test_poll_rejected(self):
-        """
-        Task Count: 2
-        Statuses: Rejected (according to server behavior, all will be rejected if one is)
-        """
-
-        # Setup
-        sim = TaskSimulator()
-        sim.install(self.bindings)
-
-        sim.add_task_state('1', STATE_ERROR, response=RESPONSE_REJECTED)
-        sim.add_task_state('2', STATE_ERROR, response=RESPONSE_REJECTED)
-
-        # Test
-        task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list, {})
-
-        # Verify
-        self.assertEqual(completed_tasks, RESULT_REJECTED)
-
-        self.assertEqual(self.prompt.get_write_tags(), ['rejected'])
-
     def test_failed_task(self):
         """
         Task Count: 3
@@ -355,35 +333,6 @@ class PollingCommandTests(base.PulpClientTests):
 
         expected_tags = ['abort', 'delayed-spinner', 'running-spinner', 'running-spinner',
                          'running-spinner','cancelled']
-        self.assertEqual(expected_tags, self.prompt.get_write_tags())
-
-    def test_postponed_task(self):
-        """
-        Task Count: 1
-        Statuses: Postponed (test will eventually run it)
-        Results: 1 Success
-        """
-
-        # Setup
-        sim = TaskSimulator()
-        sim.install(self.bindings)
-
-        # Remain postponed for two polls and then runs successfully
-        sim.add_task_state('1', STATE_WAITING, response=RESPONSE_POSTPONED)
-        sim.add_task_state('1', STATE_WAITING, response=RESPONSE_POSTPONED)
-        states = [STATE_RUNNING, STATE_FINISHED]
-        sim.add_task_states('1', states)
-
-        # Test
-        task_list = sim.get_all_tasks().response_body
-        completed_tasks = self.command.poll(task_list, {})
-
-        # Verify
-        self.assertTrue(isinstance(completed_tasks, list))
-        self.assertEqual(1, len(completed_tasks))
-
-        expected_tags = ['abort', 'delayed-spinner', 'delayed-spinner', 'running-spinner',
-                         'running-spinner', 'succeeded']
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
     def test_keyboard_interrupt(self):

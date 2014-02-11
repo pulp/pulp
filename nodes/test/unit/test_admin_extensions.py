@@ -169,7 +169,6 @@ class TestListCommands(ClientTests):
 class TestPublishCommand(ClientTests):
 
     @patch(REPO_ENABLED_CHECK, return_value=True)
-    @patch('pulp.client.commands.polling.PollingCommand.postponed')
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
     @patch('pulp.client.commands.polling.PollingCommand.poll')
     @patch(PUBLISH_API, return_value=Response(200, {}))
@@ -184,7 +183,6 @@ class TestPublishCommand(ClientTests):
 
 
     @patch(REPO_ENABLED_CHECK, return_value=False)
-    @patch('pulp.client.commands.polling.PollingCommand.postponed')
     @patch('pulp.client.commands.polling.PollingCommand.rejected')
     @patch('pulp.client.commands.polling.PollingCommand.poll')
     @patch(PUBLISH_API, return_value=Response(200, {}))
