@@ -45,11 +45,36 @@ CALL_REPORT_TEMPLATE = {
 
 
 class RunSyncRepositoryCommandTests(base.PulpClientTests):
-
+    """
+    Test the RunSyncRepositoryCommand class.
+    """
     def setUp(self):
         super(RunSyncRepositoryCommandTests, self).setUp()
         self.mock_renderer = mock.MagicMock()
         self.command = sp.RunSyncRepositoryCommand(self.context, self.mock_renderer)
+
+    def test_progress(self):
+        """
+        Test the progress() method with a progress_report.
+        """
+        progress_report = {'some': 'data'}
+        task = Task({'progress_report': progress_report})
+        spinner = mock.MagicMock()
+
+        self.command.progress(task, spinner)
+
+        self.mock_renderer.display_report.assert_called_once_with(progress_report)
+
+    def test_progress_no_progress(self):
+        """
+        Test the progress() method when the Task does not have any progress_report.
+        """
+        task = Task({})
+        spinner = mock.MagicMock()
+
+        self.command.progress(task, spinner)
+
+        self.assertEqual(self.mock_renderer.display_report.call_count, 0)
 
     def test_structure(self):
         # Ensure all of the expected options are there
@@ -141,6 +166,13 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         tags = self.prompt.get_write_tags()
         self.assertEqual(2, len(tags))
         self.assertEqual(tags[1], 'background')
+
+    def test_task_header(self):
+        """
+        The task_header() method only passes to avoid the superclass's behavior, so this test just gets us to
+        100% coverage.
+        """
+        self.command.task_header(mock.MagicMock())
 
 
 class SyncStatusCommand(base.PulpClientTests):

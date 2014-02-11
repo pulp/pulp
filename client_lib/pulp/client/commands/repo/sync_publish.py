@@ -91,11 +91,24 @@ class RunSyncRepositoryCommand(polling.PollingCommand):
             self.poll([sync_task], kwargs)
 
     def progress(self, task, spinner):
+        """
+        Render the progress report, if it is available on the given task.
+
+        :param task:    The Task that we wish to render progress about
+        :type  task:    pulp.bindings.responses.Task
+        :param spinner: Not used by this method, but the superclass will give it to us
+        :type  spinner: okaara.progress.Spinner
+        """
         if task.progress_report is not None:
             self.renderer.display_report(task.progress_report)
 
     def task_header(self, task):
-        # We don't want any task header printed for this task
+        """
+        We don't want any task header printed for this task, so we need to override the superclass behavior.
+
+        :param task: The Task that we don't want to do anything with. Unused. 
+        :type  task: pulp.bindings.responses.Task
+        """
         pass
 
 
@@ -182,7 +195,7 @@ class RunPublishRepositoryCommand(polling.PollingCommand):
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         background = kwargs[NAME_BACKGROUND]
         override_config = {}
-        
+
         # Generate override_config if any of the override options are passed.
         if self.override_config_keywords:
             override_config = self.generate_override_config(**kwargs)
