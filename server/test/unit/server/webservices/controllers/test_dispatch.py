@@ -18,8 +18,8 @@ import mock
 
 from .... import base
 from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue
+from pulp.server.dispatch import constants as dispatch_constants
 
 class TestTaskResource(base.PulpWebserviceTests):
     """
@@ -40,19 +40,58 @@ class TestTaskResource(base.PulpWebserviceTests):
 
         revoke.assert_called_once_with(task_id, terminate=True)
 
+    def test_DELETE_completed_celery_task(self):
+        """
+        Test the DELETE() method raises a TaskComplete exception if the task is already complete.
+        """
+        task_id = '1234abcd'
+        url = '/v2/tasks/%s/'
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name,
+                                             state=dispatch_constants.CALL_FINISHED_STATE)
+        status, body = self.delete(url % task_id)
+        self.assertEqual(409, status)
+        self.assertIsInstance(body, dict)
+        self.assertTrue('Task is already in a complete state' in body['error_message'])
+        self.assertTrue(task_id in body['error_message'])
+
+    def test_DELETE_non_existing_celery_task(self):
+        """
+        Test the DELETE() method raises a TaskNotFound exception if the task is not found.
+        """
+        task_id = '1234abcd'
+        url = '/v2/tasks/%s/'
+        status, body = self.delete(url % task_id)
+
+        self.assertEqual(404, status)
+        self.assertIsInstance(body, dict)
+        self.assertTrue('Task Not Found' in body['error_message'])
+        self.assertTrue(task_id in body['error_message'])
+
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
+    def test_DELETE_spawned_celery_task(self, revoke):
+        """
+        Test the DELETE() method with a UUID that does not correspond to a UUID that the
+        coordinator is aware of. This should cause a revoke call to Celery's Controller.
+        """
+        task_id = '1234abcd'
+        spawned_task_id = 'spawned_by_1234abcd'
+        url = '/v2/tasks/%s/'
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name)
+        TaskStatusManager.create_task_status(spawned_task_id, test_queue.name)
+        TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
+
+        self.delete(url % task_id)
+
+        self.assertEqual(revoke.call_count, 2)
+        revoke.assert_any_call(task_id, terminate=True)
+        revoke.assert_any_call(spawned_task_id, terminate=True)
 
 class TestTaskCollection(base.PulpWebserviceTests):
     """
     Test the TaskCollection class.
     """
-    def setUp(self):
-        base.PulpWebserviceTests.setUp(self)
-        TaskStatus.get_collection().remove()
-
-    def tearDown(self):
-        base.PulpWebserviceTests.tearDown(self)
-        TaskStatus.get_collection().remove()
-
     def test_GET_celery_tasks(self):
         """
         Test the GET() method to get all current tasks.

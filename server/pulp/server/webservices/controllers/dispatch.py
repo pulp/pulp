@@ -34,12 +34,12 @@ class TaskNotFound(MissingResource):
         return _('Task Not Found: %(id)s') % {'id': self.args[0]}
 
 
-class TaskCancelNotImplemented(PulpExecutionException):
+class TaskCompleteException(PulpExecutionException):
 
-    http_status_code = httplib.NOT_IMPLEMENTED
+    http_status_code = httplib.CONFLICT
 
     def __str__(self):
-        return _('Cancel Not Implemented for Task: %(id)s') % {'id': self.args[0]}
+        return _('Task is already in a complete state: %(id)s') % {'id': self.args[0]}
 
 
 # task controllers -------------------------------------------------------------
@@ -76,23 +76,25 @@ class TaskResource(JSONController):
             return self.ok(task)
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, call_request_id):
-        coordinator = dispatch_factory.coordinator()
-        result = coordinator.cancel_call(call_request_id)
-        if result is None:
-            # The coordinator doesn't know about the task, but Celery might. Let's tell Celery to
-            # cancel it
-            tasks.cancel(call_request_id)
-            call_report = call.CallReport(call_request_id=call_request_id,
-                                          state=dispatch_constants.CALL_CANCELED_STATE)
-        elif result is False:
-            raise TaskCancelNotImplemented(call_request_id)
-        else:
-            # if we've gotten here, the call request *should* exist
-            call_report = coordinator.find_call_reports(call_request_id=call_request_id)[0]
-        serialized_call_report = call_report.serialize()
-        serialized_call_report.update(serialization.link.current_link_obj())
-        return self.accepted(serialized_call_report)
+    def DELETE(self, task_id):
+        """
+        Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+
+        :param task_id: The ID of the task you wish to cancel
+        :type  task_id: basestring
+
+        :raises TaskNotFound: if a task with given task_id does not exist
+        :raises TaskCompleteException: if given task is already in a complete state
+        """
+        task = TaskStatusManager.find_by_task_id(task_id)
+        if task is None:
+            raise TaskNotFound(task_id)
+        if task['state'] in dispatch_constants.CALL_COMPLETE_STATES:
+            raise TaskCompleteException(task_id)
+        tasks.cancel(task_id)
+        for spawned_task_id in task.get('spawned_tasks'):
+            tasks.cancel(spawned_task_id)
+        return self.ok(None)
 
 # web.py applications ----------------------------------------------------------
 
