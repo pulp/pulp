@@ -92,11 +92,7 @@ class TaskResource(JSONController):
         if task['state'] in dispatch_constants.CALL_COMPLETE_STATES:
             raise TaskCompleteException(task_id)
         tasks.cancel(task_id)
-        # If the task has spawned other tasks, we need to cancel them as well.
-        spawned_task_ids = task.get('spawned_tasks')
-        if spawned_task_ids:
-            for spawned_task_id in spawned_task_ids:
-                tasks.cancel(spawned_task_id)
+
         return self.ok(None)
 
 # web.py applications ----------------------------------------------------------

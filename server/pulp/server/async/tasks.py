@@ -406,6 +406,12 @@ def cancel(task_id):
     """
     controller.revoke(task_id, terminate=True)
     TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
+    # If the task has spawned other tasks, we need to cancel them as well.
+    task_status = TaskStatusManager.find_by_task_id(task_id)
+    spawned_task_ids = task_status.get('spawned_tasks')
+    if spawned_task_ids:
+        for spawned_task_id in spawned_task_ids:
+            cancel(spawned_task_id)
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)
