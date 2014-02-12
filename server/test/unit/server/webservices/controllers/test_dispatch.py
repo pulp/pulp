@@ -71,22 +71,26 @@ class TestTaskResource(base.PulpWebserviceTests):
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     def test_DELETE_spawned_celery_task(self, revoke):
         """
-        Test the DELETE() method with a UUID that does not correspond to a UUID that the
-        coordinator is aware of. This should cause a revoke call to Celery's Controller.
+        Test the DELETE() which should cause a revoke call to Celery's Controller.
+        This also tests that the spawned tasks are canceled as well.
         """
         task_id = '1234abcd'
-        spawned_task_id = 'spawned_by_1234abcd'
+        spawned_task_id = 'spawned_task'
+        spawned_by_spawned_task_id = 'spawned_by_spawned_task'
         url = '/v2/tasks/%s/'
         test_queue = AvailableQueue('test_queue')
         TaskStatusManager.create_task_status(task_id, test_queue.name)
         TaskStatusManager.create_task_status(spawned_task_id, test_queue.name)
+        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_queue.name)
         TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
-
+        TaskStatusManager.update_task_status(spawned_task_id,
+                                             delta={'spawned_tasks': [spawned_by_spawned_task_id]})
         self.delete(url % task_id)
 
-        self.assertEqual(revoke.call_count, 2)
+        self.assertEqual(revoke.call_count, 3)
         revoke.assert_any_call(task_id, terminate=True)
         revoke.assert_any_call(spawned_task_id, terminate=True)
+        revoke.assert_any_call(spawned_by_spawned_task_id, terminate=True)
 
 class TestTaskCollection(base.PulpWebserviceTests):
     """
