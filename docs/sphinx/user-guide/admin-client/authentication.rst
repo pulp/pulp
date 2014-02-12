@@ -406,4 +406,4 @@ other very flexible options.  A wide range of other authentication
 options are available through Apache, including Kerberos, PAM,
 arbitrary databases, and many more.  Note that if you are using
 something other than Basic authentication (Kerberos, for example), you
-will need to change the condition in ``SetEnvIf`` appropriately.
+will need to change the condition in ``SetEnvIfNoCase`` appropriately.
