@@ -220,18 +220,20 @@ class TaskResult(object):
         :type error: pulp.server.exception.PulpException
         :param spawned_tasks: A list of task status objects for tasks that were created by this
                               task and are tracked through the pulp database.
-                              Alternately an AsyncResult.
+                              Alternately an AsyncResult, or the task_id of the task created.
         :type spawned_tasks: list of TaskStatus, AsyncResult, or str objects
         """
         self.return_value = result
         self.error = error
         self.spawned_tasks = []
-        if spawned_tasks and isinstance(spawned_tasks, list):
+        if spawned_tasks:
             for spawned_task in spawned_tasks:
                 if isinstance(spawned_task, dict):
                     self.spawned_tasks.append({'task_id': spawned_task.get('task_id')})
-                if isinstance(spawned_task, AsyncResult):
+                elif isinstance(spawned_task, AsyncResult):
                     self.spawned_tasks.append({'task_id': spawned_task.id})
+                else:  # This should be a string
+                    self.spawned_tasks.append({'task_id': spawned_task})
 
     @classmethod
     def from_async_result(cls, async_result):
@@ -258,6 +260,9 @@ class TaskResult(object):
         return cls(spawned_tasks=[{'task_id': task_status.get('task_id')}])
 
     def serialize(self):
+        """
+        Serialize the output to a dictionary
+        """
         data = {
             'result': self.return_value,
             'error': self.error,
