@@ -22,8 +22,8 @@ import mock
 
 from pulp.common import dateutils
 from pulp.devel import dummy_plugins, mock_plugins
-from pulp.devel.unit.base import PulpWebservicesTests, MockTaskResult
-from pulp.devel.unit.util import compare_dict
+from pulp.devel.unit.base import PulpWebservicesTests
+from pulp.devel.unit.util import compare_dict, assert_body_matches_async_task
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.auth import authorization
 from pulp.server.db.connection import PulpCollection
@@ -89,8 +89,7 @@ class RepoImportUploadTests(RepoControllersTests):
 
         status, body = self.post(self.URL % 'repo_id', params)
         self.assertEqual(202, status)
-        self.assertEqual(body['task_id'], task_id)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        assert_body_matches_async_task(body, mock_apply_async.return_value)
         expected_args = mock_apply_async.call_args[0][0]
         self.assertTrue('repo_id' in expected_args)
         self.assertTrue('unit_type_id' in expected_args)
@@ -391,7 +390,8 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
     def test_delete(self, mock_delete_task, mock_manager_factory):
         repo_distributor = repositories.RepoResource()
 
-        mock_delete_task.apply_async_with_reservation.return_value = MockTaskResult('foo-id')
+        async_task = AsyncResult('foo-id')
+        mock_delete_task.apply_async_with_reservation.return_value = async_task
         self.assertRaises(OperationPostponed, repo_distributor.DELETE, "foo-repo")
 
         #Validate that the check was made to ensure the repo exists
@@ -409,7 +409,7 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
         try:
             repo_distributor.DELETE("foo-repo")
         except OperationPostponed, op:
-            self.assertEquals(op.call_report.call_request_id, 'foo-id')
+            self.assertEquals(op.call_report, async_task)
 
 
     @mock.patch('pulp.server.managers.factory.repo_query_manager')
@@ -596,8 +596,7 @@ class RepoImportersTests(RepoPluginsTests):
 
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(body['task_id'], task_id)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        assert_body_matches_async_task(body, mock_apply_async.return_value)
         call_args, call_kwargs = mock_apply_async.call_args[0]
         self.assertEqual(call_args, ['gravy', 'dummy-importer'])
         self.assertEqual(call_kwargs, {'repo_plugin_config': {'foo': 'bar'}})
@@ -699,8 +698,7 @@ class RepoImporterTests(RepoPluginsTests):
 
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(body['task_id'], task_id)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertEqual(body['spawned_tasks'][0]['task_id'], task_id)
         call_args = mock_apply_async.call_args[0]
         self.assertTrue([repo_id] in call_args)
 
@@ -747,8 +745,7 @@ class RepoImporterTests(RepoPluginsTests):
                                 params=new_config)
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(body['task_id'], task_id)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertEqual(body['spawned_tasks'][0]['task_id'], task_id)
         call_args, call_kwargs = mock_apply_async.call_args[0]
         self.assertTrue(repo_id in call_args)
         self.assertEqual(call_kwargs['importer_config'], {'ice_cream' : True})
@@ -892,7 +889,8 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
     def test_delete(self, mock_delete_task, mock_manager_factory):
         repo_distributor = repositories.RepoDistributor()
 
-        mock_delete_task.apply_async_with_reservation.return_value = MockTaskResult('foo-id')
+        async_task = AsyncResult('foo-id')
+        mock_delete_task.apply_async_with_reservation.return_value = async_task
         self.assertRaises(OperationPostponed, repo_distributor.DELETE,
                           "foo-repo", "foo-distributor")
         task_tags = ['pulp:repository:foo-repo',
@@ -908,7 +906,7 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
         try:
             repo_distributor.DELETE("foo-repo", "foo-distributor")
         except OperationPostponed, op:
-            self.assertEquals(op.call_report.call_request_id, 'foo-id')
+            self.assertEquals(op.call_report, async_task)
 
     @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
     @mock.patch('pulp.server.tasks.repository.distributor_update', autospec=True)
@@ -918,7 +916,8 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
         repo_distributor.params = mock.Mock(return_value={'distributor_config': new_config,
                                                           'delta': {}})
 
-        mock_update_task.apply_async_with_reservation.return_value = MockTaskResult('foo-id')
+        async_task = AsyncResult('foo-id')
+        mock_update_task.apply_async_with_reservation.return_value = async_task
         self.assertRaises(OperationPostponed, repo_distributor.PUT, "foo-repo", "foo-distributor")
 
         task_tags = ['pulp:repository:foo-repo',
@@ -934,7 +933,7 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
         try:
             repo_distributor.PUT("foo-repo", "foo-distributor")
         except OperationPostponed, op:
-            self.assertEquals(op.call_report.call_request_id, 'foo-id')
+            self.assertEquals(op.call_report, async_task)
 
 
 
@@ -1219,6 +1218,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
         # Verify
         self.assertEqual(400, status)
+
 
 class DependencyResolutionTests(RepoControllersTests):
 
@@ -1624,8 +1624,8 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue('task_id' in body)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('task_id' in body['spawned_tasks'][0])
+
 
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_consumer(self, _reserve_resource):
@@ -1635,8 +1635,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue('task_id' in body)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('task_id' in body['spawned_tasks'][0])
 
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_bindings(self, _reserve_resource):
@@ -1648,8 +1647,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue('task_id' in body)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('task_id' in body['spawned_tasks'][0])
 
     def test_regenerate_applicability_no_criteria(self):
         # Setup

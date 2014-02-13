@@ -22,7 +22,6 @@ from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
@@ -261,7 +260,7 @@ class RepoResource(JSONController):
             dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
             [repo_id], tags=tags)
 
-        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
+        raise exceptions.OperationPostponed(async_result)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id):
@@ -317,8 +316,7 @@ class RepoImporters(JSONController):
                                                                  [repo_id, importer_type],
                                                                  {'repo_plugin_config': importer_config},
                                                                  tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoImporter(JSONController):
@@ -350,8 +348,7 @@ class RepoImporter(JSONController):
                                                 repo_id,
                                                 [repo_id],
                                                 tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(async_result)
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
@@ -368,13 +365,9 @@ class RepoImporter(JSONController):
                 resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
                 action_tag('update_importer')]
         async_result = update_importer_config.apply_async_with_reservation(
-                                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
-                                                    repo_id,
-                                                    [repo_id],
-                                                    {'importer_config': importer_config},
-                                                    tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+            dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+            repo_id, [repo_id], {'importer_config': importer_config}, tags=tags)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class SyncScheduleCollection(JSONController):
@@ -507,7 +500,7 @@ class RepoDistributor(JSONController):
             dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
             tags=tags)
 
-        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id))
+        raise exceptions.OperationPostponed(async_result)
 
 
     @auth_required(UPDATE)
@@ -546,8 +539,7 @@ class RepoDistributor(JSONController):
         async_result = repository.distributor_update.apply_async_with_reservation(
             dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
             [repo_id, distributor_id, config, delta], tags=tags)
-        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
-                                                       call_request_tags=tags))
+        raise exceptions.OperationPostponed(async_result)
 
 
 class PublishScheduleCollection(JSONController):
@@ -718,8 +710,7 @@ class RepoSync(JSONController):
 
         # this raises an exception that is handled by the middleware,
         # so no return is needed
-        raise exceptions.OperationPostponed(CallReport(call_request_id=async_result.id,
-                                                       call_request_tags=tags))
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoPublish(JSONController):
@@ -738,7 +729,7 @@ class RepoPublish(JSONController):
         distributor_id = params.get('id', None)
         overrides = params.get('override_config', None)
         async_result = repository.publish(repo_id, distributor_id, overrides)
-        raise exceptions.OperationPostponed(CallReport.from_task_status_dict(async_result.id))
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoAssociate(JSONController):
@@ -785,8 +776,7 @@ class RepoAssociate(JSONController):
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
                                                 tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoUnassociate(JSONController):
@@ -815,8 +805,7 @@ class RepoUnassociate(JSONController):
                                     [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
                                      manager_factory.principal_manager().get_principal()['login']],
                                     tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoImportUpload(JSONController):
@@ -847,8 +836,7 @@ class RepoImportUpload(JSONController):
                                     repo_id,
                                     [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
                                     tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(async_result)
 
 
 class RepoResolveDependencies(JSONController):
@@ -943,8 +931,7 @@ class ContentApplicabilityRegeneration(JSONController):
                             dispatch_constants.RESOURCE_ANY_ID,
                             (repo_criteria.as_dict(),),
                             tags=[regeneration_tag])
-        call_report = CallReport.from_task_status(async_result.id)
-        raise exceptions.OperationPostponed(call_report)
+        raise exceptions.OperationPostponed(async_result)
 
 
 # These are defined under /v2/repositories/ (see application.py to double-check)

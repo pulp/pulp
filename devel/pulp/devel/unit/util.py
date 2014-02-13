@@ -89,3 +89,7 @@ def compare_element(source, target):
 
     for source_child, target_child in zip(source_children, target_children):
         compare_element(source_child, target_child)
+
+
+def assert_body_matches_async_task(body, task):
+    assert body['spawned_tasks'][0]['task_id'] == task.id

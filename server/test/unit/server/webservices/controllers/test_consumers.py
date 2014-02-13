@@ -686,9 +686,7 @@ class ContentTest(PulpWebservicesTests):
         webservice = consumers.Content()
         webservice.params = mock.Mock(return_value={'units': 'foo-unit',
                                                     'options': 'bar'})
-        mock_task.return_value = {'task_id': 'foo',
-                                  'state': 'bar',
-                                  'tags': []}
+        mock_task.return_value = {'task_id': 'baz'}
 
         # Test
         self.assertRaises(OperationPostponed, webservice.install, 'consumer-foo')
@@ -701,9 +699,7 @@ class ContentTest(PulpWebservicesTests):
         webservice = consumers.Content()
         webservice.params = mock.Mock(return_value={'units': 'foo-unit',
                                                     'options': 'bar'})
-        mock_task.return_value = {'task_id': 'foo',
-                                  'state': 'bar',
-                                  'tags': []}
+        mock_task.return_value = {'task_id': 'baz'}
 
         # Test
         self.assertRaises(OperationPostponed, webservice.uninstall, 'consumer-foo')
@@ -716,9 +712,7 @@ class ContentTest(PulpWebservicesTests):
         webservice = consumers.Content()
         webservice.params = mock.Mock(return_value={'units': 'foo-unit',
                                                     'options': 'bar'})
-        mock_task.return_value = {'task_id': 'foo',
-                                  'state': 'bar',
-                                  'tags': []}
+        mock_task.return_value = {'task_id': 'baz'}
 
         # Test
         self.assertRaises(OperationPostponed, webservice.update, 'consumer-foo')
@@ -1308,13 +1302,12 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         _reserve_resource.return_value = self.ReservedResourceApplyAsync()
         self.populate()
         self.populate_bindings()
-        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        request_body = dict(consumer_criteria={'filters': self.FILTER})
 
         status, body = self.post(self.PATH, request_body)
 
         self.assertEquals(status, 202)
-        self.assertTrue('task_id' in body)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_consumers(self, _reserve_resource):
@@ -1325,8 +1318,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue('task_id' in body)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_bindings(self, _reserve_resource):
@@ -1339,8 +1331,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
-        self.assertTrue('task_id' in body)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
+        self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
     def test_regenerate_applicability_no_criteria(self):
         # Setup
@@ -1364,7 +1355,6 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 400)
         self.assertTrue('property_names' in body)
         self.assertTrue(body['property_names'] == ['consumer_criteria'])
-        self.assertFalse('task_id' in body)
 
 
 class ScheduledUnitInstallTests(base.PulpWebserviceTests):

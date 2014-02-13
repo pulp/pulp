@@ -16,7 +16,7 @@ from mock import patch, Mock
 from pulp.common.plugins import importer_constants
 from pulp.common.bundle import Bundle
 
-from base import WebTest, Response, Task
+from base import WebTest, Response, Task, TaskResult
 from pulp_node.handlers.model import Repository
 from pulp_node import constants
 
@@ -47,7 +47,8 @@ class TestModel(WebTest):
         super(self.__class__, self).tearDown()
 
     @patch('pulp_node.poller.TaskPoller.join')
-    @patch('pulp.bindings.repository.RepositoryActionsAPI.sync', return_value=Response(httplib.ACCEPTED, [Task()]))
+    @patch('pulp.bindings.repository.RepositoryActionsAPI.sync',
+           return_value=Response(httplib.ACCEPTED, TaskResult(0)))
     @patch('pulp.agent.lib.conduit.Conduit.consumer_id')
     def test_repository(self, *mocks):
         # Setup

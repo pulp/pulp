@@ -29,12 +29,12 @@ class TestBind(PulpCeleryTaskTests):
         mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
         binding_config = {'binding': 'foo'}
         agent_options = {'bar': 'baz'}
-        mock_bind.return_value = TaskResult(spawned_tasks=['foo-request-id'])
+        mock_bind.return_value = TaskResult(spawned_tasks=[{'task_id': 'foo-request-id'}])
         result = consumer_group.bind('foo_group_id', 'foo_repo_id', 'foo_distributor_id',
                                      True, binding_config, agent_options)
         mock_bind.assert_called_once_with('foo-consumer', 'foo_repo_id', 'foo_distributor_id',
                                           True, binding_config, agent_options)
-        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+        self.assertEquals(result.spawned_tasks[0], {'task_id': 'foo-request-id'})
 
     @patch('pulp.server.tasks.consumer_group.bind_task')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
@@ -74,11 +74,11 @@ class TestUnbind(PulpCeleryTaskTests):
     def test_bind_no_errors(self, mock_query_manager, mock_unbind):
         mock_query_manager.return_value.get_group.return_value = {'consumer_ids': ['foo-consumer']}
         options = {'bar': 'baz'}
-        mock_unbind.return_value = TaskResult(spawned_tasks=['foo-request-id'])
+        mock_unbind.return_value = TaskResult(spawned_tasks=[{'task_id': 'foo-request-id'}])
         result = consumer_group.unbind('foo_group_id', 'foo_repo_id', 'foo_distributor_id', options)
         mock_unbind.assert_called_once_with('foo-consumer', 'foo_repo_id', 'foo_distributor_id',
                                             options)
-        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+        self.assertEquals(result.spawned_tasks[0], {'task_id': 'foo-request-id'})
 
     @patch('pulp.server.tasks.consumer_group.unbind_task')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
@@ -118,11 +118,11 @@ class TestInstallContent(unittest.TestCase):
         agent_options = {'bar': 'baz'}
         mock_task = mock_agent_manager.return_value.install_content
 
-        mock_task.return_value = 'foo-request-id'
+        mock_task.return_value = {'task_id': 'foo-request-id'}
         result = consumer_group.install_content(group_id, units, agent_options)
 
         mock_task.assert_called_once_with('foo-consumer', units, agent_options)
-        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+        self.assertEquals(result.spawned_tasks[0], {'task_id': 'foo-request-id'})
 
     @patch('pulp.server.managers.factory.consumer_agent_manager')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
@@ -170,11 +170,11 @@ class TestUnInstallContent(unittest.TestCase):
         agent_options = {'bar': 'baz'}
         mock_task = mock_agent_manager.return_value.uninstall_content
 
-        mock_task.return_value = 'foo-request-id'
+        mock_task.return_value = {'task_id': 'foo-request-id'}
         result = consumer_group.uninstall_content(group_id, units, agent_options)
 
         mock_task.assert_called_once_with('foo-consumer', units, agent_options)
-        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+        self.assertEquals(result.spawned_tasks[0], {'task_id': 'foo-request-id'})
 
     @patch('pulp.server.managers.factory.consumer_agent_manager')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
@@ -222,11 +222,11 @@ class TestUpdateContent(unittest.TestCase):
         agent_options = {'bar': 'baz'}
         mock_task = mock_agent_manager.return_value.update_content
 
-        mock_task.return_value = 'foo-request-id'
+        mock_task.return_value = {'task_id': 'foo-request-id'}
         result = consumer_group.update_content(group_id, units, agent_options)
 
         mock_task.assert_called_once_with('foo-consumer', units, agent_options)
-        self.assertEquals(result.spawned_tasks[0], 'foo-request-id')
+        self.assertEquals(result.spawned_tasks[0], {'task_id': 'foo-request-id'})
 
     @patch('pulp.server.managers.factory.consumer_agent_manager')
     @patch('pulp.server.managers.factory.consumer_group_query_manager')
