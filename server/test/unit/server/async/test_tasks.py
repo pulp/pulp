@@ -632,9 +632,9 @@ class TestTask(ResourceReservationTests):
         """
         async_result = AsyncResult('foo-id')
 
-        retval = tasks.TaskResult(spawned_tasks=[async_result],
-                                  error=PulpException('error-foo'),
+        retval = tasks.TaskResult(error=PulpException('error-foo'),
                                   result='bar')
+        retval.spawned_tasks = [async_result]
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
@@ -679,6 +679,32 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['result'], 'bar')
         self.assertFalse(new_task_status['finish_time'] == None)
         self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    def test_on_success_handler_async_result(self, mock_request):
+        """
+        Make sure that overridden on_success handler updates task status correctly
+        """
+        retval = AsyncResult('foo-id')
+
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        mock_request.called_directly = False
+
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['finish_time'], None)
+
+        task = tasks.Task()
+        task.on_success(retval, task_id, args, kwargs)
+
+        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(new_task_status['state'], 'finished')
+        self.assertEqual(new_task_status['result'], None)
+        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
+
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_failure_handler(self, mock_request):

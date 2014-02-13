@@ -398,6 +398,9 @@ class Task(CeleryTask, ReservedTaskMixin):
                         elif isinstance(spawned_task, dict):
                             task_list.append(spawned_task['task_id'])
                     delta['spawned_tasks'] = task_list
+            if isinstance(retval, AsyncResult):
+                delta['spawned_tasks'] = [retval.task_id, ]
+                delta['result'] = None
 
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
@@ -418,11 +421,9 @@ class Task(CeleryTask, ReservedTaskMixin):
             delta = {'state': dispatch_constants.CALL_ERROR_STATE,
                      'finish_time': dateutils.now_utc_timestamp(),
                      'traceback': einfo.traceback}
-            if isinstance(exc, PulpException):
-                delta['error'] = exc.to_dict()
-            else:
-                pulp_exception = PulpException(str(exc))
-                delta['error'] = pulp_exception.to_dict()
+            if not isinstance(exc, PulpException):
+                exc = PulpException(str(exc))
+            delta['error'] = exc.to_dict()
 
             TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
