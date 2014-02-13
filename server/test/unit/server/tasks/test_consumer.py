@@ -42,7 +42,8 @@ class TestBind(unittest.TestCase):
     def test_bind_with_agent_notification(self, mock_bind_manager):
         binding_config = {'binding': 'foo'}
         agent_options = {'bar': 'baz'}
-        mock_bind_manager.consumer_agent_manager.return_value.bind.return_value = 'foo-id'
+        mock_bind_manager.consumer_agent_manager.return_value.bind.return_value = \
+            {'task_id': 'foo-request-id'}
         result = consumer.bind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                True, binding_config, agent_options)
         mock_bind_manager.consumer_agent_manager.return_value.bind.assert_called_once_with(
@@ -52,7 +53,7 @@ class TestBind(unittest.TestCase):
         self.assertTrue(isinstance(result, TaskResult))
         self.assertEquals(result.return_value,
                           mock_bind_manager.consumer_bind_manager.return_value.bind.return_value)
-        self.assertEquals(result.spawned_tasks, ['foo-id'])
+        self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
 
 
 class TestUnbind(unittest.TestCase):
@@ -78,13 +79,14 @@ class TestUnbind(unittest.TestCase):
         binding_config = {'notify_agent': True}
         agent_options = {'bar': 'baz'}
         mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
-        mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = 'foo-id'
+        mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = \
+            {'task_id': 'foo-request-id'}
         result = consumer.unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                  agent_options)
         mock_bind_manager.consumer_agent_manager.return_value.unbind.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options)
         self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.spawned_tasks, ['foo-id'])
+        self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
 
 
 class TestForceUnbind(unittest.TestCase):
@@ -109,13 +111,14 @@ class TestForceUnbind(unittest.TestCase):
         binding_config = {'notify_agent': True}
         agent_options = {'bar': 'baz'}
         mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
-        mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = 'foo-id'
+        mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = \
+            {'task_id': 'foo-request-id'}
         result = consumer.force_unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                        agent_options)
         mock_bind_manager.consumer_agent_manager.return_value.unbind.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options)
         self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.spawned_tasks, ['foo-id'])
+        self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
 
 
 class TestInstallContent(unittest.TestCase):

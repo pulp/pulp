@@ -64,7 +64,7 @@ def delete(repo_id):
         error = PulpCodedException(PLP0007, repo_id=repo_id)
         error.child_exceptions = errors
 
-    return TaskResult({}, error, additional_tasks)
+    return TaskResult(error=error, spawned_tasks=additional_tasks)
 
 
 @celery.task(base=Task)
@@ -106,7 +106,7 @@ def distributor_delete(repo_id, distributor_id):
     if len(unbind_errors) > 0:
         bind_error = PulpCodedException(PLP0003, repo_id=repo_id, distributor_id=distributor_id)
         bind_error.child_exceptions = unbind_errors
-    return TaskResult({}, bind_error, additional_tasks)
+    return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
 
 
 @celery.task(base=Task)

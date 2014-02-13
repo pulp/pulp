@@ -13,8 +13,10 @@
 
 import logging
 
+from celery.result import AsyncResult
+
+from pulp.server.async.tasks import TaskResult
 from pulp.server.compat import json, json_util, http_responses
-from pulp.server.dispatch.call import CallReport
 from pulp.server.exceptions import MultipleOperationsPostponed, OperationPostponed
 from pulp.server.webservices import serialization
 
@@ -40,15 +42,13 @@ class PostponedOperationMiddleware(object):
             return self.app(environ, start_response)
 
         except OperationPostponed, e:
-            if isinstance(e.call_report, CallReport):
-                serialized_call_report = e.call_report.serialize()
-                href_obj = serialization.dispatch.task_href(e.call_report)
-                serialized_call_report.update(href_obj)
-            else:  # This is TaskResult
-                serialized_call_report = e.call_report.serialize()
-                for task in serialized_call_report['spawned_tasks']:
-                    href_obj = serialization.dispatch.task_result_href(task)
-                    task.update(href_obj)
+            report = e.call_report
+            if isinstance(e.call_report, AsyncResult):
+                report = TaskResult.from_async_result(e.call_report)
+            serialized_call_report = report.serialize()
+            for task in serialized_call_report['spawned_tasks']:
+                href_obj = serialization.dispatch.task_result_href(task)
+                task.update(href_obj)
 
             body = json.dumps(serialized_call_report, default=json_util.default)
 

@@ -15,13 +15,12 @@ import web
 
 from pulp.common.plugins import distributor_constants
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
+from pulp.server.async.tasks import TaskResult
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport
 from pulp.server.exceptions import MissingValue, OperationPostponed
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.repo.publish import publish
@@ -245,8 +244,7 @@ class PublishAction(JSONController):
                                                 args=[repo_group_id, distributor_id],
                                                 kwargs={'publish_config_override' : overrides},
                                                 tags=tags)
-        call_report = CallReport.from_task_status(async_result.id)
-        raise OperationPostponed(call_report)
+        raise OperationPostponed(async_result)
 
 # web.py application -----------------------------------------------------------
 
