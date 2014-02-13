@@ -59,8 +59,7 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
 
         # Test
         override_config = {'o' : 'o'}
-        distributor, instance, config = self.publish_manager._get_distributor_instance_and_config(self.group_id, self.distributor_id)
-        self.publish_manager.publish(self.group_id, self.distributor_id, distributor, instance, config, override_config)
+        self.publish_manager.publish(self.group_id, self.distributor_id, publish_config_override=override_config)
 
         # Verify
 
@@ -105,8 +104,7 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.side_effect = Exception()
 
         # Test
-        distributor, instance, config = self.publish_manager._get_distributor_instance_and_config(self.group_id, self.distributor_id)
-        self.assertRaises(PulpExecutionException, self.publish_manager.publish, self.group_id, self.distributor_id, distributor, instance, config)
+        self.assertRaises(Exception, self.publish_manager.publish, self.group_id, self.distributor_id)
 
         # Verify
         history_entries = list(RepoGroupPublishResult.get_collection().find())
@@ -128,8 +126,7 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = PublishReport(False, summary, details)
 
         # Test
-        distributor, instance, config = self.publish_manager._get_distributor_instance_and_config(self.group_id, self.distributor_id)
-        self.publish_manager.publish(self.group_id, self.distributor_id, distributor, instance, config)
+        self.publish_manager.publish(self.group_id, self.distributor_id)
 
         # Verify
         history_entries = list(RepoGroupPublishResult.get_collection().find())
@@ -143,8 +140,7 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
 
     def test_publish_with_plugin_no_report(self):
         # Test
-        distributor, instance, config = self.publish_manager._get_distributor_instance_and_config(self.group_id, self.distributor_id)
-        self.publish_manager.publish(self.group_id, self.distributor_id, distributor, instance, config)
+        self.publish_manager.publish(self.group_id, self.distributor_id)
 
         # Verify
         history_entries = list(RepoGroupPublishResult.get_collection().find())
@@ -153,8 +149,7 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
 
     def test_last_publish(self):
         # Setup
-        distributor, instance, config = self.publish_manager._get_distributor_instance_and_config(self.group_id, self.distributor_id)
-        self.publish_manager.publish(self.group_id, self.distributor_id, distributor, instance, config)
+        self.publish_manager.publish(self.group_id, self.distributor_id)
 
         # Test
         last_publish = self.publish_manager.last_publish(self.group_id, self.distributor_id)
