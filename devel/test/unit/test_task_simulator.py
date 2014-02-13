@@ -43,7 +43,7 @@ class TaskSimulatorTests(unittest.TestCase):
 
         # Test
         sim = TaskSimulator()
-        task = sim.add_task_state(task_id, state, response=response, progress_report=progress_report)
+        task = sim.add_task_state(task_id, state, progress_report=progress_report)
 
         # Verify
         self.assertTrue(task_id in sim.ordered_task_ids)
@@ -52,8 +52,7 @@ class TaskSimulatorTests(unittest.TestCase):
 
         self.assertEqual(task.task_id, task_id)
         self.assertEqual(task.state, state)
-        self.assertEqual(task.response, response)
-        self.assertEqual(task.progress, progress_report)
+        self.assertEqual(task.progress_report, progress_report)
 
     def test_add_task_states(self):
         # Setup

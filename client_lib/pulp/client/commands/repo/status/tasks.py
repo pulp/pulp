@@ -53,39 +53,6 @@ def relevant_existing_task_id(existing_sync_tasks):
     return None
 
 
-def relevant_existing_task_group_id(existing_tasks):
-    """
-    Grok through a list of existing tasks and look for the task_group_id
-    for the highest priority.
-    """
-    running_tasks = [t for t in existing_tasks if t.is_running()]
-    waiting_tasks = [t for t in existing_tasks if t.is_waiting()]
-
-    if running_tasks:
-        return running_tasks[0].task_group_id
-    elif waiting_tasks:
-        return waiting_tasks[0].task_group_id
-
-    return None
-
-
-def sync_task_in_sync_task_group(task_list):
-    """
-    Grok through the tasks returned from the server's repo sync call and find
-    the task that pertains to the sync itself.
-
-    :param task_list: list of tasks
-    :type task_list: list
-    :return: task for the sync
-    :rtype: Task
-    """
-    sync_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
-    for t in task_list:
-        if sync_tag in t.tags:
-            return t
-    return None
-
-
 def publish_task_in_sync_task_group(task_list):
     """
     Grok through the tasks returned from the server's repo sync call and find
@@ -101,5 +68,3 @@ def publish_task_in_sync_task_group(task_list):
         if publish_tag in t.tags:
             return t
     return None
-
-

@@ -1,0 +1,3 @@
+celery depends on a version of this that is newer than what is available in epel and fedora.
+
+Soon, we will have a custom kombu that adds a qpid transport.

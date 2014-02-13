@@ -19,7 +19,6 @@ from gettext import gettext as _
 import sys
 import time
 
-# -- public -------------------------------------------------------------------
 
 def display_task_status(context, renderer, task_id):
     """
@@ -40,6 +39,7 @@ def display_task_status(context, renderer, task_id):
     task_list = [response.response_body]
 
     _display_status(context, renderer, task_list)
+
 
 def display_group_status(context, renderer, task_group_id):
     """
@@ -63,31 +63,14 @@ def display_group_status(context, renderer, task_group_id):
 
     _display_status(context, renderer, task_list)
 
-# -- private ------------------------------------------------------------------
-
 def _display_status(context, renderer, task_list):
     """
     :type renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
     """
 
-    m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the server.')
+    m = _('This command may be exited by pressing ctrl+c without affecting the actual operation on the '
+          'server.')
     context.prompt.render_paragraph(m, tag='ctrl-c')
-
-    # Handle the cases where we don't want to honor the foreground request
-    if task_list[0].is_rejected():
-        announce = _('The request to synchronize repository was rejected')
-        description = _('This is likely due to an impending delete request for the repository.')
-
-        context.prompt.render_failure_message(announce, tag='rejected-msg')
-        context.prompt.render_paragraph(description, tag='rejected-desc')
-        return
-
-    if task_list[0].is_postponed():
-        a  = _('The request to synchronize the repository was accepted but postponed '
-               'due to one or more previous requests against the repository. The sync will '
-               'take place at the earliest possible time.')
-        context.prompt.render_paragraph(a, tag='postponed')
-        return
 
     try:
         for task_num, task in enumerate(task_list):
@@ -99,6 +82,7 @@ def _display_status(context, renderer, task_list):
         # If the user presses ctrl+c, don't let the error bubble up, just
         # exit gracefully
         return
+
 
 def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     """
@@ -120,7 +104,7 @@ def _display_task_status(context, renderer, task_id, quiet_waiting=False):
         if response.response_body.is_waiting() and not quiet_waiting:
             begin_spinner.next(_('Waiting to begin next step'))
         else:
-            renderer.display_report(response.response_body.progress)
+            renderer.display_report(response.response_body.progress_report)
 
         time.sleep(poll_frequency_in_seconds)
 
@@ -131,10 +115,9 @@ def _display_task_status(context, renderer, task_id, quiet_waiting=False):
     # package download and when the task itself reports as finished. We
     # don't want to leave the UI in that half-finished state so this final
     # call is to clean up and render the completed report.
-    renderer.display_report(response.response_body.progress)
+    renderer.display_report(response.response_body.progress_report)
 
     if response.response_body.was_failure():
         sys.exit(1)
 
     return response.response_body
-
