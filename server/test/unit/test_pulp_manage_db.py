@@ -111,6 +111,18 @@ class TestManageDB(MigrationTest):
         types_db.clean()
 
     @patch('sys.stderr')
+    @patch('os.getuid', return_value=0)
+    def test_wont_run_as_root(self, mock_getuid, mock_stderr):
+        ret = manage.main()
+
+        # make sure the exit code reflect a usage error
+        self.assertEqual(ret, os.EX_USAGE)
+        # make sure a message was written to stderr with appropriate keywords
+        self.assertTrue(mock_stderr.write.call_count > 0)
+        self.assertTrue('root' in mock_stderr.write.call_args_list[0][0][0])
+        self.assertTrue('apache' in mock_stderr.write.call_args_list[0][0][0])
+
+    @patch('sys.stderr')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
