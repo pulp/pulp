@@ -35,6 +35,12 @@ Consumer
 * Fedora 19 & 20
 * CentOS 5 & 6
 
+Admin Client
+
+* RHEL 6
+* Fedora 18 & 19
+* CentOS 6
+
 Prerequisites
 -------------
 
