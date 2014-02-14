@@ -15,6 +15,7 @@ import web
 
 from pulp.common.plugins import distributor_constants
 from pulp.common.tags import action_tag, resource_tag
+from pulp.server.async.tasks import TaskResult
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria

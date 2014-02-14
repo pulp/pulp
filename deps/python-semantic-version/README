@@ -1,0 +1,5 @@
+This is required for pulp-puppet-plugins.
+
+This is not currently in epel or fedora.
+
+There are no known restrictions on what version to use.

@@ -19,6 +19,7 @@ from celery.result import AsyncResult
 import mock
 
 from pulp.devel import dummy_plugins
+from pulp.devel.unit.util import assert_body_matches_async_task
 from pulp.server.db.model.repository import Repo, RepoImporter
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.webservices.controllers.contents import ContentUnitsCollection, ContentUnitsSearch
@@ -321,9 +322,8 @@ class ImportUnitTests(BaseUploadTest):
 
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(body['task_id'], task_id)
-        self.assertNotEqual(body['state'], dispatch_constants.CALL_REJECTED_RESPONSE)
-        exepcted_call_args = ['repo-upload', 'dummy-type', 
+        assert_body_matches_async_task(body, mock_apply_async.return_value)
+        exepcted_call_args = ['repo-upload', 'dummy-type',
                               {'name': 'foo'}, {'stuff': 'bar'}, 
                               upload_id]
         self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])

@@ -17,9 +17,9 @@ import web
 
 from pulp.common.tags import action_tag, resource_tag
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallReport
 from pulp.server.exceptions import MissingResource, InvalidValue, OperationPostponed
 from pulp.server.managers import factory
 from pulp.server.webservices import serialization
@@ -282,8 +282,7 @@ class OrphanCollection(JSONController):
     def DELETE(self):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = orphan.delete_all_orphans.apply_async(tags=tags)
-        call_report = CallReport(call_request_id=async_task.id)
-        raise OperationPostponed(call_report)
+        raise OperationPostponed(async_task)
 
 
 class OrphanTypeSubCollection(JSONController):
@@ -302,8 +301,7 @@ class OrphanTypeSubCollection(JSONController):
     def DELETE(self, content_type):
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = orphan.delete_orphans_by_type.apply_async((content_type,), tags=tags)
-        call_report = CallReport(call_request_id=async_task.id)
-        raise OperationPostponed(call_report)
+        raise OperationPostponed(async_task)
 
 
 class OrphanResource(JSONController):
@@ -320,8 +318,7 @@ class OrphanResource(JSONController):
         ids = [{'content_type_id': content_type, 'unit_id': content_id}]
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = orphan.delete_orphans_by_id.apply_async((ids,), tags=tags)
-        call_report = CallReport(call_request_id=async_task.id)
-        raise OperationPostponed(call_report)
+        raise OperationPostponed(async_task)
 
 
 class DeleteOrphansAction(JSONController):
@@ -331,8 +328,7 @@ class DeleteOrphansAction(JSONController):
         tags = [action_tag('delete_orphans'),
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = orphan.delete_orphans_by_id.apply_async((orphan,), tags=tags)
-        call_report = CallReport(call_request_id=async_task.id)
-        raise OperationPostponed(call_report)
+        raise OperationPostponed(async_task)
 
 
 # wsgi application -------------------------------------------------------------

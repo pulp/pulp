@@ -114,14 +114,6 @@ class PulpWebservicesTests(unittest.TestCase):
         return os.path.join('/mock', *args) + '/'
 
 
-class MockTaskResult(object):
-    """
-    Mock object for returning an async task result
-    """
-    def __init__(self, task_id, ):
-        self.id = task_id
-
-
 class PulpCeleryTaskTests(unittest.TestCase):
     """
     Base class for tests of webservice controllers.  This base is used to work around the

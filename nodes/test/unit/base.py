@@ -191,3 +191,8 @@ class Task:
 
     def __init__(self, task_id=0):
         self.task_id = task_id
+
+
+class TaskResult:
+    def __init__(self, task_id):
+        self.spawned_tasks = [Task(task_id)]
