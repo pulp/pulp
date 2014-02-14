@@ -15,7 +15,6 @@ import web
 
 from pulp.common.plugins import distributor_constants
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server.async.tasks import TaskResult
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
@@ -23,7 +22,7 @@ from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import MissingValue, OperationPostponed
 from pulp.server.managers import factory as managers_factory
-from pulp.server.managers.repo.publish import publish
+from pulp.server.managers.repo.group.publish import publish
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
