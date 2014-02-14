@@ -96,6 +96,9 @@ def main():
     """
     This is the high level entry method. It does logging if any Exceptions are raised.
     """
+    if os.getuid() == 0:
+        print >> sys.stderr, _('This must not be run as root, but as the same user apache runs as.')
+        return os.EX_USAGE
     try:
         options = parse_args()
         _start_logging()
