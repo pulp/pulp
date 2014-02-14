@@ -14,6 +14,7 @@
 from pulp.bindings.search import SearchAPI
 from pulp.bindings.base import PulpAPI
 
+
 class ConsumerGroupAPI(PulpAPI):
     """
     Connection class to access consumer group specific calls
@@ -104,6 +105,7 @@ class ConsumerGroupSearchAPI(SearchAPI):
 
     PATH = 'v2/consumer_groups/search/'
 
+
 class ConsumerGroupActionAPI(SearchAPI):
     """
     Consumer Group Actions.
@@ -158,6 +160,7 @@ class ConsumerGroupActionAPI(SearchAPI):
 
         response = self.server.POST(path, {'criteria':kwargs})
         return response.response_body
+
 
 class ConsumerGroupBindAPI(PulpAPI):
     """
@@ -228,5 +231,3 @@ class ConsumerGroupContentAPI(PulpAPI):
         data = {"units": units,
                 "options": options,}
         return self.server.POST(path, data)
-
-

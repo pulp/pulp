@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
 import httplib
 from gettext import gettext as _
 
@@ -26,6 +25,7 @@ from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.search import SearchController
 
 
 class TaskNotFound(MissingResource):
@@ -42,24 +42,12 @@ class TaskCancelNotImplemented(PulpExecutionException):
         return _('Cancel Not Implemented for Task: %(id)s') % {'id': self.args[0]}
 
 
-# task controllers -------------------------------------------------------------
-
-class TaskCollection(JSONController):
-
-    @auth_required(authorization.READ)
-    def GET(self):
-        valid_filters = ['tag']
-        filters = self.filters(valid_filters)
-        criteria_filters = {}
-        tags = filters.get('tag', [])
-        if tags:
-            criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
-        criteria = Criteria.from_client_input({'filters': criteria_filters})
-        serialized_task_statuses = []
-        for task in TaskStatusManager.find_by_criteria(criteria):
-            task.update(serialization.dispatch.spawned_tasks(task))
-            serialized_task_statuses.append(task)
-        return self.ok(serialized_task_statuses)
+class TaskCollection(SearchController):
+    """
+    Allows authorized API users to search our Task collection.
+    """
+    def __init__(self):
+        super(TaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
 
 
 class TaskResource(JSONController):
@@ -94,13 +82,10 @@ class TaskResource(JSONController):
         serialized_call_report.update(serialization.link.current_link_obj())
         return self.accepted(serialized_call_report)
 
-# web.py applications ----------------------------------------------------------
 
 # mapped to /v2/tasks/
-
 TASK_URLS = (
-    '/', TaskCollection,
+    '/search/', TaskCollection,
     '/([^/]+)/', TaskResource,
 )
-
 task_application = web.application(TASK_URLS, globals())

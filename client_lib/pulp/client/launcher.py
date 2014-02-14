@@ -32,7 +32,6 @@ from pulp.client.extensions.exceptions import ExceptionHandler
 import pulp.client.extensions.loader as extensions_loader
 from pulp.common.config import Config
 
-# -- main execution -----------------------------------------------------------
 
 def main(config_filenames, exception_handler_class=ExceptionHandler):
     """
