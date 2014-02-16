@@ -398,20 +398,15 @@ class Task(CeleryTask, ReservedTaskMixin):
 
 def cancel(task_id):
     """
-    Cancel the task that is represented by the given task_id.
-    This also updates task's state to 'canceled' state.
+    Cancel the task that is represented by the given task_id. This method cancels only the task
+    with given task_id, not the spawned tasks. This also updates task's state to 'canceled'.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
     """
     controller.revoke(task_id, terminate=True)
-    TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
-    # If the task has spawned other tasks, we need to cancel them as well.
-    task_status = TaskStatusManager.find_by_task_id(task_id)
-    spawned_task_ids = task_status.get('spawned_tasks')
-    if spawned_task_ids:
-        for spawned_task_id in spawned_task_ids:
-            cancel(spawned_task_id)
+    TaskStatus.get_collection().find_and_modify({'task_id': task_id},
+                                                {'$set': {'state': dispatch_constants.CALL_CANCELED_STATE}})
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)

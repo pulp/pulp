@@ -50,10 +50,12 @@ class TestTaskResource(base.PulpWebserviceTests):
         TaskStatusManager.create_task_status(task_id, test_queue.name,
                                              state=dispatch_constants.CALL_FINISHED_STATE)
         status, body = self.delete(url % task_id)
-        self.assertEqual(409, status)
+        self.assertEqual(500, status)
         self.assertIsInstance(body, dict)
-        self.assertTrue('Task is already in a complete state' in body['error_message'])
-        self.assertTrue(task_id in body['error_message'])
+        error = body['error']
+        self.assertEquals(error['code'], 'PLP0023')
+        self.assertTrue('Task is already in a complete state' in error['description'])
+        self.assertEquals(error['data'], {'task_id': task_id})
 
     def test_DELETE_non_existing_celery_task(self):
         """
@@ -69,7 +71,7 @@ class TestTaskResource(base.PulpWebserviceTests):
         self.assertTrue(task_id in body['error_message'])
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
-    def test_DELETE_spawned_celery_task(self, revoke):
+    def test_DELETE_doesnt_cancel_spawned_celery_task(self, revoke):
         """
         Test the DELETE() which should cause a revoke call to Celery's Controller.
         This also tests that the spawned tasks are canceled as well.
@@ -87,10 +89,9 @@ class TestTaskResource(base.PulpWebserviceTests):
                                              delta={'spawned_tasks': [spawned_by_spawned_task_id]})
         self.delete(url % task_id)
 
-        self.assertEqual(revoke.call_count, 3)
-        revoke.assert_any_call(task_id, terminate=True)
-        revoke.assert_any_call(spawned_task_id, terminate=True)
-        revoke.assert_any_call(spawned_by_spawned_task_id, terminate=True)
+        self.assertEqual(revoke.call_count, 1)
+        revoke.assert_called_once_with(task_id, terminate=True)
+
 
 class TestTaskCollection(base.PulpWebserviceTests):
     """

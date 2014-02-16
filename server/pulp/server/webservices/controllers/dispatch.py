@@ -17,16 +17,16 @@ from gettext import gettext as _
 
 import web
 
+from pulp.common.error_codes import PLP0023
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.dispatch import constants as dispatch_constants
+from pulp.server.exceptions import MissingResource, PulpCodedException, PulpExecutionException
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-
 
 class TaskNotFound(MissingResource):
 
@@ -90,7 +90,7 @@ class TaskResource(JSONController):
         if task is None:
             raise TaskNotFound(task_id)
         if task['state'] in dispatch_constants.CALL_COMPLETE_STATES:
-            raise TaskCompleteException(task_id)
+            raise PulpCodedException(PLP0023, task_id=task_id)
         tasks.cancel(task_id)
 
         return self.ok(None)
