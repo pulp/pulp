@@ -815,6 +815,22 @@ class TestCancel(PulpServerTests):
         task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
+    def test_cancel_after_task_finished(self, logger, revoke):
+        task_id = '1234abcd'
+        test_queue = AvailableQueue('test_queue')
+        TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
+        tasks.cancel(task_id)
+
+        revoke.assert_called_once_with(task_id, terminate=True)
+        self.assertEqual(logger.info.call_count, 1)
+        log_msg = logger.info.mock_calls[0][1][0]
+        self.assertTrue(task_id in log_msg)
+        self.assertTrue('Task canceled' in log_msg)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
+
 class TestRegisterSigtermHandler(unittest.TestCase):
     """
     Test the register_sigterm_handler() decorator.
