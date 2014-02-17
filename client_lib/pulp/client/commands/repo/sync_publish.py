@@ -281,11 +281,11 @@ class PublishStatusCommand(SyncPublishCommand):
 
 def _get_repo_tasks(context, repo_id, action):
     """
-    Retrieve a list of incomplete Task objects for the given repo_id and action. action must be one of 'sync'
-    or 'publish'.
+    Retrieve a list of incomplete Task objects for the given repo_id and action. action must be one
+    of 'sync' or 'publish'.
 
-    :param context:     The CLI context from Okaara
-    :type  context:     pulp.client.extensions.core.ClientContext
+    :param context: The CLI context from Okaara
+    :type  context: pulp.client.extensions.core.ClientContext
     :param repo_id: The primary key of the repository you wish to limit the Task query to
     :type  repo_id: basestring
     :param action:  One of "sync" or "publish"

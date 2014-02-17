@@ -386,6 +386,9 @@ class PublishStatusCommand(base.PulpClientTests):
     @mock.patch('pulp.client.commands.repo.sync_publish.PublishStatusCommand.poll')
     @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     def test_run(self, mock_search, mock_poll):
+        """
+        Test the run() method when there is one publish Task. It should call poll() on it.
+        """
         repo_id = 'test-repo'
         data = {options.OPTION_REPO_ID.keyword: repo_id}
         # Simulate a task already running
@@ -403,21 +406,25 @@ class PublishStatusCommand(base.PulpClientTests):
         mock_search.assert_called_once_with(filters=expected_search_query)
         mock_poll.assert_called_once_with([task], data)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
+    @mock.patch('pulp.client.commands.repo.sync_publish.PublishStatusCommand.poll')
     @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
-    def test_run_no_status(self, mock_search, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-        }
+    def test_run_no_status(self, mock_search, mock_poll):
+        """
+        Test the run() method when there are no current publish Tasks to attach to. It
+        should query the server and inform the user that there are no publish operations to
+        report.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id}
+        # Simulate there being no publish tasks
+        mock_search.return_value = []
 
-        # No tasks are running
-        mock_search.return_value = responses.Response(200, [])
-
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_search.call_count)
-        self.assertEqual(0, mock_status.call_count)
-        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-responses.Tasks'])
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        self.assertEqual(0, mock_poll.call_count)
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
