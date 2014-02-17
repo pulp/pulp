@@ -22,11 +22,12 @@ import unittest
 
 import mock
 
-from pulp.bindings.responses import Response, Task
+from pulp.bindings import responses
 from pulp.client.commands import options, polling
 from pulp.client.commands.repo import sync_publish as sp
 from pulp.client.extensions.core import TAG_TITLE
 from pulp.client.extensions.extensions import PulpCliOption
+from pulp.common import tags
 from pulp.devel.unit import base
 
 
@@ -99,11 +100,11 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
             sp.NAME_BACKGROUND : False,
         }
         # No tasks are running
-        mock_get.return_value = Response(200, [])
-        # Response from the sync call
+        mock_get.return_value = responses.Response(200, [])
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task = Task(task_data)
-        mock_sync.return_value = Response(202, task)
+        mock_sync.return_value = responses.Response(202, task)
 
         self.command.run(**data)
 
@@ -124,11 +125,11 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
         task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
-        # Response from the sync call
+        mock_get.return_value = responses.Response(200, [task])
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task = Task(task_data)
-        mock_sync.return_value = Response(202, task)
+        mock_sync.return_value = responses.Response(202, task)
 
         self.command.run(**data)
 
@@ -150,12 +151,12 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         }
 
         # No tasks are running
-        mock_get.return_value = Response(200, [])
+        mock_get.return_value = responses.Response(200, [])
 
-        # Response from the sync call
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task = Task(task_data)
-        mock_sync.return_value = Response(202, [task])
+        mock_sync.return_value = responses.Response(202, [task])
 
         # Test
         self.command.run(**data)
@@ -204,7 +205,7 @@ class SyncStatusCommand(base.PulpClientTests):
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
         task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
+        mock_get.return_value = responses.Response(200, [task])
 
         self.command.run(**data)
 
@@ -221,7 +222,7 @@ class SyncStatusCommand(base.PulpClientTests):
         }
 
         # No tasks are running
-        mock_get.return_value = Response(200, [])
+        mock_get.return_value = responses.Response(200, [])
 
         # Test
         self.command.run(**data)
@@ -290,12 +291,12 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         }
 
         # No tasks are running
-        mock_get.return_value = Response(200, [])
+        mock_get.return_value = responses.Response(200, [])
 
-        # Response from the sync call
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task = Task(task_data)
-        mock_publish.return_value = Response(202, task)
+        mock_publish.return_value = responses.Response(202, task)
 
         # Test
         self.command.run(**data)
@@ -317,12 +318,12 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
         task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
+        mock_get.return_value = responses.Response(200, [task])
 
-        # Response from the sync call
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task = Task(task_data)
-        mock_publish.return_value = Response(202, task)
+        mock_publish.return_value = responses.Response(202, task)
 
         # Test
         self.command.run(**data)
@@ -345,12 +346,12 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         }
 
         # No tasks are running
-        mock_get.return_value = Response(200, [])
+        mock_get.return_value = responses.Response(200, [])
 
-        # Response from the sync call
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task = Task(task_data)
-        mock_publish.return_value = Response(202, task)
+        mock_publish.return_value = responses.Response(202, task)
 
         # Test
         self.command.run(**data)
@@ -382,42 +383,41 @@ class PublishStatusCommand(base.PulpClientTests):
         self.assertEqual(self.command.name, 'status')
         self.assertEqual(self.command.description, sp.DESC_PUBLISH_STATUS)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
-    def test_run(self, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-        }
-
+    @mock.patch('pulp.client.commands.repo.sync_publish.PublishStatusCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
+    def test_run(self, mock_search, mock_poll):
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
-        task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
+        task = responses.Task(task_data)
+        mock_search.return_value = [task]
 
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_get.call_count)
-        self.assertEqual(1, mock_status.call_count)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        mock_poll.assert_called_once_with([task], data)
 
     @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
-    def test_run_no_status(self, mock_get, mock_status):
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
+    def test_run_no_status(self, mock_search, mock_status):
         # Setup
         data = {
             options.OPTION_REPO_ID.keyword : 'test-repo',
         }
 
         # No tasks are running
-        mock_get.return_value = Response(200, [])
+        mock_search.return_value = responses.Response(200, [])
 
         # Test
         self.command.run(**data)
 
         # Verify
-        self.assertEqual(1, mock_get.call_count)
+        self.assertEqual(1, mock_search.call_count)
         self.assertEqual(0, mock_status.call_count)
-        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-responses.Tasks'])

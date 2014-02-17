@@ -42,12 +42,29 @@ class TaskCancelNotImplemented(PulpExecutionException):
         return _('Cancel Not Implemented for Task: %(id)s') % {'id': self.args[0]}
 
 
-class TaskCollection(SearchController):
+class SearchTaskCollection(SearchController):
     """
     Allows authorized API users to search our Task collection.
     """
     def __init__(self):
         super(TaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
+
+
+class TaskCollection(JSONController):
+    @auth_required(authorization.READ)
+    def GET(self):
+        valid_filters = ['tag']
+        filters = self.filters(valid_filters)
+        criteria_filters = {}
+        tags = filters.get('tag', [])
+        if tags:
+            criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
+        criteria = Criteria.from_client_input({'filters': criteria_filters})
+        serialized_task_statuses = []
+        for task in TaskStatusManager.find_by_criteria(criteria):
+            task.update(serialization.dispatch.spawned_tasks(task))
+            serialized_task_statuses.append(task)
+        return self.ok(serialized_task_statuses)
 
 
 class TaskResource(JSONController):
@@ -85,7 +102,8 @@ class TaskResource(JSONController):
 
 # mapped to /v2/tasks/
 TASK_URLS = (
-    '/search/', TaskCollection,
+    '/', TaskCollection,
+    '/search/', SearchTaskCollection,
     '/([^/]+)/', TaskResource,
 )
 task_application = web.application(TASK_URLS, globals())
