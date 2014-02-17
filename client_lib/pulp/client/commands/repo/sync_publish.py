@@ -18,7 +18,7 @@ from gettext import gettext as _
 
 from pulp.bindings import responses
 from pulp.client.commands import options, polling
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup
+from pulp.client.extensions.extensions import PulpCliOptionGroup
 from pulp.common import tags
 
 
@@ -85,7 +85,7 @@ class SyncPublishCommand(polling.PollingCommand):
         """
         We don't want any task header printed for this task, so we need to override the superclass behavior.
 
-        :param task: The Task that we don't want to do anything with. Unused. 
+        :param task: The Task that we don't want to do anything with. Unused.
         :type  task: pulp.bindings.responses.Task
         """
         pass
@@ -106,6 +106,13 @@ class RunSyncRepositoryCommand(SyncPublishCommand):
         super(RunSyncRepositoryCommand, self).__init__(name, description, method, context, renderer)
 
     def run(self, **kwargs):
+        """
+        If there are existing sync tasks running, attach to them and display their progress reports. Else,
+        queue a new sync task and display its progress report.
+
+        :param kwargs: The user input
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         background = kwargs[polling.FLAG_BACKGROUND.keyword]
 
@@ -113,7 +120,7 @@ class RunSyncRepositoryCommand(SyncPublishCommand):
 
         # See if an existing sync is running for the repo. If it is, resume
         # progress tracking.
-        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
+        existing_sync_tasks = _get_repo_tasks(self.context, repo_id, 'sync')
 
         if existing_sync_tasks:
             msg = _('A sync task is already in progress for this repository. ')
@@ -134,11 +141,18 @@ class SyncStatusCommand(SyncPublishCommand):
         super(SyncStatusCommand, self).__init__(name, description, method, context, renderer)
 
     def run(self, **kwargs):
+        """
+        Query the server to find any existing and incomplete sync Tasks. If found, attach to them and display
+        their progress. If not, display and error and return.
+
+        :param kwargs: The user input
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
 
         # Load the relevant task group
-        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
+        existing_sync_tasks = _get_repo_tasks(self.context, repo_id, 'sync')
 
         if not existing_sync_tasks:
             msg = _('The repository is not performing any operations')
@@ -149,11 +163,11 @@ class SyncStatusCommand(SyncPublishCommand):
 
 class RunPublishRepositoryCommand(SyncPublishCommand):
     """
-    Base class for repo publish operation. 
-    
+    Base class for repo publish operation.
+
     Requests an immediate publish for a repository. Specified distributor_id is used
     for publishing. If the publish begins (it is not postponed or rejected),
-    the provided renderer will be used to track its progress. The user has the option 
+    the provided renderer will be used to track its progress. The user has the option
     to exit the progress polling or skip it entirely through a flag on the run command.
     List of additional configuration override options can be passed in override_config_options.
     """
@@ -170,7 +184,7 @@ class RunPublishRepositoryCommand(SyncPublishCommand):
         :param distributor_id: Id of a distributor to be used for publishing
         :type distributor_id: str
 
-        :param override_config_options: Additional publish options to be accepted from user. These options will override 
+        :param override_config_options: Additional publish options to be accepted from user. These options will override
             respective options from the default publish config. Each entry should be
             either a PulpCliOption or PulpCliFlag instance
         :type override_config_options: list
@@ -207,11 +221,7 @@ class RunPublishRepositoryCommand(SyncPublishCommand):
 
         # See if an existing publish is running for the repo. If it is, resume
         # progress tracking.
-        repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
-        publish_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
-        repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
-                                            'tags': {'$all': [repo_tag, publish_tag]}}}
-        existing_publish_tasks = self.context.server.task_search.search(**repo_search_criteria)
+        existing_publish_tasks = _get_repo_tasks(self.context, repo_id, 'publish')
 
         if existing_publish_tasks:
             msg = _('A publish task is already in progress for this repository. ')
@@ -250,17 +260,46 @@ class PublishStatusCommand(SyncPublishCommand):
         super(PublishStatusCommand, self).__init__(name, description, method, context, renderer)
 
     def run(self, **kwargs):
+        """
+        Query the server for any incomplete publish operations for the repo given in kwargs. If found, display
+        their progress reports. If not, display and error message and return.
+
+        :param kwargs: The user input
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
 
-        repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
-        publish_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
-        repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
-                                            'tags': {'$all': [repo_tag, publish_tag]}}}
-        existing_publish_tasks = self.context.server.task_search.search(repo_search_criteria).response_body
+        existing_publish_tasks = _get_repo_tasks(self.context, repo_id, 'publish')
 
         if not existing_publish_tasks:
             msg = _('The repository is not performing any operations')
             self.prompt.render_paragraph(msg, tag='no-tasks')
         else:
-            status.display_group_status(self.context, self.renderer, existing_publish_tasks)
+            self.poll(existing_publish_tasks, kwargs)
+
+
+def _get_repo_tasks(context, repo_id, action):
+    """
+    Retrieve a list of incomplete Task objects for the given repo_id and action. action must be one of 'sync'
+    or 'publish'.
+
+    :param context:     The CLI context from Okaara
+    :type  context:     pulp.client.extensions.core.ClientContext
+    :param repo_id: The primary key of the repository you wish to limit the Task query to
+    :type  repo_id: basestring
+    :param action:  One of "sync" or "publish"
+    :type  action:  basestring
+    :return:        A list of Task objects
+    :rtype:         list
+    """
+    repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
+    if action == 'publish':
+        tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
+    elif action == 'sync':
+        tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
+    else:
+        raise Exception('_get_repo_tasks() does not support %(action)s as an action.' % {'action': action})
+    repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
+                                        'tags': {'$all': [repo_tag, tag]}}}
+    return context.server.task_search.search(**repo_search_criteria)
