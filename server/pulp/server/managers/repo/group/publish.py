@@ -37,45 +37,9 @@ logger = logging.getLogger(__name__)
 
 class RepoGroupPublishManager(object):
 
-    def prep_publish(self, call_request, call_report):
-        """
-        Enqueue lifecycle callback that instantiates the group distributor, sets
-        it as a keyword argument, and sets the cancel callback.
-
-        @param call_request:
-        @param call_report:
-        """
-        # grabs keyword argument, but falls back to positional
-        group_id = call_request.kwargs.get('group_id', call_request.args[0])
-        distributor_id = call_request.kwargs.get('distributor_id', call_request.args[1])
-
-        try:
-            distributor, distributor_instance, plugin_config = \
-                self._get_distributor_instance_and_config(group_id, distributor_id)
-        except MissingResource, plugin_exceptions.PluginNotFound:
-            return
-
-        call_request.kwargs['distributor'] = distributor
-        call_request.kwargs['distributor_instance'] = distributor_instance
-        call_request.kwargs['plugin_config'] = plugin_config
-
-        call_request.add_control_hook(dispatch_constants.CALL_CANCEL_CONTROL_HOOK,
-                                      distributor_instance.cancel_publish_group)
-
-    def _get_distributor_instance_and_config(self, group_id, distributor_id):
-        # separated out convenience method for use in testing
-        distributor_manager = manager_factory.repo_group_distributor_manager()
-        distributor = distributor_manager.get_distributor(group_id, distributor_id)
-        distributor_type_id = distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
-        return distributor, distributor_instance, plugin_config
-
     @staticmethod
     def publish(group_id,
                 distributor_id,
-                distributor=None,
-                distributor_instance=None,
-                plugin_config=None,
                 publish_config_override=None):
         """
         Requests the given distributor publish the repository group.
@@ -84,17 +48,13 @@ class RepoGroupPublishManager(object):
         :type  group_id:                str
         :param distributor_id:          identifies the group's distributor
         :type  distributor_id:          str
-        :param distributor:             distributor metadata as associate with the repo group
-        :type distributor:              dict
-        :param distributor_instance:    instance of group's distributor to be used for publishing
-        :type distributor_instance:     GroupDistributor
-        :param plugin_config:           general configuration for the distributor instance
-        :type plugin_config:            dict or None
         :param publish_config_override: values to pass the plugin for this publish call alone
         :type  publish_config_override: dict
         """
-        if None in (distributor, distributor_instance):
-            raise MissingResource(repo_group=group_id, group_distributor=distributor_id)
+        distributor_manager = manager_factory.repo_group_distributor_manager()
+        distributor = distributor_manager.get_distributor(group_id, distributor_id)
+        distributor_type_id = distributor['distributor_type_id']
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
 
         group_query_manager = manager_factory.repo_group_query_manager()
 
@@ -140,8 +100,7 @@ class RepoGroupPublishManager(object):
                      publish_end_timestamp, e, sys.exc_info()[2])
             publish_result_coll.save(result, safe=True)
 
-            logger.exception('Exception caught from plugin during publish call for group [%s]' % group_id)
-            raise PulpExecutionException(e), None, sys.exc_info()[2]
+            raise
 
         publish_end_timestamp = _now_timestamp()
 

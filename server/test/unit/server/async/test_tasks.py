@@ -559,11 +559,14 @@ class TestTaskResult(unittest.TestCase):
 
     def test_serialize(self):
 
-        result = tasks.TaskResult('foo', 'bar', [{'task_id': 'baz'}])
+        async_result = AsyncResult('foo')
+        result = tasks.TaskResult('foo', 'bar', [{'task_id': 'baz'}, async_result, "qux"])
         serialized = result.serialize()
         self.assertEquals(serialized.get('result'), 'foo')
         self.assertEquals(serialized.get('error'), 'bar')
-        self.assertEquals(serialized.get('spawned_tasks'), [{'task_id': 'baz'}])
+        self.assertEquals(serialized.get('spawned_tasks'), [{'task_id': 'baz'},
+                                                            {'task_id': 'foo'},
+                                                            {'task_id': 'qux'}])
 
 
 class TestTask(ResourceReservationTests):

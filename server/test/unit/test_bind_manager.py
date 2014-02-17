@@ -14,6 +14,7 @@
 import base
 
 from pulp.devel import mock_plugins
+from pulp.devel import mock_agent
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -21,7 +22,9 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 
+
 # -- test cases ---------------------------------------------------------------
+
 
 class BindManagerTests(base.PulpAsyncServerTests):
 
@@ -47,6 +50,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         Bind.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
+        mock_agent.install()
 
     def tearDown(self):
         super(BindManagerTests, self).tearDown()
@@ -55,6 +59,7 @@ class BindManagerTests(base.PulpAsyncServerTests):
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         mock_plugins.reset()
+        mock_agent.reset()
 
     def populate(self):
         config = {'key1' : 'value1', 'key2' : None}
