@@ -55,6 +55,7 @@ class Bindings(object):
         self.repo_group = RepoGroupAPI(pulp_connection)
         self.repo_group_actions = RepoGroupActionAPI(pulp_connection)
         self.repo_group_distributor = RepoGroupDistributorAPI(pulp_connection)
+        self.repo_group_distributor_search = RepoGroupSearchAPI(pulp_connection)
         self.repo_group_search = RepoGroupSearchAPI(pulp_connection)
         self.repo_history = RepositoryHistoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
