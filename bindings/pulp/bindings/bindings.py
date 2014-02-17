@@ -66,7 +66,7 @@ class Bindings(object):
         self.role = RoleAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
-        self.task_search = TaskSearchAPI(pulp_connection)
+        self.tasks_search = TaskSearchAPI(pulp_connection)
         self.uploads = UploadAPI(pulp_connection)
         self.user = UserAPI(pulp_connection)
         self.user_search = UserSearchAPI(pulp_connection)

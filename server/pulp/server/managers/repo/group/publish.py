@@ -63,7 +63,7 @@ class RepoGroupPublishManager(object):
         distributor_type_id = distributor['distributor_type_id']
 
         # Assemble the data needed for publish
-        conduit = RepoGroupPublishConduit(group_id, distributor_id)
+        conduit = RepoGroupPublishConduit(group_id, distributor)
 
         call_config = PluginCallConfiguration(plugin_config, distributor['config'],
                                               publish_config_override)
