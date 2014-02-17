@@ -302,4 +302,4 @@ def _get_repo_tasks(context, repo_id, action):
         raise Exception('_get_repo_tasks() does not support %(action)s as an action.' % {'action': action})
     repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
                                         'tags': {'$all': [repo_tag, tag]}}}
-    return context.server.task_search.search(**repo_search_criteria)
+    return context.server.tasks_search.search(**repo_search_criteria)
