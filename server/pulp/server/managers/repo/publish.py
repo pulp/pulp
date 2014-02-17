@@ -82,9 +82,6 @@ class RepoPublishManager(object):
         distributor_instance, distributor_config = RepoPublishManager.\
             _get_distributor_instance_and_config(repo_id, distributor_id)
 
-        if distributor_instance is None:
-            raise MissingResource(repo_id), None, sys.exc_info()[2]
-
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id)
 
@@ -106,13 +103,9 @@ class RepoPublishManager(object):
     @staticmethod
     def _get_distributor_instance_and_config(repo_id, distributor_id):
         repo_distributor_manager = manager_factory.repo_distributor_manager()
-        try:
-            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-            distributor, config = plugin_api.get_distributor_by_id(
-                repo_distributor['distributor_type_id'])
-        except (MissingResource, plugin_exceptions.PluginNotFound):
-            distributor = None
-            config = None
+        repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+        distributor, config = plugin_api.get_distributor_by_id(
+            repo_distributor['distributor_type_id'])
         return distributor, config
 
     @staticmethod
