@@ -67,6 +67,7 @@ DIRS = (
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
+    '/var/lib/pulp/published',
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
@@ -213,6 +214,13 @@ def install(opts):
     # those world readable. Until we fix this, we cannot close #1048297
     os.system('chmod 644 /etc/pki/pulp/ca.*')
     os.system('chown apache:apache /etc/pki/pulp/content')
+
+    # Link between pulp and apache
+    create_link(opts, '/var/lib/pulp/published', '/var/www/pub')
+
+    # Grant apache write access permissions
+    os.system('chmod 3775 /var/www/pub')
+    os.system('chown -R apache:apache /var/lib/pulp/published')
 
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"
