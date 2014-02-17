@@ -67,6 +67,7 @@ DIRS = (
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
     '/usr/lib/pulp/plugins/types',
+    '/var/lib/pulp/published',
     '/var/lib/pulp/uploads',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
