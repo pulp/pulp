@@ -405,7 +405,8 @@ def cancel(task_id):
     :type  task_id: basestring
     """
     controller.revoke(task_id, terminate=True)
-    TaskStatus.get_collection().find_and_modify({'task_id': task_id},
+    TaskStatus.get_collection().find_and_modify({'task_id': task_id,
+                                                 'state': {'$nin': dispatch_constants.CALL_COMPLETE_STATES}},
                                                 {'$set': {'state': dispatch_constants.CALL_CANCELED_STATE}})
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
