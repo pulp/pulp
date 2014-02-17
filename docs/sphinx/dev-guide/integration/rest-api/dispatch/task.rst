@@ -83,7 +83,7 @@ task must be in the *waiting* or *running* states in order to be cancelled.
 
 * :response_code:`200, if the task was successfully cancelled`
 * :response_code:`404, if the task is not found`
-* :response_code:`409, if the task is already in a complete state`
+* :response_code:`500, if the task is already in a complete state`
 
 | :return:`null`
 
