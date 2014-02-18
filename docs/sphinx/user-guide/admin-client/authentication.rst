@@ -367,35 +367,43 @@ the ``pulp-admin auth user`` commands, documented above in `Users`_.
 
 .. note:
 
-    Enabling Apache preauthentication *disables* the built-in user
-    database, so you will not be able to authenticate as ``admin``
-    after you have enabled it.  It's important that you configure a
-    user in the ``super-users`` role *before* you enable Apache
-    preauthentication.
+    Enabling Apache preauthentication as described below *disables*
+    the built-in user database, so you will not be able to
+    authenticate as ``admin`` after you have enabled it.  It's
+    important that you configure a user in the ``super-users`` role
+    *before* you enable Apache preauthentication.  LDAP authentication
+    is also disabled; OAuth will continue to work.
 
-To set up Apache authentication, add a stanza like the following to
-``/etc/httpd/conf.d/pulp.conf``::
+To set up Apache authentication, modify the ``<Files
+webservices.wsgi>`` stanza in ``/etc/httpd/conf.d/pulp.conf`` to
+resemble the following::
 
-        <Location "/pulp/api/v2/actions/login">
-            Order allow,deny
-            Allow from all
-            AuthType basic
-            AuthBasicProvider ldap
-            AuthName "Pulp"
-            AuthLDAPURL "ldaps://ad.example.com?sAMAccountName"
-            AuthLDAPBindDN "cn=pulp,..."
-            AuthLDAPBindPassword "adpassword"
-            AuthLDAPRemoteUserAttribute sAMAccountName
-            AuthzLDAPAuthoritative On
-            Require valid-user
-        </Location>
+    <Files webservices.wsgi>
+        # pass everything that isn't a Basic auth request through to Pulp
+        SetEnvIf ^Authorization$ "Basic.*" USE_APACHE_AUTH=1
+        Order allow,deny
+        Allow from env=!USE_APACHE_AUTH
+        Satisfy Any
+
+        # configure basic auth
+        AuthType basic
+        AuthBasicProvider ldap
+        AuthName "Pulp"
+        AuthLDAPURL "ldaps://ad.example.com?sAMAccountName"
+        AuthLDAPBindDN "cn=pulp,..."
+        AuthLDAPBindPassword "adpassword"
+        AuthLDAPRemoteUserAttribute sAMAccountName
+        AuthzLDAPAuthoritative On
+        Require valid-user
+
+        # Standard Pulp REST API configuration goes here...
+    </Files>
 
 This example performs LDAP authentication, with some options that
 aren't supported in Pulp itself.  This could also be used to enforce
 LDAP authorization only for members of a particular group, or many
 other very flexible options.  A wide range of other authentication
 options are available through Apache, including Kerberos, PAM,
-arbitrary databases, and many more.
-
-Note that this only secures the login page; all further authentication
-is delegated to Pulp's persistent certificate authentication.
+arbitrary databases, and many more.  Note that if you are using
+something other than Basic authentication (Kerberos, for example), you
+will need to change the condition in ``SetEnvIf`` appropriately.
