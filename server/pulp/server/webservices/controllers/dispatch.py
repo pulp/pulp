@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
 import httplib
 from gettext import gettext as _
 
@@ -26,6 +25,7 @@ from pulp.server.exceptions import MissingResource, PulpExecutionException
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.search import SearchController
 
 
 class TaskNotFound(MissingResource):
@@ -42,10 +42,15 @@ class TaskCancelNotImplemented(PulpExecutionException):
         return _('Cancel Not Implemented for Task: %(id)s') % {'id': self.args[0]}
 
 
-# task controllers -------------------------------------------------------------
+class SearchTaskCollection(SearchController):
+    """
+    Allows authorized API users to search our Task collection.
+    """
+    def __init__(self):
+        super(SearchTaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
+
 
 class TaskCollection(JSONController):
-
     @auth_required(authorization.READ)
     def GET(self):
         valid_filters = ['tag']
@@ -94,13 +99,11 @@ class TaskResource(JSONController):
         serialized_call_report.update(serialization.link.current_link_obj())
         return self.accepted(serialized_call_report)
 
-# web.py applications ----------------------------------------------------------
 
 # mapped to /v2/tasks/
-
 TASK_URLS = (
     '/', TaskCollection,
+    '/search/', SearchTaskCollection,
     '/([^/]+)/', TaskResource,
 )
-
 task_application = web.application(TASK_URLS, globals())

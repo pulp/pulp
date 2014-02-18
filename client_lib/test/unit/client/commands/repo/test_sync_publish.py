@@ -22,11 +22,12 @@ import unittest
 
 import mock
 
-from pulp.bindings.responses import Response, Task
+from pulp.bindings import responses
 from pulp.client.commands import options, polling
 from pulp.client.commands.repo import sync_publish as sp
 from pulp.client.extensions.core import TAG_TITLE
 from pulp.client.extensions.extensions import PulpCliOption
+from pulp.common import tags
 from pulp.devel.unit import base
 
 
@@ -58,7 +59,7 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the progress() method with a progress_report.
         """
         progress_report = {'some': 'data'}
-        task = Task({'progress_report': progress_report})
+        task = responses.Task({'progress_report': progress_report})
         spinner = mock.MagicMock()
 
         self.command.progress(task, spinner)
@@ -69,7 +70,7 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         """
         Test the progress() method when the Task does not have any progress_report.
         """
-        task = Task({})
+        task = responses.Task({})
         spinner = mock.MagicMock()
 
         self.command.progress(task, spinner)
@@ -79,7 +80,7 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure all of the expected options are there
         found_option_keywords = set([o.keyword for o in self.command.options])
-        expected_option_keywords = set([options.OPTION_REPO_ID.keyword, sp.NAME_BACKGROUND])
+        expected_option_keywords = set([options.OPTION_REPO_ID.keyword, polling.FLAG_BACKGROUND.keyword])
         self.assertEqual(found_option_keywords, expected_option_keywords)
 
         # Ensure the correct method is wired up
@@ -90,82 +91,87 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.description, sp.DESC_SYNC_RUN)
 
     @mock.patch('pulp.client.commands.repo.sync_publish.RunSyncRepositoryCommand.poll')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     @mock.patch('pulp.bindings.repository.RepositoryActionsAPI.sync')
-    def test_run(self, mock_sync, mock_get, poll):
+    def test_run(self, mock_sync, mock_search, poll):
+        """
+        Test the run() method when there is not an existing sync Task on the server.
+        """
         repo_id = 'test-repo'
-        data = {
-            options.OPTION_REPO_ID.keyword : repo_id,
-            sp.NAME_BACKGROUND : False,
-        }
+        data = {options.OPTION_REPO_ID.keyword : repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # No tasks are running
-        mock_get.return_value = Response(200, [])
-        # Response from the sync call
+        mock_search.return_value = []
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
-        task = Task(task_data)
-        mock_sync.return_value = Response(202, task)
+        task = responses.Task(task_data)
+        mock_sync.return_value = responses.Response(202, task)
 
         self.command.run(**data)
 
+        mock_sync.assert_called_once_with(repo_id, None)
         sync_tasks = poll.mock_calls[0][1][0]
-        poll.assert_called_once_with(
-            sync_tasks, {polling.FLAG_BACKGROUND.keyword: False, options.OPTION_REPO_ID.keyword: repo_id})
+        poll.assert_called_once_with(sync_tasks, data)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_SYNC_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE])
 
     @mock.patch('pulp.client.commands.repo.sync_publish.RunSyncRepositoryCommand.poll')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     @mock.patch('pulp.bindings.repository.RepositoryActionsAPI.sync')
-    def test_run_already_in_progress(self, mock_sync, mock_get, poll):
+    def test_run_already_in_progress(self, mock_sync, mock_search, poll):
+        """
+        Test the run() method when there is an existing sync Task on the server.
+        """
         repo_id = 'test-repo'
-        data = {
-            options.OPTION_REPO_ID.keyword : repo_id,
-            sp.NAME_BACKGROUND : False,
-        }
+        data = {options.OPTION_REPO_ID.keyword : repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
-        task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
-        # Response from the sync call
-        task_data = copy.copy(CALL_REPORT_TEMPLATE)
-        task = Task(task_data)
-        mock_sync.return_value = Response(202, task)
+        task = responses.Task(task_data)
+        mock_search.return_value = [task]
 
         self.command.run(**data)
 
+        self.assertEqual(mock_sync.call_count, 0)
         sync_tasks = poll.mock_calls[0][1][0]
-        poll.assert_called_once_with(
-            sync_tasks, {polling.FLAG_BACKGROUND.keyword: False, options.OPTION_REPO_ID.keyword: repo_id})
-        tags = self.prompt.get_write_tags()
-        self.assertEqual(2, len(tags))
-        self.assertEqual(tags[1], 'in-progress')
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_SYNC_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        poll.assert_called_once_with(sync_tasks, data)
+        write_tags = self.prompt.get_write_tags()
+        self.assertEqual(2, len(write_tags))
+        self.assertEqual(write_tags[1], 'in-progress')
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
+    @mock.patch('pulp.client.commands.repo.sync_publish.RunSyncRepositoryCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     @mock.patch('pulp.bindings.repository.RepositoryActionsAPI.sync')
-    def test_run_background(self, mock_sync, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-            sp.NAME_BACKGROUND : True,
-        }
-
+    def test_run_background(self, mock_sync, mock_search, mock_poll):
+        """
+        Test the run() method when the --bg flag is set.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword : repo_id, polling.FLAG_BACKGROUND.keyword: True}
         # No tasks are running
-        mock_get.return_value = Response(200, [])
-
-        # Response from the sync call
+        mock_search.return_value = []
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
-        task = Task(task_data)
-        mock_sync.return_value = Response(202, [task])
+        task = responses.Task(task_data)
+        mock_sync.return_value = responses.Response(202, task)
 
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(0, mock_status.call_count) # since its background
-
-        tags = self.prompt.get_write_tags()
-        self.assertEqual(2, len(tags))
-        self.assertEqual(tags[1], 'background')
+        mock_sync.assert_called_once_with(repo_id, None)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_SYNC_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        mock_poll.assert_called_once_with([task], data)
 
     def test_task_header(self):
         """
@@ -195,40 +201,47 @@ class SyncStatusCommand(base.PulpClientTests):
         self.assertEqual(self.command.description, sp.DESC_SYNC_STATUS)
 
     @mock.patch('pulp.client.commands.repo.sync_publish.SyncStatusCommand.poll')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
-    def test_run(self, mock_get, poll):
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
+    def test_run(self, mock_search, poll):
+        """
+        Test the run() method when the server has one incomplete sync task.
+        """
         repo_id = 'test-repo'
-        data = {
-            options.OPTION_REPO_ID.keyword : repo_id,
-        }
+        data = {options.OPTION_REPO_ID.keyword: repo_id}
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
-        task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
+        task = responses.Task(task_data)
+        mock_search.return_value = [task]
 
         self.command.run(**data)
 
-        self.assertEqual(1, mock_get.call_count)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_SYNC_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
         sync_tasks = poll.mock_calls[0][1][0]
-        poll.assert_called_once_with(sync_tasks, {options.OPTION_REPO_ID.keyword: repo_id})
+        poll.assert_called_once_with(sync_tasks, data)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_sync_tasks')
-    def test_run_no_status(self, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-        }
-
+    @mock.patch('pulp.client.commands.repo.sync_publish.PublishStatusCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
+    def test_run_no_status(self, mock_search, mock_poll):
+        """
+        Test run() when there are no sync_tasks on the server.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id}
         # No tasks are running
-        mock_get.return_value = Response(200, [])
+        mock_search.return_value = []
 
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_get.call_count)
-        self.assertEqual(0, mock_status.call_count)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_SYNC_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        self.assertEqual(0, mock_poll.call_count)
         self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
 
 
@@ -266,7 +279,7 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         found_option_keywords = set([o.keyword for o in self.command.options])
         found_group_option_keywords = set([o.keyword for o in self.command.option_groups[0].options])
 
-        expected_option_keywords = set([options.OPTION_REPO_ID.keyword, sp.NAME_BACKGROUND])
+        expected_option_keywords = set([options.OPTION_REPO_ID.keyword, polling.FLAG_BACKGROUND.keyword])
         expected_group_option_keywords = set([self.sample_option1.keyword, self.sample_option2.keyword])
 
         self.assertEqual(found_option_keywords, expected_option_keywords)
@@ -279,88 +292,86 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
         self.assertEqual(self.command.name, 'run')
         self.assertEqual(self.command.description, sp.DESC_PUBLISH_RUN)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_task_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
+    @mock.patch('pulp.client.commands.repo.sync_publish.RunPublishRepositoryCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     @mock.patch('pulp.bindings.repository.RepositoryActionsAPI.publish')
-    def test_run(self, mock_publish, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-            sp.NAME_BACKGROUND : False,
-        }
-
+    def test_run(self, mock_publish, mock_search, mock_poll):
+        """
+        Test the run() method when there are no incomplete publish tasks in queue.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # No tasks are running
-        mock_get.return_value = Response(200, [])
-
-        # Response from the sync call
+        mock_search.return_value = []
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
-        task = Task(task_data)
-        mock_publish.return_value = Response(202, task)
+        task = responses.Task(task_data)
+        mock_publish.return_value = responses.Response(202, task)
 
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_status.call_count)
+        mock_publish.assert_called_once_with(repo_id, self.command.distributor_id, None)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        mock_poll.assert_called_once_with([task], data)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_task_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
+    @mock.patch('pulp.client.commands.repo.sync_publish.RunPublishRepositoryCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     @mock.patch('pulp.bindings.repository.RepositoryActionsAPI.publish')
-    def test_run_already_in_progress(self, mock_publish, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-            sp.NAME_BACKGROUND : False,
-        }
-
+    def test_run_already_in_progress(self, mock_publish, mock_search, mock_poll):
+        """
+        Test the run() method when thre is already an incomplete publish operation.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
-        task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
+        task = responses.Task(task_data)
+        mock_search.return_value = [task]
 
-        # Response from the sync call
-        task_data = copy.copy(CALL_REPORT_TEMPLATE)
-        task = Task(task_data)
-        mock_publish.return_value = Response(202, task)
-
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_status.call_count)
+        # Publish shouldn't get called again since it's already running
+        self.assertEqual(mock_publish.call_count, 0)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        mock_poll.assert_called_once_with([task], data)
+        write_tags = self.prompt.get_write_tags()
+        self.assertEqual(2, len(write_tags))
+        self.assertEqual(write_tags[1], 'in-progress')
 
-        tags = self.prompt.get_write_tags()
-        self.assertEqual(2, len(tags))
-        self.assertEqual(tags[1], 'in-progress')
-
-    @mock.patch('pulp.client.commands.repo.status.status.display_task_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
+    @mock.patch('pulp.client.commands.repo.sync_publish.RunPublishRepositoryCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
     @mock.patch('pulp.bindings.repository.RepositoryActionsAPI.publish')
-    def test_run_background(self, mock_publish, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-            sp.NAME_BACKGROUND : True,
-        }
-
+    def test_run_background(self, mock_publish, mock_search, mock_poll):
+        """
+        Test run() with the --bg flag is set.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # No tasks are running
-        mock_get.return_value = Response(200, [])
-
-        # Response from the sync call
+        mock_search.return_value = []
+        # responses.Response from the sync call
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
-        task = Task(task_data)
-        mock_publish.return_value = Response(202, task)
+        task = responses.Task(task_data)
+        mock_publish.return_value = responses.Response(202, task)
 
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(0, mock_status.call_count) # since its background
-
-        tags = self.prompt.get_write_tags()
-        self.assertEqual(2, len(tags))
-        self.assertEqual(tags[1], 'background')
+        mock_publish.assert_called_once_with(repo_id, self.command.distributor_id, None)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        mock_poll.assert_called_once_with([task], data)
 
 
 class PublishStatusCommand(base.PulpClientTests):
@@ -382,42 +393,48 @@ class PublishStatusCommand(base.PulpClientTests):
         self.assertEqual(self.command.name, 'status')
         self.assertEqual(self.command.description, sp.DESC_PUBLISH_STATUS)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
-    def test_run(self, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-        }
-
+    @mock.patch('pulp.client.commands.repo.sync_publish.PublishStatusCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
+    def test_run(self, mock_search, mock_poll):
+        """
+        Test the run() method when there is one publish Task. It should call poll() on it.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
-        task = Task(task_data)
-        mock_get.return_value = Response(200, [task])
+        task = responses.Task(task_data)
+        mock_search.return_value = [task]
 
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_get.call_count)
-        self.assertEqual(1, mock_status.call_count)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        mock_poll.assert_called_once_with([task], data)
 
-    @mock.patch('pulp.client.commands.repo.status.status.display_group_status')
-    @mock.patch('pulp.bindings.tasks.TasksAPI.get_repo_publish_tasks')
-    def test_run_no_status(self, mock_get, mock_status):
-        # Setup
-        data = {
-            options.OPTION_REPO_ID.keyword : 'test-repo',
-        }
+    @mock.patch('pulp.client.commands.repo.sync_publish.PublishStatusCommand.poll')
+    @mock.patch('pulp.bindings.tasks.TaskSearchAPI.search')
+    def test_run_no_status(self, mock_search, mock_poll):
+        """
+        Test the run() method when there are no current publish Tasks to attach to. It
+        should query the server and inform the user that there are no publish operations to
+        report.
+        """
+        repo_id = 'test-repo'
+        data = {options.OPTION_REPO_ID.keyword: repo_id}
+        # Simulate there being no publish tasks
+        mock_search.return_value = []
 
-        # No tasks are running
-        mock_get.return_value = Response(200, [])
-
-        # Test
         self.command.run(**data)
 
-        # Verify
-        self.assertEqual(1, mock_get.call_count)
-        self.assertEqual(0, mock_status.call_count)
+        expected_search_query = {
+            'state': {'$nin': responses.COMPLETED_STATES},
+            'tags': {'$all': [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                              tags.action_tag(tags.ACTION_PUBLISH_TYPE)]}}
+        mock_search.assert_called_once_with(filters=expected_search_query)
+        self.assertEqual(0, mock_poll.call_count)
         self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
