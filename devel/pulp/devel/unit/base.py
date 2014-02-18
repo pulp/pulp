@@ -25,6 +25,7 @@ from pulp.client.extensions.core import ClientContext, PulpPrompt, PulpCli
 from pulp.client.extensions.exceptions import ExceptionHandler
 
 from pulp.common.config import Config
+from pulp.server.db import connection
 
 # base unittest class ----------------------------------------------------------
 
@@ -64,6 +65,7 @@ class PulpWebservicesTests(unittest.TestCase):
     """
 
     def setUp(self):
+        connection.initialize()
         self.patch1 = mock.patch('pulp.server.webservices.controllers.decorators.'
                                  'check_preauthenticated')
         self.patch2 = mock.patch('pulp.server.webservices.controllers.decorators.'
