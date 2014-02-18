@@ -33,15 +33,6 @@ class TaskNotFound(MissingResource):
     def __str__(self):
         return _('Task Not Found: %(id)s') % {'id': self.args[0]}
 
-
-class TaskCompleteException(PulpExecutionException):
-
-    http_status_code = httplib.CONFLICT
-
-    def __str__(self):
-        return _('Task is already in a complete state: %(id)s') % {'id': self.args[0]}
-
-
 # task controllers -------------------------------------------------------------
 
 class TaskCollection(JSONController):
