@@ -18,6 +18,7 @@ from .... import base
 from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
 from pulp.plugins.model import PublishReport
+from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server.async import tasks
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 from pulp.server.exceptions import InvalidValue, PulpExecutionException
@@ -204,11 +205,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         mock_plugins.DISTRIBUTOR_MAPPINGS.pop('mock-distributor')
 
         # Test
-        try:
-            self.publish_manager.publish('repo', 'dist-1', None)
-            self.fail('Expected exception was not raised')
-        except publish_manager.MissingResource, e:
-            self.assertTrue('repo' == e.resources['resource_id'])
+        self.assertRaises(PluginNotFound, self.publish_manager.publish, 'repo', 'dist-1', None)
 
     def test_publish_bad_database(self):
         """
