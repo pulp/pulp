@@ -47,7 +47,7 @@ class SearchTaskCollection(SearchController):
     Allows authorized API users to search our Task collection.
     """
     def __init__(self):
-        super(TaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
+        super(SearchTaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
 
 
 class TaskCollection(JSONController):
