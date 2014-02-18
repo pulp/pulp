@@ -23,15 +23,10 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.exceptions import MissingResource, PulpCodedException, PulpExecutionException
+from pulp.server.exceptions import MissingResource, PulpCodedException
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-
-class TaskNotFound(MissingResource):
-
-    def __str__(self):
-        return _('Task Not Found: %(id)s') % {'id': self.args[0]}
 
 # task controllers -------------------------------------------------------------
 
@@ -59,7 +54,7 @@ class TaskResource(JSONController):
     def GET(self, task_id):
         task = TaskStatusManager.find_by_task_id(task_id)
         if task is None:
-            raise TaskNotFound(task_id)
+            raise MissingResource(task_id)
         else:
             link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
             task.update(link)
@@ -73,17 +68,8 @@ class TaskResource(JSONController):
 
         :param task_id: The ID of the task you wish to cancel
         :type  task_id: basestring
-
-        :raises TaskNotFound: if a task with given task_id does not exist
-        :raises TaskCompleteException: if given task is already in a complete state
         """
-        task = TaskStatusManager.find_by_task_id(task_id)
-        if task is None:
-            raise TaskNotFound(task_id)
-        if task['state'] in dispatch_constants.CALL_COMPLETE_STATES:
-            raise PulpCodedException(PLP0023, task_id=task_id)
         tasks.cancel(task_id)
-
         return self.ok(None)
 
 # web.py applications ----------------------------------------------------------

@@ -24,7 +24,7 @@ import celery
 import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
-from pulp.server.exceptions import PulpException
+from pulp.server.exceptions import PulpException, PulpCodedException
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
@@ -821,13 +821,8 @@ class TestCancel(PulpServerTests):
         task_id = '1234abcd'
         test_queue = AvailableQueue('test_queue')
         TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
-        tasks.cancel(task_id)
+        self.assertRaises(PulpCodedException, tasks.cancel, task_id)
 
-        revoke.assert_called_once_with(task_id, terminate=True)
-        self.assertEqual(logger.info.call_count, 1)
-        log_msg = logger.info.mock_calls[0][1][0]
-        self.assertTrue(task_id in log_msg)
-        self.assertTrue('Task canceled' in log_msg)
         task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
 

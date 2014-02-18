@@ -67,7 +67,7 @@ class TestTaskResource(base.PulpWebserviceTests):
 
         self.assertEqual(404, status)
         self.assertIsInstance(body, dict)
-        self.assertTrue('Task Not Found' in body['error_message'])
+        self.assertTrue('Missing resource' in body['error_message'])
         self.assertTrue(task_id in body['error_message'])
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
@@ -213,5 +213,5 @@ class TestTaskCollection(base.PulpWebserviceTests):
         # Validate
         self.assertEqual(404, status)
         self.assertIsInstance(body, dict)
-        self.assertTrue('Task Not Found' in body['error_message'])
+        self.assertTrue('Missing resource' in body['error_message'])
         self.assertTrue(non_existing_task_id in body['error_message'])
