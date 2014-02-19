@@ -7,6 +7,10 @@ Pull Requests
 You have some commits in a branch, and you're ready to merge. The Pulp Team makes
 use of pull requests for all but the most trivial contributions.
 
+Before you make a pull request, please make sure your name is in our AUTHORS file
+found at the root of each of our repositories. That way you can prove to all your
+friends that you contributed to Pulp.
+
 On the GitHub page for the repo where your development branch lives, there will be
 a "Pull Request" button. Click it. From there you will choose the source and
 destination branches.

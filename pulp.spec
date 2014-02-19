@@ -115,6 +115,8 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
+mkdir -p %{buildroot}/%{_var}/www
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
@@ -151,6 +153,9 @@ cp server/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
 
 # Pulp Web Services
 cp -R server/srv %{buildroot}
+
+# Web Content
+ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
 
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
@@ -270,6 +275,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %defattr(-,apache,apache,-)
 %{_var}/lib/%{name}/
 %dir %{_var}/log/%{name}
+%{_var}/www/pub
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE
