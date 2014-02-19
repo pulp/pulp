@@ -11,36 +11,16 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
-import httplib
-from gettext import gettext as _
-
 import web
 
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.dispatch import call, constants as dispatch_constants, factory as dispatch_factory
-from pulp.server.exceptions import MissingResource, PulpExecutionException
+from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-
-
-class TaskNotFound(MissingResource):
-
-    def __str__(self):
-        return _('Task Not Found: %(id)s') % {'id': self.args[0]}
-
-
-class TaskCancelNotImplemented(PulpExecutionException):
-
-    http_status_code = httplib.NOT_IMPLEMENTED
-
-    def __str__(self):
-        return _('Cancel Not Implemented for Task: %(id)s') % {'id': self.args[0]}
-
 
 # task controllers -------------------------------------------------------------
 
@@ -68,7 +48,7 @@ class TaskResource(JSONController):
     def GET(self, task_id):
         task = TaskStatusManager.find_by_task_id(task_id)
         if task is None:
-            raise TaskNotFound(task_id)
+            raise MissingResource(task_id)
         else:
             link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
             task.update(link)
@@ -76,23 +56,15 @@ class TaskResource(JSONController):
             return self.ok(task)
 
     @auth_required(authorization.DELETE)
-    def DELETE(self, call_request_id):
-        coordinator = dispatch_factory.coordinator()
-        result = coordinator.cancel_call(call_request_id)
-        if result is None:
-            # The coordinator doesn't know about the task, but Celery might. Let's tell Celery to
-            # cancel it
-            tasks.cancel(call_request_id)
-            call_report = call.CallReport(call_request_id=call_request_id,
-                                          state=dispatch_constants.CALL_CANCELED_STATE)
-        elif result is False:
-            raise TaskCancelNotImplemented(call_request_id)
-        else:
-            # if we've gotten here, the call request *should* exist
-            call_report = coordinator.find_call_reports(call_request_id=call_request_id)[0]
-        serialized_call_report = call_report.serialize()
-        serialized_call_report.update(serialization.link.current_link_obj())
-        return self.accepted(serialized_call_report)
+    def DELETE(self, task_id):
+        """
+        Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+
+        :param task_id: The ID of the task you wish to cancel
+        :type  task_id: basestring
+        """
+        tasks.cancel(task_id)
+        return self.ok(None)
 
 # web.py applications ----------------------------------------------------------
 

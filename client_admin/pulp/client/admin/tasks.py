@@ -147,6 +147,7 @@ class BaseTasksSection(PulpCliSection):
 
         try:
             self.context.server.tasks.cancel_task(task_id)
+            self.context.prompt.render_success_message(_('Task cancel is successfully initiated.'))
         except PulpServerException, e:
 
             # A 501 has a bit of a special meaning here that's not used in the

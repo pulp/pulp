@@ -21,9 +21,10 @@ from celery.app import control, defaults
 from celery.result import AsyncResult
 
 from pulp.common import dateutils
+from pulp.common.error_codes import PLP0023
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.exceptions import PulpException
+from pulp.server.exceptions import PulpException, MissingResource, PulpCodedException
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
@@ -435,21 +436,26 @@ class Task(CeleryTask, ReservedTaskMixin):
 
 def cancel(task_id):
     """
-    Cancel the task that is represented by the given task_id, unless it is already in a complete state.
-    This also updates task's state to 'canceled' state.
+    Cancel the task that is represented by the given task_id. This method cancels only the task
+    with given task_id, not the spawned tasks. This also updates task's state to 'canceled'.
 
     :param task_id: The ID of the task you wish to cancel
     :type  task_id: basestring
+
+    :raises MissingResource: if a task with given task_id does not exist
+    :raises PulpCodedException: if given task is already in a complete state
     """
     task_status = TaskStatusManager.find_by_task_id(task_id)
-    if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
-        controller.revoke(task_id, terminate=True)
-        TaskStatusManager.update_task_status(task_id, {'state': dispatch_constants.CALL_CANCELED_STATE})
-        msg = _('Task canceled: %(task_id)s.')
-        msg = msg % {'task_id': task_id}
-    else:
-        msg = _('Task [%(task_id)s] cannot be canceled since it is already in a complete state.')
-        msg = msg % {'task_id': task_id}
+    if task_status is None:
+        raise MissingResource(task_id)
+    if task_status['state'] in dispatch_constants.CALL_COMPLETE_STATES:
+        raise PulpCodedException(PLP0023, task_id=task_id)
+    controller.revoke(task_id, terminate=True)
+    TaskStatus.get_collection().find_and_modify({'task_id': task_id,
+                                                 'state': {'$nin': dispatch_constants.CALL_COMPLETE_STATES}},
+                                                {'$set': {'state': dispatch_constants.CALL_CANCELED_STATE}})
+    msg = _('Task canceled: %(task_id)s.')
+    msg = msg % {'task_id': task_id}
     logger.info(msg)
 
 

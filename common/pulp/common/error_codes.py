@@ -78,4 +78,5 @@ PLP0021 = Error("PLP0021",
 PLP0022 = Error("PLP0022",
                 _("Errors occurred uninstalling content for the consumer group %(group_id)s."),
                 ['group_id'])
+PLP0023 = Error("PLP0023", _("Task is already in a complete state: %(task_id)s"), ['task_id'])
 
