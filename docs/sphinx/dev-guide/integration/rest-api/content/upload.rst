@@ -94,7 +94,7 @@ Once the uploaded file has been successfully imported and no further operations
 are desired, the caller should delete the upload request from the server.
 
 | :method:`delete`
-| :path:`/v2/content/uploads/<upload_id>`
+| :path:`/v2/content/uploads/<upload_id>/`
 | :permission:`delete`
 | :param_list:`delete` None
 | :response_list:`_`
@@ -124,3 +124,4 @@ Returns an array of IDs for all upload requests currently in the server.
  {
   "upload_ids': ["cfb1fed0-752b-439e-aa68-fba68eababa3"]
  }
+
