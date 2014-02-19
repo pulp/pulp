@@ -303,7 +303,11 @@ class PollingCommand(PulpCliCommand):
         """
         msg = _('Task Failed')
         self.prompt.render_failure_message(msg, tag='failed')
-        self.prompt.render_failure_message(task.exception, tag='failed_exception')
+        if task and task.exception:
+            self.prompt.render_failure_message(task.exception, tag='failed_exception')
+        elif task and task.error and 'description' in task.error:
+            self.context.prompt.render_failure_message(task.error['description'],
+                                                       tag='error_message')
 
     def cancelled(self, task):
         """

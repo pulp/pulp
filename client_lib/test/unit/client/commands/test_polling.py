@@ -305,7 +305,7 @@ class PollingCommandTests(base.PulpClientTests):
 
         expected_tags = ['abort',
                          'header', 'delayed-spinner', 'running-spinner', 'succeeded', # states_1
-                         'header', 'delayed-spinner', 'running-spinner', 'failed', 'failed_exception', # states_2
+                         'header', 'delayed-spinner', 'running-spinner', 'failed', # states_2
                          ]
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 

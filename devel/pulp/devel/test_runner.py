@@ -38,7 +38,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
     parser = argparse.ArgumentParser()
     parser.add_argument('--xunit-file')
     parser.add_argument('--with-xunit', action='store_true')
-    parser.add_argument('--disable-coverage', action='store_true')
+    parser.add_argument('--enable-coverage', action='store_true', default=False)
     parser.add_argument('--with-xcoverage', action='store_true')
     parser.add_argument('--xcoverage-file')
     parser.add_argument('-x', '--failfast', action='store_true')
@@ -49,7 +49,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
         'nosetests',
     ]
 
-    if not arguments.disable_coverage:
+    if arguments.enable_coverage:
         if arguments.with_xcoverage:
             args.extend(['--with-xcoverage'])
         else:

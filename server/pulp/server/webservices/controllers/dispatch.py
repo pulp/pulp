@@ -10,6 +10,8 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from gettext import gettext as _
+import httplib
 
 import web
 
@@ -21,11 +23,24 @@ from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.search import SearchController
 
-# task controllers -------------------------------------------------------------
+
+class TaskNotFound(MissingResource):
+
+    def __str__(self):
+        return _('Task Not Found: %(id)s') % {'id': self.args[0]}
+
+
+class SearchTaskCollection(SearchController):
+    """
+    Allows authorized API users to search our Task collection.
+    """
+    def __init__(self):
+        super(SearchTaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
+
 
 class TaskCollection(JSONController):
-
     @auth_required(authorization.READ)
     def GET(self):
         valid_filters = ['tag']
@@ -66,13 +81,11 @@ class TaskResource(JSONController):
         tasks.cancel(task_id)
         return self.ok(None)
 
-# web.py applications ----------------------------------------------------------
 
 # mapped to /v2/tasks/
-
 TASK_URLS = (
     '/', TaskCollection,
+    '/search/', SearchTaskCollection,
     '/([^/]+)/', TaskResource,
 )
-
 task_application = web.application(TASK_URLS, globals())

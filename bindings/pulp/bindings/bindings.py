@@ -19,7 +19,7 @@ from pulp.bindings.repository import *
 from pulp.bindings.consumer_groups import *
 from pulp.bindings.consumer import *
 from pulp.bindings.server_info import ServerInfoAPI
-from pulp.bindings.tasks import TasksAPI, TaskGroupsAPI
+from pulp.bindings.tasks import TasksAPI, TaskSearchAPI
 from pulp.bindings.upload import UploadAPI
 from pulp.bindings.auth import *
 
@@ -55,6 +55,7 @@ class Bindings(object):
         self.repo_group = RepoGroupAPI(pulp_connection)
         self.repo_group_actions = RepoGroupActionAPI(pulp_connection)
         self.repo_group_distributor = RepoGroupDistributorAPI(pulp_connection)
+        self.repo_group_distributor_search = RepoGroupSearchAPI(pulp_connection)
         self.repo_group_search = RepoGroupSearchAPI(pulp_connection)
         self.repo_history = RepositoryHistoryAPI(pulp_connection)
         self.repo_importer = RepositoryImporterAPI(pulp_connection)
@@ -64,8 +65,8 @@ class Bindings(object):
         self.repo_unit = RepositoryUnitAPI(pulp_connection)
         self.role = RoleAPI(pulp_connection)
         self.server_info = ServerInfoAPI(pulp_connection)
-        self.task_groups = TaskGroupsAPI(pulp_connection)
         self.tasks = TasksAPI(pulp_connection)
+        self.tasks_search = TaskSearchAPI(pulp_connection)
         self.uploads = UploadAPI(pulp_connection)
         self.user = UserAPI(pulp_connection)
         self.user_search = UserSearchAPI(pulp_connection)
