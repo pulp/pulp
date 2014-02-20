@@ -82,10 +82,13 @@ the repository itself and the URL reflects this accordingly.
 
 | :response_list:`_`
 
-* :response_code:`200,if the import completed successfully`
 * :response_code:`202,if the request for the import was accepted but postponed until later`
 
-| :return:`object with three attributes: success_flag, summary, and details. success_flag will be a boolean, and summary and details will be the values as returned by the Importer.`
+| :return:`a` :ref:`call_report`  The result field in the call report will be defined by the importer used
+
+**Tags:**
+The task created will have the following tags.  ``"pulp:repository:<repo_id>",
+"pulp:action:import_upload"``
 
 Delete an Upload Request
 ------------------------
@@ -94,7 +97,7 @@ Once the uploaded file has been successfully imported and no further operations
 are desired, the caller should delete the upload request from the server.
 
 | :method:`delete`
-| :path:`/v2/content/uploads/<upload_id>`
+| :path:`/v2/content/uploads/<upload_id>/`
 | :permission:`delete`
 | :param_list:`delete` None
 | :response_list:`_`
@@ -124,3 +127,4 @@ Returns an array of IDs for all upload requests currently in the server.
  {
   "upload_ids': ["cfb1fed0-752b-439e-aa68-fba68eababa3"]
  }
+

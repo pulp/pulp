@@ -18,10 +18,13 @@ from pprint import pformat
 
 import isodate
 
+#TODO: delete this
+from mock import MagicMock
+OldScheduledCall = MagicMock()
+
 from pulp.common import dateutils
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.compat import ObjectId
-from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.dispatch import call
 from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.dispatch import factory as dispatch_factory
@@ -60,7 +63,7 @@ class Scheduler(object):
         assert dispatch_interval > 0
 
         self.dispatch_interval = dispatch_interval
-        self.scheduled_call_collection = ScheduledCall.get_collection()
+        self.scheduled_call_collection = OldScheduledCall.get_collection()
 
         self.__exit = False
         self.__lock = threading.RLock()
@@ -284,7 +287,7 @@ class Scheduler(object):
         Given a schedule call, calculate when it should be run next.
 
         :param scheduled_call: scheduled call
-        :type  scheduled_call: bson.BSON or pulp.server.db.model.dispatch.ScheduledCall
+        :type  scheduled_call: bson.BSON or pulp.server.db.model.dispatch.OldScheduledCall
         :return: when the scheduled call should be run next
         :rtype:  datetime.datetime
         """
@@ -399,7 +402,7 @@ class Scheduler(object):
 
         validate_initial_schedule_options(schedule, schedule_options)
 
-        scheduled_call = ScheduledCall(itinerary_call_request, schedule, **schedule_options)
+        scheduled_call = OldScheduledCall(itinerary_call_request, schedule, **schedule_options)
         scheduled_call['first_run'] = self.calculate_first_run(schedule)
         scheduled_call['next_run'] = self.calculate_next_run(scheduled_call)
 

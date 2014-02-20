@@ -33,7 +33,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report` that lists each of the tasks that were spawned.
 
 :sample_request:`_` ::
 
@@ -48,6 +48,10 @@ content are handler specific.  The options drive how the handler performs the op
    }
  }
 
+**Tags:**
+Each task created to install content on a :term:`consumer`
+will be created with the following tags:
+``"pulp:consumer:<consumer_id>", "pulp:action:unit_install"``
 
 .. _group_content_update:
 
@@ -81,7 +85,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`404,if the consumer group does not exist`
 
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report` that lists each of the tasks that were spawned.
 
 :sample_request:`_` ::
 
@@ -96,6 +100,10 @@ content are handler specific.  The options drive how the handler performs the op
    }
  }
 
+**Tags:**
+Each task created to update content on a :term:`consumer`
+will be created with the following tags:
+``"pulp:consumer:<consumer_id>", "pulp:action:unit_update"``
 
 .. _group_content_uninstall:
 
@@ -129,7 +137,7 @@ content are handler specific.  The options drive how the handler performs the op
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer group does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report` that lists each of the tasks that were spawned.
 
 :sample_request:`_` ::
 
@@ -143,3 +151,8 @@ content are handler specific.  The options drive how the handler performs the op
      "apply": true, "reboot": false
    }
  }
+
+**Tags:**
+Each task created to uninstall content on a :term:`consumer`
+will be created with the following tags:
+``"pulp:consumer:<consumer_id>", "pulp:action:unit_uninstall"``

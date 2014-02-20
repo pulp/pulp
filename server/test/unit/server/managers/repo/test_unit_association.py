@@ -171,23 +171,6 @@ class RepoUnitAssociationManagerTests(PulpServerTests):
         # Test - Make sure this does not raise an error
         self.manager.unassociate_unit_by_id(self.repo_id, 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
 
-    def test_unassociate_by_id_other_owner(self):
-        """
-        Tests that removing the association owned by one party doesn't affect another owner's association.
-        """
-
-        # Setup
-        self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id, OWNER_TYPE_USER, 'admin')
-        self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id, OWNER_TYPE_IMPORTER, 'test-importer')
-
-        # Test
-        self.manager.unassociate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id, OWNER_TYPE_USER, 'admin')
-
-        # Verify
-        repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : self.repo_id}))
-        self.assertEqual(1, len(repo_units))
-        self.assertEqual(self.unit_id, repo_units[0]['unit_id'])
-
     def test_associate_from_repo_no_criteria(self):
         # Setup
         source_repo_id = 'source-repo'

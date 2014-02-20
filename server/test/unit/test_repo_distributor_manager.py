@@ -283,7 +283,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     # -- remove ---------------------------------------------------------------
 
-    def test_remove_distributor(self):
+    @mock.patch('pulp.server.managers.schedule.repo.RepoPublishScheduleManager.delete_by_distributor_id')
+    def test_remove_distributor(self, mock_delete_schedules):
         """
         Tests removing an existing distributor from a repository.
         """
@@ -298,6 +299,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Verify
         distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'dist-repo', 'id' : 'doomed'})
         self.assertTrue(distributor is None)
+        mock_delete_schedules.assert_called_once_with('dist-repo', 'doomed')
 
     def test_remove_distributor_no_distributor(self):
         """

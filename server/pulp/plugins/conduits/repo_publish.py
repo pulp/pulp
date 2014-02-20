@@ -89,9 +89,10 @@ class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin,
                               MultipleRepoUnitsMixin, PublishReportMixin,
                               RepoScratchpadReadMixin):
 
-    def __init__(self, group_id, distributor_id):
+    def __init__(self, group_id, distributor):
+        distributor_id = distributor.get('id')
         RepoGroupDistributorScratchPadMixin.__init__(self, group_id, distributor_id)
-        StatusMixin.__init__(self, distributor_id, DistributorConduitException)
+        StatusMixin.__init__(self, distributor.get('distributor_type_id'), DistributorConduitException)
         MultipleRepoUnitsMixin.__init__(self, DistributorConduitException)
         PublishReportMixin.__init__(self)
         RepoScratchpadReadMixin.__init__(self, DistributorConduitException)

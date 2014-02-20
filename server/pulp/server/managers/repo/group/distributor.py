@@ -10,31 +10,34 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from gettext import gettext as _
 import logging
 import re
 import sys
 import uuid
 
+from celery import task
+
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
-from pulp.server.exceptions import InvalidValue, MissingResource, PulpDataException, PulpExecutionException
+from pulp.server.exceptions import (InvalidValue, MissingResource, PulpDataException,
+                                    PulpExecutionException)
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
-# -- constants ----------------------------------------------------------------
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
-_LOG = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
+logger = logging.getLogger(__name__)
+
 
 class RepoGroupDistributorManager(object):
-
-    def get_distributor(self, repo_group_id, distributor_id):
+    @staticmethod
+    def get_distributor(repo_group_id, distributor_id):
         """
         Returns an individual distributor on the given repo group, raising
         an exception if one does not exist at the given ID.
@@ -67,7 +70,8 @@ class RepoGroupDistributorManager(object):
 
         return distributor
 
-    def find_distributors(self, repo_group_id):
+    @staticmethod
+    def find_distributors(repo_group_id):
         """
         Returns all distributors on the given repo group, returning an empty
         list if none exist.
@@ -88,7 +92,8 @@ class RepoGroupDistributorManager(object):
         distributors = list(RepoGroupDistributor.get_collection().find(spec))
         return distributors
 
-    def add_distributor(self, repo_group_id, distributor_type_id, group_plugin_config,
+    @staticmethod
+    def add_distributor(repo_group_id, distributor_type_id, group_plugin_config,
                         distributor_id=None):
         """
         Adds an association from the given repository group to a distributor.
@@ -140,7 +145,8 @@ class RepoGroupDistributorManager(object):
             if not is_distributor_id_valid(distributor_id):
                 raise InvalidValue(['distributor_id'])
 
-        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(
+            distributor_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
         # are explicitly set to None so the plugin will default them.
@@ -151,7 +157,8 @@ class RepoGroupDistributorManager(object):
         # Let the plugin validate the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_group_id)
+        transfer_group.working_dir = common_utils.distributor_working_dir(distributor_type_id,
+                                                                          repo_group_id)
 
         config_conduit = RepoConfigConduit(distributor_type_id)
 
@@ -163,12 +170,15 @@ class RepoGroupDistributorManager(object):
             if not is_valid:
                 raise PulpDataException(message)
         except Exception, e:
-            _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
+            msg = _('Exception received from distributor [%(d)s] while validating config')
+            msg = msg % {'d': distributor_type_id}
+            logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         # Remove the old distributor if it exists
         try:
-            self.remove_distributor(repo_group_id, distributor_id, force=False)
+            RepoGroupDistributorManager.remove_distributor(repo_group_id, distributor_id,
+                                                           force=False)
         except MissingResource:
             pass # if it didn't exist, no problem
 
@@ -176,16 +186,20 @@ class RepoGroupDistributorManager(object):
         try:
             distributor_instance.distributor_added(transfer_group, call_config)
         except Exception, e:
-            _LOG.exception('Error initializing distributor [%s] for group [%s]' % (distributor_type_id, repo_group_id))
+            logger.exception(
+                'Error initializing distributor [%s] for group [%s]' % (
+                    distributor_type_id, repo_group_id))
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Finally, update the database
-        distributor = RepoGroupDistributor(distributor_id, distributor_type_id, repo_group_id, clean_config)
+        distributor = RepoGroupDistributor(distributor_id, distributor_type_id, repo_group_id,
+                                           clean_config)
         distributor_coll.save(distributor)
 
         return distributor
 
-    def remove_distributor(self, repo_group_id, distributor_id, force=False):
+    @staticmethod
+    def remove_distributor(repo_group_id, distributor_id, force=False):
         """
         Removes a distributor from a group.
 
@@ -207,20 +221,23 @@ class RepoGroupDistributorManager(object):
 
         # Validation - calls will raise MissingResource
         group = manager_factory.repo_group_query_manager().get_group(repo_group_id)
-        distributor = self.get_distributor(repo_group_id, distributor_id)
+        distributor = RepoGroupDistributorManager.get_distributor(repo_group_id, distributor_id)
 
         # Call the distributor's cleanup method
         distributor_type_id = distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(
+            distributor_type_id)
 
         call_config = PluginCallConfiguration(plugin_config, distributor['config'])
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_group_id)
+        transfer_group.working_dir = common_utils.distributor_working_dir(distributor_type_id,
+                                                                          repo_group_id)
 
         try:
             distributor_instance.distributor_removed(transfer_group, call_config)
         except Exception, e:
-            _LOG.exception('Exception cleaning up distributor [%s] on group [%s]' % (distributor_id, repo_group_id))
+            logger.exception('Exception cleaning up distributor [%s] on group [%s]' % (
+                distributor_id, repo_group_id))
 
             if not force:
                 raise PulpExecutionException(), None, sys.exc_info()[2]
@@ -228,37 +245,34 @@ class RepoGroupDistributorManager(object):
         # Clean up the database
         distributor_coll.remove(distributor, safe=True)
 
-    def update_distributor_config(self, repo_group_id, distributor_id, distributor_config):
+    @staticmethod
+    def update_distributor_config(repo_group_id, distributor_id, distributor_config):
         """
         Attempts to update the saved configuration for the given distributor.
         The distributor will be asked if the new configuration is valid. If
         not, this method will raise an error and the existing configuration
         will remain unchanged.
 
-        @param repo_group_id: identifies the group
-        @type  repo_group_id: str
-
-        @param distributor_id: identifies the distributor on the group
-        @type  distributor_id: str
-
-        @param distributor_config: new configuration values to use
-        @type  distributor_config: dict
-
-        @return: the updated distributor
-        @rtype:  dict
-
-        @raise MissingResource: if the given group or distributor do not exist
-        @raise PulpDataException: if the plugin indicates the new configuration
-               is invalid
+        :param repo_group_id:      identifies the group
+        :type  repo_group_id:      str
+        :param distributor_id:     identifies the distributor on the group
+        :type  distributor_id:     str
+        :param distributor_config: new configuration values to use
+        :type  distributor_config: dict
+        :return:                   the updated distributor
+        :rtype:                    dict
+        :raise MissingResource:    if the given group or distributor do not exist
+        :raise PulpDataException:  if the plugin indicates the new configuration is invalid
         """
 
         # Validation - calls will raise MissingResource
         group_manager = manager_factory.repo_group_query_manager()
         group = group_manager.get_group(repo_group_id)
-        distributor = self.get_distributor(repo_group_id, distributor_id)
+        distributor = RepoGroupDistributorManager.get_distributor(repo_group_id, distributor_id)
 
         distributor_type_id = distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(
+            distributor_type_id)
 
         # Resolve the requested changes into the existing config
         merged_config = process_update_config(distributor['config'], distributor_config)
@@ -266,7 +280,8 @@ class RepoGroupDistributorManager(object):
         # Request the distributor validate the new configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id, repo_group_id)
+        transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id,
+                                                                                repo_group_id)
         config_conduit = RepoConfigConduit(distributor_type_id)
 
         # Request the plugin validate the configuration
@@ -277,7 +292,9 @@ class RepoGroupDistributorManager(object):
             if not is_valid:
                 raise PulpDataException(message)
         except Exception, e:
-            _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
+            msg = _('Exception received from distributor [%(d)s] while validating config')
+            msg = msg % {'d': distributor_type_id}
+            logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         # If we got this far, the merged_config is valid
@@ -298,7 +315,7 @@ class RepoGroupDistributorManager(object):
         @rtype:  object
         """
 
-        distributor = self.get_distributor(repo_group_id, distributor_id)
+        distributor = RepoGroupDistributorManager.get_distributor(repo_group_id, distributor_id)
         scratchpad = distributor['scratchpad']
         return scratchpad
 
@@ -311,11 +328,16 @@ class RepoGroupDistributorManager(object):
         @type  contents: object
         """
 
-        distributor = self.get_distributor(repo_group_id, distributor_id)
+        distributor = RepoGroupDistributorManager.get_distributor(repo_group_id, distributor_id)
         distributor['scratchpad'] = contents
         RepoGroupDistributor.get_collection().save(distributor, safe=True)
 
-# -- functions ----------------------------------------------------------------
+
+add_distributor = task(RepoGroupDistributorManager.add_distributor, base=Task)
+remove_distributor = task(RepoGroupDistributorManager.remove_distributor, base=Task,
+                          ignore_result=True)
+update_distributor_config = task(RepoGroupDistributorManager.update_distributor_config, base=Task)
+
 
 def process_update_config(current_config, supplied_config):
     """
@@ -350,6 +372,7 @@ def process_update_config(current_config, supplied_config):
     merged_config.update(supplied_config)
 
     return merged_config
+
 
 def is_distributor_id_valid(distributor_id):
     """

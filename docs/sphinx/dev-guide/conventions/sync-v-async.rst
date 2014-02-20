@@ -15,12 +15,10 @@ Any REST API will return one of three responses:
 A success response indicates no conflicts were detected and the REST call
 executed. This is what is typically expected from a REST API call.
 
-A postponed response indicates a conflict was detected, however the call can be
-executed at a later point in time. The call will be carried out by an
-asynchronous task on the server. The response body to such a call is a
-serialized call report (see below) that contains metadata about the call,
-its progress, and resolution. Additionally, an href is provided that can be used
-to poll for updates to this information.
+A postponed response indicates that some portion of the command has been
+queued to execute asynchronously.  In this case a :ref:`call_report` will be returned
+with the results of the synchronously executed portion of the command, if there are any,
+and a list of the tasks that have been spawned to complete the work in the future.
 
 More information on retrieving and displaying task information can be found
 :ref:`in the Task Management API documentation <task_management>`.
@@ -36,55 +34,19 @@ exception format including the reasons for the response.
 Call Report
 -----------
 
-A 202 ACCEPTED response returns a **call report** JSON object as the response body
+A 202 ACCEPTED response returns a **Call Rreport** JSON object as the response body
 that has the following fields:
 
-* **_href** *(string)* - uri path to retrieve subsequent call reports for this task.
-* **response** *(string)* - a response from Pulp's tasking system. The possible values include: 'accepted', 'postponed', and 'rejected'.
-* **reasons** *(array)* - a list of reasons for postponed or rejected responses
-* **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
-* **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
-* **task_group_id** *(null or string)* - the unique id of the group the task is a part of
-* **schedule_id** *(null or string)* - the unique id of the schedule if the call is scheduled
-* **progress** *(object)* - arbitrary progress information, usually in the form of an object
-* **result** *(any)* - the return value of the call, if any
-* **exception** *(null or string)* - the error exception value, if any
-* **traceback** *(null or array)* - the resulting traceback if an exception was raised
-* **start_time** *(null or string)* - the time the call started executing
-* **finish_time** *(null or string)* - the time the call stopped executing
-* **tags** *(array)* - arbitrary tags useful for looking up the call report
+* **result** *(Object)* - the return value of the call, if any
+* **error** *(Object)* - error details if an error occurred.  See :ref:`error_details`.
+* **spawned_tasks** *(array)* - list of references to tasks that were spawned.  Each
+  task object contains the relative url to retrieve the task and the unique ID of the task.
 
 Example Call Report::
 
  {
-  "exception": null,
-  "task_group_id": null,
-  "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
-  "tags": [
-    "pulp:repository:f16",
-    "pulp:action:sync"
-  ],
-  "reasons": [],
-  "start_time": "2012-05-17T16:48:00Z",
-  "traceback": null,
-  "state": "running",
-  "finish_time": null,
-  "schedule_id": null,
-  "result": null,
-  "progress": { <contents depend on the operation> },
-  "response": "accepted",
-  "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/"
+  "result": {},
+  "error": {},
+  "spawned_tasks": [{"_href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
+                     "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b" }]
  }
-
-
-.. _call_report_array:
-
-Call Report List
-----------------
-
-Sometimes a 202 ACCEPTED will return an array of call reports, where each call
-report is as described above. This happens when Pulp needs to kick off multiple
-tasks to handle the REST API call.
-
-More information on managing task groups can be found in the
-:ref:`task_group_management` section.

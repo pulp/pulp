@@ -15,22 +15,17 @@ import web
 
 from web.webapi import BadRequest
 
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server import config as pulp_config
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
 from pulp.server.managers import factory as managers_factory
-from pulp.server.webservices import execution, serialization
+from pulp.server.tasks import consumer_group
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
-from pulp.server.itineraries.consumer_group import (consumer_group_content_install_itinerary,
-     consumer_group_content_uninstall_itinerary, consumer_group_content_update_itinerary,
-     consumer_group_bind_itinerary, consumer_group_unbind_itinerary)
+
 
 # consumer group collection ----------------------------------------------------
 
@@ -59,17 +54,13 @@ class ConsumerGroupCollection(JSONController):
         if group_data:
             raise pulp_exceptions.InvalidValue(group_data.keys())
         manager = managers_factory.consumer_group_manager()
-        weight = pulp_config.config.getint('tasks', 'create_weight')
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, group_id)]
-        call_request = CallRequest(manager.create_consumer_group,
-           [group_id, display_name, description, consumer_ids, notes],
-           weight=weight, tags=tags)
-        call_request.creates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, group_id)
-        group = execution.execute_sync(call_request)
+
+        group = manager.create_consumer_group(group_id, display_name, description, consumer_ids,
+                                              notes)
         group.update(serialization.link.child_link_obj(group['id']))
         return self.created(group['_href'], group)
 
-    
+
 class ConsumerGroupSearch(SearchController):
     def __init__(self):
         super(ConsumerGroupSearch, self).__init__(
@@ -87,7 +78,6 @@ class ConsumerGroupSearch(SearchController):
             item.update(serialization.link.search_safe_link_obj(item['id']))
         return self.ok(items)
 
-# consumer group resource ----------------------------------------------------------
 
 class ConsumerGroupResource(JSONController):
 
@@ -103,29 +93,17 @@ class ConsumerGroupResource(JSONController):
     @auth_required(authorization.DELETE)
     def DELETE(self, consumer_group_id):
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)]
-        call_request = CallRequest(manager.delete_consumer_group,
-                                   [consumer_group_id],
-                                   tags=tags)
-        call_request.deletes_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        result = execution.execute(call_request)
+        result = manager.delete_consumer_group(consumer_group_id)
         return self.ok(result)
 
     @auth_required(authorization.UPDATE)
     def PUT(self, consumer_group_id):
         update_data = self.params()
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)]
-        call_request = CallRequest(manager.update_consumer_group,
-                                   args=[consumer_group_id],
-                                   kwargs=update_data,
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        group = execution.execute(call_request)
+        group = manager.update_consumer_group(consumer_group_id, **update_data)
         group.update(serialization.link.current_link_obj())
         return self.ok(group)
 
-# consumer group membership -------------------------------------------------------
 
 class ConsumerGroupAssociateAction(JSONController):
 
@@ -133,16 +111,11 @@ class ConsumerGroupAssociateAction(JSONController):
     def POST(self, consumer_group_id):
         criteria = Criteria.from_client_input(self.params().get('criteria', {}))
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id),
-                action_tag('consumer_group_associate')]
-        call_request = CallRequest(manager.associate,
-                                   [consumer_group_id, criteria],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        execution.execute(call_request)
+        manager.associate(consumer_group_id, criteria)
         query_manager = managers_factory.consumer_group_query_manager()
         group = query_manager.get_group(consumer_group_id)
         return self.ok(group['consumer_ids'])
+
 
 class ConsumerGroupUnassociateAction(JSONController):
 
@@ -150,13 +123,7 @@ class ConsumerGroupUnassociateAction(JSONController):
     def POST(self, consumer_group_id):
         criteria = Criteria.from_client_input(self.params().get('criteria', {}))
         manager = managers_factory.consumer_group_manager()
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id),
-                action_tag('consumer_group_unassociate')]
-        call_request = CallRequest(manager.unassociate,
-                                   [consumer_group_id, criteria],
-                                   tags=tags)
-        call_request.updates_resource(dispatch_constants.RESOURCE_CONSUMER_GROUP_TYPE, consumer_group_id)
-        execution.execute(call_request)
+        manager.unassociate(consumer_group_id, criteria)
         query_manager = managers_factory.consumer_group_query_manager()
         group = query_manager.get_group(consumer_group_id)
         return self.ok(group['consumer_ids'])
@@ -189,8 +156,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_requests = consumer_group_content_install_itinerary(consumer_group_id, units, options)
-        execution.execute_multiple(call_requests)
+        task = consumer_group.install_content(consumer_group_id, units, options)
+        raise pulp_exceptions.OperationPostponed(task)
 
     def update(self, consumer_group_id):
         """
@@ -206,8 +173,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_requests = consumer_group_content_update_itinerary(consumer_group_id, units, options)
-        execution.execute_multiple(call_requests)
+        task = consumer_group.update_content(consumer_group_id, units, options)
+        raise pulp_exceptions.OperationPostponed(task)
 
     def uninstall(self, consumer_group_id):
         """
@@ -223,8 +190,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        call_requests = consumer_group_content_uninstall_itinerary(consumer_group_id, units, options)
-        execution.execute_multiple(call_requests)
+        task = consumer_group.uninstall_content(consumer_group_id, units, options)
+        raise pulp_exceptions.OperationPostponed(task)
 
 
 class ConsumerGroupBindings(JSONController):
@@ -277,14 +244,9 @@ class ConsumerGroupBindings(JSONController):
         binding_config = body.get('binding_config', None)
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
-        call_requests = consumer_group_bind_itinerary(
-            group_id=group_id,
-            repo_id=repo_id,
-            distributor_id=distributor_id,
-            notify_agent=notify_agent,
-            binding_config=binding_config,
-            agent_options=options)
-        execution.execute_multiple(call_requests)
+        async_task = consumer_group.bind.apply_async((group_id, repo_id, distributor_id,
+                                                      notify_agent, binding_config, options))
+        raise pulp_exceptions.OperationPostponed(async_task)
 
 
 class ConsumerGroupBinding(JSONController):
@@ -333,8 +295,8 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        call_requests = consumer_group_unbind_itinerary(group_id, repo_id, distributor_id, {})
-        execution.execute_multiple(call_requests)
+        async_task = consumer_group.unbind.apply_async((group_id, repo_id, distributor_id, {}))
+        raise pulp_exceptions.OperationPostponed(async_task)
 
 
 # web.py application -----------------------------------------------------------

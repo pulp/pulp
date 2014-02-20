@@ -14,6 +14,7 @@
 
 import base
 
+from pulp.devel import mock_agent
 from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.history as history_manager
@@ -26,12 +27,14 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
 
     def setUp(self):
         super(ConsumerManagerTests, self).setUp()
+        mock_agent.install()
 
         # Create the manager instance to test
         self.manager = consumer_manager.ConsumerManager()
 
     def tearDown(self):
         super(ConsumerManagerTests, self).tearDown()
+        mock_agent.reset()
 
     def clean(self):
         base.PulpServerTests.clean(self)

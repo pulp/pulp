@@ -15,11 +15,13 @@
 Contains binding management classes
 """
 
-from time import time
 from logging import getLogger
+from time import time
 
+from celery import task
 from pymongo.errors import DuplicateKeyError
 
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
@@ -45,7 +47,8 @@ class BindManager(object):
             distributor_id=distributor_id,
         )
 
-    def bind(self, consumer_id, repo_id, distributor_id, notify_agent, binding_config):
+    @staticmethod
+    def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config):
         """
         Bind consumer to a specific distributor associated with
         a repository.  This call is idempotent.
@@ -79,17 +82,19 @@ class BindManager(object):
             bind = Bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
             collection.save(bind, safe=True)
         except DuplicateKeyError:
-            self._update_binding(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
-            self.__reset_bind(consumer_id, repo_id, distributor_id)
+            BindManager._update_binding(consumer_id, repo_id, distributor_id, notify_agent,
+                                        binding_config)
+            BindManager._reset_bind(consumer_id, repo_id, distributor_id)
         # fetch the inserted/updated bind
-        bind = self.get_bind(consumer_id, repo_id, distributor_id)
+        bind = BindManager.get_bind(consumer_id, repo_id, distributor_id)
         # update history
         details = {'repo_id':repo_id, 'distributor_id':distributor_id}
         manager = factory.consumer_history_manager()
         manager.record_event(consumer_id, 'repo_bound', details)
         return bind
 
-    def _update_binding(self, consumer_id, repo_id, distributor_id, notify_agent, binding_config):
+    @staticmethod
+    def _update_binding(consumer_id, repo_id, distributor_id, notify_agent, binding_config):
         """
         Workaround to the way bindings rely on a duplicate key error for supporting rebind.
         This call makes sure the existing binding is updated with the new values for
@@ -99,13 +104,14 @@ class BindManager(object):
         """
 
         collection = Bind.get_collection()
-        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         binding = collection.find_one(query)
         binding['notify_agent'] = notify_agent
         binding['binding_config'] = binding_config
         collection.save(binding, safe=True)
 
-    def __reset_bind(self, consumer_id, repo_id, distributor_id):
+    @staticmethod
+    def _reset_bind(consumer_id, repo_id, distributor_id):
         """
         Reset the bind.
         This means resetting the deleted flag and consumer requests.
@@ -118,12 +124,13 @@ class BindManager(object):
         @type distributor_id: str
         """
         collection = Bind.get_collection()
-        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         query['deleted'] = True
         update = {'$set':{'deleted':False, 'consumer_actions':[]}}
         collection.update(query, update, safe=True)
 
-    def unbind(self, consumer_id, repo_id, distributor_id):
+    @staticmethod
+    def unbind(consumer_id, repo_id, distributor_id):
         """
         Unbind a consumer from a specific distributor associated with
         a repository.  This call is idempotent.
@@ -137,13 +144,13 @@ class BindManager(object):
         @rtype: SON
         """
         collection = Bind.get_collection()
-        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         query['deleted'] = False
         bind = collection.find_one(query)
         if bind is None:
             # idempotent
             return
-        self.mark_deleted(consumer_id, repo_id, distributor_id)
+        BindManager.mark_deleted(consumer_id, repo_id, distributor_id)
         details = {
             'repo_id':repo_id,
             'distributor_id':distributor_id
@@ -162,9 +169,8 @@ class BindManager(object):
         query = dict(consumer_id=consumer_id)
         collection.remove(query)
 
-# --- finders ----------------------------------------------------------------------------
-
-    def get_bind(self, consumer_id, repo_id, distributor_id):
+    @staticmethod
+    def get_bind(consumer_id, repo_id, distributor_id):
         """
         Get a specific bind.
         This method ignores the deleted flag.
@@ -179,7 +185,7 @@ class BindManager(object):
         @raise MissingResource: When not found
         """
         collection = Bind.get_collection()
-        bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
+        bind_id = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         bind = collection.find_one(bind_id)
         if bind is None:
             raise MissingResource(bind_id=bind_id)
@@ -257,9 +263,8 @@ class BindManager(object):
         bindings = collection.query(criteria)
         return list(bindings)
 
-# --- delete management ------------------------------------------------------------------
-
-    def mark_deleted(self, consumer_id, repo_id, distributor_id):
+    @staticmethod
+    def mark_deleted(consumer_id, repo_id, distributor_id):
         """
         Mark the bind as deleted.
         @param consumer_id: uniquely identifies the consumer.
@@ -270,13 +275,14 @@ class BindManager(object):
         @type distributor_id: str
         """
         # validate
-        self.get_bind(consumer_id, repo_id, distributor_id)
+        BindManager.get_bind(consumer_id, repo_id, distributor_id)
         # update document
         collection = Bind.get_collection()
-        query = self.bind_id(consumer_id, repo_id, distributor_id)
+        query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         collection.update(query, {'$set':{'deleted':True}}, safe=True)
 
-    def delete(self, consumer_id, repo_id, distributor_id, force=False):
+    @staticmethod
+    def delete(consumer_id, repo_id, distributor_id, force=False):
         """
         Delete the bind.
         @param consumer_id: uniquely identifies the consumer.
@@ -289,7 +295,7 @@ class BindManager(object):
         @type force: bool
         """
         collection = Bind.get_collection()
-        bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
+        bind_id = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         if not force:
             query = {
                 '$and': [
@@ -303,8 +309,6 @@ class BindManager(object):
         if not force:
             bind_id['deleted'] = True
         collection.remove(bind_id, safe=True)
-
-# --- consumer actions -------------------------------------------------------------------
 
     def action_pending(self, consumer_id, repo_id, distributor_id, action, action_id):
         """
@@ -394,3 +398,8 @@ class BindManager(object):
         for action in binding['consumer_actions']:
             if action['id'] == action_id:
                 return action
+
+
+bind = task(BindManager.bind, base=Task)
+delete = task(BindManager.delete, base=Task)
+unbind = task(BindManager.unbind, base=Task)

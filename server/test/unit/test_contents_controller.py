@@ -13,14 +13,18 @@
 
 import os
 import shutil
+import uuid
 
+from celery.result import AsyncResult
 import mock
 
-import base
 from pulp.devel import dummy_plugins
+from pulp.devel.unit.util import assert_body_matches_async_task
 from pulp.server.db.model.repository import Repo, RepoImporter
-import pulp.server.managers.factory as manager_factory
+from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.webservices.controllers.contents import ContentUnitsCollection, ContentUnitsSearch
+import base
+import pulp.server.managers.factory as manager_factory
 
 
 class TestContentUnitsCollection(base.PulpWebserviceTests):
@@ -283,11 +287,22 @@ class UploadSegmentResourceTests(BaseUploadTest):
         # Verify
         self.assertEqual(404, status)
 
+class ReservedResourceApplyAsync(object):
+    """
+    This object allows us to mock the return value of _reserve_resource.apply_async.get().
+    """
+    def get(self):
+        return 'some_queue'
 
 class ImportUnitTests(BaseUploadTest):
 
-    def test_post(self):
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_post(self, _reserve_resource, mock_apply_async):
         # Setup
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
         upload_id = self.upload_manager.initialize_upload()
         self.upload_manager.save_data(upload_id, 0, 'string data')
 
@@ -306,4 +321,9 @@ class ImportUnitTests(BaseUploadTest):
         status, body = self.post('/v2/repositories/repo-upload/actions/import_upload/', body)
 
         # Verify
-        self.assertEqual(200, status)
+        self.assertEqual(202, status)
+        assert_body_matches_async_task(body, mock_apply_async.return_value)
+        exepcted_call_args = ['repo-upload', 'dummy-type',
+                              {'name': 'foo'}, {'stuff': 'bar'}, 
+                              upload_id]
+        self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])

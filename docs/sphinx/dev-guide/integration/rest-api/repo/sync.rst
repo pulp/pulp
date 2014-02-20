@@ -5,8 +5,7 @@ Sync a Repository
 -----------------
 
 Syncs content into a repository from a feed source using the repository's
-:term:`importer`. This call always executes asynchronously and will return a
-:ref:`call_report_array`.
+:term:`importer`.
 
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/sync/`
@@ -20,7 +19,7 @@ Syncs content into a repository from a feed source using the repository's
 * :response_code:`202,if the sync is set to be executed`
 * :response_code:`409,if a conflicting operation is in progress`
 
-| :return:`call report representing the current state of they sync`
+| :return:`a` :ref:`call_report`
 
 :sample_request:`_` ::
 
@@ -29,39 +28,9 @@ Syncs content into a repository from a feed source using the repository's
                        "verify_size": false},
  }
 
-:sample_response:`202` ::
-
- [
-  {"_href": "/pulp/api/v2/task_groupss/a4e8579d-6c41-4134-a150-cf65faeafdfe/",
-   "response": "accepted",
-   "reasons": [],
-   "state": "waiting",
-   "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-   "task_group_id": "a4e8579d-6c41-4134-a150-cf65faeafdfe",
-   "schedule_id": null,
-   "progress": {},
-   "result": null,
-   "exception": null,
-   "traceback": null,
-   "start_time": null,
-   "finish_time": null,
-   "tags": ["pulp:action:sync", "pulp:repository:<repo_id>"]},
-  {"_href": "/pulp/api/v2/task_groups/a4e8579d-6c41-4134-a150-cf65faeafdfe/",
-   "response": "postponed",
-   "reasons": [],
-   "state": "waiting",
-   "task_id": "a6b14cfd-dda3-4327-b02d-9609c9147920",
-   "task_group_id": "a4e8579d-6c41-4134-a150-cf65faeafdfe",
-   "schedule_id": null,
-   "progress": {},
-   "result": null,
-   "exception": null,
-   "traceback": null,
-   "start_time": null,
-   "finish_time": null,
-   "tags": ["pulp:action:publish", "pulp:action:auto_publish", "pulp:repository:<repo_id>"]},
- ]
-
+**Tags:**
+The task created will have the following tags:
+``"pulp:action:sync", "pulp:repository:<repo_id>"``
 
 
 Scheduling a Sync
@@ -83,7 +52,6 @@ schedule options must be set on the repository's :term:`importer`.
 | :response_list:`_`
 
 * :response_code:`201,if the schedule was successfully created`
-* :response_code:`503,if the resources needed to create the schedule are temporarily unavailable`
 
 | :return:`schedule report representing the current state of the scheduled call`
 
@@ -98,18 +66,28 @@ schedule options must be set on the repository's :term:`importer`.
 :sample_response:`201` ::
 
  {
-  "_id": "4fa0208461577710b2000000",
-  "_href": "/pulp/api/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/4fa0208461577710b2000000/",
-  "schedule": "00:00:00Z/P1DT",
-  "failure_threshold": 3,
-  "consecutive_failures": 0,
-  "first_run": null,
-  "last_run": null,
-  "next_run": "2012-07-13T00:00:00Z",
-  "remaining_runs": null,
+  "next_run": "2014-01-27T21:41:50Z",
+  "task": "pulp.server.tasks.repository.sync_with_auto_publish",
+  "last_updated": 1390858910.292712,
+  "first_run": "2014-01-27T21:41:50Z",
+  "schedule": "PT1H",
+  "args": [
+    "demo"
+  ],
   "enabled": true,
-  "override_config": {},
+  "last_run_at": null,
+  "_id": "52e6d29edd01fb70bd0d9c37",
+  "total_run_count": 0,
+  "failure_threshold": 3,
+  "kwargs": {
+    "overrides": {}
+  },
+  "resource": "pulp:importer:demo:puppet_importer",
+  "remaining_runs": null,
+  "consecutive_failures": 0,
+  "_href": "/pulp/api/v2/repositories/demo/importers/puppet_importer/schedules/sync/52e6d29edd01fb70bd0d9c37/"
  }
+
 
 
 Updating a Scheduled Sync
@@ -129,8 +107,6 @@ The same parameters used to create a scheduled sync may be updated at any point.
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was successfully updated`
-* :response_code:`202,if the schedule is in use and the update is postponed`
-* :response_code:`503,if there is a conflicting operation in progress`
 
 | :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Sync for details)`
 
@@ -145,9 +121,7 @@ Delete a scheduled sync to remove it permanently from the importer.
 
 | :response_list:`_`
 
-* response_code:`200,if the schedule was deleted successfully`
-* response_code:`202,if the schedule is in use and the delete is postponed`
-* response_code:`503,if the schedule is already in the processes of being deleted`
+* :response_code:`200,if the schedule was deleted successfully`
 
 | :return:`null`
 
@@ -210,3 +184,4 @@ Retrieve sync history for a repository. Each sync performed on a repository crea
    "error_message": null,
   }
  ]
+

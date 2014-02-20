@@ -152,7 +152,10 @@ Remove all orphaned content units, regardless of type.
 
 * :response_code:`202,even if no content is to be deleted`
 
-| :return:`call report representing the current state of the delete`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created will have the following tag.  ``"pulp:content_unit:orphans"``
 
 Remove Orphaned Content by Type
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,7 +168,10 @@ Remove all the orphaned content of a particular content type.
 
 * :response_code:`202,even if no content is to be deleted`
 
-| :return:`call report representing the current state of the delete`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created will have the following tag.  ``"pulp:content_unit:orphans"``
 
 Remove an Individual Orphaned Content Unit
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,7 +185,10 @@ Remove and individual orphaned content unit by content type and content id.
 * :response_code:`202,if the content unit is to be deleted`
 * :response_code:`404,if the content does not exist`
 
-| :return:`call report representing the current state of the delete`
+| :return:`a` :ref:`call_report`
+
+**Tags:**
+The task created will have the following tag.  ``"pulp:content_unit:orphans"``
 
 Remove Orphaned Content Units by Type and Id
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -200,7 +209,7 @@ the call consists of an array of JSON objects with the fields:
 
 * :response_code:`202,even if not content is to be deleted`
 
-| :return:`call report representing the current state of the delete`
+| :return:`a` :ref:`call_report`
 
 :sample_request:`post` ::
 
@@ -209,3 +218,5 @@ the call consists of an array of JSON objects with the fields:
    {'content_type_id': 'rpm', 'unit_id': '228762de-9762-4384-b41a-4ccc594467f9'}]
  }
 
+**Tags:**
+The task created will have the following tag.  ``"pulp:content_unit:orphans"``

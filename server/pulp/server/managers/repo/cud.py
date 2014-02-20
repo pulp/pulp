@@ -24,33 +24,34 @@ import re
 import shutil
 import sys
 
+from celery import task
 import pymongo
 
-from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter, RepoContentUnit, RepoSyncResult, RepoPublishResult
-from pulp.server.dispatch import factory as dispatch_factory
+from pulp.server.exceptions import error_codes
+from pulp.server.async.tasks import Task, TaskResult
+from pulp.server.tasks import repository
+from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
+                                             RepoSyncResult, RepoPublishResult)
+from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, \
+    PulpExecutionException, PulpCodedException
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, \
-    PulpExecutionException, MultipleOperationsPostponed
-from pulp.server.itineraries.repository import distributor_update_itinerary
-from pulp.server.webservices import execution
 
-# -- constants ----------------------------------------------------------------
 
 _REPO_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 _DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
 
-_LOG = logging.getLogger(__name__)
 
-# -- classes ------------------------------------------------------------------
+logger = logging.getLogger(__name__)
+
 
 class RepoManager(object):
     """
     Performs repository related functions relating to both CRUD operations and
     actions performed on or by repositories.
     """
-
-    def create_repo(self, repo_id, display_name=None, description=None, notes=None):
+    @staticmethod
+    def create_repo(repo_id, display_name=None, description=None, notes=None):
         """
         Creates a new Pulp repository that is not associated with any importers
         or distributors (those are added later through separate calls).
@@ -93,7 +94,8 @@ class RepoManager(object):
 
         return created
 
-    def create_and_configure_repo(self, repo_id, display_name=None, description=None,
+    @staticmethod
+    def create_and_configure_repo(repo_id, display_name=None, description=None,
                                   notes=None, importer_type_id=None,
                                   importer_repo_plugin_config=None, distributor_list=()):
         """
@@ -143,17 +145,20 @@ class RepoManager(object):
 
         # Let any exceptions out of this call simply bubble up, there's nothing
         # special about this step.
-        repo = self.create_repo(repo_id, display_name=display_name, description=description, notes=notes)
+        repo = RepoManager.create_repo(repo_id, display_name=display_name, description=description,
+                                       notes=notes)
 
         # Add the importer if it's specified. If that fails, delete the repository
         # before re-raising the exception.
         if importer_type_id is not None:
             importer_manager = manager_factory.repo_importer_manager()
             try:
-                importer_manager.set_importer(repo_id, importer_type_id, importer_repo_plugin_config)
+                importer_manager.set_importer(repo_id, importer_type_id,
+                                              importer_repo_plugin_config)
             except Exception, e:
-                _LOG.exception('Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
-                self.delete_repo(repo_id)
+                logger.exception(
+                    'Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
+                RepoManager.delete_repo(repo_id)
                 raise e, None, sys.exc_info()[2]
 
         # Regardless of how many distributors are successfully added, or if an
@@ -162,12 +167,12 @@ class RepoManager(object):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         if distributor_list is not None and not isinstance(distributor_list, (list, tuple)):
-            self.delete_repo(repo_id)
+            RepoManager.delete_repo(repo_id)
             raise InvalidValue(['distributor_list'])
 
         for distributor in distributor_list or []:
             if not isinstance(distributor, dict):
-                self.delete_repo(repo_id)
+                RepoManager.delete_repo(repo_id)
                 raise InvalidValue(['distributor_list'])
 
             try:
@@ -177,15 +182,17 @@ class RepoManager(object):
                 auto_publish = distributor.get('auto_publish', False)
                 distributor_id = distributor.get('distributor_id')
 
-                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish, distributor_id)
+                distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish,
+                                                    distributor_id)
             except Exception, e:
-                _LOG.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
-                self.delete_repo(repo_id)
+                logger.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
+                RepoManager.delete_repo(repo_id)
                 raise e, None, sys.exc_info()[2]
 
         return repo
 
-    def delete_repo(self, repo_id):
+    @staticmethod
+    def delete_repo(repo_id):
         """
         Deletes the given repository, optionally requesting the associated
         importer clean up any content in the repository.
@@ -211,19 +218,8 @@ class RepoManager(object):
         # will have to look at the server logs for more information.
         error_tuples = [] # tuple of failed step and exception arguments
 
-        # Remove any scheduled activities
-        scheduler = dispatch_factory.scheduler()
-
         importer_manager = manager_factory.repo_importer_manager()
-        importers = importer_manager.get_importers(repo_id)
-        if importers:
-            for schedule_id in importer_manager.list_sync_schedules(repo_id):
-                scheduler.remove(schedule_id)
-
         distributor_manager = manager_factory.repo_distributor_manager()
-        for distributor in distributor_manager.get_distributors(repo_id):
-            for schedule_id in distributor_manager.list_publish_schedules(repo_id, distributor['id']):
-                scheduler.remove(schedule_id)
 
         # Inform the importer
         importer_coll = RepoImporter.get_collection()
@@ -232,8 +228,9 @@ class RepoManager(object):
             try:
                 importer_manager.remove_importer(repo_id)
             except Exception, e:
-                _LOG.exception('Error received removing importer [%s] from repo [%s]' % (repo_importer['importer_type_id'], repo_id))
-                error_tuples.append( (_('Importer Delete Error'), e.args) )
+                logger.exception('Error received removing importer [%s] from repo [%s]' % (
+                    repo_importer['importer_type_id'], repo_id))
+                error_tuples.append(e)
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
@@ -242,8 +239,9 @@ class RepoManager(object):
             try:
                 distributor_manager.remove_distributor(repo_id, repo_distributor['id'])
             except Exception, e:
-                _LOG.exception('Error received removing distributor [%s] from repo [%s]' % (repo_distributor['id'], repo_id))
-                error_tuples.append( (_('Distributor Delete Error'), e.args))
+                logger.exception('Error received removing distributor [%s] from repo [%s]' % (
+                    repo_distributor['id'], repo_id))
+                error_tuples.append(e)
 
         # Delete the repository working directory
         repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)
@@ -251,8 +249,9 @@ class RepoManager(object):
             try:
                 shutil.rmtree(repo_working_dir)
             except Exception, e:
-                _LOG.exception('Error while deleting repo working dir [%s] for repo [%s]' % (repo_working_dir, repo_id))
-                error_tuples.append( (_('Filesystem Cleanup Error'), e.args))
+                logger.exception('Error while deleting repo working dir [%s] for repo [%s]' % (
+                    repo_working_dir, repo_id))
+                error_tuples.append(e)
 
         # Database Updates
         try:
@@ -271,17 +270,22 @@ class RepoManager(object):
             # Remove all associations from the repo
             RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
         except Exception, e:
-            _LOG.exception('Error updating one or more database collections while removing repo [%s]' % repo_id)
-            error_tuples.append( (_('Database Removal Error'), e.args))
+            msg = _('Error updating one or more database collections while removing repo [%(r)s]')
+            msg = msg % {'r': repo_id}
+            logger.exception(msg)
+            error_tuples.append(e)
 
         # remove the repo from any groups it was a member of
         group_manager = manager_factory.repo_group_manager()
         group_manager.remove_repo_from_groups(repo_id)
 
         if len(error_tuples) > 0:
-            raise PulpExecutionException(error_tuples)
+            pe = PulpExecutionException()
+            pe.child_exceptions = error_tuples
+            raise pe
 
-    def update_repo(self, repo_id, delta):
+    @staticmethod
+    def update_repo(repo_id, delta):
         """
         Updates metadata about the given repository. Only the following
         fields may be updated through this call:
@@ -364,7 +368,8 @@ class RepoManager(object):
                 message = 'There was a problem updating repository %s' % repo_id
                 raise PulpExecutionException(message), None, sys.exc_info()[2]
 
-    def update_repo_and_plugins(self, repo_id, repo_delta, importer_config,
+    @staticmethod
+    def update_repo_and_plugins(repo_id, repo_delta, importer_config,
                                 distributor_configs):
         """
         Aggregate method that will update one or more of the following:
@@ -406,37 +411,34 @@ class RepoManager(object):
         :type  distributor_configs: dict, None
 
         :return: updated repository object, same as returned from update_repo
+        :rtype: TaskResult
         """
 
         # Repo Update
         if repo_delta is None:
             repo_delta = {}
-        repo = self.update_repo(repo_id, repo_delta)
+        repo = RepoManager.update_repo(repo_id, repo_delta)
 
         # Importer Update
         if importer_config is not None:
             importer_manager = manager_factory.repo_importer_manager()
             importer_manager.update_importer_config(repo_id, importer_config)
 
+        errors = []
+        additional_tasks = []
         # Distributor Update
         if distributor_configs is not None:
-            distributor_manager = manager_factory.repo_distributor_manager()
             for dist_id, dist_config in distributor_configs.items():
-                # Update the distributor config to ensure that errors are reported immediately
-                distributor_manager.update_distributor_config(repo_id, dist_id, dist_config)
-                # Use the itinerary to update the bindings on the consumers.
-                # This will duplicate the distributor update command.
-                # The duplication should be removed once we have a tasking system that
-                # supports a better method of tracking grouped tasks
-                call_requests = distributor_update_itinerary(repo_id, dist_id, dist_config)
-                # The requests may not run immediately which is fine.  Since we have
-                # no overall tracking of these requests we  have to eat the exception.
-                try:
-                    execution.execute_multiple(call_requests)
-                except MultipleOperationsPostponed:
-                    pass
+                update_result = repository.distributor_update(repo_id, dist_id, dist_config, None)
+                additional_tasks.extend(update_result.spawned_tasks)
+                errors.append(update_result.error)
 
-        return repo
+        error = None
+        if len(errors) > 0:
+            error = PulpCodedException(error_code=error_codes.PLP0006,
+                                       repo_id=repo_id)
+            error.child_exceptions = errors
+        return TaskResult(repo, error, additional_tasks)
 
     def get_repo_scratchpad(self, repo_id):
         """
@@ -521,10 +523,10 @@ class RepoManager(object):
         if not repo_ids:
             repo_ids = [repo['id'] for repo in repo_collection.find(fields=['id'])]
 
-        _LOG.info('regenerating content unit counts for %d repositories' % len(repo_ids))
+        logger.info('regenerating content unit counts for %d repositories' % len(repo_ids))
 
         for repo_id in repo_ids:
-            _LOG.debug('regenerating content unit count for repository "%s"' % repo_id)
+            logger.debug('regenerating content unit count for repository "%s"' % repo_id)
             counts = {}
             cursor = association_collection.find({'repo_id':repo_id})
             type_ids = cursor.distinct('unit_type_id')
@@ -535,7 +537,10 @@ class RepoManager(object):
             repo_collection.update({'id': repo_id}, {'$set':{'content_unit_counts': counts}}, safe=True)
 
 
-# -- functions ----------------------------------------------------------------
+create_and_configure_repo = task(RepoManager.create_and_configure_repo, base=Task)
+delete_repo = task(RepoManager.delete_repo, base=Task, ignore_result=True)
+update_repo_and_plugins = task(RepoManager.update_repo_and_plugins, base=Task)
+
 
 def is_repo_id_valid(repo_id):
     """

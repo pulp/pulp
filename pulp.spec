@@ -26,6 +26,13 @@
 %define moduletype apps
 %endif
 
+# Determine whether we should target Upstart or systemd for this build
+%if 0%{?rhel} >= 7 || 0%{?fedora} >= 15
+%define pulp_systemd 1
+%else
+%define pulp_systemd 0
+%endif
+
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
@@ -75,6 +82,7 @@ done
 
 # Directories
 mkdir -p /srv
+mkdir -p %{buildroot}/%{_sysconfdir}/default/
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
@@ -105,7 +113,10 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
+mkdir -p %{buildroot}/%{_var}/www
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
@@ -123,8 +134,28 @@ cp server/etc/httpd/conf.d/pulp_apache_24.conf %{buildroot}/%{_sysconfdir}/httpd
 cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %endif
 
+# Server init scripts/unit files and environment files
+%if %{pulp_systemd} == 0
+cp server/etc/default/upstart_pulp_celerybeat %{buildroot}/%{_sysconfdir}/default/pulp_celerybeat
+cp server/etc/default/upstart_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
+cp server/etc/default/upstart_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
+ln -s %{_initddir}/pulp_workers %{buildroot}/%{_initddir}/pulp_resource_manager
+cp -d server/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
+# We don't want to install pulp-manage-workers in upstart systems
+rm -rf %{buildroot}/%{_libexecdir}
+%else
+cp server/etc/default/systemd_pulp_celerybeat %{buildroot}/%{_sysconfdir}/default/pulp_celerybeat
+cp server/etc/default/systemd_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
+cp server/etc/default/systemd_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
+mkdir -p %{buildroot}/%{_usr}/lib/systemd/system/
+cp server/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
+%endif
+
 # Pulp Web Services
 cp -R server/srv %{buildroot}
+
+# Web Content
+ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
 
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
@@ -139,9 +170,6 @@ cp server/bin/* %{buildroot}/%{_bindir}
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
-
-# Cron
-cp -R server/etc/cron.monthly %{buildroot}/%{_sysconfdir}
 
 %if %{pulp_selinux}
 # Install SELinux policy modules
@@ -168,11 +196,12 @@ rm -rf %{buildroot}
 Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+Requires: python-celery >= 3.1.0
 Requires: python-pymongo >= 2.5.2
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.32
-Requires: python-oauth2 >= 1.5.170-2.pulp
+Requires: python-oauth2 >= 1.5.211
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
@@ -187,9 +216,6 @@ Requires: python-gofer >= 0.77
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
-Requires: mongodb
-Requires: mongodb-server
-Requires: qpid-cpp-server
 Requires: m2crypto >= 0.21.1.pulp-7
 Requires: genisoimage
 # RHEL6 ONLY
@@ -204,7 +230,9 @@ Pulp provides replication, access, and accounting for software repositories.
 %files server
 # - root:root
 %defattr(-,root,root,-)
-%config %{_sysconfdir}/cron.monthly/pulp_monthly.sh
+%config(noreplace) %{_sysconfdir}/default/pulp_celerybeat
+%config(noreplace) %{_sysconfdir}/default/pulp_workers
+%config(noreplace) %{_sysconfdir}/default/pulp_resource_manager
 %config(noreplace) %{_sysconfdir}/httpd/conf.d/%{name}.conf
 %dir %{_sysconfdir}/pki/%{name}
 %dir %{_sysconfdir}/%{name}/content/sources/conf.d
@@ -215,7 +243,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir /srv/%{name}
 /srv/%{name}/webservices.wsgi
 %{_bindir}/pulp-manage-db
-%{_bindir}/pulp-monthly
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
 %{_usr}/lib/%{name}/plugins/distributors
@@ -226,6 +253,19 @@ Pulp provides replication, access, and accounting for software repositories.
 %{python_sitelib}/%{name}/server/
 %{python_sitelib}/%{name}/plugins/
 %{python_sitelib}/pulp_server*.egg-info
+%if %{pulp_systemd} == 0
+# Install the init scripts
+%defattr(755,root,root,-)
+%config %{_initddir}/pulp_celerybeat
+%config %{_initddir}/pulp_workers
+%config %{_initddir}/pulp_resource_manager
+%else
+# Install the systemd unit files
+%defattr(-,root,root,-)
+%{_usr}/lib/systemd/system/*
+%defattr(755,root,root,-)
+%{_libexecdir}/pulp-manage-workers
+%endif
 # 640 root:apache
 %defattr(640,root,apache,-)
 %ghost %{_sysconfdir}/pki/%{name}/ca.key
@@ -233,8 +273,9 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 # - apache:apache
 %defattr(-,apache,apache,-)
-%dir %{_var}/log/%{name}
 %{_var}/lib/%{name}/
+%dir %{_var}/log/%{name}
+%{_var}/www/pub
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE

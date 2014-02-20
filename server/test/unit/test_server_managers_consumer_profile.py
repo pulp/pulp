@@ -23,6 +23,7 @@ from pulp.server.managers import factory
 from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.devel import mock_plugins
+from pulp.devel import mock_agent
 
 
 class ProfileManagerTests(base.PulpAsyncServerTests):
@@ -39,12 +40,14 @@ class ProfileManagerTests(base.PulpAsyncServerTests):
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         mock_plugins.install()
+        mock_agent.install()
 
     def tearDown(self):
         super(ProfileManagerTests, self).tearDown()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         mock_plugins.reset()
+        mock_agent.reset()
 
     def populate(self):
         manager = factory.consumer_manager()

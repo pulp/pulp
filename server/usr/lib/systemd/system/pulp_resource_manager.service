@@ -1,0 +1,13 @@
+[Unit]
+Description=Pulp Resource Manager
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/default/pulp_resource_manager
+User=apache
+WorkingDirectory=/var/lib/pulp/celery/
+ExecStart=/usr/bin/celery worker -A pulp.server.async.app -n resource_manager@%%h\
+          -Q resource_manager -c 1 --events --loglevel=${CELERYD_LOG_LEVEL} --logfile=${CELERYD_LOG_FILE}
+
+[Install]
+WantedBy=multi-user.target

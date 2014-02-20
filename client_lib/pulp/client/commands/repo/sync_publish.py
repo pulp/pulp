@@ -10,33 +10,25 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Commands and hooks for creating and using sync, publish, and progress status
 commands.
 """
-
 from gettext import gettext as _
 
-from pulp.client.commands import options
-from pulp.client.commands.repo.status import status, tasks
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOptionGroup
+from pulp.bindings import responses
+from pulp.client.commands import options, polling
+from pulp.client.extensions.extensions import PulpCliOptionGroup
+from pulp.common import tags
 
-# -- constants ----------------------------------------------------------------
 
 # Command Descriptions
-
 DESC_SYNC_RUN = _('triggers an immediate sync of a repository')
 DESC_SYNC_STATUS = _('displays the status of a repository\'s sync tasks')
 
 DESC_PUBLISH_RUN = _('triggers an immediate publish of a repository')
 DESC_PUBLISH_STATUS = _('displays the status of a repository\'s publish tasks')
 
-NAME_BACKGROUND = 'bg'
-DESC_BACKGROUND = _('if specified, the CLI process will end but the process will continue on '
-                    'the server; the progress can be later displayed using the status command')
-
-# -- hooks --------------------------------------------------------------------
 
 class StatusRenderer(object):
 
@@ -47,9 +39,59 @@ class StatusRenderer(object):
     def display_report(self, progress_report):
         raise NotImplementedError()
 
-# -- commands -----------------------------------------------------------------
 
-class RunSyncRepositoryCommand(PulpCliCommand):
+class SyncPublishCommand(polling.PollingCommand):
+    """
+    This class contains common behaviors found in the sync and publish commands in this module.
+    """
+    def __init__(self, name, description, method, context, renderer):
+        """
+        Initialize the command, and call the superclass __init__().
+
+        :param name:        The name of the command
+        :type  name:        basestring
+        :param description: The description of the command
+        :type  description: basestring
+        :param method:      The method to be run if the command is used
+        :type  method:      callable
+        :param context:     The CLI context from Okaara
+        :type  context:     pulp.client.extensions.core.ClientContext
+        :param renderer:    The renderer to be used to print progress reports
+        :type  renderer:    StatusRenderer
+        """
+        if method is None:
+            method = self.run
+
+        super(SyncPublishCommand, self).__init__(name, description, method, context)
+
+        self.renderer = renderer
+        self.add_option(options.OPTION_REPO_ID)
+        self.context = context
+        self.prompt = context.prompt
+
+    def progress(self, task, spinner):
+        """
+        Render the progress report, if it is available on the given task.
+
+        :param task:    The Task that we wish to render progress about
+        :type  task:    pulp.bindings.responses.Task
+        :param spinner: Not used by this method, but the superclass will give it to us
+        :type  spinner: okaara.progress.Spinner
+        """
+        if task.progress_report is not None:
+            self.renderer.display_report(task.progress_report)
+
+    def task_header(self, task):
+        """
+        We don't want any task header printed for this task, so we need to override the superclass behavior.
+
+        :param task: The Task that we don't want to do anything with. Unused.
+        :type  task: pulp.bindings.responses.Task
+        """
+        pass
+
+
+class RunSyncRepositoryCommand(SyncPublishCommand):
     """
     Requests an immediate sync for a repository. If the sync begins (it is not
     postponed or rejected), the provided renderer will be used to track its
@@ -61,90 +103,76 @@ class RunSyncRepositoryCommand(PulpCliCommand):
         """
         :type renderer: pulp.client.commands.repo.sync_publish.StatusRenderer
         """
-
-        if method is None:
-            method = self.run
-
-        super(RunSyncRepositoryCommand, self).__init__(name, description, method)
-
-        self.context = context
-        self.prompt = context.prompt
-        self.renderer = renderer
-
-        self.add_option(options.OPTION_REPO_ID)
-        self.create_flag('--' + NAME_BACKGROUND, DESC_BACKGROUND)
+        super(RunSyncRepositoryCommand, self).__init__(name, description, method, context, renderer)
 
     def run(self, **kwargs):
+        """
+        If there are existing sync tasks running, attach to them and display their progress reports. Else,
+        queue a new sync task and display its progress report.
+
+        :param kwargs: The user input
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
-        background = kwargs[NAME_BACKGROUND]
+        background = kwargs[polling.FLAG_BACKGROUND.keyword]
 
         self.prompt.render_title(_('Synchronizing Repository [%(r)s]') % {'r' : repo_id})
 
         # See if an existing sync is running for the repo. If it is, resume
         # progress tracking.
-        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
-        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
+        existing_sync_tasks = _get_repo_tasks(self.context, repo_id, 'sync')
 
-        if task_group_id is not None:
+        if existing_sync_tasks:
             msg = _('A sync task is already in progress for this repository. ')
             if not background:
                 msg += _('Its progress will be tracked below.')
             self.context.prompt.render_paragraph(msg, tag='in-progress')
+            self.poll(existing_sync_tasks, kwargs)
 
         else:
             # Trigger the actual sync
             response = self.context.server.repo_actions.sync(repo_id, None)
-            sync_task = tasks.sync_task_in_sync_task_group(response.response_body)
-            task_group_id = sync_task.task_group_id
-
-        if not background:
-            status.display_group_status(self.context, self.renderer, task_group_id)
-        else:
-            msg = _('The status of this sync can be displayed using the status command.')
-            self.context.prompt.render_paragraph(msg, 'background')
+            sync_task = response.response_body
+            self.poll([sync_task], kwargs)
 
 
-class SyncStatusCommand(PulpCliCommand):
+class SyncStatusCommand(SyncPublishCommand):
     def __init__(self, context, renderer, name='status', description=DESC_SYNC_STATUS, method=None):
-
-        if method is None:
-            method = self.run
-
-        super(SyncStatusCommand, self).__init__(name, description, method)
-
-        self.context = context
-        self.prompt = context.prompt
-        self.renderer = renderer
-
-        self.add_option(options.OPTION_REPO_ID)
+        super(SyncStatusCommand, self).__init__(name, description, method, context, renderer)
 
     def run(self, **kwargs):
+        """
+        Query the server to find any existing and incomplete sync Tasks. If found, attach to them and display
+        their progress. If not, display and error and return.
+
+        :param kwargs: The user input
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
 
         # Load the relevant task group
-        existing_sync_tasks = self.context.server.tasks.get_repo_sync_tasks(repo_id).response_body
-        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
+        existing_sync_tasks = _get_repo_tasks(self.context, repo_id, 'sync')
 
-        if task_group_id is None:
+        if not existing_sync_tasks:
             msg = _('The repository is not performing any operations')
             self.prompt.render_paragraph(msg, tag='no-tasks')
         else:
-            status.display_group_status(self.context, self.renderer, task_group_id)
+            self.poll(existing_sync_tasks, kwargs)
 
 
-class RunPublishRepositoryCommand(PulpCliCommand):
+class RunPublishRepositoryCommand(SyncPublishCommand):
     """
-    Base class for repo publish operation. 
-    
+    Base class for repo publish operation.
+
     Requests an immediate publish for a repository. Specified distributor_id is used
     for publishing. If the publish begins (it is not postponed or rejected),
-    the provided renderer will be used to track its progress. The user has the option 
+    the provided renderer will be used to track its progress. The user has the option
     to exit the progress polling or skip it entirely through a flag on the run command.
     List of additional configuration override options can be passed in override_config_options.
     """
 
-    def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN, 
+    def __init__(self, context, renderer, distributor_id, name='run', description=DESC_PUBLISH_RUN,
                  method=None, override_config_options=()):
         """
         :param context: Pulp client context
@@ -156,24 +184,15 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         :param distributor_id: Id of a distributor to be used for publishing
         :type distributor_id: str
 
-        :param override_config_options: Additional publish options to be accepted from user. These options will override 
+        :param override_config_options: Additional publish options to be accepted from user. These options will override
             respective options from the default publish config. Each entry should be
             either a PulpCliOption or PulpCliFlag instance
         :type override_config_options: list
         """
-        if method is None:
-            method = self.run
+        super(RunPublishRepositoryCommand, self).__init__(name, description, method, context, renderer)
 
-        super(RunPublishRepositoryCommand, self).__init__(name, description, method)
-
-        self.context = context
-        self.prompt = context.prompt
-        self.renderer = renderer
         self.distributor_id = distributor_id
         self.override_config_keywords = []
-
-        self.add_option(options.OPTION_REPO_ID)
-        self.create_flag('--' + NAME_BACKGROUND, DESC_BACKGROUND)
 
         # Process and add config override options in their own group and save option keywords
         if override_config_options:
@@ -186,9 +205,9 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
     def run(self, **kwargs):
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
-        background = kwargs[NAME_BACKGROUND]
+        background = kwargs[polling.FLAG_BACKGROUND.keyword]
         override_config = {}
-        
+
         # Generate override_config if any of the override options are passed.
         if self.override_config_keywords:
             override_config = self.generate_override_config(**kwargs)
@@ -202,39 +221,31 @@ class RunPublishRepositoryCommand(PulpCliCommand):
 
         # See if an existing publish is running for the repo. If it is, resume
         # progress tracking.
-        existing_publish_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        task_id = tasks.relevant_existing_task_id(existing_publish_tasks)
+        existing_publish_tasks = _get_repo_tasks(self.context, repo_id, 'publish')
 
-        if task_id is not None:
+        if existing_publish_tasks:
             msg = _('A publish task is already in progress for this repository. ')
             if not background:
                 msg += _('Its progress will be tracked below.')
             self.context.prompt.render_paragraph(msg, tag='in-progress')
-
+            self.poll(existing_publish_tasks, kwargs)
         else:
             if not override_config:
                 override_config = None
             response = self.context.server.repo_actions.publish(repo_id, self.distributor_id, override_config)
-            task_id = response.response_body.task_id
+            task_id = response.response_body
+            self.poll([task_id], kwargs)
 
-        if not background:
-            status.display_task_status(self.context, self.renderer, task_id)
-        else:
-            msg = _('The status of this publish can be displayed using the status command.')
-            self.context.prompt.render_paragraph(msg, 'background')
-
-            
     def generate_override_config(self, **kwargs):
         """
         Check if any of the override config options is passed by the user and create override_config
         dictionary
 
         :param kwargs: all keyword arguments passed in by the user on the command line
-        :type kwargs: dict
-
-        :return: config option dictionary consisting of option values passed by user for valid publish config options
-                 (stored in override_config_keywords)
-        :rtype: dict
+        :type kwargs:  dict
+        :return:       config option dictionary consisting of option values passed by user for valid publish
+                       config options (stored in override_config_keywords)
+        :rtype:        dict
         """
         override_config = {}
         for option in self.override_config_keywords:
@@ -244,30 +255,51 @@ class RunPublishRepositoryCommand(PulpCliCommand):
         return override_config
 
 
-class PublishStatusCommand(PulpCliCommand):
+class PublishStatusCommand(SyncPublishCommand):
     def __init__(self, context, renderer, name='status', description=DESC_PUBLISH_STATUS, method=None):
-
-        if method is None:
-            method = self.run
-
-        super(PublishStatusCommand, self).__init__(name, description, method)
-
-        self.context = context
-        self.prompt = context.prompt
-        self.renderer = renderer
-
-        self.add_option(options.OPTION_REPO_ID)
+        super(PublishStatusCommand, self).__init__(name, description, method, context, renderer)
 
     def run(self, **kwargs):
+        """
+        Query the server for any incomplete publish operations for the repo given in kwargs. If found, display
+        their progress reports. If not, display and error message and return.
+
+        :param kwargs: The user input
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         self.prompt.render_title(_('Repository Status [%(r)s]') % {'r' : repo_id})
 
-        # Load the relevant task group
-        existing_sync_tasks = self.context.server.tasks.get_repo_publish_tasks(repo_id).response_body
-        task_group_id = tasks.relevant_existing_task_group_id(existing_sync_tasks)
+        existing_publish_tasks = _get_repo_tasks(self.context, repo_id, 'publish')
 
-        if task_group_id is None:
+        if not existing_publish_tasks:
             msg = _('The repository is not performing any operations')
             self.prompt.render_paragraph(msg, tag='no-tasks')
         else:
-            status.display_group_status(self.context, self.renderer, task_group_id)
+            self.poll(existing_publish_tasks, kwargs)
+
+
+def _get_repo_tasks(context, repo_id, action):
+    """
+    Retrieve a list of incomplete Task objects for the given repo_id and action. action must be one
+    of 'sync' or 'publish'.
+
+    :param context: The CLI context from Okaara
+    :type  context: pulp.client.extensions.core.ClientContext
+    :param repo_id: The primary key of the repository you wish to limit the Task query to
+    :type  repo_id: basestring
+    :param action:  One of "sync" or "publish"
+    :type  action:  basestring
+    :return:        A list of Task objects
+    :rtype:         list
+    """
+    repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
+    if action == 'publish':
+        tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
+    elif action == 'sync':
+        tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
+    else:
+        raise Exception('_get_repo_tasks() does not support %(action)s as an action.' % {'action': action})
+    repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
+                                        'tags': {'$all': [repo_tag, tag]}}}
+    return context.server.tasks_search.search(**repo_search_criteria)

@@ -10,26 +10,30 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from gettext import gettext as _
 import logging
 import re
 import sys
 import uuid
 
+from celery import task
+
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.exceptions import MissingResource, InvalidValue, PulpExecutionException, PulpDataException
+from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
+                                    PulpDataException)
 import pulp.server.managers.repo._common as common_utils
+from pulp.server.managers.schedule.repo import RepoPublishScheduleManager
 
-# -- constants ----------------------------------------------------------------
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
-_LOG = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
+logger = logging.getLogger(__name__)
+
 
 class RepoDistributorManager(object):
 
@@ -50,7 +54,8 @@ class RepoDistributorManager(object):
                distributor with the given ID
         """
 
-        distributor = RepoDistributor.get_collection().find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        distributor = RepoDistributor.get_collection().find_one(
+            {'repo_id' : repo_id, 'id' : distributor_id})
 
         if distributor is None:
             raise MissingResource(distributor=distributor_id)
@@ -95,7 +100,8 @@ class RepoDistributorManager(object):
         projection = {'scratchpad' : 0}
         return list(RepoDistributor.get_collection().find(spec, projection))
 
-    def add_distributor(self, repo_id, distributor_type_id, repo_plugin_config,
+    @staticmethod
+    def add_distributor(repo_id, distributor_type_id, repo_plugin_config,
                         auto_publish, distributor_id=None):
         """
         Adds an association from the given repository to a distributor. The
@@ -105,29 +111,25 @@ class RepoDistributorManager(object):
         the given ID, the existing one will be removed and replaced with the
         newly configured one.
 
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @param distributor_type_id: identifies the distributor; must correspond
-                                    to a distributor loaded at server startup
-        @type  distributor_type_id: str
-
-        @param repo_plugin_config: configuration the repo will use with this distributor; may be None
-        @type  repo_plugin_config: dict
-
-        @param auto_publish: if true, this distributor will be invoked at
-                             the end of every sync
-        @type  auto_publish: bool
-
-        @param distributor_id: unique ID to refer to this distributor for this repo
-        @type  distributor_id: str
-
-        @return: ID assigned to the distributor (only valid in conjunction with the repo)
-
-        @raise MissingResource: if the given repo_id does not refer to a valid repo
-        @raise InvalidValue: if the distributor ID is provided and unacceptable
-        @raise InvalidDistributorConfiguration: if the distributor plugin does not
-               accept the given configuration
+        :param repo_id:                         identifies the repo
+        :type  repo_id:                         str
+        :param distributor_type_id:             identifies the distributor; must correspond to a
+                                                distributor loaded at server startup
+        :type  distributor_type_id:             str
+        :param repo_plugin_config:              configuration the repo will use with this
+                                                distributor; may be None
+        :type  repo_plugin_config:              dict
+        :param auto_publish:                    if true, this distributor will be invoked at the end
+                                                of every sync
+        :type  auto_publish:                    bool
+        :param distributor_id:                  unique ID to refer to this distributor for this repo
+        :type  distributor_id:                  str
+        :return:                                ID assigned to the distributor (only valid in
+                                                conjunction with the repo)
+        :raise MissingResource:                 if the given repo_id does not refer to a valid repo
+        :raise InvalidValue:                    if the distributor ID is provided and unacceptable
+        :raise InvalidDistributorConfiguration: if the distributor plugin does not accept the given
+                                                configuration
         """
 
         repo_coll = Repo.get_collection()
@@ -175,7 +177,7 @@ class RepoDistributorManager(object):
             else:
                 valid_config, message = result
         except Exception, e:
-            _LOG.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
+            logger.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
@@ -183,7 +185,7 @@ class RepoDistributorManager(object):
 
         # Remove the old distributor if it exists
         try:
-            self.remove_distributor(repo_id, distributor_id)
+            RepoDistributorManager.remove_distributor(repo_id, distributor_id)
         except MissingResource:
             pass # if it didn't exist, no problem
 
@@ -191,7 +193,7 @@ class RepoDistributorManager(object):
         try:
             distributor_instance.distributor_added(transfer_repo, call_config)
         except Exception:
-            _LOG.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
+            logger.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Database Update
@@ -200,7 +202,8 @@ class RepoDistributorManager(object):
 
         return distributor
 
-    def remove_distributor(self, repo_id, distributor_id):
+    @staticmethod
+    def remove_distributor(repo_id, distributor_id):
         """
         Removes a distributor from a repository.
 
@@ -226,6 +229,9 @@ class RepoDistributorManager(object):
         if repo_distributor is None:
             raise MissingResource(distributor=distributor_id)
 
+        # remove schedules
+        RepoPublishScheduleManager().delete_by_distributor_id(repo_id, repo_distributor['id'])
+
         # Call the distributor's cleanup method
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
@@ -233,14 +239,16 @@ class RepoDistributorManager(object):
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
 
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id,
+                                                                         repo_id)
 
         distributor_instance.distributor_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
         distributor_coll.remove({'_id': repo_distributor['_id']}, safe=True)
 
-    def update_distributor_config(self, repo_id, distributor_id, distributor_config, auto_publish=None):
+    @staticmethod
+    def update_distributor_config(repo_id, distributor_id, distributor_config, auto_publish=None):
         """
         Attempts to update the saved configuration for the given distributor.
         The distributor will be asked if the new configuration is valid. If not,
@@ -300,11 +308,13 @@ class RepoDistributorManager(object):
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id,
+                                                                         repo_id)
         config_conduit = RepoConfigConduit(distributor_type_id)
 
         try:
-            result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
+            result = distributor_instance.validate_config(transfer_repo, call_config,
+                                                          config_conduit)
 
             # For backward compatibility with plugins that don't yet return the tuple
             if isinstance(result, bool):
@@ -313,7 +323,10 @@ class RepoDistributorManager(object):
             else:
                 valid_config, message = result
         except Exception, e:
-            _LOG.exception('Exception raised from distributor [%s] while validating config for repo [%s]' % (distributor_type_id, repo_id))
+            msg = _('Exception raised from distributor [%(d)s] while validating config for repo '
+                    '[%(r)s]')
+            msg = msg % {'d': distributor_type_id, 'r': repo_id}
+            logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
@@ -369,7 +382,7 @@ class RepoDistributorManager(object):
             payload = distributor_instance.create_consumer_payload(transfer_repo, call_config, binding_config)
             return payload
         except Exception:
-            _LOG.exception('Exception raised from distributor [%s] generating consumer payload' % distributor_id)
+            logger.exception('Exception raised from distributor [%s] generating consumer payload' % distributor_id)
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
     def get_distributor_scratchpad(self, repo_id, distributor_id):
@@ -473,7 +486,12 @@ class RepoDistributorManager(object):
             raise MissingResource(repo=repo_id, distributor=distributor_id)
         return distributor['scheduled_publishes']
 
-# -- functions ----------------------------------------------------------------
+
+add_distributor = task(RepoDistributorManager.add_distributor, base=Task)
+remove_distributor = task(RepoDistributorManager.remove_distributor, base=Task, ignore_result=True)
+update_distributor_config = task(RepoDistributorManager.update_distributor_config, base=Task,
+                                 ignore_result=True)
+
 
 def is_distributor_id_valid(distributor_id):
     """

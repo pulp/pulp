@@ -11,9 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from datetime import datetime
+from pulp.server.webservices.serialization.link import link_obj
 
-from pulp.common import dateutils
+
+def task_result_href(task):
+    if task.get('task_id'):
+        return {'_href': '/pulp/api/v2/tasks/%s/' % task['task_id']}
+    return {}
 
 
 def task_href(call_report):
@@ -28,41 +32,27 @@ def task_group_href(call_report):
     return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.call_request_group_id}
 
 
-def scheduled_call_obj(scheduled_call):
-    obj = {
-        '_id': str(scheduled_call['_id']),
-        '_href': None, # should be replaced by the caller!
-        'schedule': scheduled_call['schedule'],
-        'failure_threshold': scheduled_call['failure_threshold'],
-        'enabled': scheduled_call['enabled'],
-        'consecutive_failures': scheduled_call['consecutive_failures'],
-        'remaining_runs': scheduled_call['remaining_runs'],
-        'first_run': None,
-        'last_run': None,
-        'next_run': None,
-    }
-    for run_time_field in ('first_run', 'last_run', 'next_run'):
-        run_time = scheduled_call[run_time_field]
-        if isinstance(run_time, datetime):
-            utc_run_time = run_time.replace(tzinfo=dateutils.utc_tz())
-            obj[run_time_field] = dateutils.format_iso8601_datetime(utc_run_time)
-    return obj
-
-
-def scheduled_sync_obj(scheduled_call):
-    obj = scheduled_call_obj(scheduled_call)
-    obj['override_config'] = scheduled_call['call_request'].kwargs['overrides']
-    return obj
-
-
-def scheduled_publish_obj(scheduled_call):
-    obj = scheduled_call_obj(scheduled_call)
-    obj['override_config'] = scheduled_call['call_request'].kwargs['overrides']
-    return obj
-
-
 def scheduled_unit_management_obj(scheduled_call):
-    obj = scheduled_call_obj(scheduled_call)
-    obj['options'] = scheduled_call['call_request'].kwargs['options']
-    obj['units'] = scheduled_call['call_request'].kwargs['units']
-    return obj
+    scheduled_call['options'] = scheduled_call['kwargs']['options']
+    scheduled_call['units'] = scheduled_call['kwargs']['units']
+    return scheduled_call
+
+
+def spawned_tasks(task):
+    """
+    For a given Task dictionary convert the spawned tasks list of ids to
+    a list of link objects
+
+    :param task: The dictionary representation of a task object in the database
+    :type task: dict
+    """
+    spawned = task.get('spawned_tasks')
+    if spawned:
+        spawned_tasks = []
+        for spawned_task_id in spawned:
+            link = link_obj('/pulp/api/v2/tasks/%s/' % spawned_task_id)
+            link['task_id'] = spawned_task_id
+            spawned_tasks.append(link)
+        return {'spawned_tasks': spawned_tasks}
+    return {}
+

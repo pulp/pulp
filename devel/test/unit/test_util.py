@@ -13,6 +13,8 @@
 import unittest
 from xml.etree import ElementTree
 
+from mock import Mock
+
 from pulp.devel.unit import util
 
 
@@ -119,4 +121,19 @@ class TestCompareEtree(unittest.TestCase):
         source = ElementTree.fromstring(source_string)
         target = ElementTree.fromstring(target_string)
         self.assertRaises(AssertionError, util.compare_element, source, target)
+
+
+class TestAssertBodyMatchesAsyncTask(unittest.TestCase):
+
+    def test_successful_match(self):
+        body = {'spawned_tasks': [{'task_id': "foo"}, ]}
+        task = Mock()
+        task.id = "foo"
+        util.assert_body_matches_async_task(body, task)
+
+    def test_failure_malformed_body(self):
+        body = {}
+        task = Mock()
+        task.id = "foo"
+        self.assertRaises(Exception, util.assert_body_matches_async_task, body, task)
 

@@ -18,28 +18,27 @@ update, and deletion on a Pulp user.
 
 from gettext import gettext as _
 
-import logging
+from celery import task
 import re
 
 from pulp.server import config
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.auth import User
-from pulp.server.exceptions import PulpDataException, DuplicateResource, InvalidValue, MissingResource
+from pulp.server.exceptions import (PulpDataException, DuplicateResource, InvalidValue,
+                                    MissingResource)
 from pulp.server.managers import factory
+from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 
-# -- constants ----------------------------------------------------------------
 
 _USER_LOGIN_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
 
-_LOG = logging.getLogger(__name__)
-
-# -- classes ------------------------------------------------------------------
 
 class UserManager(object):
     """
     Performs user related functions relating to CRUD operations.
     """
-
-    def create_user(self, login, password=None, name=None, roles=None):
+    @staticmethod
+    def create_user(login, password=None, name=None, roles=None):
         """
         Creates a new Pulp user and adds it to specified to roles.
 
@@ -87,7 +86,7 @@ class UserManager(object):
         # Creation
         create_me = User(login=login, password=hashed_password, name=name, roles=roles)
         User.get_collection().save(create_me, safe=True)
-        
+
         # Grant permissions
         permission_manager = factory.permission_manager()
         permission_manager.grant_automatic_permissions_for_user(create_me['login'])
@@ -95,12 +94,11 @@ class UserManager(object):
         # Retrieve the user to return the SON object
         created = User.get_collection().find_one({'login' : login})
         created.pop('password')
-        
+
         return created
 
-
-
-    def update_user(self, login, delta):
+    @staticmethod
+    def update_user(login, delta):
         """
         Updates the user. Following fields may be updated through this call:
         * password
@@ -140,7 +138,8 @@ class UserManager(object):
             if delta['roles'] is None or invalid_type(delta['roles'], list):
                 invalid_values.append('roles')
             else:
-                # Add new roles to the user and remove deleted roles from the user according to delta
+                # Add new roles to the user and remove deleted roles from the user according to
+                # delta
                 role_manager = factory.role_manager()
                 old_roles = user['roles']
                 for new_role in delta['roles']:
@@ -161,9 +160,9 @@ class UserManager(object):
         updated.pop('password')
 
         return updated
-    
 
-    def delete_user(self, login):
+    @staticmethod
+    def delete_user(login):
         """
         Deletes the given user. Deletion of last superuser is not permitted.
 
@@ -184,15 +183,14 @@ class UserManager(object):
             raise MissingResource(login)
 
         # Make sure user is not the last super user 
-        if factory.user_query_manager().is_last_super_user(login): 
+        if factory.user_query_manager().is_last_super_user(login):
             raise PulpDataException(_("The last superuser [%s] cannot be deleted" % login))
-             
+
         # Revoke all permissions from the user
         permission_manager = factory.permission_manager()
         permission_manager.revoke_all_permissions_from_user(login)
-        
-        User.get_collection().remove({'login' : login}, safe=True)
 
+        User.get_collection().remove({'login' : login}, safe=True)
 
     def ensure_admin(self):
         """
@@ -202,23 +200,25 @@ class UserManager(object):
         """
         user_query_manager = factory.user_query_manager()
         role_manager = factory.role_manager()
-        
-        super_users = user_query_manager.find_users_belonging_to_role(role_manager.super_user_role)
+
+        super_users = user_query_manager.find_users_belonging_to_role(SUPER_USER_ROLE)
         if super_users:
             return
-        
+
         default_login = config.config.get('server', 'default_login')
-        
+
         admin = User.get_collection().find_one({'login' : default_login})
         if admin is None:
             default_password = config.config.get('server', 'default_password')
-            admin = factory.user_manager().create_user(login=default_login, password=default_password)
-        
-        role_manager.add_user_to_role(role_manager.super_user_role, default_login)
+            admin = UserManager.create_user(login=default_login,
+                                            password=default_password)
+
+        role_manager.add_user_to_role(SUPER_USER_ROLE, default_login)
 
 
-
-# -- functions ----------------------------------------------------------------
+create_user = task(UserManager.create_user, base=Task)
+delete_user = task(UserManager.delete_user, base=Task, ignore_result=True)
+update_user = task(UserManager.update_user, base=Task)
 
 
 def invalid_type(input_value, valid_type):

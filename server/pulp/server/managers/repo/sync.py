@@ -17,7 +17,6 @@ operations. All classes and functions in this module run synchronously; any
 need to execute syncs asynchronously must be handled at a higher layer.
 """
 
-# Python
 import datetime
 import isodate
 import logging
@@ -25,7 +24,8 @@ import os
 import sys
 from gettext import gettext as _
 
-# Pulp
+from celery import task
+
 from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -33,6 +33,7 @@ from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
+from pulp.server.async.tasks import register_sigterm_handler, Task
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
@@ -40,18 +41,15 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 
-# -- constants ----------------------------------------------------------------
+logger = logging.getLogger(__name__)
 
-_LOG = logging.getLogger(__name__)
-
-# -- manager ------------------------------------------------------------------
 
 class RepoSyncManager(object):
     """
     Manager used to handle sync and sync query operations.
     """
-
-    def sync(self, repo_id, sync_config_override=None):
+    @staticmethod
+    def sync(repo_id, sync_config_override=None):
         """
         Performs a synchronize operation on the given repository.
 
@@ -86,7 +84,8 @@ class RepoSyncManager(object):
         if repo is None:
             raise MissingResource(repo_id)
 
-        importer_instance, importer_config = self._get_importer_instance_and_config(repo_id)
+        importer_instance, importer_config = RepoSyncManager._get_importer_instance_and_config(
+            repo_id)
 
         if importer_instance is None:
             raise MissingResource(repo_id)
@@ -98,16 +97,20 @@ class RepoSyncManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         # Assemble the data needed for the sync
-        conduit = RepoSyncConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_IMPORTER, repo_importer['id'])
+        conduit = RepoSyncConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_IMPORTER,
+                                  repo_importer['id'])
 
-        call_config = PluginCallConfiguration(importer_config, repo_importer['config'], sync_config_override)
+        call_config = PluginCallConfiguration(importer_config, repo_importer['config'],
+                                              sync_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(repo_importer['importer_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = common_utils.importer_working_dir(
+            repo_importer['importer_type_id'], repo_id, mkdir=True)
 
         # Fire an events around the call
         fire_manager = manager_factory.event_fire_manager()
         fire_manager.fire_repo_sync_started(repo_id)
-        sync_result = self._do_sync(repo, importer_instance, transfer_repo, conduit, call_config)
+        sync_result = RepoSyncManager._do_sync(repo, importer_instance, transfer_repo, conduit,
+                                               call_config)
         fire_manager.fire_repo_sync_finished(sync_result)
 
         dispatch_context.clear_cancel_control_hook()
@@ -120,7 +123,8 @@ class RepoSyncManager(object):
         # auto publish call has been moved to a dependent call in a multiple
         # call execution through the coordinator
 
-    def _get_importer_instance_and_config(self, repo_id):
+    @staticmethod
+    def _get_importer_instance_and_config(repo_id):
         importer_manager = manager_factory.repo_importer_manager()
         try:
             repo_importer = importer_manager.get_importer(repo_id)
@@ -130,7 +134,8 @@ class RepoSyncManager(object):
             config = None
         return importer, config
 
-    def _do_sync(self, repo, importer_instance, transfer_repo, conduit, call_config):
+    @staticmethod
+    def _do_sync(repo, importer_instance, transfer_repo, conduit, call_config):
         """
         Once all of the preparation for a sync has taken place, this call
         will perform the sync, making the necessary database updates. It returns
@@ -151,16 +156,22 @@ class RepoSyncManager(object):
         result = None
 
         try:
-            sync_report = importer_instance.sync_repo(transfer_repo, conduit, call_config)
+            # Replace the Importer's sync_repo() method with our register_sigterm_handler decorator,
+            # which will set up cancel_sync_repo() as the target for the signal handler
+            sync_repo = register_sigterm_handler(importer_instance.sync_repo,
+                                                 importer_instance.cancel_sync_repo)
+            sync_report = sync_repo(transfer_repo, conduit, call_config)
 
         except Exception, e:
             sync_end_timestamp = _now_timestamp()
 
-            result = RepoSyncResult.error_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
-                                                 sync_start_timestamp, sync_end_timestamp, e, sys.exc_info()[2])
+            result = RepoSyncResult.error_result(
+                repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+                sync_start_timestamp, sync_end_timestamp, e, sys.exc_info()[2])
 
-            _LOG.exception(_('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
-            raise PulpExecutionException(), None, sys.exc_info()[2]
+            logger.exception(
+                _('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
+            raise
 
         else:
             sync_end_timestamp = _now_timestamp()
@@ -184,19 +195,23 @@ class RepoSyncManager(object):
                     result_code = RepoSyncResult.RESULT_FAILED
 
             else:
-                _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid sync report' % (repo_importer['importer_type_id'], repo_id))
+                msg = _('Plugin type [%s] on repo [%s] did not return a valid sync report')
+                msg = msg % (repo_importer['importer_type_id'], repo_id)
+                logger.warn(msg)
 
                 added_count = updated_count = removed_count = -1 # None?
-                summary = details = _('Unknown')
+                summary = details = msg
                 result_code = RepoSyncResult.RESULT_ERROR # RESULT_UNKNOWN?
 
-            result = RepoSyncResult.expected_result(repo_id, repo_importer['id'], repo_importer['importer_type_id'],
-                                                    sync_start_timestamp, sync_end_timestamp, added_count, updated_count,
-                                                    removed_count, summary, details, result_code)
+            result = RepoSyncResult.expected_result(
+                repo_id, repo_importer['id'], repo_importer['importer_type_id'],
+                sync_start_timestamp, sync_end_timestamp, added_count, updated_count, removed_count,
+                summary, details, result_code)
 
         finally:
             # Do an update instead of a save in case the importer has changed the scratchpad
-            importer_coll.update({'repo_id': repo_id}, {'$set': {'last_sync': sync_end_timestamp}}, safe=True)
+            importer_coll.update({'repo_id': repo_id}, {'$set': {'last_sync': sync_end_timestamp}},
+                                 safe=True)
             # Add a sync history entry for this run
             sync_result_coll.save(result, safe=True)
 
@@ -285,8 +300,6 @@ class RepoSyncManager(object):
 
         return list(cursor)
 
-    # -- utility --------------------------------------------------------------
-
     def get_repo_storage_directory(self, repo_id):
         """
         Returns the directory in which repositories can be stored as they are
@@ -307,6 +320,9 @@ class RepoSyncManager(object):
         return dir
 
 
+sync = task(RepoSyncManager.sync, base=Task)
+
+
 def _now_timestamp():
     """
     @return: timestamp suitable for indicating when a sync completed
@@ -321,5 +337,3 @@ def _repo_storage_dir():
     storage_dir = pulp_config.config.get('server', 'storage_dir')
     dir = os.path.join(storage_dir, 'repos')
     return dir
-
-

@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # Copyright (c) 2011 Red Hat, Inc.
 #
 #
@@ -24,7 +22,6 @@ from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.managers import factory as manager_factory
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoPublishConduitTests(base.PulpServerTests):
 
@@ -107,9 +104,9 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
         self.distributor_id = 'conduit-distributor'
 
         self.group_manager.create_repo_group(self.group_id)
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id=self.distributor_id)
+        distributor = self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id=self.distributor_id)
 
-        self.conduit = RepoGroupPublishConduit(self.group_id, self.distributor_id)
+        self.conduit = RepoGroupPublishConduit(self.group_id, distributor)
 
     def tearDown(self):
         super(RepoGroupPublishConduitTests, self).tearDown()

@@ -17,8 +17,10 @@ Contains base classes for commands that poll the server for asynchronous tasks.
 
 import time
 from gettext import gettext as _
+import collections
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
+from pulp.bindings.responses import Task
 
 
 # Returned from the poll command if one or more of the tasks in the given list
@@ -72,6 +74,9 @@ class PollingCommand(PulpCliCommand):
 
         self.add_flag(FLAG_BACKGROUND)
 
+        #list of tasks we already know about
+        self.known_tasks = set()
+
     def poll(self, task_list, user_input):
         """
         Entry point to begin polling on the tasks in the given list. Each task will be polled
@@ -92,8 +97,8 @@ class PollingCommand(PulpCliCommand):
         There are a few cases where this list is unavailable, in which case the RESULT_*
         constants in this module will be returned.
 
-        :param task_list: list of task reports received from the initial call to the server
-        :type  task_list: list of pulp.bindings.responses.Task
+        :param task_list: list or single task report(s) received from the initial call to the server
+        :type  task_list: list of or a single pulp.bindings.responses.Task
 
         :param user_input: keyword arguments that was passed to the command's method; these contain
                            the user-specified options that may affect this method
@@ -102,17 +107,14 @@ class PollingCommand(PulpCliCommand):
         :return: the final task reports for all of the tasks
         """
 
+        # Process the task_list to get the items we actually care about
+        task_list = self._get_tasks_to_poll(task_list)
+
         # I'm not sure the server has the potential to return an empty list of tasks if nothing
         # was queued, but in case it does account for it here so the caller doesn't have to
         # check anything about the task list before calling this.
         if len(task_list) == 0:
             return []
-
-        # If one task is rejected, they will all be marked as rejected, so we can simply
-        # check the first in the list.
-        if task_list[0].is_rejected():
-            self.rejected(task_list[0])
-            return RESULT_REJECTED
 
         # Punch out early if polling is disabled. This should be done after the rejected check
         # since the expectation is that the tasks were successfully queued but aren't being watched.
@@ -135,6 +137,10 @@ class PollingCommand(PulpCliCommand):
                     self.task_header(task)
 
                 task = self._poll_task(task)
+
+                # Look for new tasks that we need to start polling for
+                task_list.extend(self._get_tasks_to_poll(task))
+
                 completed_task_list.append(task)
 
                 # Display the appropriate message based on the result of the task
@@ -162,6 +168,32 @@ class PollingCommand(PulpCliCommand):
             # Gracefully handle if the user aborts the polling.
             return RESULT_ABORTED
 
+    def _get_tasks_to_poll(self, task):
+        """
+        Recursively run through the tasks returned and add them to the list of
+        items to be processed if and only if they have a task_id
+
+        :param task: A single or a list of tasks
+        :type task: list or pulp.bindings.responses.Task
+        :returns: list of tasks to poll
+        :rtype list of list or pulp.bindings.responses.Task
+        """
+        result_list = []
+        if isinstance(task, list):
+            for item in list(task):
+                result_list.extend(self._get_tasks_to_poll(item))
+        elif isinstance(task, Task):
+            #This isn't an list of tasks but that's ok, we will see if it is an individual task
+            if task.task_id and task.task_id not in self.known_tasks:
+                self.known_tasks.add(task.task_id)
+                result_list.append(task)
+            for item in task.spawned_tasks:
+                result_list.extend(self._get_tasks_to_poll(item))
+        else:
+            raise TypeError('task is not an list or a Task')
+
+        return result_list
+
     def _poll_task(self, task):
         """
         Handles a specific task in the task list until it has completed. This call will handle
@@ -182,10 +214,7 @@ class PollingCommand(PulpCliCommand):
         first_run = True
         while not task.is_completed():
 
-            # Postponed is a more specific version of waiting and must be checked first.
-            if task.is_postponed():
-                self.postponed(task, delayed_spinner)
-            elif task.is_waiting():
+            if task.is_waiting():
                 self.waiting(task, delayed_spinner)
             else:
                 if first_run:
@@ -206,8 +235,6 @@ class PollingCommand(PulpCliCommand):
         self.progress(task, running_spinner)
 
         return task
-
-    # -- polling rendering ----------------------------------------------------------------------------------
 
     def task_header(self, task):
         """
@@ -239,21 +266,6 @@ class PollingCommand(PulpCliCommand):
         """
         msg = _('Waiting to begin...')
         spinner.next(msg)
-
-    def postponed(self, task, spinner):
-        """
-        Called when a task is postponed due to the resource being used.
-        Subclasses may override this to display a custom message to the user.
-
-        :param task: full task report for the task being displayed
-        :type  task: pulp.bindings.responses.Task
-
-        :param spinner: used to indicate progress is still taking place
-        :type  spinner: okaara.progress.Spinner
-        """
-        msg  = _('The request was accepted but postponed due to one or more previous requests '
-                 'against the resource. This request will proceed at the earliest possible time.')
-        spinner.next(message=msg)
 
     def progress(self, task, spinner):
         """
@@ -291,7 +303,11 @@ class PollingCommand(PulpCliCommand):
         """
         msg = _('Task Failed')
         self.prompt.render_failure_message(msg, tag='failed')
-        self.prompt.render_failure_message(task.exception, tag='failed_exception')
+        if task and task.exception:
+            self.prompt.render_failure_message(task.exception, tag='failed_exception')
+        elif task and task.error and 'description' in task.error:
+            self.context.prompt.render_failure_message(task.error['description'],
+                                                       tag='error_message')
 
     def cancelled(self, task):
         """

@@ -11,41 +11,41 @@
 # You should have received a copy of GPLv2 along with this software; if not,
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
-import logging
 import re
 import sys
 
+from celery import task
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
 from pulp.server.exceptions import InvalidValue
 from pulp.server.managers import factory as manager_factory
 
-# -- constants ----------------------------------------------------------------
 
 _CONSUMER_GROUP_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
-_LOG = logging.getLogger(__name__)
 
 
 class ConsumerGroupManager(object):
-
-    # cud operations -----------------------------------------------------------
-
-    def create_consumer_group(self, group_id, display_name=None, description=None, consumer_ids=None, notes=None):
+    @staticmethod
+    def create_consumer_group(group_id, display_name=None, description=None, consumer_ids=None,
+                              notes=None):
         """
         Create a new consumer group.
-        @param group_id: unique id of the consumer group
-        @param display_name: display name of the consumer group
-        @type  display_name: str or None
-        @param description: description of the consumer group
-        @type  description: str or None
-        @param consumer_ids: list of ids for consumers initially belonging to the consumer group
-        @type  consumer_ids: list or None
-        @param notes: notes for the consumer group
-        @type  notes: dict or None
-        @return: SON representation of the consumer group
-        @rtype:  L{bson.SON}
+
+        :param group_id:     unique id of the consumer group
+        :type  group_id:     basestring
+        :param display_name: display name of the consumer group
+        :type  display_name: str or None
+        :param description:  description of the consumer group
+        :type  description:  str or None
+        :param consumer_ids: list of ids for consumers initially belonging to the consumer group
+        :type  consumer_ids: list or None
+        :param notes:        notes for the consumer group
+        :type  notes:        dict or None
+        :return:             SON representation of the consumer group
+        :rtype:              bson.SON
         """
         if group_id is None or _CONSUMER_GROUP_ID_REGEX.match(group_id) is None:
             raise InvalidValue(['group_id'])
@@ -59,7 +59,8 @@ class ConsumerGroupManager(object):
         group = collection.find_one({'id': group_id})
         return group
 
-    def update_consumer_group(self, group_id, **updates):
+    @staticmethod
+    def update_consumer_group(group_id, **updates):
         """
         Update an existing consumer group.
         Valid keyword arguments are:
@@ -105,7 +106,8 @@ class ConsumerGroupManager(object):
         group = collection.find_one({'id': group_id})
         return group
 
-    def delete_consumer_group(self, group_id):
+    @staticmethod
+    def delete_consumer_group(group_id):
         """
         Delete a consumer group.
         @param group_id: unique id of the consumer group to delete
@@ -114,8 +116,6 @@ class ConsumerGroupManager(object):
         collection = validate_existing_consumer_group(group_id)
         # Delete from the database
         collection.remove({'id': group_id}, safe=True)
-
-    # consumer membership ----------------------------------------------------------
 
     def remove_consumer_from_groups(self, consumer_id, group_ids=None):
         """
@@ -134,7 +134,8 @@ class ConsumerGroupManager(object):
         collection = ConsumerGroup.get_collection()
         collection.update(spec, {'$pull': {'consumer_ids': consumer_id}}, multi=True, safe=True)
 
-    def associate(self, group_id, criteria):
+    @staticmethod
+    def associate(group_id, criteria):
         """
         Associate a set of consumers, that match the passed in criteria, to a consumer group.
         @param group_id: unique id of the group to associate consumers to
@@ -152,7 +153,8 @@ class ConsumerGroupManager(object):
                 {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}},
                 safe=True)
 
-    def unassociate(self, group_id, criteria):
+    @staticmethod
+    def unassociate(group_id, criteria):
         """
         Unassociate a set of consumers, that match the passed in criteria, from a consumer group.
         @param group_id: unique id of the group to unassociate consumers from
@@ -169,8 +171,6 @@ class ConsumerGroupManager(object):
                 {'id': group_id},
                 {'$pullAll': {'consumer_ids': consumer_ids}},
                 safe=True)
-
-    # notes --------------------------------------------------------------------
 
     def add_notes(self, group_id, notes):
         """
@@ -244,8 +244,6 @@ class ConsumerGroupManager(object):
         for consumer_id in consumer_group['consumer_ids']:
             agent_manager.uninstall_content(consumer_id, units, options)
 
-    # bind ------------------------------------------------------------
-
     def bind(self, consumer_group_id, repo_id, distributor_id, notify_agent, binding_config):
         group_collection = validate_existing_consumer_group(consumer_group_id)
         consumer_group = group_collection.find_one({'id': consumer_group_id})
@@ -271,7 +269,13 @@ class ConsumerGroupManager(object):
         return unbinds
 
 
-# utility functions ------------------------------------------------------------
+associate = task(ConsumerGroupManager.associate, base=Task, ignore_result=True)
+create_consumer_group = task(ConsumerGroupManager.create_consumer_group, base=Task)
+delete_consumer_group = task(ConsumerGroupManager.delete_consumer_group, base=Task,
+                             ignore_result=True)
+update_consumer_group = task(ConsumerGroupManager.update_consumer_group, base=Task)
+unassociate = task(ConsumerGroupManager.unassociate, base=Task, ignore_result=True)
+
 
 def validate_existing_consumer_group(group_id):
     """
@@ -289,4 +293,3 @@ def validate_existing_consumer_group(group_id):
     if consumer_group is not None:
         return collection
     raise pulp_exceptions.MissingResource(consumer_group=group_id)
-

@@ -11,9 +11,7 @@ for the purpose of consuming published content.  Binding the consumer is perform
 in the following steps:
 
  1. Create the :term:`binding` on server.
- 2. Send a request to the consumer to create the binding.
-
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
+ 2. Optionally send a request to the consumer to create the binding.
 
 The distributor may support configuration options that it may use for that particular
 binding. These options would be used when generating the payload that is sent to consumers
@@ -33,11 +31,12 @@ more information on the format.
 
 | :response_list:`_`
 
-* :response_code:`202,if the bind request was accepted`
+* :response_code:`200,if the bind request was fully processed on the server`
+* :response_code:`202,if an additional task was created to update consumer agents`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the consumer, repository or distributor does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report` if any tasks were spawned.  In the event of a 200 response the body will be be the binding that was created.
 
 :sample_request:`_` ::
 
@@ -45,6 +44,13 @@ more information on the format.
    "repo_id": "test-repo",
    "distributor_id": "dist-1"
  }
+
+**Tags:**
+Each task created to add the binding to a :term:`consumer`
+will be created with the following tags: ``"pulp:repository:<repo_id>",
+"pulp:consumer:<consumer_id>"
+"pulp:repository_distributor:<distributor-id>"
+"pulp:action:bind"``
 
 .. _unbind:
 
@@ -62,11 +68,9 @@ Unbinding the consumer is performed in the following steps:
 
 The steps for a forced unbind are as follows:
 
- 1. The :term:`binding` is deleted on the server.
- 2. Send a request to the consumer to remove the binding.  The result of the consumer
-    request discarded.
-
-Each step is represented by a :ref:`call_report` in the returned :ref:`call_report_array`.
+ 1. The :term:`binding` is deleted on the server. This happens synchronously with the call.
+ 2. Send a request to the consumer to remove the binding.  The ID of the request to the consumer
+    is returned via the spawned_tasks field of the :ref:`call_report`.
 
 | :method:`delete`
 | :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>`
@@ -83,9 +87,14 @@ Each step is represented by a :ref:`call_report` in the returned :ref:`call_repo
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the binding does not exist`
 
-| :return:`A` :ref:`call_report_array`
+| :return:`A` :ref:`call_report` if any tasks were spawned.
 
-
+**Tags:**
+Each task created to delete the binding from a :term:`consumer`
+will be created with the following tags: ``"pulp:repository:<repo_id>",
+"pulp:consumer:<consumer_id>"
+"pulp:repository_distributor:<distributor-id>"
+"pulp:action:unbind"``
 
 Retrieve a Single Binding
 -------------------------

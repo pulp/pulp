@@ -28,6 +28,8 @@ RESOURCE_CONTENT_UNIT_TYPE = 'content_unit'
 RESOURCE_REPOSITORY_TYPE = 'repository'
 RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE = 'repository_distributor'
 RESOURCE_REPOSITORY_IMPORTER_TYPE = 'repository_importer'
+RESOURCE_REPOSITORY_GROUP_TYPE = 'repository_group'
+RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE = 'repository_group_distributor'
 RESOURCE_ROLE_TYPE = 'role'
 RESOURCE_SCHEDULE_TYPE = 'schedule'
 RESOURCE_USER_TYPE = 'user'
@@ -40,6 +42,9 @@ ACTION_AGENT_BIND = 'agent_bind'
 ACTION_UNBIND = 'unbind'
 ACTION_AGENT_UNBIND = 'agent_unbind'
 ACTION_DELETE_BINDING = 'delete_binding'
+ACTION_AGENT_UNIT_INSTALL = 'unit_install'
+ACTION_AGENT_UNIT_UPDATE = 'unit_update'
+ACTION_AGENT_UNIT_UNINSTALL = 'unit_uninstall'
 
 # -- public -------------------------------------------------------------------
 

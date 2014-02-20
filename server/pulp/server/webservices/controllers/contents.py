@@ -16,17 +16,17 @@ from gettext import gettext as _
 import web
 
 from pulp.common.tags import action_tag, resource_tag
-from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch.call import CallRequest
-from pulp.server.exceptions import MissingResource, InvalidValue
+from pulp.server.exceptions import MissingResource, InvalidValue, OperationPostponed
 from pulp.server.managers import factory
-from pulp.server.webservices import execution, serialization
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
-
 from pulp.server.webservices.controllers.search import SearchController
+from pulp.server.managers.content import orphan
 
 
 class ContentTypesCollection(JSONController):
@@ -206,6 +206,7 @@ class ContentUnitResource(JSONController):
 
 # content uploads controller classes -------------------------------------------
 
+
 class UploadsCollection(JSONController):
 
     # Scope: Collection
@@ -217,14 +218,14 @@ class UploadsCollection(JSONController):
         upload_manager = factory.content_upload_manager()
         upload_ids = upload_manager.list_upload_ids()
 
-        return self.ok({'upload_ids' : upload_ids})
+        return self.ok({'upload_ids': upload_ids})
 
     @auth_required(CREATE)
     def POST(self):
         upload_manager = factory.content_upload_manager()
         upload_id = upload_manager.initialize_upload()
         location = serialization.link.child_link_obj(upload_id)
-        return self.created(location['_href'], {'_href' : location['_href'], 'upload_id' : upload_id})
+        return self.created(location['_href'], {'_href': location['_href'], 'upload_id': upload_id})
 
 
 class UploadResource(JSONController):
@@ -264,6 +265,7 @@ class UploadSegmentResource(JSONController):
 
 # content orphans controller classes -------------------------------------------
 
+
 class OrphanCollection(JSONController):
 
     @auth_required(READ)
@@ -278,10 +280,9 @@ class OrphanCollection(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self):
-        orphan_manager = factory.content_orphan_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        call_request = CallRequest(orphan_manager.delete_all_orphans, tags=tags, archive=True)
-        return execution.execute_async(self, call_request)
+        async_task = orphan.delete_all_orphans.apply_async(tags=tags)
+        raise OperationPostponed(async_task)
 
 
 class OrphanTypeSubCollection(JSONController):
@@ -298,10 +299,9 @@ class OrphanTypeSubCollection(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, content_type):
-        orphan_manager = factory.content_orphan_manager()
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        call_request = CallRequest(orphan_manager.delete_orphans_by_type, [content_type], tags=tags, archive=True)
-        return execution.execute_async(self, call_request)
+        async_task = orphan.delete_orphans_by_type.apply_async((content_type,), tags=tags)
+        raise OperationPostponed(async_task)
 
 
 class OrphanResource(JSONController):
@@ -315,25 +315,21 @@ class OrphanResource(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, content_type, content_id):
-        orphan_manager = factory.content_orphan_manager()
-        orphan_manager.get_orphan(content_type, content_id)
         ids = [{'content_type_id': content_type, 'unit_id': content_id}]
         tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [ids], tags=tags, archive=True)
-        return execution.execute_async(self, call_request)
+        async_task = orphan.delete_orphans_by_id.apply_async((ids,), tags=tags)
+        raise OperationPostponed(async_task)
 
-# content actions controller classes -------------------------------------------
 
 class DeleteOrphansAction(JSONController):
-
+    # TODO: Do we really need this in addition to the OrphanResource.DELETE method?
     @auth_required(DELETE)
     def POST(self):
-        orphans = self.params()
-        orphan_manager = factory.content_orphan_manager()
         tags = [action_tag('delete_orphans'),
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        call_request = CallRequest(orphan_manager.delete_orphans_by_id, [orphans], tags=tags, archive=True)
-        return execution.execute_async(self, call_request)
+        async_task = orphan.delete_orphans_by_id.apply_async((orphan,), tags=tags)
+        raise OperationPostponed(async_task)
+
 
 # wsgi application -------------------------------------------------------------
 

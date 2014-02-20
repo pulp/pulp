@@ -71,7 +71,6 @@ group may be updated with this call.
 | :response_list:`_`
 
 * :response_code:`200,if the update executed immediately and was successful`
-* :response_code:`202,if the update was postponed until the group is available to be updated`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the group does not exist`
 
@@ -90,9 +89,8 @@ group, apart from removing them from the group.
 | :response_list:`_`
 
 * :response_code:`200,if the delete executed immediately and was successful`
-* :response_code:`202,if the request was accepted by the server and will execute in the future`
 * :response_code:`404,if the specified group does not exist`
 
-| :return:`null or call report representing the current state of the delete task`
+| :return:`null`
 
 

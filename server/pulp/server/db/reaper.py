@@ -12,184 +12,70 @@
 # see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 import logging
-import threading
-from datetime import datetime
+from datetime import datetime, timedelta
+from gettext import gettext as _
+
+from celery import task
 
 from pulp.common import dateutils
 from pulp.server import config as pulp_config
+from pulp.server.async.tasks import Task
 from pulp.server.compat import ObjectId
 from pulp.server.db.model import consumer, dispatch, repo_group, repository
 
 
-_REAPER = None
-_LOG = logging.getLogger(__name__)
+# Add collections to reap here. The keys in this datastructure are the Model classes that represent
+# each collection, and the values are the config keyname from our server.conf in the [data_reaping]
+# section that corresponds to the collection. The config is consulted by the reap_expired_documents
+# Task to determine how old documents should be (in days) before they are removed.
+_COLLECTION_TIMEDELTAS = {
+    dispatch.ArchivedCall: 'archived_calls',
+    consumer.ConsumerHistoryEvent: 'consumer_history',
+    repository.RepoSyncResult: 'repo_sync_history',
+    repository.RepoPublishResult: 'repo_publish_history',
+    repo_group.RepoGroupPublishResult: 'repo_group_publish_history',
+}
 
 
-class CollectionsReaper(object):
+_logger = logging.getLogger(__name__)
+
+
+@task(base=Task)
+def reap_expired_documents():
     """
-    Reaper class that will remove old documents from database collections that
-    have been configured for it.
-
-    This class uses the timestamp in the ObjectId that is assigned to the _id
-    field of documents to determine which documents to reap from the collection.
-    If any documents in a collection have a custom _id field, this reaper will
-    not work with that collection.
-
-    :ivar reap_interval: time, in seconds, between checks for old documents
-    :type reap_interval: int or float
-    :ivar collections: dictionary of collections and the time delta which constitutes an old document
-    :type collections: dict
+    For each collection in _COLLECTION_TIMEDELTAS, remove documents that are older than the
+    specified timedelta.
     """
-
-    def __init__(self, reap_interval):
-        self.reap_interval = reap_interval
-        self.collections = {}
-
-        self.__exit = False
-        self.__lock = threading.RLock()
-        self.__condition = threading.Condition(self.__lock)
-        self.__reaper = None
-
-    # reap management ------------------------------------------------------
-
-    def __reap(self):
-        self.__lock.acquire()
-
-        while True:
-            self.__condition.wait(timeout=self.reap_interval)
-            if self.__exit:
-                if self.__lock is not None:
-                    self.__lock.release()
-                return
-            try:
-                self._reap_expired_collection_entries()
-            except Exception, e:
-                _LOG.critical('Unhandled exception in collections reaper reap: %s' % repr(e))
-                _LOG.exception(e)
-
-    def _reap_expired_collection_entries(self):
-        for collection, delta in self.collections.items():
-            expired_object_id = self._create_expired_object_id(delta)
-            self._remove_expired_entries(collection, expired_object_id)
-
-    def _create_expired_object_id(self, delta):
-        now = datetime.now(dateutils.utc_tz())
-        expired_datetime = now - delta
-        expired_object_id = ObjectId.from_datetime(expired_datetime)
-        return expired_object_id
-
-    def _remove_expired_entries(self, collection, expired_object_id):
+    _logger.info(_('The reaper task is cleaning out old documents from the database.'))
+    for model, config_name in _COLLECTION_TIMEDELTAS.items():
+        collection = model.get_collection()
+        # Get the config for how old documents should be before they are reaped.
+        config_days = pulp_config.config.getfloat('data_reaping', config_name)
+        age = timedelta(days=config_days)
+        # Generate an ObjectId that we can use to know which objects to remove
+        expired_object_id = _create_expired_object_id(age)
+        # Remove all objects older than the timestamp encoded into the generated ObjectId
         collection.remove({'_id': {'$lte': expired_object_id}})
+    _logger.info(_('The reaper task has completed.'))
 
-    def start(self):
-        """
-        Start the reaper thread.
-        """
-        assert self.__reaper is None
-        self.__lock.acquire()
-        self.__exit = False # needed for re-starts
-        try:
-            self.__reaper = threading.Thread(target=self.__reap)
-            self.__reaper.setDaemon(True)
-            self.__reaper.start()
-        finally:
-            self.__lock.release()
 
-    def stop(self):
-        """
-        Stop the reaper thread and wait for it to exit.
-        """
-        assert self.__reaper is not None
-        self.__lock.acquire()
-        self.__exit = True
-        self.__condition.notify()
-        self.__lock.release()
-        self.__reaper.join()
-        self.__reaper = None
-
-    # collection management ----------------------------------------------------
-
-    def add_collection(self, collection, **delta_kwargs):
-        """
-        Add a collection to be reaped on the specified intervals.
-        Valid intervals and values for delta_kwargs are:
-         * years
-         * months
-         * weeks
-         * days
-         * hours
-         * minutes
-         * seconds
-        :param collection: database collection to reap documents from
-        :type collection: pymongo.collection.Collection
-        :param delta_kwargs: key word arguments for time intervals
-        """
-        self.__lock.acquire()
-        try:
-            expiration_delta = dateutils.delta_from_key_value_pairs(delta_kwargs)
-            self.collections[collection] = expiration_delta
-        finally:
-            self.__lock.release()
-
-    def remove_collection(self, collection):
-        """
-        Remove a database collection from the reaper.
-        :param collection: database collection to no longer be reaped
-        :type collection: pymongo.collection.Collection
-        """
-        self.__lock.acquire()
-        try:
-            self.collections.pop(collection, None)
-        finally:
-            self.__lock.release()
-
-# public api -------------------------------------------------------------------
-
-def initialize():
+def _create_expired_object_id(age):
     """
-    Instantiate the global reaper, start it, and add the appropriate collections
-    to be reaped from it.
+    By default, MongoDB uses a primary key that has the date that each document was created encoded
+    into it. This method generates a pulp.server.compat.ObjectId that corresponds to the timstamp of
+    now minues age, where age is a timedelta. For example, if age is 60 seconds, this will
+    return an ObjectId that has the UTC time that it was 60 seconds ago encoded into it. This is
+    useful in this module, as we want to automatically delete documents that are older than a
+    particular age, and so we can issue a remove query to MongoDB for objects with _id attributes
+    that are less than the ObjectId returned by this method.
+
+    :param age: A timedelta representing the relative time in the past that you wish an ObjectId
+                to be generated against.
+    :type  age: datetime.timedelta
+    :return:    An ObjectId containing the encoded time (now - age).
+    :rtype:     pulp.server.compat.ObjectId
     """
-    global _REAPER
-    assert _REAPER is None
-    reaper_interval = pulp_config.config.getfloat('data_reaping', 'reaper_interval')
-    _REAPER = CollectionsReaper(int(reaper_interval * dateutils.SECONDS_IN_A_DAY))
-    _REAPER.start()
-
-    # NOTE add collections to reap here:
-
-    # dispatch archived calls
-    archive_call_collection = dispatch.ArchivedCall.get_collection()
-    archived_call_lifetime = pulp_config.config.getfloat('data_reaping', 'archived_calls')
-    _REAPER.add_collection(archive_call_collection, days=archived_call_lifetime)
-
-    # consumer event history
-    consumer_event_collection = consumer.ConsumerHistoryEvent.get_collection()
-    consumer_history_lifetime = pulp_config.config.getfloat('data_reaping', 'consumer_history')
-    _REAPER.add_collection(consumer_event_collection, days=consumer_history_lifetime)
-
-    # repo sync history
-    repo_sync_result_collection = repository.RepoSyncResult.get_collection()
-    repo_sync_history_lifetime = pulp_config.config.getfloat('data_reaping', 'repo_sync_history')
-    _REAPER.add_collection(repo_sync_result_collection, days=repo_sync_history_lifetime)
-
-    # repo publish history
-    repo_publish_result_collection = repository.RepoPublishResult.get_collection()
-    repo_publish_history_lifetime = pulp_config.config.getfloat('data_reaping', 'repo_publish_history')
-    _REAPER.add_collection(repo_publish_result_collection, days=repo_publish_history_lifetime)
-
-    # repo group publish history
-    repo_group_publish_result_collection = repo_group.RepoGroupPublishResult.get_collection()
-    repo_group_publish_history_lifetime = pulp_config.config.getfloat('data_reaping', 'repo_group_publish_history')
-    _REAPER.add_collection(repo_group_publish_result_collection, days=repo_group_publish_history_lifetime)
-
-
-def finalize():
-    """
-    Delete the global reaper and wait for it's thread to exit.
-    NOTE: not used by the server but useful for testing.
-    """
-    global _REAPER
-    assert _REAPER is not None
-    _REAPER.stop()
-    _REAPER = None
+    now = datetime.now(dateutils.utc_tz())
+    expired_datetime = now - age
+    expired_object_id = ObjectId.from_datetime(expired_datetime)
+    return expired_object_id

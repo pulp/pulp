@@ -103,7 +103,6 @@ class BaseTasksSection(PulpCliSection):
         Displays detailed information about a single task. The task ID must
         be in kwargs under "task-id".
         """
-
         self.context.prompt.render_title('Task Details')
 
         task_id = kwargs['task-id']
@@ -123,7 +122,7 @@ class BaseTasksSection(PulpCliSection):
             'start_time' : start_time,
             'finish_time' : finish_time,
             'result' : result,
-            'progress' : task.progress,
+            'progress_report' : task.progress_report,
         }
 
         if task.exception:
@@ -148,6 +147,7 @@ class BaseTasksSection(PulpCliSection):
 
         try:
             self.context.server.tasks.cancel_task(task_id)
+            self.context.prompt.render_success_message(_('Task cancel is successfully initiated.'))
         except PulpServerException, e:
 
             # A 501 has a bit of a special meaning here that's not used in the
@@ -158,8 +158,6 @@ class BaseTasksSection(PulpCliSection):
                 return
             else:
                 raise e, None, sys.exc_info()[2]
-
-    # -- rendering utilities --------------------------------------------------
 
     @staticmethod
     def parse_state(task):
@@ -179,10 +177,7 @@ class BaseTasksSection(PulpCliSection):
         start_time = task.start_time or _('Unstarted')
         finish_time = task.finish_time or _('Incomplete')
 
-        if task.is_rejected():
-            state = _('Rejected')
-            result = _('N/A')
-        elif task.is_postponed() or task.is_waiting():
+        if task.is_waiting():
             state = _('Waiting')
             result = _('Incomplete')
         elif task.is_running():

@@ -8,6 +8,8 @@ Pulp 2.4.0
 New Features
 ------------
 
+#. An all-new distributed task system based on `Celery <http://celeryproject.org>`_.
+#. All of ``/var/lib/pulp`` can now be a shared filesystem.
 #. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
    version 2.5.2.
 #. Publishing Puppet repositories to flattened directories.
@@ -26,14 +28,109 @@ All Bugs
 You can see the complete list of bugs that were
 `fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.0&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
 
-API Changes
------------
+Rest API Changes
+----------------
+
+* Schedule delete no longer returns a 404 when the schedule is not found. It will
+  return a 200, because this is exactly the condition the user asked for.
+* Deleting units is no longer blocked if the user performing the delete is different
+  than the user that created the unit.  This most notably has the effect of eliminating
+  the restriction that units could not be deleted from repositories that are synced via a feed.
+  However, if a unit is deleted from a repo populated via a feed, syncing the repo again will
+  recreate the unit.
+* The structure of the Call Report has been changed significantly.  It now returns a single
+  object under all conditions.  The spawned_tasks list within that object does not contain
+  the full list of all tasks that will be scheduled for a given call.  Each spawned task
+  is responsible for spawning whatever additional tasks are needed in order to complete processing
+  For example, the sync task with auto publishing enabled returns a Call Report that only lists
+  the task_id for the sync portion of the work.  When the sync task finishes it will have the
+  task created for publishing listed in the spawned_tasks field.
+* The exception & traceback fields have been deprecated from the Call Report & Task Status objects
+  In place of those fields a new "error" object has been created and will be returned.
+* TaskGroups are no longer supported.  All usages of the task_group_id have been removed.
+* When asynchronous tasks are created they will be returned in the waiting state.  The
+  postponed or rejected states are no longer supported.
+
+
+Binding API Changes
+-------------------
+
+* Our pulp.bindings.responses.Task model has changed substantially to reflect our changes in the Task API in
+  the REST API:
+
+   #. The ``call_request_group_id`` attribute no longer exists.
+   #. The ``call_request_id`` attribute has been renamed to ``task_id``.
+   #. The ``call_request_tags`` attribute has been renamed to ``tags``.
+   #. The ``reasons`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
+   #. The ``progress`` attribute has been renamed to ``progress_report`` to reflect the same name change in
+      the API.
+   #. The ``response`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
+   #. The ``is_rejected()`` and ``is_postponed()`` methods have been removed.
+
+
+ScheduledCall
+^^^^^^^^^^^^^
+
+The ScheduledCall model has changed substantially.
+
+* ``last_run`` is now ``last_run_at``
+* ``args`` and ``kwargs`` are now top-level attributes of the object.
+* ``task`` is a new attribute that is the python path to the task this schedule will execute.
+* ``resource`` is a new attribute that is a globally-unique identifier for the object
+  this task will operate on. It is used internally to query schedules based on a given resource.
+
+CRUD operations on schedules no longer depend on resource locking, so these API
+operations will never return a 202 or 409.
 
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
 
-To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the latest RPMs
-from the Pulp repository and run the database migrations::
+To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
+latest RPMs from the Pulp repository and run the database migrations::
 
     $ sudo yum upgrade
     $ sudo pulp-manage-db
+
+Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
+about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need
+to enable Pulp's workers on at least one machine. Edit ``/etc/default/pulp_workers`` to your liking,
+and then enable and start the ``pulp_workers`` service. For Upstart systems::
+
+    $ sudo chkconfig pulp_workers on
+    $ sudo service pulp_workers start
+
+For systemd systems::
+
+    $ sudo systemctl enable pulp_workers
+    $ sudo systemctl start pulp_workers
+
+.. warning::
+   If you distribute Pulp across more than one server either through load balancing the HTTP
+   requests, or through running pulp_workers on more than one machine, it is very important that you
+   provide ``/var/lib/pulp`` as a shared filesystem to each host that is participating in the Pulp
+   installation.
+
+There are two more services that need to be running, but it is very important that only one instance
+of each of these runs across the entire Pulp installation.
+
+.. warning::
+   ``pulp_celerybeat`` and ``pulp_resource_manager`` must both be singletons, so be sure that
+   you only enable each of these on one host. They do not have to run on the same host, however.
+   Note that each Pulp child node will also need its own instance of each of these services, as
+   a Pulp child node is technically a separate distributed application from its parent.
+
+On the host(s) that will run these two services (they do not have to run on the same host), edit
+``/etc/default/pulp_celerybeat`` and ``/etc/default/pulp_resource_manager`` to your liking. Then
+enable and start the services. For Upstart::
+
+    $ sudo chkconfig pulp_celerybeat on
+    $ sudo service pulp_celerybeat start
+    $ sudo chkconfig pulp_resource_manager on
+    $ sudo service pulp_resource_manager start
+
+For systemd::
+
+    $ sudo systemctl enable pulp_celerybeat
+    $ sudo systemctl start pulp_celerybeat
+    $ sudo systemctl enable pulp_resource_manager
+    $ sudo systemctl start pulp_resource_manager

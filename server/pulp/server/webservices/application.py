@@ -31,19 +31,14 @@ web.application.handle_with_processors = _handle_with_processors
 
 from pulp.server import config # automatically loads config
 from pulp.server import logs
-from pulp.server.db import connection as db_connection
 
 # We need to read the config, start the logging, and initialize the db
 # connection prior to any other imports, since some of the imports will invoke
 # setup methods.
 logs.start_logging()
-db_connection.initialize()
+from pulp.server import initialization
 
-from pulp.plugins.loader import api as plugin_api
 from pulp.server.agent.direct.services import Services as AgentServices
-
-from pulp.plugins.loader import api as plugin_api
-from pulp.server.db import reaper
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
@@ -66,29 +61,20 @@ URLS = (
     '/v2/events', events.application,
     '/v2/permissions', permissions.application,
     '/v2/plugins', plugins.application,
-    '/v2/queued_calls', dispatch.queued_call_application,
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
     '/v2/roles', roles.application,
     '/v2/status', status.application,
-    '/v2/task_groups', dispatch.task_group_application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,
 )
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 _IS_INITIALIZED = False
 
 STACK_TRACER = None
 
 # -- initialization -----------------------------------------------------------
-
-class InitializationException(Exception):
-
-    def __init__(self, message):
-        Exception.__init__(self, message)
-        self.message = message
-
 
 def _initialize_pulp():
 
@@ -100,6 +86,12 @@ def _initialize_pulp():
     if _IS_INITIALIZED:
         return
 
+    # Even though this import does not get used anywhere, we must import it for the Celery
+    # application to be initialized. Also, this import cannot happen in the usual PEP-8 location,
+    # as it calls initialization code at the module level. Calling that code at the module level
+    # is necessary for the Celery application to initialize.
+    from pulp.server.async import app
+
     # configure agent services
     AgentServices.init()
 
@@ -110,26 +102,12 @@ def _initialize_pulp():
     except Exception:
         msg  = 'The database has not been migrated to the current version. '
         msg += 'Run pulp-manage-db and restart the application.'
-        raise InitializationException(msg), None, sys.exc_info()[2]
-
-    # Load plugins and resolve against types. This is also a likely candidate
-    # for causing the server to fail to start.
-    try:
-        plugin_api.initialize()
-    except Exception, e:
-        msg  = 'One or more plugins failed to initialize. If a new type has '
-        msg += 'been added, run pulp-manage-db to load the type into the '
-        msg += 'database and restart the application. '
-        msg += 'Error message: %s' % str(e)
-        raise InitializationException(msg), None, sys.exc_info()[2]
+        raise initialization.InitializationException(msg), None, sys.exc_info()[2]
 
     # There's a significantly smaller chance the following calls will fail.
     # The previous two are likely user errors, but the remainder represent
     # something gone horribly wrong. As such, I'm not going to account for each
     # and instead simply let the exception itself bubble up.
-
-    # Load the mappings of manager type to managers
-    manager_factory.initialize()
 
     # Initialize the tasking subsystem
     dispatch_factory.initialize()
@@ -139,9 +117,6 @@ def _initialize_pulp():
     role_manager.ensure_super_user_role()
     user_manager = manager_factory.user_manager()
     user_manager.ensure_admin()
-
-    # database document reaper
-    reaper.initialize()
 
     # start agent services
     AgentServices.start()
@@ -178,20 +153,20 @@ def wsgi_application():
 
     try:
         _initialize_pulp()
-    except InitializationException, e:
-        _LOG.fatal('*************************************************************')
-        _LOG.fatal('The Pulp server failed to start due to the following reasons:')
-        _LOG.exception('  ' + e.message)
-        _LOG.fatal('*************************************************************')
+    except initialization.InitializationException, e:
+        logger.fatal('*************************************************************')
+        logger.fatal('The Pulp server failed to start due to the following reasons:')
+        logger.exception('  ' + e.message)
+        logger.fatal('*************************************************************')
         return
     except:
-        _LOG.fatal('*************************************************************')
-        _LOG.exception('The Pulp server encountered an unexpected failure during initialization')
-        _LOG.fatal('*************************************************************')
+        logger.fatal('*************************************************************')
+        logger.exception('The Pulp server encountered an unexpected failure during initialization')
+        logger.fatal('*************************************************************')
         return
 
-    _LOG.info('*************************************************************')
-    _LOG.info('The Pulp server has been successfully initialized')
-    _LOG.info('*************************************************************')
+    logger.info('*************************************************************')
+    logger.info('The Pulp server has been successfully initialized')
+    logger.info('*************************************************************')
 
     return stack

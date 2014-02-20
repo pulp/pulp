@@ -303,7 +303,8 @@ class Repository(Entity):
         http = bindings.repo_actions.sync(self.repo_id, configuration)
         if http.response_code != httplib.ACCEPTED:
             raise RepoSyncRestError(self.repo_id, http.response_code)
-        task = http.response_body[0]
+        # The repo sync is returned with a single sync task in the Call Report
+        task = http.response_body.spawned_tasks[0]
         result = poller.join(task.task_id, progress, cancelled)
         if cancelled():
             self._cancel_synchronization(task)

@@ -150,6 +150,7 @@ class Conduit(HandlerConduit):
 
 # --- actions ----------------------------------------------------------------
 
+
 class RegistrationMonitor:
     """
     Monitor the registration (consumer) certificate for changes.
@@ -229,6 +230,7 @@ class Synchronization:
         bundle = ConsumerX509Bundle()
         consumer_id = bundle.cn()
         return consumer_id is not None
+
 
 # --- API --------------------------------------------------------------------
 

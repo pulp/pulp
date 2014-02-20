@@ -96,6 +96,9 @@ def main():
     """
     This is the high level entry method. It does logging if any Exceptions are raised.
     """
+    if os.getuid() == 0:
+        print >> sys.stderr, _('This must not be run as root, but as the same user apache runs as.')
+        return os.EX_USAGE
     try:
         options = parse_args()
         _start_logging()
@@ -120,6 +123,14 @@ def _auto_manage_db(options):
 
     :param options: The command line parameters from the user.
     """
+    message = _('Loading content types.')
+    print message
+    logger.info(message)
+    load_content_types()
+    message = _('Content types loaded.')
+    print message
+    logger.info(message)
+
     message = _('Beginning database migrations.')
     print message
     logger.info(message)
@@ -128,13 +139,6 @@ def _auto_manage_db(options):
     print message
     logger.info(message)
 
-    message = _('Loading content types.')
-    print message
-    logger.info(message)
-    load_content_types()
-    message = _('Content types loaded.')
-    print message
-    logger.info(message)
     return os.EX_OK
 
 

@@ -32,10 +32,8 @@ from pulp.bindings import responses
 
 TASK_TEMPLATE = {
     "exception": None,
-    "call_request_group_id": 'default-group',
-    "call_request_id": 'default-id',
-    "call_request_tags": [],
-    "reasons": [],
+    "task_id": 'default-id',
+    "tags": [],
     "start_time": None,
     "traceback": None,
     "state": None,
@@ -70,13 +68,11 @@ class TaskSimulator(object):
         """
         bindings.tasks = self
 
-    # -- configuration methods ------------------------------------------------------------------------------
-
-    def add_task_state(self, task_id, state, response=responses.RESPONSE_ACCEPTED, progress_report=None):
+    def add_task_state(self, task_id, state, progress_report=None, spawned_tasks=None):
         """
-        Adds a new state entry for the given task ID. If the there are currently no states listed for
-        the given ID, this call will cause the new task ID to be created and thus returned from the
-        get_all_tasks call. The order in which these task IDs are created will be tracked and
+        Adds a new state entry for the given task ID. If the there are currently no states listed
+        for the given ID, this call will cause the new task ID to be created and thus returned from
+        the get_all_tasks call. The order in which these task IDs are created will be tracked and
         honored in get_all_tasks.
 
         If doing some sort of polling operation, you'll likely need to add one of the completed states
@@ -86,14 +82,18 @@ class TaskSimulator(object):
         error crop up.
         """
         new_task_dict = copy.deepcopy(TASK_TEMPLATE)
-        new_task_dict['call_request_id'] = task_id
+        new_task_dict['task_id'] = task_id
         new_task_dict['state'] = state
-        new_task_dict['response'] = response
-        new_task_dict['progress'] = progress_report
+        new_task_dict['progress_report'] = progress_report
 
         new_task = responses.Task(new_task_dict)
+
+        if isinstance(spawned_tasks, list):
+            new_task.spawned_tasks = copy.copy(spawned_tasks)
+
         task_list_for_id = self.tasks_by_id.setdefault(task_id, [])
-        task_list_for_id.insert(0, new_task) # reverse order because popping from the end is more efficient and it will make jconnor happy
+        # reverse order because popping from the end is more efficient and it will make jconnor happy
+        task_list_for_id.insert(0, new_task)
 
         if task_id not in self.ordered_task_ids:
             self.ordered_task_ids.append(task_id)

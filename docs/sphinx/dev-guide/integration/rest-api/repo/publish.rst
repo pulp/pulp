@@ -22,7 +22,7 @@ call always executes asynchronously and will return a :term:`call report`.
 * :response_code:`202, if the publish is set to be executed`
 * :response_code:`409, if a conflicting operation is in progress`
 
-| :return:`call report representing the current state of they sync`
+| :return:`a` :ref:`call_report` representing the current state of they sync`
 
 :sample_request:`_` ::
 
@@ -31,25 +31,9 @@ call always executes asynchronously and will return a :term:`call report`.
    "override_config": {},
  }
 
-:sample_response:`202` ::
-
- {
-  "_href": "/pulp/api/v2/tasks/7744e2df-39b9-46f0-bb10-feffa2f7014b/",
-  "response": "accepted",
-  "reasons": [],
-  "state": "waiting",
-  "task_id": "7744e2df-39b9-46f0-bb10-feffa2f7014b",
-  "task_group_id": null,
-  "schedule_id": null,
-  "progress": {},
-  "result": null,
-  "exception": null,
-  "traceback": null,
-  "start_time": null,
-  "finish_time": null,
-  "tags": ["pulp:action:publish", "pulp:repository:<repo_id>"],
- }
-
+**Tags:**
+The task created will have the following tags:
+``"pulp:action:publish","pulp:repository:<repo_id>"``
 
 
 Scheduling a Publish
@@ -71,7 +55,6 @@ schedule options must be set on a repository's :term:`distributor`.
 | :response_list:`_`
 
 * :response_code:`201,if the schedule was successfully created`
-* :response_code:`503,if the resources needed to create the schedule are temporarily unavailable`
 
 | :return:`schedule report representing the current state of the scheduled call`
 
@@ -79,26 +62,35 @@ schedule options must be set on a repository's :term:`distributor`.
 
  {
   "override_config": {},
-  "schedule": "00:00:00Z/P1DT",
+  "schedule": "PT1H",
   "failure_threshold": 3,
  }
 
 :sample_response:`201` ::
 
  {
-  "_id": "4fa0208461577710b2000000",
-  "_href": "/pulp/api/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/4fa0208461577710b2000000/",
-  "schedule": "00:00:00Z/P1DT",
-  "failure_threshold": 3,
-  "consecutive_failures": 0,
-  "first_run": null,
-  "last_run": null,
-  "next_run": "2012-07-13T00:00:00Z",
-  "remaining_runs": null,
+  "next_run": "2014-01-27T21:27:56Z",
+  "task": "pulp.server.tasks.repository.publish",
+  "last_updated": 1390858076.682694,
+  "first_run": "2014-01-27T21:27:56Z",
+  "schedule": "PT1H",
+  "args": [
+    "demo",
+    "puppet_distributor"
+  ],
   "enabled": true,
-  "override_config": {},
+  "last_run_at": null,
+  "_id": "52e6cf5cdd01fb70bd0d9c34",
+  "total_run_count": 0,
+  "failure_threshold": 3,
+  "kwargs": {
+    "overrides": {}
+  },
+  "resource": "pulp:distributor:demo:puppet_distributor",
+  "remaining_runs": null,
+  "consecutive_failures": 0,
+  "_href": "/pulp/api/v2/repositories/demo/distributors/puppet_distributor/schedules/publish/52e6cf5cdd01fb70bd0d9c34/"
  }
-
 
 Updating a Scheduled Publish
 ----------------------------
@@ -117,8 +109,6 @@ The same parameters used to create a scheduled publish may be updated at any poi
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was successfully updated`
-* :response_code:`202,if the schedule is in use and the update is postponed`
-* :response_code:`503,if there is a conflicting operation in progress`
 
 | :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Publish for details)`
 
@@ -133,9 +123,7 @@ Delete a scheduled publish to remove it permanently from the distributor.
 
 | :response_list:`_`
 
-* response_code:`200,if the schedule was deleted successfully`
-* response_code:`202,if the schedule is in use and the delete is postponed`
-* response_code:`503,if the schedule is already in the processes of being deleted`
+* :response_code:`200,if the schedule was deleted successfully`
 
 | :return:`null`
 
@@ -161,7 +149,7 @@ Each scheduled publish may be inspected.
 
 
 Retrieving Publish History
------------------------
+--------------------------
 Retrieve publish history for a repository. Each publish performed on a repository creates a history entry.
 
 | :method:`get`
@@ -198,3 +186,4 @@ Retrieve publish history for a repository. Each publish performed on a repositor
    "error_message": null,
   }
  ]
+

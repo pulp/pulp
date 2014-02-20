@@ -24,6 +24,8 @@ import sys
 import traceback
 from gettext import gettext as _
 
+from celery import task
+
 from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -31,20 +33,19 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
+from pulp.server.async.tasks import register_sigterm_handler, Task
 
-# -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
-# -- manager ------------------------------------------------------------------
 
 class RepoPublishManager(object):
 
-    def publish(self, repo_id, distributor_id, publish_config_override=None):
+    @staticmethod
+    def publish(repo_id, distributor_id, publish_config_override=None):
         """
         Requests the given distributor publish the repository it is configured
         on.
@@ -64,9 +65,8 @@ class RepoPublishManager(object):
         @type  publish_config_override: dict, None
 
         :return: report of the details of the publish
-        :rtype: pulp.server.plugins.model.PublishReport
+        :rtype: pulp.server.db.model.repository.RepoPublishResult
         """
-
         repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
 
@@ -79,42 +79,38 @@ class RepoPublishManager(object):
         if repo_distributor is None:
             raise MissingResource(repository=repo_id, distributor=distributor_id)
 
-        distributor_instance, distributor_config = self._get_distributor_instance_and_config(repo_id, distributor_id)
-
-        if distributor_instance is None:
-            raise MissingResource(repo_id), None, sys.exc_info()[2]
-
-        dispatch_context = dispatch_factory.context()
-        dispatch_context.set_cancel_control_hook(distributor_instance.cancel_publish_repo)
+        distributor_instance, distributor_config = RepoPublishManager.\
+            _get_distributor_instance_and_config(repo_id, distributor_id)
 
         # Assemble the data needed for the publish
         conduit = RepoPublishConduit(repo_id, distributor_id)
 
-        call_config = PluginCallConfiguration(distributor_config, repo_distributor['config'], publish_config_override)
+        call_config = PluginCallConfiguration(distributor_config, repo_distributor['config'],
+                                              publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.distributor_working_dir(repo_distributor['distributor_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(
+            repo_distributor['distributor_type_id'], repo_id, mkdir=True)
 
         # Fire events describing the publish state
         fire_manager = manager_factory.event_fire_manager()
         fire_manager.fire_repo_publish_started(repo_id, distributor_id)
-        result = self._do_publish(repo, distributor_id, distributor_instance, transfer_repo, conduit, call_config)
+        result = RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
+                                                transfer_repo, conduit, call_config)
         fire_manager.fire_repo_publish_finished(result)
-
-        dispatch_context.clear_cancel_control_hook()
 
         return result
 
-    def _get_distributor_instance_and_config(self, repo_id, distributor_id):
+    @staticmethod
+    def _get_distributor_instance_and_config(repo_id, distributor_id):
         repo_distributor_manager = manager_factory.repo_distributor_manager()
-        try:
-            repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
-            distributor, config = plugin_api.get_distributor_by_id(repo_distributor['distributor_type_id'])
-        except (MissingResource, plugin_exceptions.PluginNotFound):
-            distributor = None
-            config = None
+        repo_distributor = repo_distributor_manager.get_distributor(repo_id, distributor_id)
+        distributor, config = plugin_api.get_distributor_by_id(
+            repo_distributor['distributor_type_id'])
         return distributor, config
 
-    def _do_publish(self, repo, distributor_id, distributor_instance, transfer_repo, conduit, call_config):
+    @staticmethod
+    def _do_publish(repo, distributor_id, distributor_instance, transfer_repo, conduit,
+                    call_config):
 
         distributor_coll = RepoDistributor.get_collection()
         publish_result_coll = RepoPublishResult.get_collection()
@@ -123,21 +119,28 @@ class RepoPublishManager(object):
         # Perform the publish
         publish_start_timestamp = _now_timestamp()
         try:
-            publish_report = distributor_instance.publish_repo(transfer_repo, conduit, call_config)
+            # Add the register_sigterm_handler decorator to the publish_repo call, so that we can
+            # respond to signals by calling the Distributor's cancel_publish_repo() method.
+            publish_repo = register_sigterm_handler(
+                distributor_instance.publish_repo, distributor_instance.cancel_publish_repo)
+            publish_report = publish_repo(transfer_repo, conduit, call_config)
         except Exception, e:
             publish_end_timestamp = _now_timestamp()
 
             # Reload the distributor in case the scratchpad is set by the plugin
-            repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+            repo_distributor = distributor_coll.find_one(
+                {'repo_id' : repo_id, 'id' : distributor_id})
             repo_distributor['last_publish'] = publish_end_timestamp
             distributor_coll.save(repo_distributor, safe=True)
 
             # Add a publish history entry for the run
-            result = RepoPublishResult.error_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
-                                                    publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
+            result = RepoPublishResult.error_result(
+                repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
+                publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
             publish_result_coll.save(result, safe=True)
 
-            _LOG.exception(_('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
+            logger.exception(
+                _('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         publish_end_timestamp = _now_timestamp()
@@ -152,23 +155,27 @@ class RepoPublishManager(object):
             summary = publish_report.summary
             details = publish_report.details
             if publish_report.success_flag:
-                _LOG.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
+                logger.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
                            repo_id, distributor_id))
                 result_code = RepoPublishResult.RESULT_SUCCESS
             else:
-                _LOG.info('publish failed for repo [%s] with distributor ID [%s]' % (
+                logger.info('publish failed for repo [%s] with distributor ID [%s]' % (
                            repo_id, distributor_id))
-                _LOG.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
+                logger.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
                            repo_id, distributor_id, summary))
                 result_code = RepoPublishResult.RESULT_FAILED
         else:
-            _LOG.warn('Plugin type [%s] on repo [%s] did not return a valid publish report' % (repo_distributor['distributor_type_id'], repo_id))
+            msg = _('Plugin type [%(type)s] on repo [%(repo)s] did not return a valid publish '
+                    'report')
+            msg = msg % {'type': repo_distributor['distributor_type_id'], 'repo': repo_id}
+            logger.warn(msg)
 
             summary = details = _('Unknown')
             result_code = RepoPublishResult.RESULT_SUCCESS
 
-        result = RepoPublishResult.expected_result(repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
-                                                   publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
+        result = RepoPublishResult.expected_result(
+            repo_id, repo_distributor['id'], repo_distributor['distributor_type_id'],
+            publish_start_timestamp, publish_end_timestamp, summary, details, result_code)
         publish_result_coll.save(result, safe=True)
         return result
 
@@ -208,7 +215,7 @@ class RepoPublishManager(object):
             try:
                 self.publish(repo_id, dist_id, None)
             except Exception:
-                _LOG.exception('Exception on auto distribute call for repo [%s] distributor [%s]' % (repo_id, dist_id))
+                logger.exception('Exception on auto distribute call for repo [%s] distributor [%s]' % (repo_id, dist_id))
                 error_string = traceback.format_exc()
                 error_runs.append( (dist_id, error_string) )
 
@@ -345,7 +352,9 @@ class RepoPublishManager(object):
         auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
         return auto_distributors
 
-# -- utilities ----------------------------------------------------------------
+
+publish = task(RepoPublishManager.publish, base=Task)
+
 
 def _now_timestamp():
     """
@@ -355,4 +364,3 @@ def _now_timestamp():
     now = datetime.datetime.now(dateutils.local_tz())
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
-
