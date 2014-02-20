@@ -95,6 +95,15 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.16-1
+- Raise python-billiard to version 3.3.0.16. (rbarlow@redhat.com)
+- Refactor all sync/publish commands to use a common query builder.
+  (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+
 * Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.13-1
 - new package built with tito
 
