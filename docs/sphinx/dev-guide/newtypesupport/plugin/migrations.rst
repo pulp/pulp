@@ -53,7 +53,7 @@ file. This will advertise your package's migrations to Pulp, and you will be reg
 system. Once you have installed your package, you should run ``pulp-manage-db``, and you should see some
 output that mentions your migration package::
 
-	$ sudo pulp-manage-db  
+	$ sudo -u apache pulp-manage-db
 	Beginning database migrations.
 	Migration package pulp.server.db.migrations is up to date at version 2
 	Migration package pulp_rpm.migrations is up to date at version 4

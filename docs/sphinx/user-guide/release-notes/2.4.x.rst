@@ -89,7 +89,7 @@ To upgrade to the new Pulp release from version 2.3.x, you should begin by using
 latest RPMs from the Pulp repository and run the database migrations::
 
     $ sudo yum upgrade
-    $ sudo pulp-manage-db
+    $ sudo -u apache pulp-manage-db
 
 Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
 about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need

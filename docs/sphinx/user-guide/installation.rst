@@ -168,7 +168,7 @@ Server
    but you only need to perform this step on one host that has the server package installed. If
    Apache or the workers are already running, just restart them::
 
-   $ sudo pulp-manage-db
+   $ sudo -u apache pulp-manage-db
 
 #. For each Pulp host that you wish to handle HTTP requests, start Apache httpd and set it to start
    on boot. For Upstart based systems::
