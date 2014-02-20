@@ -97,10 +97,11 @@ class TestConfig(TestCase):
         # validation
         self.assertFalse(mock_validate.called)
 
+    @patch('os.path.exists', return_value=True)
     @patch('__builtin__.open')
     @patch('pulp.common.config.Config.validate')
     @patch('pulp.common.config.INIConfig')
-    def test_default_paths(self, mock_config, mock_validate, mock_open):
+    def test_default_paths(self, mock_config, mock_validate, mock_open, *unused):
         mock_config.return_value = INIConfig()
 
         mock_fp = Mock()

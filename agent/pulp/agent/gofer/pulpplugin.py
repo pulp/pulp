@@ -180,8 +180,11 @@ class RegistrationMonitor:
     def changed(cls, path):
         """
         A change in the pulp certificate has been detected.
-        When deleted: disconnect from qpid by setting the UUID to None.
-        When added/updated: reconnect to qpid.
+        When the certificate has been deleted: the connection to the broker is
+        terminated by setting the UUID to None.
+        When the certificate has been added/updated: the plugin's configuration is
+        updated using the pulp configuration; the uuid is updated and the connection
+        to the broker is re-established.
         :param path: The changed file (ignored).
         :type path: str
         """
@@ -194,10 +197,10 @@ class RegistrationMonitor:
             host = cfg.messaging.host or cfg.server.host
             port = cfg.messaging.port
             url = '%s://%s:%s' % (scheme, host, port)
-            plugin_cfg = plugin.cfg()
-            plugin_cfg.messaging.url = url
-            plugin_cfg.messaging.cacert = cfg.messaging.cacert
-            plugin_cfg.messaging.clientcert = cfg.messaging.clientcert or \
+            plugin_conf = plugin.cfg()
+            plugin_conf.messaging.url = url
+            plugin_conf.messaging.cacert = cfg.messaging.cacert
+            plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
                 os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
         plugin.setuuid(consumer_id)
 
