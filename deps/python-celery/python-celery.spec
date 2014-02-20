@@ -145,6 +145,13 @@ popd
 
 
 %changelog
+* Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.1.9-1
+- Raise Celery to version 3.1.9. (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+
 * Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.1.7-1
 - new package built with tito
 
