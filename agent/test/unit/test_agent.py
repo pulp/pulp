@@ -17,7 +17,6 @@ from hashlib import sha256
 from unittest import TestCase
 
 from mock import patch, Mock
-from M2Crypto.X509 import X509Error
 
 from pulp.common.config import Config
 
@@ -37,14 +36,20 @@ CERTIFICATE
 TEST_ID_CERT_DIR = '/tmp/cert-dir'
 TEST_ID_CERT_FILE = 'test-cert'
 
-with patch('pulp.client.consumer.config.read_config', return_value=Config()):
-    from pulp.agent.gofer import pulpplugin
-
 
 CERT_PATH = os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE)
 
 
-class TestUtils(TestCase):
+class PluginTest(TestCase):
+
+    def setUp(self):
+        with patch('pulp.client.consumer.config.read_config') as mock_read:
+            mock_read.return_value = Config()
+            self.plugin = __import__(
+                'pulp.agent.gofer.pulpplugin', {}, {}, ['pulpplugin'])
+
+
+class TestUtils(PluginTest):
 
     @patch('pulp.common.bundle.Bundle.read', return_value=TEST_BUNDLE)
     def test_secret(self, fake_read):
@@ -54,10 +59,10 @@ class TestUtils(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        secret = pulpplugin.secret()
+        secret = self.plugin.secret()
 
         # validation
         # the secret is the sha256 of the certificate part of the bundle.
@@ -77,10 +82,10 @@ class TestUtils(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        secret = pulpplugin.secret()
+        secret = self.plugin.secret()
 
         # validation
         self.assertTrue(secret is None)
@@ -93,10 +98,10 @@ class TestUtils(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        bundle = pulpplugin.ConsumerX509Bundle()
+        bundle = self.plugin.ConsumerX509Bundle()
         cn = bundle.cn()
 
         # validation
@@ -112,10 +117,10 @@ class TestUtils(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        bundle = pulpplugin.ConsumerX509Bundle()
+        bundle = self.plugin.ConsumerX509Bundle()
         cn = bundle.cn()
 
         # validation
@@ -136,24 +141,24 @@ class TestUtils(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        bindings = pulpplugin.PulpBindings()
+        bindings = self.plugin.PulpBindings()
 
         # validation
         mock_conn.assert_called_with('test-host', 443, cert_filename=CERT_PATH)
         mock_bindings.assert_called_with(bindings, mock_conn())
 
 
-class TestConduit(TestCase):
+class TestConduit(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
     def test_consumer_id(self, mock_bundle):
         mock_bundle().cn = Mock(return_value=TEST_CN)
 
         # test
-        conduit = pulpplugin.Conduit()
+        conduit = self.plugin.Conduit()
 
         # validation
         self.assertEqual(conduit.consumer_id, TEST_CN)
@@ -165,11 +170,11 @@ class TestConduit(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        pulpplugin.pulp_conf.update(test_conf)
-        conduit = pulpplugin.Conduit()
+        self.plugin.pulp_conf.update(test_conf)
+        conduit = self.plugin.Conduit()
         conf = conduit.get_consumer_config()
 
         # validation
@@ -180,7 +185,7 @@ class TestConduit(TestCase):
         mock_context = Mock()
         mock_context.progress = Mock()
         mock_current.return_value = mock_context
-        conduit = pulpplugin.Conduit()
+        conduit = self.plugin.Conduit()
         report = {'a': 1}
 
         # test
@@ -195,7 +200,7 @@ class TestConduit(TestCase):
         mock_context = Mock()
         mock_context.cancelled = Mock(return_value=True)
         mock_current.return_value = mock_context
-        conduit = pulpplugin.Conduit()
+        conduit = self.plugin.Conduit()
 
         # test
         cancelled = conduit.cancelled()
@@ -209,7 +214,7 @@ class TestConduit(TestCase):
         mock_context = Mock()
         mock_context.cancelled = Mock(return_value=False)
         mock_current.return_value = mock_context
-        conduit = pulpplugin.Conduit()
+        conduit = self.plugin.Conduit()
 
         # test
         cancelled = conduit.cancelled()
@@ -219,7 +224,7 @@ class TestConduit(TestCase):
         self.assertTrue(mock_context.cancelled.called)
 
 
-class TestRegistrationMonitor(TestCase):
+class TestRegistrationMonitor(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.PathMonitor.add')
     def test_init(self, mock_add):
@@ -229,13 +234,13 @@ class TestRegistrationMonitor(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        pulpplugin.RegistrationMonitor.init()
+        self.plugin.RegistrationMonitor.init()
 
         # validation
-        mock_add.assert_called_with(CERT_PATH, pulpplugin.RegistrationMonitor.changed)
+        mock_add.assert_called_with(CERT_PATH, self.plugin.RegistrationMonitor.changed)
 
     @patch('pulp.common.bundle.Bundle.cn', return_value=TEST_CN)
     @patch('pulp.agent.gofer.pulpplugin.Plugin.find')
@@ -257,7 +262,7 @@ class TestRegistrationMonitor(TestCase):
                 'clientcert': None
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         plugin = Mock()
         plugin_cfg = Mock()
@@ -266,7 +271,7 @@ class TestRegistrationMonitor(TestCase):
         mock_find.return_value = plugin
 
         # test
-        pulpplugin.RegistrationMonitor.changed(CERT_PATH)
+        self.plugin.RegistrationMonitor.changed(CERT_PATH)
 
         # validation
         expected_url = 'tcp://pulp-host:5672'
@@ -296,7 +301,7 @@ class TestRegistrationMonitor(TestCase):
                 'clientcert': None
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         plugin = Mock()
         plugin_cfg = Mock()
@@ -305,7 +310,7 @@ class TestRegistrationMonitor(TestCase):
         mock_find.return_value = plugin
 
         # test
-        pulpplugin.RegistrationMonitor.changed(CERT_PATH)
+        self.plugin.RegistrationMonitor.changed(CERT_PATH)
 
         # validation
         expected_url = 'tcp://broker-host:5672'
@@ -327,23 +332,23 @@ class TestRegistrationMonitor(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        pulpplugin.RegistrationMonitor.changed(CERT_PATH)
+        self.plugin.RegistrationMonitor.changed(CERT_PATH)
 
         # validation
         mock_find().setuuid.assert_called_with(None)
 
 
-class TestSynchronization(TestCase):
+class TestSynchronization(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
     def test_registered(self, mock_bundle):
         mock_bundle().cn = Mock(return_value=TEST_CN)
 
         # test
-        registered = pulpplugin.Synchronization.registered()
+        registered = self.plugin.Synchronization.registered()
 
         # validation
         self.assertTrue(registered)
@@ -353,7 +358,7 @@ class TestSynchronization(TestCase):
         mock_bundle().cn = Mock(return_value=None)
 
         # test
-        registered = pulpplugin.Synchronization.registered()
+        registered = self.plugin.Synchronization.registered()
 
         # validation
         self.assertFalse(registered)
@@ -363,7 +368,7 @@ class TestSynchronization(TestCase):
     def test_send_profile_when_registered(self, mock_send, mock_registered):
         mock_registered.return_value = True
         # test
-        pulpplugin.Synchronization.profile()
+        self.plugin.Synchronization.profile()
 
         # validation
         mock_registered.assert_called_with()
@@ -374,14 +379,14 @@ class TestSynchronization(TestCase):
     def test_nosend_profile_when_not_registered(self, mock_send, mock_registered):
         mock_registered.return_value = False
         # test
-        pulpplugin.Synchronization.profile()
+        self.plugin.Synchronization.profile()
 
         # validation
         mock_registered.assert_called_with()
         self.assertFalse(mock_send.called)
 
 
-class TestConsumer(TestCase):
+class TestConsumer(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.Conduit')
     @patch('pulp.agent.gofer.pulpplugin.Dispatcher')
@@ -392,7 +397,7 @@ class TestConsumer(TestCase):
         mock_dispatcher().clean.return_value = _report
 
         # test
-        consumer = pulpplugin.Consumer()
+        consumer = self.plugin.Consumer()
         report = consumer.unregistered()
 
         # validation
@@ -410,7 +415,7 @@ class TestConsumer(TestCase):
         # test
         bindings = [{'A': 1}]
         options = {'B': 2}
-        consumer = pulpplugin.Consumer()
+        consumer = self.plugin.Consumer()
         report = consumer.bind(bindings, options)
 
         # validation
@@ -427,7 +432,7 @@ class TestConsumer(TestCase):
         # test
         bindings = [{'A': 1}]
         options = {'B': 2}
-        consumer = pulpplugin.Consumer()
+        consumer = self.plugin.Consumer()
         report = consumer.unbind(bindings, options)
 
         # validation
@@ -435,7 +440,7 @@ class TestConsumer(TestCase):
         self.assertEqual(report, _report.dict())
 
 
-class TestContent(TestCase):
+class TestContent(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.Conduit')
     @patch('pulp.agent.gofer.pulpplugin.Dispatcher')
@@ -447,7 +452,7 @@ class TestContent(TestCase):
         # test
         units = [{'A': 1}]
         options = {'B': 2}
-        content = pulpplugin.Content()
+        content = self.plugin.Content()
         report = content.install(units, options)
 
         # validation
@@ -464,7 +469,7 @@ class TestContent(TestCase):
         # test
         units = [{'A': 10}]
         options = {'B': 20}
-        content = pulpplugin.Content()
+        content = self.plugin.Content()
         report = content.update(units, options)
 
         # validation
@@ -481,7 +486,7 @@ class TestContent(TestCase):
         # test
         units = [{'A': 100}]
         options = {'B': 200}
-        content = pulpplugin.Content()
+        content = self.plugin.Content()
         report = content.uninstall(units, options)
 
         # validation
@@ -489,7 +494,7 @@ class TestContent(TestCase):
         self.assertEqual(report, _report.dict())
 
 
-class TestProfile(TestCase):
+class TestProfile(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
     @patch('pulp.agent.gofer.pulpplugin.Conduit')
@@ -508,7 +513,7 @@ class TestProfile(TestCase):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
-        pulpplugin.pulp_conf.update(test_conf)
+        self.plugin.pulp_conf.update(test_conf)
 
         _report = Mock()
         _report.details = {
@@ -520,7 +525,7 @@ class TestProfile(TestCase):
         mock_dispatcher().profile.return_value = _report
 
         # test
-        profile = pulpplugin.Profile()
+        profile = self.plugin.Profile()
         report = profile.send()
 
         # validation
