@@ -33,7 +33,7 @@ CERTIFICATE
 -----END CERTIFICATE-----
 """
 
-TEST_ID_CERT_DIR = '/tmp/cert-dir'
+TEST_ID_CERT_DIR = '/___fake18/cert-dir'
 TEST_ID_CERT_FILE = 'test-cert'
 
 
@@ -75,6 +75,21 @@ class TestUtils(PluginTest):
         self.assertEqual(h.hexdigest(), secret)
 
     @patch('pulp.common.bundle.Bundle.read', side_effect=ValueError)
+    def test_secret_failed(self, *unused):
+        test_conf = {
+            'filesystem': {
+                'id_cert_dir': TEST_ID_CERT_DIR,
+                'id_cert_filename': TEST_ID_CERT_FILE
+            }
+        }
+        self.plugin.pulp_conf.update(test_conf)
+
+        # test
+        secret = self.plugin.secret()
+
+        # validation
+        self.assertTrue(secret is None)
+
     def test_secret_unregistered(self, *unused):
         test_conf = {
             'filesystem': {

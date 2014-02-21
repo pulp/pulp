@@ -62,7 +62,7 @@ def secret():
         h.update(certificate)
         return h.hexdigest()
     except IOError, e:
-        if e.errno != errno.EEXIST:
+        if e.errno != errno.ENOENT:
             raise
     except Exception:
         log.exception('generate shared secret failed')
