@@ -13,7 +13,6 @@
 
 import datetime
 import math
-from pprint import pprint
 
 import mock
 
@@ -48,7 +47,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
     def clean(self):
         super(UnitAssociationQueryTests, self).clean()
         database.clean()
-        RepoContentUnit.get_collection().remove()
+        RepoContentUnit.get_collection().remove(safe=True)
 
     def setUp(self):
         super(UnitAssociationQueryTests, self).setUp()
@@ -264,7 +263,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
 
     # -- get_units_across_types tests -----------------------------------------
 
-    def test_get_units_no_criteria(self):
+    def test_get_units_across_types(self):
         # Test
         units_1 = self.manager.get_units_across_types('repo-1')
         units_2 = self.manager.get_units_across_types('repo-2')
@@ -275,9 +274,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
 
         for u in units_1 + units_2:
             self._assert_unit_integrity(u)
-
-        self._assert_default_sort(units_1)
-        self._assert_default_sort(units_2)
 
     def test_get_units_filter_type(self):
         # Test
@@ -291,8 +287,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         for u in units:
             self._assert_unit_integrity(u)
             self.assertTrue(u['unit_type_id'] in ['alpha', 'beta']) # purpose of this test
-
-        self._assert_default_sort(units)
 
     def test_get_units_filter_owner_type(self):
         # Test
@@ -373,10 +367,9 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         # The gamma units are associated twice, so they should only be returned once.
         self.assertEqual(self.repo_1_count - len(self.units['gamma']), len(units))
 
-        # The gamma user associations were created at an earlier date, so all of
-        # the gamma associations should be of owner type user.
-        non_user_gamma_units = [u for u in units if u['unit_type_id'] == 'gamma' and u['owner_type'] != OWNER_TYPE_USER]
-        self.assertEqual(0, len(non_user_gamma_units))
+        # there should be 2 gamma units returned
+        gamma_units = [u for u in units if u['unit_type_id'] == 'gamma']
+        self.assertEqual(2, len(gamma_units))
 
     def test_get_units_with_fields(self):
         # Test
@@ -405,9 +398,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
 
         for u in alpha_units + beta_units:
             self._assert_unit_integrity(u)
-
-        self._assert_default_sort(alpha_units)
-        self._assert_default_sort(beta_units)
 
     def test_get_units_by_type_association_filter(self):
         # Test
@@ -521,8 +511,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
 
         # Verify
         self.assertEqual(len(self.units['gamma']), len(units)) # only one association per gamma unit
-        for u in units:
-            self.assertEqual(u['owner_type'], association_manager.OWNER_TYPE_USER) # all user associations have earlier created date
+        self.assertEqual(units[0]['unit_id'], 'garden')
 
     def test_get_units_by_type_with_assoc_fields(self):
         # Test
@@ -652,28 +641,6 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         self.assertTrue(unit['metadata']['md_1'] is not None)
         self.assertTrue(unit['metadata']['md_2'] is not None)
         self.assertTrue(unit['metadata']['md_3'] is not None)
-
-    def _assert_default_sort(self, units):
-        """
-        Asserts that units are sorted first by type, then by created within
-        each type.
-        """
-
-        for i in range(0, len(units) - 1):
-            u1 = units[i]
-            u2 = units[i+1]
-            self.assertTrue(u1['unit_type_id'] <= u2['unit_type_id'])
-
-        units_by_type = {}
-        for u in units:
-            x = units_by_type.setdefault(u['unit_type_id'], [])
-            x.append(u)
-
-        for units_list in units_by_type.values():
-            for i in range(0, len(units_list) - 1):
-                u1 = units_list[i]
-                u2 = units_list[i+1]
-                self.assertTrue(u1['created'] <= u2['created'])
 
 # -- stress tests -------------------------------------------------------------
 
