@@ -140,7 +140,7 @@ class TypesDatabaseTests(base.PulpServerTests):
             self.assertTrue(DEF_1.id in e.missing_type_ids)
             self.assertTrue(DEF_2.id in e.missing_type_ids)
             self.assertTrue(DEF_3.id in e.missing_type_ids)
-            print(e) # used to test the __str__ impl
+            str(e) # used to test the __str__ impl
 
     def test_update_failed_create(self):
         """
@@ -159,7 +159,7 @@ class TypesDatabaseTests(base.PulpServerTests):
         except types_db.UpdateFailed, e:
             self.assertEqual(1, len(e.type_definitions))
             self.assertEqual(busted, e.type_definitions[0])
-            print(e)
+            str(e)
 
     def test_all_type_collection_names(self):
         """

@@ -301,11 +301,8 @@ class RepoUnitAssociationManagerTests(PulpServerTests):
         self.repo_manager.create_repo(dest_repo_id)
 
         # Test
-        try:
-            self.manager.associate_from_repo(source_repo_id, dest_repo_id)
-            self.fail('Exception expected')
-        except exceptions.MissingResource, e:
-            print(e)
+        self.assertRaises(exceptions.MissingResource,
+                          self.manager.associate_from_repo, source_repo_id, dest_repo_id)
 
     def test_associate_from_repo_importer_error(self):
         # Setup

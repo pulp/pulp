@@ -61,6 +61,7 @@ class Model(dict):
     collection_name = None
     unique_indices = ('id',) # note, '_id' is automatically unique and indexed
     search_indices = ()
+    _collection = None
 
     # -------------------------------------------------------------------------
 
@@ -108,13 +109,6 @@ class Model(dict):
         return collection
 
     @classmethod
-    def _get_cached_collection(cls):
-        try:
-            return cls.__collection
-        except AttributeError:
-            return None
-
-    @classmethod
     def get_collection(cls):
         """
         Get the document collection for this data model.
@@ -126,5 +120,6 @@ class Model(dict):
         # collection_name
         if cls.collection_name is None:
             return None
-        # removed cached connections to handle AutoReconnect exception
-        return cls._get_collection_from_db()
+        if not cls._collection:
+            cls._collection = cls._get_collection_from_db()
+        return cls._collection
