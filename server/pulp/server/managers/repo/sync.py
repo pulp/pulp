@@ -35,7 +35,6 @@ from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import register_sigterm_handler, Task
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -90,9 +89,6 @@ class RepoSyncManager(object):
         if importer_instance is None:
             raise MissingResource(repo_id)
 
-        dispatch_context = dispatch_factory.context()
-        dispatch_context.set_cancel_control_hook(importer_instance.cancel_sync_repo)
-
         importer_manager = manager_factory.repo_importer_manager()
         repo_importer = importer_manager.get_importer(repo_id)
 
@@ -112,8 +108,6 @@ class RepoSyncManager(object):
         sync_result = RepoSyncManager._do_sync(repo, importer_instance, transfer_repo, conduit,
                                                call_config)
         fire_manager.fire_repo_sync_finished(sync_result)
-
-        dispatch_context.clear_cancel_control_hook()
 
         if sync_result['result'] == RepoSyncResult.RESULT_FAILED:
             raise PulpExecutionException(_('Importer indicated a failed response'))

@@ -22,7 +22,7 @@ from nectar.config import DownloaderConfig
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
-from base import PulpAsyncServerTests
+from base import PulpServerTests
 
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
@@ -164,10 +164,10 @@ class CancelEvent(object):
         return self.call_count >= self.on_call
 
 
-class ContainerTest(PulpAsyncServerTests):
+class ContainerTest(PulpServerTests):
 
     def setUp(self):
-        PulpAsyncServerTests.setUp(self)
+        super(ContainerTest, self).setUp()
         ContentCatalog.get_collection().remove()
         self.tmp_dir = mkdtemp()
         self.downloaded = os.path.join(self.tmp_dir, 'downloaded')
@@ -180,7 +180,7 @@ class ContainerTest(PulpAsyncServerTests):
         plugins._MANAGER.catalogers.add_plugin('yum', MockCataloger, {})
 
     def tearDown(self):
-        PulpAsyncServerTests.tearDown(self)
+        super(ContainerTest, self).tearDown()
         ContentCatalog.get_collection().remove()
         shutil.rmtree(self.tmp_dir, ignore_errors=True)
         plugins.finalize()

@@ -14,16 +14,18 @@
 This module contains tests for the pulp.server.webservices.dispatch module.
 """
 import uuid
+
 import mock
 
 from .... import base
 from pulp.devel.unit.base import PulpWebservicesTests
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import PulpCodedException, MissingResource
 from pulp.server.webservices.controllers import dispatch as dispatch_controller
+
 
 class TestTaskResource(PulpWebservicesTests):
     """

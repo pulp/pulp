@@ -40,7 +40,6 @@ from pulp.server import initialization
 
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.debugging import StacktraceDumper
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import factory as manager_factory
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
@@ -108,9 +107,6 @@ def _initialize_pulp():
     # The previous two are likely user errors, but the remainder represent
     # something gone horribly wrong. As such, I'm not going to account for each
     # and instead simply let the exception itself bubble up.
-
-    # Initialize the tasking subsystem
-    dispatch_factory.initialize()
 
     # Ensure the minimal auth configuration
     role_manager = manager_factory.role_manager()

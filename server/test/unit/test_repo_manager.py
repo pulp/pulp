@@ -29,7 +29,7 @@ import pulp.server.exceptions as exceptions
 
 # -- test cases ---------------------------------------------------------------
 
-class RepoManagerTests(base.PulpAsyncServerTests):
+class RepoManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(RepoManagerTests, self).setUp()

@@ -15,11 +15,12 @@ from gettext import gettext as _
 import logging
 import sys
 
+
 import pulp.plugins.conduits._common as common_utils
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
 from pulp.server.async.task_status_manager import TaskStatusManager
-import pulp.server.dispatch.factory as dispatch_factory
+from pulp.server.async.tasks import get_current_task_id
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
@@ -532,6 +533,7 @@ class StatusMixin(object):
         self.report_id = report_id
         self.exception_class = exception_class
         self.progress_report = {}
+        self.task_id = get_current_task_id()
 
     def set_progress(self, status):
         """
@@ -545,10 +547,8 @@ class StatusMixin(object):
         """
         try:
             self.progress_report[self.report_id] = status
-            context = dispatch_factory.context()
             delta = {'progress_report': self.progress_report}
-            TaskStatusManager.update_task_status(context.call_request_id, delta)
-            context.report_progress(self.progress_report)
+            TaskStatusManager.update_task_status(self.task_id, delta)
         except Exception, e:
             _LOG.exception('Exception from server setting progress for report [%s]' % self.report_id)
             try:

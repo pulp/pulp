@@ -31,7 +31,6 @@ from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicabil
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import InvalidValue, OperationPostponed
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager

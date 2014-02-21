@@ -25,6 +25,7 @@ from pulp.devel import dummy_plugins, mock_plugins
 from pulp.devel.unit.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict, assert_body_matches_async_task
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.auth import authorization
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
@@ -34,13 +35,11 @@ from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
                                              RepoSyncResult)
 from pulp.server.exceptions import MissingResource, OperationPostponed
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 from pulp.server.async.tasks import TaskResult
 from pulp.server.webservices.controllers import repositories
-
 from .... import base
 
 

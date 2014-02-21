@@ -14,8 +14,8 @@
 from pymongo.errors import DuplicateKeyError
 
 from pulp.common import dateutils
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 
 

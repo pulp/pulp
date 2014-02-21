@@ -18,10 +18,10 @@ import web
 
 from pulp.common import constants
 from pulp.common.tags import action_tag, resource_tag
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo.importer import set_importer, remove_importer, update_importer_config
