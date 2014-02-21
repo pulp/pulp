@@ -50,8 +50,8 @@ example, the Pulp RPM project's setup.py has this as it's entry_points setup arg
 
 Once you have that in your `setup()` function, you will need to install your package using your setup.py
 file. This will advertise your package's migrations to Pulp, and you will be registered with Pulp's migration
-system. Once you have installed your package, you should run ``pulp-manage-db``, and you should see some
-output that mentions your migration package::
+system. Once you have installed your package, you should run ``pulp-manage-db`` as the same user that apache
+runs as, and you should see some output that mentions your migration package::
 
 	$ sudo -u apache pulp-manage-db
 	Beginning database migrations.

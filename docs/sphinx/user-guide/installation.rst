@@ -165,8 +165,8 @@ Server
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
-   but you only need to perform this step on one host that has the server package installed. If
-   Apache or the workers are already running, just restart them::
+   but you only need to perform this step on one host that has the server package installed. Run this
+   as the same user that Apache runs as. If Apache or the workers are already running, just restart them::
 
    $ sudo -u apache pulp-manage-db
 
