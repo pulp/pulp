@@ -354,13 +354,13 @@ class OrphanUnitListCommand(PulpCliCommand):
         self.prompt.render_document(summary, order=order)
 
 
-class OrphanUnitRemoveCommand(PulpCliCommand):
+class OrphanUnitRemoveCommand(PollingCommand):
     def __init__(self, context):
         self.context = context
         self.prompt = context.prompt
 
         m = _('remove one or more orphaned units')
-        super(OrphanUnitRemoveCommand, self).__init__('remove', m, self.run)
+        super(OrphanUnitRemoveCommand, self).__init__('remove', m, self.run, context)
 
         self.add_option(OPTION_TYPE)
         self.add_option(OPTION_UNIT_ID)
@@ -383,20 +383,4 @@ class OrphanUnitRemoveCommand(PulpCliCommand):
         else:
             raise CommandUsage
 
-        self.check_task_status(response.response_body)
-
-    def check_task_status(self, task):
-        """
-        Check the status of a task response and make appropriate CLI output
-
-        :param task: Task as returned by the API call
-        """
-        response = task.response
-        if response == 'rejected':
-            self.prompt.render_failure_message(_('Request was rejected'))
-            self.prompt.render_reasons(task.reasons)
-        else:
-            self.prompt.render_success_message(_('Request accepted'))
-            self.prompt.write(
-                _('check status of task %(t)s with "pulp-admin tasks details"')
-                % {'t': task.task_id})
+        self.poll(response.response_body, kwargs)
