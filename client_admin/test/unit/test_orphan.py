@@ -11,16 +11,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
-
 from pulp.client.admin import orphan
-import base_builtins
+from pulp.devel.unit import base
 
 
-class TestOrphanSection(base_builtins.PulpClientTests):
+class TestOrphanSection(base.PulpClientTests):
     def setUp(self):
         super(TestOrphanSection, self).setUp()
+
         self.section = orphan.OrphanSection(self.context)
 
     def test_initialize(self):

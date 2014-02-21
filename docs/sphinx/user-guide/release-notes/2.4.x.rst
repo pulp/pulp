@@ -16,6 +16,8 @@ New Features
 
 Client Changes
 --------------
+#. Converted the orphan remove command to poll until the remove finishes.  Added a background
+   flag to match the pattern the other polling commands.
 
 Noteworthy Bugs Fixed
 ---------------------
@@ -134,3 +136,4 @@ For systemd::
     $ sudo systemctl start pulp_celerybeat
     $ sudo systemctl enable pulp_resource_manager
     $ sudo systemctl start pulp_resource_manager
+
