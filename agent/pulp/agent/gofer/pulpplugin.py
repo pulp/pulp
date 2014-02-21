@@ -17,6 +17,7 @@ Contains recurring actions and remote classes.
 """
 
 import os
+import errno
 
 from hashlib import sha256
 from logging import getLogger
@@ -25,22 +26,23 @@ from M2Crypto.X509 import X509Error
 
 from gofer.decorators import *
 from gofer.agent.plugin import Plugin
-from gofer.messaging import Topic
-from gofer.messaging.producer import Producer
 from gofer.pmon import PathMonitor
 from gofer.agent.rmi import Context
 
 from pulp.common.bundle import Bundle
-from pulp.common.config import Config
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
+from pulp.client.consumer.config import read_config
 
 log = getLogger(__name__)
-plugin = Plugin.find(__name__)
-dispatcher = Dispatcher()
-cfg = plugin.cfg()
+
+# pulp consumer configuration
+# the graph (cfg) is provided for syntactic convenience
+
+pulp_conf = read_config()
+cfg = pulp_conf.graph()
 
 
 # --- utils ------------------------------------------------------------------
@@ -52,15 +54,18 @@ def secret():
     :return: The sha256 for the certificate
     :rtype: str
     """
-    bundle = ConsumerX509Bundle()
-    content = bundle.read()
-    crt = bundle.split(content)[1]
-    if content:
-        hash = sha256()
-        hash.update(crt)
-        return hash.hexdigest()
-    else:
-        return None
+    try:
+        bundle = ConsumerX509Bundle()
+        content = bundle.read()
+        certificate = bundle.split(content)[1]
+        h = sha256()
+        h.update(certificate)
+        return h.hexdigest()
+    except IOError, e:
+        if e.errno != errno.ENOENT:
+            raise
+    except Exception:
+        log.exception('generate shared secret failed')
 
 
 class ConsumerX509Bundle(Bundle):
@@ -69,7 +74,8 @@ class ConsumerX509Bundle(Bundle):
     """
 
     def __init__(self):
-        Bundle.__init__(self, cfg.rest.clientcert)
+        path = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
+        Bundle.__init__(self, path)
 
     def cn(self):
         """
@@ -91,9 +97,9 @@ class PulpBindings(Bindings):
     """
     
     def __init__(self):
-        host = cfg.rest.host
-        port = int(cfg.rest.port)
-        cert = cfg.rest.clientcert
+        host = cfg.server.host
+        port = int(cfg.server.port)
+        cert = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
         connection = PulpConnection(host, port, cert_filename=cert)
         Bindings.__init__(self, connection)
 
@@ -120,12 +126,7 @@ class Conduit(HandlerConduit):
         :return: The consumer configuration object.
         :rtype: pulp.common.config.Config
         """
-        paths = ['/etc/pulp/consumer/consumer.conf']
-        overrides = os.path.expanduser('~/.pulp/consumer.conf')
-        if os.path.exists(overrides):
-            paths.append(overrides)
-        cfg = Config(*paths)
-        return cfg
+        return pulp_conf
 
     def update_progress(self, report):
         """
@@ -171,7 +172,7 @@ class RegistrationMonitor:
         Start path monitor to track changes in the
         pulp identity certificate.
         """
-        path = cfg.rest.clientcert
+        path = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
         cls.pmon.add(path, cls.changed)
         cls.pmon.start()
 
@@ -179,14 +180,28 @@ class RegistrationMonitor:
     def changed(cls, path):
         """
         A change in the pulp certificate has been detected.
-        When deleted: disconnect from qpid by setting the UUID to None.
-        When added/updated: reconnect to qpid.
+        When the certificate has been deleted: the connection to the broker is
+        terminated by setting the UUID to None.
+        When the certificate has been added/updated: the plugin's configuration is
+        updated using the pulp configuration; the uuid is updated and the connection
+        to the broker is re-established.
         :param path: The changed file (ignored).
         :type path: str
         """
         log.info('changed: %s', path)
+        plugin = Plugin.find(__name__)
         bundle = ConsumerX509Bundle()
         consumer_id = bundle.cn()
+        if consumer_id:
+            scheme = cfg.messaging.scheme
+            host = cfg.messaging.host or cfg.server.host
+            port = cfg.messaging.port
+            url = '%s://%s:%s' % (scheme, host, port)
+            plugin_conf = plugin.cfg()
+            plugin_conf.messaging.url = url
+            plugin_conf.messaging.cacert = cfg.messaging.cacert
+            plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
+                os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
         plugin.setuuid(consumer_id)
 
 
@@ -194,25 +209,31 @@ class Synchronization:
     """
     Misc actions used to synchronize with the server.
     """
-            
+
+    @staticmethod
     @action(minutes=cfg.profile.minutes)
-    def profile(self):
+    def profile():
         """
         Report the unit profile(s).
         """
-        if self.registered():
+        if Synchronization.registered():
             profile = Profile()
             profile.send()
         else:
             log.info('not registered, profile report skipped')
-            
-    def registered(self):
+
+    @staticmethod
+    def registered():
         """
         Get registration status.
+        :return: True when a valid consumer ID can be obtained
+            from the consumer certificate bundle.
+        :rtype: bool
         """
         bundle = ConsumerX509Bundle()
         consumer_id = bundle.cn()
-        return (consumer_id is not None)
+        return consumer_id is not None
+
 
 # --- API --------------------------------------------------------------------
 
@@ -233,6 +254,7 @@ class Consumer:
         bundle = ConsumerX509Bundle()
         bundle.delete()
         conduit = Conduit()
+        dispatcher = Dispatcher()
         report = dispatcher.clean(conduit)
         return report.dict()
 
@@ -251,6 +273,7 @@ class Consumer:
         :rtype: DispatchReport
         """
         conduit = Conduit()
+        dispatcher = Dispatcher()
         report = dispatcher.bind(conduit, bindings, options)
         return report.dict()
 
@@ -268,6 +291,7 @@ class Consumer:
         :rtype: DispatchReport
         """
         conduit = Conduit()
+        dispatcher = Dispatcher()
         report = dispatcher.unbind(conduit, bindings, options)
         return report.dict()
 
@@ -291,6 +315,7 @@ class Content:
         :rtype: DispatchReport
         """
         conduit = Conduit()
+        dispatcher = Dispatcher()
         report = dispatcher.install(conduit, units, options)
         return report.dict()
 
@@ -308,6 +333,7 @@ class Content:
         :rtype: DispatchReport
         """
         conduit = Conduit()
+        dispatcher = Dispatcher()
         report = dispatcher.update(conduit, units, options)
         return report.dict()
 
@@ -325,6 +351,7 @@ class Content:
         :rtype: DispatchReport
         """
         conduit = Conduit()
+        dispatcher = Dispatcher()
         report = dispatcher.uninstall(conduit, units, options)
         return report.dict()
 
@@ -346,6 +373,7 @@ class Profile:
         consumer_id = bundle.cn()
         conduit = Conduit()
         bindings = PulpBindings()
+        dispatcher = Dispatcher()
         report = dispatcher.profile(conduit)
         log.info('profile: %s' % report)
         for type_id, profile_report in report.details.items():
