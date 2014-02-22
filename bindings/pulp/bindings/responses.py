@@ -144,7 +144,7 @@ class Task(object):
         :return: String representation of self
         :rtype:  unicode
         """
-        return u'Task: %(id)s State: %(state)s' % {'id': self.task_id, 'state': self.state}
+        return _(u'Task: %(id)s State: %(state)s') % {'id': self.task_id, 'state': self.state}
 
     def was_successful(self):
         """
@@ -182,7 +182,14 @@ class Task(object):
         return self.state == STATE_CANCELED
 
     def __str__(self):
-        return _('Task: task_id [%(i)s] state [%(s)s]') % {'i' : self.task_id, 's' : self.state}
+        """
+        Return a string representation of this Task.
+
+        :return: String representation of self
+        :rtype:  unicode
+        """
+        return self.__repr__()
+
 
 class BlockingReason(object):
     """

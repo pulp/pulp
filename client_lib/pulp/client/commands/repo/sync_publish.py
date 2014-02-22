@@ -42,7 +42,8 @@ class StatusRenderer(object):
 
 class SyncPublishCommand(polling.PollingCommand):
     """
-    This class contains common behaviors found in the sync and publish commands in this module.
+    This class contains common behaviors found in the sync and publish commands in this module. It is not
+    intended to be used by itself. It is intended to be used as a common superclass.
     """
     def __init__(self, name, description, method, context, renderer):
         """
@@ -204,6 +205,12 @@ class RunPublishRepositoryCommand(SyncPublishCommand):
                 self.override_config_keywords.append(option.keyword)
 
     def run(self, **kwargs):
+        """
+        Run the publish operation on the server, or if one is already running, attach to it.
+
+        :param kwargs: The user inputs
+        :type  kwargs: dict
+        """
         repo_id = kwargs[options.OPTION_REPO_ID.keyword]
         background = kwargs[polling.FLAG_BACKGROUND.keyword]
         override_config = {}
@@ -295,11 +302,11 @@ def _get_repo_tasks(context, repo_id, action):
     """
     repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
     if action == 'publish':
-        tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
+        action_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
     elif action == 'sync':
-        tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
+        action_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
     else:
-        raise Exception('_get_repo_tasks() does not support %(action)s as an action.' % {'action': action})
+        raise ValueError('_get_repo_tasks() does not support %(action)s as an action.' % {'action': action})
     repo_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
-                                        'tags': {'$all': [repo_tag, tag]}}}
+                                        'tags': {'$all': [repo_tag, action_tag]}}}
     return context.server.tasks_search.search(**repo_search_criteria)
