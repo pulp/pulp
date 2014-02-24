@@ -8,7 +8,9 @@
 %global srcname kombu
 
 Name:           python-%{srcname}
-Version:        3.0.8
+# The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
+Epoch:          1
+Version:        3.0.12
 Release:        1%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
@@ -45,17 +47,17 @@ BuildRequires: python-mock
 BuildRequires: python-simplejson
 BuildRequires: PyYAML
 BuildRequires: python-msgpack
-BuildRequires: python-amqp
+BuildRequires: python-amqp >= 1.4.3
 
 %if 0%{?with_python3}
-BuildRequires: python3-amqp
+BuildRequires: python3-amqp >= 1.4.3
 %endif
 
 # For documentation
 #BuildRequires:  pymongo python-sphinx
 #This causes tests error, needs fixing upstream. Incompatible with python > 2.7
 #BuildRequires:  python-couchdb
-Requires: python-amqp >= 1.3.3
+Requires: python-amqp >= 1.4.3
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
 
@@ -75,7 +77,7 @@ Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-amqp
+Requires:       python3-amqp >= 1.4.3
 
 %description -n python3-kombu
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
@@ -148,6 +150,19 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Feb 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
+- Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
+  (rbarlow@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-1].
+  (rbarlow@redhat.com)
+- Raise Kombu to version 3.0.12. (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+- Merge branch 'distributed-tasks' into rbarlow-package_distributed_tasks
+  (rbarlow@redhat.com)
+
 * Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.0.8-1
 - new package built with tito
 
