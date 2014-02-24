@@ -8,7 +8,7 @@
 %endif
 
 Name:           python-%{srcname}
-Version:        3.3.0.13
+Version:        3.3.0.16
 Release:        1%{?dist}
 # We need this to be 1 for Fedora systems, since the official Fedora billiards package is epoch 1. If we don't
 # that package will always be considered "newer" than ours, even when our version string is greater.
@@ -95,6 +95,15 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.16-1
+- Raise python-billiard to version 3.3.0.16. (rbarlow@redhat.com)
+- Refactor all sync/publish commands to use a common query builder.
+  (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+
 * Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.13-1
 - new package built with tito
 

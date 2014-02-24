@@ -6,7 +6,7 @@
 %endif
 
 Name:           python-celery
-Version:        3.1.7
+Version:        3.1.9
 Release:        1%{?dist}
 Summary:        Distributed Task Queue
 
@@ -20,10 +20,10 @@ BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 Requires:       python-anyjson
 Requires:       python-dateutil
-Requires:       python-kombu >= 3.0.5
+Requires:       python-kombu >= 3.0.12
 Requires:       python-setuptools
 Requires:       pyparsing
-Requires:       python-billiard >= 3.3.0.7
+Requires:       python-billiard >= 3.3.0.14
 Requires:       python-amqp
 Requires:	pytz
 %if ! (0%{?fedora} > 13 || 0%{?rhel} > 6)
@@ -66,10 +66,10 @@ Summary:        Distributed Task Queue
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-kombu >= 3.0.5
+Requires:       python3-kombu >= 3.0.12
 Requires:       python3-pytz
 Requires:       python3-dateutil
-Requires:       python3-billiard >= 3.3.0.7
+Requires:       python3-billiard >= 3.3.0.14
 Requires:       python3-amqp
 %description -n python3-celery
 An open source asynchronous task queue/job queue based on
@@ -145,6 +145,13 @@ popd
 
 
 %changelog
+* Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.1.9-1
+- Raise Celery to version 3.1.9. (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+
 * Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 3.1.7-1
 - new package built with tito
 

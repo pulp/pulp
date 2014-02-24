@@ -11,7 +11,7 @@
 %global srcname amqp
 
 Name:           python-%{srcname}
-Version:        1.3.3
+Version:        1.4.3
 Release:        1%{?dist}
 Summary:        Low-level AMQP client for Python (fork of amqplib)
 
@@ -130,6 +130,14 @@ Documentation for python-amqp
 
 
 %changelog
+* Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 1.4.3-1
+- Raise python-amqp to 1.4.3. (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Remove a stray space from python-amqp.spec (rbarlow@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+
 * Mon Jan 27 2014 Randy Barlow <rbarlow@redhat.com> 1.3.3-1
 - new package built with tito
 
