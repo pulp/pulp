@@ -18,7 +18,7 @@ import uuid
 import mock
 
 from .... import base
-from pulp.devel.unit.base import PulpWebservicesTests
+from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
