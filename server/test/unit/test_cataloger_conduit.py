@@ -11,7 +11,7 @@
 
 from uuid import uuid4
 
-from base import PulpAsyncServerTests
+from base import PulpServerTests
 
 from pulp.server.db.model.content import ContentCatalog
 from pulp.plugins.conduits.cataloger import CatalogerConduit
@@ -22,14 +22,14 @@ SOURCE_ID = 'test'
 EXPIRES = 3600
 
 
-class TestCatalogerConduit(PulpAsyncServerTests):
+class TestCatalogerConduit(PulpServerTests):
 
     def setUp(self):
-        PulpAsyncServerTests.setUp(self)
+        super(TestCatalogerConduit, self).setUp()
         ContentCatalog.get_collection().remove()
 
     def tearDown(self):
-        PulpAsyncServerTests.tearDown(self)
+        super(TestCatalogerConduit, self).tearDown()
         ContentCatalog.get_collection().remove()
 
     def units(self, start_n, end_n):

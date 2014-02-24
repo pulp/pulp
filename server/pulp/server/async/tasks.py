@@ -16,20 +16,19 @@ import logging
 import re
 import signal
 
-from celery import task, Task as CeleryTask
+from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
 
 from pulp.common import dateutils
 from pulp.common.error_codes import PLP0023
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource, PulpCodedException
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.managers import resources
 
 
@@ -349,12 +348,6 @@ class Task(CeleryTask, ReservedTaskMixin):
         This overrides CeleryTask's __call__() method. We use this method
         for task state tracking of Pulp tasks.
         """
-        # Add task_id to the task context, so that agent and plugins have access to the task id.
-        # There are a few other attributes in the context as defined by old dispatch system.
-        # These are unused right now. These should be removed when we cleanup the dispatch folder
-        # after the migration to celery is complete.
-        task_context = dispatch_factory.context()
-        task_context.call_request_id = self.request.id
         # Check task status and skip running the task if task state is 'canceled'.
         task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
         if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
@@ -457,6 +450,19 @@ def cancel(task_id):
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)
+
+
+def get_current_task_id():
+    """"
+    Get the current task id from celery.  If this is called outside of a running
+    celery task it will return None
+
+    :return: The ID of the currently running celery task or None if not in a task
+    :rtype: str
+    """
+    if current_task and current_task.request and current_task.request.id:
+        return current_task.request.id
+    return None
 
 
 def register_sigterm_handler(f, handler):

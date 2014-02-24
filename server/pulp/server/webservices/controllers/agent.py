@@ -18,8 +18,8 @@ import logging
 import web
 
 # Pulp
+from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth.authorization import UPDATE
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
@@ -40,16 +40,14 @@ class Reply(JSONController):
         """
         body = self.params()
         _LOG.info('agent (%s) reply:\n%s', uuid, body)
-        coordinator = dispatch_factory.coordinator()
-        call_request_id = body['any']
+        task_id = body['any']
         if body['status'] == 200:
             result = body['reply']
-            coordinator.complete_call_success(call_request_id, result)
+            TaskStatusManager.set_task_succeeded(task_id, result)
         else:
             raised = body['exception']
-            exception = raised['xmsg']
             traceback = raised['xstate']['trace']
-            coordinator.complete_call_failure(call_request_id, exception, traceback)
+            TaskStatusManager.set_task_failed(task_id, traceback)
         return self.ok({})
 
 # -- web.py application -------------------------------------------------------

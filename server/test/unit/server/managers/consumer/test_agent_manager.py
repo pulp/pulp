@@ -12,7 +12,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import itertools
-
 from unittest import TestCase
 
 from mock import patch, Mock, ANY
@@ -20,10 +19,10 @@ from mock import patch, Mock, ANY
 from pulp.common.tags import (
     action_tag, resource_tag, ACTION_AGENT_BIND, ACTION_AGENT_UNBIND,
     ACTION_AGENT_UNIT_INSTALL, ACTION_AGENT_UNIT_UPDATE, ACTION_AGENT_UNIT_UNINSTALL)
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.db.model.consumer import Bind
 from pulp.server.managers.consumer.agent import AgentManager, Units
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer

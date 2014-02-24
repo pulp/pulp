@@ -34,7 +34,6 @@ from pulp.server.config import config as pulp_conf
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.dispatch import QueuedCall
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as managers
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
@@ -85,10 +84,6 @@ class ServerTests(TestCase):
 
     def setUp(self):
         QueuedCall.get_collection().remove()
-        dispatch_factory.initialize()
-
-    def tearDown(self):
-        dispatch_factory.finalize(True)
 
 
 class WebTest(ServerTests):

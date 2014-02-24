@@ -23,7 +23,7 @@ import pulp.server.exceptions as exceptions
 
 # -- test cases ---------------------------------------------------------------
 
-class ConsumerManagerTests(base.PulpAsyncServerTests):
+class ConsumerManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(ConsumerManagerTests, self).setUp()
@@ -309,9 +309,7 @@ class ConsumerManagerTests(base.PulpAsyncServerTests):
             print(e)
 
 
-
-
-class ConsumerHistoryManagerTests(base.PulpAsyncServerTests):
+class ConsumerHistoryManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(ConsumerHistoryManagerTests, self).setUp()

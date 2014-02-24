@@ -17,10 +17,10 @@ import web
 from web.webapi import BadRequest
 
 from pulp.common.tags import action_tag
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, \
     UnsupportedValue, MissingResource
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,

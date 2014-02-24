@@ -26,7 +26,7 @@ from pulp.server.managers import factory
 # -- test cases ---------------------------------------------------------------
 
 
-class BindManagerTests(base.PulpAsyncServerTests):
+class BindManagerTests(base.PulpServerTests):
 
     CONSUMER_ID = 'test-consumer'
     EXTRA_CONSUMER_1 = 'extra_consumer_1'

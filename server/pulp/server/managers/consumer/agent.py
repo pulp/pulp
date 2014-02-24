@@ -26,8 +26,8 @@ from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.db.model.consumer import Bind
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import PulpExecutionException, PulpDataException
 from pulp.server.managers import factory as managers
 from pulp.server.async.task_status_manager import TaskStatusManager

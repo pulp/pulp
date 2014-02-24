@@ -176,7 +176,7 @@ class EventListenerManagerTests(base.PulpServerTests):
 # event tests ------------------------------------------------------------------
 
 
-class EventTests(base.PulpAsyncServerTests):
+class EventTests(base.PulpServerTests):
 
     @mock.patch('celery.current_task')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')

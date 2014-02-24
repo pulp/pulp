@@ -11,7 +11,7 @@
 
 from uuid import uuid4
 
-from base import PulpAsyncServerTests
+from base import PulpServerTests
 
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.managers.content.catalog import ContentCatalogManager
@@ -23,14 +23,14 @@ SOURCE_ID = 'test'
 EXPIRATION = 3600
 
 
-class TestCatalogManager(PulpAsyncServerTests):
+class TestCatalogManager(PulpServerTests):
 
     def setUp(self):
-        PulpAsyncServerTests.setUp(self)
+        super(TestCatalogManager, self).setUp()
         ContentCatalog.get_collection().remove()
 
     def tearDown(self):
-        PulpAsyncServerTests.tearDown(self)
+        super(TestCatalogManager, self).tearDown()
         ContentCatalog.get_collection().remove()
 
     def test_locator(self):

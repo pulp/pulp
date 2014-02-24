@@ -17,7 +17,7 @@ _NAMESPACE_DELIMITER = ':'
 _PULP_NAMESPACE = 'pulp'
 _ACTION_NAMESPACE = 'action'
 
-# These are duplicated from pulp.server.dispatch.constants. We can't import
+# These are duplicated from pulp.server.async.constants. We can't import
 # those directly as this module lives in common and will run on the client.
 # I didn't change dispatch to import from here because it just felt dirty.
 

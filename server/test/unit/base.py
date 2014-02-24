@@ -25,8 +25,6 @@ from pulp.server.db import connection
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
-from pulp.server.dispatch import constants as dispatch_constants
-from pulp.server.dispatch import factory as dispatch_factory
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
@@ -100,22 +98,7 @@ class PulpServerTests(unittest.TestCase):
                 setattr(parent, mocked_attr, original_attr)
 
 
-class PulpAsyncServerTests(PulpServerTests):
-    """
-    Intermediate test suite that starts and stops the asynchronous dispatch
-    system, but doesn't setup the webservices.
-    """
-
-    def setUp(self):
-        super(PulpAsyncServerTests, self).setUp()
-        dispatch_factory.initialize()
-
-    def tearDown(self):
-        super(PulpAsyncServerTests, self).tearDown()
-        dispatch_factory.finalize(clear_queued_calls=True)
-
-
-class PulpWebserviceTests(PulpAsyncServerTests):
+class PulpWebserviceTests(PulpServerTests):
     """
     Base unit test class for all webservice controller tests.
     """
@@ -126,7 +109,7 @@ class PulpWebserviceTests(PulpAsyncServerTests):
 
     @classmethod
     def setUpClass(cls):
-        PulpServerTests.setUpClass()
+        super(PulpWebserviceTests, cls).setUpClass()
 
         # The application setup is somewhat time consuming and really only needs
         # to be done once. We might be able to move it out to a single call for
@@ -161,7 +144,6 @@ class PulpWebserviceTests(PulpAsyncServerTests):
 
     def setUp(self):
         super(PulpWebserviceTests, self).setUp()
-        self.coordinator = dispatch_factory.coordinator()
         self.success_failure = None
         self.result = None
         self.exception = None
@@ -222,24 +204,6 @@ class PulpWebserviceTests(PulpAsyncServerTests):
             body = None
 
         return status, body
-
-
-class PulpItineraryTests(PulpAsyncServerTests):
-
-    def setUp(self):
-        PulpAsyncServerTests.setUp(self)
-        TaskQueue.install()
-        self.coordinator = dispatch_factory.coordinator()
-
-    def tearDown(self):
-        TaskQueue.uninstall()
-        PulpAsyncServerTests.tearDown(self)
-
-    def run_next(self):
-        TaskQueue.run_next()
-
-    def cancel(self, request_id):
-        self.coordinator.cancel_call(request_id)
 
 
 class RecursiveUnorderedListComparisonMixin(object):
@@ -310,76 +274,3 @@ class ResourceReservationTests(PulpServerTests):
         AvailableQueue.get_collection().remove()
         ReservedResource.get_collection().remove()
         TaskStatus.get_collection().remove()
-
-
-class TaskQueue:
-
-    @classmethod
-    def install(cls):
-        existing = dispatch_factory._task_queue()
-        if existing:
-            existing.stop()
-        queue = cls()
-        dispatch_factory._TASK_QUEUE = queue
-        return queue
-
-    @classmethod
-    def uninstall(cls):
-        pass
-
-    @classmethod
-    def run_next(cls):
-        queue = dispatch_factory._task_queue()
-        if isinstance(queue, cls):
-            queue.__run_next()
-        else:
-            raise Exception, '%s not installed' % cls
-
-    def __init__(self):
-        self.__next = 0
-        self.__queue = []
-
-    def start(self):
-        pass
-
-    def stop(self, *args, **kwargs):
-        pass
-
-    def enqueue(self, task):
-        self.__queue.append(task)
-
-    def cancel(self, task):
-        return task.cancel()
-
-    def __run_next(self):
-        if self.__next < len(self.__queue):
-            task = self.__queue[self.__next]
-            self.__run(task)
-            self.__next += 1
-        else:
-            raise Exception, 'No tasks pending'
-
-    def __run(self, task):
-        finished = \
-            [t.call_request.id for t in self.__queue[:self.__next]
-                if t.call_report.state == dispatch_constants.CALL_FINISHED_STATE]
-        for request_id in task.call_request.dependencies.keys():
-            if request_id not in finished:
-                task.skip()
-                return
-        task.call_report.state = dispatch_constants.CALL_RUNNING_STATE
-        task._run()
-
-    def get(self, task_id):
-        for task in self.__queue:
-            if task.call_report.call_request_id == task_id:
-                return task
-
-    def all_tasks(self):
-        return list(self.__queue)
-
-    def lock(self):
-        pass
-
-    def unlock(self):
-        pass
