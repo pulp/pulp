@@ -178,6 +178,7 @@ class BaseUploadTest(base.PulpWebserviceTests):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
 
+
 class UploadsCollectionTests(BaseUploadTest):
 
     def test_get_no_uploads(self):
@@ -216,6 +217,7 @@ class UploadsCollectionTests(BaseUploadTest):
         upload_file = self.upload_manager._upload_file_path(body['upload_id'])
         self.assertTrue(os.path.exists(upload_file))
 
+
 class UploadResourceTests(BaseUploadTest):
 
     def test_delete(self):
@@ -231,6 +233,7 @@ class UploadResourceTests(BaseUploadTest):
 
         upload_file = self.upload_manager._upload_file_path(upload_id)
         self.assertTrue(not os.path.exists(upload_file))
+
 
 class UploadSegmentResourceTests(BaseUploadTest):
 
@@ -286,12 +289,14 @@ class UploadSegmentResourceTests(BaseUploadTest):
         # Verify
         self.assertEqual(404, status)
 
+
 class ReservedResourceApplyAsync(object):
     """
     This object allows us to mock the return value of _reserve_resource.apply_async.get().
     """
     def get(self):
         return 'some_queue'
+
 
 class ImportUnitTests(BaseUploadTest):
 
@@ -326,3 +331,18 @@ class ImportUnitTests(BaseUploadTest):
                               {'name': 'foo'}, {'stuff': 'bar'}, 
                               upload_id]
         self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])
+
+
+class CatalogTests(base.PulpWebserviceTests):
+
+    @mock.patch('pulp.server.managers.content.catalog.ContentCatalogManager.purge')
+    def test_delete(self, mock_purge):
+        source_id = 'test-source'
+
+        # test
+        url = '/v2/content/catalog/%s' % source_id
+        status, body = self.delete(url)
+
+        # validation
+        self.assertEqual(status, 200)
+        mock_purge.assert_called_with(source_id)
