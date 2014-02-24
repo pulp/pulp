@@ -380,7 +380,7 @@ resemble the following::
 
     <Files webservices.wsgi>
         # pass everything that isn't a Basic auth request through to Pulp
-        SetEnvIf ^Authorization$ "Basic.*" USE_APACHE_AUTH=1
+        SetEnvIfNoCase ^Authorization$ "Basic.*" USE_APACHE_AUTH=1
         Order allow,deny
         Allow from env=!USE_APACHE_AUTH
         Satisfy Any
