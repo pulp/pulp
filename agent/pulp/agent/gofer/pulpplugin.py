@@ -87,7 +87,7 @@ class ConsumerX509Bundle(Bundle):
         """
         try:
             return Bundle.cn(self)
-        except X509Error:
+        except (KeyError, X509Error):
             log.warn('certificate: %s, not valid', self.path)
 
 
