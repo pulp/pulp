@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.2.alpha%{?dist}
+Release: 0.3.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -530,6 +530,19 @@ exit 0
 %endif
 
 %changelog
+* Mon Feb 24 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.3.alpha
+- 980150 - support broker host that is different than pulp host.
+  (jortel@redhat.com)
+- 1058835 - Fix documentation of URL path for deletion of upload requests.
+  (bcourt@redhat.com)
+- 1042932 - Fix listings bug & enable export repo group support for celery
+  (bcourt@redhat.com)
+- 1046160 - taking ownership of /var/lib/pulp/published (mhrivnak@redhat.com)
+- 1051700 - Documenting that pulp-admin is not supported on RHEL5
+  (mhrivnak@redhat.com)
+- 1051700 - adding an explicit requirement for python 2.6 to pulp-admin-client
+  (mhrivnak@redhat.com)
+
 * Tue Jan 28 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.2.alpha
 - 1048297 - pulp-dev.py sets the CA cert and key world readable.
   (rbarlow@redhat.com)
