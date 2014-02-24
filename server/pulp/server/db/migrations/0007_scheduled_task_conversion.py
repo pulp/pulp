@@ -111,6 +111,8 @@ def convert_schedule(save_func, call):
 
     call_request = call.pop('serialized_call_request')
     # we are no longer storing these pickled.
+    # these are cast to a string because python 2.6 sometimes fails to
+    # deserialize json from unicode.
     call['args'] = pickle.loads(str(call_request['args']))
     call['kwargs'] = pickle.loads(str(call_request['kwargs']))
     # keeping this pickled because we don't really know how to use it yet
