@@ -246,8 +246,10 @@ class ScheduledCall(Model):
             last_run = None
         else:
             last_run = dateutils.parse_iso8601_datetime(self.last_run_at)
+        #  self.schedule is cast to a string because python 2.6 sometimes fails to
+        #  deserialize json from unicode.
         return ScheduleEntry(self.name, self.task, last_run, self.total_run_count,
-                             pickle.loads(self.schedule), self.args, self.kwargs,
+                             pickle.loads(str(self.schedule)), self.args, self.kwargs,
                              self.options, False, scheduled_call=self)
 
     def as_dict(self):
