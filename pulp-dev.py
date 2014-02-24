@@ -109,12 +109,18 @@ LINKS = (
     ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
 )
 
-LSB_VENDOR = subprocess.Popen(['lsb_release', '-si'],
-                              stdout=subprocess.PIPE).communicate()[0].strip()
+
+try:
+    LSB_VENDOR = subprocess.Popen(['lsb_release', '-si'],
+                                  stdout=subprocess.PIPE).communicate()[0].strip()
+except OSError:
+    print ('pulp-dev requires lsb_release to detect which operating system you are using. Please '
+           'install it and try again. For Red Hat based distributions, the package is called '
+           'redhat-lsb.')
+    sys.exit(1)
 if LSB_VENDOR not in ('RedHatEnterpriseServer', 'Fedora'):
     print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
     sys.exit(1)
-
 LSB_VERSION = float(subprocess.Popen(['lsb_release', '-sr'],
                     stdout=subprocess.PIPE).communicate()[0])
 
