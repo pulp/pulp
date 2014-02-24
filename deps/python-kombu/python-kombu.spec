@@ -150,6 +150,19 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Feb 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
+- Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
+  (rbarlow@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-1].
+  (rbarlow@redhat.com)
+- Raise Kombu to version 3.0.12. (rbarlow@redhat.com)
+- Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- Don't build Python 3 versions of Celery and deps. (rbarlow@redhat.com)
+- Merge branch 'distributed-tasks' into rbarlow-package_distributed_tasks
+  (rbarlow@redhat.com)
+
 * Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
 - Raise Kombu to version 3.0.12. (rbarlow@redhat.com)
 - Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
