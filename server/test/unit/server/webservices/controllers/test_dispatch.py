@@ -191,7 +191,7 @@ class TestTaskCollection(base.PulpWebserviceTests):
 
         # Validate
         self.assertEqual(200, status)
-        self.assertIsInstance(body, dict)
+        self.assertTrue(isinstance(body, dict))
         self.assertEquals(body['state'], state2)
         self.assertEqual(body['queue'], queue_2)
         self.assertEquals(body['tags'], tags)
@@ -212,6 +212,6 @@ class TestTaskCollection(base.PulpWebserviceTests):
 
         # Validate
         self.assertEqual(404, status)
-        self.assertIsInstance(body, dict)
+        self.assertTrue(isinstance(body, dict))
         self.assertTrue('Missing resource' in body['error_message'])
         self.assertTrue(non_existing_task_id in body['error_message'])
