@@ -42,11 +42,14 @@ CERT_PATH = os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE)
 
 class PluginTest(TestCase):
 
+    @staticmethod
+    @patch('pulp.client.consumer.config.read_config')
+    def load_plugin(mock_read):
+        mock_read.return_value = Config()
+        return __import__('pulp.agent.gofer.pulpplugin', {}, {}, ['pulpplugin'])
+
     def setUp(self):
-        with patch('pulp.client.consumer.config.read_config') as mock_read:
-            mock_read.return_value = Config()
-            self.plugin = __import__(
-                'pulp.agent.gofer.pulpplugin', {}, {}, ['pulpplugin'])
+        self.plugin = PluginTest.load_plugin()
 
 
 class TestUtils(PluginTest):
