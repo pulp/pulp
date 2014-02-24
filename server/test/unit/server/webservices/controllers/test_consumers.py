@@ -20,7 +20,7 @@ from web.webapi import BadRequest
 from .... import base
 from pulp.devel import mock_agent
 from pulp.devel import mock_plugins
-from pulp.devel.unit.base import PulpWebservicesTests
+from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.auth import authorization

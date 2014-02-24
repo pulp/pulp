@@ -22,7 +22,7 @@ import mock
 
 from pulp.common import dateutils
 from pulp.devel import dummy_plugins, mock_plugins
-from pulp.devel.unit.base import PulpWebservicesTests
+from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict, assert_body_matches_async_task
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async import constants as dispatch_constants
