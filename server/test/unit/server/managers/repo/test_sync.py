@@ -55,7 +55,7 @@ class MockRepoPublishManager:
         MockRepoPublishManager.raise_error = False
 
 
-class RepoSyncManagerTests(base.PulpAsyncServerTests):
+class RepoSyncManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(RepoSyncManagerTests, self).setUp()
@@ -593,7 +593,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertTrue(os.path.exists(dir))
 
 
-class TestDoSync(base.PulpAsyncServerTests):
+class TestDoSync(base.PulpServerTests):
     """
     Assert correct behavior from the _do_sync() method.
     """

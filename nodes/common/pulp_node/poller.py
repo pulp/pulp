@@ -10,11 +10,10 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import httplib
-
 from time import sleep
 from gettext import gettext as _
 
-from pulp.server.dispatch.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
+from pulp.server.async.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
 # --- i18m ------------------------------------------------------------------------------

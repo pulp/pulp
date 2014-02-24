@@ -27,7 +27,7 @@ import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
 
 
-class RepoSyncManagerTests(base.PulpAsyncServerTests):
+class RepoSyncManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(RepoSyncManagerTests, self).setUp()
@@ -603,7 +603,7 @@ class RepoSyncManagerTests(base.PulpAsyncServerTests):
         self.assertEqual(0, len(repo3_dists))
 
 
-class TestDoPublish(base.PulpAsyncServerTests):
+class TestDoPublish(base.PulpServerTests):
     """
     Assert correct behavior from the _do_publish() method.
     """

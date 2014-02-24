@@ -16,10 +16,9 @@ from gettext import gettext as _
 import web
 
 from pulp.common.tags import action_tag, resource_tag
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE
-from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.exceptions import MissingResource, InvalidValue, OperationPostponed
 from pulp.server.managers import factory
 from pulp.server.webservices import serialization

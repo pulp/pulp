@@ -14,7 +14,7 @@
 import traceback
 import unittest
 
-from base import PulpAsyncServerTests
+from base import PulpServerTests
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
@@ -38,7 +38,7 @@ class ConsumerGroupManagerInstantiationTests(unittest.TestCase):
             self.fail(traceback.format_exc())
 
 
-class ConsumerGroupTests(PulpAsyncServerTests):
+class ConsumerGroupTests(PulpServerTests):
 
     def setUp(self):
         super(ConsumerGroupTests, self).setUp()

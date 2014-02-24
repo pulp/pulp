@@ -26,7 +26,7 @@ from pulp.devel import mock_plugins
 from pulp.devel import mock_agent
 
 
-class ProfileManagerTests(base.PulpAsyncServerTests):
+class ProfileManagerTests(base.PulpServerTests):
 
     CONSUMER_ID = 'test-consumer'
     TYPE_1 = 'type-1'

@@ -21,7 +21,6 @@ import mock
 from pulp.devel import dummy_plugins
 from pulp.devel.unit.util import assert_body_matches_async_task
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.dispatch import constants as dispatch_constants
 from pulp.server.webservices.controllers.contents import ContentUnitsCollection, ContentUnitsSearch
 import base
 import pulp.server.managers.factory as manager_factory

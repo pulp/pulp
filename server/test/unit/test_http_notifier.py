@@ -23,7 +23,7 @@ from pulp.server.event.data import Event
 import base
 
 
-class TestHTTPNotifierTests(base.PulpAsyncServerTests):
+class TestHTTPNotifierTests(base.PulpServerTests):
 
     @mock.patch('pulp.server.event.http._create_connection')
     def test_handle_event(self, mock_create):
