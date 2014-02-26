@@ -1,4 +1,4 @@
-# Copyright (c) 2010-2012 Red Hat, Inc.
+# Copyright (c) 2010-2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -14,12 +14,12 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 %if 0%{?rhel} == 5
-%define pulp_selinux 0
+%define pulp_server 0
 %else
-%define pulp_selinux 1
+%define pulp_server 1
 %endif
 
-%if %{pulp_selinux}
+%if %{pulp_server}
 #SELinux
 %define selinux_variants mls strict targeted
 %define selinux_policyver %(sed -e 's,.*selinux-policy-\\([^/]*\\)/.*,\\1,' /usr/share/selinux/devel/policyhelp 2> /dev/null)
@@ -56,14 +56,18 @@ Pulp provides replication, access, and accounting for software repositories.
 %setup -q
 
 %build
-for directory in agent bindings client_admin client_consumer client_lib common server
+for directory in agent bindings client_admin client_consumer client_lib common
 do
     pushd $directory
     %{__python} setup.py build
     popd
 done
 
-%if %{pulp_selinux}
+%if %{pulp_server}
+pushd server
+%{__python} setup.py build
+popd
+
 # SELinux Configuration
 cd server/selinux/server
 sed -i "s/policy_module(pulp-server,[0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server,%{version})/" pulp-server.te
@@ -73,62 +77,42 @@ cd -
 
 %install
 rm -rf %{buildroot}
-for directory in agent bindings client_admin client_consumer client_lib common server
+for directory in agent bindings client_admin client_consumer client_lib common
 do
     pushd $directory
     %{__python} setup.py install -O1 --skip-build --root %{buildroot}
     popd
 done
 
-# Directories
-mkdir -p /srv
-mkdir -p %{buildroot}/%{_sysconfdir}/default/
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
+# Server installation
+%if %{pulp_server}
+pushd server
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+
+# These directories are specific to the server
+mkdir -p %{buildroot}/srv
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/content/sources/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server/plugins.conf.d
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/content/sources/conf.d
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
-mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
-mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
-mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
-mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
-mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
+mkdir -p %{buildroot}/%{_sysconfdir}/default/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/catalogers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/distributors
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/importers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/profilers
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/catalogers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/types
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
 mkdir -p %{buildroot}/%{_var}/www
-mkdir -p %{buildroot}/%{_var}/log/%{name}/
-mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
-mkdir -p %{buildroot}/%{_bindir}
 
 # Configuration
 cp -R server/etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
-cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
-cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
-cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
 
 # Apache Configuration
-%if 0%{?fedora} >= 18
+%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 cp server/etc/httpd/conf.d/pulp_apache_24.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
 %else
 cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd/conf.d/pulp.conf
@@ -157,30 +141,61 @@ cp -R server/srv %{buildroot}
 # Web Content
 ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
 
+# Tools
+cp server/bin/* %{buildroot}/%{_bindir}
+
+# Ghost
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
+
+# Install SELinux policy modules
+pushd server/selinux/server
+./install.sh %{buildroot}%{_datadir}
+mkdir -p %{buildroot}%{_datadir}/pulp/selinux/server
+cp enable.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp uninstall.sh %{buildroot}%{_datadir}/pulp/selinux/server
+cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
+popd
+%endif # End server installation block
+
+# Everything else installation
+# Directories
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
+mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
+mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
+mkdir -p %{buildroot}/%{_var}/log/%{name}/
+mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
+mkdir -p %{buildroot}/%{_bindir}
+
+# Configuration
+cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
+cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
+cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
+
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
 cp -R agent/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
 
-# Tools
-cp server/bin/* %{buildroot}/%{_bindir}
-
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
-touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
-touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
-
-%if %{pulp_selinux}
-# Install SELinux policy modules
-cd server/selinux/server
-./install.sh %{buildroot}%{_datadir}
-mkdir -p %{buildroot}%{_datadir}/pulp/selinux/server
-cp enable.sh %{buildroot}%{_datadir}/pulp/selinux/server
-cp uninstall.sh %{buildroot}%{_datadir}/pulp/selinux/server
-cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
-cd -
-%endif
 
 %clean
 rm -rf %{buildroot}
@@ -191,7 +206,7 @@ rm -rf %{buildroot}
 
 
 # ---- Server ------------------------------------------------------------------
-
+%if %{pulp_server}
 %package server
 Summary: The pulp platform server
 Group: Development/Languages
@@ -298,7 +313,7 @@ if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
 fi
-
+%endif # End pulp_server if block
 
 # ---- Common ------------------------------------------------------------------
 
@@ -475,7 +490,7 @@ on a defined interval.
 
 # --- Selinux ---------------------------------------------------------------------
 
-%if %{pulp_selinux}
+%if %{pulp_server}
 %package        selinux
 Summary:        Pulp SELinux policy for pulp components.
 Group:          Development/Languages
@@ -527,7 +542,7 @@ exit 0
 %{_datadir}/selinux/*/pulp-server.pp
 %{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
 
-%endif
+%endif # End selinux if block
 
 %changelog
 * Mon Feb 24 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.3.alpha
