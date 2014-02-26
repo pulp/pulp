@@ -17,6 +17,8 @@ This module contains tests for the pulp.server.async.task_status_manager module.
 import mock
 import uuid
 
+from datetime import datetime
+
 from ... import base
 
 from pulp.common import dateutils
@@ -152,15 +154,19 @@ class TaskStatusManagerTests(base.PulpServerTests):
         tags = ['test-tag1', 'test-tag2']
         state = 'waiting'
         TaskStatusManager.create_task_status(task_id, queue, tags, state)
-        delta = {'start_time': dateutils.now_utc_timestamp(),
+        now = datetime.now(dateutils.utc_tz())
+        start_time = dateutils.format_iso8601_datetime(now)
+        delta = {'start_time': start_time,
                  'state': 'running',
                  'disregard': 'ignored',
                  'progress_report': {'report-id': 'my-progress'}}
 
         updated = TaskStatusManager.update_task_status(task_id, delta)
 
-        task_status =  TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(task_status['start_time'], delta['start_time'])
+        # Make sure that parse_iso8601_datetime is able to parse the start_time without errors
+        dateutils.parse_iso8601_datetime(task_status['start_time'])
         self.assertEqual(task_status['state'], delta['state'])
         self.assertEqual(task_status['progress_report'], delta['progress_report'])
         self.assertEqual(task_status['queue'], queue)
