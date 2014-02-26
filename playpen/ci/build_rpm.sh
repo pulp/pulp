@@ -6,13 +6,17 @@
 echo "Test Building the RPMs"
 set -x
 # Jenkins isn't setting the workspace properly on slave nodes so resetting it here
-cd $WORKSPACE
+WORKSPACE="$(readlink -f $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../../)"
+OS_NAME=$(lsb_release -si)
+OS_VERSION=$(lsb_release -sr | cut -f1 -d.)
+
+cd ${WORKSPACE}
 mkdir -p tito
 
 #function that takes a directory as an argument and runs the setup steps within that directory
 function build_rpm {
     pushd $1
-    tito build --rpm --test --output $WORKSPACE/tito
+    tito build --rpm --test --output ${WORKSPACE}/tito
     popd
 }
 
@@ -20,7 +24,7 @@ build_rpm 'pulp'
 build_rpm 'pulp_rpm'
 build_rpm 'pulp_puppet'
 
-if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" == "5" ]; then
+if [ "$OS_NAME" == "RedHatEnterpriseServer" ] && [ "$OS_VERSION" == "5" ]; then
     # Lot's of the stuff isn't built on rhel 5
     echo "Skipping non RHEL5 compliant packages"
 else
