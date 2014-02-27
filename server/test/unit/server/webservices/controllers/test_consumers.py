@@ -50,20 +50,20 @@ class ConsumerTest(base.PulpWebserviceTests):
 
     def setUp(self):
         base.PulpWebserviceTests.setUp(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
+        Consumer.get_collection().remove(safe=True)
+        Repo.get_collection().remove(safe=True)
+        RepoDistributor.get_collection().remove(safe=True)
+        Bind.get_collection().remove(safe=True)
         plugin_api._create_manager()
         mock_plugins.install()
         mock_agent.install()
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
-        Consumer.get_collection().remove()
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        Bind.get_collection().remove()
+        Consumer.get_collection().remove(safe=True)
+        Repo.get_collection().remove(safe=True)
+        RepoDistributor.get_collection().remove(safe=True)
+        Bind.get_collection().remove(safe=True)
         mock_plugins.reset()
 
     def test_get(self):
@@ -1368,6 +1368,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.consumer_id = 'test-consumer'
         self.consumer_manager = factory.consumer_manager()
         self.consumer_manager.register(self.consumer_id)
+        ScheduledCall.get_collection().remove(safe=True)
 
     def tearDown(self):
         super(ScheduledUnitInstallTests, self).tearDown()
