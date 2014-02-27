@@ -45,6 +45,112 @@ CALL_REPORT_TEMPLATE = {
 }
 
 
+class GetRepoTasksTests(unittest.TestCase):
+    """
+    Tests for the _get_repo_tasks() function.
+    """
+    def test_publish_action(self):
+        """
+        Test with action set to 'publish'.
+        """
+        context = mock.MagicMock()
+        a_task = mock.MagicMock()
+        context.server.tasks_search.search.return_value = [a_task]
+        repo_id = 'some_repo'
+        action = 'publish'
+
+        tasks = sp._get_repo_tasks(context, repo_id, action)
+
+        self.assertEqual(tasks, [a_task])
+        expected_repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
+        expected_action_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
+        expected_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
+                                                'tags': {'$all': [expected_repo_tag, expected_action_tag]}}}
+        context.server.tasks_search.search.assert_called_once_with(**expected_search_criteria)
+
+    def test_sync_action(self):
+        """
+        Test with action set to 'sync'.
+        """
+        context = mock.MagicMock()
+        a_task = mock.MagicMock()
+        context.server.tasks_search.search.return_value = [a_task]
+        repo_id = 'some_repo'
+        action = 'sync'
+
+        tasks = sp._get_repo_tasks(context, repo_id, action)
+
+        self.assertEqual(tasks, [a_task])
+        expected_repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
+        expected_action_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
+        expected_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
+                                                'tags': {'$all': [expected_repo_tag, expected_action_tag]}}}
+        context.server.tasks_search.search.assert_called_once_with(**expected_search_criteria)
+
+    def test_unsupported_action(self):
+        """
+        Test with action set to neither sync or publish.
+        """
+        context = mock.MagicMock()
+        a_task = mock.MagicMock()
+        context.server.tasks_search.search.return_value = [a_task]
+        repo_id = 'some_repo'
+        action = 'unsupported'
+
+        self.assertRaises(ValueError, sp._get_repo_tasks, context, repo_id, action)
+
+
+class SyncPublishCommandTests(base.PulpClientTests):
+    """
+    Tests for the SyncPublishCommand class.
+    """
+    @mock.patch('pulp.client.commands.polling.PollingCommand.__init__',
+                side_effect=polling.PollingCommand.__init__, autospec=True)
+    def test__init___method_set(self, __init__):
+        """
+        Test the __init__() method when method is set.
+        """
+        name = 'some_name'
+        description = 'some_description'
+        method = mock.MagicMock()
+        context = mock.MagicMock()
+        renderer = mock.MagicMock()
+
+        spc = sp.SyncPublishCommand(name, description, method, context, renderer)
+
+        self.assertEqual(spc.renderer, renderer)
+        self.assertEqual(spc.context, context)
+        self.assertEqual(spc.prompt, context.prompt)
+        self.assertTrue(options.OPTION_REPO_ID in spc.options)
+        __init__.assert_called_once_with(spc, name, description, method, context)
+
+    @mock.patch('pulp.client.commands.polling.PollingCommand.__init__',
+                side_effect=polling.PollingCommand.__init__, autospec=True)
+    def test__init___method_unset(self, __init__):
+        """
+        Test the __init__() method when method is None.
+        """
+        name = 'some_name'
+        description = 'some_description'
+        method = None
+        context = mock.MagicMock()
+        renderer = mock.MagicMock()
+        # Because the SyncPublishCommand does not have a run() method, we need to make and test a subclass of
+        # it that has a run() method to ensure that method defaults to run() when is is None.
+        class TestSubclass(sp.SyncPublishCommand):
+            def run(self):
+                pass
+
+        spc = TestSubclass(name, description, method, context, renderer)
+
+        self.assertEqual(spc.renderer, renderer)
+        self.assertEqual(spc.context, context)
+        self.assertEqual(spc.prompt, context.prompt)
+        self.assertTrue(options.OPTION_REPO_ID in spc.options)
+        # When method is None, self.run should have been used instead
+        __init__.assert_called_once_with(spc, name, description, spc.run, context)
+
+
 class RunSyncRepositoryCommandTests(base.PulpClientTests):
     """
     Test the RunSyncRepositoryCommand class.
