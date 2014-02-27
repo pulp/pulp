@@ -12,9 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import unittest
+from datetime import timedelta
 
 import mock
 
+from pulp.common import dateutils
 from pulp.server import exceptions
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.managers.factory import initialize
@@ -48,9 +50,20 @@ class TestScheduleResource(unittest.TestCase):
         self.assertEqual(schedule['task'], 'pulp.tasks.frequent')
         self.assertEqual(schedule['_href'], mock_path.return_value)
 
+        # next_run is calculated on-demand, and there is a small chance that it
+        # will be re-calculated in the call.for_display() call as 1 second later
+        # than it was calculated above. Thus we will test that equality here
+        # with a tolerance of 1 second
+        for_display = call.for_display()
+        call_next_run = dateutils.parse_iso8601_datetime(call.next_run)
+        display_next_run = dateutils.parse_iso8601_datetime(for_display['next_run'])
+        self.assertTrue(display_next_run - call_next_run <= timedelta(seconds=1))
+
         # now check overall equality with the actual for_display value
         del schedule['_href']
-        self.assertEqual(schedule, call.for_display())
+        del schedule['next_run']
+        del for_display['next_run']
+        self.assertEqual(schedule, for_display)
 
         # make sure we called the manager layer correctly
         mock_utils_get.assert_called_once_with([call.id])
