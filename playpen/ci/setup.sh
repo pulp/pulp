@@ -5,9 +5,12 @@
 
 echo "Setting up after source control extract"
 set -x
-# Jenkins isn't setting the workspace properly on slave nodes so resetting it here
+# Jenkins isn't setting the env properly on slave nodes so resetting it here
 env
-cd $WORKSPACE
+WORKSPACE="$(readlink -f $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../../)"
+OS_NAME=$(lsb_release -si)
+OS_VERSION=$(lsb_release -sr | cut -f1 -d.)
+cd ${WORKSPACE}
 
 #function that takes a directory as an argument and runs the setup steps within that directory
 function setup {
@@ -23,7 +26,7 @@ function setup {
     popd
 }
 
-if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" == "5" ]; then
+if [ "$OS_NAME" == "RedHatEnterpriseServer" ] && [ "$OS_VERSION" == "5" ]; then
     # don't install nectar on RHEL 5
     echo "Nectar is not installed on RHEL 5"
 else
