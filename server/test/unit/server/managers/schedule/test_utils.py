@@ -192,10 +192,10 @@ class TestGetEnabled(unittest.TestCase):
 class TestDelete(unittest.TestCase):
     schedule_id = str(ObjectId())
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.remove')
-    def test_delete(self, mock_remove):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_delete(self, mock_get_collection):
+        mock_remove = mock_get_collection.return_value.remove
         mock_remove.return_value = None
-        mock_remove.__name__ = 'remove'
 
         utils.delete(self.schedule_id)
 
@@ -215,10 +215,10 @@ class TestDelete(unittest.TestCase):
 
 
 class TestDeleteByResource(unittest.TestCase):
-    @mock.patch('pulp.server.db.connection.PulpCollection.remove')
-    def test_calls_remove(self, mock_remove):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_calls_remove(self, mock_get_collection):
+        mock_remove = mock_get_collection.return_value.remove
         mock_remove.return_value = None
-        mock_remove.__name__ = 'remove'
 
         utils.delete_by_resource('resource1')
 
@@ -228,10 +228,10 @@ class TestDeleteByResource(unittest.TestCase):
 class TestUpdate(unittest.TestCase):
     schedule_id = str(ObjectId())
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
-    def test_update(self, mock_find):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_update(self, mock_get):
+        mock_find = mock_get.return_value.find_and_modify
         mock_find.return_value = SCHEDULES[0]
-        mock_find.__name__ = 'find_and_modify'
 
         ret = utils.update(self.schedule_id, {'enabled': True})
 
@@ -262,21 +262,22 @@ class TestUpdate(unittest.TestCase):
         self.assertRaises(exceptions.UnsupportedValue, utils.update,
                           self.schedule_id, {'foo': 'bar'})
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
-    def test_missing(self, mock_find):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_missing(self, mock_get_collection):
         # this should cause the exception to be raised
+        mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = None
-        mock_find.__name__ = 'find_and_modify'
 
         self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id, {'enabled': True})
+        self.assertEqual(mock_find.call_count, 1)
 
 
 class TestResetFailureCount(unittest.TestCase):
     schedule_id = str(ObjectId())
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.update')
-    def test_reset(self, mock_update):
-        mock_update.__name__ = 'update'
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_reset(self, mock_get_collection):
+        mock_update = mock_get_collection.return_value.update
 
         utils.reset_failure_count(self.schedule_id)
 
@@ -301,12 +302,10 @@ class TestResetFailureCount(unittest.TestCase):
 class TestIncrementFailureCount(unittest.TestCase):
     schedule_id = str(ObjectId())
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
-    @mock.patch('pulp.server.db.connection.PulpCollection.update')
-    def test_update(self, mock_update, mock_find):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_update(self, mock_get_collection):
+        mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = SCHEDULES[0]
-        mock_find.__name__ = 'find_and_modify'
-        mock_update.__name__ = 'update'
 
         utils.increment_failure_count(self.schedule_id)
 
@@ -320,23 +319,22 @@ class TestIncrementFailureCount(unittest.TestCase):
         # make sure it asks for the new version of the schedule to be returned
         self.assertTrue(mock_find.call_args[1]['new'] is True)
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.from_db')
-    def test_not_found(self, mock_from_db, mock_find):
+    def test_not_found(self, mock_from_db, mock_get_collection):
+        mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = None
-        mock_find.__name__ = 'find_and_modify'
 
         utils.increment_failure_count(self.schedule_id)
 
         # from_db() gets called if find_and_modify returns anything.
         self.assertEqual(mock_from_db.call_count, 0)
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
-    @mock.patch('pulp.server.db.connection.PulpCollection.update')
-    def test_threshold_none(self, mock_update, mock_find):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_threshold_none(self, mock_get_collection):
+        mock_find = mock_get_collection.return_value.find_and_modify
+        mock_update = mock_get_collection.return_value.update
         mock_find.return_value = SCHEDULES[1]
-        mock_find.__name__ = 'find_and_modify'
-        mock_update.__name__ = 'update'
 
         utils.increment_failure_count(self.schedule_id)
 
@@ -345,14 +343,13 @@ class TestIncrementFailureCount(unittest.TestCase):
         # make sure we didn't disable the schedule
         self.assertEqual(mock_update.call_count, 0)
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
-    @mock.patch('pulp.server.db.connection.PulpCollection.update')
-    def test_schedule_already_disabled(self, mock_update, mock_find):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_schedule_already_disabled(self, mock_get_collection):
+        mock_find = mock_get_collection.return_value.find_and_modify
+        mock_update = mock_get_collection.return_value.update
         schedule = SCHEDULES[0].copy()
         schedule['enabled'] = False
         mock_find.return_value = schedule
-        mock_find.__name__ = 'find_and_modify'
-        mock_update.__name__ = 'update'
 
         utils.increment_failure_count(self.schedule_id)
 
@@ -361,14 +358,13 @@ class TestIncrementFailureCount(unittest.TestCase):
         # make sure we didn't disable the schedule, since it's already disabled
         self.assertEqual(mock_update.call_count, 0)
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.find_and_modify')
-    @mock.patch('pulp.server.db.connection.PulpCollection.update')
-    def test_disable_schedule(self, mock_update, mock_find):
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_disable_schedule(self, mock_get_collection):
+        mock_find = mock_get_collection.return_value.find_and_modify
+        mock_update = mock_get_collection.return_value.update
         schedule = SCHEDULES[0].copy()
         schedule['consecutive_failures'] = 2
         mock_find.return_value = schedule
-        mock_find.__name__ = 'find_and_modify'
-        mock_update.__name__ = 'update'
 
         utils.increment_failure_count(self.schedule_id)
 

@@ -32,7 +32,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
     """
     def clean(self):
         super(TaskStatusManagerTests, self).clean()
-        TaskStatus.get_collection().remove()
+        TaskStatus.get_collection().remove(safe=True)
 
     def get_random_uuid(self):
         return str(uuid.uuid4())

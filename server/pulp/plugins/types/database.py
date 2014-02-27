@@ -146,7 +146,7 @@ def clean():
     all_collection_names = database.collection_names()
     type_collection_names = [n for n in all_collection_names if n.startswith(TYPE_COLLECTION_PREFIX)]
     for drop_me in type_collection_names:
-        database.drop_collection(drop_me)
+        database[drop_me].drop()
 
     # Purge the types collection of all entries
     type_collection = ContentType.get_collection()
