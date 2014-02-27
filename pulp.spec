@@ -84,6 +84,29 @@ do
     popd
 done
 
+# Directories
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
+mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
+mkdir -p %{buildroot}/%{_var}/log/%{name}/
+mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
+mkdir -p %{buildroot}/%{_bindir}
+
 # Server installation
 %if %{pulp_server}
 pushd server
@@ -97,6 +120,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server/plugins.conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
 mkdir -p %{buildroot}/%{_sysconfdir}/default/
+mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/catalogers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/distributors
@@ -159,30 +183,6 @@ popd
 %endif # End server installation block
 
 # Everything else installation
-# Directories
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
-mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
-mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
-mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
-mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
-mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
-mkdir -p %{buildroot}/%{_var}/log/%{name}/
-mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
-mkdir -p %{buildroot}/%{_bindir}
-
 # Configuration
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
 cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
