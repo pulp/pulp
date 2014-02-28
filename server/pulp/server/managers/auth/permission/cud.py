@@ -21,7 +21,7 @@ from gettext import gettext as _
 from celery import task
 
 from pulp.server.async.tasks import Task
-from pulp.server.auth.authorization import _get_operations
+from pulp.server.auth import authorization
 from pulp.server.db.model.auth import Permission, User
 from pulp.server.exceptions import (
     DuplicateResource, InvalidValue, MissingResource, PulpDataException,
@@ -34,24 +34,19 @@ class PermissionManager(object):
     """
     Performs permission related functions relating to CRUD operations.
     """
-
-    def __init__(self):
-        self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE = range(5)
-        self.operation_names = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
-
     @staticmethod
     def create_permission(resource_uri):
         """
         Creates a new Pulp permission.
 
-        @param resource_uri: resource_uri for the permission
-        @type  resource_uri: str
+        :param resource_uri: resource_uri for the permission
+        :type  resource_uri: str
 
-        @raise DuplicateResource: if there is already a permission with the requested resource
-        @raise InvalidValue: if any of the fields are unacceptable
+        :raises DuplicateResource: if there is already a permission with the requested resource
+        :raises InvalidValue: if any of the fields are unacceptable
         """
 
-        existing_permission = Permission.get_collection().find_one({'resource' : resource_uri})
+        existing_permission = Permission.get_collection().find_one({'resource': resource_uri})
         if existing_permission is not None:
             raise DuplicateResource(resource_uri)
 
@@ -60,26 +55,26 @@ class PermissionManager(object):
         Permission.get_collection().save(create_me, safe=True)
 
         # Retrieve the permission to return the SON object
-        created = Permission.get_collection().find_one({'resource' : resource_uri})
+        created = Permission.get_collection().find_one({'resource': resource_uri})
 
         return created
 
-    def update_permission(self, resource_uri, delta):
+    @staticmethod
+    def update_permission(resource_uri, delta):
         """
         Updates a permission object.
 
-        @param resource_uri: identifies the resource URI of the permission being deleted
-        @type resource_uri: str
+        :param resource_uri: identifies the resource URI of the permission being deleted
+        :type resource_uri: str
+        :param delta: A dict containing update keywords.
+        :type delta: dict
 
-        @param delta: A dict containing update keywords.
-        @type delta: dict
-
-        @return: The updated object
-        @rtype: dict
+        :return: The updated object
+        :rtype: dict
         """
 
         # Check whether the permission exists
-        found = Permission.get_collection().find_one({'resource' : resource_uri})
+        found = Permission.get_collection().find_one({'resource': resource_uri})
         if found is None:
             raise MissingResource(resource_uri)
 
@@ -98,11 +93,11 @@ class PermissionManager(object):
     def delete_permission(resource_uri):
         """
         Deletes the given permission.
-        @param resource_uri: identifies the resource URI of the permission being deleted
-        @type  resource_uri: str
+        :param resource_uri: identifies the resource URI of the permission being deleted
+        :type  resource_uri: str
 
-        @raise MissingResource: if permission for a given resource does not exist
-        @raise InvalidValue: if resource URI is invalid
+        :raises MissingResource: if permission for a given resource does not exist
+        :raises InvalidValue: if resource URI is invalid
         """
 
         # Raise exception if resource is invalid
@@ -121,14 +116,12 @@ class PermissionManager(object):
         """
         Grant permission on a resource for a user and a set of operations.
 
-        @type resource: str
-        @param resource: uri path representing a pulp resource
-
-        @type user: str
-        @param user: login of user to grant permissions to
-
-        @type operations: list or tuple of integers
-        @param operations:list of allowed operations being granted
+        :param resource: uri path representing a pulp resource
+        :type resource: str
+        :param login: login of user to grant permissions to
+        :type login: str
+        :param operations:list of allowed operations being granted
+        :type operations: list or tuple of integers
         """
         # we don't grant permissions to the system
         if login == system.SYSTEM_LOGIN:
@@ -203,13 +196,12 @@ class PermissionManager(object):
         """
         Grant CRUDE permissions for a newly created resource to current principal.
 
-        @type resource: str
-        @param resource: resource path to grant permissions to
+        :param resource: resource path to grant permissions to
+        :type resource: str
 
-        @rtype: bool
-        @return: True on success, False otherwise
-
-        @raise PulpExecutionException: if the system principal has not been set
+        :rtype: bool
+        :return: True on success, False otherwise
+        :raises PulpExecutionException: if the system principal has not been set
         """
         principal_manager = factory.principal_manager()
         user = principal_manager.get_principal()
@@ -218,37 +210,35 @@ class PermissionManager(object):
                 _('Cannot grant automatic permissions for [%(user)s] on resource [%(resource)s]') %
                 {'user': user, 'resource': resource})
 
-        operations = [self.CREATE, self.READ, self.UPDATE, self.DELETE, self.EXECUTE]
-        self.grant(resource, user['login'], operations)
+        self.grant(resource, user['login'], authorization.OPERATION_NAMES)
 
     def grant_automatic_permissions_for_user(self, login):
         """
         Grant the permissions required for a new user so that they my log into Pulp
         and update their own information.
 
-        @param login: login of the new user
-        @type  login: str
+        :param login: login of the new user
+        :type  login: str
         """
-        self.grant('/v2/actions/login/', login, [self.READ, self.UPDATE])
-        self.grant('/v2/actions/logout/', login, [self.READ, self.UPDATE])
-        self.grant('/v2/users/%s/' % login, login, [self.READ, self.UPDATE])
+        self.grant('/v2/actions/login/', login, [authorization.READ, authorization.UPDATE])
+        self.grant('/v2/actions/logout/', login, [authorization.READ, authorization.UPDATE])
+        self.grant('/v2/users/%s/' % login, login, [authorization.READ, authorization.UPDATE])
 
     def revoke_permission_from_user(self, resource, login, operation_names):
         """
         Revoke the operations on the resource from the user
-        @type resource: str
-        @param resource: pulp resource to revoke operations on
 
-        @type login: str
-        @param login: name of the user to revoke permissions from
+        :param resource: pulp resource to revoke operations on
+        :type resource: str
+        :param login: name of the user to revoke permissions from
+        :type login: str
+        :param operation_names: name of the operations to revoke
+        :type operation_names: list or tuple of str's
 
-        @type operation_names: list or tuple of str's
-        @param operation_names: name of the operations to revoke
-
-        @rtype: bool
-        @return: True on success
+        :rtype: bool
+        :return: True on success
         """
-        operations = _get_operations(operation_names)
+        operations = self.operation_names_to_values(operation_names)
         self.revoke(resource, login, operations)
         return True
 
@@ -256,11 +246,11 @@ class PermissionManager(object):
         """
         Revoke all the permissions from a given user
 
-        @type login: str
-        @param login: login of the user to revoke all permissions from
+        :param login: login of the user to revoke all permissions from
+        :type login: str
 
-        @rtype: bool
-        @return: True on success
+        :rtype: bool
+        :return: True on success
         """
         for permission in factory.permission_query_manager().find_all():
             if login not in permission['users']:
@@ -272,6 +262,53 @@ class PermissionManager(object):
                 # Delete entire permission if there are no more users
                 Permission.get_collection().remove({'resource':permission['resource']}, safe=True)
 
+    def operation_name_to_value(self, name):
+        """
+        Convert an operation name to an operation value
+
+        :param name: operation name
+        :type name: str
+
+        :rtype: int
+        :return: operation value
+        :raises InvalidValue: when given operation name is invalid
+        """
+        if name is not None:
+            name = name.upper()
+        if name not in authorization.OPERATION_NAMES:
+            raise InvalidValue('operation')
+        return authorization.OPERATION_NAMES.index(name)
+
+    def operation_names_to_values(self, names):
+        """
+        Convert a list of operation names to operation values
+
+        :param names: names to convert to values
+        :type name: list or tuple of str's
+
+        :rtype: list of int's
+        :return: list of operation values
+        :raises InvalidValue: when any of the given operation name is invalid
+        """
+        if names is None:
+            raise InvalidValue('operations')
+        operations = [self.operation_name_to_value(n) for n in names]
+        return operations
+
+    def operation_value_to_name(self, operation):
+        """
+        Convert an operation value to an operation name
+        Returns None if given operation value is invalid.
+
+        :param operation: operation value
+        :type operation: int
+
+        :rtype: str
+        :return: operation name
+        """
+        if operation < authorization.CREATE or operation > authorization.EXECUTE:
+            return None
+        return authorization.OPERATION_NAMES[operation]
 
 grant = task(PermissionManager.grant, base=Task, ignore_result=True)
 revoke = task(PermissionManager.revoke, base=Task, ignore_result=True)

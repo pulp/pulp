@@ -14,7 +14,7 @@
 import web
 
 import pulp.server.managers.factory as managers
-from pulp.server.auth.authorization import (READ, EXECUTE, operation_to_name, _get_operations)
+from pulp.server.auth.authorization import (READ, EXECUTE)
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 import pulp.server.exceptions as exceptions
@@ -40,8 +40,9 @@ class PermissionCollection(JSONController):
 
         for permission in permissions:
             users = permission['users']
+            permission_manager = managers.permission_manager()
             for user, ops in users.items():
-                users[user] = [operation_to_name(o) for o in ops]
+                users[user] = [permission_manager.operation_value_to_name(o) for o in ops]
 
         return self.ok(permissions)
 
@@ -64,11 +65,9 @@ class GrantToUser(JSONController):
                                'resource': resource,
                                'operation_names': operation_names})
 
-        operations = _get_operations(operation_names)
-
         # Grant permission synchronously
         permission_manager = managers.permission_manager()
-
+        operations = permission_manager.operation_names_to_values(operation_names)
         return self.ok(permission_manager.grant(resource, login, operations))
 
 
@@ -90,11 +89,9 @@ class RevokeFromUser(JSONController):
                                'resource': resource,
                                'operation_names': operation_names})
 
-        operations = _get_operations(operation_names)
-
         # Grant permission synchronously
         permission_manager = managers.permission_manager()
-
+        operations = permission_manager.operation_names_to_values(operation_names)
         return self.ok(permission_manager.revoke(resource, login, operations))
 
 
@@ -116,11 +113,10 @@ class GrantToRole(JSONController):
                                'resource': resource,
                                'operation_names': operation_names})
 
-        operations = _get_operations(operation_names)
-
         # Grant permission synchronously
         role_manager = managers.role_manager()
-
+        permission_manager = managers.permission_manager()
+        operations = permission_manager.operation_names_to_values(operation_names)
         return self.ok(role_manager.add_permissions_to_role(role_id, resource, operations))
 
 
@@ -142,11 +138,10 @@ class RevokeFromRole(JSONController):
                                'resource': resource,
                                'operation_names': operation_names})
 
-        operations = _get_operations(operation_names)
-
         # Grant permission synchronously
         role_manager = managers.role_manager()
-
+        permission_manager = managers.permission_manager()
+        operations = permission_manager.operation_names_to_values(operation_names)
         return self.ok(role_manager.remove_permissions_from_role(role_id, resource, operations))
 
 
