@@ -137,15 +137,6 @@ class Task(object):
         """
         return self.state in COMPLETED_STATES
 
-    def __repr__(self):
-        """
-        Return a string representation of this Task.
-
-        :return: String representation of self
-        :rtype:  unicode
-        """
-        return u'Task: %(id)s State: %(state)s' % {'id': self.task_id, 'state': self.state}
-
     def was_successful(self):
         """
         Indicates if a task finished successfully. If the task is not finished,
@@ -182,7 +173,14 @@ class Task(object):
         return self.state == STATE_CANCELED
 
     def __str__(self):
-        return _('Task: task_id [%(i)s] state [%(s)s]') % {'i' : self.task_id, 's' : self.state}
+        """
+        Return a string representation of this Task.
+
+        :return: String representation of self
+        :rtype:  unicode
+        """
+        return _(u'Task: %(id)s State: %(state)s') % {'id': self.task_id, 'state': self.state}
+
 
 class BlockingReason(object):
     """

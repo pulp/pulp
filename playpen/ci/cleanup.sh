@@ -5,11 +5,13 @@
 
 echo "Cleaning up after the build"
 set -x
-cd $WORKSPACE
+# Jenkins isn't setting the workspace properly on slave nodes so resetting it here
+WORKSPACE="$(readlink -f $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../../../)"
+cd ${WORKSPACE}
 
 pip freeze | grep pulp | cut -f1 -d"=" | while read line
 do
-  sudo pip-python uninstall -y $line
+  sudo pip-python uninstall -y ${line}
 done
 sudo pip-python uninstall -y nectar
 

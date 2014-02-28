@@ -128,3 +128,25 @@ class TestTask(unittest.TestCase):
         self.assertEqual(type(a_task.spawned_tasks[0]), responses.Task)
         self.assertEqual(a_task.spawned_tasks[0].href, some_typical_data['spawned_tasks'][0]['_href'])
         self.assertEqual(a_task.spawned_tasks[0].task_id, some_typical_data['spawned_tasks'][0]['task_id'])
+
+    def test___str__(self):
+        """
+        Test the __str__() method.
+        """
+        some_typical_data = {
+            u'_href': u'/pulp/api/v2/tasks/9efb5da2-ff42-4633-9355-81385bd43310',
+            u'task_id': u'9efb5da2-ff42-4633-9355-81385bd43310',
+            u'tags': [u'pulp:repository:zoo', u'pulp:action:sync'], u'finish_time': 1392054742,
+            u'_ns': u'task_status', u'start_time': 1392054740,
+            u'spawned_tasks': [{u'_href': u'/pulp/api/v2/tasks/37506910-dc71-46c4-809e-48cf385b803f/',
+                                u'task_id': u'37506910-dc71-46c4-809e-48cf385b803f'}],
+            u'progress_report': {u'some': u'data'},
+            u'queue': u'reserved_resource_worker-0@tangerine.rdu.redhat.com', u'state': u'finished',
+            u'result': {u'some': u'return data'},
+            u'_id': {u'$oid': u'52f911d4b8b0edc2462f61a2'}}
+        a_task = responses.Task(some_typical_data)
+
+        representation = str(a_task)
+
+        expected_representation = u'Task: 9efb5da2-ff42-4633-9355-81385bd43310 State: finished'
+        self.assertEqual(representation, expected_representation)
