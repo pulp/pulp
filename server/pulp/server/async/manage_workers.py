@@ -33,7 +33,7 @@ EnvironmentFile=%(environment_file)s
 User=apache
 WorkingDirectory=/var/lib/pulp/celery/
 ExecStart=/usr/bin/celery worker -n reserved_resource_worker-%(num)s@%%%%h -A pulp.server.async.app\
-          --loglevel=${CELERYD_LOG_LEVEL} -c 1 --events --logfile=${CELERYD_LOG_FILE}
+          --loglevel=${CELERYD_LOG_LEVEL} -c 1 --events
 """
 
 
