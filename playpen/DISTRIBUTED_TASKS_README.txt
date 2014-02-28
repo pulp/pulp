@@ -79,7 +79,8 @@ order to get up and running.
 
 5) Lastly, you need to run a Celery Beat. This is similar to a crond for Celery. It is important
    that only one Celery Beat be run across the entire application, no matter how many Pulp servers
-   are part of the system.
+   are part of the system. Celery Beat must run long enough to send at least one "babysit" task before the
+   Pulp application will work correctly, as this is how Pulp discovers the available workers.
 
    $ sudo -u apache celery beat -A pulp.server.async.app --loglevel INFO --pidfile /tmp/beat.pid
 
