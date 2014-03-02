@@ -60,8 +60,6 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
 
         args.extend(['--cover-html',
                      '--cover-erase',
-                     '--all-modules',
-                     '--traverse-namespace',
                      '--cover-package',
                      ','.join(packages)])
 
