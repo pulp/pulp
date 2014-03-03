@@ -357,12 +357,14 @@ class Task(CeleryTask, ReservedTaskMixin):
         # Skip updating status for eagerly executed tasks, since we don't want to track
         # synchronous tasks in our database.
         if not self.request.called_directly:
+            now = datetime.now(dateutils.utc_tz())
+            start_time = dateutils.format_iso8601_datetime(now)
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
             TaskStatus.get_collection().update(
                 {'task_id': self.request.id},
                 {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
-                          'start_time': dateutils.now_utc_timestamp()}},
+                          'start_time': start_time}},
                 upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
@@ -382,8 +384,10 @@ class Task(CeleryTask, ReservedTaskMixin):
         """
         logger.debug("Task successful : [%s]" % task_id)
         if not self.request.called_directly:
+            now = datetime.now(dateutils.utc_tz())
+            finish_time = dateutils.format_iso8601_datetime(now)
             delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
-                     'finish_time': dateutils.now_utc_timestamp(),
+                     'finish_time': finish_time,
                      'result': retval}
             if isinstance(retval, TaskResult):
                 delta['result'] = retval.return_value
@@ -417,8 +421,10 @@ class Task(CeleryTask, ReservedTaskMixin):
         """
         logger.debug("Task failed : [%s]" % task_id)
         if not self.request.called_directly:
+            now = datetime.now(dateutils.utc_tz())
+            finish_time = dateutils.format_iso8601_datetime(now)
             delta = {'state': dispatch_constants.CALL_ERROR_STATE,
-                     'finish_time': dateutils.now_utc_timestamp(),
+                     'finish_time': finish_time,
                      'traceback': einfo.traceback}
             if not isinstance(exc, PulpException):
                 exc = PulpException(str(exc))

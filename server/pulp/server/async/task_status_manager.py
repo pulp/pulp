@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from datetime import datetime
 from pymongo.errors import DuplicateKeyError
 
 from pulp.common import dateutils
@@ -71,9 +72,11 @@ class TaskStatusManager(object):
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
         """
+        now = datetime.now(dateutils.utc_tz())
+        start_time = dateutils.format_iso8601_datetime(now)
         delta = {
             'state': dispatch_constants.CALL_RUNNING_STATE,
-            'start_time': dateutils.now_utc_timestamp(),
+            'start_time': start_time,
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
@@ -86,9 +89,11 @@ class TaskStatusManager(object):
         :param result: The optional value returned by the task execution.
         :type result: anything
         """
+        now = datetime.now(dateutils.utc_tz())
+        finish_time = dateutils.format_iso8601_datetime(now)
         delta = {
             'state': dispatch_constants.CALL_FINISHED_STATE,
-            'finish_time': dateutils.now_utc_timestamp(),
+            'finish_time': finish_time,
             'result': result
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
@@ -102,9 +107,11 @@ class TaskStatusManager(object):
         :ivar traceback: A string representation of the traceback resulting from the task execution.
         :type traceback: basestring
         """
+        now = datetime.now(dateutils.utc_tz())
+        finish_time = dateutils.format_iso8601_datetime(now)
         delta = {
             'state': dispatch_constants.CALL_ERROR_STATE,
-            'finish_time': dateutils.now_utc_timestamp(),
+            'finish_time': finish_time,
             'traceback': traceback
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
