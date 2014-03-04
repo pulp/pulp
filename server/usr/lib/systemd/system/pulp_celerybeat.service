@@ -6,7 +6,7 @@ After=network.target
 EnvironmentFile=/etc/default/pulp_celerybeat
 User=apache
 WorkingDirectory=/var/lib/pulp/celery/
-ExecStart=/usr/bin/celery beat --loglevel=${CELERYBEAT_LOG_LEVEL} -A pulp.server.async.app
+ExecStart=/usr/bin/celery beat -A pulp.server.async.app
 
 [Install]
 WantedBy=multi-user.target
