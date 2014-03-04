@@ -1,1 +1,3 @@
+Team owner: rbarlow
+
 kombu requires this, and a new-enough version is not available in Fedora or EPEL.

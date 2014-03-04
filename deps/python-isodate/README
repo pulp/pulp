@@ -1,1 +1,5 @@
-This appears to be unmaintained upstream, and there is no knowledge of why we have a patch. This version is newer than what is in Fedora and EPEL, so we should consider using a different library.
+Team owner: skarmarkar
+
+This appears to be unmaintained upstream, and there is no knowledge of why we have
+a patch. This version is newer than what is in Fedora and EPEL, so we should
+consider using a different library.

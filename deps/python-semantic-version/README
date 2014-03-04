@@ -1,5 +1,10 @@
+Team owner: mhrivnak
+
 This is required for pulp-puppet-plugins.
 
 This is not currently in epel or fedora.
 
 There are no known restrictions on what version to use.
+
+The plan is to get this into Fedora and EPEL. mhrivnak got it to build successfully
+on the fedora koji and will continue on that path.

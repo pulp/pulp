@@ -1,3 +1,5 @@
+Team owner: rbarlow
+
 kombu 3.0.8 requires version 1.3.3, which is not available in EPEL or Fedora.
 
 This requirement may not actually be necessary once proton and qpid are used with celery.
