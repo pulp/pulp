@@ -1,8 +1,4 @@
 # Configuration file for Pulp's Celerybeat worker
 
-# Configure the log level for the Celerybeat worker here. DEBUG, INFO, WARNING, ERROR, CRITICAL, and
-# FATAL are the allowed values.
-CELERYBEAT_LOG_LEVEL="INFO"
-
 # Configure Python's encoding for writing all logs, stdout and stderr
 PYTHONIOENCODING="UTF-8"

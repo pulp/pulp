@@ -1,8 +1,4 @@
 # Configuration file for Pulp's Resource Manager
 
-# Configure the log level for the Celery worker here. DEBUG, INFO, WARNING, ERROR, CRITICAL, and
-# FATAL are the allowed values.
-CELERYD_LOG_LEVEL="INFO"
-
 # Configure Python's encoding for writing all logs, stdout and stderr
 PYTHONIOENCODING="UTF-8"
