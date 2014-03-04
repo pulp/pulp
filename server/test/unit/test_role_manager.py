@@ -75,6 +75,28 @@ class RoleManagerTests(base.PulpServerTests):
         r2 = self.role_query_manager.find_by_id(n)
         self.assertTrue(r2 is None)
 
+    def test_update_role(self):
+        role_id = 'update_role'
+        self.role_manager.create_role(role_id)
+        delta = {'display_name': 'display_name',
+                 'description': 'description'}
+        returned_role = self.role_manager.update_role(role_id, delta)
+        self.assertEqual(returned_role.get('display_name'), delta['display_name'])
+        self.assertEqual(returned_role.get('description'), delta['description'])
+        updated_role = self.role_query_manager.find_by_id(role_id)
+        self.assertEqual(updated_role.get('display_name'), delta['display_name'])
+        self.assertEqual(updated_role.get('description'), delta['description'])
+
+    def test_update_role_unsupported(self):
+        role_id = 'update_role'
+        self.role_manager.create_role(role_id)
+        delta = {'display_name': 'display_name',
+                 'permissions': {"/": ["CREATE", "DELETE"]}}
+        self.assertRaises(PulpDataException, self.role_manager.update_role, role_id, delta)
+        role = self.role_query_manager.find_by_id(role_id)
+        self.assertNotEqual(role.get('display_name'), delta['display_name'])
+        self.assertNotEqual(role.get('permissions'), delta['permissions'])
+
     def test_add_user(self):
         u = self._create_user()
         r = self._create_role()
@@ -159,7 +181,6 @@ class RoleManagerTests(base.PulpServerTests):
         r2 = self._create_role()
         s = self._create_resource()
         o = authorization.READ
-        n = authorization.operation_to_name(o)
         self.role_manager.add_user_to_role(r1['id'], u['login'])
         self.role_manager.add_user_to_role(r2['id'], u['login'])
         self.role_manager.add_permissions_to_role(r1['id'], s, [o])
