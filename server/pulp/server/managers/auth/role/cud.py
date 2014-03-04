@@ -20,8 +20,7 @@ from gettext import gettext as _
 from celery import task
 
 from pulp.server.async.tasks import Task
-from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE, \
-    _operations_not_granted_by_roles
+from pulp.server.auth.authorization import _operations_not_granted_by_roles
 from pulp.server.db.model.auth import Role, User
 from pulp.server.exceptions import (DuplicateResource, InvalidValue, MissingResource,
                                     PulpDataException)
@@ -92,7 +91,7 @@ class RoleManager(object):
 
         for key, value in delta.items():
             # simple changes
-            if key in ('display_name', 'description',):
+            if key in ('display_name', 'description', 'permissions',):
                 role[key] = value
                 continue
 
@@ -102,7 +101,7 @@ class RoleManager(object):
         Role.get_collection().save(role, safe=True)
 
         # Retrieve the user to return the SON object
-        updated = Role.get_collection().find_one({'id': role_id})
+        updated = Role.get_collection().find_one({'id' : role_id})
         return updated
 
     @staticmethod
@@ -160,7 +159,7 @@ class RoleManager(object):
         if role_id == SUPER_USER_ROLE:
             raise PulpDataException(_('super-users role cannot be changed'))
 
-        role = Role.get_collection().find_one({'id': role_id})
+        role = Role.get_collection().find_one({'id' : role_id})
         if role is None:
             raise MissingResource(role_id)
 
@@ -208,8 +207,8 @@ class RoleManager(object):
         for user in users:
             other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
             user_ops = _operations_not_granted_by_roles(resource,
-                                                        operations,
-                                                        other_roles)
+                                                    operations,
+                                                    other_roles)
             factory.permission_manager().revoke(resource, user['login'], user_ops)
 
         # in no more allowed operations, remove the resource
@@ -275,7 +274,7 @@ class RoleManager(object):
         if role_id == SUPER_USER_ROLE and factory.user_query_manager().is_last_super_user(login):
             raise PulpDataException(
                 _('%(role)s cannot be empty, and %(login)s is the last member') %
-                {'role': SUPER_USER_ROLE, 'login': login})
+                {'role': self.super_user_role, 'login': login})
 
         if role_id not in user['roles']:
             return
@@ -298,7 +297,8 @@ class RoleManager(object):
         if role is None:
             role = self.create_role(SUPER_USER_ROLE, 'Super Users',
                                     'Role indicates users with admin privileges')
-            role['permissions'] = {'/': [CREATE, READ, UPDATE, DELETE, EXECUTE]}
+            pm = factory.permission_manager()
+            role['permissions'] = {'/':[pm.CREATE, pm.READ, pm.UPDATE, pm.DELETE, pm.EXECUTE]}
             Role.get_collection().save(role, safe=True)
 
 

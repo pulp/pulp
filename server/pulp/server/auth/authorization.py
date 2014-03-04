@@ -15,19 +15,89 @@
 Utility functions to manage permissions and roles in pulp.
 """
 import logging
+from gettext import gettext as _
+
+from pulp.server.exceptions import PulpException, InvalidValue
+
+from pulp.server.managers import factory
 
 _log = logging.getLogger(__name__)
 
-# operation names and values --------------------------------------------------
+class PulpAuthorizationError(PulpException):
+    pass
 
-OPERATION_NAMES = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'EXECUTE']
+# operations api --------------------------------------------------------------
+
 CREATE = 0
 READ = 1
 UPDATE = 2
 DELETE = 3
 EXECUTE = 4
 
+# Temporarily moved this out of db into here; this is the only place using it
+# and it's going to be deleted.
+
+def name_to_operation(name):
+    """
+    Convert a operation name to an operation value
+    Returns None if the name does not correspond to an operation
+    @type name: str
+    @param name: operation name
+    @rtype: int or None
+    @return: operation value
+    """
+    name = name.upper()
+    if name not in factory.permission_manager().operation_names:
+        raise InvalidValue('operations')
+    return factory.permission_manager().operation_names.index(name)
+
+
+def names_to_operations(names):
+    """
+    Convert a list of operation names to operation values
+    Returns None if there is any name that does not correspond to an operation
+    @type name: list or tuple of str's
+    @param names: names to convert to values
+    @rtype: list of int's or None
+    @return: list of operation values
+    """
+    operations = [name_to_operation(n) for n in names]
+    if None in operations:
+        return None
+    return operations
+
+
+def operation_to_name(operation):
+    """
+    Convert an operation value to an operation name
+    Returns None if the operation value is invalid
+    @type operation: int
+    @param operation: operation value
+    @rtype: str or None
+    @return: operation name
+    """
+    if operation < factory.permission_manager().CREATE or operation > factory.permission_manager().EXECUTE:
+        return None
+    return factory.permission_manager().operation_names[operation]
+
 # utilities -------------------------------------------------------------------
+
+
+def _get_operations(operation_names):
+    """
+    Get a list of operation values give a list of operation names
+    Raise an exception if any of the names are invalid
+    @type operation_names: list or tuple of str's
+    @param operation_names: list of operation names
+    @rtype: list of int's
+    @return: list of operation values
+    @raise L{PulpAuthorizationError}: on any invalid names
+    """
+    operations = names_to_operations(operation_names)
+    if operations is None:
+        raise PulpAuthorizationError(_('invalid operation name or names: %s') %
+                            ', '.join(operation_names))
+    return operations
 
 
 def _operations_not_granted_by_roles(resource, operations, roles):
@@ -52,3 +122,56 @@ def _operations_not_granted_by_roles(resource, operations, roles):
             if operation in permissions[resource]:
                 culled_ops.remove(operation)
     return culled_ops
+
+
+class GrantPermissionsForTask(object):
+    """
+    Grant appropriate permissions to a task resource for the user that started
+    the task.
+    """
+
+    def __init__(self):
+        self.user_name = factory.principal_manager().get_principal()['login']
+
+    def __call__(self, task):
+        if self.user_name is factory.principal_manager().system_login:
+            return
+        resource = '/tasks/%s/' % task.id
+        operations = ['READ', 'DELETE']
+        factory.permission_manager().grant(resource, self.user_name, operations)
+
+
+class RevokePermissionsForTask(object):
+    """
+    Revoke the permissions for a task from the user that started the task.
+    """
+
+    def __init__(self):
+        self.user_name = factory.principal_manager().get_principal()['login']
+
+    def __call__(self, task):
+        if self.user_name is factory.principal_manager().system_login:
+            return
+        resource = '/tasks/%s/' % task.id
+        operations = ['READ', 'DELETE']
+        factory.permission_manager().revoke(resource, self.user_name, operations)
+
+
+class GrantPermmissionsForTaskV2(GrantPermissionsForTask):
+
+    def __call__(self, call_request, call_report):
+        if self.user_name is factory.principal_manager().system_login:
+            return
+        resource = '/v2/tasks/%s/' % call_report.call_request_id
+        operations = ['READ', 'DELETE']
+        factory.permission_manager().grant(resource, self.user_name, operations)
+
+
+class RevokePermissionsForTaskV2(RevokePermissionsForTask):
+
+    def __call__(self, call_request, call_report):
+        if self.user_name is factory.principal_manager().system_login:
+            return
+        resource = '/v2/tasks/%s/' % call_report.call_request_id
+        operations = ['READ', 'DELETE']
+        factory.permission_manager().revoke(resource, self.user_name, operations)

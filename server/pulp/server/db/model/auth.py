@@ -15,7 +15,6 @@ from pulp.server.db.model.base import Model
 
 # -- classes -----------------------------------------------------------------
 
-
 class User(Model):
     """
     Represents a user of Pulp.
@@ -75,6 +74,7 @@ class Role(Model):
         self.display_name = display_name or id
         self.description = description
         self.permissions = permissions or {}
+
 
 
 class Permission(Model):

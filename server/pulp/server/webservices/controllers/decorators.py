@@ -21,18 +21,19 @@ import httplib
 import logging
 
 from pulp.common import auth_utils
-from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.config import config
 from pulp.server.compat import wraps
 from pulp.server.exceptions import PulpException
 from pulp.server.managers import factory
+from pulp.server.managers.auth.permission.cud import PermissionManager
 from pulp.server.webservices import http
 
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
-DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/' : [READ]}
+PM = PermissionManager()
+DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/' : [PM.READ]}
 
 # -- exceptions ---------------------------------------------------------------
 
@@ -138,7 +139,7 @@ def is_consumer_authorized(resource, consumerid, operation):
     permissions = DEFAULT_CONSUMER_PERMISSIONS
     consumer_base_url = '/v2/consumers/%s/' % consumerid
     # Add all permissions to base url for this consumer.
-    permissions[consumer_base_url] = [CREATE, READ, UPDATE, DELETE, EXECUTE]
+    permissions[consumer_base_url] = [PM.CREATE, PM.READ, PM.UPDATE, PM.DELETE, PM.EXECUTE]
 
     parts = [p for p in resource.split('/') if p]
     while parts:

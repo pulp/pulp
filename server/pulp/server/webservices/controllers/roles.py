@@ -12,7 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 import web
 
-from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
+from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE, operation_to_name
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -29,14 +29,12 @@ class RolesCollection(JSONController):
     def GET(self):
 
         role_query_manager = managers.role_query_manager()
-        user_query_manager = managers.user_query_manager()
-        permissions_manager = managers.permission_manager()
         roles = role_query_manager.find_all()
         for role in roles:
             role['users'] = [u['login'] for u in
-                             user_query_manager.find_users_belonging_to_role(role['id'])]
+                             managers.user_query_manager().find_users_belonging_to_role(role['id'])]
             for resource, operations in role['permissions'].items():
-                role['permissions'][resource] = [permissions_manager.operation_value_to_name(o)
+                role['permissions'][resource] = [operation_to_name(o)
                                                  for o in operations]
 
         for role in roles:
@@ -72,18 +70,19 @@ class RoleResource(JSONController):
     @auth_required(READ)
     def GET(self, role_id):
 
-        role = managers.role_query_manager().find_by_id(role_id)
+        manager = managers.role_query_manager()
+        role = manager.find_by_id(role_id)
         if role is None:
             raise exceptions.MissingResource(role_id)
 
         role['users'] = [u['login'] for u in
                          managers.user_query_manager().find_users_belonging_to_role(role['id'])]
-        permissions_manager = managers.permission_manager()
         for resource, operations in role['permissions'].items():
-            role['permissions'][resource] = [permissions_manager.operation_value_to_name(o)
+            role['permissions'][resource] = [operation_to_name(o)
                                              for o in operations]
 
         role.update(serialization.link.current_link_obj())
+
         return self.ok(role)
 
     @auth_required(DELETE)
