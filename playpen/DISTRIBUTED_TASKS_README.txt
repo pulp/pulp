@@ -21,19 +21,13 @@ order to get up and running.
 
     $ sudo systemctl start rabbitmq-server
 
-    Add a rabbit user. You will need to remember the username and password you set here for the
-    broker_url in step 3.
+    When the server first starts running:
+    - a virtual host named / is created
+    - a user 'guest' is created with a default password of guest, granted full access to the / virtual host.
+    In case you'd like to add your own user do not forger to set its permissions. You will need to remember
+    the username and password you set here for the broker_url in step 3.
 
     $ sudo rabbitmqctl add_user <username> <password>
-
-    Optionally, you can create a vhost here. If you do, you need to put it in the <vhost> part of
-    the broker_url in step 3. If you don't, leave the trailing slash on the broker_url, but put
-    nothing.
-
-    $ sudo rabbitmqctl add_vhost <vhost>
-
-    If you added a vhost, you need the -p <vhost> part of this next command, and if you didn't,
-    simply omit that portion.
 
     $ sudo rabbitmqctl set_permissions -p <vhost> <username> ".*" ".*" ".*"
 
