@@ -262,8 +262,6 @@ class UploadSegmentResource(JSONController):
 
         return self.ok(None)
 
-# content orphans controller classes -------------------------------------------
-
 
 class OrphanCollection(JSONController):
 
@@ -330,6 +328,15 @@ class DeleteOrphansAction(JSONController):
         raise OperationPostponed(async_task)
 
 
+class CatalogResource(JSONController):
+
+    @auth_required(DELETE)
+    def DELETE(self, source_id):
+        manager = factory.content_catalog_manager()
+        manager.purge(source_id)
+        return self.ok(None)
+
+
 # wsgi application -------------------------------------------------------------
 
 _URLS = ('/types/$', ContentTypesCollection,
@@ -343,6 +350,7 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/$', OrphanCollection,
          '/orphans/([^/]+)/$', OrphanTypeSubCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
-         '/actions/delete_orphans/$', DeleteOrphansAction,)
+         '/actions/delete_orphans/$', DeleteOrphansAction,
+         '/catalog/([^/]+)$', CatalogResource,)
 
 application = web.application(_URLS, globals())

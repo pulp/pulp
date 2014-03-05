@@ -8,3 +8,4 @@ Content Manipulation APIs
    associate
    orphan
    retrieval
+   catalog

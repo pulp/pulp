@@ -24,6 +24,7 @@ import celery
 import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
+from pulp.common import dateutils
 from pulp.server.exceptions import PulpException, PulpCodedException
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
@@ -625,7 +626,9 @@ class TestTask(ResourceReservationTests):
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], retval)
-        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertFalse(new_task_status['finish_time'] is None)
+        # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
+        dateutils.parse_iso8601_datetime(new_task_status['finish_time'])
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_success_handler_spawned_task_status(self, mock_request):
@@ -654,7 +657,9 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], 'bar')
         self.assertEqual(new_task_status['error']['description'], 'error-foo')
-        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertFalse(new_task_status['finish_time'] is None)
+        # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
+        dateutils.parse_iso8601_datetime(new_task_status['finish_time'])
         self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
 
     @mock.patch('pulp.server.async.tasks.Task.request')
@@ -679,7 +684,7 @@ class TestTask(ResourceReservationTests):
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], 'bar')
-        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertFalse(new_task_status['finish_time'] is None)
         self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
 
     @mock.patch('pulp.server.async.tasks.Task.request')
@@ -704,7 +709,9 @@ class TestTask(ResourceReservationTests):
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], None)
-        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertFalse(new_task_status['finish_time'] is None)
+        # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
+        dateutils.parse_iso8601_datetime(new_task_status['finish_time'])
         self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
 
 
@@ -736,7 +743,9 @@ class TestTask(ResourceReservationTests):
 
         new_task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(new_task_status['state'], 'error')
-        self.assertFalse(new_task_status['finish_time'] == None)
+        self.assertFalse(new_task_status['finish_time'] is None)
+        # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
+        dateutils.parse_iso8601_datetime(new_task_status['finish_time'])
         self.assertEqual(new_task_status['traceback'], einfo.traceback)
 
     @mock.patch('celery.Task.apply_async')
