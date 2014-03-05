@@ -78,3 +78,7 @@ celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
 celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())
+# Valid choices are 'pickle', 'json', 'msgpack', and 'yaml'.
+celery.conf.update(CELERY_ACCEPT_CONTENT=['json', 'pickle'])
+# When serializing tasks, use json by default
+celery.conf.update(CELERY_TASK_SERIALIZER='json')
