@@ -155,6 +155,13 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Mar 06 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-2
+- Patch python-kombu for qpid support. (rbarlow@redhat.com)
+- removing Travis section from diff (bmbouter@gmail.com)
+- Adding patch that adds Qpid support to Kombu (bmbouter@gmail.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+
 * Mon Feb 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
 - Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
   (rbarlow@redhat.com)
