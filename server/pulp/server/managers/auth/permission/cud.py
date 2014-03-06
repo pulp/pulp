@@ -308,7 +308,7 @@ class PermissionManager(object):
         """
         try:
             return authorization.OPERATION_NAMES[operation]
-        except IndexError:
+        except IndexError, TypeError:
             return None
 
 grant = task(PermissionManager.grant, base=Task, ignore_result=True)
