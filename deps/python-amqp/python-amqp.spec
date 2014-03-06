@@ -130,6 +130,10 @@ Documentation for python-amqp
 
 
 %changelog
+* Wed Mar 05 2014 Randy Barlow <rbarlow@redhat.com> 1.4.4-1
+- Update to amqp-1.4.4. (rbarlow@redhat.com)
+- Remove a duplicate block from the changelog on amqp. (rbarlow@redhat.com)
+
 * Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 1.4.3-1
 - Raise python-amqp to 1.4.3. (rbarlow@redhat.com)
 - Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
