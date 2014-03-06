@@ -1,17 +1,3 @@
-diff --git a/.travis.yml b/.travis.yml
-index 19208e5..6ebca0b 100644
---- a/.travis.yml
-+++ b/.travis.yml
-@@ -17,6 +17,6 @@ before_install:
-       uname -a
-       lsb_release -a
-       sudo pip install tox
-- script: tox -v -e $TRAVIS_PYTHON_VERSION -- -v
-- after_success:
--   - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
-+script: tox -v -e $TRAVIS_PYTHON_VERSION -- -v
-+after_success:
-+    - .tox/$TRAVIS_PYTHON_VERSION/bin/coveralls
 diff --git a/AUTHORS b/AUTHORS
 index 66851d9..f7aea2f 100644
 --- a/AUTHORS
