@@ -276,22 +276,22 @@ class PermissionManager(object):
         if name is not None:
             name = name.upper()
         if name not in authorization.OPERATION_NAMES:
-            raise InvalidValue('operation')
+            raise InvalidValue('operation_name')
         return authorization.OPERATION_NAMES.index(name)
 
     def operation_names_to_values(self, names):
         """
         Convert a list of operation names to operation values
 
-        :param names: names to convert to values
+        :param names: names of operations to convert to values
         :type name: list or tuple of str's
 
         :rtype: list of int's
         :return: list of operation values
-        :raises InvalidValue: when any of the given operation name is invalid
+        :raises InvalidValue: when any of the given operation names is invalid
         """
         if names is None:
-            raise InvalidValue('operations')
+            raise InvalidValue('operation_names')
         operations = [self.operation_name_to_value(n) for n in names]
         return operations
 
@@ -306,9 +306,10 @@ class PermissionManager(object):
         :rtype: str
         :return: operation name
         """
-        if operation < authorization.CREATE or operation > authorization.EXECUTE:
+        try:
+            return authorization.OPERATION_NAMES[operation]
+        except IndexError:
             return None
-        return authorization.OPERATION_NAMES[operation]
 
 grant = task(PermissionManager.grant, base=Task, ignore_result=True)
 revoke = task(PermissionManager.revoke, base=Task, ignore_result=True)
