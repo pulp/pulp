@@ -306,10 +306,9 @@ class PermissionManager(object):
         :rtype: str
         :return: operation name
         """
-        try:
-            return authorization.OPERATION_NAMES[operation]
-        except IndexError, TypeError:
+        if operation < authorization.CREATE or operation > authorization.EXECUTE:
             return None
+        return authorization.OPERATION_NAMES[operation]
 
 grant = task(PermissionManager.grant, base=Task, ignore_result=True)
 revoke = task(PermissionManager.revoke, base=Task, ignore_result=True)
