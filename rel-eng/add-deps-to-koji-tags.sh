@@ -56,7 +56,6 @@ do
         package_nvr="${project}-${version_without_dist}.${platform}"
 
         # Check if the package (not including version has been added to the koji tag)
-        # search_result=`koji list-pkgs --tag=${koji_target} --package=${project}`
         koji list-pkgs --tag=${koji_target} --package=${project} &>/dev/null
         if [ $? != 0 ]
         then
@@ -71,7 +70,7 @@ do
         if [ ${search_result} ]
         then
             # The specific version of the package already exists in koji, lets add it to our target
-            echo "koji tag-pkg ${koji_target} ${package_nvr}"
+            koji tag-pkg ${koji_target} ${package_nvr}
         else
             # The specific version of the package does not exist in koji.
             # Build the srpm with tito and then submit the rpm to koji
