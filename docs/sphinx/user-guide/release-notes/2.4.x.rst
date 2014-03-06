@@ -69,6 +69,16 @@ Binding API Changes
    #. The ``response`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
    #. The ``is_rejected()`` and ``is_postponed()`` methods have been removed.
 
+Plugin API Changes
+------------------
+
+If you are a plugin author, these changes are relevant to you:
+
+* The Importer and Distributor cancellation method signatures have changed. cancel_sync_repo() and
+  cancel_publish_repo() both used to take multiple arguments. With the conversion to Celery, we no
+  longer had a need for those extra arguments, and so both of these now receive only the Importer or
+  Distributor instance (self). If you have written an Importer or a Distributor, you will need to
+  adjust your method signatures accordingly in order to work with this release of Pulp.
 
 ScheduledCall
 ^^^^^^^^^^^^^
