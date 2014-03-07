@@ -9,6 +9,7 @@ Contents:
    introduction
    release-notes/index
    installation
+   tuning
    server
    admin-client/index
    consumer-client/index
