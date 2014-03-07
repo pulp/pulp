@@ -1,4 +1,4 @@
-Team owner: bbouter
+Team owner: bbouters
 
 celery depends on a version of this that is newer than what is available in epel and fedora.
 
