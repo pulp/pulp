@@ -4,7 +4,7 @@ Tuning
 WSGI Processes
 --------------
 
-By default, each system on which pulp is deployed will start 3 WSGI processes to
+By default, each Apache server on which pulp is deployed will start 3 WSGI processes to
 serve the REST API. The number of processes can be adjusted in
 ``/etc/httpd/conf.d/pulp.conf`` on the ``WSGIDaemonProcess`` statement, along
 with other items. See the Apache documentation of ``mod_wsgi`` for details.
