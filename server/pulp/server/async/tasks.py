@@ -54,15 +54,17 @@ def babysit():
     all_queues_set = set([q.name for q in all_queues])
 
     active_queues_set = set()
-    for worker, queues in active_queues.items():
-        # If this worker is a reserved task worker, let's make sure we know about it in our
-        # available_queues collection, and make sure it is processing a queue with its own name
-        if re.match('^%s' % RESERVED_WORKER_NAME_PREFIX, worker):
-            # Make sure that this worker is subscribed to a queue of his own name. If not,
-            # subscribe him to one
-            if not worker in [queue['name'] for queue in queues]:
-                controller.add_consumer(queue=worker, destination=(worker,))
-            active_queues_set.add(worker)
+    # If there are no active queues, active_queues will be None
+    if active_queues is not None:
+        for worker, queues in active_queues.items():
+            # If this worker is a reserved task worker, let's make sure we know about it in our
+            # available_queues collection, and make sure it is processing a queue with its own name
+            if re.match('^%s' % RESERVED_WORKER_NAME_PREFIX, worker):
+                # Make sure that this worker is subscribed to a queue of his own name. If not,
+                # subscribe him to one
+                if not worker in [queue['name'] for queue in queues]:
+                    controller.add_consumer(queue=worker, destination=(worker,))
+                active_queues_set.add(worker)
 
     # Determine which queues are in active_queues_set that aren't in all_queues_set. These are new
     # workers and we need to add them to the database.
