@@ -288,6 +288,7 @@ class InvalidValue(PulpDataException):
     def __init__(self, property_names):
         """
         @param property_names: list of all properties that were invalid
+                               if a single property_name is passed, it is converted to a list
         @type  property_names: list
         """
         super(InvalidValue, self).__init__(property_names)

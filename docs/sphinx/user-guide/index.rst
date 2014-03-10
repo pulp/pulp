@@ -9,7 +9,9 @@ Contents:
    introduction
    release-notes/index
    installation
+   tuning
    server
+   authentication
    admin-client/index
    consumer-client/index
    nodes

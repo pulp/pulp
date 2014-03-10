@@ -1,1 +1,3 @@
+Team owner: rbarlow
+
 python-kombu 3.0.8 requires 0.3.3 or greater, which is not available in EPEL.

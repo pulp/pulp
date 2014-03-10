@@ -1,1 +1,4 @@
-kombu requires this, and a new-enough version is not available in Fedora or EPEL.
+Team owner: rbarlow
+
+celery-3.1.9 requires billiard >= 3.3.0.14, and a new-enough version is not available in
+Fedora <= 20 or EPEL 6.

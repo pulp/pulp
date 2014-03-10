@@ -212,6 +212,7 @@ Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-celery >= 3.1.0
+Requires: python-celery < 3.2.0
 Requires: python-pymongo >= 2.5.2
 Requires: python-setuptools
 Requires: python-webpy
@@ -231,7 +232,7 @@ Requires: python-gofer >= 0.77
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
-Requires: m2crypto >= 0.21.1.pulp-7
+Requires: m2crypto >= 0.21.1-8.pulp
 Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
@@ -253,7 +254,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %dir %{_sysconfdir}/%{name}/content/sources/conf.d
 %dir %{_sysconfdir}/%{name}/server
 %dir %{_sysconfdir}/%{name}/server/plugins.conf.d
-%config(noreplace) %{_sysconfdir}/%{name}/logging/
+%config(noreplace) %{_sysconfdir}/%{name}/logging.cfg
 %dir %{_sysconfdir}/%{name}/vhosts80
 %dir /srv/%{name}
 /srv/%{name}/webservices.wsgi

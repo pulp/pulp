@@ -11,7 +11,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-
 import base
 import random
 import string
@@ -22,12 +21,12 @@ import pulp.server.exceptions as exceptions
 
 from pulp.server.db.model.auth import Role
 
-
 # -- test cases ---------------------------------------------------------------
 
-class RoleManagerTests(base.PulpServerTests):
+
+class PermissionManagerTests(base.PulpServerTests):
     def setUp(self):
-        super(RoleManagerTests, self).setUp()
+        super(PermissionManagerTests, self).setUp()
 
         self.alpha_num = string.letters + string.digits
 
@@ -42,7 +41,7 @@ class RoleManagerTests(base.PulpServerTests):
         manager_factory.principal_manager().clear_principal()
 
     def tearDown(self):
-        super(RoleManagerTests, self).tearDown()
+        super(PermissionManagerTests, self).tearDown()
 
     def clean(self):
         base.PulpServerTests.clean(self)
@@ -63,7 +62,6 @@ class RoleManagerTests(base.PulpServerTests):
         return '/%s/' % '/'.join(''.join(random.sample(self.alpha_num,
                                                        random.randint(6, 10)))
                                  for i in range(random.randint(2, 4)))
-
 
     def test_user_create_failure(self):
         u = self._create_user()
@@ -164,5 +162,40 @@ class RoleManagerTests(base.PulpServerTests):
         self.permission_manager.grant('/', u['login'], [o])
         self.assertTrue(self.user_query_manager.is_authorized(r, u['login'], o))
 
+    def test_operation_name_to_value(self):
+        pm = manager_factory.permission_manager()
+        self.assertEqual(pm.operation_name_to_value('CREATE'), authorization.CREATE)
+        self.assertEqual(pm.operation_name_to_value('READ'), authorization.READ)
+        self.assertEqual(pm.operation_name_to_value('UPDATE'), authorization.UPDATE)
+        self.assertEqual(pm.operation_name_to_value('DELETE'), authorization.DELETE)
+        self.assertEqual(pm.operation_name_to_value('EXECUTE'), authorization.EXECUTE)
+        self.assertRaises(exceptions.InvalidValue, pm.operation_name_to_value, 'random')
+        self.assertRaises(exceptions.InvalidValue, pm.operation_name_to_value, None)
+        self.assertRaises(exceptions.InvalidValue, pm.operation_name_to_value, '')
 
+    def test_operation_names_to_values(self):
+        pm = manager_factory.permission_manager()
+        test1 = ['CREATE', 'delete']
+        test1_values = [authorization.CREATE, authorization.DELETE]
+        test2 = ['execute']
+        test2_values = [authorization.EXECUTE]
+        test3 = []
+        test3_values = []
+        test4 = ['READ', 'UPDATE', 'random']
+        test5 = None
+        self.assertEqual(pm.operation_names_to_values(test1), test1_values)
+        self.assertEqual(pm.operation_names_to_values(test2), test2_values)
+        self.assertEqual(pm.operation_names_to_values(test3), test3_values)
+        self.assertRaises(exceptions.InvalidValue, pm.operation_names_to_values, test4)
+        self.assertRaises(exceptions.InvalidValue, pm.operation_names_to_values, test5)
 
+    def test_operation_value_to_name(self):
+        pm = manager_factory.permission_manager()
+        self.assertEqual(pm.operation_value_to_name(authorization.CREATE), 'CREATE')
+        self.assertEqual(pm.operation_value_to_name(authorization.READ), 'READ')
+        self.assertEqual(pm.operation_value_to_name(authorization.UPDATE), 'UPDATE')
+        self.assertEqual(pm.operation_value_to_name(authorization.DELETE), 'DELETE')
+        self.assertEqual(pm.operation_value_to_name(authorization.EXECUTE), 'EXECUTE')
+        self.assertEqual(pm.operation_value_to_name('RANDOM'), None)
+        self.assertEqual(pm.operation_value_to_name(99), None)
+        self.assertEqual(pm.operation_value_to_name(-2), None)
