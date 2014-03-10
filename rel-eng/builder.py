@@ -206,6 +206,9 @@ def build_repos(output_dir):
             command = "createrepo -g %s %s" % (comps_file, arch_dir)
             subprocess.check_call(command, shell=True)
 
+    # Remove the noarch directory since it is not needed after repos are created
+    shutil.rmtree(noarch_dir, ignore_errors=True)
+
 
 def run_destination_ssh_step(ssh_command):
     """
