@@ -9,8 +9,8 @@
 
 Summary: Support for using OpenSSL in python scripts
 Name: m2crypto
-Version: 0.21.1
-Release: 8.pulp%{?dist}
+Version: 0.21.1.pulp
+Release: 8%{?dist}
 Source0: http://pypi.python.org/packages/source/M/M2Crypto/M2Crypto-%{version}.tar.gz
 # https://bugzilla.osafoundation.org/show_bug.cgi?id=2341
 Patch0: m2crypto-0.21.1-timeouts.patch
