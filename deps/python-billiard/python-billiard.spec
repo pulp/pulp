@@ -25,6 +25,7 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-mock
 BuildRequires:  python-unittest2
 BuildRequires:  python-nose
+BuildRequires:  python-nose-cover3
 
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
