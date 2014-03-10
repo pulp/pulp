@@ -232,7 +232,7 @@ Requires: python-gofer >= 0.77
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
-Requires: m2crypto >= 0.21.1.pulp-7
+Requires: m2crypto >= 0.21.1-8.pulp
 Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
