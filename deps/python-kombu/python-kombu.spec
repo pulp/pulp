@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.12
-Release:        1%{?dist}
+Release:        2.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,6 +19,7 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
+Patch0:         qpid_transport.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -60,6 +61,7 @@ BuildRequires: python3-amqp >= 1.4.3
 Requires: python-amqp >= 1.4.3
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
+Requires: python-qpid-qmf
 
 %description
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
@@ -94,6 +96,9 @@ This subpackage is for python3
 
 %prep
 %setup -q -n %{srcname}-%{version}
+
+# Add qpid support
+%patch0 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -150,6 +155,13 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Mar 06 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-2
+- Patch python-kombu for qpid support. (rbarlow@redhat.com)
+- removing Travis section from diff (bmbouter@gmail.com)
+- Adding patch that adds Qpid support to Kombu (bmbouter@gmail.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+
 * Mon Feb 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
 - Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
   (rbarlow@redhat.com)
