@@ -21,7 +21,7 @@ opts = {
 mysession = koji.ClientSession("http://koji.katello.org/kojihub", opts)
 mysession.ssl_login(opts['cert'], opts['ca'], opts['serverca'])
 
-ARCH_LIST = ('i386', 'x86_64')
+ARCH_LIST = ('i386', 'i686', 'x86_64')
 DISTRIBUTION_MAP = {
     'el5': 'rhel5',
     'el6': 'rhel6',
@@ -32,8 +32,8 @@ DISTRIBUTION_MAP = {
 DISTRIBUTION_PUBLISH_DIRECTORIES = {
     'el5': '5server',
     'el6': '6server',
-    'fc19': 'fedora-18',
-    'fc20': 'fedora-19'
+    'fc19': 'fedora-19',
+    'fc20': 'fedora-20'
 }
 
 DIST_LIST = DISTRIBUTION_MAP.keys()
@@ -84,6 +84,9 @@ def build_srpm(distributions):
     Build the srpms to feed to koji.
     For now we are only doing real builds.  There is commented out code in here
     to bump the version with a timestamp for when we want to do scratch builds
+
+    :param distributions: list of distribution tags that we want to build SRPMs for
+    :type distributions: list of str
     """
     for dist in distributions:
         tito_path = os.path.join(TITO_DIR, dist)
@@ -92,24 +95,24 @@ def build_srpm(distributions):
         for spec_location in spec_list:
             working_dir = os.path.join(WORKSPACE, spec_location)
             os.chdir(working_dir)
-            # Update the spec file
-            # sed_command = 'sed -i "/^Release:/ s/%/.${release}%/" *.spec'
-            # sed_command = sed_command.replace("${release}", TIMESTAMP)
-            # subprocess.call(sed_command, shell=True)
-            # Build the SRPM
-            # subprocess.call(['tito', 'tag', '--keep-version', '--accept-auto-changelog'])
             distribution = ".%s" % dist
             print "Building Srpm for %s" % distribution
             subprocess.check_call(['tito', 'build', '--offline', '--srpm', '--output', tito_path,
                                   '--dist', distribution])
-            # subprocess.call(['tito', 'tag', '-u'])
 
 
 def build_with_koji(build_tag_prefix, target_dists, scratch=False):
     """
     Run builds of all the pulp srpms on koji
+    :param build_tag_prefix: The prefix for the build tag to build using koji.  For example
+           pulp-2.4-testing
+    :type build_tag_prefix: str
     :param target_dists: a list of dist tags to use for the
-    Return list of task_ids to monitor
+    :type target_dists: list of dist tags to build for
+    :param scratch: Whether or not to run a scratch build with koji
+    :type scratch: bool
+    :returns: list of task_ids to monitor
+    :rtype: list of str
     """
     builds = []
     upload_prefix = 'pulp-build/%s' % str(uuid.uuid4())
@@ -142,7 +145,6 @@ def wait_for_completion(build_ids):
         while True:
             info = mysession.getTaskInfo(task_id)
             state = koji.TASK_STATES[info['state']]
-            #print "Got State: %s" % state
             if state in ['FAILED', 'CANCELED']:
                 msg = "Task %s: %i" % (state, task_id)
                 raise Exception(msg)
@@ -156,7 +158,7 @@ def download_rpms_from_tag(tag, output_directory):
     """
     For a given tag download all the latest contents of that tag to the given output directory.
     This will create subdirectories for each arch in the tag (noarch, i686, x86_64,
-    src) assuming that the contains packages with that tag
+    src) assuming that the contains packages with that tag.
 
     :param tag: The koji tag to get the files from
     :type tag: str
@@ -173,7 +175,6 @@ def download_rpms_from_tag(tag, output_directory):
     # Iterate through the packages and pull their output from koji with wget
     os.chdir(output_directory)
     for package in rpms[1]:
-        #print "%(name)s %(nvr)s %(release)s %(package_name)s %(release)s %(version)s" % package
         koji_dir = "/packages/%(name)s/%(version)s/%(release)s/" % package
         data_dir = "/packages/%(name)s/%(version)s/%(release)s/data" % package
         koji_url = "http://koji.katello.org"
@@ -221,6 +222,8 @@ def upload_and_unpack_binary_repository(target_directory, tar_file):
 
     :param target_directory: The location on the hosting server
     :type target_directory: str
+    :param tar_file: The fully qualified name & path of the tar file to upload
+    :type tar_file: str
     """
 
     # First make sure the directory exists on the host
@@ -275,10 +278,10 @@ if opts.push:
     subprocess.check_call("tar cvf repo.tar *", shell=True)
     tar_file = os.path.join(MASH_DIR, "repo.tar")
     print "Need to %s to sync to fedorapeople %s " % (tar_file, target_repo_dir)
-    print "Cleaning out previously published repo directory"
-    command = 'rm -rf %s' % target_repo_dir
-    run_destination_ssh_step(command)
-    upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
-    print "Finished updating repo"
+    # print "Cleaning out previously published repo directory"
+    # command = 'rm -rf %s' % target_repo_dir
+    # run_destination_ssh_step(command)
+   # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
+    # print "Finished updating repo"
 
 
