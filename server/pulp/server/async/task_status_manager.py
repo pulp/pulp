@@ -66,6 +66,18 @@ class TaskStatusManager(object):
         return created
 
     @staticmethod
+    def set_task_accepted(task_id):
+        """
+        Update a task's state to reflect that it has been accepted.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        """
+        delta = {
+            'state': dispatch_constants.CALL_ACCEPTED_STATE
+        }
+        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+    @staticmethod
     def set_task_started(task_id):
         """
         Update a task's state to reflect that it has started running.
@@ -99,7 +111,7 @@ class TaskStatusManager(object):
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
     @staticmethod
-    def set_task_failed(task_id, traceback):
+    def set_task_failed(task_id, traceback=None):
         """
         Update a task's state to reflect that it succeeded.
         :param task_id: The identity of the task to be updated.

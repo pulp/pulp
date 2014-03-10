@@ -32,6 +32,7 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+from pulp.server.config import config as pulp_conf
 import pulp.server.managers.factory as managers
 
 
@@ -87,15 +88,30 @@ class Consumers(JSONController):
     @auth_required(CREATE)
     def POST(self):
         body = self.params()
-        id = body.get('id')
+        consumer_id = body.get('id')
         display_name = body.get('display_name')
         description = body.get('description')
         notes = body.get('notes')
+        rsa_pub = body.get('rsa_pub')
 
         manager = managers.consumer_manager()
-        consumer = manager.register(id, display_name, description, notes)
-        consumer.update({'_href': serialization.link.child_link_obj(consumer['id'])})
-        return self.created(consumer['_href'], consumer)
+
+        created, certificate = manager.register(
+            consumer_id,
+            display_name=display_name,
+            description=description,
+            notes=notes,
+            rsa_pub=rsa_pub)
+
+        link = serialization.link.child_link_obj(consumer_id)
+        created.update({'_href': link})
+
+        document = {
+            'consumer': created,
+            'certificate': certificate
+        }
+
+        return self.created(link['_href'], document)
 
 
 class Consumer(JSONController):

@@ -18,29 +18,31 @@ import json
 from pulp.server.db.model.base import Model
 from pulp.common import dateutils
 
+
 # -- classes -----------------------------------------------------------------
+
 
 class Consumer(Model):
     """
     Represents a consumer of the content on Pulp server.
 
-    @ivar consumer_id: uniquely identifies the consumer
-    @type consumer_id: str
+    :ivar consumer_id: uniquely identifies the consumer
+    :type consumer_id: str
 
-    @ivar display_name: user-friendly name of the consumer
-    @type display_name: str
+    :ivar display_name: user-friendly name of the consumer
+    :type display_name: str
 
-    @ivar description: user-friendly description of the consumer
-    @type description: str
+    :ivar description: user-friendly description of the consumer
+    :type description: str
 
-    @ivar notes: arbitrary key-value pairs programmatically describing the consumer
-    @type notes: dict
+    :ivar notes: arbitrary key-value pairs pragmatically describing the consumer
+    :type notes: dict
 
-    @param capabilities: operations permitted on the consumer
-    @type capabilities: dict
+    :ivar capabilities: operations permitted on the consumer
+    :type capabilities: dict
 
-    @param certificate: x509 certificate for the consumer
-    @type certificate: str
+    :ivar rsa_pub: The consumer's RSA public key used for message authentication.
+    :type rsa_pub: str
     """
     RESOURCE_TEMPLATE = 'pulp:consumer:%s'
 
@@ -48,16 +50,34 @@ class Consumer(Model):
     unique_indices = ('id',)
     search_indices = ('notes',)
 
-    def __init__(self, consumer_id, display_name, description=None, notes=None, capabilities=None, certificate=None):
+    def __init__(self,
+                 consumer_id,
+                 display_name,
+                 description=None,
+                 notes=None,
+                 capabilities=None,
+                 rsa_pub=None):
+        """
+        :param consumer_id: uniquely identifies the consumer
+        :type consumer_id: str
+        :param display_name: user-friendly name of the consumer
+        :type display_name: str
+        :param description: user-friendly description of the consumer
+        :type description: str
+        :param notes: arbitrary key-value pairs pragmatically describing the consumer
+        :type notes: dict
+        :param capabilities: operations permitted on the consumer
+        :type capabilities: dict
+        :param rsa_pub: The consumer's RSA public key used for authentication.
+        :type rsa_pub: str
+        """
         super(Consumer, self).__init__()
-
         self.id = consumer_id
         self.display_name = display_name
         self.description = description
         self.notes = notes or {}
-
         self.capabilities = capabilities or {}
-        self.certificate = certificate or None
+        self.rsa_pub = rsa_pub
 
     @classmethod
     def build_resource_tag(cls, consumer_id):
@@ -237,13 +257,13 @@ class UnitProfile(Model):
     same RPMs installed will end up with the same ordering of their RPMs in the database.
 
     :ivar  consumer_id:  A consumer ID.
-    :itype consumer_id:  str
+    :type consumer_id:  str
     :ivar  content_type: The profile (unit) type ID.
-    :itype content_type: str
+    :type content_type: str
     :ivar  profile:      The stored profile.
-    :itype profile:      object
+    :type profile:      object
     :ivar  profile_hash: A hash of the profile, used for quick comparisons of profiles
-    :itype profile_hash: basestring
+    :type profile_hash: basestring
     """
 
     collection_name = 'consumer_unit_profiles'
@@ -294,19 +314,19 @@ class ConsumerHistoryEvent(Model):
     """
     Represents a consumer history event.
 
-    @ivar consumer_id: identifies the consumer
-    @type consumer_id: str
+    :ivar consumer_id: identifies the consumer
+    :type consumer_id: str
 
-    @ivar originator: consumer or username of the admin who initiated the event
-    @type originator: str
+    :ivar originator: consumer or username of the admin who initiated the event
+    :type originator: str
 
-    @param type: event type
+    :param type: event type
                  current supported event types: 'consumer_registered', 'consumer_unregistered', 'repo_bound', 'repo_unbound',
                  'content_unit_installed', 'content_unit_uninstalled', 'unit_profile_changed', 'added_to_group', 'removed_from_group'
-    @type  type: str
+    :type  type: str
 
-    @param details: event details
-    @type details: dict
+    :param details: event details
+    :type details: dict
     """
     collection_name = 'consumer_history'
     search_indices = ('consumer_id', 'originator', 'type', )
@@ -320,6 +340,7 @@ class ConsumerHistoryEvent(Model):
         self.details = details
         now = datetime.datetime.now(dateutils.utc_tz())
         self.timestamp = dateutils.format_iso8601_datetime(now)
+
 
 class ConsumerGroup(Model):
     """

@@ -20,9 +20,7 @@ is to be sent.  Further, gofer supports including arbitrary information to be
 round tripped.  This is contextual information that the asynchronous reply handler
 will need to process the reply.  We include such things as: The task_id and in
 some cases DB entity IDs so we can update the DB based on the result of the
-operation on the agent.  The context also generates the shared secret which is
-included in the RMI request.  Shared secret authentication one of the built-in
-authentication mechanisms supported by gofer.
+operation on the agent.
 
 Agent request flow:
 - Invoke the RMI
@@ -81,7 +79,12 @@ class PulpAgent(object):
         :type task_id: str
         """
         criteria = {'match': {'task_id': task_id}}
-        agent = Agent(context.uuid, url=context.url, secret=context.secret, async=True)
+        agent = Agent(
+            context.uuid,
+            url=context.url,
+            authenticator=context.authenticator,
+            transport=context.transport,
+            async=True)
         admin = agent.Admin()
         admin.cancel(criteria=criteria)
 
@@ -102,7 +105,12 @@ class Consumer(object):
         :param context: The call context.
         :type context: pulp.server.agent.context.Context
         """
-        agent = Agent(context.uuid, url=context.url, secret=context.secret, async=True)
+        agent = Agent(
+            context.uuid,
+            url=context.url,
+            authenticator=context.authenticator,
+            transport=context.transport,
+            async=True)
         consumer = agent.Consumer()
         consumer.unregistered()
 
@@ -122,10 +130,9 @@ class Consumer(object):
         agent = Agent(
             context.uuid,
             url=context.url,
-            timeout=context.get_timeout('bind_timeout'),
-            secret=context.secret,
+            authenticator=context.authenticator,
+            transport=context.transport,
             ctag=context.reply_queue,
-            watchdog=context.watchdog,
             any=context.details)
         consumer = agent.Consumer()
         consumer.bind(bindings, options)
@@ -145,10 +152,9 @@ class Consumer(object):
         agent = Agent(
             context.uuid,
             url=context.url,
-            timeout=context.get_timeout('unbind_timeout'),
-            secret=context.secret,
+            authenticator=context.authenticator,
+            transport=context.transport,
             ctag=context.reply_queue,
-            watchdog=context.watchdog,
             any=context.details)
         consumer = agent.Consumer()
         consumer.unbind(bindings, options)
@@ -174,10 +180,9 @@ class Content(object):
         agent = Agent(
             context.uuid,
             url=context.url,
-            timeout=context.get_timeout('install_timeout'),
-            secret=context.secret,
+            authenticator=context.authenticator,
+            transport=context.transport,
             ctag=context.reply_queue,
-            watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
         content.install(units, options)
@@ -197,10 +202,9 @@ class Content(object):
         agent = Agent(
             context.uuid,
             url=context.url,
-            timeout=context.get_timeout('update_timeout'),
-            secret=context.secret,
+            authenticator=context.authenticator,
+            transport=context.transport,
             ctag=context.reply_queue,
-            watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
         content.update(units, options)
@@ -220,10 +224,9 @@ class Content(object):
         agent = Agent(
             context.uuid,
             url=context.url,
-            timeout=context.get_timeout('uninstall_timeout'),
-            secret=context.secret,
+            authenticator=context.authenticator,
+            transport=context.transport,
             ctag=context.reply_queue,
-            watchdog=context.watchdog,
             any=context.details)
         content = agent.Content()
         content.uninstall(units, options)
@@ -241,6 +244,10 @@ class Profile(object):
         :param context: The call context.
         :type context: pulp.server.agent.context.Context
         """
-        agent = Agent(context.uuid, url=context.url, secret=context.secret)
+        agent = Agent(
+            context.uuid,
+            url=context.url,
+            authenticator=context.authenticator,
+            transport=context.transport)
         profile = agent.Profile()
         profile.send()

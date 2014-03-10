@@ -21,6 +21,10 @@ config = None # ConfigParser.SafeConfigParser instance
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
+    'authentication': {
+        'rsa_key': '/etc/pki/pulp/rsa.key',
+        'rsa_pub': '/etc/pki/pulp/rsa_pub.key',
+    },
     'consumer_history': {
         'lifetime': '180', # in days
     },
@@ -56,18 +60,15 @@ _default_values = {
     },
     'logs': {
         'config': '/etc/pulp/logging/basic.cfg',
-        'db_config' : '/etc/pulp/logging/db.cfg',
+        'db_config': '/etc/pulp/logging/db.cfg',
     },
     'messaging': {
         'url': 'tcp://localhost:5672',
+        'transport': 'qpid',
+        'auth_enabled': 'true',
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
-        'topic_exchange': 'amq.topic',
-        'install_timeout': '10:600',
-        'update_timeout': '10:600',
-        'uninstall_timeout': '10:600',
-        'bind_timeout': '2592000:600',
-        'unbind_timeout': '2592000:600',
+        'topic_exchange': 'amq.topic'
     },
     'scheduler': {
         'dispatch_interval': '30',

@@ -17,17 +17,17 @@ Contains recurring actions and remote classes.
 """
 
 import os
-import errno
 
-from hashlib import sha256
 from logging import getLogger
 
+from M2Crypto import RSA, BIO
 from M2Crypto.X509 import X509Error
 
 from gofer.decorators import *
 from gofer.agent.plugin import Plugin
 from gofer.pmon import PathMonitor
 from gofer.agent.rmi import Context
+from gofer.messaging.auth import ValidationFailed
 
 from pulp.common.bundle import Bundle
 from pulp.agent.lib.dispatcher import Dispatcher
@@ -48,24 +48,66 @@ cfg = pulp_conf.graph()
 # --- utils ------------------------------------------------------------------
 
 
-def secret():
+class Authenticator(object):
     """
-    Get the shared secret used for auth of RMI requests.
-    :return: The sha256 for the certificate
-    :rtype: str
+    Provides message authentication using RSA keys.
+    The server and the agent sign sent messages using their private keys
+    and validate received messages using each others public keys.
+    :ivar rsa_key: The private RSA key used for signing.
+    :type rsa_key: RSA.RSA
+    :ivar rsa_pub: The public RSA key used for validation.
+    :type rsa_pub: RSA.RSA
     """
-    try:
-        bundle = ConsumerX509Bundle()
-        content = bundle.read()
-        certificate = bundle.split(content)[1]
-        h = sha256()
-        h.update(certificate)
-        return h.hexdigest()
-    except IOError, e:
-        if e.errno != errno.ENOENT:
-            raise
-    except Exception:
-        log.exception('generate shared secret failed')
+
+    def __init__(self):
+        self.rsa_key = None
+        self.rsa_pub = None
+
+    def load(self):
+        """
+        Load both private and public RSA keys.
+        """
+        fp = open(cfg.authentication.rsa_key)
+        try:
+            pem = fp.read()
+            bfr = BIO.MemoryBuffer(pem)
+            self.rsa_key = RSA.load_key_bio(bfr)
+        finally:
+            fp.close()
+        fp = open(cfg.server.rsa_pub)
+        try:
+            pem = fp.read()
+            bfr = BIO.MemoryBuffer(pem)
+            self.rsa_pub = RSA.load_pub_key_bio(bfr)
+        finally:
+            fp.close()
+
+    def sign(self, digest):
+        """
+        Sign the specified message.
+        :param digest: An AMQP message digest.
+        :type digest: str
+        :return: The message signature.
+        :rtype: str
+        """
+        return self.rsa_key.sign(digest)
+
+    def validate(self, uuid, digest, signature):
+        """
+        Validate the specified message and signature.
+        :param uuid: The (unused) uuid of the sender.
+        :type uuid: str
+        :param digest: An AMQP message digest.
+        :type digest: str
+        :param signature: A message signature.
+        :type signature: str
+        :raises ValidationFailed: when message is not valid.
+        """
+        try:
+            if not self.rsa_pub.verify(digest, signature):
+                raise ValidationFailed()
+        except RSA.RSAError:
+            raise ValidationFailed()
 
 
 class ConsumerX509Bundle(Bundle):
@@ -197,12 +239,19 @@ class RegistrationMonitor:
             host = cfg.messaging.host or cfg.server.host
             port = cfg.messaging.port
             url = '%s://%s:%s' % (scheme, host, port)
+            authenticator = Authenticator()
+            authenticator.load()
             plugin_conf = plugin.cfg()
             plugin_conf.messaging.url = url
+            plugin_conf.messaging.uuid = consumer_id
             plugin_conf.messaging.cacert = cfg.messaging.cacert
             plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
                 os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-        plugin.setuuid(consumer_id)
+            plugin_conf.messaging.transport = cfg.messaging.transport
+            plugin.authenticator = authenticator
+            plugin.attach()
+        else:
+            plugin.detach()
 
 
 class Synchronization:
@@ -243,7 +292,7 @@ class Consumer:
     Consumer Management.
     """
 
-    @remote(secret=secret)
+    @remote
     def unregistered(self):
         """
         Notification that the consumer had been unregistered.
@@ -258,7 +307,7 @@ class Consumer:
         report = dispatcher.clean(conduit)
         return report.dict()
 
-    @remote(secret=secret)
+    @remote
     def bind(self, bindings, options):
         """
         Bind to the specified repository ID.
@@ -277,7 +326,7 @@ class Consumer:
         report = dispatcher.bind(conduit, bindings, options)
         return report.dict()
 
-    @remote(secret=secret)
+    @remote
     def unbind(self, bindings, options):
         """
         Unbind to the specified repository ID.
@@ -301,7 +350,7 @@ class Content:
     Content Management.
     """
 
-    @remote(secret=secret)
+    @remote
     def install(self, units, options):
         """
         Install the specified content units using the specified options.
@@ -319,7 +368,7 @@ class Content:
         report = dispatcher.install(conduit, units, options)
         return report.dict()
 
-    @remote(secret=secret)
+    @remote
     def update(self, units, options):
         """
         Update the specified content units using the specified options.
@@ -337,7 +386,7 @@ class Content:
         report = dispatcher.update(conduit, units, options)
         return report.dict()
 
-    @remote(secret=secret)
+    @remote
     def uninstall(self, units, options):
         """
         Uninstall the specified content units using the specified options.
@@ -361,7 +410,7 @@ class Profile:
     Profile Management
     """
 
-    @remote(secret=secret)
+    @remote
     def send(self):
         """
         Send the content profile(s) to the server.

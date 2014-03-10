@@ -95,6 +95,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server
 mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
@@ -130,7 +131,9 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/types
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/static
 mkdir -p %{buildroot}/%{_var}/www
+mkdir -p %{buildroot}/%{_var}/www/pulp
 
 # Configuration
 cp -R server/etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
@@ -164,6 +167,7 @@ cp -R server/srv %{buildroot}
 
 # Web Content
 ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
+ln -s %{_var}/lib/pulp/static %{buildroot}/%{_var}/www/pulp/static
 
 # Tools
 cp server/bin/* %{buildroot}/%{_bindir}
@@ -183,6 +187,7 @@ popd
 %endif # End server installation block
 
 # Everything else installation
+
 # Configuration
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
 cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
@@ -228,7 +233,7 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 0.77
+Requires: python-gofer >= 1.0.0
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -286,17 +291,21 @@ Pulp provides replication, access, and accounting for software repositories.
 %defattr(640,root,apache,-)
 %ghost %{_sysconfdir}/pki/%{name}/ca.key
 %ghost %{_sysconfdir}/pki/%{name}/ca.crt
+%ghost %{_sysconfdir}/pki/%{name}/rsa.key
+%ghost %{_sysconfdir}/pki/%{name}/rsa_pub.key
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 # - apache:apache
 %defattr(-,apache,apache,-)
 %{_var}/lib/%{name}/
 %dir %{_var}/log/%{name}
 %{_var}/www/pub
+%{_var}/www/pulp
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE
 
 %post server
+
 # OAuth credentials
 SECTION="oauth"
 MATCH_SECTION="/^\[$SECTION\]$/"
@@ -309,12 +318,28 @@ sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
     -e "$MATCH_SECTION,/^$/s/^$SECRET$/$SECRET $(generate)/" \
     -i %{_sysconfdir}/%{name}/server.conf
 
+# RSA key pair
+KEY_DIR="%{_sysconfdir}/pki/%{name}"
+KEY_PATH="$KEY_DIR/rsa.key"
+KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
+if [ ! -f $KEY_PATH ]
+then
+  openssl genrsa -out $KEY_PATH 1024 &> /dev/null
+  openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
+fi
+chmod 640 $KEY_PATH
+chmod 644 $KEY_PATH_PUB
+chown root:apache $KEY_PATH
+chown root:apache $KEY_PATH_PUB
+ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
+
 # CA certificate
 if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
 fi
 %endif # End pulp_server if block
+
 
 # ---- Common ------------------------------------------------------------------
 
@@ -462,8 +487,24 @@ A tool used to administer a pulp consumer.
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
 %{_bindir}/%{name}-consumer
+%ghost %{_sysconfdir}/pki/%{name}/consumer/rsa.key
+%ghost %{_sysconfdir}/pki/%{name}/consumer/rsa_pub.key
+%ghost %{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 %ghost %{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 %doc README LICENSE
+
+%post consumer-client
+
+# RSA key pair
+KEY_DIR="%{_sysconfdir}/pki/%{name}/consumer/"
+KEY_PATH="$KEY_DIR/rsa.key"
+KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
+if [ ! -f $KEY_PATH ]
+then
+  openssl genrsa -out $KEY_PATH 1024 &> /dev/null
+  openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
+fi
+chmod 640 $KEY_PATH
 
 
 # ---- Agent -------------------------------------------------------------------
@@ -474,7 +515,8 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: gofer >= 0.77
+Requires: gofer >= 1.0.0
+Requires: m2crypto
 
 %description agent
 The pulp agent, used to provide remote command & control and

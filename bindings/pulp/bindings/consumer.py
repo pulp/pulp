@@ -17,6 +17,7 @@ from pulp.bindings.search import SearchAPI
 # Default for update APIs to differentiate between None and not updating the value
 UNSPECIFIED = object()
 
+
 class ConsumerAPI(PulpAPI):
     """
     Connection class to access consumer specific calls
@@ -34,12 +35,15 @@ class ConsumerAPI(PulpAPI):
         path = self.base_path
         return self.server.GET(path, options)
 
-    def register(self, id, name, description, notes):
+    def register(self, id, name=None, description=None, notes=None, rsa_pub=None):
         path = self.base_path
-        body = {"id": id,
-                "display_name": name,
-                "description": description,
-                "notes": notes,}
+        body = {
+            "id": id,
+            "display_name": name,
+            "description": description,
+            "notes": notes,
+            "rsa_pub": rsa_pub
+        }
         return self.server.POST(path, body)
 
     def consumer(self, id):
