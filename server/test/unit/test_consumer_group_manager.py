@@ -195,7 +195,7 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(consumer['id'] in group['consumer_ids'])
 
-    @patch('pulp.server.agent.direct.pulpagent.Consumer.unregistered')
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
     def test_unregister(self, unused):
         group_id = 'delete_from_me'
         consumer = self._create_consumer('delete_me')

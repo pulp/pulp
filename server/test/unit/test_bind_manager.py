@@ -260,7 +260,7 @@ class BindManagerTests(base.PulpServerTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEqual(len(binds), 0)
 
-    @patch('pulp.server.agent.direct.pulpagent.Consumer.unregistered')
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
     def test_consumer_unregister_cleanup(self, *unused):
         # Setup
         self.populate()

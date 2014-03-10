@@ -284,7 +284,7 @@ class ProfileManagerTests(base.PulpServerTests):
         profiles = list(cursor)
         self.assertEquals(len(profiles), 0)
 
-    @patch('pulp.server.agent.direct.pulpagent.Consumer.unregistered')
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
     def test_consumer_unregister_cleanup(self, *unused):
         # Setup
         self.test_create()
