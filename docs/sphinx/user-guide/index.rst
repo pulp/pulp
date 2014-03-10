@@ -10,6 +10,7 @@ Contents:
    release-notes/index
    installation
    server
+   authentication
    admin-client/index
    consumer-client/index
    nodes
