@@ -24,6 +24,7 @@ BuildArch:      noarch
 BuildRequires:  python2-devel
 %if 0%{?rhel} == 6
 BuildRequires:  python-ordereddict
+BuildRequires:  python-importlib
 %endif
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
