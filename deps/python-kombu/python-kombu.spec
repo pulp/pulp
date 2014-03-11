@@ -158,6 +158,14 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com> 3.0.12-4
+- add python-importlib to build requirements for rhel6 (bcourt@redhat.com)
+- Update for rhel6 mock builder support (bcourt@redhat.com)
+- Update for rhel6 mock builder support (bcourt@redhat.com)
+- Update for rhel6 mock builder support (bcourt@redhat.com)
+- Update to include requirement of python-ordereddict on rhel6 which has python
+  2.6 installed (bcourt@redhat.com)
+
 * Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com> 3.0.12-3
 - Update for to add epoch (bcourt@redhat.com)
 - Bump release and add epoch to sub package (bcourt@redhat.com)
