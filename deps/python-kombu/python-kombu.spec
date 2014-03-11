@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.12
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -22,6 +22,9 @@ Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
+if 0%{?rhel} > 6
+BuildRequires:  python-ordereddict
+%endif
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
 BuildRequires:  python3-nose
