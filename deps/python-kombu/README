@@ -1,5 +1,7 @@
 Team owner: bbouters
 
-celery depends on a version of this that is newer than what is available in epel and fedora.
-
-Soon, we will have a custom kombu that adds a qpid transport.
+Celery 3.1.9 requires kombu>=3.0.13,<4.0, which is not in Fedora<=20 or EPEL 6.
+Furthermore, Pulp would like to use the Qpid transport through a patch that has
+not yet been accepted in upstream Kombu.  Currently, this build packages
+vanilla kombu==3.0.13 and then applies the patch contained in
+qpid_transport.patch 
