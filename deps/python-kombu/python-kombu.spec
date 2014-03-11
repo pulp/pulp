@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.12
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -151,6 +151,17 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com>
+- Bump release and add epoch to sub package (bcourt@redhat.com)
+- changing name based on review (mhrivnak@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-1].
+  (rbarlow@redhat.com)
+- Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
+  (rbarlow@redhat.com)
+
 * Mon Feb 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
 - Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
   (rbarlow@redhat.com)
