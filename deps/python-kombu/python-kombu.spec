@@ -22,6 +22,9 @@ Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
+%if 0%{?rhel} > 6
+BuildRequires:  python-ordereddict
+%endif
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
 BuildRequires:  python3-nose
