@@ -151,6 +151,18 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com> 3.0.12-3
+- Update for to add epoch (bcourt@redhat.com)
+- Bump release and add epoch to sub package (bcourt@redhat.com)
+- changing name based on review (mhrivnak@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-1].
+  (rbarlow@redhat.com)
+- Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
+  (rbarlow@redhat.com)
+
 * Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com>
 - Bump release and add epoch to sub package (bcourt@redhat.com)
 - changing name based on review (mhrivnak@redhat.com)
