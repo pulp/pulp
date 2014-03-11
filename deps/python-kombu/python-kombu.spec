@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.12
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -73,6 +73,7 @@ also provide proven and tested solutions to common messaging problems.
 
 %if 0%{?with_python3}
 %package -n python3-kombu
+Epoch:          1
 Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
