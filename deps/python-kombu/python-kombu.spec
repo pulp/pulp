@@ -22,7 +22,7 @@ Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
-%if 0%{?rhel} > 6
+%if 0%{?rhel} == 6
 BuildRequires:  python-ordereddict
 %endif
 %if 0%{?with_python3}
@@ -63,7 +63,7 @@ BuildRequires: python3-amqp >= 1.4.3
 Requires: python-amqp >= 1.4.3
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
-%if 0%{?rhel} > 6
+%if 0%{?rhel} == 6
 Requires:  python-ordereddict
 %endif
 
