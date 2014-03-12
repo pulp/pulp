@@ -13,9 +13,15 @@
 from celery import Celery
 from celery.signals import worker_ready
 
+from pulp.server import config # automatically loads config
 from pulp.server import initialization
+from pulp.server import logs
 from pulp.server.async import tasks
 from pulp.server.async.celery_instance import celery
+
+
+logs.start_logging()
+initialization.initialize()
 
 
 @worker_ready.connect
@@ -29,5 +35,4 @@ def initialize_worker(*args, **kwargs):
     :param kwargs: unused
     :type  kwargs: dict
     """
-    initialization.initialize()
     tasks.babysit()
