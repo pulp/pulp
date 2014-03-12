@@ -30,10 +30,12 @@ import web
 web.application.handle_with_processors = _handle_with_processors
 
 from pulp.server import config # automatically loads config
+from pulp.server import logs
 
 # We need to read the config, start the logging, and initialize the db
 # connection prior to any other imports, since some of the imports will invoke
 # setup methods.
+logs.start_logging()
 from pulp.server import initialization
 
 from pulp.server.agent.direct.services import Services as AgentServices

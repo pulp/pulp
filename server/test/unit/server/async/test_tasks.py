@@ -322,6 +322,21 @@ class TestDeleteQueue(ResourceReservationTests):
         self.assertEqual(aqc.find().count(), 2)
 
 
+class TestInitializeWorker(unittest.TestCase):
+    """
+    Test the initialize_worker() function.
+    """
+    @mock.patch('pulp.server.async.tasks.babysit')
+    def test_initialize_worker(self, babysit):
+        """
+        Test that initialize_worker() makes the correct calls.
+        """
+        tasks._initialize_worker()
+
+        # babysit() should have been called with no args
+        babysit.assert_called_once_with()
+
+
 class TestQueueReleaseResource(ResourceReservationTests):
     """
     Test the _queue_release_resource() function.

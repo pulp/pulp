@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.12
-Release:        1%{?dist}
+Release:        4.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -22,6 +22,10 @@ Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
+%if 0%{?rhel} == 6
+BuildRequires:  python-ordereddict
+BuildRequires:  python-importlib
+%endif
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
 BuildRequires:  python3-nose
@@ -60,6 +64,10 @@ BuildRequires: python3-amqp >= 1.4.3
 Requires: python-amqp >= 1.4.3
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
+%if 0%{?rhel} == 6
+Requires:  python-ordereddict
+%endif
+Requires: python-qpid-qmf
 
 %description
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
@@ -73,6 +81,7 @@ also provide proven and tested solutions to common messaging problems.
 
 %if 0%{?with_python3}
 %package -n python3-kombu
+Epoch:          1
 Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
@@ -94,6 +103,9 @@ This subpackage is for python3
 
 %prep
 %setup -q -n %{srcname}-%{version}
+
+# Add qpid support
+%patch0 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -150,6 +162,44 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com> 3.0.12-4
+- add python-importlib to build requirements for rhel6 (bcourt@redhat.com)
+- Update for rhel6 mock builder support (bcourt@redhat.com)
+- Update for rhel6 mock builder support (bcourt@redhat.com)
+- Update for rhel6 mock builder support (bcourt@redhat.com)
+- Update to include requirement of python-ordereddict on rhel6 which has python
+  2.6 installed (bcourt@redhat.com)
+
+* Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com> 3.0.12-3
+- Update for to add epoch (bcourt@redhat.com)
+- Bump release and add epoch to sub package (bcourt@redhat.com)
+- changing name based on review (mhrivnak@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-1].
+  (rbarlow@redhat.com)
+- Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
+  (rbarlow@redhat.com)
+
+* Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com>
+- Bump release and add epoch to sub package (bcourt@redhat.com)
+- changing name based on review (mhrivnak@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-1].
+  (rbarlow@redhat.com)
+- Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
+  (rbarlow@redhat.com)
+
+* Thu Mar 06 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-2
+- Patch python-kombu for qpid support. (rbarlow@redhat.com)
+- removing Travis section from diff (bmbouter@gmail.com)
+- Adding patch that adds Qpid support to Kombu (bmbouter@gmail.com)
+- Remove duplicate entries from python-kombu.spec's changelog.
+  (rbarlow@redhat.com)
+
 * Mon Feb 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.12-1
 - Raise the python-kombu epoch to 1 to match the Fedora package's epoch.
   (rbarlow@redhat.com)

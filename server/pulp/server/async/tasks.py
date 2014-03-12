@@ -19,6 +19,7 @@ import signal
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
+from celery.signals import worker_ready
 
 from pulp.common import dateutils
 from pulp.common.error_codes import PLP0023
@@ -96,6 +97,20 @@ def babysit():
         # and if it has, let's delete it.
         if active_queue.missing_since < datetime.utcnow() - timedelta(minutes=5):
             _delete_queue.apply_async(args=(queue,), queue=RESOURCE_MANAGER_QUEUE)
+
+
+@worker_ready.connect
+def _initialize_worker(*args, **kwargs):
+    """
+    This gets called by Celery when the worker is ready to accept work. It initializes Pulp and runs our
+    babysit() function synchronously so that the application is aware of this worker immediately.
+
+    :param args:   unused
+    :type  args:   list
+    :param kwargs: unused
+    :type  kwargs: dict
+    """
+    babysit()
 
 
 @task

@@ -14,11 +14,6 @@
 import logging
 import sys
 
-# We need to initialize logging early, because some of the other imports in this module can generate
-# log messages.
-from pulp.server import logs
-logs.start_logging()
-
 # It is important that we initialize the DB connection early
 from pulp.server.db import connection as db_connection
 db_connection.initialize()
@@ -42,6 +37,9 @@ def initialize():
     global _IS_INITIALIZED
     if _IS_INITIALIZED:
         return
+
+    # This is here temporarily, so that we can run the monkey patches for qpid and stuff
+    import kombu.transport.qpid
 
     # Load plugins and resolve against types. This is also a likely candidate
     # for causing the server to fail to start.

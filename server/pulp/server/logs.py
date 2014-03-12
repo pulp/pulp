@@ -18,8 +18,6 @@ import os
 from pulp.server import config
 
 
-# logging configuration -------------------------------------------------------
-
 def check_log_file(file_path):
     """
     Check the write permissions on log files and their parent directory. Raise
@@ -31,6 +29,7 @@ def check_log_file(file_path):
     if not os.access(dir_path, os.W_OK):
         raise RuntimeError('Cannot write to log directory: %s' % dir_path)
     return 'Yeah!'
+
 
 def _enable_all_loggers():
     """
@@ -47,6 +46,7 @@ def _enable_all_loggers():
     for key in keys:
         logging.root.manager.loggerDict[key].disabled = 0
 
+
 def configure_pulp_logging():
     """
     Configures logging from config file specified in pulp.conf
@@ -57,9 +57,9 @@ def configure_pulp_logging():
     logging.config.fileConfig(log_config_filename)
     _enable_all_loggers() # Hack needed for RHEL-5
 
-# pulp logging api ------------------------------------------------------------
 
 started = False
+
 
 def start_logging():
     """
