@@ -272,6 +272,8 @@ This plug-in provides RMI access to package (RPM) management.
 
 %changelog
 * Wed Mar 12 2014 Jeff Ortel <jortel@redhat.com> 1.0.4-1
+- gofer 1.0.4. (jortel@redhat.com)
+* Wed Mar 12 2014 Jeff Ortel <jortel@redhat.com> 1.0.4-1
 - Improved import between plugins. (jortel@redhat.com)
 
 * Tue Mar 11 2014 Jeff Ortel <jortel@redhat.com> 1.0.3-1
