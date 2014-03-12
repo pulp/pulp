@@ -421,7 +421,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
         repo = RepoManager().create_repo('a_repo_id')
-        consumer = ConsumerManager().register('consumer_id')
+        consumer, certificate = ConsumerManager().register('consumer_id')
         profile_1 = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         profile_2 = ProfileManager().create(consumer.id, 'other_content_type', 'more_profile_data')
         # This one should remain
@@ -454,7 +454,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
         repo = RepoManager().create_repo('a_repo_id')
-        consumer = ConsumerManager().register('consumer_id')
+        consumer, certificate = ConsumerManager().register('consumer_id')
         profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
                                                         profile.profile, 'applicability_data')
@@ -478,7 +478,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
         repo = RepoManager().create_repo('a_repo_id')
-        consumer = ConsumerManager().register('consumer_id')
+        consumer, certificate = ConsumerManager().register('consumer_id')
         profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
                                                         profile.profile, 'applicability_data')
@@ -502,7 +502,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
         repo = RepoManager().create_repo('a_repo_id')
-        consumer = ConsumerManager().register('consumer_id')
+        consumer, certificate = ConsumerManager().register('consumer_id')
         profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         rpa = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
                                                       profile.profile, 'applicability_data')

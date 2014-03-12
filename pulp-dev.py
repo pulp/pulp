@@ -44,7 +44,7 @@ DIRS = (
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
-    '/etc/pki/pulp/consumer',
+    '/etc/pki/pulp/consumer/server',
     '/etc/pki/pulp/content',
     '/srv',
     '/srv/pulp',
@@ -72,6 +72,7 @@ DIRS = (
     '/var/lib/pulp/celery',
     '/var/lib/pulp/published',
     '/var/lib/pulp/uploads',
+    '/var/lib/pulp/static',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
@@ -107,6 +108,9 @@ LINKS = (
      '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'),
     ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
     ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
+
+    # Static Content
+    ('/etc/pki/pulp/rsa_pub.key', '/var/lib/pulp/static/rsa_pub.key'),
 )
 
 
@@ -195,6 +199,20 @@ def get_paths_to_copy():
     return paths
 
 
+def gen_rsa_keys():
+    print 'generating RSA keys'
+    for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
+        key_path = os.path.join(key_dir, 'rsa.key')
+        key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
+        if not os.path.exists(key_path):
+            os.system('openssl genrsa -out %s 2048' % key_path)
+        if not os.path.exists(key_path_pub):
+            os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
+        os.system('chmod 640 %s' % key_path)
+        os.system('chown root:apache %s' % key_path)
+        os.system('chown root:apache %s' % key_path_pub)
+
+
 def getlinks():
     links = []
     for l in LINKS:
@@ -246,6 +264,7 @@ def getlinks():
 def install(opts):
     warnings = []
     create_dirs(opts)
+    gen_rsa_keys()
     currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
         warning_msg = create_link(opts, os.path.join(currdir,src), dst)

@@ -14,7 +14,8 @@
 
 import base
 
-from pulp.devel import mock_agent
+from mock import patch
+
 from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.history as history_manager
@@ -27,21 +28,19 @@ class ConsumerManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(ConsumerManagerTests, self).setUp()
-        mock_agent.install()
 
         # Create the manager instance to test
         self.manager = consumer_manager.ConsumerManager()
 
     def tearDown(self):
         super(ConsumerManagerTests, self).tearDown()
-        mock_agent.reset()
 
     def clean(self):
         base.PulpServerTests.clean(self)
 
         Consumer.get_collection().remove()
 
-    def test_create(self):
+    def test_registration(self):
         """
         Tests creating a consumer with valid data is successful.
         """
@@ -50,11 +49,13 @@ class ConsumerManagerTests(base.PulpServerTests):
         consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
-        notes = {'note1' : 'value1'}
+        notes = {'note1': 'value1'}
+        capabilities = {}
+        rsa_pub = 'fake-key'
 
         # Test
-        created = self.manager.register(consumer_id, name, description, notes)
-        print created
+        created, certificate = self.manager.register(
+            consumer_id, name, description, notes=notes, capabilities=capabilities, rsa_pub=rsa_pub)
 
         # Verify
         consumers = list(Consumer.get_collection().find())
@@ -65,11 +66,13 @@ class ConsumerManagerTests(base.PulpServerTests):
         self.assertEqual(name, consumer['display_name'])
         self.assertEqual(description, consumer['description'])
         self.assertEqual(notes, consumer['notes'])
+        self.assertEqual(rsa_pub, consumer['rsa_pub'])
 
         self.assertEqual(consumer_id, created['id'])
         self.assertEqual(name, created['display_name'])
         self.assertEqual(description, created['description'])
         self.assertEqual(notes, created['notes'])
+        self.assertEqual(rsa_pub, consumer['rsa_pub'])
 
     def test_create_defaults(self):
         """
@@ -137,7 +140,8 @@ class ConsumerManagerTests(base.PulpServerTests):
             self.assertTrue(['notes'] in e)
             print(e) # for coverage
 
-    def test_unregister_consumer(self):
+    @patch('pulp.server.managers.consumer.agent.AgentManager.unregistered')
+    def test_unregister_consumer(self, mock_unreg):
         """
         Tests unregistering a consumer under normal circumstances.
         """
@@ -152,6 +156,7 @@ class ConsumerManagerTests(base.PulpServerTests):
         # Verify
         consumers = list(Consumer.get_collection().find({'id' : consumer_id}))
         self.assertEqual(0, len(consumers))
+        mock_unreg.assert_called_with(consumer_id)
 
     def test_delete_consumer_no_consumer(self):
         """
@@ -165,14 +170,14 @@ class ConsumerManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue('fake consumer' == e.resources['consumer'])
 
-
     def test_update_consumer(self):
         """
         Tests the case of successfully updating a consumer.
         """
 
         # Setup
-        self.manager.register('update-me', display_name='display_name_1', description='description_1', notes={'a' : 'a'})
+        self.manager.register(
+            'update-me', display_name='display_name_1', description='description_1', notes={'a': 'a'})
 
         delta = {
             'display_name' : 'display_name_2',
@@ -228,7 +233,6 @@ class ConsumerManagerTests(base.PulpServerTests):
         consumers = list(Consumer.get_collection().find())
         consumer = consumers[0]
         self.assertEqual(consumer['notes'], notes)
-
 
     def test_update_notes(self):
         """
@@ -289,7 +293,6 @@ class ConsumerManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             print e
             self.assertTrue(consumer_id == e.resources['consumer'])
-
 
     def test_add_update_remove_notes_with_invalid_notes(self):
         # Setup

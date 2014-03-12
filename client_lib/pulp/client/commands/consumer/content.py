@@ -135,7 +135,7 @@ class ConsumerContentInstallCommand(PollingCommand):
         return units
 
     def progress(self, task, spinner):
-        self.progress_tracker.display(task.progress)
+        self.progress_tracker.display(task.progress_report)
 
     def succeeded(self, task):
         msg = _('Install Succeeded')
@@ -248,7 +248,7 @@ class ConsumerContentUpdateCommand(PollingCommand):
         return units
 
     def progress(self, task, spinner):
-        self.progress_tracker.display(task.progress)
+        self.progress_tracker.display(task.progress_report)
 
     def succeeded(self, task):
         msg = _('Update Succeeded')
@@ -356,7 +356,7 @@ class ConsumerContentUninstallCommand(PollingCommand):
         return units
 
     def progress(self, task, spinner):
-        self.progress_tracker.display(task.progress)
+        self.progress_tracker.display(task.progress_report)
 
     def succeeded(self, task):
         msg = _('Uninstall Succeeded')

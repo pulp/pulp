@@ -22,6 +22,7 @@ from datetime import datetime
 from ... import base
 
 from pulp.common import dateutils
+from pulp.server.async import constants
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
@@ -192,3 +193,86 @@ class TaskStatusManagerTests(base.PulpServerTests):
         criteria = Criteria()
         TaskStatusManager.find_by_criteria(criteria)
         mock_query.assert_called_once_with(criteria)
+
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_set_accepted(self, mock_update):
+        task_id = 'test'
+
+        # test
+
+        TaskStatusManager.set_task_accepted(task_id)
+
+        # validation
+
+        delta = {
+            'state': constants.CALL_ACCEPTED_STATE
+        }
+
+        mock_update.assert_called_with(task_id=task_id, delta=delta)
+
+    @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_set_started(self, mock_update, mock_date):
+        task_id = 'test'
+        now = '1234'
+        mock_date.return_value = now
+
+        # test
+
+        TaskStatusManager.set_task_started(task_id)
+
+        # validation
+
+        delta = {
+            'state': constants.CALL_RUNNING_STATE,
+            'start_time': now
+        }
+
+        mock_update.assert_called_with(task_id=task_id, delta=delta)
+
+    @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_set_succeeded(self, mock_update, mock_date):
+        task_id = 'test'
+        result = 'done'
+        now = '1234'
+
+        mock_date.return_value = now
+
+        # test
+
+        TaskStatusManager.set_task_succeeded(task_id, result)
+
+        # validation
+
+        delta = {
+            'state': constants.CALL_FINISHED_STATE,
+            'finish_time': now,
+            'result': result
+        }
+
+        mock_update.assert_called_with(task_id=task_id, delta=delta)
+
+    @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_set_failed(self, mock_update, mock_date):
+        task_id = 'test'
+        traceback = 'TB'
+        now = '1234'
+
+        mock_date.return_value = now
+
+        # test
+
+        TaskStatusManager.set_task_failed(task_id, traceback)
+
+        # validation
+
+        delta = {
+            'state': constants.CALL_ERROR_STATE,
+            'finish_time': now,
+            'traceback': traceback
+        }
+
+        mock_update.assert_called_with(task_id=task_id, delta=delta)

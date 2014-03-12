@@ -12,13 +12,11 @@
 Test the pulp.server.webservices.controllers.consumer module.
 """
 import logging
-import unittest
 
 import mock
 from web.webapi import BadRequest
 
 from .... import base
-from pulp.devel import mock_agent
 from pulp.devel import mock_plugins
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict
@@ -56,7 +54,6 @@ class ConsumerTest(base.PulpWebserviceTests):
         Bind.get_collection().remove(safe=True)
         plugin_api._create_manager()
         mock_plugins.install()
-        mock_agent.install()
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
@@ -162,7 +159,8 @@ class ConsumerTest(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
-    def test_delete(self):
+    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.unregistered')
+    def test_delete(self, mock_unregistered):
         """
         Tests unregistering an existing consumer.
         """
@@ -175,8 +173,9 @@ class ConsumerTest(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(200, status)
 
-        consumer = Consumer.get_collection().find_one({'id' : 'doomed'})
+        consumer = Consumer.get_collection().find_one({'id': 'doomed'})
         self.assertTrue(consumer is None)
+        mock_unregistered.assert_called_with(self.CONSUMER_ID)
 
     def test_delete_missing_consumer(self):
         """
@@ -246,7 +245,6 @@ class ConsumersTest(base.PulpWebserviceTests):
         Bind.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
-        mock_agent.install()
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
@@ -347,24 +345,38 @@ class ConsumersTest(base.PulpWebserviceTests):
         self.assertEqual(200, status)
         self.assertEqual(0, len(body))
 
-    def test_post(self):
+    @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.register')
+    def test_post(self, mock_register):
         """
         Tests using post to register a consumer.
         """
-        # Setup
+
         body = {
-            'id' : self.CONSUMER_IDS[0],
-            'display-name' : 'Consumer 1',
-            'description' : 'Test Consumer',
+            'id': self.CONSUMER_IDS[0],
+            'display-name': 'Consumer 1',
+            'description': 'Test Consumer',
+            'rsa_pub': 'QIBAAKBgQDcx31TTh+',
+            'notes': {}
         }
+
+        created = body
+
+        certificate = 'fake-certificate'
+        mock_register.return_value = (created, certificate)
+
         # Test
+
         status, body = self.post('/v2/consumers/', params=body)
+
         # Verify
+
+        document = {
+            'consumer': created,
+            'certificate': certificate
+        }
+
         self.assertEqual(201, status)
-        self.assertEqual(body['id'], self.CONSUMER_IDS[0])
-        collection = Consumer.get_collection()
-        consumer = collection.find_one({'id' : self.CONSUMER_IDS[0]})
-        self.assertTrue(consumer is not None)
+        self.assertEqual(body, document)
 
     def test_post_bad_data(self):
         """
@@ -557,7 +569,6 @@ class BindTest(base.PulpWebserviceTests):
         Bind.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
-        mock_agent.install()
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
@@ -1364,7 +1375,6 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         super(ScheduledUnitInstallTests, self).setUp()
         plugin_api._create_manager()
         mock_plugins.install()
-        mock_agent.install()
         self.consumer_id = 'test-consumer'
         self.consumer_manager = factory.consumer_manager()
         self.consumer_manager.register(self.consumer_id)
@@ -1508,14 +1518,12 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEqual(status, 200)
 
 
-
 class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
 
     def setUp(self):
         super(ScheduledUnitUpdateTests, self).setUp()
         plugin_api._create_manager()
         mock_plugins.install()
-        mock_agent.install()
         self.consumer_id = 'test-consumer'
         self.consumer_manager = factory.consumer_manager()
         self.consumer_manager.register(self.consumer_id)
@@ -1658,14 +1666,12 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
         self.assertEqual(status, 200)
 
 
-
 class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
 
     def setUp(self):
         super(ScheduledUnitUninstallTests, self).setUp()
         plugin_api._create_manager()
         mock_plugins.install()
-        mock_agent.install()
         self.consumer_id = 'test-consumer'
         self.consumer_manager = factory.consumer_manager()
         self.consumer_manager.register(self.consumer_id)

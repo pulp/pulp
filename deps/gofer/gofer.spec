@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 0.77.1
+Version: 1.0.4
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -63,7 +63,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/plugins
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/init.d
 mkdir -p %{buildroot}/%{_var}/log/%{name}
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/journal/watchdog
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/share/%{name}/plugins
 mkdir -p %{buildroot}/%{_mandir}/man1
@@ -106,9 +105,7 @@ if [ $1 = 0 ] ; then
 fi
 
 
-###############################################################################
-# python lib
-###############################################################################
+# --- python lib -------------------------------------------------------------
 
 %package -n python-%{name}
 Summary: Gofer python lib modules
@@ -116,27 +113,80 @@ Group: Development/Languages
 Obsoletes: %{name}-lib
 BuildRequires: python
 Requires: python-simplejson
-Requires: python-qpid >= 0.18
 Requires: PyPAM
 %if 0%{?rhel} && 0%{?rhel} < 6
 Requires: python-hashlib
 Requires: python-uuid
-Requires: python-ssl
 %endif
 
 %description -n python-%{name}
-Contains gofer python lib modules.
+Provides gofer python lib modules.
 
 %files -n python-%{name}
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}/*.py*
 %{python_sitelib}/%{name}/rmi/
 %{python_sitelib}/%{name}/messaging/
+%dir %{python_sitelib}/%{name}/transport/
+%{python_sitelib}/%{name}/transport/*.*
 %doc LICENSE
 
-###############################################################################
-# ruby lib
-###############################################################################
+
+# --- python qpid transport --------------------------------------------------
+
+%package -n python-%{name}-qpid
+Summary: Gofer Qpid transport python package
+Group: Development/Languages
+BuildRequires: python
+Requires: python-%{name} >= %{version}
+Requires: python-qpid >= 0.18
+%if 0%{?rhel} && 0%{?rhel} < 6
+Requires: python-ssl
+%endif
+
+%description -n python-%{name}-qpid
+Provides the gofer qpid transport package.
+
+%files -n python-%{name}-qpid
+%{python_sitelib}/%{name}/transport/qpid
+%doc LICENSE
+
+
+# --- python amqplib transport -----------------------------------------------
+
+%package -n python-%{name}-amqplib
+Summary: Gofer amqplib transport python package
+Group: Development/Languages
+BuildRequires: python
+Requires: python-%{name} >= %{version}
+Requires: python-amqplib >= 1.0.2
+
+%description -n python-%{name}-amqplib
+Provides the gofer amqplib transport package.
+
+%files -n python-%{name}-amqplib
+%{python_sitelib}/%{name}/transport/amqplib
+%doc LICENSE
+
+
+# --- python rabbitmq transport -------------------------------------------
+
+%package -n python-%{name}-rabbitmq
+Summary: Gofer rabbitmq transport python package
+Group: Development/Languages
+BuildRequires: python
+Requires: python-%{name} >= %{version}
+Requires: python-librabbitmq >= 1.0.2
+
+%description -n python-%{name}-rabbitmq
+Provides the gofer rabbitmq transport package.
+
+%files -n python-%{name}-rabbitmq
+%{python_sitelib}/%{name}/transport/rabbitmq
+%doc LICENSE
+
+
+# --- ruby lib ---------------------------------------------------------------
 
 %package -n ruby-%{name}
 Summary: Gofer ruby lib modules
@@ -147,7 +197,7 @@ Requires: rubygem(json)
 Requires: rubygem(qpid) >= 0.16.0
 
 %description -n ruby-%{name}
-Contains gofer ruby lib modules.
+Provides gofer ruby lib modules.
 
 %files -n ruby-%{name}
 %defattr(-,root,root,-)
@@ -158,9 +208,7 @@ Contains gofer ruby lib modules.
 %doc LICENSE
 
 
-###############################################################################
-# plugin: system
-###############################################################################
+# --- plugin: system ---------------------------------------------------------
 
 %package -n gofer-system
 Summary: The system plug-in
@@ -169,7 +217,7 @@ BuildRequires: python
 Requires: %{name} >= %{version}
 
 %description -n gofer-system
-Contains the system plug-in.
+Provides the system plug-in.
 The system plug-in provides system functionality.
 
 %files -n gofer-system
@@ -179,32 +227,7 @@ The system plug-in provides system functionality.
 %doc LICENSE
 
 
-###############################################################################
-# plugin: watchdog
-###############################################################################
-
-%package -n gofer-watchdog
-Summary: The watchdog plug-in
-Group: Development/Languages
-BuildRequires: python
-Requires: %{name} >= %{version}
-
-%description -n gofer-watchdog
-Contains the watchdog plug-in.
-This plug-in is used to support time out
-for asynchronous RMI calls.
-
-%files -n gofer-watchdog
-%defattr(-,root,root,-)
-%config(noreplace) %{_sysconfdir}/%{name}/plugins/watchdog.conf
-%{_usr}/share/%{name}/plugins/watchdog.*
-%{_var}/lib/%{name}/journal/watchdog
-%doc LICENSE
-
-
-###############################################################################
-# plugin: virt
-###############################################################################
+# --- plugin: virt -----------------------------------------------------------
 
 %package -n gofer-virt
 Summary: The virtualization plugin
@@ -214,7 +237,7 @@ Requires: libvirt-python
 Requires: %{name} >= %{version}
 
 %description -n gofer-virt
-Contains the virtualization plugin.
+Provides the virtualization plugin.
 This plug-in provides RMI access to libvirt functionality.
 
 %files -n gofer-virt
@@ -224,9 +247,7 @@ This plug-in provides RMI access to libvirt functionality.
 %doc LICENSE
 
 
-###############################################################################
-# plugin: package
-###############################################################################
+# --- plugin: package --------------------------------------------------------
 
 %package -n gofer-package
 Summary: The package (RPM) plugin
@@ -236,7 +257,7 @@ Requires: yum
 Requires: %{name} >= %{version}
 
 %description -n gofer-package
-Contains the package plugin.
+Provides the package plugin.
 This plug-in provides RMI access to package (RPM) management.
 
 %files -n gofer-package
@@ -246,10 +267,56 @@ This plug-in provides RMI access to package (RPM) management.
 %doc LICENSE
 
 
+# --- changelog --------------------------------------------------------------
+
 
 %changelog
-* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 0.77.1-1
-- 1023056 - use qpid builtin SSL transport. (jortel@redhat.com)
+* Wed Mar 12 2014 Jeff Ortel <jortel@redhat.com> 1.0.4-1
+- gofer 1.0.4. (jortel@redhat.com)
+* Wed Mar 12 2014 Jeff Ortel <jortel@redhat.com> 1.0.4-1
+- Improved import between plugins. (jortel@redhat.com)
+
+* Tue Mar 11 2014 Jeff Ortel <jortel@redhat.com> 1.0.3-1
+- make queue non-exclusive by default. (jortel@redhat.com)
+
+* Mon Mar 10 2014 Jeff Ortel <jortel@redhat.com> 1.0.2-1
+- Log consumed messages. (jortel@redhat.com)
+
+* Mon Mar 10 2014 Jeff Ortel <jortel@redhat.com> 1.0.1-1
+- Improved agent logging. (jortel@redhat.com)
+
+* Mon Mar 10 2014 Jeff Ortel <jortel@redhat.com> 1.0.0-1
+- Detach before attach and make detach idempotent. (jortel@redhat.com)
+- Explicit manual plugin attach; get rid of plugin monitor thread.
+  (jortel@redhat.com)
+- Support virtual_host and host_validation configuration options.
+  (jortel@redhat.com)
+- Support userid and password configuration options. (jortel@redhat.com)
+- Change envelope/document and Envelope/Document. (jortel@redhat.com)
+- Support pluggable message authentication. (jortel@redhat.com)
+- Send 'accepted' status when RMI request is added to the pending queue.
+  (jortel@redhat.com)
+- Send 'rejected' status report when message validation failed.
+  (jortel@redhat.com)
+- Direct routing by uuid; no more blending of plugin APIs. (jortel@redhat.com)
+- Move Admin class from builtin plugin to internal. (jortel@redhat.com)
+- Improved pending queue. (jortel@redhat.com)
+- Improved thread pool. (jortel@redhat.com)
+- Purge unused filter in configuration. (jortel@redhat.com)
+- Discontinue support for configuration directives. (jortel@redhat.com)
+- Purge mocks in favor of python mock. (jortel@redhat.com)
+- Support multiple transports (amqplib, rabbmitmq, python-qpid).
+- Discontinue support for deprectated watchdog. (jortel@redhat.com)
+- Simplified RMI timeout.  No longer supporting timeout for RMI completion.
+  (jortel@redhat.com)
+* Tue Jan 14 2014 Jeff Ortel <jortel@redhat.com> 1.0.0-0.1
+- default asynchronous timeout to None. (jortel@redhat.com)
+  add 'send' as required by transports. (jortel@redhat.com)
+- watchdog removed; timeout flows revised. watchdog removed; add 'accepted'
+  status; add 'wait' option; redefine timeout option as single integer
+  pertaining to the accepted. (jortel@redhat.com)
+- Add 'match' criteria operator. (jortel@redhat.com)
+- Support plugable transports. (jortel@redhat.com)
 * Mon Sep 30 2013 Jeff Ortel <jortel@redhat.com> 0.77-1
 - Reduce logging do DEBUG on frequent messaging and RMI processing events.
   (jortel@redhat.com)

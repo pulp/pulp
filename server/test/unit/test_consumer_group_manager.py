@@ -15,6 +15,7 @@ import traceback
 import unittest
 
 from base import PulpServerTests
+from mock import patch
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
@@ -53,7 +54,8 @@ class ConsumerGroupTests(PulpServerTests):
 
     def _create_consumer(self, consumer_id):
         manager = managers_factory.consumer_manager()
-        return manager.register(consumer_id)
+        consumer, certificate = manager.register(consumer_id)
+        return consumer
 
 
 class ConsumerGroupCUDTests(ConsumerGroupTests):
@@ -193,7 +195,8 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(consumer['id'] in group['consumer_ids'])
 
-    def test_unregister(self):
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    def test_unregister(self, unused):
         group_id = 'delete_from_me'
         consumer = self._create_consumer('delete_me')
         self.manager.create_consumer_group(group_id, consumer_ids=[consumer['id']])

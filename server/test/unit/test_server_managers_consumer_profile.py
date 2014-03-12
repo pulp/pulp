@@ -16,6 +16,8 @@ import base
 import mock
 import pymongo
 
+from mock import patch
+
 from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.server.exceptions import MissingResource
@@ -23,7 +25,6 @@ from pulp.server.managers import factory
 from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.devel import mock_plugins
-from pulp.devel import mock_agent
 
 
 class ProfileManagerTests(base.PulpServerTests):
@@ -40,14 +41,12 @@ class ProfileManagerTests(base.PulpServerTests):
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         mock_plugins.install()
-        mock_agent.install()
 
     def tearDown(self):
         super(ProfileManagerTests, self).tearDown()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         mock_plugins.reset()
-        mock_agent.reset()
 
     def populate(self):
         manager = factory.consumer_manager()
@@ -285,7 +284,8 @@ class ProfileManagerTests(base.PulpServerTests):
         profiles = list(cursor)
         self.assertEquals(len(profiles), 0)
 
-    def test_consumer_unregister_cleanup(self):
+    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    def test_consumer_unregister_cleanup(self, *unused):
         # Setup
         self.test_create()
         # Test

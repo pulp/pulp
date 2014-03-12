@@ -11,10 +11,9 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import hashlib
-
 from pulp.server.config import config as pulp_conf
 
+from pulp.server.agent.auth import Authenticator
 from pulp.server.agent.direct.services import Services
 
 
@@ -30,8 +29,8 @@ class Context(object):
     some cases DB entity IDs so we can update the DB based on the result of the
     operation on the agent.
 
-    :ivar uuid: The agent UUID.
-    :type uiud: str
+    :ivar agent_id: The agent ID.
+    :type agent_id: str
     :ivar url: The broker URL.
     :type url: str
     :ivar secret: The shared secret for the consumer.
@@ -50,27 +49,10 @@ class Context(object):
         :param consumer: A consumer DB model object.
         :type consumer: dict
         """
-        self.uuid = consumer['id']
+        self.agent_id = consumer['id']
         self.url = pulp_conf.get('messaging', 'url')
-        certificate = consumer.get('certificate')
-        hash = hashlib.sha256()
-        hash.update(certificate.strip())
-        self.secret = hash.hexdigest()
+        self.transport = pulp_conf.get('messaging', 'transport')
         self.details = details
-        self.watchdog = Services.watchdog
         self.reply_queue = Services.REPLY_QUEUE
-
-    @staticmethod
-    def get_timeout(option):
-        """
-        Get a timeout option from the server configuration.
-        The value is parsed and converted into a gofer
-        timeout tuple.
-        :param option: The name of a config option.
-        :type option: str
-        :return: A gofer timeout tuple: (<initial>, <duration>).
-        :rtype tuple
-        """
-        value = pulp_conf.get('messaging', option)
-        initial, duration = value.split(':')
-        return initial, duration
+        self.authenticator = Authenticator()
+        self.authenticator.load()

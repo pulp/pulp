@@ -12,6 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
+import urllib2
+import errno
 
 from gettext import gettext as _
 from M2Crypto.X509 import X509Error
@@ -20,9 +22,12 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
 from pulp.client.extensions.decorator import priority
-from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client.extensions import exceptions
 from pulp.client import validators
+
+
+OPTION_EXCHANGE_KEYS = PulpCliFlag('--keys', _('exchange public keys with the server'))
 
 
 # -- framework hook -----------------------------------------------------------
@@ -40,7 +45,7 @@ def initialize(context):
     d = 'user-readable description for the consumer'
     description_option = PulpCliOption('--description', _(d), required=False)
 
-    d =  'adds/updates/deletes key-value pairs to programmatically identify the repository; '
+    d = 'adds/updates/deletes key-value pairs to pragmatically identify the repository; '
     d += 'pairs must be separated by an equal sign (e.g. key=value); multiple notes can '
     d += 'be %(i)s by specifying this option multiple times; notes are deleted by '
     d += 'specifying "" as the value'
@@ -67,6 +72,7 @@ def initialize(context):
     update_command.add_option(name_option)
     update_command.add_option(description_option)
     update_command.add_option(update_note_option)
+    update_command.add_option(OPTION_EXCHANGE_KEYS)
     context.cli.add_command(update_command)
 
     # Unregister Command
@@ -82,7 +88,47 @@ def initialize(context):
     context.cli.add_command(StatusCommand(context, 'status', _(d)))
 
 
+def download(url, location):
+    """
+    Download files to the specified location.
+    :param url: The file URL.
+    :type url: str
+    :param location: The absolute path to where the downloaded
+        file is to be stored.
+    :type location: str
+    """
+    request = urllib2.urlopen(url)
+    try:
+        content = request.read()
+        fp = open(location, 'w+')
+        try:
+            fp.write(content)
+        finally:
+            fp.close()
+    finally:
+        request.close()
+
+
+def update_server_key(conf):
+    """
+    Download the server's RSA key and store in the location
+    specified in the configuration.
+    :param conf: The consumer configuration object.
+    :type conf: dict
+    """
+    host = conf['server']['host']
+    location = conf['server']['rsa_pub']
+    url = 'https://%s/pulp/static/rsa_pub.key' % host
+    try:
+        os.makedirs(os.path.dirname(location))
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise
+    download(url, location)
+
+
 # -- common exceptions --------------------------------------------------------
+
 
 class RegisterCommand(PulpCliCommand):
 
@@ -92,11 +138,10 @@ class RegisterCommand(PulpCliCommand):
         self.prompt = context.prompt
 
     def register(self, **kwargs):
-
-        # Get consumer id
-        id = kwargs['consumer-id']
+        consumer_id = kwargs['consumer-id']
 
         # Check if this consumer is already registered
+
         existing_consumer = load_consumer_id(self.context)
         if existing_consumer:
             m = _('This system has already been registered as a consumer. Please '
@@ -106,14 +151,12 @@ class RegisterCommand(PulpCliCommand):
             return
 
         # Get other consumer parameters
-        name = id
-        if 'display-name' in kwargs:
-            name = kwargs['display-name']
-        description = kwargs['description']
-        notes = None
-        if 'note' in kwargs.keys():
-            if kwargs['note']:
-                notes = args_to_notes_dict(kwargs['note'], include_none=False)
+
+        name = kwargs.get('display-name', consumer_id)
+        description = kwargs.get('description')
+        notes = kwargs.get('note')
+        if notes:
+            notes = args_to_notes_dict(notes, include_none=False)
 
         # Check write permissions to cert directory
         id_cert_dir = self.context.config['filesystem']['id_cert_dir']
@@ -122,17 +165,44 @@ class RegisterCommand(PulpCliCommand):
             self.prompt.render_failure_message(msg % {'d': id_cert_dir})
             return exceptions.CODE_PERMISSIONS_EXCEPTION
 
-        # Call the server
-        consumer = self.context.server.consumer.register(id, name, description, notes).response_body
+        # RSA key
+        path = self.context.config['authentication']['rsa_pub']
+        fp = open(path)
+        try:
+            rsa_pub = fp.read()
+        finally:
+            fp.close()
 
-        # Write consumer cert
+        # Call the server
+
+        reply = self.context.server.consumer.register(
+            consumer_id,
+            name=name,
+            description=description,
+            notes=notes,
+            rsa_pub=rsa_pub)
+
+        certificate = reply.response_body['certificate']
+
+        # Write consumer certificate
+
         id_cert_name = self.context.config['filesystem']['id_cert_filename']
         cert_filename = os.path.join(id_cert_dir, id_cert_name)
-        f = open(cert_filename, 'w')
-        f.write(consumer['certificate'])
-        f.close()
+        fp = open(cert_filename, 'w')
+        try:
+            fp.write(certificate)
+        finally:
+            fp.close()
 
-        self.prompt.render_success_message('Consumer [%s] successfully registered' % id)
+        # download server public key
+
+        try:
+            update_server_key(self.context.config)
+        except Exception, e:
+            msg = _('Download server RSA key failed [%(e)s]' % {'e': e})
+            self.prompt.render_failure_message(msg)
+
+        self.prompt.render_success_message('Consumer [%s] successfully registered' % consumer_id)
 
 
 class UpdateCommand(PulpCliCommand):
@@ -143,12 +213,11 @@ class UpdateCommand(PulpCliCommand):
         self.prompt = context.prompt
 
     def update(self, **kwargs):
-
-        # Assemble the delta for all options that were passed in
         consumer_id = load_consumer_id(self.context)
         if not consumer_id:
             self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
             return
+
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         if 'note' in delta.keys():
             if delta['note']:
@@ -161,9 +230,24 @@ class UpdateCommand(PulpCliCommand):
             key = key.replace('-', '_')
             delta[key] = v
 
+        if kwargs.get(OPTION_EXCHANGE_KEYS.keyword):
+            path = self.context.config['authentication']['rsa_pub']
+            fp = open(path)
+            try:
+                delta['rsa_pub'] = fp.read()
+            finally:
+                fp.close()
+
         try:
             self.context.server.consumer.update(consumer_id, delta)
             self.prompt.render_success_message('Consumer [%s] successfully updated' % consumer_id)
+            if not kwargs.get(OPTION_EXCHANGE_KEYS.keyword):
+                return
+            try:
+                update_server_key(self.context.config)
+            except Exception, e:
+                msg = _('Download server RSA key failed [%(e)s]' % {'e': e})
+                self.prompt.render_failure_message(msg)
         except NotFoundException:
             self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
 
@@ -282,6 +366,7 @@ class HistoryCommand(PulpCliCommand):
         order = filters
         for history in history_list:
             self.prompt.render_document(history, filters=filters, order=order)
+
 
 class StatusCommand(PulpCliCommand):
 
