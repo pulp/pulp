@@ -85,7 +85,7 @@ class Authenticator(object):
     def sign(self, digest):
         """
         Sign the specified message.
-        :param digest: An AMQP message digest.
+        :param digest: A message digest.
         :type digest: str
         :return: The message signature.
         :rtype: str
@@ -97,7 +97,7 @@ class Authenticator(object):
         Validate the specified message and signature.
         :param uuid: The (unused) uuid of the sender.
         :type uuid: str
-        :param digest: An AMQP message digest.
+        :param digest: A message digest.
         :type digest: str
         :param signature: A message signature.
         :type signature: str
