@@ -9,7 +9,7 @@
 
 Name:           python-%{srcname}
 Version:        3.3.0.16
-Release:        1%{?dist}
+Release:        2%{?dist}
 # We need this to be 1 for Fedora systems, since the official Fedora billiards package is epoch 1. If we don't
 # that package will always be considered "newer" than ours, even when our version string is greater.
 Epoch:          1
@@ -72,7 +72,9 @@ popd
 %endif # with_python3
 
 %check
+%if 0%{?rhel} != 6
 %{__python} setup.py test
+%fi
 #
 %if 0%{?with_python3}
 pushd %{py3dir}
