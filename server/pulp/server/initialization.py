@@ -14,11 +14,6 @@
 import logging
 import sys
 
-# We need to initialize logging early, because some of the other imports in this module can generate
-# log messages.
-from pulp.server import logs
-logs.start_logging()
-
 # It is important that we initialize the DB connection early
 from pulp.server.db import connection as db_connection
 db_connection.initialize()
