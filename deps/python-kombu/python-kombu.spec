@@ -10,8 +10,8 @@
 Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
-Version:        3.0.12
-Release:        4.pulp%{?dist}
+Version:        3.0.13
+Release:        1.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,6 +19,7 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
+Patch0:         qpid_transport.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
