@@ -43,6 +43,9 @@ def initialize():
     if _IS_INITIALIZED:
         return
 
+    # This is here temporarily, so that we can run the monkey patches for qpid and stuff
+    import kombu.transport.qpid
+
     # Load plugins and resolve against types. This is also a likely candidate
     # for causing the server to fail to start.
     try:
