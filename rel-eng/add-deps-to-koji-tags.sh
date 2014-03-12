@@ -34,7 +34,7 @@ rm -Rf ${TITO_DIR}
 mkdir -p ${TITO_DIR}
 
 
-PROJECTS="gofer python-okaara python-isodate"
+PROJECTS="gofer python-isodate"
 PROJECTS_NON_RHEL5="m2crypto mod_wsgi createrepo"
 PROJECTS_NON_RHEL5=("${PROJECTS_NON_RHEL5[@]} python-nectar python-semantic-version")
 PROJECTS_NON_RHEL5=("${PROJECTS_NON_RHEL5[@]} python-celery python-amqp python-anyjson")

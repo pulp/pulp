@@ -6,7 +6,7 @@ import shutil
 import subprocess
 import time
 import uuid
-from optparse import OptionParser
+import argparse
 
 import koji
 
@@ -40,38 +40,68 @@ DIST_LIST = DISTRIBUTION_MAP.keys()
 WORKSPACE = os.path.realpath(os.path.join(os.path.dirname(__file__), '../../'))
 MASH_DIR = os.path.join(WORKSPACE, 'mash')
 TITO_DIR = os.path.join(WORKSPACE, 'tito')
+DEPS_DIR = os.path.join(WORKSPACE, 'pulp', 'deps')
 
-usage = "usage: %prog [options] <pulp-version> <stream-target>\n  The stream target is one of " \
-        "(beta, testing, or stable)"
-parser = OptionParser(usage)
-parser.add_option("--packageonly", action="store_true", default=False,
-                  help="Create the repos only.  Do not build with koji.")
-parser.add_option("--push", action="store_true", default=False,
-                  help="Push the created repos to fedorapeople.")
-parser.add_option("--scratch", action="store_true", default=False,
-                  help="Use the scratch option for the koji builder.")
-(opts, args) = parser.parse_args()
+parser = argparse.ArgumentParser()
+parser.add_argument("version", help="The version of pulp to run the build for (2.4, 2.5, etc.)")
+parser.add_argument("stream", choices=['stable', 'testing', 'beta'],
+                    help="The target release stream to build.")
+parser.add_argument("--packageonly", action="store_true", default=False,
+                    help="Create the repos only.  Do not build with koji.")
+parser.add_argument("--disable-packaging", action="store_true", default=False,
+                    help="Do not package or create repos")
+parser.add_argument("--push", action="store_true", default=False,
+                    help="Push the created repos to fedorapeople.")
+parser.add_argument("--scratch", action="store_true", default=False,
+                    help="Use the scratch option for the koji builder.")
+parser.add_argument("--build-dependency",
+                    help="If specified, only build the specified dependency")
+parser.add_argument("--distribution", choices=DIST_LIST, nargs='+',
+                    help="If specified, only build for the specified distribution")
 
-if len(args) < 2:
-    print "ERROR: need to specify pulp-version and target\n"
-    parser.print_help()
-    sys.exit(1)
+opts = parser.parse_args()
 
-pulp_version = args[0]
-build_stream = args[1]
-
-if build_stream not in ['stable', 'testing', 'beta']:
-    print "Error: %s is not a valid build stream.  Value must be one of 'stable', 'testing'," \
-          " or 'beta'" % build_stream
-    sys.exit(1)
+pulp_version = opts.version
+build_stream = opts.stream
 
 if build_stream == 'stable':
     build_tag = "pulp-%s" % pulp_version
 else:
     build_tag = "pulp-%s-%s" % (pulp_version, build_stream)
 
+# If we are building with a dependency override the global default distribution list
+# with the list for that dependency.
+if opts.build_dependency:
+    dist_list_file = os.path.join(DEPS_DIR, opts.build_dependency, 'dist_list.txt')
+    try:
+        with open(dist_list_file, 'r') as handle:
+            line = handle.readline()
+            dists_from_dep = line.split(' ')
+            # Verify that all the dists specified are valid
+            if not set(dists_from_dep).issubset(DIST_LIST):
+                print "The distribution keys specified for %s is not a subset of %s" % \
+                      (opts.build_dependency, str(DIST_LIST))
+                sys.exit(1)
+            DIST_LIST = dists_from_dep
+    except IOError:
+        print "dist_list.txt file not found for %s." % opts.build_dependency
+
+
+# If a specific distribution or list of distributions has been specified on the command line
+# use that list
+if opts.distribution:
+    print "Building for %s only" % opts.distribution
+    DIST_LIST = opts.distribution
+
 
 def ensure_dir(target_dir):
+    """
+    Ensure that the directory specified exists and is empty.  This will delete the directory
+    if it already exists
+
+    :param target_dir: The directory to process
+    :type target_dir: str
+    """
     shutil.rmtree(target_dir, ignore_errors=True)
     try:
         os.makedirs(target_dir)
@@ -82,8 +112,6 @@ def ensure_dir(target_dir):
 def build_srpm(distributions):
     """
     Build the srpms to feed to koji.
-    For now we are only doing real builds.  There is commented out code in here
-    to bump the version with a timestamp for when we want to do scratch builds
 
     :param distributions: list of distribution tags that we want to build SRPMs for
     :type distributions: list of str
@@ -92,13 +120,19 @@ def build_srpm(distributions):
         tito_path = os.path.join(TITO_DIR, dist)
         ensure_dir(tito_path)
         spec_list = ['pulp', 'pulp/nodes', 'pulp_rpm', 'pulp_puppet']
+        if opts.build_dependency:
+            spec_list = ['pulp/deps/%s' % opts.build_dependency]
+
         for spec_location in spec_list:
             working_dir = os.path.join(WORKSPACE, spec_location)
             os.chdir(working_dir)
             distribution = ".%s" % dist
             print "Building Srpm for %s" % distribution
-            subprocess.check_call(['tito', 'build', '--offline', '--srpm', '--output', tito_path,
-                                  '--dist', distribution])
+            command = ['tito', 'build', '--offline', '--srpm', '--output', tito_path,
+                                  '--dist', distribution]
+            if opts.scratch:
+                command.append('--test')
+            subprocess.check_call(command)
 
 
 def build_with_koji(build_tag_prefix, target_dists, scratch=False):
@@ -119,18 +153,18 @@ def build_with_koji(build_tag_prefix, target_dists, scratch=False):
 
     for dist in target_dists:
         srpm_dir = os.path.join(TITO_DIR, dist)
-        build_target = "%s-%s" % (build_tag_prefix, DISTRIBUTION_MAP[distvalue])
+        build_target = "%s-%s" % (build_tag_prefix, DISTRIBUTION_MAP[dist])
 
         # Get all the source RPMs that were built
         # submit each srpm
         for dir_file in os.listdir(srpm_dir):
             if dir_file.endswith(".rpm"):
-                full_path = os.path.join(srpm_dir, file)
+                full_path = os.path.join(srpm_dir, dir_file)
                 # upload the file
-                print "Uploading %s" % file
+                print "Uploading %s" % dir_file
                 mysession.uploadWrapper(full_path, upload_prefix)
                 # Start the koji build
-                source = "%s/%s" % (upload_prefix, file)
+                source = "%s/%s" % (upload_prefix, dir_file)
                 task_id = int(mysession.build(source, build_target, {'scratch': scratch}))
                 print "Created Build Task: %i" % task_id
                 builds.append(task_id)
@@ -259,32 +293,35 @@ os.makedirs(TITO_DIR)
 if not opts.packageonly:
     build_srpm(DIST_LIST)
     builds = build_with_koji(build_tag, DIST_LIST, opts.scratch)
+    wait_for_completion(builds)
 
-# Download the rpms and create the yum repos
-for distkey, distvalue in DISTRIBUTION_MAP.iteritems():
-    build_target = "%s-%s" % (build_tag, distvalue)
-    output_dir = os.path.join(MASH_DIR, DISTRIBUTION_PUBLISH_DIRECTORIES[distkey])
-    ensure_dir(output_dir)
-    for arch in ARCH_LIST:
-        os.makedirs(os.path.join(output_dir, arch))
-    print "Downloading tag: %s to %s" % (build_target, output_dir)
-    download_rpms_from_tag(build_target, output_dir)
-    build_repos(output_dir)
+# Don't build the repos if we are building a dependency
+if not opts.disable_packaging:
+    # Download the rpms and create the yum repos
+    for distkey, distvalue in DISTRIBUTION_MAP.iteritems():
+        build_target = "%s-%s" % (build_tag, distvalue)
+        output_dir = os.path.join(MASH_DIR, DISTRIBUTION_PUBLISH_DIRECTORIES[distkey])
+        ensure_dir(output_dir)
+        for arch in ARCH_LIST:
+            os.makedirs(os.path.join(output_dir, arch))
+        print "Downloading tag: %s to %s" % (build_target, output_dir)
+        download_rpms_from_tag(build_target, output_dir)
+        build_repos(output_dir)
 
-# Push to hosted location
-if opts.push:
-    print "Push has not been implemented yet."
-    repos_dir = '/srv/repos/pulp/pulp'
-    target_repo_dir = "%s/%s/%s" % (repos_dir, build_stream, pulp_version)
-    # tar up all the files
-    os.chdir(MASH_DIR)
-    subprocess.check_call("tar cvf repo.tar *", shell=True)
-    tar_file = os.path.join(MASH_DIR, "repo.tar")
-    print "Need to %s to sync to fedorapeople %s " % (tar_file, target_repo_dir)
-    # print "Cleaning out previously published repo directory"
-    # command = 'rm -rf %s' % target_repo_dir
-    # run_destination_ssh_step(command)
-   # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
-    # print "Finished updating repo"
+    # Push to hosted location
+    if opts.push:
+        print "Push has not been implemented yet."
+        repos_dir = '/srv/repos/pulp/pulp'
+        target_repo_dir = "%s/%s/%s" % (repos_dir, build_stream, pulp_version)
+        # tar up all the files
+        os.chdir(MASH_DIR)
+        subprocess.check_call("tar cvf repo.tar *", shell=True)
+        tar_file = os.path.join(MASH_DIR, "repo.tar")
+        print "Need to %s to sync to fedorapeople %s " % (tar_file, target_repo_dir)
+        # print "Cleaning out previously published repo directory"
+        # command = 'rm -rf %s' % target_repo_dir
+        # run_destination_ssh_step(command)
+        # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
+        # print "Finished updating repo"
 
 
