@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.3.alpha%{?dist}
+Release: 0.4.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -588,6 +588,15 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.4.alpha
+- 1075701 - Re-enable Celery log capturing. (rbarlow@redhat.com)
+- 1071960 - Support message authentication. Port pulp to gofer 1.0. Removed
+  timeouts for agent related tasks. (jortel@redhat.com)
+- 1066040 - removing 'permissions' from valid update keywords for role update,
+  moving manager functionality out of authorization.py, removing duplicate
+  declaration of permission operation constants in permission.py and adding
+  missing unit tests (skarmark@redhat.com)
+
 * Mon Feb 24 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.3.alpha
 - 980150 - support broker host that is different than pulp host.
   (jortel@redhat.com)
