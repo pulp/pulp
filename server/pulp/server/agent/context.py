@@ -29,8 +29,8 @@ class Context(object):
     some cases DB entity IDs so we can update the DB based on the result of the
     operation on the agent.
 
-    :ivar uuid: The agent UUID.
-    :type uiud: str
+    :ivar agent_id: The agent ID.
+    :type agent_id: str
     :ivar url: The broker URL.
     :type url: str
     :ivar secret: The shared secret for the consumer.
@@ -49,7 +49,7 @@ class Context(object):
         :param consumer: A consumer DB model object.
         :type consumer: dict
         """
-        self.uuid = consumer['id']
+        self.agent_id = consumer['id']
         self.url = pulp_conf.get('messaging', 'url')
         self.transport = pulp_conf.get('messaging', 'transport')
         self.details = details

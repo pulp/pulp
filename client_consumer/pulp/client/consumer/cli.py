@@ -95,6 +95,7 @@ def download(url, location):
     :type url: str
     :param location: The absolute path to where the downloaded
         file is to be stored.
+    :type location: str
     """
     request = urllib2.urlopen(url)
     try:

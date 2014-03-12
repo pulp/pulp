@@ -80,7 +80,7 @@ class PulpAgent(object):
         """
         criteria = {'match': {'task_id': task_id}}
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -106,7 +106,7 @@ class Consumer(object):
         :type context: pulp.server.agent.context.Context
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -128,7 +128,7 @@ class Consumer(object):
         :type options: dict
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -150,7 +150,7 @@ class Consumer(object):
         :type options: dict
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -178,7 +178,7 @@ class Content(object):
         :type options: dict
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -200,7 +200,7 @@ class Content(object):
         :type options: dict
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -222,7 +222,7 @@ class Content(object):
         :type options: dict
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport,
@@ -245,7 +245,7 @@ class Profile(object):
         :type context: pulp.server.agent.context.Context
         """
         agent = Agent(
-            context.uuid,
+            context.agent_id,
             url=context.url,
             authenticator=context.authenticator,
             transport=context.transport)

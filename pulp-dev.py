@@ -73,7 +73,6 @@ DIRS = (
     '/var/lib/pulp/published',
     '/var/lib/pulp/uploads',
     '/var/lib/pulp/static',
-    '/var/www/pulp',
     '/var/log/pulp',
     '/var/www/.python-eggs', # needed for older versions of mod_wsgi
 )
@@ -99,7 +98,6 @@ LINKS = (
     # Server Web Configuration
     ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
     ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
-    ('/var/lib/pulp/static', '/var/www/pulp/static'),
 
     # Pulp Nodes
     ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
@@ -206,8 +204,10 @@ def gen_rsa_keys():
     for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
         key_path = os.path.join(key_dir, 'rsa.key')
         key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
-        os.system('openssl genrsa -out %s 1024' % key_path)
-        os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
+        if not os.path.exists(key_path):
+            os.system('openssl genrsa -out %s 2048' % key_path)
+        if not os.path.exists(key_path_pub):
+            os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
         os.system('chmod 640 %s' % key_path)
         os.system('chown root:apache %s' % key_path)
         os.system('chown root:apache %s' % key_path_pub)

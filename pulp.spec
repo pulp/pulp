@@ -133,7 +133,6 @@ mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/static
 mkdir -p %{buildroot}/%{_var}/www
-mkdir -p %{buildroot}/%{_var}/www/pulp
 
 # Configuration
 cp -R server/etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
@@ -167,7 +166,6 @@ cp -R server/srv %{buildroot}
 
 # Web Content
 ln -s %{_var}/lib/pulp/published %{buildroot}/%{_var}/www/pub
-ln -s %{_var}/lib/pulp/static %{buildroot}/%{_var}/www/pulp/static
 
 # Tools
 cp server/bin/* %{buildroot}/%{_bindir}
@@ -233,7 +231,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.0.0
+Requires: python-gofer >= 1.0.4
+Requires: python-gofer-qpid >= 1.0.4
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -299,7 +298,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_var}/lib/%{name}/
 %dir %{_var}/log/%{name}
 %{_var}/www/pub
-%{_var}/www/pulp
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE
@@ -324,7 +322,7 @@ KEY_PATH="$KEY_DIR/rsa.key"
 KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
 if [ ! -f $KEY_PATH ]
 then
-  openssl genrsa -out $KEY_PATH 1024 &> /dev/null
+  openssl genrsa -out $KEY_PATH 2048 &> /dev/null
   openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
 fi
 chmod 640 $KEY_PATH
@@ -501,7 +499,7 @@ KEY_PATH="$KEY_DIR/rsa.key"
 KEY_PATH_PUB="$KEY_DIR/rsa_pub.key"
 if [ ! -f $KEY_PATH ]
 then
-  openssl genrsa -out $KEY_PATH 1024 &> /dev/null
+  openssl genrsa -out $KEY_PATH 2048 &> /dev/null
   openssl rsa -in $KEY_PATH -pubout > $KEY_PATH_PUB 2> /dev/null
 fi
 chmod 640 $KEY_PATH
@@ -515,7 +513,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: gofer >= 1.0.0
+Requires: python-gofer >= 1.0.4
+Requires: python-gofer-qpid >= 1.0.4
+Requires: gofer >= 1.0.4
 Requires: m2crypto
 
 %description agent
