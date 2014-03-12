@@ -318,7 +318,7 @@ if not opts.disable_packaging:
         # print "Cleaning out previously published repo directory"
         # command = 'rm -rf %s' % target_repo_dir
         # run_destination_ssh_step(command)
-       # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
+        # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
         # print "Finished updating repo"
 
 
