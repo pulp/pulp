@@ -82,6 +82,7 @@ if opts.build_dependency:
                 print "The distribution keys specified for %s is not a subset of %s" % \
                       (opts.build_dependency, str(DIST_LIST))
                 sys.exit(1)
+            DIST_LIST = dists_from_dep
     except IOError:
         print "dist_list.txt file not found for %s." % opts.build_dependency
 
