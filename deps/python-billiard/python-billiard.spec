@@ -99,6 +99,19 @@ popd
 %endif # with_python3
 
 %changelog
+* Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 3.3.0.16-2
+- Don't require nose-3 on rhel6 since that package doesn't exist and we are
+  skipping the unit tests on that dist (bcourt@redhat.com)
+- fix if block (bcourt@redhat.com)
+- Update to skip running the billiard unit tests on the rhel 6 builder
+  (bcourt@redhat.com)
+- Remove python-okaara since a newer version is in epel and add a dist_list.txt
+  file with the list of distributions each dependency should be built for
+  (bcourt@redhat.com)
+- Update billiard 3 spec to add python-nose-cover3 (bcourt@redhat.com)
+- Update dependency READMEs. (rbarlow@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+
 * Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.16-1
 - Raise python-billiard to version 3.3.0.16. (rbarlow@redhat.com)
 - Refactor all sync/publish commands to use a common query builder.
