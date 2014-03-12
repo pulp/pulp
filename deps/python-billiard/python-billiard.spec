@@ -74,7 +74,7 @@ popd
 %check
 %if 0%{?rhel} != 6
 %{__python} setup.py test
-%fi
+%endif
 #
 %if 0%{?with_python3}
 pushd %{py3dir}
