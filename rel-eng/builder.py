@@ -128,8 +128,12 @@ def build_srpm(distributions):
             os.chdir(working_dir)
             distribution = ".%s" % dist
             print "Building Srpm for %s" % distribution
-            subprocess.check_call(['tito', 'build', '--offline', '--srpm', '--output', tito_path,
-                                  '--dist', distribution])
+            command = ['tito', 'build', '--offline', '--srpm', '--output', tito_path,
+                                  '--dist', distribution]
+            if opts.scratch:
+                command.append('--test')
+
+            subprocess.check_call(command)
 
 
 def build_with_koji(build_tag_prefix, target_dists, scratch=False):
