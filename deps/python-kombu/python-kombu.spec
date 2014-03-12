@@ -163,6 +163,25 @@ popd
 %endif # with_python3
 
 %changelog
+* Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 3.0.13-1.pulp
+- Updating with latest stable qpid patch (bmbouter@gmail.com)
+- Bump the Release of python-kombu to match the previously built version
+  (bcourt@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-4].
+  (bcourt@redhat.com)
+- add python-importlib to build requirements for rhel6 (bcourt@redhat.com)
+- Update to include requirement of python-ordereddict on rhel6 which has python
+  2.6 installed (bcourt@redhat.com)
+- Automatic commit of package [python-kombu] minor release [3.0.12-3].
+  (bcourt@redhat.com)
+- Bump release and add epoch to sub package (bcourt@redhat.com)
+- Bumped kombu version to 3.0.13 (bmbouter@gmail.com)
+- Merge branch 'bmbouter-kombu-qpid' (bmbouter@gmail.com)
+- Added pulp to release field of python-kombu (bmbouter@gmail.com)
+- Updating python-kombu README (bmbouter@gmail.com)
+- changing name based on review (mhrivnak@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+
 * Tue Mar 11 2014 Barnaby Court <bcourt@redhat.com> 3.0.12-4
 - add python-importlib to build requirements for rhel6 (bcourt@redhat.com)
 - Update for rhel6 mock builder support (bcourt@redhat.com)
