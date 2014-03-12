@@ -19,6 +19,7 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
+Patch0: qpid_transport.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel

@@ -132,7 +132,8 @@ def build_srpm(distributions):
                                   '--dist', distribution]
             if opts.scratch:
                 command.append('--test')
-            subprocess.check_call(command)
+
+            subprocess.check_call(command, shell=True)
 
 
 def build_with_koji(build_tag_prefix, target_dists, scratch=False):
