@@ -108,6 +108,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Mar 13 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.16-3
+- Change the logic for whether to run billiard tests. (rbarlow@redhat.com)
+
 * Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 3.3.0.16-2
 - Don't require nose-3 on rhel6 since that package doesn't exist and we are
   skipping the unit tests on that dist (bcourt@redhat.com)
