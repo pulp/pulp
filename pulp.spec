@@ -173,6 +173,8 @@ cp server/bin/* %{buildroot}/%{_bindir}
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.key
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/ca.crt
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/rsa.key
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/rsa_pub.key
 
 # Install SELinux policy modules
 pushd server/selinux/server
@@ -185,6 +187,11 @@ popd
 %endif # End server installation block
 
 # Everything else installation
+
+# Ghost
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/rsa.key
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/rsa_pub.key
+touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 
 # Configuration
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
