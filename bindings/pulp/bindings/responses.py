@@ -18,6 +18,7 @@ RESPONSE_ACCEPTED = 'accepted'
 RESPONSE_POSTPONED = 'postponed'
 RESPONSE_REJECTED = 'rejected'
 
+STATE_ACCEPTED = 'accepted'
 STATE_RUNNING = 'running'
 STATE_WAITING = 'waiting'
 STATE_FINISHED = 'finished'
@@ -118,7 +119,7 @@ class Task(object):
 
         :rtype: bool
         """
-        return self.state == STATE_WAITING
+        return self.state is None or self.state == STATE_WAITING
 
     def is_running(self):
         """
@@ -127,6 +128,14 @@ class Task(object):
         :rtype: bool
         """
         return self.state == STATE_RUNNING
+
+    def was_accepted(self):
+        """
+        Indicates if the task was accepted by the agent.
+
+        :rtype: bool
+        """
+        return self.state == STATE_ACCEPTED
 
     def is_completed(self):
         """

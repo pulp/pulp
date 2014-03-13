@@ -13,9 +13,11 @@
 import mock
 
 
-from pulp.bindings.responses import (Task, STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
-                                     STATE_RUNNING, STATE_SKIPPED, RESPONSE_POSTPONED, RESPONSE_REJECTED)
-from pulp.client.commands.polling import PollingCommand, RESULT_ABORTED, RESULT_REJECTED, FLAG_BACKGROUND, RESULT_BACKGROUND
+from pulp.bindings.responses import (
+    Task, STATE_WAITING, STATE_CANCELED, STATE_ERROR, STATE_FINISHED,
+    STATE_RUNNING, STATE_SKIPPED, STATE_ACCEPTED)
+from pulp.client.commands.polling import (
+    PollingCommand, RESULT_ABORTED, FLAG_BACKGROUND, RESULT_BACKGROUND)
 from pulp.devel.unit import base
 from pulp.devel.unit.task_simulator import TaskSimulator
 
@@ -55,8 +57,8 @@ class PollingCommandTests(base.PulpClientTests):
         sim.install(self.bindings)
 
         task_id = '123'
-        state_progression = [STATE_WAITING,
-                             STATE_WAITING,
+        state_progression = [None,
+                             STATE_ACCEPTED,
                              STATE_RUNNING,
                              STATE_RUNNING,
                              STATE_FINISHED]
