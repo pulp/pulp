@@ -69,11 +69,12 @@ class Authenticator(object):
         else:
             return ''
 
-    def validate(self, uuid, digest, signature):
+    def validate(self, agent_id, digest, signature):
         """
         Validate the specified message and signature.
-        :param uuid: The uuid of the sender.
-        :type uuid: str
+        :param agent_id: The id of the agent that sent the request.
+            The agent id has the form: 'pulp.agent.<consumer_id>'.
+        :type agent_id: str
         :param digest: A message digest.
         :type digest: str
         :param signature: A message signature.
@@ -82,7 +83,8 @@ class Authenticator(object):
         """
         if not self.enabled:
             return
-        key = self.get_key(uuid)
+        consumer_id = agent_id.rsplit('.', 1)[-1]
+        key = self.get_key(consumer_id)
         try:
             if not key.verify(digest, signature):
                 raise ValidationFailed()

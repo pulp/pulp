@@ -39,7 +39,9 @@ class TestContext(TestCase):
 
         # validation
 
-        self.assertEqual(context.agent_id, consumer['id'])
+        agent_id = 'pulp.agent.%s' % consumer['id']
+
+        self.assertEqual(context.agent_id, agent_id)
         self.assertEqual(context.url, pulp_conf.get('messaging', 'url'))
         self.assertEqual(context.details, details)
         self.assertEqual(context.reply_queue, Services.REPLY_QUEUE)
