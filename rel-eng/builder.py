@@ -21,22 +21,34 @@ opts = {
 mysession = koji.ClientSession("http://koji.katello.org/kojihub", opts)
 mysession.ssl_login(opts['cert'], opts['ca'], opts['serverca'])
 
-ARCH_LIST = ('i386', 'i686', 'x86_64')
-DISTRIBUTION_MAP = {
-    'el5': 'rhel5',
-    'el6': 'rhel6',
-    'fc19': 'fedora19',
-    'fc20': 'fedora20'
+ARCH = 'arch'
+REPO_NAME = 'repo_name'
+DIST_KOJI_NAME= 'koji_name'
+DISTRIBUTION_INFO = {
+    'el5': {
+        ARCH: ['i386', 'x86_64'],
+        REPO_NAME: '5server',
+        DIST_KOJI_NAME: 'rhel5'
+    },
+    'el6': {
+        ARCH: ['i686', 'x86_64'],
+        REPO_NAME: '6server',
+        DIST_KOJI_NAME: 'rhel5',
+    },
+    'fc19': {
+        ARCH: ['i686', 'x86_64'],
+        REPO_NAME: 'fedora-19',
+        DIST_KOJI_NAME: 'fedora19',
+    },
+    'fc20': {
+        ARCH: ['i686', 'x86_64'],
+        REPO_NAME: 'fedora-20',
+        DIST_KOJI_NAME: 'fedora20',
+    },
 }
 
-DISTRIBUTION_PUBLISH_DIRECTORIES = {
-    'el5': '5server',
-    'el6': '6server',
-    'fc19': 'fedora-19',
-    'fc20': 'fedora-20'
-}
 
-DIST_LIST = DISTRIBUTION_MAP.keys()
+DIST_LIST = DISTRIBUTION_INFO.keys()
 WORKSPACE = os.path.realpath(os.path.join(os.path.dirname(__file__), '../../'))
 MASH_DIR = os.path.join(WORKSPACE, 'mash')
 TITO_DIR = os.path.join(WORKSPACE, 'tito')
@@ -58,6 +70,8 @@ parser.add_argument("--build-dependency",
                     help="If specified, only build the specified dependency")
 parser.add_argument("--distribution", choices=DIST_LIST, nargs='+',
                     help="If specified, only build for the specified distribution")
+parser.add_argument("--tito-tag", help="The specific tito tag that should be built.  "
+                                       "If not specified the latest will be used.")
 
 opts = parser.parse_args()
 
@@ -85,6 +99,7 @@ if opts.build_dependency:
             DIST_LIST = dists_from_dep
     except IOError:
         print "dist_list.txt file not found for %s." % opts.build_dependency
+        sys.exit(1)
 
 
 # If a specific distribution or list of distributions has been specified on the command line
@@ -94,15 +109,18 @@ if opts.distribution:
     DIST_LIST = opts.distribution
 
 
-def ensure_dir(target_dir):
+def ensure_dir(target_dir, clean=True):
     """
-    Ensure that the directory specified exists and is empty.  This will delete the directory
-    if it already exists
+    Ensure that the directory specified exists and is empty.  By default this will delete
+    the directory if it already exists
 
     :param target_dir: The directory to process
     :type target_dir: str
+    :param clean: Whether or not the directory should be removed and recreated
+    :type clean: bool
     """
-    shutil.rmtree(target_dir, ignore_errors=True)
+    if clean:
+        shutil.rmtree(target_dir, ignore_errors=True)
     try:
         os.makedirs(target_dir)
     except OSError:
@@ -133,6 +151,10 @@ def build_srpm(distributions):
             if opts.scratch:
                 command.append('--test')
 
+            if opts.tito_tag:
+                command.append('--tag')
+                command.append(opts.tito_tag)
+
             subprocess.check_call(command)
 
 
@@ -154,7 +176,8 @@ def build_with_koji(build_tag_prefix, target_dists, scratch=False):
 
     for dist in target_dists:
         srpm_dir = os.path.join(TITO_DIR, dist)
-        build_target = "%s-%s" % (build_tag_prefix, DISTRIBUTION_MAP[dist])
+        build_target = "%s-%s" % (build_tag_prefix,
+                                  (DISTRIBUTION_INFO.get(dist)).get(DIST_KOJI_NAME))
 
         # Get all the source RPMs that were built
         # submit each srpm
@@ -216,31 +239,37 @@ def download_rpms_from_tag(tag, output_directory):
         location_on_koji = "%s%s" % (koji_url, koji_dir)
         command = "wget -r -np -nH --cut-dirs=4 -R index.htm*  %s -X %s" % \
                   (location_on_koji, data_dir)
-        print command
         subprocess.check_call(command, shell=True)
 
 
-def build_repos(output_dir):
+def build_repos(output_dir, dist):
     """
     Build the yum repos for each arch
     this method assumes that the directories already exist with each of the arches needed
 
     :param output_dir: The directory where the files were downloaded from koji
     :type output_dir: str
+    :param dist: The key for the distribution map for this repo
+    :type dist: str
     """
     noarch_dir = os.path.join(output_dir, 'noarch')
     comps_file = os.path.join(WORKSPACE, 'pulp', 'comps.xml')
-    for arch in ARCH_LIST:
+    arch_list = (DISTRIBUTION_INFO.get(dist)).get(ARCH)
+    for arch in arch_list:
         arch_dir = os.path.join(output_dir, arch)
-        if os.path.exists(arch_dir):
-            # Copy the noarch files to the arch_dir
-            command = "cp -R %s/* %s" % (noarch_dir, arch_dir)
-            print command
-            subprocess.check_call(command, shell=True)
-            # create the repo
-            command = "createrepo -g %s %s" % (comps_file, arch_dir)
-            subprocess.check_call(command, shell=True)
+        ensure_dir(arch_dir, False)
 
+        # Copy the noarch files to the arch_dir
+        command = "cp -R %s/* %s" % (noarch_dir, arch_dir)
+        subprocess.check_call(command, shell=True)
+        # create the repo
+        command = "createrepo -g %s %s" % (comps_file, arch_dir)
+        subprocess.check_call(command, shell=True)
+
+    # If there is an i686 directory rename it i386 since that is what the distributions expect
+    if os.path.exists(os.path.join(output_dir, 'i686')):
+        shutil.move(os.path.join(output_dir, 'i686'),
+                    os.path.join(output_dir, 'i386'))
     # Remove the noarch directory since it is not needed after repos are created
     shutil.rmtree(noarch_dir, ignore_errors=True)
 
@@ -299,15 +328,15 @@ if not opts.packageonly:
 # Don't build the repos if we are building a dependency
 if not opts.disable_packaging:
     # Download the rpms and create the yum repos
-    for distkey, distvalue in DISTRIBUTION_MAP.iteritems():
-        build_target = "%s-%s" % (build_tag, distvalue)
-        output_dir = os.path.join(MASH_DIR, DISTRIBUTION_PUBLISH_DIRECTORIES[distkey])
+    for distkey, distvalue in DISTRIBUTION_INFO.iteritems():
+        build_target = "%s-%s" % (build_tag, distvalue.get(DIST_KOJI_NAME))
+        output_dir = os.path.join(MASH_DIR, distvalue.get(REPO_NAME))
         ensure_dir(output_dir)
-        for arch in ARCH_LIST:
+        for arch in distvalue.get(ARCH):
             os.makedirs(os.path.join(output_dir, arch))
         print "Downloading tag: %s to %s" % (build_target, output_dir)
         download_rpms_from_tag(build_target, output_dir)
-        build_repos(output_dir)
+        build_repos(output_dir, distkey)
 
     # Push to hosted location
     if opts.push:
