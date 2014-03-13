@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.4.alpha%{?dist}
+Release: 0.5.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -595,6 +595,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Mar 13 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.5.alpha
+- Pulp rebuild
+
 * Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.4.alpha
 - 1075701 - Re-enable Celery log capturing. (rbarlow@redhat.com)
 - 1071960 - Support message authentication. Port pulp to gofer 1.0. Removed
