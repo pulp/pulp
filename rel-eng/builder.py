@@ -33,7 +33,7 @@ DISTRIBUTION_INFO = {
     'el6': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: '6server',
-        DIST_KOJI_NAME: 'rhel5',
+        DIST_KOJI_NAME: 'rhel6',
     },
     'fc19': {
         ARCH: ['i686', 'x86_64'],
