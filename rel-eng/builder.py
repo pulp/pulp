@@ -24,29 +24,33 @@ mysession.ssl_login(opts['cert'], opts['ca'], opts['serverca'])
 ARCH = 'arch'
 REPO_NAME = 'repo_name'
 DIST_KOJI_NAME= 'koji_name'
+PULP_PACKAGES = 'pulp_packages'
 DISTRIBUTION_INFO = {
     'el5': {
         ARCH: ['i386', 'x86_64'],
         REPO_NAME: '5server',
-        DIST_KOJI_NAME: 'rhel5'
+        DIST_KOJI_NAME: 'rhel5',
+        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet']
     },
     'el6': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: '6server',
         DIST_KOJI_NAME: 'rhel6',
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
     },
     'fc19': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-19',
         DIST_KOJI_NAME: 'fedora19',
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
     },
     'fc20': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-20',
         DIST_KOJI_NAME: 'fedora20',
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
     },
 }
-
 
 DIST_LIST = DISTRIBUTION_INFO.keys()
 WORKSPACE = os.path.realpath(os.path.join(os.path.dirname(__file__), '../../'))
@@ -58,8 +62,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument("version", help="The version of pulp to run the build for (2.4, 2.5, etc.)")
 parser.add_argument("stream", choices=['stable', 'testing', 'beta'],
                     help="The target release stream to build.")
-parser.add_argument("--packageonly", action="store_true", default=False,
-                    help="Create the repos only.  Do not build with koji.")
+parser.add_argument("--update-tag-package-list", action="store_true", default=False,
+                    help="Update the packages associated with the tag.  This will verify that the "
+                         "dependencies & pulp packages are associated with the tag and that the "
+                         "specific versions of each of the dependencies has been associated with "
+                         "the appropriate tag.  The current logged in user will be the owner for "
+                         "any packages that are added to the tag.  ")
+parser.add_argument("--disable-build", action="store_true", default=False,
+                    help="Disable koji building.")
 parser.add_argument("--disable-packaging", action="store_true", default=False,
                     help="Do not package or create repos")
 parser.add_argument("--push", action="store_true", default=False,
@@ -309,6 +319,120 @@ def upload_and_unpack_binary_repository(target_directory, tar_file):
     command = 'rm %s/repo.tar' % (target_directory)
     run_destination_ssh_step(command)
 
+def get_tag_packages(tag):
+    """
+    Get the set of packages currently associated with a tag
+
+    :param tag: the tag to search for in koji
+    :type tag: str
+
+    :returns: a set of package names
+    :rtype: set of str
+    """
+    dsttag=mysession.getTag(tag)
+    pkglist = set([(p['package_name']) for p in mysession.listPackages(tagID=dsttag['id'])])
+    return pkglist
+
+
+def get_supported_dists_for_dep(dep_directory):
+    """
+    Get a list of the supported distributions for the dependency in the given directory
+
+    :param dep_directory: The full of the directory where the dependency is stored
+    :type dep_directory: str
+
+    :returns: a set of dist keys for the dists that this dep supports
+    :rtype: set of str
+    """
+    dist_list_file = os.path.join(dep_directory, 'dist_list.txt')
+    try:
+        with open(dist_list_file, 'r') as handle:
+            line = handle.readline()
+            dists_from_dep = line.split(' ')
+    except IOError:
+        print "dist_list.txt file not found for %s." % dep_directory
+        sys.exit(1)
+
+    return set(dists_from_dep)
+
+
+def get_deps_for_dist(dist_key):
+    """
+    Get all the dependency packages that are required for a given distribution
+
+    :param dist_key: The distribution for which to get the deps
+    :type dist_key: str
+    :returns: a list of packages
+    :rtype: set of str
+    """
+    deps_packages = set([name for name in os.listdir(DEPS_DIR)
+                         if os.path.isdir(os.path.join(DEPS_DIR, name))])
+
+    dist_deps = []
+    for dep in deps_packages:
+        dist_list = get_supported_dists_for_dep(os.path.join(DEPS_DIR, dep))
+        if dist_key in dist_list:
+            dist_deps.append(dep)
+
+    return set(dist_deps)
+
+
+def add_packages_to_tag(base_tag):
+    """
+    Add a set of package to a given tag
+
+    :param base_tag: The distribution independent root of the build tag.  For example:
+                     pulp-2.4-testing
+    :type base_tag: str
+    :param owner: The user that should own the packages that are added to the tag
+    :type owner: str
+    """
+    task_list = []
+    current_user = mysession.getLoggedInUser().get('name')
+    # For each Distribution
+    for dist_key, dist_info in DISTRIBUTION_INFO.iteritems():
+        build_tag = "%s-%s" % (base_tag, dist_info.get(DIST_KOJI_NAME))
+        # get the current tagged builds for this build_tag
+        build_tag_existing_builds = [data.get('nvr') for data in mysession.listTagged(build_tag)]
+
+        dist_deps = get_deps_for_dist(dist_key)
+        packages_in_tag = get_tag_packages(build_tag)
+        delta = dist_deps.difference(packages_in_tag)
+        # add the regular dependencies
+        for package in delta:
+            # Add the package to the tag
+            print "adding %s to %s" % (package, build_tag)
+            mysession.packageListAdd(build_tag, package, current_user)
+
+        # verify all of the versions of the packages
+        for package in dist_deps:
+            # Get the current version of the dep and add it to the tag if it exists in koji
+            specfile = os.path.join(DEPS_DIR, package, "%s.spec" % package)
+            command = 'rpm --queryformat "%{RPMTAG_VERSION}-%{RPMTAG_RELEASE} "' \
+                      ' --specfile ' + specfile + ' | cut -f1 -d" "'
+            result = str(subprocess.check_output(command, shell=True))
+            version = result.strip()
+            # remove the distkey from the version string
+            version = version[:version.rfind('.')]
+            package_nvr = "%s-%s.%s" % (package, version, dist_key)
+            # Verify that this version of the package is not already in the tag
+            if package_nvr not in build_tag_existing_builds:
+                # verify that the package_nvr exists in koji at all
+                existing = mysession.search(package_nvr, 'build', 'glob')
+                if existing:
+                    print "Adding %s to %s" % (package_nvr, build_tag)
+                    task_id = mysession.tagBuild(build_tag, package_nvr)
+                    task_list.append(task_id)
+
+        # add the missing pulp packages
+        pulp_packages = set(dist_info.get(PULP_PACKAGES))
+        delta = pulp_packages.difference(packages_in_tag)
+        for package in delta:
+            print "adding %s to %s" % (package, build_tag)
+
+    # Monitor the task list until all are completed
+    wait_for_completion(task_list)
+
 # clean out and rebuild the mash directory & the target arch directories
 ensure_dir(MASH_DIR)
 ensure_dir(TITO_DIR)
@@ -319,8 +443,16 @@ os.makedirs(MASH_DIR)
 shutil.rmtree(TITO_DIR, ignore_errors=True)
 os.makedirs(TITO_DIR)
 
+# First update package tags if specified
+if opts.update_tag_package_list:
+    add_packages_to_tag(build_tag)
+    print "After updating packages the build target repositories need to rebuild.  Please monitor "\
+          "the koji server directly to ensure that those tasks have finished before building new " \
+          "dependencies or versions of pulp.  "
+    sys.exit(0)
+
 # Build the repos if requested
-if not opts.packageonly:
+if not opts.disable_build:
     build_srpm(DIST_LIST)
     builds = build_with_koji(build_tag, DIST_LIST, opts.scratch)
     wait_for_completion(builds)
