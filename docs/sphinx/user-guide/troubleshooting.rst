@@ -64,15 +64,14 @@ Other logs
 Some of Pulp's other processes still log to files. Those file locations are documented here.
 
 /var/log/pulp/celerybeat.log
-  Celery beat log for Upstart systems. For systemd, Celery beat it logged through syslog.
-
 /var/log/pulp/reserved_resource_worker-\*.log
-  There will be one of these per task worker for Upstart systems. systemd systems log these
-  messages through syslog.
-
 /var/log/pulp/resource_manager.log
-  The special resource manager worker's log for Upstart systems. systemd systems will use syslog
-  for these messages.
+  All of these files will only be present if your operating system uses Upstart for init. If you
+  use systemd, these log messages will all be sent to the syslog by the Celery units.
+
+  These files will contain messages from Celery's early startup, before it initializes the Pulp
+  application. If there are problems loading Pulp, Celery will log those problems here. Once Pulp
+  initializes, it begins capturing all of the Celery logs and writing them to syslog.
 
 /var/log/httpd/error_log
   This is where Apache will log errors that the Pulp server itself did not
