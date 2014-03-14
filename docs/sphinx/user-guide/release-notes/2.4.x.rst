@@ -13,6 +13,9 @@ New Features
 #. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
    version 2.5.2.
 #. Publishing Puppet repositories to flattened directories.
+#. Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
+   releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
+   ``/var/log/pulp/`` as it used to.
 
 Client Changes
 --------------

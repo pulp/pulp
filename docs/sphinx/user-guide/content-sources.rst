@@ -19,7 +19,8 @@ Content sources are defined in ``/etc/pulp/content/sources/conf.d``. Each file w
 may contain one or more sections. Each section defines a content source.
 
 The [section] defines the content source ID. The following properties
-are supported:
+are supported::
+
  - **enabled** <bool>
      The content source is enabled. Disabled sources are ignored.
  - **name** <str>
