@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-requests
-Version:        2.0.0
+Version:        2.2.1
 Release:        1%{?dist}
 Summary:        HTTP library, written in Python, for human beings
 
@@ -42,6 +42,14 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/requests/*
 
 %changelog
+* Fri Mar 14 2014 Sayli Karmarkar <skarmark@redhat.com> 2.2.1-1
+- Remove python-okaara since a newer version is in epel and add a dist_list.txt
+  file with the list of distributions each dependency should be built for
+  (bcourt@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+- Deleting dependencies we no longer need and adding README files to explain
+  why we are keeping the others. (mhrivnak@redhat.com)
+- updating to the latest version 2.2.1 of python-requests dependency
 * Fri Oct 04 2013 Sayli Karmarkar <skarmark@redhat.com> 2.0.0-1
 - New package built with tito. This version vastly improves proxy support, 
 including the CONNECT verb. This fixes https://bugzilla.redhat.com/show_bug.cgi?id=1014368.
