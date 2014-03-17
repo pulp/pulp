@@ -369,7 +369,7 @@ class TestRegistrationMonitor(PluginTest):
 
         # validation
         expected_url = 'tcp://pulp-host:5672'
-        self.assertEqual(plugin_cfg.messaging.uuid, TEST_CN)
+        self.assertEqual(plugin_cfg.messaging.uuid, 'pulp.agent.%s' % TEST_CN)
         self.assertEqual(plugin_cfg.messaging.url, expected_url)
         self.assertEqual(plugin_cfg.messaging.cacert, 'test-ca')
         self.assertEqual(plugin_cfg.messaging.clientcert, CERT_PATH)
@@ -411,7 +411,7 @@ class TestRegistrationMonitor(PluginTest):
 
         # validation
         expected_url = 'tcp://broker-host:5672'
-        self.assertEqual(plugin_cfg.messaging.uuid, TEST_CN)
+        self.assertEqual(plugin_cfg.messaging.uuid, 'pulp.agent.%s' % TEST_CN)
         self.assertEqual(plugin_cfg.messaging.url, expected_url)
         self.assertEqual(plugin_cfg.messaging.cacert, 'test-ca')
         self.assertEqual(plugin_cfg.messaging.clientcert, CERT_PATH)
