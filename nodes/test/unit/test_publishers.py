@@ -15,7 +15,7 @@ import tempfile
 import tarfile
 
 from unittest import TestCase
-from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.downloaders.local import LocalFileDownloader
 from nectar.config import DownloaderConfig
 
 from pulp_node import constants
@@ -88,7 +88,7 @@ class TestHttp(TestCase):
             p.commit()
         # verify
         conf = DownloaderConfig()
-        downloader = HTTPSCurlDownloader(conf)
+        downloader = LocalFileDownloader(conf)
         manifest_path = p.manifest_path()
         working_dir = os.path.join(self.tmpdir, 'working_dir')
         os.makedirs(working_dir)
