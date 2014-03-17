@@ -16,7 +16,7 @@ function setup {
     # Find all the setup.py files and execute run pip install in those directories
     find . -name setup.py | while read SETUP_FILE; do
         SETUP_DIR=`dirname "${SETUP_FILE}"`
-        sudo pip-python install -e ${SETUP_DIR}
+        sudo pip install -e ${SETUP_DIR}
     done
 
     sudo python pulp-dev.py -I
@@ -29,6 +29,9 @@ if [ "$OS_NAME" == "RedHat" ] && [ "$OS_VERSION" == "5" ]; then
 else
     setup 'nectar'
 fi
+
+# Setup gofer since different pulp versions require different versios of gofer
+setup 'gofer'
 
 setup 'pulp'
 setup 'pulp_rpm'
