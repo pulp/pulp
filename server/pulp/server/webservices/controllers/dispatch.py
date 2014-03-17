@@ -53,6 +53,7 @@ class TaskCollection(JSONController):
         serialized_task_statuses = []
         for task in TaskStatusManager.find_by_criteria(criteria):
             task.update(serialization.dispatch.spawned_tasks(task))
+            task.update(serialization.dispatch.task_result_href(task))
             serialized_task_statuses.append(task)
         return self.ok(serialized_task_statuses)
 
