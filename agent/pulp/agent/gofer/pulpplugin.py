@@ -223,10 +223,11 @@ class RegistrationMonitor:
         """
         A change in the pulp certificate has been detected.
         When the certificate has been deleted: the connection to the broker is
-        terminated by setting the UUID to None.
+        terminated by calling plugin.detach().
         When the certificate has been added/updated: the plugin's configuration is
-        updated using the pulp configuration; the uuid is updated and the connection
-        to the broker is re-established.
+        updated using the pulp configuration; the uuid is updated to the agent_id
+        which has the form: 'pulp.agent.<consumer_id>' and the connection
+        to the broker is established by calling plugin.attach().
         :param path: The changed file (ignored).
         :type path: str
         """
@@ -239,11 +240,12 @@ class RegistrationMonitor:
             host = cfg.messaging.host or cfg.server.host
             port = cfg.messaging.port
             url = '%s://%s:%s' % (scheme, host, port)
+            agent_id = 'pulp.agent.%s' % consumer_id
             authenticator = Authenticator()
             authenticator.load()
             plugin_conf = plugin.cfg()
             plugin_conf.messaging.url = url
-            plugin_conf.messaging.uuid = consumer_id
+            plugin_conf.messaging.uuid = agent_id
             plugin_conf.messaging.cacert = cfg.messaging.cacert
             plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
                 os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
