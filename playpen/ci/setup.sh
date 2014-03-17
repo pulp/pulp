@@ -13,10 +13,12 @@ cd $WORKSPACE
 function setup {
     pushd $1
 
-    # Find all the setup.py files and execute run pip install in those directories
+    # Find all the setup.py files and execute run setup.py develop in those directories
     find . -name setup.py | while read SETUP_FILE; do
         SETUP_DIR=`dirname "${SETUP_FILE}"`
-        sudo pip install -e ${SETUP_DIR}
+        pushd ${SETUP_DIR}
+        sudo python setup.py develop
+        popd
     done
 
     sudo python pulp-dev.py -I
