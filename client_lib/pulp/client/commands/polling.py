@@ -270,7 +270,7 @@ class PollingCommand(PulpCliCommand):
 
     def accepted(self, task, spinner):
         """
-        Called when a task has accepted.
+        Called when a task has been accepted.
         Subclasses may override this to display a custom message to the user.
 
         :param task: full task report for the task being displayed
