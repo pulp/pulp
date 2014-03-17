@@ -15,30 +15,37 @@ Pulp's log messages.
 journald
 ^^^^^^^^
 
-journald is the logging daemon that is distributed as part of systemd. It is a very nice logging
-daemon that provides a very useful interface to the logs,
+journald is the logging daemon that is distributed as part of systemd. If you are using Fedora
+this is your primary logging daemon, though it's possible that you also have rsyslogd installed.
+journald is a very nice logging daemon that provides a very useful interface to the logs,
 `journalctl <http://www.freedesktop.org/software/systemd/man/journalctl.html>`_. If your system
 uses journald, you might not have any logs written to /var/log depending on how your system is
-configured. For Pulp's purposes, you should use ``journalctl`` to access Pulp's various logs. We'll
-leave it to the systemd team to thoroughly document that command, but it's worth mentioning that it
-can be used to aggregate the logs from Pulp's various processes together into one handy view, using
-it's ``-u`` flag. Pulp server runs in a variety of units, so if you wanted to see the log
-messages from all server processes together you could use this command, substituting
-PULP_CONCURRENCY with the number of Celery workers you are using::
+configured. For Pulp's purposes, you should use ``journalctl`` to access Pulp's various logs. Most
+of the log messages that you will wish to see will have the "pulp" tag on them, so this command
+will display most of Pulp's log messages::
 
-    $ sudo journalctl -u httpd -u pulp_celerybeat -u pulp_resource_manager -u pulp_workers $(for i in $( seq 0 $( expr $PULP_CONCURRENCY - 1)); do echo -u pulp_worker-$i; done;)
+    $ sudo journalctl SYSLOG_IDENTIFIER=pulp
 
-Another useful flag that can be used with journalctl is ``-f``, which performs a similar function
+We'll leave it to the systemd team to thoroughly document ``journalctl``, but it's worth mentioning
+that it can be used to aggregate the logs from Pulp's various processes together into one handy
+view using it's ``+`` operator. Pulp server runs in a variety of units, and if there are problems
+starting Pulp, you may wish to see log messages from httpd or celery. If you wanted to see the
+log messages from all server processes together you could use this command::
+
+    $ sudo journalctl SYSLOG_IDENTIFIER=pulp + SYSLOG_IDENTIFIER=celery + SYSLOG_IDENTIFIER=httpd
+
+A ``journalctl`` flag to know about is ``-f``, which performs a similar function
 as ``tail``'s ``-f`` flag.
 
 rsyslogd
 ^^^^^^^^
 
-rsyslogd is another popular logging daemon. On many distributions, it is configured to log most
-messages to ``/var/log/messages``. If this is your logging daemon, it is likely that all of Pulp's
-logs will go to this file by default. If you wish to filter Pulp's log messages out and place them
-into a separate file, you will need to configure rsyslogd to match Pulp's messages. Pulp prefixes
-all of its log messages with "pulp", to aid in matching its messages in the logging daemon.
+rsyslogd is another popular logging daemon. If you are using RHEL 6, this is your logging daemon.
+On many distributions, it is configured to log most messages to ``/var/log/messages``. If this is
+your logging daemon, it is likely that all of Pulp's logs will go to this file by default. If you
+wish to filter Pulp's log messages out and place them into a separate file, you will need to
+configure rsyslogd to match Pulp's messages. Pulp prefixes all of its log messages with "pulp", to
+aid in matching its messages in the logging daemon.
 
 If you wish to match Pulp messages and have them logged to a different file than
 ``/var/log/messages``, you may adjust your ``/etc/rsyslog.conf`` file. You should find the line for
@@ -52,20 +59,18 @@ Why Syslog?
 ^^^^^^^^^^^
 
 Pulp's use of syslog is a departure from previous Pulp releases which used to write their own log
-files to /var/log/pulp/. This was problematic for Pulp's 2.4.0 release as Pulp evolved into a
+files to /var/log/pulp/. This was problematic for Pulp's 2.4.0 release as Pulp evolved to use a
 multi-process distributed architecture. Python's file-based log handler cannot be used by multiple
-processes to write to the same file path, and so Pulp had to do something different. syslog is a
-widely used logging protocol, and the Pulp team decided to leverage it to handle our newfound
-distributed logging problem.
+processes to write to the same file path, and so Pulp had to do something different. Syslog is a
+widely used logging protocol, and given the distributed nature of Pulp it was the most appropriate
+logging solution available.
 
 Other logs
 ^^^^^^^^^^
 
 Some of Pulp's other processes still log to files. Those file locations are documented here.
 
-/var/log/pulp/celerybeat.log
-/var/log/pulp/reserved_resource_worker-\*.log
-/var/log/pulp/resource_manager.log
+/var/log/pulp/celerybeat.log, /var/log/pulp/reserved_resource_worker-\*.log, /var/log/pulp/resource_manager.log
   All of these files will only be present if your operating system uses Upstart for init. If you
   use systemd, these log messages will all be sent to the syslog by the Celery units.
 
