@@ -286,15 +286,16 @@ Here are a few troubleshooting tips:
 General
 ^^^^^^^
 
-#. The Qpid broker (qpidd) logs in ``/var/log/messages`` by default.
+#. The Pulp server logs to syslog.
 
-#. Pulp server logs Qpid connection information in ``/var/log/pulp/pulp.log``
+#. The Qpid broker (qpidd) also logs to syslog by default.
 
 #. The consumer agent (goferd) logs Qpid connection information in ``/var/log/gofer/agent.log``
 
 #. Make sure you've copied the client key and certificate to each consumer.
 
-#. Make sure you have restarted the services involved: httpd, qpidd and pulp-agent.
+#. Make sure you have restarted the services involved: httpd, qpidd, pulp_celerybeat,
+   pulp_resource_manager, pulp_workers, and pulp-agent.
 
 #. Make sure the firewall on the Pulp server is configured to permit TCP on port 5671
    or that it's disabled.
@@ -311,19 +312,19 @@ Log Messages Explained
    SELinux problems and not SSL issues.
 
 ``[Security] notice Listening for SSL connections on TCP port 5671``
-    If you don't see a log message containing this in ``/var/log/messages`` then either the
+    If you don't see a log message containing this in your syslog, then either the
     ``qpid-cpp-server-ssl`` package is not installed or the Qpid broker is not configured
     for SSL.  This can also indicate that SSL configuration is complete but the Qpid broker
     service (qpidd) needs to be restarted.
 
 ``[Security] notice SSL plugin not enabled, you must set --ssl-cert-db to enable it.``
-    Log messages in ``/var/log/messages`` containing this indicate that the Qpid broker has
+    Log messages containing this indicate that the Qpid broker has
     been configured for SSL but the ``qpid-cpp-server-ssl`` RPM has not been installed.
     This can also indicate that the RPM has been installed but that the Qpid service (qpidd)
     needs to be restarted.
 
 ``[Security] error Rejected un-encrypted connection.``
-    Log messages in ``/var/log/messages`` containing this indicate that either the Pulp
+    Log messages containing this indicate that either the Pulp
     server or the consumer is not properly configured to connect using SSL.  This can also
     indicate that SSL configuration is complete but that either the Pulp server (httpd) or
     the consumer agent (goferd) needs to be restarted.
