@@ -23,7 +23,7 @@ mysession.ssl_login(opts['cert'], opts['ca'], opts['serverca'])
 
 ARCH = 'arch'
 REPO_NAME = 'repo_name'
-DIST_KOJI_NAME= 'koji_name'
+DIST_KOJI_NAME = 'koji_name'
 PULP_PACKAGES = 'pulp_packages'
 DISTRIBUTION_INFO = {
     'el5': {
@@ -63,11 +63,11 @@ parser.add_argument("version", help="The version of pulp to run the build for (2
 parser.add_argument("stream", choices=['stable', 'testing', 'beta'],
                     help="The target release stream to build.")
 parser.add_argument("--update-tag-package-list", action="store_true", default=False,
-                    help="Update the packages associated with the tag.  This will verify that the "
+                    help="Update the packages associated with the tag. This will verify that the "
                          "dependencies & pulp packages are associated with the tag and that the "
                          "specific versions of each of the dependencies has been associated with "
-                         "the appropriate tag.  The current logged in user will be the owner for "
-                         "any packages that are added to the tag.  ")
+                         "the appropriate tag. The current logged in user will be the owner for "
+                         "any packages that are added to the tag.")
 parser.add_argument("--disable-build", action="store_true", default=False,
                     help="Disable koji building.")
 parser.add_argument("--disable-packaging", action="store_true", default=False,
@@ -157,7 +157,7 @@ def build_srpm(distributions):
             distribution = ".%s" % dist
             print "Building Srpm for %s" % distribution
             command = ['tito', 'build', '--offline', '--srpm', '--output', tito_path,
-                                  '--dist', distribution]
+                       '--dist', distribution]
             if opts.scratch:
                 command.append('--test')
 
@@ -319,6 +319,7 @@ def upload_and_unpack_binary_repository(target_directory, tar_file):
     command = 'rm %s/repo.tar' % (target_directory)
     run_destination_ssh_step(command)
 
+
 def get_tag_packages(tag):
     """
     Get the set of packages currently associated with a tag
@@ -329,7 +330,7 @@ def get_tag_packages(tag):
     :returns: a set of package names
     :rtype: set of str
     """
-    dsttag=mysession.getTag(tag)
+    dsttag = mysession.getTag(tag)
     pkglist = set([(p['package_name']) for p in mysession.listPackages(tagID=dsttag['id'])])
     return pkglist
 
@@ -338,7 +339,7 @@ def get_supported_dists_for_dep(dep_directory):
     """
     Get a list of the supported distributions for the dependency in the given directory
 
-    :param dep_directory: The full of the directory where the dependency is stored
+    :param dep_directory: The full path of the directory where the dependency is stored
     :type dep_directory: str
 
     :returns: a set of dist keys for the dists that this dep supports
@@ -379,13 +380,12 @@ def get_deps_for_dist(dist_key):
 
 def add_packages_to_tag(base_tag):
     """
-    Add a set of package to a given tag
+    Add a set of package to a given tag.  If a package needs to be added to the tag
+    the current user will be used as the owner.
 
     :param base_tag: The distribution independent root of the build tag.  For example:
                      pulp-2.4-testing
     :type base_tag: str
-    :param owner: The user that should own the packages that are added to the tag
-    :type owner: str
     """
     task_list = []
     current_user = mysession.getLoggedInUser().get('name')
@@ -485,5 +485,3 @@ if not opts.disable_packaging:
         # run_destination_ssh_step(command)
         # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
         # print "Finished updating repo"
-
-
