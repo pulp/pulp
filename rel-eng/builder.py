@@ -28,13 +28,13 @@ PULP_PACKAGES = 'pulp_packages'
 DISTRIBUTION_INFO = {
     'el5': {
         ARCH: ['i386', 'x86_64'],
-        REPO_NAME: '5server',
+        REPO_NAME: '5Server',
         DIST_KOJI_NAME: 'rhel5',
         PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet']
     },
     'el6': {
         ARCH: ['i686', 'x86_64'],
-        REPO_NAME: '6server',
+        REPO_NAME: '6Server',
         DIST_KOJI_NAME: 'rhel6',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
     },
