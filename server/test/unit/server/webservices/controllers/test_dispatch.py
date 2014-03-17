@@ -24,6 +24,7 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue
 from pulp.server.exceptions import PulpCodedException, MissingResource
+from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers import dispatch as dispatch_controller
 
 
@@ -120,9 +121,13 @@ class TestTaskCollection(base.PulpWebserviceTests):
         self.assertTrue(len(body) == 2)
         for task in body:
             if task['task_id'] == task_id1:
+                self.assertEqual(task['_href'],
+                                 serialization.dispatch.task_result_href(task)['_href'])
                 self.assertEquals(task['state'], state1)
                 self.assertEqual(task['queue'], queue_1)
             else:
+                self.assertEqual(task['_href'],
+                                 serialization.dispatch.task_result_href(task)['_href'])
                 self.assertEquals(task['state'], state2)
                 self.assertEqual(task['queue'], queue_2)
         self.assertEquals(task['tags'], tags)
