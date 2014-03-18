@@ -12,7 +12,7 @@
 from urlparse import urlparse
 
 from qpidtoollibs import BrokerAgent
-from qpid.messaging import Connection as Connection
+from qpid.messaging import Connection
 
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent.direct.services import Services
@@ -49,7 +49,10 @@ def _migrate_reply_queue(broker):
     """
     name = Services.REPLY_QUEUE
     queue = broker.getQueue(name)
-    if queue and queue.values['arguments']['exclusive']:
+    if not queue:
+        # nothing to migrate
+        return
+    if queue.values['exclusive'] or queue.values['arguments'].get('exclusive', False):
         broker.delQueue(name)
         broker.addQueue(name, durable=True)
 
