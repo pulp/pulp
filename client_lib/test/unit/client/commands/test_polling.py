@@ -57,7 +57,7 @@ class PollingCommandTests(base.PulpClientTests):
         sim.install(self.bindings)
 
         task_id = '123'
-        state_progression = [None,
+        state_progression = [STATE_WAITING,
                              STATE_ACCEPTED,
                              STATE_RUNNING,
                              STATE_RUNNING,

@@ -119,7 +119,7 @@ class Task(object):
 
         :rtype: bool
         """
-        return self.state is None or self.state == STATE_WAITING
+        return self.state == STATE_WAITING
 
     def is_running(self):
         """
