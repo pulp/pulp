@@ -25,6 +25,11 @@ def migrate(*args, **kwargs):
     - Ensure pulp.task is no longer *exclusive*.
     - Rename agent queues: consumer_id> => pulp.agent.<consumer_id>
     """
+    transport = pulp_conf.get('messaging', 'transport')
+    if transport != 'qpid':
+        # not using qpid
+        return
+
     url = urlparse(pulp_conf.get('messaging', 'url'))
     connection = Connection(
         host=url.hostname,

@@ -23,6 +23,7 @@ MIGRATION = 'pulp.server.db.migrations.0009_qpid_queues'
 
 TEST_CONF = """
 [messaging]
+transport: qpid
 url: tcp://myhost:1234
 clientcert: TEST-CERTIFICATE
 """
@@ -62,6 +63,30 @@ class TestMigration(TestCase):
         fake_migrate_reply_queue.assert_called_with(fake_broker())
         fake_migrate_agent_queues.assert_called_with(fake_broker())
         fake_connection().detach.assert_called_with()
+
+    @patch(MIGRATION + '.BrokerAgent')
+    @patch(MIGRATION + '.Connection')
+    @patch(MIGRATION + '._migrate_reply_queue')
+    @patch(MIGRATION + '._migrate_agent_queues')
+    @patch(MIGRATION + '.pulp_conf')
+    def test_migrate_not_qpid(self,
+                     fake_conf,
+                     fake_migrate_agent_queues,
+                     fake_migrate_reply_queue,
+                     fake_connection,
+                     fake_broker):
+
+        fake_conf.get.return_value = 'not-qpid'
+
+        # test
+        migration = MigrationModule(MIGRATION)._module
+        migration.migrate()
+
+        # validation
+        self.assertFalse(fake_connection.called)
+        self.assertFalse(fake_broker.called)
+        self.assertFalse(fake_migrate_reply_queue.called)
+        self.assertFalse(fake_migrate_agent_queues.called)
 
     def test_migrate_reply_queue(self):
         fake_queue = Mock()
