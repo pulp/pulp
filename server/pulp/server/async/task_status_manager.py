@@ -15,9 +15,9 @@ from datetime import datetime
 from pymongo.errors import DuplicateKeyError
 
 from pulp.common import dateutils
-from pulp.server.async import constants as dispatch_constants
+from pulp.server.async import constants
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
+from pulp.server.exceptions import DuplicateResource, MissingResource
 
 
 class TaskStatusManager(object):
@@ -27,7 +27,7 @@ class TaskStatusManager(object):
     """
 
     @staticmethod
-    def create_task_status(task_id, queue, tags=None, state=None):
+    def create_task_status(task_id, queue=None, tags=None):
         """
         Creates a new task status for given task_id. 
 
@@ -35,34 +35,21 @@ class TaskStatusManager(object):
         :type  task_id: basestring
         :param queue:   The name of the queue that the Task is in
         :type  queue:   basestring
-        :param tags: custom tags on the task
-        :type  tags: list of basestrings or None
-        :param state: state of callable in its lifecycle
-        :type  state: basestring or None
+        :param tags: list of tags for the task
+        :type  tags: list|None
         :return: task status document
         :rtype:  dict
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue: if any of the fields are unacceptable
         """
-        invalid_values = []
-        if task_id is None:
-            invalid_values.append('task_id')
-        if queue is None:
-            invalid_values.append('queue')
-        if tags is not None and not isinstance(tags, list):
-            invalid_values.append('tags')
-        if state is not None and not isinstance(state, basestring):
-            invalid_values.append('state')
-        if invalid_values:
-            raise InvalidValue(invalid_values)
-
-        task_status = TaskStatus(task_id, queue, tags=tags, state=state)
+        collection = TaskStatus.get_collection()
+        task_status = TaskStatus(task_id, constants.CALL_WAITING_STATE, tags=tags, queue=queue)
         try:
-            TaskStatus.get_collection().save(task_status, safe=True)
+            collection.save(task_status, safe=True)
         except DuplicateKeyError:
             raise DuplicateResource(task_id)
 
-        created = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        created = collection.find_one({'task_id': task_id})
         return created
 
     @staticmethod
@@ -73,7 +60,7 @@ class TaskStatusManager(object):
         :type  task_id: basestring
         """
         delta = {
-            'state': dispatch_constants.CALL_ACCEPTED_STATE
+            'state': constants.CALL_ACCEPTED_STATE
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
@@ -87,7 +74,7 @@ class TaskStatusManager(object):
         now = datetime.now(dateutils.utc_tz())
         start_time = dateutils.format_iso8601_datetime(now)
         delta = {
-            'state': dispatch_constants.CALL_RUNNING_STATE,
+            'state': constants.CALL_RUNNING_STATE,
             'start_time': start_time,
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
@@ -104,7 +91,7 @@ class TaskStatusManager(object):
         now = datetime.now(dateutils.utc_tz())
         finish_time = dateutils.format_iso8601_datetime(now)
         delta = {
-            'state': dispatch_constants.CALL_FINISHED_STATE,
+            'state': constants.CALL_FINISHED_STATE,
             'finish_time': finish_time,
             'result': result
         }
@@ -122,7 +109,7 @@ class TaskStatusManager(object):
         now = datetime.now(dateutils.utc_tz())
         finish_time = dateutils.format_iso8601_datetime(now)
         delta = {
-            'state': dispatch_constants.CALL_ERROR_STATE,
+            'state': constants.CALL_ERROR_STATE,
             'finish_time': finish_time,
             'traceback': traceback
         }
@@ -152,17 +139,28 @@ class TaskStatusManager(object):
         :raise MissingResource: if there is no task status corresponding to the given task_id
         """
 
-        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
-        if task_status is None:
-            raise MissingResource(task_id)
+        collection = TaskStatus.get_collection()
 
-        updatable_attributes = ['state', 'result', 'traceback', 'start_time', 'finish_time',
-                                'error', 'spawned_tasks', 'progress_report']
+        task_status = collection.find_one({'task_id': task_id})
+        if task_status is None:
+            raise MissingResource(task_id=task_id)
+
+        mutable_attributes = [
+            'state',
+            'result',
+            'traceback',
+            'start_time',
+            'finish_time',
+            'error',
+            'spawned_tasks',
+            'progress_report'
+        ]
+
         for key, value in delta.items():
-            if key in updatable_attributes:
+            if key in mutable_attributes:
                 task_status[key] = value
 
-        TaskStatus.get_collection().save(task_status, safe=True)
+        collection.save(task_status, safe=True)
         return task_status
 
     @staticmethod
@@ -175,11 +173,12 @@ class TaskStatusManager(object):
         :raise MissingResource: if the given task status does not exist
         :raise InvalidValue: if task_id is invalid
         """
-        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        collection = TaskStatus.get_collection()
+        task_status = collection.find_one({'task_id': task_id})
         if task_status is None:
-            raise MissingResource(task_id)
+            raise MissingResource(task_id=task_id)
 
-        TaskStatus.get_collection().remove({'task_id' : task_id}, safe=True)
+        collection.remove({'task_id': task_id}, safe=True)
 
     @staticmethod
     def find_all():
@@ -201,7 +200,7 @@ class TaskStatusManager(object):
         :return: serialized task status
         :rtype:  dict or None
         """
-        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
         return task_status
 
     @staticmethod

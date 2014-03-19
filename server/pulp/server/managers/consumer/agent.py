@@ -81,7 +81,7 @@ class AgentManager(object):
             resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             action_tag(ACTION_AGENT_BIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
+        task = TaskStatusManager.create_task_status(task_id, tags=tags)
 
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -133,7 +133,7 @@ class AgentManager(object):
             resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             action_tag(ACTION_AGENT_UNBIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
+        task = TaskStatusManager.create_task_status(task_id, tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -181,7 +181,7 @@ class AgentManager(object):
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag(ACTION_AGENT_UNIT_INSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
+        task = TaskStatusManager.create_task_status(task_id, tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -225,7 +225,7 @@ class AgentManager(object):
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag(ACTION_AGENT_UNIT_UPDATE)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
+        task = TaskStatusManager.create_task_status(task_id, tags=tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -269,7 +269,7 @@ class AgentManager(object):
             resource_tag(dispatch_constants.RESOURCE_CONSUMER_TYPE, consumer_id),
             action_tag(ACTION_AGENT_UNIT_UNINSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=tags)
+        task = TaskStatusManager.create_task_status(task_id, tags=tags)
 
         # agent request
         manager = managers.consumer_manager()

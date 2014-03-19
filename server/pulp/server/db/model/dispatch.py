@@ -501,10 +501,8 @@ class TaskStatus(Model):
     unique_indices = ('task_id',)
     search_indices = ('task_id', 'tags', 'state')
 
-    def __init__(self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None,
-                 progress_report=None):
+    def __init__(self, task_id, state, queue=None, tags=None):
         super(TaskStatus, self).__init__()
-
         self.task_id = task_id
         self.queue = queue
         self.tags = tags or []
@@ -513,6 +511,6 @@ class TaskStatus(Model):
         self.traceback = None
         self.start_time = None
         self.finish_time = None
-        self.error = error
-        self.spawned_tasks = spawned_tasks
-        self.progress_report = progress_report or {}
+        self.error = None
+        self.spawned_tasks = []
+        self.progress_report = {}

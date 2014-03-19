@@ -28,6 +28,13 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers import dispatch as dispatch_controller
 
 
+def create_task_status(task_id, queue, tags=None, state=None):
+    collection = TaskStatus.get_collection()
+    status = TaskStatus(task_id, state, tags=tags, queue=queue)
+    collection.save(status, safe=True)
+    return collection.find_one({'task_id': task_id})
+
+
 class TestTaskResource(PulpWebservicesTests):
     """
     Test the TaskResource class.
@@ -49,7 +56,7 @@ class TestTaskResource(PulpWebservicesTests):
         """
         task_id = '1234abcd'
         test_queue = AvailableQueue('test_queue')
-        TaskStatusManager.create_task_status(task_id, test_queue.name)
+        create_task_status(task_id, test_queue.name)
 
         self.task_resource.DELETE(task_id)
 
@@ -61,7 +68,7 @@ class TestTaskResource(PulpWebservicesTests):
         """
         task_id = '1234abcd'
         test_queue = AvailableQueue('test_queue')
-        TaskStatusManager.create_task_status(task_id, test_queue.name,
+        create_task_status(task_id, test_queue.name,
                                              state=dispatch_constants.CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, self.task_resource.DELETE, task_id)
 
@@ -82,9 +89,9 @@ class TestTaskResource(PulpWebservicesTests):
         spawned_task_id = 'spawned_task'
         spawned_by_spawned_task_id = 'spawned_by_spawned_task'
         test_queue = AvailableQueue('test_queue')
-        TaskStatusManager.create_task_status(task_id, test_queue.name)
-        TaskStatusManager.create_task_status(spawned_task_id, test_queue.name)
-        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_queue.name)
+        create_task_status(task_id, test_queue.name)
+        create_task_status(spawned_task_id, test_queue.name)
+        create_task_status(spawned_by_spawned_task_id, test_queue.name)
         TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
         TaskStatusManager.update_task_status(spawned_task_id,
                                              delta={'spawned_tasks': [spawned_by_spawned_task_id]})
@@ -112,8 +119,8 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state2 = 'running'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, queue_2, tags, state2)
+        create_task_status(task_id1, queue_1, tags, state1)
+        create_task_status(task_id2, queue_2, tags, state2)
         status, body = self.get('/v2/tasks/')
 
         # Validate
@@ -152,9 +159,9 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state3 = 'running'
         tags3 = ['random']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags1, state1)
-        TaskStatusManager.create_task_status(task_id2, queue_2, tags2, state2)
-        TaskStatusManager.create_task_status(task_id3, queue_3, tags3, state3)
+        create_task_status(task_id1, queue_1, tags1, state1)
+        create_task_status(task_id2, queue_2, tags2, state2)
+        create_task_status(task_id3, queue_3, tags3, state3)
 
         # Validate for tags
         status, body = self.get('/v2/tasks/?tag=random&tag=tags')
@@ -190,8 +197,8 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state2 = 'running'
         tags = ['random','tags']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, queue_2, tags, state2)
+        create_task_status(task_id1, queue_1, tags, state1)
+        create_task_status(task_id2, queue_2, tags, state2)
         status, body = self.get('/v2/tasks/%s/' % task_id2)
 
         # Validate
@@ -211,7 +218,7 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state1 = 'waiting'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
+        create_task_status(task_id1, queue_1, tags, state1)
         non_existing_task_id = str(uuid.uuid4())
         status, body = self.get('/v2/tasks/%s/' % non_existing_task_id)
 
