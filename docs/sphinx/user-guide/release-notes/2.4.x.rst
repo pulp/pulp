@@ -13,6 +13,10 @@ New Features
 #. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
    version 2.5.2.
 #. Publishing Puppet repositories to flattened directories.
+#. All messaging between the pulp server and agents is signed and authenticated using asymmetric
+   keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
+   must run: ``pulp-consumer update --keys`` and restart the pulp-agent service for messaging between
+   the server and agent to continue working properly.
 #. Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
    releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
    ``/var/log/pulp/`` as it used to.
@@ -21,6 +25,13 @@ Client Changes
 --------------
 #. Converted the orphan remove command to poll until the remove finishes.  Added a background
    flag to match the pattern the other polling commands.
+#. The behavior of commands requiring agent participation have changed. The *Waiting to begin...*
+   text displayed by the spinner now indicates that a task has been created and that a request
+   has been sent to the agent but that the agent has not yet accepted the request. Once the agent
+   has accepted the request, the text displayed by the spinner will change to indicate this. The
+   spinner will continue until the agent begins executing the request. Agent related tasks no
+   longer have a timeout, so it's up to the caller to determine how long to wait for completion.
+   It is the responsibility of the caller to cancel tasks not progressing as desired.
 
 Noteworthy Bugs Fixed
 ---------------------
@@ -55,6 +66,9 @@ Rest API Changes
 * TaskGroups are no longer supported.  All usages of the task_group_id have been removed.
 * When asynchronous tasks are created they will be returned in the waiting state.  The
   postponed or rejected states are no longer supported.
+* Agent related tasks no longer timeout, and it is now at the caller's discretion as to how long
+  to wait for task completion. The task *state* now reflects the progression of the task on the
+  agent.
 
 
 Binding API Changes
