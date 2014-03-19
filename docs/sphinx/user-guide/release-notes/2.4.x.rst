@@ -26,8 +26,8 @@ Client Changes
    text displayed by the spinner now indicates that a task has been created and that a request
    has been sent to the agent but that the agent has not yet accepted the request. Once the agent
    has accepted the request, the text displayed by the spinner will change to indicate this. The
-   spinner will remain running until the agent begins executing the request. Agent related tasks no
-   longer have a timeout so it's up to the caller to determine how long to wait for completion.
+   spinner will continue until the agent begins executing the request. Agent related tasks no
+   longer have a timeout, so it's up to the caller to determine how long to wait for completion.
    It is the responsibility of the caller to cancel tasks not progressing as desired.
 
 Noteworthy Bugs Fixed
@@ -63,8 +63,8 @@ Rest API Changes
 * TaskGroups are no longer supported.  All usages of the task_group_id have been removed.
 * When asynchronous tasks are created they will be returned in the waiting state.  The
   postponed or rejected states are no longer supported.
-* Agent related tasks no longer timeout and it is now at the caller's discretion as to how long
-  wait for task completion. The task *state* now reflects the progression of the task on the
+* Agent related tasks no longer timeout, and it is now at the caller's discretion as to how long
+  to wait for task completion. The task *state* now reflects the progression of the task on the
   agent.
 
 
