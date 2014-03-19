@@ -8,7 +8,6 @@
 /sbin/restorecon -i -R /usr/bin/pulp-consumer
 /sbin/restorecon -i -R /var/lib/pulp
 /sbin/restorecon -i -R /var/log/pulp
-/sbin/restorecon -i -R /var/www/pulp_puppet
 
 
 

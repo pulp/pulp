@@ -30,16 +30,15 @@ class Context(object):
     operation on the agent.
 
     :ivar agent_id: The agent ID.
+        The agent id has the form: 'pulp.agent.<consumer_id>'.
     :type agent_id: str
     :ivar url: The broker URL.
     :type url: str
-    :ivar secret: The shared secret for the consumer.
-    :type secret: str
-    :ivar round_tripped: Data round tripped to that agent and back.
+    :ivar transport: The name of the gofer transport to be used.
+    :type transport: str
+    :ivar details: Data round tripped to that agent and back.
         Used by the reply consumer.
-    :type round_tripped: object
-    :ivar watchdog: A gofer watchdog object.  Used to track overdue requests.
-    :type watchdog: gofer.rmi.async.Watchdog
+    :type details: dict
     :ivar reply_queue: The reply queue name.
     :type reply_queue: str
     """
@@ -48,8 +47,11 @@ class Context(object):
         """
         :param consumer: A consumer DB model object.
         :type consumer: dict
+        :param details: A dictionary of information to be round-tripped.
+            Primarily used to correlate asynchronous replies.
+        :type details: dict
         """
-        self.agent_id = consumer['id']
+        self.agent_id = 'pulp.agent.%s' % consumer['id']
         self.url = pulp_conf.get('messaging', 'url')
         self.transport = pulp_conf.get('messaging', 'transport')
         self.details = details

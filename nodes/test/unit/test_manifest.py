@@ -17,7 +17,7 @@ import json
 
 from unittest import TestCase
 
-from nectar.downloaders.curl import HTTPSCurlDownloader
+from nectar.downloaders.local import LocalFileDownloader
 from nectar.config import DownloaderConfig
 
 from pulp_node.manifest import *
@@ -105,7 +105,7 @@ class TestManifest(TestCase):
         manifest.write()
         # Test
         cfg = DownloaderConfig()
-        downloader = HTTPSCurlDownloader(cfg)
+        downloader = LocalFileDownloader(cfg)
         working_dir = os.path.join(self.tmp_dir, 'working_dir')
         os.makedirs(working_dir)
         path = os.path.join(self.tmp_dir, MANIFEST_FILE_NAME)

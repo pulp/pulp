@@ -17,6 +17,9 @@ New Features
    keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
    must run: ``pulp-consumer update --keys`` and restart the pulp-agent service for messaging between
    the server and agent to continue working properly.
+#. Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
+   releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
+   ``/var/log/pulp/`` as it used to.
 
 Client Changes
 --------------
