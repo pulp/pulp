@@ -34,7 +34,7 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
                                              RepoSyncResult)
-from pulp.server.exceptions import MissingResource, OperationPostponed
+from pulp.server.exceptions import MissingResource, OperationPostponed, PulpException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
@@ -44,7 +44,6 @@ from .... import base
 
 
 class RepoControllersTests(base.PulpWebserviceTests):
-
     def setUp(self):
         super(RepoControllersTests, self).setUp()
         self.repo_manager = manager_factory.repo_manager()
@@ -58,6 +57,7 @@ class ReservedResourceApplyAsync(object):
     """
     This object allows us to mock the return value of _reserve_resource.apply_async.get().
     """
+
     def get(self):
         return 'some_queue'
 
@@ -97,12 +97,11 @@ class RepoImportUploadTests(RepoControllersTests):
 
 
 class RepoSearchTests(RepoControllersTests):
-
     @mock.patch.object(repositories.RepoSearch, 'params')
     @mock.patch.object(PulpCollection, 'query')
     def test_basic_search(self, mock_query, mock_params):
         mock_params.return_value = {
-            'criteria' : {}
+            'criteria': {}
         }
         ret = self.post('/v2/repositories/search/')
         self.assertEqual(ret[0], 200)
@@ -133,11 +132,11 @@ class RepoSearchTests(RepoControllersTests):
         make sure the method returns the same stuff that is returned by query()
         """
         mock_params.return_value = {
-            'criteria' : {}
+            'criteria': {}
         }
         mock_query.return_value = [
-            {'id' : 'repo-1'},
-            {'id' : 'repo-2'},
+            {'id': 'repo-1'},
+            {'id': 'repo-2'},
         ]
         ret = self.post('/v2/repositories/search/')
         self.assertEqual(ret[0], 200)
@@ -148,9 +147,9 @@ class RepoSearchTests(RepoControllersTests):
     @mock.patch.object(PulpCollection, 'query')
     def test_search_with_importers(self, mock_query, mock_params, mock_process_repos):
         mock_params.return_value = {
-            'criteria' : {},
-            'importers' : 1,
-            'distributors' : 0
+            'criteria': {},
+            'importers': 1,
+            'distributors': 0
         }
         ret = self.post('/v2/repositories/search/')
         self.assertEqual(ret[0], 200)
@@ -161,9 +160,9 @@ class RepoSearchTests(RepoControllersTests):
     @mock.patch.object(PulpCollection, 'query')
     def test_search_with_distributors(self, mock_query, mock_params, mock_process_repos):
         mock_params.return_value = {
-            'criteria' : {},
-            'importers' : 0,
-            'distributors' : 1
+            'criteria': {},
+            'importers': 0,
+            'distributors': 1
         }
         ret = self.post('/v2/repositories/search/')
         self.assertEqual(ret[0], 200)
@@ -174,9 +173,9 @@ class RepoSearchTests(RepoControllersTests):
     @mock.patch.object(PulpCollection, 'query')
     def test_search_with_both(self, mock_query, mock_params, mock_process_repos):
         mock_params.return_value = {
-            'criteria' : {},
-            'importers' : 1,
-            'distributors' : 1
+            'criteria': {},
+            'importers': 1,
+            'distributors': 1
         }
         ret = self.post('/v2/repositories/search/')
         self.assertEqual(ret[0], 200)
@@ -216,7 +215,6 @@ class RepoSearchTests(RepoControllersTests):
 
 
 class RepoCollectionTests(RepoControllersTests):
-
     def test_get(self):
         """
         Tests retrieving a list of repositories.
@@ -249,8 +247,8 @@ class RepoCollectionTests(RepoControllersTests):
         self.assertEqual(0, len(body))
 
     def test_merge_related_objects(self):
-        REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
-        IMPORTERS = [{'repo_id' : 'dummy-1', 'id' : 'importer-1', 'importer_type_id' : 1}]
+        REPOS = [{'id': 'dummy-1', 'display_name': 'dummy'}]
+        IMPORTERS = [{'repo_id': 'dummy-1', 'id': 'importer-1', 'importer_type_id': 1}]
 
         # mock out these managers so we don't hit the DB
         mock_importer_manager = mock.MagicMock()
@@ -264,42 +262,42 @@ class RepoCollectionTests(RepoControllersTests):
     @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
     def test_process_repos_calls_serialize(self, mock_link_obj):
         mock_link_obj.return_value = {}
-        REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
+        REPOS = [{'id': 'dummy-1', 'display_name': 'dummy'}]
         repositories.RepoCollection._process_repos(REPOS)
         mock_link_obj.assert_called_once_with(REPOS[0]['id'])
 
     @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
                 return_value={})
     def test_process_repos_without_details(self, mock_link_obj):
-        REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
+        REPOS = [{'id': 'dummy-1', 'display_name': 'dummy'}]
         ret = repositories.RepoCollection._process_repos(REPOS)
         self.assertTrue('importers' not in ret[0])
         self.assertTrue('distributors' not in ret[0])
 
     @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
-        return_value={})
+                return_value={})
     @mock.patch.object(repositories, '_merge_related_objects')
     def test_process_repos_with_importers(self, mock_merge_related_objects,
                                           mock_link_obj):
-        REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
+        REPOS = [{'id': 'dummy-1', 'display_name': 'dummy'}]
         repositories.RepoCollection._process_repos(REPOS, importers=True)
         self.assertEqual(mock_merge_related_objects.call_count, 1)
         self.assertEqual(mock_merge_related_objects.call_args[0][0], 'importers')
         self.assertTrue(isinstance(mock_merge_related_objects.call_args[0][1],
-            RepoImporterManager))
+                                   RepoImporterManager))
 
     @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
-        return_value={})
+                return_value={})
     @mock.patch.object(repositories, '_merge_related_objects')
     def test_process_repos_with_distributors(self, mock_merge_related_objects,
-                                          mock_link_obj):
-        REPOS = [{'id' : 'dummy-1', 'display_name' : 'dummy'}]
+                                             mock_link_obj):
+        REPOS = [{'id': 'dummy-1', 'display_name': 'dummy'}]
         repositories.RepoCollection._process_repos(REPOS, distributors=True)
         self.assertEqual(mock_merge_related_objects.call_count, 1)
         self.assertEqual(
             mock_merge_related_objects.call_args[0][0], 'distributors')
         self.assertTrue(isinstance(mock_merge_related_objects.call_args[0][1],
-            RepoDistributorManager))
+                                   RepoDistributorManager))
 
     @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_all')
     @mock.patch.object(repositories, '_merge_related_objects')
@@ -332,9 +330,9 @@ class RepoCollectionTests(RepoControllersTests):
 
         # Setup
         body = {
-            'id' : 'repo-1',
-            'display_name' : 'Repo 1',
-            'description' : 'Repository',
+            'id': 'repo-1',
+            'display_name': 'Repo 1',
+            'description': 'Repository',
         }
 
         # Test
@@ -354,7 +352,7 @@ class RepoCollectionTests(RepoControllersTests):
         """
 
         # Setup
-        body = {'id' : 'HA! This looks so totally invalid, but we do allow this ID now :)'}
+        body = {'id': 'HA! This looks so totally invalid, but we do allow this ID now :)'}
 
         # Test
         status, body = self.post('/v2/repositories/', params=body)
@@ -370,7 +368,7 @@ class RepoCollectionTests(RepoControllersTests):
         # Setup
         self.repo_manager.create_repo('existing')
 
-        body = {'id' : 'existing'}
+        body = {'id': 'existing'}
 
         # Test
         status, body = self.post('/v2/repositories/', params=body)
@@ -399,7 +397,7 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
         #validate that the task was called with the appropriate tags
         task_tags = ['pulp:repository:foo-repo',
                      'pulp:action:delete']
-        mock_delete_task.apply_async_with_reservation.\
+        mock_delete_task.apply_async_with_reservation. \
             assert_called_once_with(dispatch_constants.RESOURCE_REPOSITORY_TYPE,
                                     'foo-repo', ['foo-repo', ], tags=task_tags)
         #validate the permissions
@@ -409,7 +407,6 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
             repo_distributor.DELETE("foo-repo")
         except OperationPostponed, op:
             self.assertEquals(op.call_report, async_task)
-
 
     @mock.patch('pulp.server.managers.factory.repo_query_manager')
     @mock.patch('pulp.server.managers.factory.repo_manager', autospec=True)
@@ -422,18 +419,41 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
         })
         repo_distributor.params = params
         mock_update_task = mock_repo_manager.return_value.update_repo_and_plugins
-        mock_update_task.return_value = TaskResult({'repo_id': 'repo-foo'})
+        working_result = TaskResult({'repo_id': 'repo-foo'}, error=PulpException("foo"))
+        mock_update_task.return_value = working_result
         repo_distributor.ok = mock.Mock()
         repo_distributor.PUT("foo-repo")
         mock_update_task.assert_called_once_with('foo-repo', 'foo', 'bar', 'baz')
-        compare_dict(repo_distributor.ok.call_args_list[0][0][0],
-                     {'repo_id': 'repo-foo', '_href': self.get_mock_uri_path()})
 
+        working_result.return_value['_href'] = self.get_mock_uri_path()
+        compare_dict(repo_distributor.ok.call_args_list[0][0][0],
+                     working_result.serialize())
+
+        self.validate_auth(authorization.UPDATE)
+
+    @mock.patch('pulp.server.managers.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.factory.repo_manager', autospec=True)
+    def test_put_with_spawned_raises_operation_postponed(self, mock_repo_manager,
+                                                         mock_manager_factory):
+        repo_distributor = repositories.RepoResource()
+        params = mock.Mock(return_value={
+            'delta': 'foo',
+            'importer_config': 'bar',
+            'distributor_configs': 'baz'
+        })
+        repo_distributor.params = params
+        mock_update_task = mock_repo_manager.return_value.update_repo_and_plugins
+        working_result = TaskResult({'repo_id': 'repo-foo'}, error=PulpException("foo"),
+                                    spawned_tasks=[{'task_id': 'foo'}])
+        mock_update_task.return_value = working_result
+        repo_distributor.ok = mock.Mock()
+
+        self.assertRaises(OperationPostponed, repo_distributor.PUT, "foo-repo")
+        mock_update_task.assert_called_once_with('foo-repo', 'foo', 'bar', 'baz')
         self.validate_auth(authorization.UPDATE)
 
 
 class RepoResourceTests(RepoControllersTests):
-
     def test_get(self):
         """
         Tests retrieving a valid repo.
@@ -514,7 +534,6 @@ class RepoResourceTests(RepoControllersTests):
 
 
 class RepoPluginsTests(RepoControllersTests):
-
     def setUp(self):
         super(RepoPluginsTests, self).setUp()
 
@@ -539,7 +558,6 @@ class RepoPluginsTests(RepoControllersTests):
 
 
 class RepoImportersTests(RepoPluginsTests):
-
     def test_get(self):
         """
         Tests getting the list of importers for a valid repo with importers.
@@ -588,8 +606,8 @@ class RepoImportersTests(RepoPluginsTests):
 
         # Test
         req_body = {
-            'importer_type_id' : 'dummy-importer',
-            'importer_config' : {'foo' : 'bar'},
+            'importer_type_id': 'dummy-importer',
+            'importer_config': {'foo': 'bar'},
         }
         status, body = self.post('/v2/repositories/gravy/importers/', params=req_body)
 
@@ -608,8 +626,8 @@ class RepoImportersTests(RepoPluginsTests):
         _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
         req_body = {
-            'importer_type_id' : 'dummy-importer',
-            'importer_config' : {'foo' : 'bar'},
+            'importer_type_id': 'dummy-importer',
+            'importer_config': {'foo': 'bar'},
         }
         status, body = self.post('/v2/repositories/blah/importers/', params=req_body)
         # Verify
@@ -634,7 +652,7 @@ class RepoImportersTests(RepoPluginsTests):
         # Setup
         self.repo_manager.create_repo('walnuts')
         req_body = {
-            'importer_type_id' : 'not-a-real-importer'
+            'importer_type_id': 'not-a-real-importer'
         }
         _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
@@ -644,7 +662,6 @@ class RepoImportersTests(RepoPluginsTests):
 
 
 class RepoImporterTests(RepoPluginsTests):
-
     def test_get(self):
         """
         Tests getting an importer that exists.
@@ -739,15 +756,15 @@ class RepoImporterTests(RepoPluginsTests):
         mock_apply_async.return_value = AsyncResult(task_id)
         _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
-        new_config = {'importer_config' : {'ice_cream' : True}}
-        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/', 
+        new_config = {'importer_config': {'ice_cream': True}}
+        status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/',
                                 params=new_config)
         # Verify
         self.assertEqual(202, status)
         self.assertEqual(body['spawned_tasks'][0]['task_id'], task_id)
         call_args, call_kwargs = mock_apply_async.call_args[0]
         self.assertTrue(repo_id in call_args)
-        self.assertEqual(call_kwargs['importer_config'], {'ice_cream' : True})
+        self.assertEqual(call_kwargs['importer_config'], {'ice_cream': True})
 
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_update_missing_repo(self, _reserve_resource):
@@ -756,8 +773,8 @@ class RepoImporterTests(RepoPluginsTests):
         """
         _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
-        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/', 
-                                params={'importer_config' : {}})
+        status, body = self.put('/v2/repositories/foo/importers/dummy-importer/',
+                                params={'importer_config': {}})
         # Verify
         self.assertEqual(202, status)
 
@@ -770,8 +787,8 @@ class RepoImporterTests(RepoPluginsTests):
         self.repo_manager.create_repo('pie')
         _reserve_resource.return_value = ReservedResourceApplyAsync()
         # Test
-        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/', 
-                                params={'importer_config' : {}})
+        status, body = self.put('/v2/repositories/pie/importers/dummy-importer/',
+                                params={'importer_config': {}})
         # Verify
         self.assertEqual(202, status)
 
@@ -789,15 +806,16 @@ class RepoImporterTests(RepoPluginsTests):
 
 
 class RepoDistributorsTests(RepoPluginsTests):
-
     def test_get_distributors(self):
         """
         Tests retrieving all distributors for a repo.
         """
         # Setup
         self.repo_manager.create_repo('coffee')
-        self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True, distributor_id='dist-1')
-        self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True, distributor_id='dist-2')
+        self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True,
+                                                 distributor_id='dist-1')
+        self.distributor_manager.add_distributor('coffee', 'dummy-distributor', {}, True,
+                                                 distributor_id='dist-2')
         # Test
         status, body = self.get('/v2/repositories/coffee/distributors/')
         # Verify
@@ -834,8 +852,8 @@ class RepoDistributorsTests(RepoPluginsTests):
         self.repo_manager.create_repo('tea')
 
         req_body = {
-            'distributor_type_id' : 'dummy-distributor',
-            'distributor_config' : {'a' : 'b'},
+            'distributor_type_id': 'dummy-distributor',
+            'distributor_config': {'a': 'b'},
         }
 
         # Test
@@ -855,8 +873,8 @@ class RepoDistributorsTests(RepoPluginsTests):
 
         # Test
         req_body = {
-            'distributor_type_id' : 'dummy-distributor',
-            'distributor_config' : {'a' : 'b'},
+            'distributor_type_id': 'dummy-distributor',
+            'distributor_config': {'a': 'b'},
         }
         status, body = self.post('/v2/repositories/not_there/distributors/', params=req_body)
 
@@ -934,8 +952,6 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
         except OperationPostponed, op:
             self.assertEquals(op.call_report, async_task)
 
-
-
     @mock.patch('pulp.server.tasks.repository.distributor_update', autospec=True)
     def test_put_missing_config_raises_exception(self, mock_update_task):
         repo_distributor = repositories.RepoDistributor()
@@ -944,7 +960,6 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
 
 
 class RepoDistributorTests(RepoPluginsTests):
-
     def test_get(self):
         """
         Tests getting a single repo distributor.
@@ -977,7 +992,6 @@ class RepoDistributorTests(RepoPluginsTests):
 
 
 class RepoSyncHistoryTests(RepoPluginsTests):
-
     def test_get(self):
         """
         Tests getting sync history for a repo.
@@ -1039,12 +1053,14 @@ class RepoSyncHistoryTests(RepoPluginsTests):
     def add_success_result(self, repo_id, offset):
         started = datetime.datetime.now(dateutils.local_tz())
         completed = started + datetime.timedelta(days=offset)
-        r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 1, 1, 1, '', '', RepoSyncResult.RESULT_SUCCESS)
+        r = RepoSyncResult.expected_result(repo_id, 'foo', 'bar',
+                                           dateutils.format_iso8601_datetime(started),
+                                           dateutils.format_iso8601_datetime(completed), 1, 1, 1,
+                                           '', '', RepoSyncResult.RESULT_SUCCESS)
         RepoSyncResult.get_collection().save(r, safe=True)
 
 
 class RepoPublishHistoryTests(RepoPluginsTests):
-
     def test_get(self):
         """
         Tests getting the publish history for a repo.
@@ -1052,7 +1068,8 @@ class RepoPublishHistoryTests(RepoPluginsTests):
 
         # Setup
         self.repo_manager.create_repo('pub-test')
-        self.distributor_manager.add_distributor('pub-test', 'dummy-distributor', {}, True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('pub-test', 'dummy-distributor', {}, True,
+                                                 distributor_id='dist-1')
         for i in range(0, 10):
             self._add_success_result('pub-test', 'dist-1', i)
 
@@ -1070,7 +1087,8 @@ class RepoPublishHistoryTests(RepoPluginsTests):
 
         # Setup
         self.repo_manager.create_repo('foo')
-        self.distributor_manager.add_distributor('foo', 'dummy-distributor', {}, True, distributor_id='empty')
+        self.distributor_manager.add_distributor('foo', 'dummy-distributor', {}, True,
+                                                 distributor_id='empty')
 
         # Test
         status, body = self.get('/v2/repositories/foo/history/publish/empty/')
@@ -1118,17 +1136,21 @@ class RepoPublishHistoryTests(RepoPluginsTests):
     def _add_success_result(self, repo_id, distributor_id, offset):
         started = datetime.datetime.now(dateutils.local_tz())
         completed = started + datetime.timedelta(days=offset)
-        r = RepoPublishResult.expected_result(repo_id, distributor_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), '', '', RepoPublishResult.RESULT_SUCCESS)
+        r = RepoPublishResult.expected_result(repo_id, distributor_id, 'bar',
+                                              dateutils.format_iso8601_datetime(started),
+                                              dateutils.format_iso8601_datetime(completed), '', '',
+                                              RepoPublishResult.RESULT_SUCCESS)
         RepoPublishResult.get_collection().save(r, safe=True)
 
-class RepoUnitAssociationQueryTests(RepoControllersTests):
 
+class RepoUnitAssociationQueryTests(RepoControllersTests):
     def setUp(self):
         super(RepoUnitAssociationQueryTests, self).setUp()
         self.repo_manager.create_repo('repo-1')
 
         self.association_query_mock = mock.Mock()
-        manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION_QUERY] = self.association_query_mock
+        manager_factory._INSTANCES[
+            manager_factory.TYPE_REPO_ASSOCIATION_QUERY] = self.association_query_mock
 
     def clean(self):
         super(RepoUnitAssociationQueryTests, self).clean()
@@ -1143,25 +1165,25 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
         self.association_query_mock.get_units_by_type.return_value = []
 
         query = {
-            'type_ids' : ['rpm'],
-            'filters' : {
-                'unit' : {'key' : {'$in' : 'zsh'}},
-                'association' : {'owner_type' : 'importer'}
+            'type_ids': ['rpm'],
+            'filters': {
+                'unit': {'key': {'$in': 'zsh'}},
+                'association': {'owner_type': 'importer'}
             },
-            'sort' : {
-                'unit' : [ ['name', 'ascending'], ['version', '-1'] ],
-                'association' : [ ['created', '-1'], ['updated', '1'] ]
+            'sort': {
+                'unit': [['name', 'ascending'], ['version', '-1']],
+                'association': [['created', '-1'], ['updated', '1']]
             },
-            'limit' : '100',
-            'skip' : '200',
-            'fields' : {
-                'unit' : ['name', 'version', 'arch'],
-                'association' : ['created']
+            'limit': '100',
+            'skip': '200',
+            'fields': {
+                'unit': ['name', 'version', 'arch'],
+                'association': ['created']
             },
-            'remove_duplicates' : 'True'
+            'remove_duplicates': 'True'
         }
 
-        params = {'criteria' : query}
+        params = {'criteria': query}
         status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
 
         # Verify
@@ -1175,12 +1197,16 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
         self.assertEqual(query['type_ids'], criteria.type_ids)
         self.assertEqual(query['filters']['association'], criteria.association_filters)
         self.assertEqual(query['filters']['unit'], criteria.unit_filters)
-        self.assertEqual([('created', UnitAssociationCriteria.SORT_DESCENDING), ('updated', UnitAssociationCriteria.SORT_ASCENDING)], criteria.association_sort)
-        self.assertEqual([('name', UnitAssociationCriteria.SORT_ASCENDING), ('version', UnitAssociationCriteria.SORT_DESCENDING)], criteria.unit_sort)
+        self.assertEqual([('created', UnitAssociationCriteria.SORT_DESCENDING),
+                          ('updated', UnitAssociationCriteria.SORT_ASCENDING)],
+                         criteria.association_sort)
+        self.assertEqual([('name', UnitAssociationCriteria.SORT_ASCENDING),
+                          ('version', UnitAssociationCriteria.SORT_DESCENDING)], criteria.unit_sort)
         self.assertEqual(int(query['limit']), criteria.limit)
         self.assertEqual(int(query['skip']), criteria.skip)
         self.assertEqual(query['fields']['unit'], criteria.unit_fields)
-        self.assertEqual(query['fields']['association'] + ['unit_id', 'unit_type_id'], criteria.association_fields)
+        self.assertEqual(query['fields']['association'] + ['unit_id', 'unit_type_id'],
+                         criteria.association_fields)
         self.assertEqual(bool(query['remove_duplicates']), criteria.remove_duplicates)
 
     def test_post_multiple_type(self):
@@ -1191,9 +1217,9 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
         # Setup
         self.association_query_mock.get_units_across_types.return_value = []
 
-        query = {'type_ids' : ['rpm', 'errata']}
+        query = {'type_ids': ['rpm', 'errata']}
 
-        params = {'criteria' : query}
+        params = {'criteria': query}
         status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
 
         # Verify
@@ -1201,7 +1227,9 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
         self.assertEqual(0, self.association_query_mock.get_units_by_type.call_count)
         self.assertEqual(1, self.association_query_mock.get_units_across_types.call_count)
-        self.assertTrue(isinstance(self.association_query_mock.get_units_across_types.call_args[1]['criteria'], UnitAssociationCriteria))
+        self.assertTrue(
+            isinstance(self.association_query_mock.get_units_across_types.call_args[1]['criteria'],
+                       UnitAssociationCriteria))
 
     def test_post_missing_query(self):
         # Test
@@ -1212,7 +1240,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
     def test_post_bad_query(self):
         # Test
-        params = {'criteria' : {'limit' : 'fus'}}
+        params = {'criteria': {'limit': 'fus'}}
         status, body = self.post('/v2/repositories/repo-1/search/units/', params=params)
 
         # Verify
@@ -1220,8 +1248,8 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
 
 
 class DependencyResolutionTests(RepoControllersTests):
-
-    @mock.patch('pulp.server.managers.repo.dependency.DependencyManager.resolve_dependencies_by_criteria')
+    @mock.patch(
+        'pulp.server.managers.repo.dependency.DependencyManager.resolve_dependencies_by_criteria')
     def test_post(self, mock_resolve_method):
         # Setup
         mock_resolve_method.return_value = ['foo']
@@ -1234,12 +1262,13 @@ class DependencyResolutionTests(RepoControllersTests):
 
         self.assertEqual(1, mock_resolve_method.call_count)
 
-    @mock.patch('pulp.server.managers.repo.dependency.DependencyManager.resolve_dependencies_by_criteria')
+    @mock.patch(
+        'pulp.server.managers.repo.dependency.DependencyManager.resolve_dependencies_by_criteria')
     def test_post_bad_criteria(self, mock_resolve_method):
         # Setup
         mock_resolve_method.return_value = ['foo']
         body = {
-            'criteria' : 'bar'
+            'criteria': 'bar'
         }
 
         # Test
@@ -1252,25 +1281,26 @@ class DependencyResolutionTests(RepoControllersTests):
     @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
     def test_post_auth_required(self, mock_headers):
         """
-        Test that when the proper authentication information is missing, the server returns a 401 error
-        when RepoResolveDependencies.POST is called
+        Test that when the proper authentication information is missing, the server returns a 401
+        error when RepoResolveDependencies.POST is called
         """
         call_status, call_body = self.post('/v2/repositories/repo/actions/resolve_dependencies/')
         self.assertEqual(401, call_status)
 
 
 class RepoAssociateTests(RepoControllersTests):
-
     def setUp(self):
         super(RepoAssociateTests, self).setUp()
         self.repo_manager.create_repo('source-repo-1')
         self.repo_manager.create_repo('dest-repo-1')
 
         #self.association_manager_mock = mock.Mock()
-        #manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = self.association_manager_mock
+        #manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = self
+        # .association_manager_mock
 
         self.association_manager_dummy = dummy_plugins.DummyObject()
-        manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = self.association_manager_dummy
+        manager_factory._INSTANCES[
+            manager_factory.TYPE_REPO_ASSOCIATION] = self.association_manager_dummy
 
     def clean(self):
         super(RepoAssociateTests, self).clean()
@@ -1282,35 +1312,31 @@ class RepoAssociateTests(RepoControllersTests):
         self.assertEqual(400, status)
 
     def test_post_invalid_dest_repo(self):
-        params = {'source_repo_id' : 'source-repo-1',
-                  'criteria' : {},}
+        params = {'source_repo_id': 'source-repo-1', 'criteria': {}, }
 
         status, body = self.post('/v2/repositories/fake/actions/associate/', params=params)
 
         self.assertEqual(404, status)
 
     def test_post_invalid_source_repo(self):
-        params = {'source_repo_id' : 'fake',
-                  'criteria' : {},}
+        params = {'source_repo_id': 'fake', 'criteria': {}, }
 
         status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
 
         self.assertEqual(400, status)
 
     def test_post_unparsable_criteria(self):
-
         # Test
-        params = {'source_repo_id' : 'source-repo-1',
-                  'criteria' : 'unparsable'}
+        params = {'source_repo_id': 'source-repo-1', 'criteria': 'unparsable'}
         status, body = self.post('/v2/repositories/dest-repo-1/actions/associate/', params=params)
 
         # Verify
         self.assertEqual(400, status)
 
+
 # scheduled sync rest api ------------------------------------------------------
 
 class ScheduledSyncTests(RepoPluginsTests):
-
     def setUp(self):
         super(ScheduledSyncTests, self).setUp()
 
@@ -1401,15 +1427,16 @@ class ScheduledSyncTests(RepoPluginsTests):
         self.assertEqual(body['enabled'], updates['enabled'])
         self.assertEqual(body['kwargs']['overrides'], updates['override_config'])
 
+
 # scheduled publish api --------------------------------------------------------
 
 class ScheduledPublishTests(RepoPluginsTests):
-
     def setUp(self):
         super(ScheduledPublishTests, self).setUp()
         self.repo_id = 'scheduled-repo'
         self.repo_manager.create_repo(self.repo_id)
-        self.distributor_manager.add_distributor(self.repo_id, 'dummy-distributor', {}, True, distributor_id='dist')
+        self.distributor_manager.add_distributor(self.repo_id, 'dummy-distributor', {}, True,
+                                                 distributor_id='dist')
 
     def clean(self):
         super(ScheduledPublishTests, self).clean()
@@ -1495,27 +1522,25 @@ class ScheduledPublishTests(RepoPluginsTests):
 
 
 class UnitCriteriaTests(unittest.TestCase):
-
     def test_parse_criteria(self):
-
         # Setup
         query = {
-            'type_ids' : ['rpm'],
-            'filters' : {
-                'unit' : {'$and' : [
-                    {'$regex' : '^p.*'},
-                    {'$not' : 'ython$'},
+            'type_ids': ['rpm'],
+            'filters': {
+                'unit': {'$and': [
+                    {'$regex': '^p.*'},
+                    {'$not': 'ython$'},
                 ]},
-                'association' : {'created' : {'$gt' : 'now'}},
+                'association': {'created': {'$gt': 'now'}},
             },
 
-            'limit' : 100,
-            'skip' : 200,
-            'fields' : {
-                'unit' : ['name', 'version'],
-                'association' : ['created'],
+            'limit': 100,
+            'skip': 200,
+            'fields': {
+                'unit': ['name', 'version'],
+                'association': ['created'],
             },
-            'remove_duplicates' : True,
+            'remove_duplicates': True,
         }
 
         # Test
@@ -1523,7 +1548,7 @@ class UnitCriteriaTests(unittest.TestCase):
 
         # Verify
         self.assertEqual(criteria.type_ids, ['rpm'])
-        self.assertEqual(criteria.association_filters, {'created' : {'$gt' : 'now'}})
+        self.assertEqual(criteria.association_filters, {'created': {'$gt': 'now'}})
         self.assertEqual(criteria.limit, 100)
         self.assertEqual(criteria.skip, 200)
         self.assertEqual(criteria.unit_fields, ['name', 'version'])
@@ -1541,17 +1566,15 @@ class UnitCriteriaTests(unittest.TestCase):
         self.assertEqual(and_list[1]['$not'], re.compile('ython$'))
 
 
-
 class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
-
     CONSUMER_IDS = ['consumer-1', 'consumer-2']
-    FILTER = {'id':{'$in':CONSUMER_IDS}}
-    SORT = [{'id':1}]
+    FILTER = {'id': {'$in': CONSUMER_IDS}}
+    SORT = [{'id': 1}]
     CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
-    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
-    REPO_IDS = ['repo-1','repo-2']
-    REPO_FILTER = {'id':{'$in':REPO_IDS}}
-    REPO_CRITERIA = Criteria(filters=REPO_FILTER, sort=[{'id':1}])
+    PROFILE = [{'name': 'zsh', 'version': '1.0'}, {'name': 'ksh', 'version': '1.0'}]
+    REPO_IDS = ['repo-1', 'repo-2']
+    REPO_FILTER = {'id': {'$in': REPO_IDS}}
+    REPO_CRITERIA = Criteria(filters=REPO_FILTER, sort=[{'id': 1}])
     YUM_DISTRIBUTOR_ID = 'yum_distributor'
 
     PATH = '/v2/repositories/actions/content/regenerate_applicability/'
@@ -1569,9 +1592,8 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
 
         yum_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
         yum_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda p,r,c,x:
-                      {'rpm': ['rpm-1', 'rpm-2'],
-                       'erratum': ['errata-1', 'errata-2']})
+            mock.Mock(side_effect=lambda p, r, c, x: {'rpm': ['rpm-1', 'rpm-2'],
+                                                      'erratum': ['errata-1', 'errata-2']})
 
     def tearDown(self):
         base.PulpWebserviceTests.tearDown(self)
@@ -1590,11 +1612,11 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for repo_id in self.REPO_IDS:
             repo_manager.create_repo(repo_id)
             distributor_manager.add_distributor(
-                                                repo_id,
-                                                'mock-distributor',
-                                                {},
-                                                True,
-                                                self.YUM_DISTRIBUTOR_ID)
+                repo_id,
+                'mock-distributor',
+                {},
+                True,
+                self.YUM_DISTRIBUTOR_ID)
 
     def populate_bindings(self):
         self.populate_repos()
@@ -1619,18 +1641,17 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.populate()
         self.populate_bindings()
         # Test
-        request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
+        request_body = dict(repo_criteria={'filters': self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body['spawned_tasks'][0])
 
-
     @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
     def test_regenerate_applicability_no_consumer(self, _reserve_resource):
         # Test
         _reserve_resource.return_value = ReservedResourceApplyAsync()
-        request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
+        request_body = dict(repo_criteria={'filters': self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
@@ -1642,7 +1663,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         _reserve_resource.return_value = ReservedResourceApplyAsync()
         self.populate()
         # Test
-        request_body = dict(repo_criteria={'filters':self.REPO_FILTER})
+        request_body = dict(repo_criteria={'filters': self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)

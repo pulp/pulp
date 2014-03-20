@@ -17,10 +17,12 @@ import unittest
 
 import mock
 
-import base
+from .... import base
+from pulp.common import error_codes
 from pulp.common.util import encode_unicode
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.factory as manager_factory
@@ -472,6 +474,7 @@ class RepoManagerTests(base.PulpServerTests):
         } # only update one of the two distributors
 
         result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config, new_distributor_configs)
+        self.assertEquals(None, result.error)
         repo = result.return_value
         # Verify
         self.assertEqual(repo['id'], 'repo-1')
@@ -486,6 +489,33 @@ class RepoManagerTests(base.PulpServerTests):
 
         dist_2 = distributor_manager.get_distributor('repo-1', 'dist-2')
         self.assertEqual(dist_2['config'], {'key-d2' : 'orig-2'})
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager')
+    @mock.patch('pulp.server.managers.repo.cud.manager_factory')
+    @mock.patch('pulp.server.managers.repo.cud.repository.distributor_update')
+    def test_update_repo_and_plugins_with_errors(self, mock_distributor_update, mock_manager_factory, mock_repo_manager):
+        """
+        Tests the aggregate call to update a repo and its plugins with errors
+        """
+
+        # Test
+        repo_delta = {'display_name' : 'Updated'}
+        new_importer_config = {'key-i1' : 'updated-1', 'key-i2' : 'new-1'}
+        new_distributor_configs = {
+            'dist-1' : {'key-d1' : 'updated-1'},
+        } # only update one of the two distributors
+
+        update_error = exceptions.PulpException('foo')
+        mock_distributor_update.return_value = TaskResult(error=update_error)
+
+        result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config,
+                                                      new_distributor_configs)
+        self.assertTrue(result.error is not None)
+        error = result.error
+        self.assertEquals(error.error_code, error_codes.PLP0006)
+        self.assertEquals(len(error.child_exceptions), 1)
+        self.assertEquals(error.child_exceptions[0], update_error)
+
 
     def test_update_repo_and_plugins_partial(self):
         """
