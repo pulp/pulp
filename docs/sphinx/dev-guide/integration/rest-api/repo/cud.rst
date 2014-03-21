@@ -173,12 +173,12 @@ The details of the added importer are returned from the call.
 
 | :response_list:`_`
 
-* :response_code:`201,if the importer was successfully added`
+* :response_code:`202,if the association was queued to be performed`
 * :response_code:`400,if one or more of the required parameters is missing, the importer type ID refers to a non-existent importer, or the importer indicates the supplied configuration is invalid`
 * :response_code:`404,if there is no repository with the given ID`
 * :response_code:`500,if the importer raises an error during initialization`
 
-| :return:`a` :ref:`call_report` containing the database representation of the importer (not the full repository details, just the importer)
+| :return:`a` :ref:`call_report` containing the current state of the association task
 
 :sample_request:`_` ::
 
@@ -190,8 +190,8 @@ The details of the added importer are returned from the call.
   }
  }
 
-**Sample result value:**
-The result field of the :ref:`call_report` contains the database representation of the importer (not the full repository details, just the importer)
+**Sample result value for the Task Report:**
+The result field of the :ref:`task_report` will contain the database representation of the importer (not the full repository details, just the importer)
 ::
 
  {
