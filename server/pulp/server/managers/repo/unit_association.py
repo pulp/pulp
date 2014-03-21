@@ -56,9 +56,7 @@ SORT_DESCENDING = pymongo.DESCENDING
 
 _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 
-
 logger = logging.getLogger(__name__)
-
 
 
 class RepoUnitAssociationManager(object):
@@ -67,6 +65,7 @@ class RepoUnitAssociationManager(object):
     units. The functionality provided within assumes the repo and units have
     been created outside of this manager.
     """
+
     def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type,
                              owner_id, update_unit_count=True):
         """
@@ -111,11 +110,11 @@ class RepoUnitAssociationManager(object):
             raise exceptions.InvalidValue(['owner_type'])
 
         # If the association already exists, no need to do anything else
-        spec = {'repo_id' : repo_id,
-                'unit_id' : unit_id,
-                'unit_type_id' : unit_type_id,
-                'owner_type' : owner_type,
-                'owner_id' : owner_id,}
+        spec = {'repo_id': repo_id,
+                'unit_id': unit_id,
+                'unit_type_id': unit_type_id,
+                'owner_type': owner_type,
+                'owner_id': owner_id, }
         existing_association = RepoContentUnit.get_collection().find_one(spec)
         if existing_association is not None:
             return
@@ -346,8 +345,9 @@ class RepoUnitAssociationManager(object):
                removal
         @type  notify_plugins: bool
         """
-        association_filters = {'unit_id' : {'$in' : unit_id_list}}
-        criteria = UnitAssociationCriteria(type_ids=[unit_type_id], association_filters=association_filters)
+        association_filters = {'unit_id': {'$in': unit_id_list}}
+        criteria = UnitAssociationCriteria(type_ids=[unit_type_id],
+                                           association_filters=association_filters)
 
         return self.unassociate_by_criteria(repo_id, criteria, owner_type, owner_id,
                                             notify_plugins=notify_plugins)
@@ -374,7 +374,6 @@ class RepoUnitAssociationManager(object):
             return []
         unit_map = {}  # maps unit_type_id to a list of unit_ids
 
-        # Filter out based on the owner so we can give a useful error
         for unit in unassociate_units:
             id_list = unit_map.setdefault(unit['unit_type_id'], [])
             id_list.append(unit['unit_id'])
@@ -385,9 +384,8 @@ class RepoUnitAssociationManager(object):
         for unit_type_id, unit_ids in unit_map.items():
             spec = {'repo_id': repo_id,
                     'unit_type_id': unit_type_id,
-                    'unit_id': {'$in': unit_ids},
-                    'owner_type': owner_type,
-                    'owner_id': owner_id}
+                    'unit_id': {'$in': unit_ids}
+                    }
             collection.remove(spec, safe=True)
 
             unique_count = sum(
@@ -433,9 +431,9 @@ class RepoUnitAssociationManager(object):
         @rtype:  bool
         """
         spec = {
-            'repo_id' : repo_id,
-            'unit_id' : unit_id,
-            'unit_type_id' : unit_type_id,
+            'repo_id': repo_id,
+            'unit_id': unit_id,
+            'unit_type_id': unit_type_id,
         }
         unit_coll = RepoContentUnit.get_collection()
 
@@ -444,7 +442,7 @@ class RepoUnitAssociationManager(object):
 
 
 associate_from_repo = task(RepoUnitAssociationManager.associate_from_repo, base=Task)
-unassociate_by_criteria = task(RepoUnitAssociationManager.unassociate_by_criteria)
+unassociate_by_criteria = task(RepoUnitAssociationManager.unassociate_by_criteria, base=Task)
 
 
 def load_associated_units(source_repo_id, criteria):
@@ -482,7 +480,6 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
 
 
 def remove_from_importer(repo_id, transfer_units):
-
     # Retrieve the repo from the database and convert to the transfer repo
     repo_query_manager = manager_factory.repo_query_manager()
     repo = repo_query_manager.get_repository(repo_id)
