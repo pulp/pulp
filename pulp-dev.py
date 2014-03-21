@@ -65,6 +65,7 @@ DIRS = (
     '/var/lib/pulp_client/consumer',
     '/var/lib/pulp_client/consumer/extensions',
     '/usr/lib/pulp/plugins',
+    '/usr/lib/pulp/plugins/catalogers',
     '/usr/lib/pulp/plugins/distributors',
     '/usr/lib/pulp/plugins/importers',
     '/usr/lib/pulp/plugins/profilers',
