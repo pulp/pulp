@@ -1,9 +1,9 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.1.6
+Version:        1.2.0
 Release:        1%{?dist}
-Summary:        Performance tuned network download client library
+Summary:        A download library that separates workflow from implementation details
 
 Group:          Development/Tools
 License:        GPLv2
@@ -15,17 +15,16 @@ BuildArch:      noarch
 
 BuildRequires:  python-setuptools
 
-Requires:       python-eventlet >= 0.9.17
 Requires:       python-isodate >= 0.4.9
-Requires:       python-pycurl >= 7.19.0
 Requires:       python-requests >= 2.2.1
-# RHEL6 ONLY
-%if 0%{?rhel} == 6
-Requires:       curl >= 7.19.0
-%endif
 
 %description
-%{summary}
+Nectar is a download library that abstracts the workflow of making and tracking
+download requests away from the mechanics of how those requests are carried
+out. It allows multiple downloaders to exist with different implementations,
+such as the default "threaded" downloader, which uses the "requests" library
+with multiple threads. Other experimental downloaders have used tools like
+pycurl and eventlets.
 
 %prep
 %setup -q
@@ -43,9 +42,17 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %{python_sitelib}/nectar/
 %{python_sitelib}/nectar*.egg-info
-%doc LICENSE.txt
+%doc LICENSE.txt README.rst
 
 %changelog
+* Fri Mar 21 2014 Michael Hrivnak <mhrivnak@redhat.com> 1.2.0-1
+- custom headers can now be specified on sessions and requests
+  (mhrivnak@redhat.com)
+- correcting typo in the python-requests version dep (skarmark@redhat.com)
+- updating python-requests depedency version to 2.1.1 (skarmark@redhat.com)
+- removing downloaders that we aren't using or supporting. Both are also known
+  to have serious bugs. (mhrivnak@redhat.com)
+
 * Mon Oct 28 2013 Sayli Karmarkar <skarmark@redhat.com> 1.1.6-1
 - Merge pull request #13 from pulp/skarmark-1021662 (skarmark@redhat.com)
 - 1021662 - adding proxy auth to proxy urls along with the headers
