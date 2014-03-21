@@ -16,6 +16,10 @@ New Features
 #. Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
    releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
    ``/var/log/pulp/`` as it used to.
+#. Pulp also has eliminated the ``/etc/pulp/logging/`` folder, as well as the entire ``[logs]``
+   section of ``/etc/pulp/server.conf``. All logging configuration has been replaced with a single
+   ``log_level`` setting in the ``[server]`` section of ``/etc/pulp/server.conf``, and it is also
+   optional.
 
 Client Changes
 --------------
@@ -105,6 +109,13 @@ latest RPMs from the Pulp repository and run the database migrations::
 
     $ sudo yum upgrade
     $ sudo -u apache pulp-manage-db  # run this as the same user apache runs as
+
+You can remove ``/etc/pulp/logging/`` if you like, as it is no longer used. Also, you can
+optionally edit the new ``log_level`` setting in the ``[server]`` section of
+``/etc/pulp/server.conf`` to your preference::
+
+    $ sudo rm -rf /etc/pulp/logging/
+    $ sudo $EDITOR /etc/pulp/server.conf
 
 Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
 about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need
