@@ -119,6 +119,9 @@ class PulpCodedValidationException(PulpCodedException):
     :param validation_exceptions: List of coded exceptions for each validation error that occurred
     :type validation_exceptions: list of PulpCodedException
     """
+
+    http_status_code = httplib.BAD_REQUEST
+
     def __init__(self, validation_exceptions=None):
         super(PulpCodedValidationException, self).__init__(error_code=error_codes.PLP1000)
         if validation_exceptions:
