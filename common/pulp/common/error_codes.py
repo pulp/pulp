@@ -62,7 +62,6 @@ PLP0009 = Error("PLP0009", _("Missing resource(s): %(resources)s"), ['resources'
 PLP0010 = Error("PLP0010", _("Conflicting operation reasons: %(r)s"), ['reasons'])
 PLP0011 = Error("PLP0011", _("Operation timed out after: %(timeout)s"), ['timeout'])
 PLP0012 = Error("PLP0012", _("Operation postponed"), [])
-PLP0013 = Error("PLP0013", _("Multiple Operations"), [])
 PLP0014 = Error("PLP0014", _('Operation not implemented: %(operation_name)s'), ['operation_name'])
 PLP0015 = Error("PLP0015", _('Invalid properties: %(properties)s'), ['properties'])
 PLP0016 = Error("PLP0016", _('Missing values for: %(properties)s'), ['properties'])
@@ -80,3 +79,12 @@ PLP0022 = Error("PLP0022",
                 ['group_id'])
 PLP0023 = Error("PLP0023", _("Task is already in a complete state: %(task_id)s"), ['task_id'])
 
+# Create a section for general validation errors (PLP1000 - PLP2999)
+# Validation problems should be reported with a general PLP1000 error with a more specific
+# error message nested inside of it.
+PLP1000 = Error("PLP1000", _("A validation error occurred."), [])
+PLP1001 = Error("PLP1001", _("The consumer %(consumer_id)s does not exist."), ['consumer_id'])
+PLP1002 = Error("PLP1002", _("The field %(field) must have a value specified."), ['field'])
+PLP1003 = Error("PLP1003", _("The value specified for the field %(field) must be made up of letters"
+                             ", numbers, underscores, or hyphens with no spaces."), ['field'])
+PLP1004 = Error("PLP1004", _("An object of type %(type) already exists in the database with an id of %(object_id)"), ['type', 'object_id'])

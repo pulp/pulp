@@ -14,10 +14,12 @@
 import traceback
 import unittest
 
-from base import PulpServerTests
+from .....import base
 from mock import patch
 
 from pulp.server import exceptions as pulp_exceptions
+from pulp.common import error_codes
+from pulp.devel.unit.server import util
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
 from pulp.server.managers import factory as managers_factory
@@ -39,7 +41,7 @@ class ConsumerGroupManagerInstantiationTests(unittest.TestCase):
             self.fail(traceback.format_exc())
 
 
-class ConsumerGroupTests(PulpServerTests):
+class ConsumerGroupTests(base.PulpServerTests):
 
     def setUp(self):
         super(ConsumerGroupTests, self).setUp()
@@ -66,18 +68,38 @@ class ConsumerGroupCUDTests(ConsumerGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(group is None)
 
+    def test_create_with_consumer(self):
+        group_id = 'create_consumer_group'
+        self._create_consumer('test_consumer')
+        self.manager.create_consumer_group(group_id, consumer_ids=['test_consumer'])
+        group = self.collection.find_one({'id': group_id})
+        self.assertFalse(group is None)
+
+    def test_create_invalid_consuemr_id(self):
+        group_id = 'create_consumer_group'
+        # Add one valid consumer
+        self._create_consumer('test_consumer')
+
+        util.assert_validation_exception(self.manager.create_consumer_group, [error_codes.PLP1001],
+                                         group_id, consumer_ids=['test_consumer', 'bad1'])
+        group = self.collection.find_one({'id': group_id})
+        self.assertFalse(group is not None)
+
     def test_create_duplicate_id(self):
         group_id = 'already_exists'
         self.manager.create_consumer_group(group_id)
-        self.assertRaises(pulp_exceptions.DuplicateResource,
-                          self.manager.create_consumer_group,
-                          group_id)
+        util.assert_validation_exception(self.manager.create_consumer_group, [error_codes.PLP1004],
+                                         group_id)
 
     def test_create_invalid_id(self):
         group_id = '**invalid/id**'
-        self.assertRaises(pulp_exceptions.InvalidValue,
-                          self.manager.create_consumer_group,
-                          group_id)
+        util.assert_validation_exception(self.manager.create_consumer_group, [error_codes.PLP1003],
+                                         group_id)
+
+    def test_create_missing_id(self):
+        group_id = None
+        util.assert_validation_exception(self.manager.create_consumer_group, [error_codes.PLP1002],
+                                         group_id)
 
     def test_update_display_name(self):
         group_id = 'update_me'

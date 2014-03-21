@@ -18,9 +18,10 @@ from celery import task
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server import exceptions as pulp_exceptions
+from pulp.common import error_codes
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
-from pulp.server.exceptions import InvalidValue
+from pulp.server.exceptions import InvalidValue, PulpCodedException
 from pulp.server.managers import factory as manager_factory
 
 
@@ -35,7 +36,7 @@ class ConsumerGroupManager(object):
         Create a new consumer group.
 
         :param group_id:     unique id of the consumer group
-        :type  group_id:     basestring
+        :type  group_id:     str
         :param display_name: display name of the consumer group
         :type  display_name: str or None
         :param description:  description of the consumer group
@@ -47,15 +48,38 @@ class ConsumerGroupManager(object):
         :return:             SON representation of the consumer group
         :rtype:              bson.SON
         """
-        if group_id is None or _CONSUMER_GROUP_ID_REGEX.match(group_id) is None:
-            raise InvalidValue(['group_id'])
+        validation_errors = []
+        if group_id is None:
+            validation_errors.append(PulpCodedException(error_codes.PLP1002, field='group_id'))
+        elif _CONSUMER_GROUP_ID_REGEX.match(group_id) is None:
+            validation_errors.append(PulpCodedException(error_codes.PLP1003, field='group_id'))
+
+        if consumer_ids:
+            # Validate that all the consumer_ids exist and raise an exception if they don't
+            consumer_collection = Consumer.get_collection()
+            matched_consumers = consumer_collection.find({'id': {'$in': consumer_ids}})
+            if matched_consumers.count() is not len(consumer_ids):
+                # Create a set of all the matched consumer_ids
+                matched_consumers_set = set()
+                for consumer in matched_consumers:
+                    matched_consumers_set.add(consumer.get('id'))
+                # find the missing items
+                for consumer_id in (set(consumer_ids)).difference(matched_consumers_set):
+                    validation_errors.append(PulpCodedException(error_codes.PLP1001,
+                                                                consumer_id=consumer_id))
+
+        if validation_errors:
+            raise pulp_exceptions.PulpCodedValidationException(validation_errors)
 
         collection = ConsumerGroup.get_collection()
         consumer_group = ConsumerGroup(group_id, display_name, description, consumer_ids, notes)
         try:
             collection.insert(consumer_group, safe=True)
         except DuplicateKeyError:
-            raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
+            raise pulp_exceptions.PulpCodedValidationException(
+                [PulpCodedException(error_codes.PLP1004, type=ConsumerGroup.collection_name,
+                                    object_id=group_id)])
+
         group = collection.find_one({'id': group_id})
         return group
 

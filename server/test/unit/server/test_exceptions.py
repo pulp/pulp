@@ -14,18 +14,18 @@
 import unittest
 
 from pulp.devel.unit.util import compare_dict
-from pulp.server.exceptions import PulpException, PulpCodedException
+from pulp.server import exceptions
 from pulp.common import error_codes
 
 
 class TestPulpException(unittest.TestCase):
 
     def test_custom_message(self):
-        test_exception = PulpException("foo_msg")
+        test_exception = exceptions.PulpException("foo_msg")
         self.assertEquals(str(test_exception), "foo_msg")
 
     def test_to_dict(self):
-        test_exception = PulpException("foo_msg")
+        test_exception = exceptions.PulpException("foo_msg")
         test_exception.error_data = {"foo": "bar"}
 
         result = test_exception.to_dict()
@@ -36,10 +36,10 @@ class TestPulpException(unittest.TestCase):
                               'sub_errors': []})
 
     def test_to_dict_nested_pulp_exception(self):
-        test_exception = PulpException("foo_msg")
+        test_exception = exceptions.PulpException("foo_msg")
         test_exception.error_data = {"foo": "bar"}
 
-        test_exception.add_child_exception(PulpCodedException(error_codes.PLP0001))
+        test_exception.add_child_exception(exceptions.PulpCodedException(error_codes.PLP0001))
 
         result = test_exception.to_dict()
         child_exception = result['sub_errors'][0]
@@ -49,7 +49,7 @@ class TestPulpException(unittest.TestCase):
                                        'sub_errors': []})
 
     def test_to_dict_nested_general_exception(self):
-        test_exception = PulpException("foo_msg")
+        test_exception = exceptions.PulpException("foo_msg")
         test_exception.error_data = {"foo": "bar"}
 
         test_exception.add_child_exception(Exception("Foo Message"))
@@ -75,18 +75,37 @@ class TestPulpCodedException(unittest.TestCase):
         Test to ensure that the fields required by the error code are available in the error
         data.
         """
-        PulpCodedException(error_codes.PLP0000, message='foo message', extra_field='bar')
+        exceptions.PulpCodedException(error_codes.PLP0000, message='foo message', extra_field='bar')
 
     def test_field_validation_fails(self):
         """
         Test to ensure that the fields required by the error code are available in the error
         data.
         """
-        self.assertRaises(PulpCodedException, PulpCodedException, error_codes.PLP0000, baz='q')
+        self.assertRaises(exceptions.PulpCodedException, exceptions.PulpCodedException, error_codes.PLP0000, baz='q')
 
     def test_field_validation_fails_data_none(self):
         """
         Test to ensure that the fields required by the error code are available in the error
         data.
         """
-        self.assertRaises(PulpCodedException, PulpCodedException, error_codes.PLP0000)
+        self.assertRaises(exceptions.PulpCodedException, exceptions.PulpCodedException, error_codes.PLP0000)
+
+
+class TestPulpCodedValidationException(unittest.TestCase):
+
+    def test_init(self):
+        """
+        Test basic init with no values
+        """
+        e = exceptions.PulpCodedValidationException()
+        self.assertEquals(e.error_code, error_codes.PLP1000)
+
+    def test_with_child_exceptions(self):
+        """
+        Test initialization with child exceptions
+        """
+        e = exceptions.PulpCodedValidationException([exceptions.PulpCodedException(),
+                                                     exceptions.PulpCodedException()])
+        self.assertEquals(e.error_code, error_codes.PLP1000)
+        self.assertEquals(len(e.child_exceptions), 2)

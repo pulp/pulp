@@ -112,6 +112,19 @@ class PulpCodedException(PulpException):
         return msg.encode('utf-8')
 
 
+class PulpCodedValidationException(PulpCodedException):
+    """
+    Class for wrapping collections of coded validation errors.
+
+    :param validation_exceptions: List of coded exceptions for each validation error that occurred
+    :type validation_exceptions: list of PulpCodedException
+    """
+    def __init__(self, validation_exceptions=None):
+        super(PulpCodedValidationException, self).__init__(error_code=error_codes.PLP1000)
+        if validation_exceptions:
+            self.child_exceptions = validation_exceptions
+
+
 class MissingResource(PulpExecutionException):
     """"
     Base class for exceptions raised due to requesting a resource that does not
@@ -217,31 +230,6 @@ class OperationPostponed(PulpExecutionException):
 
     def data_dict(self):
         return {'call_report': self.call_report}
-
-
-class MultipleOperationsPostponed(PulpExecutionException):
-    """
-    Base class for handling multiple simultaneous asynchronous operations being
-    executed by the coordinator.
-    """
-    http_status_code = httplib.ACCEPTED
-
-    def __init__(self, call_report_list):
-        """
-        @param call_report_list: list of call reports, one for each operation
-        @type call_report_list: list
-        """
-        super(MultipleOperationsPostponed, self).__init__(call_report_list)
-        self.error_code = error_codes.PLP0013
-        self.call_report_list = call_report_list
-        self.error_data = {'call_report_list': call_report_list}
-
-    def __str__(self):
-        msg = self.error_code.message % self.error_data
-        return msg.encode('utf-8')
-
-    def data_dict(self):
-        return {'call_report_list': self.call_report_list}
 
 
 class NotImplemented(PulpExecutionException):
