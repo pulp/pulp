@@ -61,6 +61,10 @@ following::
         # Standard Pulp REST API configuration goes here...
     </Files>
 
+Note that this *requires* LDAP authentication for the initial login,
+and *allows* either LDAP or Pulp certificate authentication on the
+entire API.
+
 Basic Auth Login Example
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -86,11 +90,15 @@ recommended.
 For this basic-auth example, the ``.htaccess`` file must then be created using
 the ``htpasswd`` command.
 
+Note that this *requires* Apache authentication for the initial login,
+and also *requires* Pulp certificate authentication on the entire API.
+
 LDAP
 ----
 
-.. warning:: Deprecated as of 2.4! Please use apache's mod_authnz_ldap to provide
-             preauthentication per instructions above.
+.. deprecated:: 2.4
+   Please use apache's mod_authnz_ldap to provide preauthentication
+   per instructions above.
 
 Pulp supports LDAP authentication by configuring the ``[ldap]``
 section in ``server.conf``.  An LDAP user who logs in for the first
@@ -148,4 +156,3 @@ For example:
     enabled = true
     oauth_key = ab3cd9j4ks73hf7g
     oauth_secret = xyz4992k83j47x0b
-
