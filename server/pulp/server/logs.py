@@ -137,7 +137,10 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
                     name=record.name, level=record.levelno, pathname=record.pathname,
                     lineno=record.lineno, msg=message_chunk, args=tuple(),
                     exc_info=None, func=record.funcName)
-                super(CompliantSysLogHandler, self).emit(new_record)
+                # In Python 2.6 and earlier, the SysLogHandler is not a new-style class. This means
+                # that super() cannot be used, so we will just call the SysLogHandler's emit()
+                # directly.
+                logging.handlers.SysLogHandler.emit(self, new_record)
 
     def _calculate_formatter_buffer(self, record):
         """
