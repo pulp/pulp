@@ -475,6 +475,8 @@ class TaskStatus(Model):
 
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
+    :ivar task_type:   the fully qualified (package/method) type of the task
+    :type task_type:   str
     :ivar tags:        custom tags on the task
     :type tags:        list
     :ivar state:       state of callable in its lifecycle
@@ -506,6 +508,7 @@ class TaskStatus(Model):
         super(TaskStatus, self).__init__()
 
         self.task_id = task_id
+        self.task_type = None
         self.queue = queue
         self.tags = tags or []
         self.state = state

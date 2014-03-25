@@ -18,6 +18,7 @@ task.
 * **_href** *(string)* - uri path to retrieve this task report object.
 * **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
+* **task_type** *(string)* - the fully qualified (package/method) type of the task that is executing the asynchronous call
 * **progress** *(object)* - arbitrary progress information, usually in the form of an object
 * **result** *(any)* - the return value of the call, if any
 * **exception** *(null or string)* - **deprecated** the error exception value, if any
@@ -38,6 +39,7 @@ Example Task Report::
   "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/",
   "state": "running",
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
+  "task_type": "pulp.server.tasks.repository.sync_with_auto_publish",
   "progress": {}, # contents depend on the operation
   "result": null,
   "start_time": "2012-05-17T16:48:00Z",

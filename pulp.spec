@@ -123,10 +123,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/vhosts80
 mkdir -p %{buildroot}/%{_sysconfdir}/default/
 mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/catalogers
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/distributors
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/importers
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/profilers
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/types
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
@@ -272,10 +268,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
-%{_usr}/lib/%{name}/plugins/distributors
-%{_usr}/lib/%{name}/plugins/importers
-%{_usr}/lib/%{name}/plugins/profilers
-%{_usr}/lib/%{name}/plugins/catalogers
 %{_usr}/lib/%{name}/plugins/types
 %{python_sitelib}/%{name}/server/
 %{python_sitelib}/%{name}/plugins/
