@@ -43,7 +43,7 @@ Example serialized exception::
 .. _error_details:
 
 Error Details
-==================
+=============
 Pulp is moving to provide more programmatically useful results when errors occur.
 One of the primary ways we are doing this is through the new "error" object. This object
 will be included in the body for all JSON calls that have errors.  The error object will contain
@@ -67,3 +67,9 @@ Example serialized error details::
   "sub_errors": []
  }
 
+
+Error Codes
+===========
+Pulp Error codes should be segmented.  The following segments have been established
+* PLP0000-PLP0999 - General Server Errors (and legacy PulpException errors)
+* PLP1000-PLP2999 - Validation errors
