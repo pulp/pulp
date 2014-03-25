@@ -25,6 +25,7 @@ import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
+from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException, PulpCodedException
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
@@ -585,10 +586,11 @@ class TestTaskResult(unittest.TestCase):
     def test_serialize(self):
 
         async_result = AsyncResult('foo')
-        result = tasks.TaskResult('foo', 'bar', [{'task_id': 'baz'}, async_result, "qux"])
+        test_exception = PulpException('foo')
+        result = tasks.TaskResult('foo', test_exception, [{'task_id': 'baz'}, async_result, "qux"])
         serialized = result.serialize()
         self.assertEquals(serialized.get('result'), 'foo')
-        self.assertEquals(serialized.get('error'), 'bar')
+        compare_dict(test_exception.to_dict(), serialized.get('error'))
         self.assertEquals(serialized.get('spawned_tasks'), [{'task_id': 'baz'},
                                                             {'task_id': 'foo'},
                                                             {'task_id': 'qux'}])

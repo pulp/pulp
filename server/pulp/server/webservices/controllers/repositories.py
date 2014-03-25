@@ -277,7 +277,12 @@ class RepoResource(JSONController):
         repo = task_result.return_value
         repo.update(serialization.link.current_link_obj())
 
-        return self.ok(repo)
+        # If tasks were spawned, raise that as a result
+        if task_result.spawned_tasks:
+            raise exceptions.OperationPostponed(task_result)
+
+        result = task_result.serialize()
+        return self.ok(result)
 
 
 class RepoImporters(JSONController):

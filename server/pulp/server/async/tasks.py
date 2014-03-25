@@ -280,9 +280,12 @@ class TaskResult(object):
         """
         Serialize the output to a dictionary
         """
+        serialized_error = self.error
+        if serialized_error:
+            serialized_error = self.error.to_dict()
         data = {
             'result': self.return_value,
-            'error': self.error,
+            'error': serialized_error,
             'spawned_tasks': self.spawned_tasks}
         return data
 
