@@ -359,7 +359,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         TaskStatus.get_collection().update(
             {'task_id': async_result.id},
             {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
-             '$set': {'queue': queue, 'tags': tags}},
+             '$set': {'queue': queue, 'tags': tags, 'task_type': self.name}},
             upsert=True)
         return async_result
 

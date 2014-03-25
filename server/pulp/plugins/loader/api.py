@@ -43,13 +43,10 @@ ENTRY_POINT_CATALOGERS = 'pulp.catalogers'
 # plugin locations
 
 _PLUGINS_ROOT = '/usr/lib/pulp/plugins'
-_DISTRIBUTORS_DIR = _PLUGINS_ROOT + '/distributors'
-_IMPORTERS_DIR = _PLUGINS_ROOT + '/importers'
-_PROFILERS_DIR = _PLUGINS_ROOT + '/profilers'
-_CATALOGERS_DIR = _PLUGINS_ROOT + '/catalogers'
 _TYPES_DIR = _PLUGINS_ROOT + '/types'
 
 # state management -------------------------------------------------------------
+
 
 def initialize(validate=True):
     """
@@ -64,15 +61,6 @@ def initialize(validate=True):
         return
 
     _create_manager()
-    # add plugins here in the form (path, base class, manager map)
-    plugin_tuples =  ((_DISTRIBUTORS_DIR, Distributor, _MANAGER.distributors),
-                      (_DISTRIBUTORS_DIR, GroupDistributor, _MANAGER.group_distributors),
-                      (_IMPORTERS_DIR, GroupImporter, _MANAGER.group_importers),
-                      (_IMPORTERS_DIR, Importer, _MANAGER.importers),
-                      (_PROFILERS_DIR, Profiler, _MANAGER.profilers),
-                      (_CATALOGERS_DIR, Cataloger, _MANAGER.catalogers))
-    for path, base_class, plugin_map in plugin_tuples:
-        loading.load_plugins_from_path(path, base_class, plugin_map)
 
     plugin_entry_points = (
         (ENTRY_POINT_DISTRIBUTORS, _MANAGER.distributors),
@@ -105,6 +93,7 @@ def finalize():
 
 # query api --------------------------------------------------------------------
 
+
 def list_content_types():
     """
     List the supported content types.
@@ -123,6 +112,7 @@ def list_group_distributors():
     """
     assert _is_initialized()
     return _MANAGER.group_distributors.get_loaded_plugins()
+
 
 def list_distributors():
     """
@@ -174,23 +164,23 @@ def list_catalogers():
     return _MANAGER.catalogers.get_loaded_plugins()
 
 
-def list_distributor_types(id):
+def list_distributor_types(distributor_id):
     """
     List the supported distribution types for the given distributor id.
-    :param id: id of the distributor
-    :type id: str
+    :param distributor_id: id of the distributor
+    :type distributor_id: str
     :return: tuple of types supported by the distributor
     :rtype: tuple
     :raise: PluginNotFound if no distributor corresponds to the id
     """
     assert _is_initialized()
-    types = _MANAGER.distributors.get_loaded_plugins().get(id, None)
+    types = _MANAGER.distributors.get_loaded_plugins().get(distributor_id, None)
     if types is None:
-        raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
+        raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': distributor_id})
     return types
 
 
-def list_importer_types(id):
+def list_importer_types(importer_id):
     """
     List the supported content types for the given importer id.
 
@@ -201,8 +191,8 @@ def list_importer_types(id):
     "types". I don't have time to dig into what is calling this to fix it,
     so for now I'm fixing the docs.
 
-    :param id: id of the importer
-    :type id: str
+    :param importer_id: id of the importer
+    :type importer_id: str
 
     :return: dict containing the type IDs at key "types"
     :rtype:  dict {str : list}
@@ -210,175 +200,175 @@ def list_importer_types(id):
     :raise: PluginNotFound if no importer corresponds to the id
     """
     assert _is_initialized()
-    types = _MANAGER.importers.get_loaded_plugins().get(id, None)
+    types = _MANAGER.importers.get_loaded_plugins().get(importer_id, None)
     if types is None:
-        raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
+        raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': importer_id})
     return types
 
 
-def list_profiler_types(id):
+def list_profiler_types(profiler_id):
     """
     List the supported profile types for the given profiler id.
-    :param id: id of the profiler
-    :type id: str
+    :param profiler_id: id of the profiler
+    :type profiler_id: str
     :return: tuple of types supported by the profiler
     :rtype: tuple
     :raise: PluginNotFound if no profiler corresponds to the id
     """
     assert _is_initialized()
-    types = _MANAGER.profilers.get_loaded_plugins().get(id, None)
+    types = _MANAGER.profilers.get_loaded_plugins().get(profiler_id, None)
     if types is None:
-        raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': id})
+        raise loader_exceptions.PluginNotFound(_('No plugin found: %(n)s') % {'n': profiler_id})
     return types
 
 
-def is_valid_distributor(id):
+def is_valid_distributor(distributor_id):
     """
     Check to see that a distributor exists for the given id.
-    :param id: id of the distributor
-    :type id: str
+    :param distributor_id: id of the distributor
+    :type distributor_id: str
     :return: True if the distributor exists, False otherwise
     :rtype: bool
     """
     assert _is_initialized()
     plugins = _MANAGER.distributors.get_loaded_plugins()
-    return id in plugins
+    return distributor_id in plugins
 
 
-def is_valid_group_distributor(id):
+def is_valid_group_distributor(group_distributor_id):
     """
     Checks to see that a group distributor exists for the given id.
-    :param id: id of the group distributor
-    :type  id: str
+    :param group_distributor_id: id of the group distributor
+    :type  group_distributor_id: str
     :return: true if the group distributor exists; false otherwise
     :rtype: bool
     """
     assert _is_initialized()
     plugins = _MANAGER.group_distributors.get_loaded_plugins()
-    return id in plugins
+    return group_distributor_id in plugins
 
 
-def is_valid_importer(id):
+def is_valid_importer(importer_id):
     """
     Check to see that a importer exists for the given id.
-    :param id: id of the importer
-    :type id: str
+    :param importer_id: id of the importer
+    :type importer_id: str
     :return: True if the importer exists, False otherwise
     :rtype: bool
     """
     assert _is_initialized()
     plugins = _MANAGER.importers.get_loaded_plugins()
-    return id in plugins
+    return importer_id in plugins
 
 
-def is_valid_group_importer(id):
+def is_valid_group_importer(group_importer_id):
     """
     Checks to see that a group importer exists for the given id.
-    :param id: id of the group importer
-    :type  id: str
+    :param group_importer_id: id of the group importer
+    :type  group_importer_id: str
     :return: true if the group importer exists; false otherwise
     :rtype: bool
     """
     assert _is_initialized()
     plugins = _MANAGER.group_importers.get_loaded_plugins()
-    return id in plugins
+    return group_importer_id in plugins
 
 
-def is_valid_profiler(id):
+def is_valid_profiler(profiler_id):
     """
     Check to see that a profiler exists for the given id.
-    :param id: id of the profiler
-    :type id: str
+    :param profiler_id: id of the profiler
+    :type profiler_id: str
     :return: True if the profiler exists, False otherwise
     :rtype: bool
     """
     assert _is_initialized()
     plugins = _MANAGER.profilers.get_loaded_plugins()
-    return id in plugins
+    return profiler_id in plugins
 
 
-def is_valid_cataloger(id):
+def is_valid_cataloger(cataloger_id):
     """
     Check to see that a cataloger exists for the given id.
-    :param id: id of the cataloger
-    :type id: str
+    :param cataloger_id: id of the cataloger
+    :type cataloger_id: str
     :return: True if the cataloger exists, False otherwise
     :rtype: bool
     """
     assert _is_initialized()
     plugins = _MANAGER.catalogers.get_loaded_plugins()
-    return id in plugins
+    return cataloger_id in plugins
 
 
 # plugin api -------------------------------------------------------------------
 
-def get_distributor_by_id(id):
+def get_distributor_by_id(distributor_id):
     """
     Get a distributor instance that corresponds to the given id.
-    :param id: id of the distributor
-    :type id: str
+    :param distributor_id: id of the distributor
+    :type distributor_id: str
     :return: tuple of Distributor instance and dictionary configuration
     :rtype: tuple (Distributor, dict)
     :raise: PluginNotFound if no distributor corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _MANAGER.distributors.get_plugin_by_id(id)
+    cls, cfg = _MANAGER.distributors.get_plugin_by_id(distributor_id)
     return cls(), cfg
 
 
-def get_importer_by_id(id):
+def get_importer_by_id(importer_id):
     """
     Get an importer instance that corresponds to the given id.
-    :param id: id of the importer
-    :type id: str
+    :param importer_id: id of the importer
+    :type importer_id: str
     :return: tuple of Importer instance and dictionary configuration
     :rtype: tuple (Importer, dict)
     :raise: PluginNotFound if no importer corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _MANAGER.importers.get_plugin_by_id(id)
+    cls, cfg = _MANAGER.importers.get_plugin_by_id(importer_id)
     return cls(), cfg
 
 
-def get_group_distributor_by_id(id):
+def get_group_distributor_by_id(group_distributor_id):
     """
     Get a group distributor instance that corresponds to the given id.
-    :param id: id of the group distributor
-    :type id: str
+    :param group_distributor_id: id of the group distributor
+    :type group_distributor_id: str
     :return: tuple of GroupDistributor instance and dictionary configuration
     :rtype: tuple (GroupDistributor, dict)
     :raise: PluginNotFound if no group distributor corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _MANAGER.group_distributors.get_plugin_by_id(id)
+    cls, cfg = _MANAGER.group_distributors.get_plugin_by_id(group_distributor_id)
     return cls(), cfg
 
 
-def get_group_importer_by_id(id):
+def get_group_importer_by_id(group_importer_id):
     """
     Get a group importer instance that corresponds to the given id.
-    :param id: id of the group importer
-    :type id: str
+    :param group_importer_id: id of the group importer
+    :type group_importer_id: str
     :return: tuple of GroupImporter instance and dictionary configuration
     :rtype: tuple (GroupImporter, dict)
     :raise: PluginNotFound if no group importer corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _MANAGER.group_importers.get_plugin_by_id(id)
+    cls, cfg = _MANAGER.group_importers.get_plugin_by_id(group_importer_id)
     return cls(), cfg
 
 
-def get_profiler_by_id(id):
+def get_profiler_by_id(profiler_id):
     """
     Get a profiler instance that corresponds to the given id.
-    :param id: id of the profiler
-    :type id: str
+    :param profiler_id: id of the profiler
+    :type profiler_id: str
     :return: tuple of Profiler instance and dictionary configuration
     :rtype: tuple (Profiler, dict)
     :raise: PluginNotFound if no profiler corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _MANAGER.profilers.get_plugin_by_id(id)
+    cls, cfg = _MANAGER.profilers.get_plugin_by_id(profiler_id)
     return cls(), cfg
 
 
@@ -398,17 +388,17 @@ def get_profiler_by_type(type_id):
     return cls(), cfg
 
 
-def get_cataloger_by_id(id):
+def get_cataloger_by_id(catloger_id):
     """
     Get a cataloger instance that corresponds to the given id.
-    :param id: id of the cataloger
-    :type id: str
+    :param catloger_id: id of the cataloger
+    :type catloger_id: str
     :return: tuple of Cataloger instance and dictionary configuration
     :rtype: tuple (Cataloger, dict)
     :raise: PluginNotFound if no cataloger corresponds to the id
     """
     assert _is_initialized()
-    cls, cfg = _MANAGER.catalogers.get_plugin_by_id(id)
+    cls, cfg = _MANAGER.catalogers.get_plugin_by_id(catloger_id)
     return cls(), cfg
 
 
@@ -431,6 +421,7 @@ def _is_initialized():
     :rtype: bool
     """
     return isinstance(_MANAGER, PluginManager)
+
 
 def _create_manager():
     global _MANAGER
