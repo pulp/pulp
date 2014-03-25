@@ -1398,7 +1398,6 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         status, body = self.post(consumer_path % 'unregistered_consumer')
 
         self.assertEquals(status, 404)
-        print body
         self.assertTrue('Missing resource' in body['error']['description'])
         self.assertTrue(body['error']['data']['resources'] == {'consumer_id': 'unregistered_consumer'})
         self.assertFalse('task_id' in body)

@@ -27,10 +27,10 @@ and postponed until the current task is completed.
 
 | :response_list:`_`
 
-* :response_code:`202,if applicability regeneration is set to be executed or queued up`
+* :response_code:`202,if applicability regeneration is queued successfully`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:`a` :ref:`call_report` representing the current state of the applicability regeneration
+| :return:a :ref:`call_report` representing the current state of the applicability regeneration
 
 :sample_request:`_` ::
 
@@ -74,10 +74,10 @@ and postponed until the current task is completed.
 
 | :response_list:`_`
 
-* :response_code:`202,if applicability regeneration is set to be executed or queued up`
+* :response_code:`202,if applicability regeneration is queued successfully`
 * :response_code:`400,if one or more of the parameters is invalid`
 
-| :return:`a` :ref:`call_report` representing the current state of the applicability regeneration
+| :return:a :ref:`call_report` representing the current state of the applicability regeneration
 
 :sample_request:`_` ::
 
@@ -93,10 +93,10 @@ The task created will have the following tag: ``"pulp:action:applicability_regen
 Generate Content Applicability for a single Consumer
 ----------------------------------------------------
 
-This API regenerates :term:`applicability data` for given consumer asynchronously
-and saves it in the Pulp database. It can be used by a consumer when it's profile is updated
-or consumer-repository bindings are updated. Applicability data is regenerated
-for all unit profiles associated with given consumers and for all content types
+This API regenerates :term:`applicability data` for the given consumer asynchronously
+and saves it in the Pulp database. It can be used by a consumer when its profile is updated
+or its consumer-repository bindings are updated. Applicability data is regenerated
+for all unit profiles associated with te given consumer and for all content types
 that define applicability. Generated applicability data can be queried using
 the `Query Content Applicability` API described above.
 
@@ -111,10 +111,10 @@ are queued and postponed until the current task is completed.
 
 | :response_list:`_`
 
-* :response_code:`202,if applicability regeneration is set to be executed or queued up`
+* :response_code:`202,if applicability regeneration is queued successfully`
 * :response_code:`404,if a consumer with given consumer_id does not exist`
 
-| :return:`a` :ref:`call_report` representing the current state of the applicability regeneration
+| :return:a :ref:`call_report` representing the current state of the applicability regeneration
 
 **Tags:**
 The task created will have the following tag: ``"pulp:action:consumer_applicability_regeneration"``
