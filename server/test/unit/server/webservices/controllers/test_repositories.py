@@ -1294,13 +1294,9 @@ class RepoAssociateTests(RepoControllersTests):
         self.repo_manager.create_repo('source-repo-1')
         self.repo_manager.create_repo('dest-repo-1')
 
-        #self.association_manager_mock = mock.Mock()
-        #manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = self
-        # .association_manager_mock
-
         self.association_manager_dummy = dummy_plugins.DummyObject()
-        manager_factory._INSTANCES[
-            manager_factory.TYPE_REPO_ASSOCIATION] = self.association_manager_dummy
+        manager_factory._INSTANCES[manager_factory.TYPE_REPO_ASSOCIATION] = \
+            self.association_manager_dummy
 
     def clean(self):
         super(RepoAssociateTests, self).clean()
