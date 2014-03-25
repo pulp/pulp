@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
+# Copyright © 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -22,6 +22,10 @@ def assert_validation_exception(method, error_codes, *args, **kwargs):
     :type method: method
     :param error_codes: list of error codes that should be contained in the validation error
     :type error_codes: list of pulp.common.error_codes.Error
+    :param args: Any positional arguments to pass through to the method
+    :type args: list
+    :param kwargs: Any keyword arguments that should be passed through to the method
+    :type kwargs: dict
     """
     try:
         method(*args, **kwargs)
@@ -42,14 +46,13 @@ def assert_validation_exception(method, error_codes, *args, **kwargs):
         for child in e.child_exceptions:
             errors_raised.add(child.error_code.code)
         errors_expected = set()
-        if error_codes:
-            for code in error_codes:
-                errors_expected.add(code.code)
+        for code in error_codes:
+            errors_expected.add(code.code)
 
-        excpected_errors_missing = errors_expected.difference(errors_raised)
-        if excpected_errors_missing:
+        expected_errors_missing = errors_expected.difference(errors_raised)
+        if expected_errors_missing:
             raise AssertionError("The following errors were specified but not raised: %s"  %
-                                 str(excpected_errors_missing))
+                                 str(expected_errors_missing))
         errors_raised_unexpectedly = errors_raised.difference(errors_expected)
         if errors_raised_unexpectedly:
             raise AssertionError("The following errors were not specified but were raised: %s" %

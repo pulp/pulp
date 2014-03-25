@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
+# Copyright (c) 2014 Red Hat, Inc.
 #
 # This software is licensed to you under the GNU General Public
 # License as published by the Free Software Foundation; either version
@@ -35,6 +35,11 @@ class TestAssertValidationExceptionRaised(unittest.TestCase):
         mock_method = Mock(side_effect=PulpCodedValidationException())
         util.assert_validation_exception(mock_method, [], baz="qux")
         mock_method.assert_called_once_with(baz="qux")
+
+    def test_calls_method_with_child_exceptions(self):
+        mock_method = Mock(side_effect=PulpCodedValidationException(
+            validation_exceptions=[PulpCodedException()]))
+        util.assert_validation_exception(mock_method, error_codes=[error_codes.PLP0001])
 
     def test_error_codes_no_child_exceptions(self):
         mock_method = Mock(side_effect=PulpCodedValidationException())

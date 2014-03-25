@@ -75,7 +75,7 @@ class ConsumerGroupCUDTests(ConsumerGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(group is None)
 
-    def test_create_invalid_consuemr_id(self):
+    def test_create_invalid_consumer_id(self):
         group_id = 'create_consumer_group'
         # Add one valid consumer
         self._create_consumer('test_consumer')
