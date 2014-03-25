@@ -1366,6 +1366,43 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('property_names' in body)
         self.assertTrue(body['property_names'] == ['consumer_criteria'])
 
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_consumer_regenerate_applicability(self, _reserve_resource):
+        # We need to fake the _resource_manager returning a queue to us
+        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+        self.populate()
+        self.populate_bindings()
+
+        consumer_path = '/v2/consumers/%s/actions/content/regenerate_applicability/'
+        status, body = self.post(consumer_path % 'consumer-1')
+
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body.get('spawned_tasks')[0])
+
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_consumer_regenerate_applicability_no_bindings(self, _reserve_resource):
+        # We need to fake the _resource_manager returning a queue to us
+        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+        self.populate()
+
+        consumer_path = '/v2/consumers/%s/actions/content/regenerate_applicability/'
+        status, body = self.post(consumer_path % 'consumer-1')
+
+        self.assertEquals(status, 202)
+        self.assertTrue('task_id' in body.get('spawned_tasks')[0])
+
+    def test_consumer_regenerate_applicability_unregistered_consumer(self):
+        self.populate()
+
+        consumer_path = '/v2/consumers/%s/actions/content/regenerate_applicability/'
+        status, body = self.post(consumer_path % 'unregistered_consumer')
+
+        self.assertEquals(status, 404)
+        print body
+        self.assertTrue('Missing resource' in body['error']['description'])
+        self.assertTrue(body['error']['data']['resources'] == {'consumer_id': 'unregistered_consumer'})
+        self.assertFalse('task_id' in body)
+
 
 class ScheduledUnitInstallTests(base.PulpWebserviceTests):
     """

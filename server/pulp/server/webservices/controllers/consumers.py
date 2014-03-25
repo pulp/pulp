@@ -603,6 +603,34 @@ class ContentApplicabilityRegeneration(JSONController):
         raise OperationPostponed(async_result)
 
 
+class ConsumerContentApplicabilityRegeneration(JSONController):
+    """
+    Content applicability regeneration for a given consumer.
+    Since our permission model is closely tied to API URIs, this is a separate API than the one above,
+    so that individual consumers can request applicability generation for themselves.
+    """
+    @auth_required(CREATE)
+    def POST(self, consumer_id):
+        """
+        Creates an async task to regenerate content applicability data for given consumer.
+
+        :param consumer_id: The consumer ID.
+        :type consumer_id: basestring
+        """
+        consumer_query_manager = managers.consumer_query_manager()
+        if consumer_query_manager.find_by_id(consumer_id) is None:
+            raise MissingResource(consumer_id=consumer_id)
+        consumer_criteria = Criteria(filters={'consumer_id': consumer_id})
+
+        tags = [action_tag('consumer_content_applicability_regeneration')]
+        async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
+            dispatch_constants.RESOURCE_CONSUMER_TYPE,
+            consumer_id,
+            (consumer_criteria.as_dict(),),
+            tags=tags)
+        raise OperationPostponed(async_result)
+
+
 class UnitActionScheduleCollection(JSONController):
     ACTION = None
 
@@ -718,6 +746,7 @@ urls = (
     '/binding/search/$', BindingSearch,
     '/content/applicability/$', ContentApplicability,
     '/search/$', ConsumerSearch,
+    '/([^/]+)/actions/content/regenerate_applicability/$', ConsumerContentApplicabilityRegeneration,
     '/([^/]+)/bindings/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/$', Bindings,
     '/([^/]+)/bindings/([^/]+)/([^/]+)/$', Binding,
