@@ -125,7 +125,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         msg = u'Please do not kill ☃'
 
-        # This one cuts exactly before the snowman starts, so it's OK.
+        # This one cuts exactly after the snowman, so it's OK.
         with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 22):
             messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
 
