@@ -117,6 +117,21 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             expected_messages = ['Please do not cut \xe2\x98\x83', ' in half.']
             self.assertEqual(messages, expected_messages)
 
+    def test__cut_message_handles_multibyte_characters_at_end(self):
+        """
+        Make sure that _cut_messages() will not blow up if a message ends with a multi-byte
+        character exactly at the allowed length. We'll use a unicode snowman, both because it is a
+        three byte character and because it is fun.
+        """
+        msg = u'Please do not kill ☃'
+
+        # This one cuts exactly before the snowman starts, so it's OK.
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 22):
+            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+
+            expected_messages = ['Please do not kill \xe2\x98\x83']
+            self.assertEqual(messages, expected_messages)
+
     @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 48)
     def test__cut_message_with_buffer(self):
         """
