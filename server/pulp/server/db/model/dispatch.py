@@ -517,5 +517,5 @@ class TaskStatus(Model):
         self.start_time = None
         self.finish_time = None
         self.error = error
-        self.spawned_tasks = spawned_tasks
+        self.spawned_tasks = spawned_tasks or []
         self.progress_report = progress_report or {}

@@ -46,13 +46,12 @@ def spawned_tasks(task):
     :param task: The dictionary representation of a task object in the database
     :type task: dict
     """
+    spawned_tasks = []
     spawned = task.get('spawned_tasks')
     if spawned:
-        spawned_tasks = []
         for spawned_task_id in spawned:
             link = link_obj('/pulp/api/v2/tasks/%s/' % spawned_task_id)
             link['task_id'] = spawned_task_id
             spawned_tasks.append(link)
-        return {'spawned_tasks': spawned_tasks}
-    return {}
+    return {'spawned_tasks': spawned_tasks}
 

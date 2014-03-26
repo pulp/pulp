@@ -44,8 +44,9 @@ class TestTaskStatus(unittest.TestCase):
         queue = 'some_queue'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
+        spawned_tasks = ['foo']
 
-        ts = TaskStatus(task_id, queue, tags, state)
+        ts = TaskStatus(task_id, queue, tags, state, spawned_tasks=spawned_tasks)
 
         self.assertEqual(ts.task_id, task_id)
         self.assertEqual(ts.queue, queue)
@@ -55,6 +56,7 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts.traceback, None)
         self.assertEqual(ts.start_time, None)
         self.assertEqual(ts.finish_time, None)
+        self.assertEqual(ts.spawned_tasks, spawned_tasks)
 
     def test___init___defaults(self):
         """
@@ -73,6 +75,7 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts.traceback, None)
         self.assertEqual(ts.start_time, None)
         self.assertEqual(ts.finish_time, None)
+        self.assertEqual(ts.spawned_tasks, [])
 
 
 class TestScheduledCallInit(unittest.TestCase):

@@ -26,7 +26,7 @@ task.
 * **start_time** *(null or string)* - the time the call started executing
 * **finish_time** *(null or string)* - the time the call stopped executing
 * **tags** *(array)* - arbitrary tags useful for looking up the call report
-* **spawned_tasks** *(null or array)* - List of uri for any tasks that were spawned by this task.
+* **spawned_tasks** *(array)* - List of objects containing the uri and task id for any tasks that were spawned by this task.
 * **error** *(null or object)* - Any, errors that occurred that did not cause the overall call to fail.  See :ref:`error_details`.
 
 .. note::
