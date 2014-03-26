@@ -200,7 +200,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         handler.emit(record)
 
         self.assertEqual(super_emit.call_count, 1)
-        new_record = super_emit.mock_calls[0][1][0]
+        new_record = super_emit.mock_calls[0][1][1]
         self.assertEqual(new_record.name, 'pulp.test.module')
         self.assertEqual(new_record.levelno, logging.INFO)
         self.assertEqual(new_record.pathname, '/some/path')
@@ -240,7 +240,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertEqual(super_emit.call_count, 2)
         # Let's make sure each new record has the right non-message attributes
         for mock_call in super_emit.mock_calls:
-            new_record = mock_call[1][0]
+            new_record = mock_call[1][1]
             self.assertEqual(new_record.name, 'pulp.test.module')
             self.assertEqual(new_record.levelno, logging.INFO)
             self.assertEqual(new_record.pathname, '/some/path')
@@ -251,7 +251,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         # Now let's make sure the messages were split correctly. They will not be formatted yet,
         # but they should have left exactly enough room for formatting.
         expected_messages = ['This message is very long', '.']
-        messages = [mock_call[1][0].msg for mock_call in super_emit.mock_calls]
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
     @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 54)
@@ -281,7 +281,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertEqual(super_emit.call_count, 3)
         # Let's make sure each new record has the right non-message attributes
         for mock_call in super_emit.mock_calls:
-            new_record = mock_call[1][0]
+            new_record = mock_call[1][1]
             self.assertEqual(new_record.name, 'pulp.test.module')
             self.assertEqual(new_record.levelno, logging.INFO)
             self.assertEqual(new_record.pathname, '/some/path')
@@ -293,7 +293,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         # but the first should have left exactly enough room for formatting, and the newline should
         # have caused a third message.
         expected_messages = ['This message is very long', '.', 'And it has a newline.']
-        messages = [mock_call[1][0].msg for mock_call in super_emit.mock_calls]
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
@@ -318,7 +318,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertEqual(super_emit.call_count, 2)
         # Let's make sure each new record has the right non-message attributes
         for mock_call in super_emit.mock_calls:
-            new_record = mock_call[1][0]
+            new_record = mock_call[1][1]
             self.assertEqual(new_record.name, 'pulp.test.module')
             self.assertEqual(new_record.levelno, logging.INFO)
             self.assertEqual(new_record.pathname, '/some/path')
@@ -328,7 +328,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             self.assertEqual(new_record.funcName, 'some_function')
         # Let's make sure the split around the newline happened correctly.
         expected_messages = ['This ', ' should be OK.']
-        messages = [mock_call[1][0].msg for mock_call in super_emit.mock_calls]
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
@@ -357,7 +357,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertEqual(super_emit.call_count, 5)
         # Let's make sure each new record has the right non-message attributes
         for mock_call in super_emit.mock_calls:
-            new_record = mock_call[1][0]
+            new_record = mock_call[1][1]
             self.assertEqual(new_record.name, 'pulp.test.module')
             self.assertEqual(new_record.levelno, logging.ERROR)
             self.assertEqual(new_record.pathname, '/some/path')
@@ -375,7 +375,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         traceback_lines.pop()
         expected_messages = ['Uh oh.']
         expected_messages.extend(traceback_lines)
-        messages = [mock_call[1][0].msg for mock_call in super_emit.mock_calls]
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
@@ -406,7 +406,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertEqual(super_emit.call_count, 5)
         # Let's make sure each new record has the right non-message attributes
         for mock_call in super_emit.mock_calls:
-            new_record = mock_call[1][0]
+            new_record = mock_call[1][1]
             self.assertEqual(new_record.name, 'pulp.test.module')
             self.assertEqual(new_record.levelno, logging.ERROR)
             self.assertEqual(new_record.pathname, '/some/path')
@@ -424,7 +424,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         traceback_lines.pop()
         expected_messages = ['42']
         expected_messages.extend(traceback_lines)
-        messages = [mock_call[1][0].msg for mock_call in super_emit.mock_calls]
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
 
