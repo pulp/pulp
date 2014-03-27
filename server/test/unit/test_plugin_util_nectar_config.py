@@ -69,5 +69,4 @@ class ConfigTranslationTests(unittest.TestCase):
         self.assertEqual(download_config.proxy_url, 'proxy')
         self.assertEqual(download_config.max_concurrent, 10)
 
-        self.assertEqual(download_config.__getattr__('proxy_username'), None) # spot check
-
+        self.assertEqual(download_config.proxy_username, None) # spot check
