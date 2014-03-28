@@ -92,6 +92,7 @@ is centered around updating only that metadata.
 | :response_list:`_`
 
 * :response_code:`200,if the update was executed and successful`
+* :response_code:`202,if the update was executed but additional tasks were created to update nested distributor configurations`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if there is no repository with the give ID`
 
@@ -116,26 +117,34 @@ is centered around updating only that metadata.
  }
 
 **Sample result value:**
-The result field of the :ref:`call_report` contains the database representation of the distributor (not the full repository details, just the distributor)
+The result field of the :ref:`call_report` contains the database representation of the repository
 ::
 
  {
  ...
  "result": {
-   "display_name": "Updated",
-   "description": null,
-   "_ns": "repos",
-   "notes": {},
-   "content_unit_counts": {},
-   "_id": "harness_repo_1",
-   "id": "harness_repo_1"
+    "display_name": "zoo",
+    "description": "foo",
+    "_ns": "repos",
+    "notes": {
+      "_repo-type": "rpm-repo"
+    },
+    "content_unit_counts": {
+      "package_group": 2,
+      "package_category": 1,
+      "rpm": 32,
+      "erratum": 4
+    },
+    "_id": {
+      "$oid": "5328b2983738202945a3bb47"
+    },
+    "id": "zoo",
+    "_href": "/pulp/api/v2/repositories/zoo/"
+
   },
   ...
  }
 
-**Tags:**
-The task created will have the following tags: ``"pulp:action:add_importer",
-"pulp:repository:<repo_id>"``
 
 Associate an Importer to a Repository
 -------------------------------------
@@ -173,12 +182,12 @@ The details of the added importer are returned from the call.
 
 | :response_list:`_`
 
-* :response_code:`201,if the importer was successfully added`
+* :response_code:`202,if the association was queued to be performed`
 * :response_code:`400,if one or more of the required parameters is missing, the importer type ID refers to a non-existent importer, or the importer indicates the supplied configuration is invalid`
 * :response_code:`404,if there is no repository with the given ID`
 * :response_code:`500,if the importer raises an error during initialization`
 
-| :return:`a` :ref:`call_report` containing the database representation of the importer (not the full repository details, just the importer)
+| :return:`a` :ref:`call_report` containing the current state of the association task
 
 :sample_request:`_` ::
 
@@ -190,8 +199,8 @@ The details of the added importer are returned from the call.
   }
  }
 
-**Sample result value:**
-The result field of the :ref:`call_report` contains the database representation of the importer (not the full repository details, just the importer)
+**Sample result value for the Task Report:**
+The result field of the :ref:`task_report` will contain the database representation of the importer (not the full repository details, just the importer)
 ::
 
  {

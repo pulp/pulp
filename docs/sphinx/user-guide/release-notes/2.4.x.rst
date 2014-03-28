@@ -69,7 +69,9 @@ Rest API Changes
 * Agent related tasks no longer timeout, and it is now at the caller's discretion as to how long
   to wait for task completion. The task *state* now reflects the progression of the task on the
   agent.
-
+* The original applicability generation API didn't allow a consumer to be able to request
+  regeneration of its own applicability. To be able to allow this, we have introduced a new API
+  which can be used by consumers and is documented on the same page as other applicability APIs.
 
 Binding API Changes
 -------------------

@@ -13,7 +13,7 @@
 
 import celery
 
-from pulp.server.async.tasks import TaskResult
+from pulp.server.async.tasks import TaskResult, Task
 from pulp.server.managers import factory as managers
 
 
@@ -131,7 +131,7 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
     return response
 
 
-@celery.task
+@celery.task(base=Task)
 def install_content(consumer_id, units, options):
     """
     Install units on a consumer
@@ -149,7 +149,7 @@ def install_content(consumer_id, units, options):
     return agent_manager.install_content(consumer_id, units, options)
 
 
-@celery.task
+@celery.task(base=Task)
 def update_content(consumer_id, units, options):
     """
     Update units on a consumer.
@@ -167,7 +167,7 @@ def update_content(consumer_id, units, options):
     return agent_manager.update_content(consumer_id, units, options)
 
 
-@celery.task
+@celery.task(base=Task)
 def uninstall_content(consumer_id, units, options):
     """
     Uninstall content from a consumer.

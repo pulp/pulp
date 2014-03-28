@@ -47,37 +47,6 @@ class ConfigParsingException(Exception):
 
 # plugin loading methods -------------------------------------------------------
 
-def load_plugins_from_path(path, base_class, plugin_map):
-    """
-    @type path: str
-    @type base_class: type
-    @type plugin_map: L{_PluginMap}
-    """
-    _LOG.debug('Loading multiple plugins: %s, %s' % (path, base_class.__name__))
-
-    if not os.access(path, os.F_OK | os.R_OK):
-        msg = _('Cannot load plugins: path does not exist or cannot be read: %(p)s')
-        _LOG.critical(msg % {'p': path})
-        return
-
-    add_path_to_sys_path(path)
-
-    plugin_dirs = get_plugin_dirs(path)
-
-    for dir_ in plugin_dirs:
-        if dir_ in sys.modules:
-            msg = _('Cannot load plugin: python already has module loaded: %(d)s')
-            _LOG.error(msg % {'d': dir_})
-            continue
-
-        plugin_tuples = load_plugins(dir_, base_class, base_class.__name__.lower())
-
-        if plugin_tuples is None:
-            continue
-
-        for cls, cfg in plugin_tuples:
-            add_plugin_to_map(cls, cfg, plugin_map)
-
 
 def add_plugin_to_map(cls, cfg, plugin_map):
     """
@@ -107,21 +76,6 @@ def load_plugins_from_entry_point(entry_point_group_name, plugin_map):
     for entry_point in pkg_resources.iter_entry_points(entry_point_group_name):
         cls, cfg = entry_point.load()()
         add_plugin_to_map(cls, cfg, plugin_map)
-
-
-def get_plugin_dirs(plugin_root):
-    """
-    @type plugin_root: str
-    @rtype: list [str, ...]
-    """
-    _LOG.debug('Looking for plugin dirs in plugin root: %s' % plugin_root)
-    dirs = []
-    for entry in os.listdir(plugin_root):
-        plugin_dir = os.path.join(plugin_root, entry)
-        if not os.path.isdir(plugin_dir):
-            continue
-        dirs.append(plugin_dir)
-    return dirs
 
 
 def load_plugins(path, base_class, module_name):

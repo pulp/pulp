@@ -431,7 +431,8 @@ class RepoManager(object):
             for dist_id, dist_config in distributor_configs.items():
                 update_result = repository.distributor_update(repo_id, dist_id, dist_config, None)
                 additional_tasks.extend(update_result.spawned_tasks)
-                errors.append(update_result.error)
+                if update_result.error:
+                    errors.append(update_result.error)
 
         error = None
         if len(errors) > 0:

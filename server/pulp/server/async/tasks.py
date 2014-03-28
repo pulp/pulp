@@ -280,9 +280,12 @@ class TaskResult(object):
         """
         Serialize the output to a dictionary
         """
+        serialized_error = self.error
+        if serialized_error:
+            serialized_error = self.error.to_dict()
         data = {
             'result': self.return_value,
-            'error': self.error,
+            'error': serialized_error,
             'spawned_tasks': self.spawned_tasks}
         return data
 
@@ -356,7 +359,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         TaskStatus.get_collection().update(
             {'task_id': async_result.id},
             {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
-             '$set': {'queue': queue, 'tags': tags}},
+             '$set': {'queue': queue, 'tags': tags, 'task_type': self.name}},
             upsert=True)
         return async_result
 

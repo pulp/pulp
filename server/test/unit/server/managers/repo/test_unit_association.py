@@ -13,7 +13,7 @@
 
 import mock
 
-from ....base import PulpServerTests
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -41,7 +41,7 @@ TYPE_2_DEF = model.TypeDefinition('type-2', 'Type 2', 'Test Definition Two',
 MOCK_TYPE_DEF = model.TypeDefinition('mock-type', 'Mock Type', 'Used by the mock importer',
                                      ['key-1'], [], [])
 
-class RepoUnitAssociationManagerTests(PulpServerTests):
+class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoUnitAssociationManagerTests, self).clean()
@@ -435,7 +435,8 @@ class RepoUnitAssociationManagerTests(PulpServerTests):
 
         # Setup
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id, OWNER_TYPE_USER, 'admin')
-        self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id_2, OWNER_TYPE_USER, 'admin')
+        # Add a different user to ensure they will remove properly
+        self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id_2, OWNER_TYPE_IMPORTER, 'foo')
         self.manager.associate_unit_by_id(self.repo_id, 'type-2', 'unit-1', OWNER_TYPE_USER, 'admin')
         self.manager.associate_unit_by_id(self.repo_id, 'type-2', 'unit-2', OWNER_TYPE_USER, 'admin')
 

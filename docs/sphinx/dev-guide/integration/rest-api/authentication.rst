@@ -34,7 +34,9 @@ requests to the REST API.
 
 :sample_response:`200` ::
 
-    -----BEGIN RSA PRIVATE KEY-----
+ {
+  "key":
+    "-----BEGIN RSA PRIVATE KEY-----
     MIICXAIBAAKBgQC/AW1iSiMbwAeHJcwCQedMHaKg8/3aBA88pkYGwJL1cxlmN5Hr
     OL2WYUi3Kbkt51n56LiBc5wetQ3O2WDARaLTuk4j9LJDVsN065F6q4NuwYLx8lar
     U5ZQVfxE/CP/2KW2ymp4YPFksoo1yZJDvComteuVk2n20o4MKtE7VvYCSwIDAQAB
@@ -49,7 +51,9 @@ requests to the REST API.
     Z73Xa49cbwgRJkGmuwJBALEDimytIFUSzXCJZj1s6/5Uvldfae3297pbdU0ByBHf
     /WZ1p6+u8FthSMnmq4DI4UDdxDQfNjHdcGcWPQb4yko=
     -----END RSA PRIVATE KEY-----
-    -----BEGIN CERTIFICATE-----
+    ",
+  "certificate":
+    "-----BEGIN CERTIFICATE-----
     MIICMzCCARsCASgwDQYJKoZIhvcNAQEFBQAwFDESMBAGA1UEAxMJbG9jYWxob3N0
     MB4XDTEzMDIyMjE2MjExOFoXDTEzMDMwMTE2MjExOFowLzEtMCsGA1UEAxMkYWRt
     aW46YWRtaW46NTA1YTJiZDFlMTlhMDA2MzViMDAwMDA5MIGfMA0GCSqGSIb3DQEB
@@ -63,8 +67,7 @@ requests to the REST API.
     7jwhi90WftYsQDHik9Ek43ltDVjfhDhQFWg3QKM7Xg2BkYkYYGB6ld6+v/jpOxtp
     Bg9xsQGTzaPcxGKAAwRHnEJ8vcBK+DIH5CqKOmhxxEveBDFWSNAI
     -----END CERTIFICATE-----
+    "
+ }
 
 
-.. OAuth
-   -----
-   TODO
