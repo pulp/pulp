@@ -13,29 +13,20 @@ import sys
 import os
 import re
 
-from urlparse import urlsplit, urljoin
+from urlparse import urljoin
 from logging import getLogger
 from ConfigParser import ConfigParser
-
-from nectar.downloaders.local import LocalFileDownloader
-from nectar.downloaders.threaded import HTTPThreadedDownloader
 
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 
 from pulp.server.content.sources import constants
-from pulp.server.content.sources.descriptor import is_valid, to_seconds, nectar_config
+from pulp.server.content.sources.descriptor import is_valid, to_seconds
 
 
 log = getLogger(__name__)
 
-# map scheme to nectar dowloader
-DOWNLOADER = {
-    'file': LocalFileDownloader,
-    'http': HTTPThreadedDownloader,
-    'https': HTTPThreadedDownloader,
-}
 
 # used to split list of paths
 PATHS_REGEX = re.compile(r'\s+')
@@ -193,9 +184,8 @@ class ContentSource(object):
         :rtype: bool
         """
         try:
+            self.cataloger()
             self.downloader()
-            plugin_id = self.descriptor[constants.TYPE]
-            plugins.get_cataloger_by_id(plugin_id)
             return is_valid(self.id, self.descriptor)
         except Exception:
             return False
@@ -260,6 +250,24 @@ class ContentSource(object):
             url_list.append(url)
         return url_list
 
+    def conduit(self):
+        """
+        Get a plugin conduit.
+        :return: A plugin conduit.
+        :rtype CatalogerConduit
+        """
+        return CatalogerConduit(self.id, self.expires())
+
+    def cataloger(self):
+        """
+        Get the cataloger plugin.
+        :return: A cataloger plugin.
+        :rtype: pulp.server.plugins.cataloger.Cataloger
+        """
+        plugin_id = self.descriptor[constants.TYPE]
+        plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
+        return plugin
+
     def downloader(self):
         """
         Get a fully configured nectar downloader.
@@ -269,13 +277,9 @@ class ContentSource(object):
         :rtype: nectar.downloaders.Downloader.
         """
         url = self.base_url()
-        conf = nectar_config(self.descriptor)
-        try:
-            parts = urlsplit(url)
-            downloader = DOWNLOADER[parts.scheme](conf)
-            return downloader
-        except KeyError:
-            raise ValueError('unsupported protocol: %s', url)
+        conduit = self.conduit()
+        plugin = self.cataloger()
+        return plugin.downloader(conduit, self.descriptor, url)
 
     def refresh(self, cancel_event):
         """
@@ -287,9 +291,8 @@ class ContentSource(object):
         :rtype: list of: RefreshReport
         """
         reports = []
-        plugin_id = self.descriptor[constants.TYPE]
-        plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
-        conduit = CatalogerConduit(self.id, self.expires())
+        conduit = self.conduit()
+        plugin = self.cataloger()
         for url in self.urls():
             if cancel_event.isSet():
                 break

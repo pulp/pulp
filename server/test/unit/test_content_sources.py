@@ -43,6 +43,8 @@ UNSUPPORTED_PROTOCOL = 'unsupported-protocol'
 TYPE_ID = 'rpm'
 EXPIRES = 600
 
+HEADERS = {'HEADER_1': 'LetMeIn'}
+
 
 ALT_1 = """
 [%s]
@@ -139,6 +141,14 @@ class MockCataloger(object):
     def __init__(self, exception=None):
         self.exception = exception
         self.refresh = Mock(side_effect=self._refresh)
+
+    def downloader(self, conduit, config, url):
+        nectar_config = DownloaderConfig(**config)
+        if url.startswith('http'):
+            return HTTPThreadedDownloader(nectar_config)
+        if url.startswith('file'):
+            return LocalFileDownloader(nectar_config)
+        raise ValueError('unsupported url')
 
     def _refresh(self, conduit, *unused):
         conduit.added_count = 100
