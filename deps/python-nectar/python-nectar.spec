@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.2.0
+Version:        1.2.1
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc LICENSE.txt README.rst
 
 %changelog
+* Fri Mar 28 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
+- 1078945 - Canceling a repo sync task does not seem to halt the
+  rpm sync (bcourt@redhat.com)
+- 965764 - DownloaderConfig is explicit. (rbarlow@redhat.com)
+- 1078945 - Avoid use of thread join and Event.wait() so that we don't end up
+  in C code that will block python signal handlers. (bcourt@redhat.com)
+
 * Fri Mar 21 2014 Michael Hrivnak <mhrivnak@redhat.com> 1.2.0-1
 - custom headers can now be specified on sessions and requests
   (mhrivnak@redhat.com)
