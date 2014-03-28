@@ -58,14 +58,11 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
 def unbind(consumer_id, repo_id, distributor_id, options):
     """
     Unbind a  consumer.
-
-    A forced unbind immediately deletes the binding instead
-    of marking it deleted and going through that lifecycle.
-    It is intended to be used to clean up orphaned bindings
-    caused by failed/unconfirmed unbind actions on the consumer.
     The itinerary is:
-      1. Delete the binding on the server.
+      1. Unbind the consumer from the repo on the server (mark the binding on the server as deleted).
       2. Request that the consumer (agent) perform the unbind.
+      3. Delete the binding on the server.
+
     :param consumer_id: A consumer ID.
     :type consumer_id: str
     :param repo_id: A repository ID.
@@ -84,6 +81,9 @@ def unbind(consumer_id, repo_id, distributor_id, options):
     response = None
 
     if binding['notify_agent']:
+        # Unbind the consumer from the repo on the server
+        bind_manager.unbind(consumer_id, repo_id, distributor_id)
+        # Notify the agent to remove the binding.
         # The agent notification handler will delete the binding from the server
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
