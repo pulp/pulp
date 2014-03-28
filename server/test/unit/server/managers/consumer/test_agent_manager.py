@@ -119,7 +119,7 @@ class TestAgentManager(TestCase):
             distributor_id=distributor_id)
 
         self.assertEqual(task, mock_task)
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, tags=tags)
         mock_agent.bind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.BIND, task_id)
@@ -188,7 +188,7 @@ class TestAgentManager(TestCase):
             distributor_id=distributor_id)
 
         self.assertEqual(task, mock_task)
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, tags=tags)
         mock_agent.unbind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.UNBIND, task_id)
@@ -246,7 +246,7 @@ class TestAgentManager(TestCase):
         self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, tags=tags)
         mock_profiler.install_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.install.assert_called_with(mock_context.return_value, [unit], options)
 
@@ -303,7 +303,7 @@ class TestAgentManager(TestCase):
         self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, tags=tags)
         mock_profiler.update_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.update.assert_called_with(mock_context.return_value, [unit], options)
 
@@ -360,7 +360,7 @@ class TestAgentManager(TestCase):
         self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, tags=tags)
         mock_profiler.uninstall_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.uninstall.assert_called_with(mock_context.return_value, [unit], options)
 

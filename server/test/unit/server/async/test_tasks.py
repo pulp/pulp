@@ -84,6 +84,13 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'auto_delete': False}]}
 
 
+def create_task_status(task_id, queue, state=None):
+    collection = TaskStatus.get_collection()
+    status = TaskStatus(task_id, state, queue=queue)
+    collection.save(status, safe=True)
+    return collection.find_one({'task_id': task_id})
+
+
 class TestBabysit(ResourceReservationTests):
     """
     Test the babysit() function.
@@ -119,15 +126,15 @@ class TestBabysit(ResourceReservationTests):
         # Let's simulate three tasks being assigned to this AvailableQueue, with two of them being
         # in an incomplete state and one in a complete state. The two should get canceled.
         # Let's put task_1 in progress
-        task_1 = TaskStatusManager.create_task_status('task_1', missing_available_queue.name,
+        task_1 = create_task_status('task_1', missing_available_queue.name,
                                                       state=CALL_RUNNING_STATE)
-        task_2 = TaskStatusManager.create_task_status('task_2', missing_available_queue.name,
+        task_2 = create_task_status('task_2', missing_available_queue.name,
                                                       state=CALL_WAITING_STATE)
         # This task shouldn't get canceled because it isn't in an incomplete state
-        task_3 = TaskStatusManager.create_task_status('task_3', missing_available_queue.name,
+        task_3 = create_task_status('task_3', missing_available_queue.name,
                                                       state=CALL_FINISHED_STATE)
         # Let's make a task in a worker that is still present just to make sure it isn't touched.
-        task_4 = TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
+        task_4 = create_task_status('task_4', RESERVED_WORKER_1,
                                                       state=CALL_RUNNING_STATE)
 
         # Now, let's call babysit() again. This time, it should delete the AvailableQueue, and it
@@ -287,15 +294,15 @@ class TestDeleteQueue(ResourceReservationTests):
         # Let's simulate three tasks being assigned to RESERVED_WORKER_2, with two of them being
         # in an incomplete state and one in a complete state. We will delete RESERVED_WORKER_2's
         # queue, which should cause the two to get canceled. Let's put task_1 in progress
-        task_1 = TaskStatusManager.create_task_status('task_1', RESERVED_WORKER_2,
+        task_1 = create_task_status('task_1', RESERVED_WORKER_2,
                                                       state=CALL_RUNNING_STATE)
-        task_2 = TaskStatusManager.create_task_status('task_2', RESERVED_WORKER_2,
+        task_2 = create_task_status('task_2', RESERVED_WORKER_2,
                                                       state=CALL_WAITING_STATE)
         # This task shouldn't get canceled because it isn't in an incomplete state
-        task_3 = TaskStatusManager.create_task_status('task_3', RESERVED_WORKER_2,
+        task_3 = create_task_status('task_3', RESERVED_WORKER_2,
                                                       state=CALL_FINISHED_STATE)
         # Let's make a task in a worker that is still present just to make sure it isn't touched.
-        task_4 = TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
+        task_4 = create_task_status('task_4', RESERVED_WORKER_1,
                                                       state=CALL_RUNNING_STATE)
         # Let's just make sure the babysit() worked and that we have an AvailableQueue with RR2
         aqc = AvailableQueue.get_collection()
@@ -643,7 +650,7 @@ class TestTask(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
 
@@ -673,7 +680,7 @@ class TestTask(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
 
@@ -701,7 +708,7 @@ class TestTask(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
 
@@ -726,7 +733,7 @@ class TestTask(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
 
@@ -760,7 +767,7 @@ class TestTask(ResourceReservationTests):
         einfo = EInfo()
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = create_task_status(task_id, 'some_queue')
         self.assertEqual(task_status['state'], None)
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
@@ -825,7 +832,7 @@ class TestTask(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
-        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue'), state=CALL_CANCELED_STATE)
+        create_task_status(task_id, AvailableQueue('test-queue'), state=CALL_CANCELED_STATE)
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
         task = tasks.Task()
@@ -852,7 +859,7 @@ class TestCancel(PulpServerTests):
     def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
         test_queue = AvailableQueue('test_queue')
-        TaskStatusManager.create_task_status(task_id, test_queue.name)
+        create_task_status(task_id, test_queue.name)
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
@@ -868,7 +875,7 @@ class TestCancel(PulpServerTests):
     def test_cancel_after_task_finished(self, logger, revoke):
         task_id = '1234abcd'
         test_queue = AvailableQueue('test_queue')
-        TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
+        create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, tasks.cancel, task_id)
 
         task_status = TaskStatusManager.find_by_task_id(task_id)

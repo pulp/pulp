@@ -47,9 +47,8 @@ class TaskStatusManagerTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         queue = 'a_queue'
         tags = ['test-tag1', 'test-tag2']
-        state = 'waiting'
 
-        created = TaskStatusManager.create_task_status(task_id, queue, tags, state)
+        created = TaskStatusManager.create_task_status(task_id, queue=queue, tags=tags)
 
         task_statuses = list(TaskStatus.get_collection().find())
         self.assertEqual(1, len(task_statuses))
@@ -58,11 +57,11 @@ class TaskStatusManagerTests(base.PulpServerTests):
         self.assertEqual(task_id, task_status['task_id'])
         self.assertEqual(queue, task_status['queue'])
         self.assertEqual(tags, task_status['tags'])
-        self.assertEqual(state, task_status['state'])
+        self.assertEqual(constants.CALL_WAITING_STATE, task_status['state'])
 
         self.assertEqual(task_id, created['task_id'])
         self.assertEqual(tags, created['tags'])
-        self.assertEqual(state, created['state'])
+        self.assertEqual(constants.CALL_WAITING_STATE, created['state'])
 
     def test_create_task_status_defaults(self):
         """
@@ -70,65 +69,35 @@ class TaskStatusManagerTests(base.PulpServerTests):
         properly.
         """
         task_id = self.get_random_uuid()
-        queue = 'a_queue'
 
-        TaskStatusManager.create_task_status(task_id, queue)
+        TaskStatusManager.create_task_status(task_id)
 
         task_statuses = list(TaskStatus.get_collection().find())
         self.assertEqual(1, len(task_statuses))
         self.assertEqual(task_id, task_statuses[0]['task_id'])
-        self.assertEqual(queue, task_statuses[0]['queue'])
+        self.assertTrue(task_statuses[0]['queue'] is None)
         self.assertEqual([], task_statuses[0]['tags'])
-        self.assertEqual(None, task_statuses[0]['state'])
-
-    def test_create_task_status_invalid_task_id(self):
-        """
-        Test that calling create_task_status() with an invalid task id raises the correct error.
-        """
-        try:
-            TaskStatusManager.create_task_status(None, 'some_queue')
-            self.fail('Invalid ID did not raise an exception')
-        except exceptions.InvalidValue, e:
-            self.assertTrue(e.property_names[0], 'task_id')
+        self.assertEqual(constants.CALL_WAITING_STATE, task_statuses[0]['state'])
 
     def test_create_task_status_duplicate_task_id(self):
         """
         Tests create_task_status() with a duplicate task id.
         """
         task_id = self.get_random_uuid()
-        queue = 'a_queue'
 
-        TaskStatusManager.create_task_status(task_id, queue)
+        TaskStatusManager.create_task_status(task_id)
         try:
-            TaskStatusManager.create_task_status(task_id, queue)
+            TaskStatusManager.create_task_status(task_id)
             self.fail('Task status with a duplicate task id did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(task_id in e)
-
-    def test_create_task_status_invalid_attributes(self):
-        """
-        Tests that calling create_task_status() with invalid attributes
-        results in an error
-        """
-        task_id = self.get_random_uuid()
-        # queue is not allowed to be None
-        queue = None
-        tags = 'not a list'
-        state = 1
-        try:
-            TaskStatusManager.create_task_status(task_id, queue, tags, state)
-            self.fail('Invalid attributes did not cause create to raise an exception')
-        except exceptions.InvalidValue, e:
-            self.assertTrue('tags' in e.data_dict()['property_names'])
-            self.assertTrue('state' in e.data_dict()['property_names'])
-            self.assertTrue('queue' in e.data_dict()['property_names'])
 
     def test_delete_task_status(self):
         """
         Test delete_task_status() under normal circumstances.
         """
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id, 'a_queue')
+        TaskStatusManager.create_task_status(task_id)
 
         TaskStatusManager.delete_task_status(task_id)
 
@@ -144,7 +113,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
             TaskStatusManager.delete_task_status(task_id)
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue(task_id == e.resources['resource_id'])
+            self.assertTrue({'task_id': task_id} == e.resources)
 
     def test_update_task_status(self):
         """
@@ -153,12 +122,11 @@ class TaskStatusManagerTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         queue = 'special_queue'
         tags = ['test-tag1', 'test-tag2']
-        state = 'waiting'
-        TaskStatusManager.create_task_status(task_id, queue, tags, state)
+        TaskStatusManager.create_task_status(task_id, queue=queue, tags=tags)
         now = datetime.now(dateutils.utc_tz())
         start_time = dateutils.format_iso8601_datetime(now)
         delta = {'start_time': start_time,
-                 'state': 'running',
+                 'state': constants.CALL_RUNNING_STATE,
                  'disregard': 'ignored',
                  'progress_report': {'report-id': 'my-progress'}}
 
@@ -186,7 +154,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
             TaskStatusManager.update_task_status(task_id, {})
             self.fail('Exception expected')
         except exceptions.MissingResource, e:
-            self.assertTrue(task_id == e.resources['resource_id'])
+            self.assertTrue({'task_id': task_id} == e.resources)
 
     @mock.patch('pulp.server.db.connection.PulpCollection.query')
     def test_find_by_criteria(self, mock_query):
