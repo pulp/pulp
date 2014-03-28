@@ -28,7 +28,7 @@ from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
 from pulp.server.async import constants as dispatch_constants
 from pulp.server.db.model.consumer import Bind
-from pulp.server.exceptions import PulpExecutionException, PulpDataException
+from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.agent import Context
@@ -394,10 +394,14 @@ class AgentManager(object):
         agent_bindings = []
         for binding in bindings:
             manager = managers.repo_distributor_manager()
-            distributor = manager.get_distributor(
-                binding['repo_id'],
-                binding['distributor_id'])
-            type_id = distributor['distributor_type_id']
+            try:
+                distributor = manager.get_distributor(
+                    binding['repo_id'],
+                    binding['distributor_id'])
+                type_id = distributor['distributor_type_id']
+            except MissingResource:
+                # In case the distributor was already deleted from the server.
+                type_id = None
             agent_binding = dict(type_id=type_id, repo_id=binding['repo_id'])
             agent_bindings.append(agent_binding)
         return agent_bindings
