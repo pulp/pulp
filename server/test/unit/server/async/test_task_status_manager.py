@@ -79,7 +79,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         self.assertEqual(task_id, task_statuses[0]['task_id'])
         self.assertEqual(queue, task_statuses[0]['queue'])
         self.assertEqual([], task_statuses[0]['tags'])
-        self.assertEqual(None, task_statuses[0]['state'])
+        self.assertEqual('waiting', task_statuses[0]['state'])
 
     def test_create_task_status_invalid_task_id(self):
         """

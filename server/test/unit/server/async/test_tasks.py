@@ -642,7 +642,7 @@ class TestTask(ResourceReservationTests):
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
-        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
@@ -672,7 +672,7 @@ class TestTask(ResourceReservationTests):
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
-        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
@@ -700,7 +700,7 @@ class TestTask(ResourceReservationTests):
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
-        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
@@ -725,7 +725,7 @@ class TestTask(ResourceReservationTests):
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
-        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
@@ -759,7 +759,7 @@ class TestTask(ResourceReservationTests):
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
-        self.assertEqual(task_status['state'], None)
+        self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
 

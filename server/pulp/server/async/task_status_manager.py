@@ -56,6 +56,9 @@ class TaskStatusManager(object):
         if invalid_values:
             raise InvalidValue(invalid_values)
 
+        if not state:
+            state = dispatch_constants.CALL_WAITING_STATE
+
         task_status = TaskStatus(task_id, queue, tags=tags, state=state)
         try:
             TaskStatus.get_collection().save(task_status, safe=True)
