@@ -17,7 +17,6 @@ Contains base classes for commands that poll the server for asynchronous tasks.
 
 import time
 from gettext import gettext as _
-import collections
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
 from pulp.bindings.responses import Task
@@ -216,6 +215,8 @@ class PollingCommand(PulpCliCommand):
 
             if task.is_waiting():
                 self.waiting(task, delayed_spinner)
+            elif task.was_accepted():
+                self.accepted(task, delayed_spinner)
             else:
                 if first_run:
                     self.prompt.render_spacer(1)
@@ -238,7 +239,7 @@ class PollingCommand(PulpCliCommand):
 
     def task_header(self, task):
         """
-        Displays information to the user to indiciate which task is about to be tracked.
+        Displays information to the user to indicate which task is about to be tracked.
         This is only called once per task immediately before the polling loop begins and
         only if there is more than one task being tracked.
 
@@ -266,6 +267,20 @@ class PollingCommand(PulpCliCommand):
         """
         msg = _('Waiting to begin...')
         spinner.next(msg)
+
+    def accepted(self, task, spinner):
+        """
+        Called when a task has been accepted.
+        Subclasses may override this to display a custom message to the user.
+
+        :param task: full task report for the task being displayed
+        :type  task: pulp.bindings.responses.Task
+
+        :param spinner: used to indicate progress is still taking place
+        :type  spinner: okaara.progress.Spinner
+        """
+        msg = _('Accepted...')
+        spinner.next(message=msg)
 
     def progress(self, task, spinner):
         """
