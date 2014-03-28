@@ -46,6 +46,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Fri Mar 28 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
+- Latest version required by Pulp. (jortel@redhat.com)
+
+* Fri Mar 28 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
 - 1078945 - Canceling a repo sync task does not seem to halt the
   rpm sync (bcourt@redhat.com)
 - 965764 - DownloaderConfig is explicit. (rbarlow@redhat.com)
