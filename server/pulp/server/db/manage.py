@@ -13,15 +13,15 @@ This module's main() function becomes the pulp-manage-db.py script.
 """
 from gettext import gettext as _
 from optparse import OptionParser
-import logging.config
+import logging
 import traceback
 import os
 import sys
 
 from pulp.plugins.loader.api import load_content_types
+from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
-from pulp.server import config
 
 
 connection.initialize()
@@ -150,8 +150,5 @@ def _start_logging():
     Call into Pulp to get the logging started, and set up the logger to be used in this module.
     """
     global logger
-    log_config_filename = config.config.get('logs', 'config')
-    if not os.access(log_config_filename, os.R_OK):
-        raise RuntimeError("Unable to read log configuration file: %s" % (log_config_filename))
-    logging.config.fileConfig(log_config_filename)
+    logs.start_logging()
     logger = logging.getLogger(__name__)

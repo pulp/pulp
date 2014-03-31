@@ -90,7 +90,6 @@ LINKS = (
     ('server/etc/pulp/server.conf', '/etc/pulp/server.conf'),
     ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
     ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
-    ('server/etc/pulp/logging.cfg', '/etc/pulp/logging.cfg'),
 
     # Server Web Configuration
     ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),

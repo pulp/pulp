@@ -55,12 +55,12 @@ def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_
             if report.spawned_tasks:
                 additional_tasks.extend(report.spawned_tasks)
         except PulpException, e:
-            #Log a message so that we can debug but don't throw
+            # Log a message so that we can debug but don't throw
             logger.debug(e.message)
             bind_errors.append(e)
         except Exception, e:
-            logger.exception(e)
-            #Don't do anything else since we still want to process all the other consumers
+            logger.exception(e.message)
+            # Don't do anything else since we still want to process all the other consumers
             bind_errors.append(e)
 
     bind_error = None
@@ -105,7 +105,7 @@ def unbind(group_id, repo_id, distributor_id, options):
             logger.warn(e.message)
             bind_errors.append(e)
         except Exception, e:
-            logger.exception(e)
+            logger.exception(e.message)
             bind_errors.append(e)
             #Don't do anything else since we still want to process all the other consumers
 
@@ -205,7 +205,7 @@ def _process_group(consumer_group, error_code, error_kwargs, process_method, *ar
             logger.warn(e.message)
             errors.append(e)
         except Exception, e:
-            logger.exception(e)
+            logger.exception(e.message)
             errors.append(e)
             #Don't do anything else since we still want to process all the other consumers
 

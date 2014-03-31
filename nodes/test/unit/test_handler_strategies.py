@@ -145,7 +145,7 @@ class TestBase(TestCase):
         self.assertEqual(request.summary.errors[0].error_id, RepoSyncRestError.ERROR_ID)
         self.assertEqual(request.summary.errors[0].details['http_code'], 401)
 
-    @patch('pulp_node.handlers.model.Repository.fetch_all', return_value=[TestRepo(123)])
+    @patch('pulp_node.handlers.model.Repository.fetch_all', return_value=[TestRepo('123')])
     @patch('pulp_node.handlers.model.Repository.delete', side_effect=ValueError())
     def test_delete_repositories_exception(self, *unused):
         # Setup

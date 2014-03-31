@@ -12,6 +12,13 @@ are commonly used will be documented here, journald and rsyslogd. If you happen 
 syslog handler on your operating system, please refer to its documentation to learn how to access
 Pulp's log messages.
 
+Log Level
+^^^^^^^^^
+
+Pulp's log level can be adjusted with the ``log_level`` setting in the ``[server]`` section of
+``/etc/pulp/server.conf``. This setting is optional and defaults to INFO. Valid choices are
+CRITICAL, ERROR, WARNING, INFO, DEBUG, and NOTSET.
+
 journald
 ^^^^^^^^
 
