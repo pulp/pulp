@@ -22,7 +22,7 @@ from pulp.common.tags import (
 from pulp.server.async import constants as dispatch_constants
 from pulp.server.db.model.consumer import Bind
 from pulp.server.managers.consumer.agent import AgentManager, Units
-from pulp.server.exceptions import PulpExecutionException, PulpDataException
+from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
@@ -517,6 +517,27 @@ class TestAgentManager(TestCase):
         for binding, agent_binding in itertools.izip(bindings, agent_bindings):
             self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
             self.assertEqual(distributor['distributor_type_id'], agent_binding['type_id'])
+
+    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager')
+    def test_get_agent_unbindings_distributor_deleted(self, mock_repo_distributor_manager):
+        # Test that AgentManager._unbindings does not raise an exception
+        # when the distributor is deleted and returns None as the distributor_type_id.
+        def test_get_distributor():
+            raise MissingResource()
+        mock_repo_distributor_manager.get_distributor = test_get_distributor
+
+        # test
+        bindings = [
+            {'consumer_id': '10', 'repo_id': '20', 'distributor_id': '30', 'binding_config': {}},
+            {'consumer_id': '40', 'repo_id': '50', 'distributor_id': '60', 'binding_config': {}},
+        ]
+        agent_bindings = AgentManager._unbindings(bindings)
+
+        # validation
+        self.assertEqual(len(agent_bindings), 2)
+        for binding, agent_binding in itertools.izip(bindings, agent_bindings):
+            self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
+            self.assertEqual(None, agent_binding['type_id'])
 
 
 class TestUnits(TestCase):

@@ -83,6 +83,8 @@ class TestUnbind(unittest.TestCase):
             {'task_id': 'foo-request-id'}
         result = consumer.unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                  agent_options)
+        mock_bind_manager.consumer_bind_manager.return_value.unbind.assert_called_once_with(
+            'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id')
         mock_bind_manager.consumer_agent_manager.return_value.unbind.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', agent_options)
         self.assertTrue(isinstance(result, TaskResult))

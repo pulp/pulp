@@ -44,8 +44,8 @@ class PulpException(Exception):
 
     def to_dict(self):
         """
-        The to_dict method is used to provide a standarized dictionary
-        of the exception information for useage storing to the database
+        The to_dict method is used to provide a standardized dictionary
+        of the exception information for usage storing to the database
         or converting to json to send back via an API call
         """
         result = {

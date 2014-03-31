@@ -51,7 +51,7 @@ PLP0006 = Error("PLP0006", _("Errors occurred while updating the distributor con
                              "repository %(repo_id)s"),
                 ['repo_id'])
 PLP0007 = Error("PLP0007",
-                _("Error occurred while cascading delete of repository %(repo_id to distributor"
+                _("Error occurred while cascading delete of repository %(repo_id)s to distributor "
                   "bindings associated with it."),
                 ['repo_id'])
 PLP0008 = Error("PLP0008",

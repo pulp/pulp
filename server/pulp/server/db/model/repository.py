@@ -150,7 +150,7 @@ class RepoDistributor(Model):
     @type id: str
 
     @ivar distributor_type_id: used to look up the distributor plugin when this
-                               importer is used
+                               distributor is used
     @type distributor_type_id: str
 
     @ivar config: distributor config passed to the plugin when it is invoked

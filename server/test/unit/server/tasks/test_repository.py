@@ -54,6 +54,9 @@ class TestDelete(PulpCeleryTaskTests):
         mock_unbind.assert_called_once_with('foo', 'repo-foo', 'dist-id', ANY)
         self.assertTrue(isinstance(result.error, PulpException))
         self.assertEquals(result.error.error_code, error_codes.PLP0007)
+        error_dict = result.error.to_dict()
+        self.assertTrue("Error occurred while cascading delete of repository"
+                        in error_dict['description'])
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
 
 
