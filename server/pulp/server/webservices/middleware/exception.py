@@ -22,7 +22,7 @@ from pulp.server.exceptions import PulpException
 from pulp.server.webservices import serialization
 
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class ExceptionHandlerMiddleware(object):
@@ -43,7 +43,7 @@ class ExceptionHandlerMiddleware(object):
         try:
             return self.app(environ, start_response)
         except Exception, e:
-            _LOG.exception(e)
+            logger.exception(str(e))
             t, e, tb = sys.exc_info()
             status = None
             error_obj = None
@@ -64,7 +64,7 @@ class ExceptionHandlerMiddleware(object):
 
             else:
                 msg = _('Unhandled Exception')
-                _LOG.exception(msg)
+                logger.exception(msg)
                 status = httplib.INTERNAL_SERVER_ERROR
                 error_obj = serialization.error.exception_obj(e, tb, msg)
             serialized_error = json.dumps(error_obj)

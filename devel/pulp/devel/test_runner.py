@@ -42,6 +42,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
     parser.add_argument('--with-xcoverage', action='store_true')
     parser.add_argument('--xcoverage-file')
     parser.add_argument('-x', '--failfast', action='store_true')
+    parser.add_argument('-v', '--verbose', action='store_true')
 
     arguments = parser.parse_args()
 
@@ -74,11 +75,12 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
 
     if arguments.failfast:
         args.extend(['-x'])
+    if arguments.verbose:
+        args.extend(['-v'])
     if arguments.with_xunit:
         args.extend(['--with-xunit', '--process-timeout=360'])
     if arguments.xunit_file:
         args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
-    # print args
-    #Call the test process
+    # Call the test process
     subprocess.call(args)
