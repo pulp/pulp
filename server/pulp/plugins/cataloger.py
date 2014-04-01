@@ -15,6 +15,21 @@ class Cataloger(object):
     Catalog content provided by content sources.
     """
 
+    def get_downloader(self, conduit, config, url):
+        """
+        Get an object suitable for downloading content contributed
+        in the catalog by this cataloger.
+        :param conduit: Access to pulp platform API.
+        :type conduit: pulp.server.plugins.conduits.cataloger.CatalogerConduit
+        :param config: The content source configuration.
+        :type config: dict
+        :param url: The URL for the content source.
+        :type url: str
+        :return: A configured downloader.
+        :rtype: nectar.downloaders.base.Downloader
+        """
+        raise NotImplementedError()
+
     def refresh(self, conduit, config, url):
         """
         Refresh the content catalog.

@@ -13,29 +13,20 @@ import sys
 import os
 import re
 
-from urlparse import urlsplit, urljoin
+from urlparse import urljoin
 from logging import getLogger
 from ConfigParser import ConfigParser
-
-from nectar.downloaders.local import LocalFileDownloader
-from nectar.downloaders.threaded import HTTPThreadedDownloader
 
 from pulp.server.managers import factory as managers
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 
 from pulp.server.content.sources import constants
-from pulp.server.content.sources.descriptor import is_valid, to_seconds, nectar_config
+from pulp.server.content.sources.descriptor import is_valid, to_seconds
 
 
 log = getLogger(__name__)
 
-# map scheme to nectar dowloader
-DOWNLOADER = {
-    'file': LocalFileDownloader,
-    'http': HTTPThreadedDownloader,
-    'https': HTTPThreadedDownloader,
-}
 
 # used to split list of paths
 PATHS_REGEX = re.compile(r'\s+')
@@ -169,7 +160,7 @@ class ContentSource(object):
                 source = ContentSource(section, descriptor)
                 if not source.is_valid():
                     continue
-                if not source.enabled():
+                if not source.enabled:
                     continue
                 sources[source.id] = source
         return sources
@@ -193,13 +184,14 @@ class ContentSource(object):
         :rtype: bool
         """
         try:
-            self.downloader()
-            plugin_id = self.descriptor[constants.TYPE]
-            plugins.get_cataloger_by_id(plugin_id)
+            self.get_cataloger()
+            self.get_downloader()
             return is_valid(self.id, self.descriptor)
         except Exception:
+            log.exception('source [%s] not valid', self.id)
             return False
 
+    @property
     def enabled(self):
         """
         Get whether the content source is enabled.
@@ -209,6 +201,7 @@ class ContentSource(object):
         enabled = self.descriptor.get(constants.ENABLED)
         return enabled.lower() in ('1', 'true', 'yes')
 
+    @property
     def priority(self):
         """
         Get the content source priority (0=lowest)
@@ -218,6 +211,7 @@ class ContentSource(object):
         """
         return int(self.descriptor.get(constants.PRIORITY, 0))
 
+    @property
     def expires(self):
         """
         Get the duration in seconds of how long content catalog entries
@@ -228,6 +222,7 @@ class ContentSource(object):
         """
         return to_seconds(self.descriptor.get(constants.EXPIRES, '24h'))
 
+    @property
     def base_url(self):
         """
         Get the base URL used to inspect the content source
@@ -237,6 +232,7 @@ class ContentSource(object):
         """
         return self.descriptor[constants.BASE_URL]
 
+    @property
     def urls(self):
         """
         Get the (optional) list of URLs specified in the descriptor.
@@ -247,8 +243,8 @@ class ContentSource(object):
         url_list = []
         paths = self.descriptor.get(constants.PATHS)
         if not paths:
-            return [self.base_url()]
-        base = self.base_url()
+            return [self.base_url]
+        base = self.base_url
         if not base.endswith('/'):
             base += '/'
         for path in re.split(PATHS_REGEX, paths):
@@ -260,7 +256,25 @@ class ContentSource(object):
             url_list.append(url)
         return url_list
 
-    def downloader(self):
+    def get_conduit(self):
+        """
+        Get a plugin conduit.
+        :return: A plugin conduit.
+        :rtype CatalogerConduit
+        """
+        return CatalogerConduit(self.id, self.expires)
+
+    def get_cataloger(self):
+        """
+        Get the cataloger plugin.
+        :return: A cataloger plugin.
+        :rtype: pulp.server.plugins.cataloger.Cataloger
+        """
+        plugin_id = self.descriptor[constants.TYPE]
+        plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
+        return plugin
+
+    def get_downloader(self):
         """
         Get a fully configured nectar downloader.
         The returned downloader is configured using properties defined
@@ -268,14 +282,9 @@ class ContentSource(object):
         :return: A nectar downloader.
         :rtype: nectar.downloaders.Downloader.
         """
-        url = self.base_url()
-        conf = nectar_config(self.descriptor)
-        try:
-            parts = urlsplit(url)
-            downloader = DOWNLOADER[parts.scheme](conf)
-            return downloader
-        except KeyError:
-            raise ValueError('unsupported protocol: %s', url)
+        conduit = self.get_conduit()
+        plugin = self.get_cataloger()
+        return plugin.get_downloader(conduit, self.descriptor, self.base_url)
 
     def refresh(self, cancel_event):
         """
@@ -287,10 +296,9 @@ class ContentSource(object):
         :rtype: list of: RefreshReport
         """
         reports = []
-        plugin_id = self.descriptor[constants.TYPE]
-        plugin, cfg = plugins.get_cataloger_by_id(plugin_id)
-        conduit = CatalogerConduit(self.id, self.expires())
-        for url in self.urls():
+        conduit = self.get_conduit()
+        plugin = self.get_cataloger()
+        for url in self.urls:
             if cancel_event.isSet():
                 break
             conduit.reset()
@@ -316,10 +324,10 @@ class ContentSource(object):
         return hash(self.id)
 
     def __gt__(self, other):
-        return self.priority() > other.priority()
+        return self.priority > other.priority
 
     def __lt__(self, other):
-        return self.priority() < other.priority()
+        return self.priority < other.priority
 
 
 class PrimarySource(ContentSource):
@@ -338,7 +346,14 @@ class PrimarySource(ContentSource):
         ContentSource.__init__(self, '__primary__', {})
         self._downloader = downloader
 
-    def downloader(self):
+    @property
+    def priority(self):
+        """
+        Must be last.
+        """
+        return sys.maxint
+
+    def get_downloader(self):
         """
         Get the wrapped downloader.
         :return: The wrapped (primary) downloader.
@@ -351,12 +366,6 @@ class PrimarySource(ContentSource):
         Does not support refresh.
         """
         pass
-
-    def priority(self):
-        """
-        Must be last.
-        """
-        return sys.maxint
 
 
 class RefreshReport(object):

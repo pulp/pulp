@@ -28,7 +28,7 @@ from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
-from pulp.server.content.sources.descriptor import to_seconds, is_valid
+from pulp.server.content.sources.descriptor import to_seconds, is_valid, nectar_config
 from pulp.server.content.sources import model
 from pulp.server.content.sources.container import NectarListener
 
@@ -42,6 +42,8 @@ UNSUPPORTED_PROTOCOL = 'unsupported-protocol'
 
 TYPE_ID = 'rpm'
 EXPIRES = 600
+
+HEADERS = {'HEADER_1': 'LetMeIn'}
 
 
 ALT_1 = """
@@ -139,6 +141,13 @@ class MockCataloger(object):
     def __init__(self, exception=None):
         self.exception = exception
         self.refresh = Mock(side_effect=self._refresh)
+
+    def get_downloader(self, conduit, config, url):
+        if url.startswith('http'):
+            return HTTPThreadedDownloader(nectar_config(config))
+        if url.startswith('file'):
+            return LocalFileDownloader(nectar_config(config))
+        raise ValueError('unsupported url')
 
     def _refresh(self, conduit, *unused):
         conduit.added_count = 100
@@ -241,7 +250,7 @@ class TestLoading(ContainerTest):
     def test_urls(self):
         sources = ContentSource.load_all(self.tmp_dir)
         underground = sources[UNDERGROUND]
-        urls = underground.urls()
+        urls = underground.urls
         self.assertEqual(len(urls), 4)
         self.assertEqual(urls[0], 'file:///underground/fedora/18/x86_64/')
         self.assertEqual(urls[1], 'file:///underground/fedora/18/i386/')
@@ -252,7 +261,7 @@ class TestLoading(ContainerTest):
     def test_nectar_config(self, *unused):
         sources = ContentSource.load_all(self.tmp_dir)
         unit_world = sources[UNIT_WORLD_SECURE]
-        downloader = unit_world.downloader()
+        downloader = unit_world.get_downloader()
         self.assertEqual(downloader.config.max_concurrent, 10)
         self.assertEqual(downloader.config.max_speed, 1000)
         self.assertEqual(downloader.config.ssl_validation, True)
@@ -558,7 +567,7 @@ class TestRefreshing(ContainerTest):
             self.assertEqual(r.deleted_count, 0)
         calls = iter(plugin.refresh.call_args_list)
         for source in ContentSource.load_all(self.tmp_dir).values():
-            for url in source.urls():
+            for url in source.urls:
                 args = calls.next()[0]
                 self.assertTrue(isinstance(args[0], CatalogerConduit))
                 self.assertEqual(args[1], source.descriptor)
