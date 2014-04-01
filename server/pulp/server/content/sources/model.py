@@ -188,6 +188,7 @@ class ContentSource(object):
             self.downloader()
             return is_valid(self.id, self.descriptor)
         except Exception:
+            log.exception('source [%s] not valid', self.id)
             return False
 
     def enabled(self):

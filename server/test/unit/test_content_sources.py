@@ -28,7 +28,7 @@ from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
-from pulp.server.content.sources.descriptor import to_seconds, is_valid
+from pulp.server.content.sources.descriptor import to_seconds, is_valid, nectar_config
 from pulp.server.content.sources import model
 from pulp.server.content.sources.container import NectarListener
 
@@ -143,11 +143,10 @@ class MockCataloger(object):
         self.refresh = Mock(side_effect=self._refresh)
 
     def downloader(self, conduit, config, url):
-        nectar_config = DownloaderConfig(**config)
         if url.startswith('http'):
-            return HTTPThreadedDownloader(nectar_config)
+            return HTTPThreadedDownloader(nectar_config(config))
         if url.startswith('file'):
-            return LocalFileDownloader(nectar_config)
+            return LocalFileDownloader(nectar_config(config))
         raise ValueError('unsupported url')
 
     def _refresh(self, conduit, *unused):
