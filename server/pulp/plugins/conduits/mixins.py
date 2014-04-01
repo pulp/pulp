@@ -545,6 +545,11 @@ class StatusMixin(object):
                publish; the contents may contain whatever information is relevant
                to the distributor implementation so long as it is serializable
         """
+
+        if self.task_id is None:
+            # not running within a task
+            return
+
         try:
             self.progress_report[self.report_id] = status
             delta = {'progress_report': self.progress_report}

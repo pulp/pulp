@@ -559,6 +559,21 @@ class StatusMixinTests(unittest.TestCase):
         self.assertEqual(call_args[0], task_id)
         self.assertEqual(call_args[1], delta)
 
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
+    def test_set_progress_no_task(self, mock_get_task_id, mock_update):
+        # Setup
+        mock_get_task_id.return_value = None
+        self.mixin = mixins.StatusMixin('', mixins.ImporterConduitException)
+
+        # Test
+        status = 'status'
+        self.mixin.set_progress(status)
+
+        # Verify
+        self.assertFalse(mock_update.called)
+
+
     @mock.patch('pulp.server.async.tasks.get_current_task_id')
     def test_set_progress_with_exception(self, mock_call):
         # Setup
