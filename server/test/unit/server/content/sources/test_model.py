@@ -193,7 +193,7 @@ class TestContentSource(TestCase):
 
         fake_valid.side_effect = [d[1]['valid'] for d in DESCRIPTOR]
 
-        fake_enabled.side_effect = [d[1]['enabled'] for d in DESCRIPTOR]
+        fake_enabled.__get__ = Mock(side_effect=[d[1]['enabled'] for d in DESCRIPTOR])
 
         parser = Mock()
         parser.items.side_effect = [d[1].items() for d in DESCRIPTOR]
@@ -226,8 +226,8 @@ class TestContentSource(TestCase):
     @patch('pulp.server.content.sources.model.is_valid')
     def test_is_valid(self, mock_descriptor_is_valid):
         source = ContentSource('s-1', {'A': 1})
-        source.downloader = Mock()
-        source.cataloger = Mock()
+        source.get_downloader = Mock()
+        source.get_cataloger = Mock()
 
         # Test
 
@@ -235,16 +235,16 @@ class TestContentSource(TestCase):
 
         # validation
 
-        source.cataloger.assert_called_with()
-        source.downloader.assert_called_with()
+        source.get_cataloger.assert_called_with()
+        source.get_downloader.assert_called_with()
         mock_descriptor_is_valid.assert_called_with(source.id, source.descriptor)
         self.assertTrue(valid)
 
     @patch('pulp.server.content.sources.model.is_valid')
     def test_is_valid_no_plugin(self, mock_descriptor_is_valid):
         source = ContentSource('s-1', {'A': 1})
-        source.downloader = Mock()
-        source.cataloger = Mock(side_effect=NotImplementedError())
+        source.get_downloader = Mock()
+        source.get_cataloger = Mock(side_effect=NotImplementedError())
 
         # Test
 
@@ -252,16 +252,16 @@ class TestContentSource(TestCase):
 
         # validation
 
-        source.cataloger.assert_called_with()
-        self.assertFalse(source.downloader.called)
+        source.get_cataloger.assert_called_with()
+        self.assertFalse(source.get_downloader.called)
         self.assertFalse(mock_descriptor_is_valid.called)
         self.assertFalse(valid)
 
     @patch('pulp.server.content.sources.model.is_valid')
     def test_is_valid_no_downloader(self, mock_descriptor_is_valid):
         source = ContentSource('s-1', {'A': 1})
-        source.downloader = Mock(side_effect=NotImplementedError())
-        source.cataloger = Mock()
+        source.get_downloader = Mock(side_effect=NotImplementedError())
+        source.get_cataloger = Mock()
 
         # Test
 
@@ -269,16 +269,16 @@ class TestContentSource(TestCase):
 
         # validation
 
-        source.cataloger.assert_called_with()
-        source.downloader.assert_called_with()
+        source.get_cataloger.assert_called_with()
+        source.get_downloader.assert_called_with()
         self.assertFalse(mock_descriptor_is_valid.called)
         self.assertFalse(valid)
 
     @patch('pulp.server.content.sources.model.is_valid')
     def test_is_valid_bad_descriptor(self, mock_descriptor_is_valid):
         source = ContentSource('s-1', {'A': 1})
-        source.downloader = Mock()
-        source.cataloger = Mock()
+        source.get_downloader = Mock()
+        source.get_cataloger = Mock()
         mock_descriptor_is_valid.side_effect = ValueError()
 
         # Test
@@ -287,27 +287,27 @@ class TestContentSource(TestCase):
 
         # validation
 
-        source.cataloger.assert_called_with()
-        source.downloader.assert_called_with()
+        source.get_cataloger.assert_called_with()
+        source.get_downloader.assert_called_with()
         self.assertFalse(valid)
 
     def test_enabled(self):
         source = ContentSource('s-1', {constants.ENABLED: 'true'})
-        self.assertTrue(source.enabled())
+        self.assertTrue(source.enabled)
         source.descriptor[constants.ENABLED] = 'false'
-        self.assertFalse(source.enabled())
+        self.assertFalse(source.enabled)
 
     def test_priority(self):
         source = ContentSource('s-1', {constants.PRIORITY: 123})
-        self.assertEqual(source.priority(), 123)
+        self.assertEqual(source.priority, 123)
 
     def test_expires(self):
         source = ContentSource('s-1', {constants.EXPIRES: '1h'})
-        self.assertEqual(source.expires(), 3600)
+        self.assertEqual(source.expires, 3600)
 
     def test_base_url(self):
         source = ContentSource('s-1', {constants.BASE_URL: 'http://xyz.com'})
-        self.assertEqual(source.base_url(), 'http://xyz.com')
+        self.assertEqual(source.base_url, 'http://xyz.com')
 
     def test_urls(self):
         base_url = 'http://xyz.com'
@@ -315,7 +315,7 @@ class TestContentSource(TestCase):
         source = ContentSource('s-1', {constants.BASE_URL: base_url, constants.PATHS: paths})
 
         # test
-        urls = source.urls()
+        urls = source.urls
 
         # validation
 
@@ -333,7 +333,7 @@ class TestContentSource(TestCase):
         source = ContentSource('s-1', {constants.BASE_URL: base_url})
 
         # test
-        urls = source.urls()
+        urls = source.urls
 
         # validation
 
@@ -346,7 +346,7 @@ class TestContentSource(TestCase):
     def test_conduit(self):
         source = ContentSource('s-1', {constants.EXPIRES: '1h'})
 
-        conduit = source.conduit()
+        conduit = source.get_conduit()
 
         self.assertEqual(conduit.source_id, source.id)
         self.assertEqual(conduit.expires, 3600)
@@ -360,7 +360,7 @@ class TestContentSource(TestCase):
         # test
 
         source = ContentSource('s-1', {constants.TYPE: 1234})
-        cataloger = source.cataloger()
+        cataloger = source.get_cataloger()
 
         # validation
 
@@ -372,24 +372,27 @@ class TestContentSource(TestCase):
         fake_conduit = Mock()
         fake_cataloger = Mock()
         fake_downloader = Mock()
-        fake_cataloger.downloader = Mock(return_value=fake_downloader)
+        fake_cataloger.get_downloader = Mock(return_value=fake_downloader)
 
         source = ContentSource('s-1', {constants.BASE_URL: url})
-        source.conduit = Mock(return_value=fake_conduit)
-        source.cataloger = Mock(return_value=fake_cataloger)
+        source.get_conduit = Mock(return_value=fake_conduit)
+        source.get_cataloger = Mock(return_value=fake_cataloger)
 
         # test
-        downloader = source.downloader()
+        downloader = source.get_downloader()
 
 
         # validation
-        source.cataloger.assert_called_with()
-        fake_cataloger.downloader.assert_called_with(fake_conduit, source.descriptor, url)
+        source.get_cataloger.assert_called_with()
+        fake_cataloger.get_downloader.assert_called_with(fake_conduit, source.descriptor, url)
         self.assertEqual(downloader, fake_downloader)
 
-    def test_refresh(self):
+    @patch('pulp.server.content.sources.model.ContentSource.urls')
+    def test_refresh(self, fake_urls):
         url = 'http://xyz.com'
         urls = ['url-1', 'url-2']
+        fake_urls.__get__ = Mock(return_value=urls)
+
         canceled = Mock()
         canceled.isSet = Mock(return_value=False)
         conduit = Mock()
@@ -397,9 +400,8 @@ class TestContentSource(TestCase):
         cataloger.refresh.side_effect = FakeRefresh()
 
         source = ContentSource('s-1', {constants.BASE_URL: url})
-        source.conduit = Mock(return_value=conduit)
-        source.cataloger = Mock(return_value=cataloger)
-        source.urls = Mock(return_value=urls)
+        source.get_conduit = Mock(return_value=conduit)
+        source.get_cataloger = Mock(return_value=cataloger)
 
         # test
 
@@ -414,7 +416,7 @@ class TestContentSource(TestCase):
         n = 0
         added = 10
         deleted = 1
-        for _url in source.urls():
+        for _url in source.urls:
             cataloger.refresh.assert_any(conduit, source.descriptor, _url)
             self.assertEqual(report[n].source_id, source.id)
             self.assertEqual(report[n].url, _url)
@@ -426,18 +428,21 @@ class TestContentSource(TestCase):
             deleted += 1
             n += 1
 
-    def test_refresh_canceled(self):
+    @patch('pulp.server.content.sources.model.ContentSource.urls')
+    def test_refresh_canceled(self, fake_urls):
         url = 'http://xyz.com'
         urls = ['url-1', 'url-2']
+
+        fake_urls.__get__ = Mock(return_value=urls)
+
         canceled = Mock()
         canceled.isSet = Mock(return_value=True)
         conduit = Mock()
         cataloger = Mock()
 
         source = ContentSource('s-1', {constants.BASE_URL: url})
-        source.conduit = Mock(return_value=conduit)
-        source.cataloger = Mock(return_value=cataloger)
-        source.urls = Mock(return_value=urls)
+        source.get_conduit = Mock(return_value=conduit)
+        source.get_cataloger = Mock(return_value=cataloger)
 
         # test
 
@@ -450,9 +455,12 @@ class TestContentSource(TestCase):
         self.assertEqual(cataloger.refresh.call_count, 0)
         self.assertEqual(report, [])
 
-    def test_refresh_raised(self):
+    @patch('pulp.server.content.sources.model.ContentSource.urls')
+    def test_refresh_raised(self, fake_urls):
         url = 'http://xyz.com'
         urls = ['url-1', 'url-2']
+        fake_urls.__get__ = Mock(return_value=urls)
+
         canceled = Mock()
         canceled.isSet = Mock(return_value=False)
         conduit = Mock()
@@ -460,9 +468,8 @@ class TestContentSource(TestCase):
         cataloger.refresh.side_effect = ValueError('just failed')
 
         source = ContentSource('s-1', {constants.BASE_URL: url})
-        source.conduit = Mock(return_value=conduit)
-        source.cataloger = Mock(return_value=cataloger)
-        source.urls = Mock(return_value=urls)
+        source.get_conduit = Mock(return_value=conduit)
+        source.get_cataloger = Mock(return_value=cataloger)
 
         # test
 
@@ -475,7 +482,7 @@ class TestContentSource(TestCase):
         self.assertEqual(cataloger.refresh.call_count, len(urls))
 
         n = 0
-        for _url in source.urls():
+        for _url in source.urls:
             cataloger.refresh.assert_any(conduit, source.descriptor, _url)
             self.assertEqual(report[n].source_id, source.id)
             self.assertEqual(report[n].url, _url)
@@ -529,7 +536,7 @@ class TestPrimarySource(TestCase):
     def test_downloader(self):
         downloader = Mock()
         primary = PrimarySource(downloader)
-        self.assertEqual(primary.downloader(), downloader)
+        self.assertEqual(primary.get_downloader(), downloader)
 
     def test_refresh(self):
         # just added for coverage
@@ -538,7 +545,7 @@ class TestPrimarySource(TestCase):
 
     def test_priority(self):
         primary = PrimarySource(None)
-        self.assertEqual(primary.priority(), sys.maxint)
+        self.assertEqual(primary.priority, sys.maxint)
 
 
 class TestReport(TestCase):

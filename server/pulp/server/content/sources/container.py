@@ -89,7 +89,7 @@ class ContentContainer(object):
                 #  of the requests have been satisfied.
                 break
             for source, nectar_list in collated.items():
-                downloader = source.downloader()
+                downloader = source.get_downloader()
                 downloader.event_listener = NectarListener(cancel_event, downloader, listener)
                 downloader.download(nectar_list)
                 if cancel_event.isSet():

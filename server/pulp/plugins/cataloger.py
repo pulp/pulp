@@ -15,7 +15,7 @@ class Cataloger(object):
     Catalog content provided by content sources.
     """
 
-    def downloader(self, conduit, config, url):
+    def get_downloader(self, conduit, config, url):
         """
         Get an object suitable for downloading content contributed
         in the catalog by this cataloger.
@@ -25,6 +25,8 @@ class Cataloger(object):
         :type config: dict
         :param url: The URL for the content source.
         :type url: str
+        :return: A configured downloader.
+        :rtype: nectar.downloaders.base.Downloader
         """
         raise NotImplementedError()
 

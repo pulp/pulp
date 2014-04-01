@@ -99,7 +99,7 @@ class TestContainer(TestCase):
         sources = []
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
-            s.downloader = Mock()
+            s.get_downloader = Mock()
             sources.append(s)
 
         request_list = []
@@ -135,8 +135,8 @@ class TestContainer(TestCase):
             r.find_sources.assert_called_with(fake_primary, container.sources)
 
         for source in sources:
-            source.downloader.assert_called_with()
-            downloader = source.downloader()
+            source.get_downloader.assert_called_with()
+            downloader = source.get_downloader()
             listener = downloader.event_listener
             self.assertEqual(listener.cancel_event, canceled)
             self.assertEqual(listener.downloader, downloader)
@@ -163,7 +163,7 @@ class TestContainer(TestCase):
         sources = []
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
-            s.downloader = Mock()
+            s.get_downloader = Mock()
             sources.append(s)
 
         request_list = []
@@ -201,7 +201,7 @@ class TestContainer(TestCase):
 
         called = 0
         for s in sources:
-            if s.downloader.called:
+            if s.get_downloader.called:
                 called += 1
 
         self.assertEqual(called, 1)
@@ -213,7 +213,7 @@ class TestContainer(TestCase):
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock(return_value=[n])
-            s.downloader = Mock()
+            s.get_downloader = Mock()
             sources[s.id] = s
 
         fake_manager().has_entries.return_value = False
@@ -237,7 +237,7 @@ class TestContainer(TestCase):
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock(side_effect=ValueError('must be int'))
-            s.downloader = Mock()
+            s.get_downloader = Mock()
             sources[s.id] = s
 
         fake_manager().has_entries.return_value = False
