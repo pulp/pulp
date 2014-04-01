@@ -10,7 +10,6 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from unittest import TestCase
-from threading import Event
 
 from mock import patch, Mock
 from nectar.request import DownloadRequest
@@ -119,7 +118,7 @@ class TestContainer(TestCase):
         fake_collated = Mock(side_effect=collated)
 
         fake_listener = Mock()
-        canceled = Event()
+        canceled = FakeEvent()
         fake_primary = PrimarySource(Mock())
 
         # test
@@ -145,7 +144,7 @@ class TestContainer(TestCase):
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all', Mock())
     def test_download_canceled_before_collated(self):
-        canceled = Event()
+        canceled = FakeEvent()
         canceled.set()
 
         # test
@@ -220,7 +219,7 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = Event()
+        canceled = FakeEvent()
         container = ContentContainer('')
         report = container.refresh(canceled)
 
@@ -244,7 +243,7 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = Event()
+        canceled = FakeEvent()
         container = ContentContainer('')
         report = container.refresh(canceled)
 
@@ -268,7 +267,7 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = Event()
+        canceled = FakeEvent()
         container = ContentContainer('')
         container.refresh(canceled, force=True)
 
@@ -288,7 +287,7 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = Event()
+        canceled = FakeEvent()
         canceled.set()
         container = ContentContainer('')
         container.refresh(canceled, force=True)
@@ -332,7 +331,7 @@ class TestNectarListener(TestCase):
         mock_log.exception.assert_called_with(str(method))
 
     def test_construction(self):
-        canceled = Event()
+        canceled = FakeEvent()
         downloader = Mock()
         listener = Mock()
 
@@ -518,3 +517,18 @@ class TestNectarListener(TestCase):
         # validation
         canceled.isSet.assert_called_with()
         self.assertFalse(listener.failed_succeeded.called)
+
+
+# using this so nobody thinks the tests are using threads.
+
+
+class FakeEvent(object):
+
+    def __init__(self):
+        self._set = False
+
+    def isSet(self):
+        return self._set
+
+    def set(self):
+        self._set = True
