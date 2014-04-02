@@ -429,6 +429,7 @@ def add_packages_to_tag(base_tag):
         delta = pulp_packages.difference(packages_in_tag)
         for package in delta:
             print "adding %s to %s" % (package, build_tag)
+            mysession.packageListAdd(build_tag, package, current_user)
 
     # Monitor the task list until all are completed
     wait_for_completion(task_list)
