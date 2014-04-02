@@ -252,6 +252,10 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 1.0.5-1
+- Log to syslog instead of /var/log/gofer/ and support userid/password and vhost
+  properties. (jortel@redhat.com)
+
 * Mon Mar 31 2014 Jeff Ortel <jortel@redhat.com> 1.0.5-1
 - Log to syslog instead of /var/log/gofer/. (jortel@redhat.com)
 - Support userid/password in the broker url. (jortel@redhat.com)
