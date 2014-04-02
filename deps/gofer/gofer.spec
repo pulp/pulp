@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.0.4
+Version: 1.0.5
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -62,7 +62,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/plugins
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/init.d
-mkdir -p %{buildroot}/%{_var}/log/%{name}
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/share/%{name}/plugins
 mkdir -p %{buildroot}/%{_mandir}/man1
@@ -85,7 +84,6 @@ rm -rf %{buildroot}
 %dir %{_usr}/lib/%{name}/plugins/
 %dir %{_usr}/share/%{name}/plugins/
 %dir %{_sysconfdir}/%{name}/conf.d/
-%dir %{_var}/log/%{name}/
 %{python_sitelib}/%{name}/agent/
 %{_bindir}/%{name}d
 %attr(755,root,root) %{_sysconfdir}/init.d/%{name}d
@@ -166,23 +164,6 @@ Provides the gofer amqplib transport package.
 
 %files -n python-%{name}-amqplib
 %{python_sitelib}/%{name}/transport/amqplib
-%doc LICENSE
-
-
-# --- python rabbitmq transport -------------------------------------------
-
-%package -n python-%{name}-rabbitmq
-Summary: Gofer rabbitmq transport python package
-Group: Development/Languages
-BuildRequires: python
-Requires: python-%{name} >= %{version}
-Requires: python-librabbitmq >= 1.0.2
-
-%description -n python-%{name}-rabbitmq
-Provides the gofer rabbitmq transport package.
-
-%files -n python-%{name}-rabbitmq
-%{python_sitelib}/%{name}/transport/rabbitmq
 %doc LICENSE
 
 
@@ -271,8 +252,16 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Wed Mar 12 2014 Jeff Ortel <jortel@redhat.com> 1.0.4-1
-- gofer 1.0.4. (jortel@redhat.com)
+* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 1.0.5-1
+- Log to syslog instead of /var/log/gofer/ and support userid/password and vhost
+  properties. (jortel@redhat.com)
+
+* Mon Mar 31 2014 Jeff Ortel <jortel@redhat.com> 1.0.5-1
+- Log to syslog instead of /var/log/gofer/. (jortel@redhat.com)
+- Support userid/password in the broker url. (jortel@redhat.com)
+- Remove librabbitmq transport. (jortel@redhat.com)
+- Add support for skipping SSL validation. (jortel@redhat.com)
+- Use qpid builtin SSL transport. (jortel@redhat.com)
 * Wed Mar 12 2014 Jeff Ortel <jortel@redhat.com> 1.0.4-1
 - Improved import between plugins. (jortel@redhat.com)
 
