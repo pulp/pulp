@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.7.alpha%{?dist}
+Release: 0.7.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -586,6 +586,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.beta
+- Pulp rebuild
+
 * Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.alpha
 - 1082130 - Update progress only when task_id != None. (jortel@redhat.com)
 - 1082064 - task status created with state=WAITING when None is passed.
