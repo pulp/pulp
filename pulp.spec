@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.6.alpha%{?dist}
+Release: 0.7.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -586,6 +586,33 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.alpha
+- 1082130 - Update progress only when task_id != None. (jortel@redhat.com)
+- 1082064 - task status created with state=WAITING when None is passed.
+  (jortel@redhat.com)
+- 1080642 - updated consumer unbind task to mark the binding deleted before
+  notifying agent (skarmark@redhat.com)
+- 1080626 - updated agent manager to return no exception when converting server
+  bindings to agent bindings in case distributor is already deleted on the
+  server (skarmark@redhat.com)
+- 1080626 - fixing error in the error code description preventing to complete
+  repo delete on the server (skarmark@redhat.com)
+- 965764 - Fix a test for the DownloaderConfig API. (rbarlow@redhat.com)
+- 1015583 - added a new api so that consumers can request applicability
+  generation for themselves (skarmark@redhat.com)
+- 1078335 - Add import statements for missing tasks. (rbarlow@redhat.com)
+- 1073154 - Do not log newlines or long messages. (rbarlow@redhat.com)
+- 1074661 - Raise a validation error if non-existant consumers are specified
+  during creation of a consumer group (bcourt@redhat.com)
+- 1078305 - Repo update not reporting errors properly.  Fix error response for
+  repo update and incorrect documentation for the udpate call.
+  (bcourt@redhat.com)
+- 1076225 - Update docs to include information about the result value of the
+  Task Report as opposed to the Call Report (bcourt@redhat.com)
+- 1076628 - Fix base class for unassociate task and update test case for unit
+  deletion (bcourt@redhat.com)
+- 1018183 - Include _href's on tasks during GET all. (rbarlow@redhat.com)
+
 * Thu Mar 13 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.6.alpha
 - Pulp rebuild
 
