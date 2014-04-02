@@ -201,5 +201,5 @@ Logging
 -------
 
 The Pulp agent is implemented using Gofer plugins. Agent handler log messages are written
-to the standard Gofer agent log at ``/var/log/gofer/agent.log``.
+to syslog.
 

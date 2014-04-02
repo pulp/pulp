@@ -290,7 +290,8 @@ General
 
 #. The Qpid broker (qpidd) also logs to syslog by default.
 
-#. The consumer agent (goferd) logs Qpid connection information in ``/var/log/gofer/agent.log``
+#. The consumer agent (goferd) logs Qpid connection information to syslog.
+   See: :ref:`logging` for details.
 
 #. Make sure you've copied the client key and certificate to each consumer.
 
