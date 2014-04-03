@@ -26,7 +26,7 @@ REPO_NAME = 'repo_name'
 DIST_KOJI_NAME = 'koji_name'
 PULP_PACKAGES = 'pulp_packages'
 
-#Mapping for the package keys in the DISTRIBUTION_INFO to the locations on disk
+# Mapping for the package keys in the DISTRIBUTION_INFO to the locations on disk
 PULP_PACKAGE_LOCATIONS = {
     'pulp': 'pulp',
     'pulp-nodes': 'pulp/nodes',
