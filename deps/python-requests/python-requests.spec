@@ -42,6 +42,14 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/requests/*
 
 %changelog
+* Wed Apr 02 2014 Sayli Karmarkar <skarmark@redhat.com> 2.2.1-1
+- correcting a couple of typos in the python-requests version
+  (skarmark@redhat.com)
+- updating nectar dependency on python-requests to version 2.1.1
+  (skarmark@redhat.com)
+- Automatic commit of package [python-requests] minor release [2.2.1-1].
+  (skarmark@redhat.com)
+
 * Fri Mar 14 2014 Sayli Karmarkar <skarmark@redhat.com> 2.2.1-1
 - updating to the latest version 2.2.1 of python-requests dependency
 * Fri Oct 04 2013 Sayli Karmarkar <skarmark@redhat.com> 2.0.0-1
