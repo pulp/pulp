@@ -25,6 +25,15 @@ ARCH = 'arch'
 REPO_NAME = 'repo_name'
 DIST_KOJI_NAME = 'koji_name'
 PULP_PACKAGES = 'pulp_packages'
+
+#Mapping for the package keys in the DISTRIBUTION_INFO to the locations on disk
+PULP_PACKAGE_LOCATIONS = {
+    'pulp': 'pulp',
+    'pulp-nodes': 'pulp/nodes',
+    'pulp-rpm': 'pulp_rpm',
+    'pulp-puppet': 'pulp_puppet'
+}
+
 DISTRIBUTION_INFO = {
     'el5': {
         ARCH: ['i386', 'x86_64'],
@@ -147,9 +156,12 @@ def build_srpm(distributions):
     for dist in distributions:
         tito_path = os.path.join(TITO_DIR, dist)
         ensure_dir(tito_path)
-        spec_list = ['pulp', 'pulp/nodes', 'pulp_rpm', 'pulp_puppet']
+        spec_list = []
         if opts.build_dependency:
             spec_list = ['pulp/deps/%s' % opts.build_dependency]
+        else:
+            for pulp_package in DISTRIBUTION_INFO[dist][PULP_PACKAGES]:
+                spec_list.append(PULP_PACKAGE_LOCATIONS[pulp_package])
 
         for spec_location in spec_list:
             working_dir = os.path.join(WORKSPACE, spec_location)
