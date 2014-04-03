@@ -42,9 +42,6 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/requests/*
 
 %changelog
-* Wed Apr 02 2014  <> 2.2.1-1
-- fatal: bad revision 'python-requests-2.2.1-1..HEAD'
-
 * Fri Mar 14 2014 Sayli Karmarkar <skarmark@redhat.com> 2.2.1-1
 - updating to the latest version 2.2.1 of python-requests dependency
 * Fri Oct 04 2013 Sayli Karmarkar <skarmark@redhat.com> 2.0.0-1
