@@ -1,7 +1,7 @@
-[buildconfig]
+[globalconfig]
 lib_dir = rel-eng/lib
-builder = tito.builder.Builder
-tagger = tito.tagger.VersionTagger
+default_builder = tito.builder.Builder
+default_tagger = tito.tagger.VersionTagger
 
 [pulp-nightly-rhel5]
 disttag = .el5pulp
