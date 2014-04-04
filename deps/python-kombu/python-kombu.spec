@@ -163,6 +163,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Apr 04 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.13-2.pulp
+- Added latest qpid patch to python-kombu and bumped the release.
+  (bmbouter@gmail.com)
+
 * Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 3.0.13-1.pulp
 - Updating with latest stable qpid patch (bmbouter@gmail.com)
 - Bump the Release of python-kombu to match the previously built version
