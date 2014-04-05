@@ -15,7 +15,6 @@ import os
 import socket
 from ConfigParser import SafeConfigParser
 
-# global configuration --------------------------------------------------------
 
 config = None # ConfigParser.SafeConfigParser instance
 
@@ -49,6 +48,8 @@ _default_values = {
     },
     'oauth': {
         'enabled': 'true',
+        'oauth_key': '',
+        'oauth_secret': '',
     },
     'ldap': {
         'enabled': 'false',
@@ -90,7 +91,6 @@ _default_values = {
 # to add a default configuration file, list the full path here
 _config_files = ['/etc/pulp/server.conf']
 
-# configuration api -----------------------------------------------------------
 
 def check_config_files():
     """
@@ -150,6 +150,5 @@ def remove_config_file(file_path):
     _config_files.remove(file_path)
     load_configuration()
 
-# ------------------------------------------------------------------------------
 
 load_configuration()

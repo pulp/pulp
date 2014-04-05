@@ -185,7 +185,7 @@ def get_paths_to_copy():
     :return: List of (src, dst, owner, group, mode) tuples of paths to copy.
     :rtype:  list
     """
-    paths = [('server/etc/pulp/server.conf', '/etc/pulp/server.conf', 'root', 'apache', '640')]
+    paths = [('server/etc/pulp/server.conf', '/etc/pulp/server.conf', 'root', 'apache', '644')]
     if LSB_VERSION >= 7.0:
         paths.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
                       '/etc/systemd/system/pulp_celerybeat.service', 'root', 'root', '644'))
