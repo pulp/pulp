@@ -28,9 +28,6 @@ _default_values = {
     'consumer_history': {
         'lifetime': '180', # in days
     },
-    'coordinator': {
-        'task_state_poll_interval': '0.1',
-    },
     'data_reaping': {
         'reaper_interval': '0.25',
         'archived_calls': '0.5',
@@ -47,20 +44,17 @@ _default_values = {
     'email': {
         'host': 'localhost',
         'port': '25',
-        'enabled' : 'false'
+        'enabled' : 'false',
+        'from': 'pulp@localhost',
     },
     'oauth': {
-        'enabled': 'false',
+        'enabled': 'true',
     },
     'ldap': {
         'enabled': 'false',
         'uri': 'ldap://localhost',
         'base': 'dc=localhost',
         'tls': 'false',
-    },
-    'logs': {
-        'config': '/etc/pulp/logging/basic.cfg',
-        'db_config': '/etc/pulp/logging/db.cfg',
     },
     'messaging': {
         'url': 'tcp://localhost:5672',
@@ -69,9 +63,6 @@ _default_values = {
         'cacert': '/etc/pki/qpid/ca/ca.crt',
         'clientcert': '/etc/pki/qpid/client/client.pem',
         'topic_exchange': 'amq.topic'
-    },
-    'scheduler': {
-        'dispatch_interval': '30',
     },
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
@@ -87,15 +78,12 @@ _default_values = {
         'default_password': 'admin',
         'debugging_mode': 'false',
         'storage_dir': '/var/lib/pulp/',
+        'log_level': 'INFO',
+        'key_url': '/pulp/gpg',
+        'ks_url': '/pulp/ks',
     },
     'tasks': {
-        'concurrency_threshold': '9',
-        'dispatch_interval': '0.5',
-        'archived_call_lifetime': '48',
-        'consumer_content_weight': '0',
-        'create_weight': '0',
-        'publish_weight': '1',
-        'sync_weight': '2',
+        'broker_url': 'qpid://guest@localhost/',
     },
 }
 
