@@ -31,6 +31,7 @@ from pulp.server.db.model.consumer import Consumer
 
 logger = logging.getLogger(__name__)
 
+
 def migrate(*args, **kwargs):
     """
     Migrate qpid queues:
