@@ -11,7 +11,7 @@ from mock import Mock, patch
 
 from pulp.common.error_codes import PLP1005
 from pulp.devel.unit.server.util import assert_validation_exception
-from pulp.plugins.util.metadata_writer import MetadataFileContext
+from pulp.plugins.util.metadata_writer import MetadataFileContext, JSONArrayFileContext
 
 
 class MetadataWriterTests(unittest.TestCase):
@@ -205,3 +205,29 @@ class MetadataWriterTests(unittest.TestCase):
         context.initialize = Mock()
         context.__enter__()
         context.initialize.assert_called_once_with()
+
+
+class TestJSONArrayFileContext(unittest.TestCase):
+
+    def setUp(self):
+        self.working_directory = tempfile.mkdtemp()
+        self.file_name = os.path.join(self.working_directory, 'foo')
+        self.context = JSONArrayFileContext(self.file_name)
+        self.context.metadata_file_handle = Mock()
+
+    def tearDown(self):
+        shutil.rmtree(self.working_directory)
+
+    def test_write_file_header(self):
+        self.context._write_file_header()
+        self.context.metadata_file_handle.write.assert_called_once_with('[')
+
+    def test_write_file_footer(self):
+        self.context._write_file_footer()
+        self.context.metadata_file_handle.write.assert_called_once_with(']')
+
+    def test_add_unit_metadata(self):
+        self.context.add_unit_metadata('foo')
+        self.assertEquals(self.context.metadata_file_handle.write.call_count, 0)
+        self.context.add_unit_metadata('bar')
+        self.context.metadata_file_handle.write.assert_called_once_with(',')

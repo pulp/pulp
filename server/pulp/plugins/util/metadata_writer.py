@@ -169,3 +169,42 @@ class MetadataFileContext(object):
 
         self.metadata_file_handle.flush()
         self.metadata_file_handle.close()
+
+
+class JSONArrayFileContext(MetadataFileContext):
+    """
+    Context manager for writing out units as a json array.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+
+        :param args: any positional arguments to be passed to the superclass
+        :type  args: list
+        :param kwargs: any keyword arguments to be passed to the superclass
+        :type  kwargs: dict
+        """
+
+        super(JSONArrayFileContext, self).__init__(*args, **kwargs)
+        self.units_added = False
+
+    def _write_file_header(self):
+        """
+        Write out the beginning of the json file
+        """
+        self.metadata_file_handle.write('[')
+
+    def _write_file_footer(self):
+        """
+        Write out the end of the json file
+        """
+        self.metadata_file_handle.write(']')
+
+    def add_unit_metadata(self, unit):
+        """
+        Add the specific metadata for this unit
+        """
+        if self.units_added:
+            self.metadata_file_handle.write(',')
+        else:
+            self.units_added = True
