@@ -298,7 +298,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_var}/www/pub
 # Install the docs
 %defattr(-,root,root,-)
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 %post server
 
@@ -360,7 +360,7 @@ A collection of components that are common between the pulp server and client.
 %{python_sitelib}/%{name}/__init__.*
 %{python_sitelib}/%{name}/common/
 %{python_sitelib}/pulp_common*.egg-info
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 
 # ---- Client Bindings ---------------------------------------------------------
@@ -379,7 +379,7 @@ The Pulp REST API bindings for python.
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}/bindings/
 %{python_sitelib}/pulp_bindings*.egg-info
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 
 # ---- Client Extension Framework -----------------------------------------------------
@@ -406,7 +406,7 @@ A framework for loading Pulp client extensions.
 %{python_sitelib}/%{name}/client/*.pyc
 %{python_sitelib}/%{name}/client/*.pyo
 %{python_sitelib}/pulp_client_lib*.egg-info
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 
 # ---- Agent Handler Framework -------------------------------------------------
@@ -427,7 +427,7 @@ for content, bind and system specific operations.
 %dir %{_sysconfdir}/%{name}/agent
 %dir %{_sysconfdir}/%{name}/agent/conf.d
 %dir %{_usr}/lib/%{name}/agent
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 
 # ---- Admin Client (CLI) ------------------------------------------------------
@@ -456,7 +456,7 @@ synching, and to kick off remote actions on consumers.
 %dir %{_usr}/lib/%{name}/admin/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 
 # ---- Consumer Client (CLI) ---------------------------------------------------
@@ -487,7 +487,7 @@ A tool used to administer a pulp consumer.
 %ghost %{_sysconfdir}/pki/%{name}/consumer/rsa_pub.key
 %ghost %{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 %ghost %{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 %post consumer-client
 
@@ -527,7 +527,7 @@ on a defined interval.
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_libdir}/gofer/plugins/pulpplugin.*
 %{_sysconfdir}/rc.d/init.d/pulp-agent
-%doc README LICENSE
+%doc README LICENSE COPYRIGHT
 
 # --- Selinux ---------------------------------------------------------------------
 
@@ -578,7 +578,7 @@ exit 0
 
 %files selinux
 %defattr(-,root,root,-)
-%doc server/selinux/server/pulp-server.fc server/selinux/server/pulp-server.if server/selinux/server/pulp-server.te README LICENSE
+%doc server/selinux/server/pulp-server.fc server/selinux/server/pulp-server.if server/selinux/server/pulp-server.te README LICENSE COPYRIGHT
 %{_datadir}/pulp/selinux/server/*
 %{_datadir}/selinux/*/pulp-server.pp
 %{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
