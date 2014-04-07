@@ -88,3 +88,4 @@ PLP1002 = Error("PLP1002", _("The field %(field) must have a value specified."),
 PLP1003 = Error("PLP1003", _("The value specified for the field %(field) must be made up of letters"
                              ", numbers, underscores, or hyphens with no spaces."), ['field'])
 PLP1004 = Error("PLP1004", _("An object of type %(type) already exists in the database with an id of %(object_id)"), ['type', 'object_id'])
+PLP1005 = Error("PLP1005", _("The checksum type %(checksum_type)s is unknown."), ['checksum_type'])

@@ -26,6 +26,8 @@ TYPE_SHA    = 'sha'
 TYPE_SHA1   = 'sha1'
 TYPE_SHA256 = 'sha256'
 
+HASHLIB_ALGORITHMS = (TYPE_MD5, TYPE_SHA, TYPE_SHA1, TYPE_SHA256)
+
 CHECKSUM_FUNCTIONS = {
     TYPE_MD5    : hashlib.md5,
     TYPE_SHA    : hashlib.sha1,
