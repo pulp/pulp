@@ -178,21 +178,28 @@ def create_dirs(opts):
 
 def get_paths_to_copy():
     """
-    Return a list of 5-tuples. Each 5-tuple is a (source, destination, owner, group, mode)
-    indicating a source path that should be copied to the given destination, and the owner, group,
-    and mode that should be applied to the destination
+    Return a list of dictionaries. Each dictionary contains source, destination, owner, group, mode,
+    and overwrite keys. These indicate a source path that should be copied to the given destination,
+    and the owner, group, and mode that should be applied to the destination. The overwrite key
+    indicates whether the destination should be overwritten if it already exists when copying the
+    files to the destination, as well as whether the destination path should be removed when this
+    script is called with the uninstall flag.
 
-    :return: List of (src, dst, owner, group, mode) tuples of paths to copy.
+    :return: List of dictionaries describing copy operations that should be performed.
     :rtype:  list
     """
-    paths = [('server/etc/pulp/server.conf', '/etc/pulp/server.conf', 'root', 'apache', '644')]
+    paths = [{'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
+              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False}]
     if LSB_VERSION >= 7.0:
-        paths.append(('server/usr/lib/systemd/system/pulp_celerybeat.service',
-                      '/etc/systemd/system/pulp_celerybeat.service', 'root', 'root', '644'))
-        paths.append(('server/usr/lib/systemd/system/pulp_resource_manager.service',
-                      '/etc/systemd/system/pulp_resource_manager.service', 'root', 'root', '644'))
-        paths.append(('server/usr/lib/systemd/system/pulp_workers.service',
-                      '/etc/systemd/system/pulp_workers.service', 'root', 'root', '644'))
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
+                      'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
+                      'destination': '/etc/systemd/system/pulp_resource_manager.service',
+                      'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
+                      'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
 
     return paths
 
@@ -269,12 +276,13 @@ def install(opts):
         if warning_msg:
             warnings.append(warning_msg)
 
-    for src, dst, owner, group, mode in get_paths_to_copy():
-        msg = 'copying %(src)s to %(dst)s' % {'src': src, 'dst': dst}
-        debug(opts, msg)
-        shutil.copy2(src, dst)
-        os.system('chown %s:%s %s' % (owner, group, dst))
-        os.system('chmod %s %s' % (mode, dst))
+    for path in get_paths_to_copy():
+        if not os.path.exists(path['destination']) or path['overwrite']:
+            msg = 'copying %(src)s to %(dst)s' % {'src': path['source'], 'dst': path['destination']}
+            debug(opts, msg)
+            shutil.copy2(path['source'], path['destination'])
+            os.system('chown %s:%s %s' % (path['owner'], path['group'], path['destination']))
+            os.system('chmod %s %s' % (path['mode'], path['destination']))
 
     # Grant apache write access to the pulp tools log file and pulp
     # packages dir
@@ -322,11 +330,11 @@ def uninstall(opts):
             continue
         os.unlink(dst)
 
-    for src, dst, owner, group, mode in get_paths_to_copy():
-        if os.path.exists(dst):
-            msg = 'removing %(dst)s' % {'dst': dst}
+    for path in get_paths_to_copy():
+        if path['overwrite'] and os.path.exists(path['destination']):
+            msg = 'removing %(dst)s' % {'dst': path['destination']}
             debug(opts, msg)
-            os.unlink(dst)
+            os.unlink(path['destination'])
 
     # Link between pulp and apache
     if os.path.exists('/var/www/pub'):
