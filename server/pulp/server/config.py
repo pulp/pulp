@@ -47,7 +47,7 @@ _default_values = {
         'from': 'pulp@localhost',
     },
     'oauth': {
-        'enabled': 'false',
+        'enabled': 'true',
         'oauth_key': '',
         'oauth_secret': '',
     },
