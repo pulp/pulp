@@ -194,6 +194,7 @@ Pulp child nodes support.
 
 %files child
 %defattr(-,root,root,-)
+%dir %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer
 %{python_sitelib}/pulp_node/importers/
 %{python_sitelib}/pulp_node/handlers/
 %{python_sitelib}/pulp_node_child*.egg-info
@@ -201,7 +202,7 @@ Pulp child nodes support.
 %{_sysconfdir}/pulp/agent/conf.d/nodes.conf
 %defattr(640,root,apache,-)
 # We don't want the importer config to be world readable, since it can contain proxy passwords
-%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/*
 %defattr(-,root,root,-)
 %doc
 
