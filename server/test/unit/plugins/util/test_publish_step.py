@@ -39,6 +39,16 @@ class PublishStepTests(PublisherBase):
         working_dir = step.get_working_dir()
         self.assertEquals(working_dir, 'foo')
 
+    def test_get_repo(self):
+        step = PublishStep('foo_step', 'FOO_TYPE')
+        step.parent = mock.Mock(repo='foo')
+        self.assertEquals('foo', step.get_repo())
+
+    def test_get_conduit(self):
+        step = PublishStep('foo_step', 'FOO_TYPE')
+        step.parent = mock.Mock(conduit='foo')
+        self.assertEquals('foo', step.get_conduit())
+
     def test_get_step(self):
         step = PublishStep('foo_step', 'FOO_TYPE')
         step.parent = mock.Mock()

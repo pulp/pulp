@@ -241,8 +241,23 @@ class PublishStep(object):
         Return the working directory
 
         :returns: the working directory from the parent
+        :rtype: str
         """
         return self.parent.working_dir
+
+    def get_repo(self):
+        """
+        :returns: the repoository for this publish action
+        :rtype: pulp.plugins.model.Repository
+        """
+        return self.parent.repo
+
+    def get_conduit(self):
+        """
+        :returns: Return the conduit for this publish action
+        :rtype: pulp.plugins.conduits.repo_publish.RepoPublishConduit
+        """
+        return self.parent.conduit
 
     def get_step(self, step_id):
         """
