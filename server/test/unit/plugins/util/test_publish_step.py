@@ -423,6 +423,44 @@ class BasePublisherTests(PublisherBase):
                           self.publisher.config,
                           initialize_metadata_steps=[mock_metadata_step, mock_metadata_step_2])
 
+    def test_add_initialize_metadata_steps(self):
+        base_publish = BasePublisher(self.publisher.repo,
+                                     self.publisher.conduit,
+                                     self.publisher.config)
+        base_publish._add_steps = mock.Mock()
+        steps = [PublishStep('foo')]
+        base_publish.add_initialize_metadata_steps(steps)
+        base_publish._add_steps.assert_called_once_with(steps,
+                                                        base_publish.initialize_metadata_steps)
+
+    def test_add_process_steps(self):
+        base_publish = BasePublisher(self.publisher.repo,
+                                     self.publisher.conduit,
+                                     self.publisher.config)
+        base_publish._add_steps = mock.Mock()
+        steps = [PublishStep('foo')]
+        base_publish.add_process_steps(steps)
+        base_publish._add_steps.assert_called_once_with(steps, base_publish.process_steps)
+
+    def test_add_finalize_metadata_steps(self):
+        base_publish = BasePublisher(self.publisher.repo,
+                                     self.publisher.conduit,
+                                     self.publisher.config)
+        base_publish._add_steps = mock.Mock()
+        steps = [PublishStep('foo')]
+        base_publish.add_finalize_metadata_steps(steps)
+        base_publish._add_steps.assert_called_once_with(steps, base_publish.finalize_metadata_steps)
+
+    def test_add_post_process_steps(self):
+        base_publish = BasePublisher(self.publisher.repo,
+                                     self.publisher.conduit,
+                                     self.publisher.config)
+        base_publish._add_steps = mock.Mock()
+        steps = [PublishStep('foo')]
+        base_publish.add_post_process_steps(steps)
+        base_publish._add_steps.assert_called_once_with(steps,
+                                                        base_publish.post_metadata_process_steps)
+
     def test_get_step(self):
         mock_metadata_step = mock.MagicMock(spec=PublishStep)
         mock_metadata_step.step_id = 'metadata'

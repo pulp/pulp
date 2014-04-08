@@ -79,7 +79,7 @@ class BasePublisher(object):
         :param step_list: The list of steps to be added to the publisher
         :type step_list: list of PublishStep
         :param target_list: the list that the steps should be added to
-        :type step_list: list of UnitPublishStep
+        :type step_list: list of PublishStep
         """
         if step_list:
             for step in step_list:
@@ -91,6 +91,38 @@ class BasePublisher(object):
                 self.all_steps[step.step_id] = step
                 step.parent = self
             target_list.extend(step_list)
+
+    def add_initialize_metadata_steps(self, steps):
+        """
+        Add additional metadata initialization steps
+        :param steps: The list of step objects to process
+        :type steps: list of PublishStep
+        """
+        self._add_steps(steps, self.initialize_metadata_steps)
+
+    def add_process_steps(self, steps):
+        """
+        Add additional processing steps
+        :param steps: The list of step objects to process
+        :type steps: list of PublishStep
+        """
+        self._add_steps(steps, self.process_steps)
+
+    def add_finalize_metadata_steps(self, steps):
+        """
+        Add additional metadata finalization steps
+        :param steps: The list of step objects to process
+        :type steps: list of PublishStep
+        """
+        self._add_steps(steps, self.finalize_metadata_steps)
+
+    def add_post_process_steps(self, steps):
+        """
+        Add additional post processing steps
+        :param steps: The list of step objects to process
+        :type steps: list of PublishStep
+        """
+        self._add_steps(steps, self.post_metadata_process_steps)
 
     def get_step(self, step_id):
         """
