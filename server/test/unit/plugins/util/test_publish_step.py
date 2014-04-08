@@ -10,7 +10,7 @@ from pulp.devel.unit.util import touch, compare_dict
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
-from pulp.plugins.util.publish_step import PublishStep, BasePublisher
+from pulp.plugins.util.publish_step import PublishStep, UnitPublishStep, BasePublisher
 
 
 class PublisherBase(unittest.TestCase):
@@ -33,88 +33,35 @@ class PublisherBase(unittest.TestCase):
 class PublishStepTests(PublisherBase):
 
     def test_get_working_dir(self):
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.parent = mock.Mock()
         step.parent.working_dir = 'foo'
         working_dir = step.get_working_dir()
         self.assertEquals(working_dir, 'foo')
 
     def test_get_repo(self):
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.parent = mock.Mock(repo='foo')
         self.assertEquals('foo', step.get_repo())
 
     def test_get_conduit(self):
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.parent = mock.Mock(conduit='foo')
         self.assertEquals('foo', step.get_conduit())
 
     def test_get_step(self):
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.parent = mock.Mock()
         other_step = step.get_step('other')
         step.parent.get_step.assert_called_once_with('other')
         self.assertEquals(other_step, step.parent.get_step())
 
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_process_step_skip_units(self, mock_update):
-        self.publisher.config = PluginCallConfiguration(None, {'skip': ['FOO']})
-        step = PublishStep('foo_step', 'FOO')
-        step.parent = self.publisher
-        step.process()
-        self.assertEquals(step.state, reporting_constants.STATE_SKIPPED)
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_process_step_no_units(self, mock_update):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 0}
-        mock_method = mock.Mock()
-        step = PublishStep('foo_step', 'FOO_TYPE')
-        step.parent = self.publisher
-        step.process_unit = mock_method
-        step.process()
-        self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
-        self.assertFalse(mock_method.called)
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_single_unit(self, mock_get_units, mock_update):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
-        mock_method = mock.Mock()
-        mock_get_units.return_value = ['mock_unit']
-        step = PublishStep('foo_step', 'FOO_TYPE')
-        step.parent = self.publisher
-        step.process_unit = mock_method
-        step.process()
-
-        self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
-        self.assertEquals(step.progress_successes, 1)
-        self.assertEquals(step.progress_failures, 0)
-        self.assertEquals(step.total_units, 1)
-        mock_method.assert_called_once_with('mock_unit')
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_single_unit_exception(self, mock_get_units, mock_update):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
-        mock_method = mock.Mock(side_effect=Exception())
-        mock_get_units.return_value = ['mock_unit']
-        step = PublishStep('foo_step', 'FOO_TYPE')
-        step.parent = self.publisher
-        step.process_unit = mock_method
-
-        self.assertRaises(Exception, step.process)
-        self.assertEquals(step.state, reporting_constants.STATE_FAILED)
-        self.assertEquals(step.progress_successes, 0)
-        self.assertEquals(step.progress_failures, 1)
-        self.assertEquals(step.total_units, 1)
-        mock_method.assert_called_once_with('mock_unit')
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
     def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units, mock_update):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_get_units.return_value = ['mock_unit']
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.parent = self.publisher
         step.finalize_metadata = mock.Mock(side_effect=Exception())
         self.assertRaises(Exception, step.process)
@@ -123,34 +70,13 @@ class PublishStepTests(PublisherBase):
         self.assertEquals(step.progress_failures, 1)
         self.assertEquals(step.total_units, 1)
 
-    def _step_canceler(self, unit):
-        if unit is 'cancel':
-            self.publisher.cancel()
-
     def test_cancel_before_processing(self):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.is_skipped = mock.Mock()
         step.cancel()
         step.process()
         self.assertEquals(0, step.is_skipped.call_count)
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_cancelled_mid_unit_processing(self, mock_get_units, mock_update):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
-        mock_get_units.return_value = ['cancel', 'bar_unit']
-        step = PublishStep('foo_step', 'FOO_TYPE')
-        self.publisher._add_steps([step], self.publisher.process_steps)
-        step.parent = self.publisher
-
-        step.process_unit = self._step_canceler
-        step.process()
-
-        self.assertEquals(step.state, reporting_constants.STATE_CANCELLED)
-        self.assertEquals(step.progress_successes, 1)
-        self.assertEquals(step.progress_failures, 0)
-        self.assertEquals(step.total_units, 2)
 
     def test_report_progress(self):
         publish_step = PublishStep('foo_step')
@@ -177,7 +103,7 @@ class PublishStepTests(PublisherBase):
         self.assertEqual(publish_step.error_details[0], details)
 
     def test_get_progress_report(self):
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.error_details = "foo"
         step.state = reporting_constants.STATE_COMPLETE
         step.total_units = 2
@@ -197,7 +123,7 @@ class PublishStepTests(PublisherBase):
         compare_dict(report, target_report)
 
     def test_get_progress_report_summary(self):
-        step = PublishStep('foo_step', 'FOO_TYPE')
+        step = PublishStep('foo_step')
         step.state = reporting_constants.STATE_COMPLETE
         report = step.get_progress_report_summary()
         target_report = {
@@ -295,7 +221,7 @@ class PublishStepTests(PublisherBase):
 
         os.makedirs(os.path.join(self.working_dir, 'four'))
         self.assertEqual(len(os.listdir(self.working_dir)), 4)
-        step = PublishStep("foo", "bar")
+        step = PublishStep("foo")
 
         step._clear_directory(self.working_dir, ['two'])
 
@@ -303,22 +229,115 @@ class PublishStepTests(PublisherBase):
 
     def test_clear_directory_that_does_not_exist(self):
         # If this doesn't throw we are ok
-        step = PublishStep("foo", "bar")
+        step = PublishStep("foo")
         step._clear_directory(os.path.join(self.working_dir, 'imaginary'))
 
     def test_get_total(self):
-        step = PublishStep("foo", ['bar', 'baz'])
+        step = PublishStep("foo")
+        self.assertEquals(1, step._get_total())
+
+
+class UnitPublishStepTests(PublisherBase):
+
+    def _step_canceler(self, unit):
+        if unit is 'cancel':
+            self.publisher.cancel()
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_process_step_skip_units(self, mock_update):
+        self.publisher.config = PluginCallConfiguration(None, {'skip': ['FOO']})
+        step = UnitPublishStep('foo_step', 'FOO')
+        step.parent = self.publisher
+        step.process()
+        self.assertEquals(step.state, reporting_constants.STATE_SKIPPED)
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    def test_process_step_no_units(self, mock_update):
+        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 0}
+        mock_method = mock.Mock()
+        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step.parent = self.publisher
+        step.process_unit = mock_method
+        step.process()
+        self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
+        self.assertFalse(mock_method.called)
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
+    def test_process_step_single_unit(self, mock_get_units, mock_update):
+        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
+        mock_method = mock.Mock()
+        mock_get_units.return_value = ['mock_unit']
+        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step.parent = self.publisher
+        step.process_unit = mock_method
+        step.process()
+
+        self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
+        self.assertEquals(step.progress_successes, 1)
+        self.assertEquals(step.progress_failures, 0)
+        self.assertEquals(step.total_units, 1)
+        mock_method.assert_called_once_with('mock_unit')
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
+    def test_process_step_single_unit_exception(self, mock_get_units, mock_update):
+        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
+        mock_method = mock.Mock(side_effect=Exception())
+        mock_get_units.return_value = ['mock_unit']
+        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step.parent = self.publisher
+        step.process_unit = mock_method
+
+        self.assertRaises(Exception, step.process)
+        self.assertEquals(step.state, reporting_constants.STATE_FAILED)
+        self.assertEquals(step.progress_successes, 0)
+        self.assertEquals(step.progress_failures, 1)
+        self.assertEquals(step.total_units, 1)
+        mock_method.assert_called_once_with('mock_unit')
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
+    def test_process_step_cancelled_mid_unit_processing(self, mock_get_units, mock_update):
+        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
+        mock_get_units.return_value = ['cancel', 'bar_unit']
+        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        self.publisher._add_steps([step], self.publisher.process_steps)
+        step.parent = self.publisher
+
+        step.process_unit = self._step_canceler
+        step.process()
+
+        self.assertEquals(step.state, reporting_constants.STATE_CANCELLED)
+        self.assertEquals(step.progress_successes, 1)
+        self.assertEquals(step.progress_failures, 0)
+        self.assertEquals(step.total_units, 2)
+
+    def test_get_total(self):
+        step = UnitPublishStep("foo", ['bar', 'baz'])
         step.parent = mock.Mock()
         step.parent.repo.content_unit_counts.get.return_value = 1
         total = step._get_total()
         self.assertEquals(2, total)
 
     def test_get_total_for_list(self):
-        step = PublishStep("foo", ['bar', 'baz'])
+        step = UnitPublishStep("foo", ['bar', 'baz'])
         step.parent = mock.Mock()
         step.parent.repo.content_unit_counts.get.return_value = 1
-        total = step._get_total(['bar', 'baz'])
+        total = step._get_total()
         self.assertEquals(2, total)
+
+    def test_get_total_for_none(self):
+        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step.parent = mock.Mock()
+        step.parent.repo.content_unit_counts.get.return_value = 0
+        total = step._get_total()
+        self.assertEquals(0, total)
+
+    def test_process_unit_with_no_work(self):
+        # Run the blank process unit to ensure no exceptions are raised
+        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step.process_unit('foo')
 
 
 class BasePublisherTests(PublisherBase):
@@ -326,12 +345,12 @@ class BasePublisherTests(PublisherBase):
     @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
     def test_publish(self, mock_get_units):
         mock_get_units.return_value = []
-        metadata_step = PublishStep('metadata', 'metadata_type')
+        metadata_step = PublishStep('metadata')
         metadata_step.initialize_metadata = mock.Mock()
         metadata_step.finalize_metadata = mock.Mock()
-        process_step = PublishStep('process', 'process_type')
+        process_step = PublishStep('process')
         process_step.process = mock.Mock()
-        post_process_step = PublishStep('post_process', 'post_process_type')
+        post_process_step = PublishStep('post_process')
         post_process_step.process = mock.Mock()
         base_publish = BasePublisher(self.publisher.repo,
                                      self.publisher.conduit,
@@ -350,12 +369,12 @@ class BasePublisherTests(PublisherBase):
     @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
     def test_publish_initialize_working_dir(self, mock_get_units):
         mock_get_units.return_value = []
-        metadata_step = PublishStep('metadata', 'metadata_type')
+        metadata_step = PublishStep('metadata')
         metadata_step.initialize_metadata = mock.Mock()
         metadata_step.finalize_metadata = mock.Mock()
-        process_step = PublishStep('process', 'process_type')
+        process_step = PublishStep('process')
         process_step.process = mock.Mock()
-        post_process_step = PublishStep('post_process', 'post_process_type')
+        post_process_step = PublishStep('post_process')
         post_process_step.process = mock.Mock()
         base_publish = BasePublisher(self.publisher.repo,
                                      self.publisher.conduit,
@@ -487,3 +506,4 @@ class BasePublisherTests(PublisherBase):
 
         self.publisher.cancel()
         self.assertEquals(0, mock_step.cancel.call_count)
+

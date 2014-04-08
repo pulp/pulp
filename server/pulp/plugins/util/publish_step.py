@@ -41,15 +41,15 @@ class BasePublisher(object):
         :param config: The publish configuration
         :type config: PluginCallConfiguration
         :param initialize_metadata_steps: A list of steps that will have metadata initialized
-        :type initialize_metadata_steps: list of PublishStep
+        :type initialize_metadata_steps: list of UnitPublishStep
         :param process_steps: A list of steps that are part of the primary publish action
-        :type process_steps: list of PublishStep
+        :type process_steps: list of UnitPublishStep
         :param finalize_metadata_steps: A list of steps that are run as part of the metadata
                                         finalization phase
-        :type finalize_metadata_steps: list of PublishStep
+        :type finalize_metadata_steps: list of UnitPublishStep
         :param post_metadata_process_steps: A list of steps that are run after metadata has
                                             been processed
-        :type post_metadata_process_steps: list of PublishStep
+        :type post_metadata_process_steps: list of UnitPublishStep
 
         """
 
@@ -79,7 +79,7 @@ class BasePublisher(object):
         :param step_list: The list of steps to be added to the publisher
         :type step_list: list of PublishStep
         :param target_list: the list that the steps should be added to
-        :type step_list: list of PublishStep
+        :type step_list: list of UnitPublishStep
         """
         if step_list:
             for step in step_list:
@@ -99,7 +99,7 @@ class BasePublisher(object):
         :param step_id: a unique identifier for the step to be returned
         :type step_id: str
         :returns: The step matching the step_id
-        :rtype: PublishStep
+        :rtype: UnitPublishStep
         """
         return self.all_steps[step_id]
 
@@ -215,7 +215,7 @@ class BasePublisher(object):
 
 class PublishStep(object):
 
-    def __init__(self, step_id, unit_type=None):
+    def __init__(self, step_id):
         """
         Set the default parent, step_id and unit_type for the the publish step
         the unit_type defaults to none since some steps are not used for processing units.
@@ -227,14 +227,13 @@ class PublishStep(object):
         """
         self.parent = None
         self.step_id = step_id
-        self.unit_type = unit_type
         self.canceled = False
 
         self.state = reporting_constants.STATE_NOT_STARTED
         self.progress_successes = 0
         self.progress_failures = 0
         self.error_details = []
-        self.total_units = 0
+        self.total_units = 1
 
     def get_working_dir(self):
         """
@@ -266,17 +265,6 @@ class PublishStep(object):
         """
         return self.parent.get_step(step_id)
 
-    def get_unit_generator(self):
-        """
-        This method returns a generator for the unit_type specified on the PublishStep.
-        The units created by this generator will be iterated over by the process_unit method.
-
-        :return: generator of units
-        :rtype:  GeneratorTyp of Units
-        """
-        criteria = UnitAssociationCriteria(type_ids=[self.unit_type])
-        return self.parent.conduit.get_units(criteria, as_generator=True)
-
     def is_skipped(self):
         """
         Test to find out if the step should be skipped.
@@ -284,7 +272,7 @@ class PublishStep(object):
         :return: whether or not the step should be skipped
         :rtype:  bool
         """
-        return self.unit_type in self.parent.skip_list
+        return False
 
     def initialize_metadata(self):
         """
@@ -298,12 +286,9 @@ class PublishStep(object):
         """
         pass
 
-    def process_unit(self, unit):
+    def process_main(self):
         """
-        Do any work required for publishing a unit in this step
-
-        :param unit: The unit to process
-        :type unit: Unit
+        Do any primary work required for this step
         """
         pass
 
@@ -326,21 +311,17 @@ class PublishStep(object):
 
         total = 0
         try:
-            self.total_units = self._get_total(self.unit_type)
+            self.total_units = self._get_total()
             total = self.total_units
             if total == 0:
                 self.state = reporting_constants.STATE_COMPLETE
                 return
             self.initialize_metadata()
-            package_unit_generator = self.get_unit_generator()
             self.report_progress()
-
-            for package_unit in package_unit_generator:
-                if self.canceled:
-                    return
-                self.process_unit(package_unit)
-                self.progress_successes += 1
-
+            self._process_block()
+            # Double check & return if we have been canceled
+            if self.canceled:
+                return
         except Exception:
             e_type, e_value, tb = sys.exc_info()
             self._record_failure(e_value, tb)
@@ -362,21 +343,21 @@ class PublishStep(object):
 
         self.state = reporting_constants.STATE_COMPLETE
 
-    def _get_total(self, id_list=None):
+    def _process_block(self):
         """
-        Return the total number of units that are processed by this step.
+        This block is called for the main processing loop
+        """
+        self.process_main()
+        self.report_progress()
+        self.progress_successes += 1
+
+    def _get_total(self):
+        """
+        Process steps default to one action.
         This is used generally for progress reporting.  The value returned should not change
         during the processing of the step.
         """
-        if id_list is None:
-            id_list = self.unit_type
-        total = 0
-        if isinstance(id_list, list):
-            for type_id in id_list:
-                total += self.parent.repo.content_unit_counts.get(type_id, 0)
-        else:
-            total = self.parent.repo.content_unit_counts.get(id_list, 0)
-        return total
+        return 1
 
     @staticmethod
     def _create_symlink(source_path, link_path):
@@ -516,3 +497,78 @@ class PublishStep(object):
         return {
             self.step_id: self.state
         }
+
+
+class UnitPublishStep(PublishStep):
+
+    def __init__(self, step_id, unit_type=None):
+        """
+        Set the default parent, step_id and unit_type for the the publish step
+        the unit_type defaults to none since some steps are not used for processing units.
+
+        :param step_id: The id of the step this processes
+        :type step_id: str
+        :param unit_type: The type of unit this step processes
+        :type unit_type: str or list of str
+        """
+        super(UnitPublishStep, self).__init__(step_id)
+        self.unit_type = unit_type
+
+    def get_unit_generator(self):
+        """
+        This method returns a generator for the unit_type specified on the PublishStep.
+        The units created by this generator will be iterated over by the process_unit method.
+
+        :return: generator of units
+        :rtype:  GeneratorTyp of Units
+        """
+        criteria = UnitAssociationCriteria(type_ids=[self.unit_type])
+        return self.parent.conduit.get_units(criteria, as_generator=True)
+
+    def is_skipped(self):
+        """
+        Test to find out if the step should be skipped.
+
+        :return: whether or not the step should be skipped
+        :rtype:  bool
+        """
+        return self.unit_type in self.parent.skip_list
+
+    def process_unit(self, unit):
+        """
+        Do any work required for publishing a unit in this step
+
+        :param unit: The unit to process
+        :type unit: Unit
+        """
+        pass
+
+    def _process_block(self):
+        """
+        This block is called for the main processing loop
+        """
+        package_unit_generator = self.get_unit_generator()
+        self.report_progress()
+
+        for package_unit in package_unit_generator:
+            if self.canceled:
+                return
+            self.process_unit(package_unit)
+            self.progress_successes += 1
+        self.report_progress()
+
+    def _get_total(self, id_list=None):
+        """
+        Return the total number of units that are processed by this step.
+        This is used generally for progress reporting.  The value returned should not change
+        during the processing of the step.
+        """
+        if id_list is None:
+            id_list = self.unit_type
+        total = 0
+        if isinstance(id_list, list):
+            for type_id in id_list:
+                total += self.parent.repo.content_unit_counts.get(type_id, 0)
+        else:
+            total = self.parent.repo.content_unit_counts.get(id_list, 0)
+        return total
