@@ -55,8 +55,8 @@ removed at anytime using the :doc:`membership calls<membership>`.
 Update a Consumer Group
 -----------------------
 
-All the fields, other than the id, that are available when creating a consumer
-group may be updated with this call.
+Metadata about the consumer group itself (not the members) can be updated with this call.
+Consumer members can be added or removed at anytime using the :doc:`membership calls<membership>`.
 
 | :method:`put`
 | :path:`/v2/consumer_groups/<consumer_group_id>/`
@@ -65,7 +65,6 @@ group may be updated with this call.
 
 * :param:`?display_name,string,same as in create call`
 * :param:`?description,string,same as in create call`
-* :param:`?consumer_ids,array,same as in create call`
 * :param:`?notes,object,same as in create call`
 
 | :response_list:`_`
