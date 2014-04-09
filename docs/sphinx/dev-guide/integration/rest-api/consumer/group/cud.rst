@@ -75,6 +75,28 @@ Consumer members can be added or removed at anytime using the :doc:`membership c
 
 | :return:`updated representation of the consumer group resource`
 
+:sample_request:`_` ::
+
+ {
+  "display_name": "new-name",
+  "description": "new-description",
+  "notes": {"new-note": "new-value"}
+ }
+
+:sample_response:`200` ::
+
+ {
+  "scratchpad": null,
+  "display_name": "new-name",
+  "description": "new-description",
+  "_ns": "consumer_groups",
+  "notes": {"new-note": "new-value"},
+  "consumer_ids": [],
+  "_id": {"$oid": "5344df87e5e71066d17aa889"},
+  "id": "test-consumer-group",
+  "_href": "/pulp/api/v2/consumer_groups/test-consumer-group/"
+}
+
 
 Delete a Consumer Group
 -----------------------
