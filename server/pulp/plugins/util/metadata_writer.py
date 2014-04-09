@@ -21,7 +21,7 @@ class MetadataFileContext(object):
         :param metadata_file_path: full path to metadata file to be generated
         :type  metadata_file_path: str
         :param checksum_type: checksum type to be used to generate and prepend checksum
-                              to the file names of repodata files. If checksum_type is None,
+                              to the file names of files. If checksum_type is None,
                               no checksum is added to the filename
         :type checksum_type: str or None
         """
@@ -92,7 +92,7 @@ class MetadataFileContext(object):
         except Exception, e:
             _LOG.exception(e)
 
-        # Add calculated checksum to the repodata filename except for repomd file.
+        # Add calculated checksum to the filename
         file_name = os.path.basename(self.metadata_file_path)
         if self.checksum_type is not None:
             with open(self.metadata_file_path, 'rb') as file_handle:
