@@ -37,8 +37,6 @@ class MetadataFileContext(object):
                     [PulpCodedException(error_codes.PLP1005, checksum_type=checksum_type)])
             self.checksum_constructor = checksum_function
 
-    # -- for use with 'with' ---------------------------------------------------
-
     def __enter__(self):
 
         self.initialize()
@@ -57,8 +55,6 @@ class MetadataFileContext(object):
         self.finalize()
 
         return True
-
-    # -- context lifecycle -----------------------------------------------------
 
     def initialize(self):
         """
@@ -108,8 +104,6 @@ class MetadataFileContext(object):
 
         # Set the metadata_file_handle to None so we don't double call finalize
         self.metadata_file_handle = None
-
-    # -- metadata file lifecycle -----------------------------------------------
 
     def _open_metadata_file_handle(self):
         """
