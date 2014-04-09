@@ -87,6 +87,24 @@ class RepoGroupCUDTests(RepoGroupTests):
                           self.manager.create_repo_group,
                           group_id)
 
+    def test_create_with_repo_ids(self):
+        repo_ids = ['test-repo-1', 'test-repo-2']
+        group_id = 'test-group-id'
+        self._create_repo(repo_ids[0])
+        self._create_repo(repo_ids[1])
+        self.manager.create_repo_group(group_id=group_id, repo_ids=repo_ids)
+        group = self.collection.find_one({'id': group_id})
+        self.assertFalse(group is None)
+        self.assertEqual(group['repo_ids'], repo_ids)
+
+    def test_create_with_invalid_repo_id(self):
+        repo_ids = ['valid-repo-id', 'invalid-repo-id']
+        group_id = 'test-group-id'
+        self._create_repo('valid-repo-id')
+        self.assertRaises(pulp_exceptions.MissingResource,
+                          self.manager.create_repo_group,
+                          group_id=group_id, repo_ids=repo_ids)
+
     @mock.patch('pulp.server.managers.repo.group.cud.RepoGroupManager.create_repo_group',
                 spec_set=cud.RepoGroupManager.create_repo_group, return_value='potato')
     def test_create_and_config_no_distributors(self, create_repo_group):
