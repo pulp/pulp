@@ -133,6 +133,8 @@ For example:
     default_role = ldap-users
     filter = (gidNumber=200)
 
+.. _oauth-config:
+
 OAuth
 -----
 
@@ -146,7 +148,8 @@ The following options are supported:
   enabled. Default: false
 * ``oauth_key``: Key to enable OAuth style authentication.  Required.
 * ``oauth_secret``: Shared secret that can be used for OAuth style
-  authentication.  Required.
+  authentication. Please be sure to choose a secret that is long enough for your desired level of
+  security. Required.
 
 For example:
 
@@ -155,4 +158,9 @@ For example:
     [oauth]
     enabled = true
     oauth_key = ab3cd9j4ks73hf7g
-    oauth_secret = xyz4992k83j47x0b
+    oauth_secret = xyz4992k83j47x0bBoo8fue3yohneepo
+
+.. warning::
+
+   Do not use the key or secret given in the above example. It is important that you use unique and
+   secret values for these configuration items.

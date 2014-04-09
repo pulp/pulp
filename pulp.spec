@@ -302,18 +302,6 @@ Pulp provides replication, access, and accounting for software repositories.
 
 %post server
 
-# OAuth credentials
-SECTION="oauth"
-MATCH_SECTION="/^\[$SECTION\]$/"
-KEY="oauth_key:"
-SECRET="oauth_secret:"
-function generate() {
-  echo `< /dev/urandom tr -dc A-Z0-9 | head -c8`
-}
-sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
-    -e "$MATCH_SECTION,/^$/s/^$SECRET$/$SECRET $(generate)/" \
-    -i %{_sysconfdir}/%{name}/server.conf
-
 # RSA key pair
 KEY_DIR="%{_sysconfdir}/pki/%{name}"
 KEY_PATH="$KEY_DIR/rsa.key"
