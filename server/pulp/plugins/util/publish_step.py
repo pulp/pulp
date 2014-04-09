@@ -260,6 +260,7 @@ class PublishStep(object):
         self.parent = None
         self.step_id = step_id
         self.canceled = False
+        self.description = ""
 
         self.state = reporting_constants.STATE_NOT_STARTED
         self.progress_successes = 0
@@ -512,12 +513,13 @@ class PublishStep(object):
         """
         total_processed = self.progress_successes + self.progress_failures
         return {
-            reporting_constants.PROGRESS_SUCCESSES_KEY: self.progress_successes,
+            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: self.progress_successes,
             reporting_constants.PROGRESS_STATE_KEY: self.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: self.error_details,
-            reporting_constants.PROGRESS_PROCESSED_KEY: total_processed,
-            reporting_constants.PROGRESS_FAILURES_KEY: self.progress_failures,
-            reporting_constants.PROGRESS_TOTAL_KEY: self.total_units
+            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: total_processed,
+            reporting_constants.PROGRESS_NUM_FAILURES_KEY: self.progress_failures,
+            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: self.total_units,
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: self.description
         }
 
     def get_progress_report_summary(self):

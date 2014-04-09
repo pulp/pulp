@@ -2,16 +2,12 @@
 Contains constants used for generic state processing & reporting for tasks
 """
 
-PROGRESS_TOTAL_KEY = 'total'
-PROGRESS_PROCESSED_KEY = 'processed'
-PROGRESS_SUCCESSES_KEY = 'successes'
-PROGRESS_FAILURES_KEY = 'failures'
-
-PROGRESS_STATE_KEY = 'state'
-PROGRESS_NUM_SUCCESS_KEY = 'num_success'
-PROGRESS_NUM_ERROR_KEY = 'num_error'
-PROGRESS_ITEMS_LEFT_KEY = 'items_left'
 PROGRESS_ITEMS_TOTAL_KEY = 'items_total'
+PROGRESS_NUM_PROCESSED_KEY = 'num_processed'
+PROGRESS_NUM_SUCCESSES_KEY = 'num_success'
+PROGRESS_NUM_FAILURES_KEY = 'num_failures'
+PROGRESS_DESCRIPTION_KEY = 'description'
+PROGRESS_STATE_KEY = 'state'
 PROGRESS_ERROR_DETAILS_KEY = 'error_details'
 
 STATE_NOT_STARTED = 'NOT_STARTED'

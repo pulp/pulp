@@ -112,16 +112,38 @@ class PublishStepTests(PublisherBase):
         report = step.get_progress_report()
 
         target_report = {
-            reporting_constants.PROGRESS_SUCCESSES_KEY: 1,
+            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
             reporting_constants.PROGRESS_STATE_KEY: step.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
-            reporting_constants.PROGRESS_PROCESSED_KEY: 2,
-            reporting_constants.PROGRESS_FAILURES_KEY: 1,
-            reporting_constants.PROGRESS_TOTAL_KEY: 2
+            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
+            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
+            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: ''
         }
 
         compare_dict(report, target_report)
 
+    def test_get_progress_report_description(self):
+        step = PublishStep('bar_step')
+        step.description = 'bar'
+        step.error_details = "foo"
+        step.state = reporting_constants.STATE_COMPLETE
+        step.total_units = 2
+        step.progress_successes = 1
+        step.progress_failures = 1
+        report = step.get_progress_report()
+
+        target_report = {
+            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
+            reporting_constants.PROGRESS_STATE_KEY: step.state,
+            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
+            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
+            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
+            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar'
+        }
+
+        compare_dict(report, target_report)
     def test_get_progress_report_summary(self):
         step = PublishStep('foo_step')
         step.state = reporting_constants.STATE_COMPLETE
