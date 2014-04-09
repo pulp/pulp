@@ -94,16 +94,8 @@ To install *Nodes* parent support, follow the instructions below.
   $ sudo yum install @pulp-nodes-parent
 
 2. The communication between the child and parent nodes is secured using OAuth. The parent node
-   must have OAuth enabled and configured. Oauth is enabled and configured with a unique, generated
-   *key* and *secret* during installation. Edit the ``/etc/pulp/server.conf`` and ensure proper
-   configuration.
-
-::
-
- [oauth]
- enabled: true
- oauth_key: 3KIEJD78
- oauth_secret: L7JSUWJ9
+   must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
+   on enabling and configuring OAuth.
 
 3. Restart Apache.
 
@@ -124,20 +116,24 @@ To install *Nodes* child support, follow the instructions below.
  $ sudo yum install @pulp-nodes-child
 
 2. The communication between the child and parent nodes is secured using OAuth. The child node
-   must have OAuth enabled and configured. Oauth is enabled and configured with a unique, generated
-   *key* and *secret* during installation. Edit the ``/etc/pulp/server.conf`` and ensure proper
-   configuration.
+   must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
+   on enabling and configuring OAuth.
 
 ::
 
  [oauth]
  enabled: true
- oauth_key: AI93L0D8
- oauth_secret: WA8JKWL0
+ oauth_key: Xohkaethaama5eki
+ oauth_secret: eePa7Bi3gohdir1pai2icohvaidai0io
 
-3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found in
-   ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match a
-   user with administration privileges on the parent node.
+.. warning::
+
+   Do not use the key or secret given in the above example. It is important that you use unique and
+   secret values for these configuration items.
+
+3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found
+   in ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match
+   a user with administration privileges on the parent node.
 
 ::
 
@@ -157,8 +153,8 @@ Example:
  user_id: admin
 
  [parent_oauth]
- key: 3KIEJD78
- secret: L7JSUWJ9
+ key: Xohkaethaama5eki
+ secret: eePa7Bi3gohdir1pai2icohvaidai0io
  user_id: admin
 
 4. Restart Apache.
