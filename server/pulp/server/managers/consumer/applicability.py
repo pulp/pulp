@@ -134,13 +134,17 @@ class ApplicabilityRegenerationManager(object):
         for repo_id in repo_ids:
             # Find all existing applicabilities for given repo_id
             existing_applicabilities = RepoProfileApplicability.get_collection().find(
-                {'repo_id':repo_id})
+                {'repo_id': repo_id})
             for existing_applicability in existing_applicabilities:
                 # Convert cursor to RepoProfileApplicability object
                 existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
                                                                      fields=['id', 'content_type'])
+                # In case when a consumer unit profile is updated, but profile regeneration for that consumer
+                # is not requested, unit_profile will be None.
+                if unit_profile is None:
+                    continue
                 # Regenerate applicability data for given unit_profile and repo id
                 ApplicabilityRegenerationManager.regenerate_applicability(profile_hash, 
                                                                           unit_profile['content_type'],

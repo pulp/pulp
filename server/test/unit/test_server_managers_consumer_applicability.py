@@ -275,6 +275,22 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 0)
 
+    def test_regenerate_applicability_for_repos_consumer_profile_updated(self):
+        # Setup
+        self.populate_consumers_different_profiles()
+        self.populate_bindings()
+        # Test
+        manager = factory.applicability_regeneration_manager()
+        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Verify
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 4)
+        # Update the consumer profile so that the previous profile does not exist
+        manager = factory.consumer_profile_manager()
+        manager.update(self.CONSUMER_IDS[0], 'rpm', {'name':'zsh', 'version':'1.0'})
+        applicability_list = list(RepoProfileApplicability.get_collection().find())
+        self.assertEqual(len(applicability_list), 4)
+
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):
     """
