@@ -17,16 +17,38 @@ import ConfigParser
 import logging.handlers
 import os
 
+from celery.signals import setup_logging
+
 from pulp.server import config
 
 
 DEFAULT_LOG_LEVEL = logging.INFO
+# A list of modules from which we silence all log messages. It might be possible to expand this data
+# structure to express log levels to blacklist as well, if we ever find that we need that in the
+# future.
+LOG_BLACKLIST = ['qpid.messaging.io.ops', 'qpid.messaging.io.raw']
 LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
 
 
-def start_logging():
+def _blacklist_loggers():
+    """
+    Disable all the loggers in the LOG_BLACKLIST.
+    """
+    for logger_name in LOG_BLACKLIST:
+        logger = logging.getLogger(logger_name)
+        logger.disabled = True
+        logger.propagate = False
+
+
+@setup_logging.connect
+def start_logging(*args, **kwargs):
     """
     Configure Pulp's syslog handler for the configured log level.
+
+    :param args:   Unused
+    :type  args:   list
+    :param kwargs: Unused
+    :type  kwargs: dict
     """
     # Get and set up the root logger with our configured log level
     try:
@@ -47,37 +69,7 @@ def start_logging():
     root_logger.handlers = []
     root_logger.addHandler(handler)
 
-    # Some of our libraries and code have already gotten loggers before we started logging. We need
-    # to iterate over all the loggers. For each child logger we need to configure it to propagate
-    # to its parent. For each parent, we will need to configure it to our our handler.
-    parent_logger_names = set()
-    for logger_name in root_logger.manager.loggerDict.keys():
-        if '.' in logger_name:
-            # This is a "child" logger. We should set it to propagate all of its messages to its
-            # parent for handling.
-            logger = logging.getLogger(logger_name)
-            logger.propagate = 1
-            logger.level = logging.NOTSET
-            logger.handlers = []
-            # Add this child's parent logger to our set of known parents.
-            parent_logger_name = logger_name.split('.')[0]
-            parent_logger_names.add(parent_logger_name)
-        else:
-            # This is a parent logger. Let's add it to the set of known parent loggers and
-            # continue. We'll deal with the parents in the next block.
-            parent_logger_names.add(logger_name)
-
-    # Now let's configure all parent loggers to use our handler
-    for logger_name in parent_logger_names:
-        logger = logging.getLogger(logger_name)
-        # Since this is the parent, we don't want its logs to propagate any further
-        logger.propagate = 0
-        logger.level = log_level
-        # Let's remove any handlers that may have been on this logger, so that it's just ours.
-        # If we didn't do this, some log messages could be duplicated in the syslog (such as
-        # the Celery logs).
-        logger.handlers = []
-        logger.addHandler(handler)
+    _blacklist_loggers()
 
 
 def stop_logging():
