@@ -149,6 +149,15 @@ popd
 
 
 %changelog
+* Fri Apr 11 2014 Brian Bouterse <bmbouter@gmail.com> 3.1.9-2.pulp
+- Add patch manifest to python-celery spec file. (bmbouter@gmail.com)
+- Updating patches for python-celery and python-kombu. (bmbouter@gmail.com)
+- Remove python-okaara since a newer version is in epel and add a dist_list.txt
+  file with the list of distributions each dependency should be built for
+  (bcourt@redhat.com)
+- Update dependency READMEs. (rbarlow@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+
 * Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.1.9-1
 - Raise Celery to version 3.1.9. (rbarlow@redhat.com)
 - Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
