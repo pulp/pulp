@@ -141,11 +141,13 @@ class ApplicabilityRegenerationManager(object):
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
                                                                      fields=['id', 'content_type'])
-                # In case when a consumer unit profile is updated and existing RepoProfileApplicability
-                # object that referenced the consumer's old profile hasn't been cleaned up by the reaper
-                # yet, unit_profile will be None.
                 if unit_profile is None:
+                    # Unit profiles change whenever packages are installed or removed on consumers,
+                    # and it is possible that existing_applicability references a UnitProfile
+                    # that no longer exists. This is harmless, as Pulp has a monthly cleanup task
+                    # that will identify these dangling references and remove them.
                     continue
+
                 # Regenerate applicability data for given unit_profile and repo id
                 ApplicabilityRegenerationManager.regenerate_applicability(profile_hash, 
                                                                           unit_profile['content_type'],
