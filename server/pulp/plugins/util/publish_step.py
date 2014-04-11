@@ -19,20 +19,20 @@ class BasePublisher(object):
     The BasePublisher can be used as the foundation for any step based processor
 
     Publishers follow the following phases
-    1) Initialize metadata - Perform any global metadata initialization
-    2) Process Steps - Process units that are part of the repository
-    3) Finalize Metadata - Perform any metadata processing needed before final publish
-    4) Post Metadata processing - Perform any final actions needed for the publish.  Usually
+    1) Initialize Steps- Perform any global initialization
+    2) Process Steps - Perform primary processing
+    3) Finalize Metadata - Perform any finalization after processing has completed for all steps
+    4) Post processing - Perform any final actions needed for the publish.  Usually
        this will include moving the data from the working directory to it's final location
        on the filesystem and making it available publicly
     """
 
     def __init__(self,
                  repo, publish_conduit, config,
-                 initialize_metadata_steps=None,
+                 initialize_steps=None,
                  process_steps=None,
-                 finalize_metadata_steps=None,
-                 post_metadata_process_steps=None):
+                 finalize_steps=None,
+                 post_process_steps=None):
         """
         :param repo: The repo to be published
         :type repo: pulp.plugins.model.Repository
@@ -40,16 +40,14 @@ class BasePublisher(object):
         :type publish_conduit: RepoPublishConduit
         :param config: The publish configuration
         :type config: PluginCallConfiguration
-        :param initialize_metadata_steps: A list of steps that will have metadata initialized
-        :type initialize_metadata_steps: list of UnitPublishStep
+        :param initialize_steps: A list of steps that will have their initialize block called
+        :type initialize_steps: list of PublishStep
         :param process_steps: A list of steps that are part of the primary publish action
-        :type process_steps: list of UnitPublishStep
-        :param finalize_metadata_steps: A list of steps that are run as part of the metadata
-                                        finalization phase
-        :type finalize_metadata_steps: list of UnitPublishStep
-        :param post_metadata_process_steps: A list of steps that are run after metadata has
-                                            been processed
-        :type post_metadata_process_steps: list of UnitPublishStep
+        :type process_steps: list of PublishStep
+        :param finalize_steps: A list of steps that are run as part of the finalization
+        :type finalize_steps: list of PublishStep
+        :param post_process_steps: A list of steps that are run after finalization
+        :type post_process_steps: list of PublishStep
 
         """
 
@@ -67,10 +65,12 @@ class BasePublisher(object):
         self.finalize_metadata_steps = []
         self.post_metadata_process_steps = []
 
-        self._add_steps(initialize_metadata_steps, self.initialize_metadata_steps)
+        self.ordered_step_list = []
+
+        self._add_steps(initialize_steps, self.initialize_metadata_steps)
         self._add_steps(process_steps, self.process_steps)
-        self._add_steps(finalize_metadata_steps, self.finalize_metadata_steps)
-        self._add_steps(post_metadata_process_steps, self.post_metadata_process_steps)
+        self._add_steps(finalize_steps, self.finalize_metadata_steps)
+        self._add_steps(post_process_steps, self.post_metadata_process_steps)
 
     def _add_steps(self, step_list, target_list):
         """
@@ -91,6 +91,23 @@ class BasePublisher(object):
                 self.all_steps[step.step_id] = step
                 step.parent = self
             target_list.extend(step_list)
+
+            # rebuild the ordered step list
+            known_steps = set()
+            ordered_step_list = []
+            for step in self.initialize_metadata_steps:
+                if step.step_id not in known_steps:
+                    ordered_step_list.append(step)
+            for step in self.process_steps:
+                if step.step_id not in known_steps:
+                    ordered_step_list.append(step)
+            for step in self.finalize_metadata_steps:
+                if step.step_id not in known_steps:
+                    ordered_step_list.append(step)
+            for step in self.post_metadata_process_steps:
+                if step.step_id not in known_steps:
+                    ordered_step_list.append(step)
+            self.ordered_step_list = ordered_step_list
 
     def add_initialize_metadata_steps(self, steps):
         """
@@ -147,13 +164,13 @@ class BasePublisher(object):
             # attempt processing of all the steps
             try:
                 for step in self.initialize_metadata_steps:
-                    step.initialize_metadata()
+                    step.initialize()
                 for step in self.process_steps:
                     step.process()
             finally:
                 # metadata steps may have open file handles so attempt finalization
                 for step in self.finalize_metadata_steps:
-                    step.finalize_metadata()
+                    step.finalize()
                     # Since this step doesn't go through the normal processing we must update it
                     step.state = reporting_constants.STATE_COMPLETE
             for step in self.post_metadata_process_steps:
@@ -224,9 +241,9 @@ class BasePublisher(object):
         """
         Get the machine readable progress report for the entire step processor
         """
-        report = {}
-        for step in self.all_steps.itervalues():
-            report[step.step_id] = step.get_progress_report()
+        report = []
+        for step in self.ordered_step_list:
+            report.append(step.get_progress_report())
         return report
 
     def get_progress_report_summary(self):
@@ -307,15 +324,16 @@ class PublishStep(object):
         """
         return False
 
-    def initialize_metadata(self):
+    def initialize(self):
         """
-        Method called to initialize metadata after units are processed
+        Method called to initialize after all publish steps have been created
         """
         pass
 
-    def finalize_metadata(self):
+    def finalize(self):
         """
-        Method called to finalize metadata after units are processed
+        Method called to finalize after process_main has been called.  This will
+        be called even if process_main or initialize raises an exceptions
         """
         pass
 
@@ -349,7 +367,7 @@ class PublishStep(object):
             if total == 0:
                 self.state = reporting_constants.STATE_COMPLETE
                 return
-            self.initialize_metadata()
+            self.initialize()
             self.report_progress()
             self._process_block()
             # Double check & return if we have been canceled
@@ -365,7 +383,7 @@ class PublishStep(object):
             try:
                 # Only finalize the metadata if we would have made it to initialization
                 if total != 0:
-                    self.finalize_metadata()
+                    self.finalize()
             except Exception, e:
                 # on the off chance that one of the finalize steps raise an exception we need to
                 # record it as a failure.  If a finalize does fail that error should take precedence
@@ -381,8 +399,8 @@ class PublishStep(object):
         This block is called for the main processing loop
         """
         self.process_main()
-        self.report_progress()
         self.progress_successes += 1
+        self.report_progress()
 
     def _get_total(self):
         """
@@ -513,6 +531,7 @@ class PublishStep(object):
         """
         total_processed = self.progress_successes + self.progress_failures
         return {
+            reporting_constants.PROGRESS_STEP_ID_KEY: self.step_id,
             reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: self.progress_successes,
             reporting_constants.PROGRESS_STATE_KEY: self.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: self.error_details,
@@ -583,12 +602,18 @@ class UnitPublishStep(PublishStep):
         """
         package_unit_generator = self.get_unit_generator()
         self.report_progress()
-
+        last_report = 0
         for package_unit in package_unit_generator:
             if self.canceled:
                 return
             self.process_unit(package_unit)
             self.progress_successes += 1
+            current_time = time.time()
+            if current_time != last_report:
+                # Update at most once a second
+                self.report_progress()
+                last_report = current_time
+
         self.report_progress()
 
     def _get_total(self, id_list=None):

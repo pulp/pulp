@@ -63,7 +63,7 @@ class PublishStepTests(PublisherBase):
         mock_get_units.return_value = ['mock_unit']
         step = PublishStep('foo_step')
         step.parent = self.publisher
-        step.finalize_metadata = mock.Mock(side_effect=Exception())
+        step.finalize = mock.Mock(side_effect=Exception())
         self.assertRaises(Exception, step.process)
         self.assertEquals(step.state, reporting_constants.STATE_FAILED)
         self.assertEquals(step.progress_successes, 1)
@@ -112,6 +112,7 @@ class PublishStepTests(PublisherBase):
         report = step.get_progress_report()
 
         target_report = {
+            reporting_constants.PROGRESS_STEP_ID_KEY: 'foo_step',
             reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
             reporting_constants.PROGRESS_STATE_KEY: step.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
@@ -134,6 +135,7 @@ class PublishStepTests(PublisherBase):
         report = step.get_progress_report()
 
         target_report = {
+            reporting_constants.PROGRESS_STEP_ID_KEY: 'bar_step',
             reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
             reporting_constants.PROGRESS_STATE_KEY: step.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
@@ -368,8 +370,8 @@ class BasePublisherTests(PublisherBase):
     def test_publish(self, mock_get_units):
         mock_get_units.return_value = []
         metadata_step = PublishStep('metadata')
-        metadata_step.initialize_metadata = mock.Mock()
-        metadata_step.finalize_metadata = mock.Mock()
+        metadata_step.initialize = mock.Mock()
+        metadata_step.finalize = mock.Mock()
         process_step = PublishStep('process')
         process_step.process = mock.Mock()
         post_process_step = PublishStep('post_process')
@@ -377,14 +379,14 @@ class BasePublisherTests(PublisherBase):
         base_publish = BasePublisher(self.publisher.repo,
                                      self.publisher.conduit,
                                      self.publisher.config,
-                                     initialize_metadata_steps=[metadata_step],
+                                     initialize_steps=[metadata_step],
                                      process_steps=[process_step],
-                                     finalize_metadata_steps=[metadata_step],
-                                     post_metadata_process_steps=[post_process_step])
+                                     finalize_steps=[metadata_step],
+                                     post_process_steps=[post_process_step])
 
         base_publish.publish()
-        metadata_step.initialize_metadata.assert_called_once_with()
-        metadata_step.finalize_metadata.assert_called_once_with()
+        metadata_step.initialize.assert_called_once_with()
+        metadata_step.finalize.assert_called_once_with()
         process_step.process.assert_called_once_with()
         post_process_step.process.assert_called_once_with()
 
@@ -392,8 +394,8 @@ class BasePublisherTests(PublisherBase):
     def test_publish_initialize_working_dir(self, mock_get_units):
         mock_get_units.return_value = []
         metadata_step = PublishStep('metadata')
-        metadata_step.initialize_metadata = mock.Mock()
-        metadata_step.finalize_metadata = mock.Mock()
+        metadata_step.initialize = mock.Mock()
+        metadata_step.finalize = mock.Mock()
         process_step = PublishStep('process')
         process_step.process = mock.Mock()
         post_process_step = PublishStep('post_process')
@@ -401,22 +403,22 @@ class BasePublisherTests(PublisherBase):
         base_publish = BasePublisher(self.publisher.repo,
                                      self.publisher.conduit,
                                      self.publisher.config,
-                                     initialize_metadata_steps=[metadata_step],
+                                     initialize_steps=[metadata_step],
                                      process_steps=[process_step],
-                                     finalize_metadata_steps=[metadata_step],
-                                     post_metadata_process_steps=[post_process_step])
+                                     finalize_steps=[metadata_step],
+                                     post_process_steps=[post_process_step])
 
         base_publish.working_dir = os.path.join(base_publish.working_dir, 'foo')
         base_publish.publish()
-        metadata_step.initialize_metadata.assert_called_once_with()
-        metadata_step.finalize_metadata.assert_called_once_with()
+        metadata_step.initialize.assert_called_once_with()
+        metadata_step.finalize.assert_called_once_with()
         process_step.process.assert_called_once_with()
         post_process_step.process.assert_called_once_with()
 
     def test_publish_with_error(self):
         mock_metadata_step = mock.MagicMock(spec=PublishStep)
         mock_metadata_step.step_id = 'metadata'
-        mock_metadata_step.initialize_metadata.side_effect = Exception('foo')
+        mock_metadata_step.initialize.side_effect = Exception('foo')
         mock_process_step = mock.MagicMock(spec=PublishStep)
         mock_process_step.step_id = 'process'
         mock_post_process_step = mock.MagicMock(spec=PublishStep)
@@ -424,14 +426,14 @@ class BasePublisherTests(PublisherBase):
         base_publish = BasePublisher(self.publisher.repo,
                                      self.publisher.conduit,
                                      self.publisher.config,
-                                     initialize_metadata_steps=[mock_metadata_step],
+                                     initialize_steps=[mock_metadata_step],
                                      process_steps=[mock_process_step],
-                                     finalize_metadata_steps=[mock_metadata_step],
-                                     post_metadata_process_steps=[mock_post_process_step])
+                                     finalize_steps=[mock_metadata_step],
+                                     post_process_steps=[mock_post_process_step])
         self.assertRaises(Exception, base_publish.publish)
-        mock_metadata_step.initialize_metadata.assert_called_once_with()
+        mock_metadata_step.initialize.assert_called_once_with()
 
-        self.assertTrue(mock_metadata_step.finalize_metadata.called)
+        self.assertTrue(mock_metadata_step.finalize.called)
         self.assertFalse(mock_process_step.process.called)
         self.assertFalse(mock_post_process_step.process.called)
 
@@ -443,7 +445,7 @@ class BasePublisherTests(PublisherBase):
         self.assertRaises(ValueError, BasePublisher, self.publisher.repo,
                           self.publisher.conduit,
                           self.publisher.config,
-                          initialize_metadata_steps=[mock_metadata_step, mock_metadata_step_2])
+                          initialize_steps=[mock_metadata_step, mock_metadata_step_2])
 
     def test_add_initialize_metadata_steps(self):
         base_publish = BasePublisher(self.publisher.repo,
@@ -493,10 +495,10 @@ class BasePublisherTests(PublisherBase):
         base_publish = BasePublisher(self.publisher.repo,
                                      self.publisher.conduit,
                                      self.publisher.config,
-                                     initialize_metadata_steps=[mock_metadata_step],
+                                     initialize_steps=[mock_metadata_step],
                                      process_steps=[mock_process_step],
-                                     finalize_metadata_steps=[mock_metadata_step],
-                                     post_metadata_process_steps=[mock_post_process_step])
+                                     finalize_steps=[mock_metadata_step],
+                                     post_process_steps=[mock_post_process_step])
 
         self.assertEquals(mock_metadata_step, base_publish.get_step('metadata'))
         self.assertEquals(mock_process_step, base_publish.get_step('process'))

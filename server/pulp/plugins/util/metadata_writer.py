@@ -58,8 +58,7 @@ class MetadataFileContext(object):
 
     def initialize(self):
         """
-        Create the new metadata file and write the XML header and opening root
-        level tag into it.
+        Create the new metadata file and write the header.
         """
         if self.metadata_file_handle is not None:
             # initialize has already, at least partially, been run
