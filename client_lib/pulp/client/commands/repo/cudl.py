@@ -46,6 +46,7 @@ class CreateRepositoryCommand(PulpCliCommand):
     """
     Creates a new repository in Pulp without any importers/distributors assigned.
     """
+    default_notes = {}
 
     def __init__(self, context, name='create', description=DESC_CREATE, method=None):
         self.context = context
@@ -61,19 +62,88 @@ class CreateRepositoryCommand(PulpCliCommand):
         self.add_option(OPTION_DESCRIPTION)
         self.add_option(OPTION_NOTES)
 
-    def run(self, **kwargs):
+    def _parse_basic_options(self, kwargs):
+        """
+        Parse the options known by this class
+
+        :param kwargs:  user input as provided by okaara
+        :type  kwargs:  dict
+
+        :return:    tuple of repo_id, name, description, notes
+        :rtype:     tuple
+        """
+
         # Collect input
         repo_id = kwargs[OPTION_REPO_ID.keyword]
         name = repo_id
         if OPTION_NAME.keyword in kwargs:
             name = kwargs[OPTION_NAME.keyword]
         description = kwargs[OPTION_DESCRIPTION.keyword]
-        notes = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+        if kwargs[OPTION_NOTES.keyword]:
+            notes = arg_utils.args_to_notes_dict(kwargs[OPTION_NOTES.keyword], include_none=True)
+        else:
+            notes = {}
+        notes.update(self.default_notes)
 
+        return repo_id, name, description, notes
+
+    def run(self, **kwargs):
+        repo_id, name, description, notes = self._parse_basic_options(kwargs)
         # Call the server
         self.context.server.repo.create(repo_id, name, description, notes)
+        self.display_success(repo_id)
+
+    def display_success(self, repo_id):
+        """
+        Display a success message
+
+        :param repo_id: unique ID of the repository
+        :type  repo_id: basestring
+        """
         msg = _('Repository [%(r)s] successfully created')
         self.prompt.render_success_message(msg % {'r' : repo_id})
+
+
+class CreateAndConfigureRepositoryCommand(CreateRepositoryCommand):
+    IMPORTER_TYPE_ID = None
+
+    def _parse_importer_config(self, user_input):
+        """
+        Subclasses should override this to provide whatever option parsing
+        is needed to create an importer config.
+
+        :param user_input:  dictionary of data passed in by okaara
+        :type  user_inpus:  dict
+
+        :return:    importer config
+        :rtype:     dict
+        """
+        return {}
+
+    def _describe_distributors(self, user_input):
+        """
+        Subclasses should override this to provide whatever option parsing
+        is needed to create distributor configs.
+
+        :param user_input:  dictionary of data passed in by okaara
+        :type  user_inpus:  dict
+
+        :return:    list of tuples containing distributor_type_id,
+                    repo_plugin_config, auto_publish, and distributor_id (the same
+                    that would be passed to the RepoDistributorAPI.create call).
+        :rtype:     list
+        """
+        return []
+
+    def run(self, **kwargs):
+        repo_id, name, description, notes = self._parse_basic_options(kwargs)
+        # Call the server
+        importer_config = self._parse_importer_config(kwargs)
+        distributors = self._describe_distributors(kwargs)
+        self.context.server.repo.create_and_configure(repo_id, name, description, notes,
+                                                      self.IMPORTER_TYPE_ID, importer_config,
+                                                      distributors)
+        self.display_success(repo_id)
 
 
 class DeleteRepositoryCommand(PollingCommand):

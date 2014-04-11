@@ -62,23 +62,20 @@ class UploadManagerTests(unittest.TestCase):
 
     # -- test cases -----------------------------------------------------------
 
-    def test_initialize_no_working_dir(self):
-        # Setup
-        self.upload_manager.upload_working_dir += '/mkdir-test'
-        self.assertTrue(not os.path.exists(self.upload_manager.upload_working_dir))
+    def test_init_with_defaults(self):
+        context = mock.MagicMock()
+        context.config = {'filesystem': {'upload_working_dir': '/a/b/c'}}
 
-        # Test
-        self.upload_manager.initialize()
+        manager = upload_util.UploadManager.init_with_defaults(context)
 
-        # Verify
-        self.assertTrue(os.path.exists(self.upload_manager.upload_working_dir))
+        self.assertTrue(isinstance(manager, upload_util.UploadManager))
+        self.assertEqual(manager.upload_working_dir, '/a/b/c/default')
 
     def test_initialize_no_trackers(self):
         # Test
         self.upload_manager.initialize()
 
         # Verify
-        self.assertTrue(self.upload_manager.is_initialized)
         self.assertEqual(0, len(self.upload_manager.list_uploads()))
 
     def test_initialize_with_trackers(self):
@@ -90,9 +87,6 @@ class UploadManagerTests(unittest.TestCase):
             tf = upload_util.UploadTracker(filename)
             tf.upload_id = id
             tf.save()
-
-        # Test
-        self.upload_manager.initialize()
 
         # Verify
 
@@ -118,6 +112,9 @@ class UploadManagerTests(unittest.TestCase):
         upload_id = self.upload_manager.initialize_upload('fn-1', 'repo-1', 'type-1', {'k1' : 'v1'}, {})
 
         # Verify
+
+        # make sure it created the working directory
+        self.assertTrue(os.path.exists(self.upload_working_dir))
 
         # Call to the server was correct
         self.assertEqual(upload_id, MOCK_UPLOAD_ID)
@@ -345,14 +342,6 @@ class UploadManagerTests(unittest.TestCase):
 
         # Verify
         self.assertEqual(0, self.mock_upload_bindings.import_upload.call_count)
-
-    def test_uninitialized_calls(self):
-        # Test
-        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.initialize_upload, 'f', 'r', 't', {'k' : 'v'}, 'm')
-        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.upload, 'i')
-        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.import_upload, 'i')
-        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.list_uploads)
-        self.assertRaises(upload_util.ManagerUninitializedException, self.upload_manager.delete_upload, 'i')
 
     def test_missing_upload_requests(self):
         # Setup
