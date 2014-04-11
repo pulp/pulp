@@ -277,19 +277,34 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
     def test_regenerate_applicability_for_repos_consumer_profile_updated(self):
         # Setup
-        self.populate_consumers_different_profiles()
-        self.populate_bindings()
-        # Test
-        manager = factory.applicability_regeneration_manager()
-        manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
-        # Verify
+        factory.consumer_manager().register(self.CONSUMER_IDS[0])
+        factory.consumer_profile_manager().create(self.CONSUMER_IDS[0], 'rpm', self.PROFILE1)
+        factory.repo_manager().create_repo(self.REPO_IDS[0])
+        factory.repo_distributor_manager().add_distributor(self.REPO_IDS[0],
+                                                           'mock-distributor',
+                                                           {},
+                                                           True,
+                                                           self.YUM_DISTRIBUTOR_ID)
+        factory.consumer_bind_manager().bind(self.CONSUMER_IDS[0],
+                                             self.REPO_IDS[0],
+                                             self.YUM_DISTRIBUTOR_ID,
+                                             False,
+                                             {})
+
+        # Request applicability generation for the consumer
+        applicability_manager = factory.applicability_regeneration_manager()
+        applicability_manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
+        # Update the consumer profile
+        profile_manager = factory.consumer_profile_manager()
+        profile_manager.update(self.CONSUMER_IDS[0], 'rpm', {'name':'zsh', 'version':'1.0'})
+        # Request applicability regeneration for the repo and assert that no exception is raised
+        applicability_manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
+
         applicability_list = list(RepoProfileApplicability.get_collection().find())
-        self.assertEqual(len(applicability_list), 4)
-        # Update the consumer profile so that the previous profile does not exist
-        manager = factory.consumer_profile_manager()
-        manager.update(self.CONSUMER_IDS[0], 'rpm', {'name':'zsh', 'version':'1.0'})
-        applicability_list = list(RepoProfileApplicability.get_collection().find())
-        self.assertEqual(len(applicability_list), 4)
+        self.assertEqual(len(applicability_list), 1)
+        expected_applicability = {'rpm': ['rpm-1', 'rpm-2'], 'erratum': ['errata-1', 'errata-2']}
+        self.assertEqual(applicability_list[0]['profile'], self.PROFILE1)
+        self.assertEqual(applicability_list[0]['applicability'], expected_applicability)
 
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):

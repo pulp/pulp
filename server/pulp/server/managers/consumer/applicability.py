@@ -141,8 +141,9 @@ class ApplicabilityRegenerationManager(object):
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
                                                                      fields=['id', 'content_type'])
-                # In case when a consumer unit profile is updated, but profile regeneration for that consumer
-                # is not requested, unit_profile will be None.
+                # In case when a consumer unit profile is updated and existing RepoProfileApplicability
+                # object that referenced the consumer's old profile hasn't been cleaned up by the reaper
+                # yet, unit_profile will be None.
                 if unit_profile is None:
                     continue
                 # Regenerate applicability data for given unit_profile and repo id
