@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.7.beta%{?dist}
+Release: 0.8.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -301,18 +301,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %doc README LICENSE
 
 %post server
-
-# OAuth credentials
-SECTION="oauth"
-MATCH_SECTION="/^\[$SECTION\]$/"
-KEY="oauth_key:"
-SECRET="oauth_secret:"
-function generate() {
-  echo `< /dev/urandom tr -dc A-Z0-9 | head -c8`
-}
-sed -e "$MATCH_SECTION,/^$/s/^$KEY$/$KEY $(generate)/" \
-    -e "$MATCH_SECTION,/^$/s/^$SECRET$/$SECRET $(generate)/" \
-    -i %{_sysconfdir}/%{name}/server.conf
 
 # RSA key pair
 KEY_DIR="%{_sysconfdir}/pki/%{name}"
@@ -586,6 +574,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Apr 07 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.8.beta
+- Pulp rebuild
+
 * Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.beta
 - Pulp rebuild
 

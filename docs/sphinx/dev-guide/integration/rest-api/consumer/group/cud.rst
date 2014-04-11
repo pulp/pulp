@@ -55,8 +55,8 @@ removed at anytime using the :doc:`membership calls<membership>`.
 Update a Consumer Group
 -----------------------
 
-All the fields, other than the id, that are available when creating a consumer
-group may be updated with this call.
+Metadata about the consumer group itself (not the members) can be updated with this call.
+Consumer members can be added or removed at anytime using the :doc:`membership calls<membership>`.
 
 | :method:`put`
 | :path:`/v2/consumer_groups/<consumer_group_id>/`
@@ -65,7 +65,6 @@ group may be updated with this call.
 
 * :param:`?display_name,string,same as in create call`
 * :param:`?description,string,same as in create call`
-* :param:`?consumer_ids,array,same as in create call`
 * :param:`?notes,object,same as in create call`
 
 | :response_list:`_`
@@ -75,6 +74,28 @@ group may be updated with this call.
 * :response_code:`404,if the group does not exist`
 
 | :return:`updated representation of the consumer group resource`
+
+:sample_request:`_` ::
+
+ {
+  "display_name": "new-name",
+  "description": "new-description",
+  "notes": {"new-note": "new-value"}
+ }
+
+:sample_response:`200` ::
+
+ {
+  "scratchpad": null,
+  "display_name": "new-name",
+  "description": "new-description",
+  "_ns": "consumer_groups",
+  "notes": {"new-note": "new-value"},
+  "consumer_ids": [],
+  "_id": {"$oid": "5344df87e5e71066d17aa889"},
+  "id": "test-consumer-group",
+  "_href": "/pulp/api/v2/consumer_groups/test-consumer-group/"
+}
 
 
 Delete a Consumer Group

@@ -26,6 +26,7 @@ or removed from the group using the :doc:`membership calls<members>`.
 
 * :response_code:`201,the group was successfully created`
 * :response_code:`400,if one or more of the parameters is invalid`
+* :response_code:`404,if any id in the given repo_ids does not belong to a valid repository`
 * :response_code:`409,if there is already a group with the given ID`
 
 | :return:`database representation of the created group`
