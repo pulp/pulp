@@ -7,13 +7,14 @@
 
 Name:           python-celery
 Version:        3.1.9
-Release:        1%{?dist}
+Release:        2.pulp%{?dist}
 Summary:        Distributed Task Queue
 
 Group:          Development/Languages
 License:        BSD
 URL:            http://celeryproject.org
 Source0:        http://pypi.python.org/packages/source/c/celery/celery-%{version}.tar.gz
+Patch0:         celery_bug_1973_fix.patch
 
 BuildArch:      noarch
 BuildRequires:  python2-devel
@@ -98,6 +99,9 @@ for Redis, Beanstalk, MongoDB, CouchDB and databases
 %prep
 %setup -q -n celery-%{version}
 
+# Bugfix for Celery https://github.com/celery/celery/issues/1973
+%patch0 -p1
+
 %if 0%{?with_python3}
 cp -a . %{py3dir}
 %endif
@@ -145,6 +149,15 @@ popd
 
 
 %changelog
+* Fri Apr 11 2014 Brian Bouterse <bmbouter@gmail.com> 3.1.9-2.pulp
+- Add patch manifest to python-celery spec file. (bmbouter@gmail.com)
+- Updating patches for python-celery and python-kombu. (bmbouter@gmail.com)
+- Remove python-okaara since a newer version is in epel and add a dist_list.txt
+  file with the list of distributions each dependency should be built for
+  (bcourt@redhat.com)
+- Update dependency READMEs. (rbarlow@redhat.com)
+- updating info about dependencies we build (mhrivnak@redhat.com)
+
 * Thu Feb 20 2014 Randy Barlow <rbarlow@redhat.com> 3.1.9-1
 - Raise Celery to version 3.1.9. (rbarlow@redhat.com)
 - Merge pull request #787 from pulp/mhrivnak-deps (mhrivnak@hrivnak.org)
