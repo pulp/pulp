@@ -14,6 +14,7 @@ Group:          Development/Languages
 License:        BSD
 URL:            http://celeryproject.org
 Source0:        http://pypi.python.org/packages/source/c/celery/celery-%{version}.tar.gz
+Patch0:         celery_bug_1973_fix.patch
 
 BuildArch:      noarch
 BuildRequires:  python2-devel
