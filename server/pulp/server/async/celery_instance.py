@@ -18,6 +18,7 @@ the factory ends up importing tasks.py when it imports all the managers.
 Hopefully we will eliminate the factory in the future, but until then this workaround is necessary.
 """
 from datetime import timedelta
+import ssl
 
 from celery import Celery
 
@@ -78,3 +79,12 @@ celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
 celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())
+
+if config.get('tasks', 'celery_require_ssl') == 'yes':
+    BROKER_USE_SSL = {
+        'ca_certs': config.get('tasks', 'cacert'),
+        'keyfile': config.get('tasks', 'keyfile'),
+        'certfile': config.get('tasks', 'certfile'),
+        'cert_reqs': ssl.CERT_REQUIRED,
+    }
+    celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
