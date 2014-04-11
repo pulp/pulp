@@ -229,9 +229,16 @@ echo "Recommended properties in /etc/pulp/server.conf:"
 echo "
 ...
 [messaging]
-url=ssl://<host>:5671
-cacert=$INST_DIR/ca.crt
-clientcert=$INST_DIR/client.crt
+url: ssl://<host>:5671
+cacert: $INST_DIR/ca.crt
+clientcert: $INST_DIR/client.crt
+
+[tasks]
+broker_url: qpid://<host>:5671/
+celery_require_ssl: yes
+cacert: /etc/pki/pulp/qpid/ca.crt
+keyfile: /etc/pki/pulp/qpid/client.crt
+certfile: /etc/pki/pulp/qpid/client.crt
 "
 
 echo ""
@@ -253,4 +260,7 @@ NOTES:
 
   [2] The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
       need to be manually copied to each consumer.
+
+  [3] The $INST_DIR/ca.crt and $INST_DIR/client.crt certificates will
+      need to be manually copied to each worker.
 "

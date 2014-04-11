@@ -16,7 +16,7 @@ import socket
 from ConfigParser import SafeConfigParser
 
 
-config = None # ConfigParser.SafeConfigParser instance
+config = None  # ConfigParser.SafeConfigParser instance
 
 # to guarantee that a section and/or setting exists, add a default value here
 _default_values = {
@@ -25,7 +25,7 @@ _default_values = {
         'rsa_pub': '/etc/pki/pulp/rsa_pub.key',
     },
     'consumer_history': {
-        'lifetime': '180', # in days
+        'lifetime': '180',  # in days
     },
     'data_reaping': {
         'reaper_interval': '0.25',
@@ -43,7 +43,7 @@ _default_values = {
     'email': {
         'host': 'localhost',
         'port': '25',
-        'enabled' : 'false',
+        'enabled': 'false',
         'from': 'pulp@localhost',
     },
     'oauth': {
@@ -68,7 +68,7 @@ _default_values = {
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
-        'ssl_ca_certificate' : '/etc/pki/pulp/ssl_ca.crt',
+        'ssl_ca_certificate': '/etc/pki/pulp/ssl_ca.crt',
         'user_cert_expiration': '7',
         'consumer_cert_expiration': '3650',
         'serial_number_path': '/var/lib/pulp/sn.dat',
@@ -85,11 +85,16 @@ _default_values = {
     },
     'tasks': {
         'broker_url': 'qpid://guest@localhost/',
+        'celery_require_ssl': 'no',
+        'cacert': '/etc/pki/pulp/qpid/ca.crt',
+        'keyfile': '/etc/pki/pulp/qpid/client.crt',
+        'certfile': '/etc/pki/pulp/qpid/client.crt',
     },
 }
 
 # to add a default configuration file, list the full path here
 _config_files = ['/etc/pulp/server.conf']
+
 
 
 def check_config_files():

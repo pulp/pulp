@@ -126,11 +126,13 @@ Server
     
     $ sudo yum install qpid-cpp-server
 
-   Configure the Qpid broker in ``/etc/qpidd.conf`` and either add or change the auth setting
-   to be off by having ``auth=no`` on its own line.  The server can be *optionally* configured
-   so that it will connect to the broker using SSL by following the steps defined in the
-   :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.  By default, the server
-   will connect using a plain TCP connection.
+   Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``.  For Qpid 0.24+ the
+   config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the
+   config file at ``/etc/qpidd.conf``.  If not using authentication for the broker, either add or
+   change the auth setting to be off by having ``auth=no`` on its own line.  The server can be
+   *optionally* configured so that it will connect to the broker using SSL by following the steps
+   defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.  By default, the
+   server will connect to the broker using a plain TCP connection to localhost.
 
    After installing and configuring Qpid, you should configure it to start at boot and start it. For
    Upstart based systems::
@@ -159,7 +161,10 @@ Server
 
    * **email** if you intend to have the server send email (off by default)
    * **database** if your database resides on a different host or port
-   * **messaging** if your Qpid server is on a different host or if you want to use SSL
+   * **messaging** if your Qpid server for communication between Pulp components is on a different
+     host or if you want to use SSL
+   * **tasks** if your Qpid server for the asynchronous tasks is on a different host or if you want
+     to use SSL
    * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use
      Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
@@ -309,6 +314,8 @@ repositories.
 3. The agent may be configured so that it will connect to the Qpid broker using SSL by
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
+
+::
 
 4. Set the agent to start at boot:
 

@@ -11,7 +11,9 @@ Overview
 The steps to reconfigure both Pulp and Qpid to communicate using SSL are as follows:
 
 1. Generate x.509 keys, certificates and NSS database.
-2. Edit ``/etc/qpidd.conf`` to require SSL and define certificates.
+2. Edit the ``qpidd.conf`` file to require SSL and define certificates.  Qpid 0.24+
+   expects the config file to be at ``/etc/qpid/qpidd.conf`` and earlier Qpid versions
+   expect it to be at ``/etc/qpidd.conf``.
 3. Edit ``/etc/pulp/server.conf`` *messaging* section so that the server will connect to
    the Qpid broker using SSL.
 4. On each consumer, edit ``/etc/pulp/consumer/consumer.conf`` *messaging* section
@@ -21,8 +23,13 @@ The steps to reconfigure both Pulp and Qpid to communicate using SSL are as foll
   * ``/etc/pki/pulp/qpid/ca.crt``
   * ``/etc/pki/pulp/qpid/client.crt``
 
-6. Make sure the ``qpid-cpp-server-ssl`` RPM is installed.
-7. Restart qpidd, httpd and pulp-agent
+6. Copy the x.509 certificates to each worker:
+
+  * ``/etc/pki/pulp/qpid/ca.crt``
+  * ``/etc/pki/pulp/qpid/client.crt``
+
+7. Make sure the ``qpid-cpp-server-ssl`` RPM is installed.
+8. Restart qpidd, httpd and pulp-agent
 
 
 Details
@@ -110,7 +117,7 @@ The following is an example of running the script:
 
   Artifacts copied to: /etc/pki/pulp/qpid.
 
-  Recommended properties in /etc/qpidd.conf:
+  Recommended properties in qpidd.conf:
 
   auth=no
   # SSL
@@ -130,6 +137,13 @@ The following is an example of running the script:
   url=ssl://<host>:5671
   cacert=/etc/pki/pulp/qpid/ca.crt
   clientcert=/etc/pki/pulp/qpid/client.crt
+
+  [tasks]
+  broker_url=qpid://<host>:5671/
+  celery_require_ssl=yes
+  cacert=/etc/pki/pulp/qpid/ca.crt
+  keyfile=/etc/pki/pulp/qpid/client.crt
+  certfile=/etc/pki/pulp/qpid/client.crt
 
 
   Recommended properties in /etc/pulp/consumer/consumer.conf:
@@ -161,8 +175,9 @@ Step #2 - Edit the Qpid broker configuration
 By default, the Qpid broker (qpidd) is configured to accept non-encryped client connections
 on port 5672.  After creating the certificates and NSS database, qpidd needs to be
 reconfigured to accept only SSL connections using the key and certificates stored in the
-NSS database.  The ``/etc/qpidd.conf`` needs to be edited and the following SSL related
-properties defined as follows:
+NSS database.  The Qpid 0.24+ config file is located at ``/etc/qpid/qpidd.conf``, or for
+earlier Qpid versions at ``/etc/qpidd.conf``.  The ``qpidd.conf`` file needs to be edited
+and the following SSL related properties defined as follows:
 
 *auth*
     Require authentication. (value: no)
@@ -192,9 +207,11 @@ Step #3 - Edit the Pulp server configuration
 
 By default, the Pulp server is configured so that it will connect to the Qpid broker on port 5672.
 Now that Qpid broker has been reconfigured to only accept SSL connections on port 5671, the
-Pulp server configuration file, ``/etc/pulp/server.conf``, needs to be edited.  The properties
-in the *messaging* section that specify the port, the CA certificate and client certificate
-need to be updated as follows:
+Pulp server configuration file, ``/etc/pulp/server.conf``, needs to be edited.  The properties in
+the *messaging* and *tasks* sections need to be updated.
+
+The properties in the *messaging* section that specify the port, the CA certificate and client
+certificate need to be updated as follows:
 
 *url*
     The URL to the Qpid broker. Protocol choices: tcp=plain, ssl=SSL.
@@ -202,13 +219,36 @@ need to be updated as follows:
 
 *cacert*
     The fully qualified path to the CA certificate used to validate the broker's
-    SSL certificate (value: ``/etc/pki/pulp/qpid/ca.crt``)
+    SSL certificate. (value: ``/etc/pki/pulp/qpid/ca.crt``)
 
 *clientcert*
     The fully qualified path a file containing both the client private key and certificate.
     The certificate is sent to the broker when the SSL connection is initiated by the Pulp
     server.  The broker authenticates the Pulp server based on this certificate.
     (value: ``/etc/pki/pulp/qpid/client.crt``)
+
+The following properties in the *tasks* section need to be updated as follows:
+
+*broker_url*
+    The URL that Celery will use to connect to the Qpid broker.  Must specify the port 5671,
+    and the correct host. (value: qpid://<host>:5671/)
+
+*celery_require_ssl*
+    Indicate that Pulps use of Celery should require SSL. (value: ``yes``)
+
+*cacert*
+    The fully qualified path to the CA certificate used to validate the broker's SSL
+    certificate. (value: ``/etc/pki/pulp/qpid/ca.crt``)
+
+*keyfile*
+    The fully qualified path to the key file associated with the client's certificate.  The
+    ``pulp-qpid-ssl-cfg`` script puts the key in the same file as the client certificate file.
+    (value: ``/etc/pki/pulp/qpid/client.crt``)
+
+*certfile*
+    The fully qualified path to the certificate file associated with the client, and corresponding
+    with the key specified by keyfile. (value: ``/etc/pki/pulp/qpid/client.crt``)
+
 
 Step #4 - Edit each consumer configuration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -254,14 +294,32 @@ For example:
 **Note:** the <host> is the hostname of a consumer.
 
 
-Step #6 - Install qpid-cpp-server-ssl
+Step #6 - Copy certificates to each worker
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In step #3, we updated the ``server.conf`` and specified the SSL properties which included
+the paths to the CA and client certificate files.  Those files need to be copied to each
+worker.
+
+For example:
+
+::
+
+ cd ``/etc/pki/pulp/qpid``
+ scp ca.crt root@<host>:/etc/pki/pulp/qpid
+ scp client.crt root@<host>:/etc/pki/pulp/qpid
+
+**Note:** the <host> is the hostname of a worker.
+
+
+Step #7 - Install qpid-cpp-server-ssl
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To support SSL, the Qpid broker must have the SSL module installed.  This module
 is provided by the ``qpid-cpp-server-ssl`` package.  Make sure this package is installed.
 
 
-Step #7 - Restart services
+Step #8 - Restart services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Now that the Qpid and pulp configurations have been updated, the corresponding services
@@ -271,6 +329,12 @@ On the Pulp server:
 
 * qpidd
 * httpd
+* pulp_resource_manager
+* pulp_celerybeat
+
+On each worker:
+
+* pulp_workers
 
 On each consumer:
 
