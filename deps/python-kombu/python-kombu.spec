@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.13
-Release:        2.pulp%{?dist}
+Release:        3.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -105,7 +105,9 @@ This subpackage is for python3
 %prep
 %setup -q -n %{srcname}-%{version}
 
-# Add qpid support
+# Add Qpid broker support until the following PR is accepted upstream and
+# included in a release:
+# https://github.com/celery/kombu/pull/335
 %patch0 -p1
 
 # manage requirements on rpm base

@@ -2545,7 +2545,7 @@ index 0000000..efd5362
 +        :type queue: str
 +
 +        """
-+        self._delete(queue)
++        return
 +
 +    def queue_bind(self, queue, exchange, routing_key, **kwargs):
 +        """Bind a queue to an exchange with a bind key.

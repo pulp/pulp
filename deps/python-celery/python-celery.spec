@@ -7,7 +7,7 @@
 
 Name:           python-celery
 Version:        3.1.9
-Release:        1%{?dist}
+Release:        2.pulp%{?dist}
 Summary:        Distributed Task Queue
 
 Group:          Development/Languages
@@ -97,6 +97,9 @@ for Redis, Beanstalk, MongoDB, CouchDB and databases
 
 %prep
 %setup -q -n celery-%{version}
+
+# Bugfix for Celery https://github.com/celery/celery/issues/1973
+%patch0 -p1
 
 %if 0%{?with_python3}
 cp -a . %{py3dir}
