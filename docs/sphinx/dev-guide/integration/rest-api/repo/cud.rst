@@ -478,8 +478,8 @@ The total number of spawned tasks depends on how many consumers are bound to the
 | :permission:`delete`
 | :response_list:`_`
 
-* :response_code:`202,if the update was executed and successful`
-* :response_code:`202,if the request was accepted by the server to delete when the repository is available`
+* :response_code:`202,if the request was accepted by the server to delete the repository`
+* :response_code:`404,if the requested repository does not exist`
 
 | :return:`a` :ref:`call_report`
 
