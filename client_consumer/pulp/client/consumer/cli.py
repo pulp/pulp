@@ -16,6 +16,8 @@ import urllib2
 import errno
 
 from gettext import gettext as _
+from M2Crypto import RSA
+from M2Crypto.util import no_passphrase_callback
 from M2Crypto.X509 import X509Error
 
 from pulp.bindings.exceptions import NotFoundException
@@ -166,7 +168,11 @@ class RegisterCommand(PulpCliCommand):
             return exceptions.CODE_PERMISSIONS_EXCEPTION
 
         # RSA key
+        path = self.context.config['authentication']['rsa_key']
+        key = RSA.gen_key(2048, 65535, no_passphrase_callback)
+        key.save_key(path, None)
         path = self.context.config['authentication']['rsa_pub']
+        key.save_pub_key(path)
         fp = open(path)
         try:
             rsa_pub = fp.read()

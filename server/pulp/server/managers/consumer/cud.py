@@ -87,14 +87,14 @@ class ConsumerManager(object):
         # Use the ID for the display name if one was not specified
         display_name = display_name or consumer_id
 
+        # Creation
+        consumer = Consumer(consumer_id, display_name, description, notes, capabilities, rsa_pub)
+        _id = collection.save(consumer, safe=True)
+
         # Generate certificate
         cert_gen_manager = factory.cert_generation_manager()
         expiration_date = config.config.getint('security', 'consumer_cert_expiration')
-        key, certificate = cert_gen_manager.make_cert(consumer_id, expiration_date)
-
-        # Creation
-        consumer = Consumer(consumer_id, display_name, description, notes, capabilities, rsa_pub)
-        collection.save(consumer, safe=True)
+        key, certificate = cert_gen_manager.make_cert(consumer_id, expiration_date, uid=str(_id))
 
         factory.consumer_history_manager().record_event(consumer_id, 'consumer_registered')
 

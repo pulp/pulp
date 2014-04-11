@@ -17,6 +17,8 @@ import os
 import shutil
 import unittest
 
+from mock import patch
+
 from pulp.common.bundle import Bundle
 
 KEY = """
@@ -100,6 +102,26 @@ rwlofisIJvB0JQxaoQgprDem4CChLqEAnMmCpybfSLLqXTieTPr116nQ9A==
 -----END CERTIFICATE-----
 """
 
+VERIZON_CERTIFICATE = """
+-----BEGIN CERTIFICATE-----
+MIICyjCCAbICAh/QMA0GCSqGSIb3DQEBBQUAMCAxHjAcBgNVBAMMFWxvY2FsaG9z
+dC5sb2NhbGRvbWFpbjAeFw0xNDA0MTExNzM0MTBaFw0xNDA3MTAxNzM0MTBaMDUx
+GTAXBgNVBAMMEFZlcml6b24gV2lyZWxlc3MxGDAWBgoJkiaJk/IsZAEBDAh2em4t
+dXNlcjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMRkjseAow6eH/Ig
+Wb5zD47QRA0No9jNqGL6onRSYaMjCTKcu3T1nPbBTVlxSQw9cah2anXoJaFZzIcc
+7c0RPGMpJR3wVe/0sOBMTeD0CFHwdhin2lo75AMLldc/7qenuMT9bxaQKZ3MDRba
+lz+ESIXFZPx/Oy2cp5vWwq3OEQAcRwMhdYZfRjoKZ+xQ+kHhdJD4Baakee8vyP2o
+3T+xLY2ZOBBLtuhypB96QrCESozL8u2YS3Dqbq1X0ge0eub/lk+QMDjrtF5kTC45
+jgJEykdRFhgKznO5IAwnHt5NvZ1wQxF/lAvt6lBG5t9XuFV1cQOLiE7BzklDjOX9
+7Oy9JxMCAwEAATANBgkqhkiG9w0BAQUFAAOCAQEAIUn1UUhNtkKAcxhVb4z1Wt5Z
+A8d/IhfMvHtA3tCJSsJMikgl6/JB0vokS/3WzgaKy1/i5TQlNzy+85sIlJIb5ZDF
+Rga+h2limYH1JjKuELCnKHYktdFUiEvnkJ1G8DS237hxY/dvUmc4DDKf6kiqwiDc
+Cv4cvTO3M8CcN8CdYNFqp7xKgGvJowuaCamXQ9Hvd2Io0Cr+eW3CalIyqN/MVrWK
+yzH13WQDo8czdb+sG1N4Vljk2WV+YcrTnkEePU3EgbadwMdr8Bi5yWUkcxCm9cYA
+WbBc3t8IYtnwwimoMf6USrxatrukx5j/aT3HBJld7zOPrFGArw3s9SIXHGFCZQ==
+-----END CERTIFICATE-----
+"""
+
 BUNDLE = ''.join((KEY,CERTIFICATE))
 BUNDLE_ROOT = '/tmp/pulp/bundle-testing/test.crt'
 CRTFILE = os.path.join(BUNDLE_ROOT, 'test.crt')
@@ -133,6 +155,59 @@ class TestBundles(unittest.TestCase):
         self.assertTrue(Bundle.hascrt(CERTIFICATE))
         self.assertTrue(Bundle.hascrt(CERTIFICATE))
         self.assertTrue(Bundle.hasboth(BUNDLE))
+
+    @patch('pulp.common.bundle.Bundle.valid')
+    @patch('pulp.common.bundle.Bundle.read')
+    def test_cn(self, fake_read, fake_valid):
+        fake_read.return_value = CERTIFICATE
+        fake_valid.return_value = True
+        bundle = Bundle('')
+        cn = bundle.cn()
+        fake_valid.assert_called_with()
+        fake_read.assert_called_with()
+        self.assertEqual(cn, 'localhost')
+
+    @patch('pulp.common.bundle.Bundle.valid')
+    @patch('pulp.common.bundle.Bundle.read')
+    def test_cn_invalid_certificate(self, fake_read, fake_valid):
+        fake_read.return_value = CERTIFICATE
+        fake_valid.return_value = False
+        bundle = Bundle('')
+        cn = bundle.cn()
+        fake_valid.assert_called_with()
+        self.assertTrue(cn is None)
+
+    @patch('pulp.common.bundle.Bundle.valid')
+    @patch('pulp.common.bundle.Bundle.read')
+    def test_uid(self, fake_read, fake_valid):
+        fake_read.return_value = VERIZON_CERTIFICATE
+        fake_valid.return_value = True
+        bundle = Bundle('')
+        uid = bundle.uid()
+        fake_valid.assert_called_with()
+        fake_read.assert_called_with()
+        self.assertEqual(uid, 'vzn-user')
+
+    @patch('pulp.common.bundle.Bundle.valid')
+    @patch('pulp.common.bundle.Bundle.read')
+    def test_uid_none(self, fake_read, fake_valid):
+        fake_read.return_value = CERTIFICATE
+        fake_valid.return_value = True
+        bundle = Bundle('')
+        uid = bundle.uid()
+        fake_valid.assert_called_with()
+        fake_read.assert_called_with()
+        self.assertTrue(uid is None)
+
+    @patch('pulp.common.bundle.Bundle.valid')
+    @patch('pulp.common.bundle.Bundle.read')
+    def test_uid_invalid_certificate(self, fake_read, fake_valid):
+        fake_read.return_value = CERTIFICATE
+        fake_valid.return_value = False
+        bundle = Bundle('')
+        uid = bundle.uid()
+        fake_valid.assert_called_with()
+        self.assertTrue(uid is None)
 
     def testWrite(self):
         b = Bundle(CRTFILE)

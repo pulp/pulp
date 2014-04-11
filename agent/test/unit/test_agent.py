@@ -24,6 +24,7 @@ from pulp.common.config import Config
 TEST_HOST = 'test-host'
 TEST_PORT = '443'
 TEST_CN = 'test-cn'
+TEST_UID = 'test-uid'
 
 TEST_BUNDLE = """
 -----BEGIN RSA PRIVATE KEY-----
@@ -99,6 +100,35 @@ class PluginTest(TestCase):
 
     def setUp(self):
         self.plugin = PluginTest.load_plugin()
+
+
+class TestSecret(PluginTest):
+
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_secret(self, fake_bundle):
+        bundle = Mock()
+        bundle.uid.return_value = 'test-uid'
+        fake_bundle.return_value = bundle
+
+        # test
+        secret = self.plugin.get_secret()
+
+        # validation
+        bundle.uid.assert_called_with()
+        self.assertEqual(secret, bundle.uid())
+
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_no_secret(self, fake_bundle):
+        bundle = Mock()
+        bundle.uid.return_value = None
+        fake_bundle.return_value = bundle
+
+        # test
+        secret = self.plugin.get_secret()
+
+        # validation
+        bundle.uid.assert_called_with()
+        self.assertEqual(secret, None)
 
 
 class TestAuthentication(PluginTest):
@@ -216,6 +246,43 @@ class TestBundle(PluginTest):
         # validation
         self.assertEqual(bundle.path, CERT_PATH)
         self.assertEqual(cn, None)
+
+    @patch('pulp.common.bundle.Bundle.uid', return_value=TEST_UID)
+    def test_bundle_uid(self, *unused):
+        test_conf = {
+            'filesystem': {
+                'id_cert_dir': TEST_ID_CERT_DIR,
+                'id_cert_filename': TEST_ID_CERT_FILE
+            }
+        }
+        self.plugin.pulp_conf.update(test_conf)
+
+        # test
+        bundle = self.plugin.ConsumerX509Bundle()
+        uid = bundle.uid()
+
+        # validation
+        self.assertEqual(bundle.path, CERT_PATH)
+        self.assertEqual(uid, TEST_UID)
+
+    @patch('os.path.exists', return_value=True)
+    @patch('pulp.common.bundle.Bundle.read', return_value=TEST_BUNDLE)
+    def test_invalid_bundle_uid(self, *unused):
+        test_conf = {
+            'filesystem': {
+                'id_cert_dir': TEST_ID_CERT_DIR,
+                'id_cert_filename': TEST_ID_CERT_FILE
+            }
+        }
+        self.plugin.pulp_conf.update(test_conf)
+
+        # test
+        bundle = self.plugin.ConsumerX509Bundle()
+        uid = bundle.uid()
+
+        # validation
+        self.assertEqual(bundle.path, CERT_PATH)
+        self.assertEqual(uid, None)
 
 
 class TestBindings(PluginTest):

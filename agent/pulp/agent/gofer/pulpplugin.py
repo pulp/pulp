@@ -17,6 +17,7 @@ Contains recurring actions and remote classes.
 """
 
 import os
+import errno
 
 from logging import getLogger
 
@@ -46,6 +47,18 @@ cfg = pulp_conf.graph()
 
 
 # --- utils ------------------------------------------------------------------
+
+
+def get_secret():
+    """
+    Get the shared secret.
+    The shared secret is the DB _id for the consumer object as specified
+    in the UID part of the certificate distinguished name (DN).
+    :return: The secret.
+    :rtype: str
+    """
+    bundle = ConsumerX509Bundle()
+    return bundle.uid()
 
 
 class Authenticator(object):
@@ -129,7 +142,20 @@ class ConsumerX509Bundle(Bundle):
         """
         try:
             return Bundle.cn(self)
-        except (KeyError, X509Error):
+        except (X509Error):
+            log.warn('certificate: %s, not valid', self.path)
+            
+    def uid(self):
+        """
+        Get the userid (UID) part of the certificate subject.
+        Returns None, if the certificate is invalid.
+        :return The userid (UID) part of the certificate subject or None when
+            the certificate is not found or invalid.
+        :rtype: str
+        """
+        try:
+            return Bundle.uid(self)
+        except (X509Error):
             log.warn('certificate: %s, not valid', self.path)
 
 
@@ -294,7 +320,7 @@ class Consumer:
     Consumer Management.
     """
 
-    @remote
+    @remote(secret=get_secret)
     def unregistered(self):
         """
         Notification that the consumer had been unregistered.
@@ -309,7 +335,7 @@ class Consumer:
         report = dispatcher.clean(conduit)
         return report.dict()
 
-    @remote
+    @remote(secret=get_secret)
     def bind(self, bindings, options):
         """
         Bind to the specified repository ID.
@@ -328,7 +354,7 @@ class Consumer:
         report = dispatcher.bind(conduit, bindings, options)
         return report.dict()
 
-    @remote
+    @remote(secret=get_secret)
     def unbind(self, bindings, options):
         """
         Unbind to the specified repository ID.
@@ -352,7 +378,7 @@ class Content:
     Content Management.
     """
 
-    @remote
+    @remote(secret=get_secret)
     def install(self, units, options):
         """
         Install the specified content units using the specified options.
@@ -370,7 +396,7 @@ class Content:
         report = dispatcher.install(conduit, units, options)
         return report.dict()
 
-    @remote
+    @remote(secret=get_secret)
     def update(self, units, options):
         """
         Update the specified content units using the specified options.
@@ -388,7 +414,7 @@ class Content:
         report = dispatcher.update(conduit, units, options)
         return report.dict()
 
-    @remote
+    @remote(secret=get_secret)
     def uninstall(self, units, options):
         """
         Uninstall the specified content units using the specified options.
@@ -412,7 +438,7 @@ class Profile:
     Profile Management
     """
 
-    @remote
+    @remote(secret=get_secret)
     def send(self):
         """
         Send the content profile(s) to the server.
