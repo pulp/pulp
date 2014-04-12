@@ -13,6 +13,18 @@ from gettext import gettext as _
 import logging
 from urlparse import urlparse
 
+QPIDTOOLLIBS_AVAILABLE = True
+try:
+    from qpidtoollibs import BrokerAgent
+except ImportError:
+    QPIDTOOLLIBS_AVAILABLE = False
+
+QPID_MESSAGING_AVAILABLE = True
+try:
+    from qpid.messaging import Connection
+except ImportError:
+    QPID_MESSAGING_AVAILABLE = False
+
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent.direct.services import Services
 from pulp.server.db.model.consumer import Consumer
@@ -31,17 +43,13 @@ def migrate(*args, **kwargs):
         # not using qpid
         return
 
-    try:
-        from qpid.messaging import Connection
-    except ImportError:
+    if not QPID_MESSAGING_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpid.messaging is not installed.  Please '
                 'install qpid.messaging and rerun the migrations.')
         logger.error(msg)
         raise Exception(msg)
 
-    try:
-        from qpidtoollibs import BrokerAgent
-    except ImportError:
+    if not QPIDTOOLLIBS_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpidtoollibs is not installed.  Please '
                 'install qpidtoollibs and rerun the migrations.')
         logger.error(msg)
