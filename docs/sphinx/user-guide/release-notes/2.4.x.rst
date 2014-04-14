@@ -56,6 +56,14 @@ You can see the complete list of bugs that were
 Rest API Changes
 ----------------
 
+``/v2/queued_calls``
+
+    This API has been removed in 2.4.
+
+``/v2/task_groups``
+
+    This API has been removed in 2.4.
+
 * Schedule delete no longer returns a 404 when the schedule is not found. It will
   return a 200, because this is exactly the condition the user asked for.
 * Deleting units is no longer blocked if the user performing the delete is different
