@@ -49,6 +49,7 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
             OPTION_DESCRIPTION.keyword : 'Repository Description',
             OPTION_NOTES.keyword : ['a=a', 'b=b'],
         }
+        self.command.default_notes = {'foo': 'bar'}
 
         self.server_mock.request.return_value = 201, {}
 
@@ -64,7 +65,68 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
         self.assertEqual(body['id'], 'test-repo')
         self.assertEqual(body['display_name'], 'Test Repository')
         self.assertEqual(body['description'], 'Repository Description')
-        self.assertEqual(body['notes'], {'a' : 'a', 'b' : 'b'})
+        self.assertEqual(body['notes'], {'a':'a', 'b':'b', 'foo':'bar'})
+
+        self.assertEqual(1, len(self.prompt.get_write_tags()))
+        self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
+
+    def test_parse_basic_options_default_notes(self):
+        data = {
+            OPTION_REPO_ID.keyword : 'test-repo',
+            OPTION_NAME.keyword : 'Test Repository',
+            OPTION_DESCRIPTION.keyword : 'Repository Description',
+            OPTION_NOTES.keyword : [],
+        }
+        repo_id, name, description, notes = self.command._parse_basic_options(data)
+
+        self.assertEqual(notes, {})
+
+
+class CreateAndConfigureRepositoryCommandTests(base.PulpClientTests):
+
+    def setUp(self):
+        super(CreateAndConfigureRepositoryCommandTests, self).setUp()
+        self.command = cudl.CreateAndConfigureRepositoryCommand(self.context)
+
+    def test_structure(self):
+        # Ensure all of the expected options are there
+        for o in [OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID]:
+            self.assertTrue(o in self.command.options)
+
+        # Ensure the correct method is wired up
+        self.assertEqual(self.command.method, self.command.run)
+
+        # Ensure the correct metadata
+        self.assertEqual(self.command.name, 'create')
+        self.assertEqual(self.command.description, cudl.DESC_CREATE)
+
+    def test_run(self):
+        # Setup
+        data = {
+            OPTION_REPO_ID.keyword : 'test-repo',
+            OPTION_NAME.keyword : 'Test Repository',
+            OPTION_DESCRIPTION.keyword : 'Repository Description',
+            OPTION_NOTES.keyword : ['a=a', 'b=b'],
+        }
+        self.command.default_notes = {'foo': 'bar'}
+
+        self.server_mock.request.return_value = 201, {}
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(1, self.server_mock.request.call_count)
+        self.assertEqual('POST', self.server_mock.request.call_args[0][0])
+
+        body = self.server_mock.request.call_args[0][2]
+        body = json.loads(body)
+        self.assertEqual(body['id'], 'test-repo')
+        self.assertEqual(body['display_name'], 'Test Repository')
+        self.assertEqual(body['description'], 'Repository Description')
+        self.assertEqual(body['notes'], {'a':'a', 'b':'b', 'foo':'bar'})
+        self.assertEqual(body['distributors'], [])
+        self.assertEqual(body['importer_type_id'], None)
 
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])

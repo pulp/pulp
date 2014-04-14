@@ -482,7 +482,7 @@ class RepoManager(object):
     def update_repo_scratchpad(self, repo_id, scratchpad):
         """
         Update the repository scratchpad with the specified key-value pairs.
-        New keys are added, existing keys are updated.
+        New keys are added, existing keys are overwritten.
 
         :param repo_id: A repository ID
         :type repo_id: str

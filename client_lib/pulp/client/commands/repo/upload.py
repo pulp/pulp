@@ -21,6 +21,7 @@ from pulp.client.commands import options
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
 # -- constants ----------------------------------------------------------------
+from pulp.client.upload.manager import UploadManager
 
 COLOR_RUNNING = COLOR_GREEN
 COLOR_PAUSED = COLOR_YELLOW
@@ -72,7 +73,7 @@ class MetadataException(Exception):
 
 class UploadCommand(PulpCliCommand):
 
-    def __init__(self, context, upload_manager, name='upload',
+    def __init__(self, context, upload_manager=None, name='upload',
                  description=DESC_UPLOAD, method=None, upload_files=True):
         """
         Extendable command for handling the process of uploading a file to
@@ -88,6 +89,8 @@ class UploadCommand(PulpCliCommand):
                to upload and the create will be purely metadata based
         :type  upload_files: bool
         """
+        if upload_manager is None:
+            upload_manager = UploadManager.init_with_defaults(context)
 
         if method is None:
             method = self.run
