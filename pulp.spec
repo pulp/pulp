@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.8.beta%{?dist}
+Release: 0.9.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -574,6 +574,18 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Apr 14 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.9.beta
+- 1080647 - added validation that a unit profile is not None before requesting
+  applicability regeneration by repos (skarmark@redhat.com)
+- 1061783 - added missing example for the consumer group update api
+  documentation (skarmark@redhat.com)
+- 1074668 - updated consumer group update api docs to remove consumer_ids from
+  acceptable parameters (skarmark@redhat.com)
+- 1073997 - adding validation to repo group create call to check for valid repo
+  ids (skarmark@redhat.com)
+- 1085545 - Fix permissions on /etc/pulp/server/plugins.conf.d/nodes/importer.
+  (jortel@redhat.com)
+
 * Mon Apr 07 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.8.beta
 - Pulp rebuild
 
