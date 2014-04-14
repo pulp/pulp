@@ -20,3 +20,6 @@ tags
 
 # Ninja IDE
 *.nja
+
+# Sublime
+.codeintel

@@ -26,6 +26,43 @@ import mock
 from pulp.server import logs
 
 
+class TestBlacklistLoggers(unittest.TestCase):
+    """
+    Test the _blacklist_loggers() function.
+    """
+    @mock.patch('pulp.server.logs.LOG_BLACKLIST', ['logger_a', 'logger_b'])
+    @mock.patch('pulp.server.logs.logging.getLogger')
+    def test_blacklist_loggers(self, getLogger):
+        """
+        Ensure that _blacklist_loggers does the right thing for the given loggers.
+        """
+        # logger_c shouldn't get disabled
+        loggers = {'logger_c': mock.MagicMock()}
+        loggers['logger_c'].disabled = False
+        loggers['logger_c'].propagate = True
+
+        def _get_logger(logger_name):
+            """
+            Return logger_a or logger_b by logger-name.
+            """
+            if logger_name not in loggers:
+                loggers[logger_name] = mock.MagicMock()
+            return loggers[logger_name]
+        getLogger.side_effect = _get_logger
+
+        logs._blacklist_loggers()
+
+        self.assertEqual(set(loggers.keys()), set(['logger_a', 'logger_b', 'logger_c']))
+        for logger_name in ['logger_a', 'logger_b']:
+            logger = loggers[logger_name]
+            self.assertEqual(logger.disabled, True)
+            self.assertEqual(logger.propagate, False)
+        # logger_c should not have been blacklisted
+        logger = loggers['logger_c']
+        self.assertEqual(logger.disabled, False)
+        self.assertEqual(logger.propagate, True)
+
+
 class TestCompliantSysLogHandler(unittest.TestCase):
     """
     Test the CompliantSysLogHandler class.
@@ -432,54 +469,16 @@ class TestStartLogging(unittest.TestCase):
     """
     Test the configure_pulp_logging() function.
     """
+    @mock.patch('pulp.server.logs._blacklist_loggers')
     @mock.patch('pulp.server.logs.config.config.get', return_value='WARNING')
     @mock.patch('pulp.server.logs.logging.getLogger')
-    def test_child_loggers_with_existing_parents(self, getLogger, get):
+    def test_calls__blacklist_loggers(self, getLogger, get, _blacklist_loggers):
         """
-        Pre-existing child loggers should not get a handler attached to them, but they should be
-        set to propagate. This test creates the parent loggers explicitly, and assures they are
-        configured appropriately. 
+        Ensure that start_logging() calls _blacklist_loggers().
         """
-        child_logger = mock.MagicMock(spec=logging.Logger)
-        child_logger.name = 'some.child.logger'
-        other_child_logger = mock.MagicMock(spec=logging.Logger)
-        other_child_logger.name = 'some.other.child.logger'
-        parent_logger = mock.MagicMock(spec=logging.Logger)
-        parent_logger.name = 'some'
-        root_logger = mock.MagicMock(spec=logging.Logger)
-        root_logger.manager = mock.MagicMock()
-        root_logger.manager.loggerDict = {
-            child_logger.name: child_logger, other_child_logger.name: other_child_logger,
-            parent_logger.name: parent_logger}
-        def fake_getLogger(name=None):
-            if name is None:
-                return root_logger
-            return root_logger.manager.loggerDict[name]
-        getLogger.side_effect = fake_getLogger
-
         logs.start_logging()
 
-        # The config should have been queried for log level
-        get.assert_called_once_with('server', 'log_level')
-
-        # The child loggers should have these three attributes set
-        for logger in [child_logger, other_child_logger]:
-            self.assertEqual(logger.propagate, 1)
-            self.assertEqual(logger.level, logging.NOTSET)
-            self.assertEqual(logger.handlers, [])
-
-        # Let's make sure the parent got setup right too
-        self.assertEqual(parent_logger.propagate, 0)
-        # We should have used the configured log level
-        self.assertEqual(parent_logger.level, logging.WARNING)
-        self.assertEqual(parent_logger.addHandler.call_count, 1)
-        parent_handler = parent_logger.addHandler.mock_calls[0][1][0]
-        self.assertTrue(isinstance(parent_handler, logs.CompliantSysLogHandler))
-
-        # Make sure this is the same handler used by the root logger. We'll assert that the handler
-        # itself is right in test_root_logger_configured().
-        root_handler = root_logger.addHandler.mock_calls[0][1][0]
-        self.assertEqual(root_handler, parent_handler)
+        _blacklist_loggers.assert_called_once_with()
 
     @mock.patch('pulp.server.logs.config.config.get', return_value='something wrong')
     @mock.patch('pulp.server.logs.logging.getLogger')
@@ -490,6 +489,7 @@ class TestStartLogging(unittest.TestCase):
         root_logger = mock.MagicMock(spec=logging.Logger)
         root_logger.manager = mock.MagicMock()
         root_logger.manager.loggerDict = {}
+
         def fake_getLogger(name=None):
             if name is None:
                 return root_logger
@@ -513,6 +513,7 @@ class TestStartLogging(unittest.TestCase):
         root_logger = mock.MagicMock(spec=logging.Logger)
         root_logger.manager = mock.MagicMock()
         root_logger.manager.loggerDict = {}
+
         def fake_getLogger(name=None):
             if name is None:
                 return root_logger
@@ -537,6 +538,7 @@ class TestStartLogging(unittest.TestCase):
         root_logger = mock.MagicMock(spec=logging.Logger)
         root_logger.manager = mock.MagicMock()
         root_logger.manager.loggerDict = {}
+
         def fake_getLogger(name=None):
             if name is None:
                 return root_logger
@@ -552,55 +554,6 @@ class TestStartLogging(unittest.TestCase):
         # We should have defaulted
         root_logger.setLevel.assert_called_once_with(logs.DEFAULT_LOG_LEVEL)
 
-    @mock.patch('pulp.server.logs.config.config.get', return_value='CRITICAL')
-    @mock.patch('pulp.server.logs.logging.getLogger')
-    def test_nonexisting_parent_loggers_handled(self, getLogger, get):
-        """
-        This test assures that all pre-existing child loggers that didn't have pre-existing parent
-        loggers get our top level loggers added to their parents.
-        """
-        child_logger = mock.MagicMock(spec=logging.Logger)
-        child_logger.name = 'some.child.logger'
-        other_child_logger = mock.MagicMock(spec=logging.Logger)
-        other_child_logger.name = 'some.other.child.logger'
-        root_logger = mock.MagicMock(spec=logging.Logger)
-        root_logger.manager = mock.MagicMock()
-        # Note that there isn't a parent logger called 'some' yet.
-        root_logger.manager.loggerDict = {
-            child_logger.name: child_logger, other_child_logger.name: other_child_logger}
-        def fake_getLogger(name=None):
-            if name is None:
-                return root_logger
-            if name not in root_logger.manager.loggerDict:
-                root_logger.manager.loggerDict[name] = mock.MagicMock()
-            return root_logger.manager.loggerDict[name]
-        getLogger.side_effect = fake_getLogger
-
-        logs.start_logging()
-
-        # The config should have been queried for log level
-        get.assert_called_once_with('server', 'log_level')
-
-        # The child loggers should have these three attributes set
-        for logger in [child_logger, other_child_logger]:
-            self.assertEqual(logger.propagate, 1)
-            self.assertEqual(logger.level, logging.NOTSET)
-            self.assertEqual(logger.handlers, [])
-
-        # Let's make sure the parent exists now and got setup right
-        parent_logger = root_logger.manager.loggerDict['some']
-        self.assertEqual(parent_logger.propagate, 0)
-        # We should have used the configured log level
-        self.assertEqual(parent_logger.level, logging.CRITICAL)
-        self.assertEqual(parent_logger.addHandler.call_count, 1)
-        parent_handler = parent_logger.addHandler.mock_calls[0][1][0]
-        self.assertTrue(isinstance(parent_handler, logs.CompliantSysLogHandler))
-
-        # Make sure this is the same handler used by the root logger. We'll assert that the handler
-        # itself is right in test_root_logger_configured().
-        root_handler = root_logger.addHandler.mock_calls[0][1][0]
-        self.assertEqual(root_handler, parent_handler)
-
     @mock.patch('pulp.server.logs.config.config.get', return_value='Debug')
     @mock.patch('pulp.server.logs.logging.getLogger')
     def test_root_logger_configured(self, getLogger, get):
@@ -610,6 +563,7 @@ class TestStartLogging(unittest.TestCase):
         root_logger = mock.MagicMock(spec=logging.Logger)
         root_logger.manager = mock.MagicMock()
         root_logger.manager.loggerDict = {}
+
         def fake_getLogger(name=None):
             if name is None:
                 return root_logger
