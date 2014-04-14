@@ -32,10 +32,12 @@ class TestBind(unittest.TestCase):
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
             False, binding_config)
 
+        self.assertTrue(isinstance(result, TaskResult))
         self.assertEquals(mock_bind_manager.consumer_bind_manager.return_value.bind.return_value,
-                          result)
+                          result.return_value)
 
-        #Make sure we didn't process the agent
+        # Make sure we didn't process the agent
+        self.assertEquals(result.spawned_tasks, [])
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
 
     @patch('pulp.server.tasks.consumer.managers')
