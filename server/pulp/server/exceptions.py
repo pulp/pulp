@@ -116,14 +116,16 @@ class PulpCodedValidationException(PulpCodedException):
     """
     Class for wrapping collections of coded validation errors.
 
+    :param error_code: The particular error code that should be used for this validation exception
+    :type error_code: pulp.common.error_codes.Error
     :param validation_exceptions: List of coded exceptions for each validation error that occurred
     :type validation_exceptions: list of PulpCodedException
     """
 
     http_status_code = httplib.BAD_REQUEST
 
-    def __init__(self, validation_exceptions=None):
-        super(PulpCodedValidationException, self).__init__(error_code=error_codes.PLP1000)
+    def __init__(self, validation_exceptions=None, error_code=error_codes.PLP1000, **kwargs):
+        super(PulpCodedValidationException, self).__init__(error_code=error_code, **kwargs)
         if validation_exceptions:
             self.child_exceptions = validation_exceptions
 

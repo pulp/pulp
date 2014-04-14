@@ -11,6 +11,9 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import unittest
+import os
+import shutil
+import tempfile
 from xml.etree import ElementTree
 
 from mock import Mock
@@ -137,3 +140,22 @@ class TestAssertBodyMatchesAsyncTask(unittest.TestCase):
         task.id = "foo"
         self.assertRaises(Exception, util.assert_body_matches_async_task, body, task)
 
+
+class TestTouch(unittest.TestCase):
+
+    def setUp(self):
+        self.working_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.working_dir, ignore_errors=True)
+
+    def test_in_existing_directory(self):
+        filename = os.path.join(self.working_dir, "foo.txt")
+        util.touch(filename)
+
+        self.assertTrue(os.path.exists(filename))
+
+    def test_create_parent_diectory(self):
+        filename = os.path.join(self.working_dir, 'subdir', "foo.txt")
+        util.touch(filename)
+        self.assertTrue(os.path.exists(filename))

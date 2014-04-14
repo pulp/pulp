@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import os
 from xml.etree import ElementTree
 
 
@@ -93,3 +94,20 @@ def compare_element(source, target):
 
 def assert_body_matches_async_task(body, task):
     assert body['spawned_tasks'][0]['task_id'] == task.id
+
+
+def touch(path):
+    """
+    Create a file at the specified path.  If the path does not exist already,
+    create the parent directories for the file specified
+
+    :param path: The canonical file path to create
+    :type path: str
+    """
+    parent = os.path.dirname(path)
+
+    if not os.path.exists(parent):
+        os.makedirs(parent)
+
+    with open(path, 'w'):
+        pass
