@@ -3,6 +3,7 @@ Contains a generic renderer for use printing status for tasks created with the
  pulp.plugins.util.publish_step.BasePublisher & PublishStep.
 """
 from gettext import gettext as _
+
 from pulp.client.commands.repo.sync_publish import StatusRenderer
 from pulp.common.plugins import reporting_constants
 
@@ -11,7 +12,7 @@ class CancelException(Exception):
     pass
 
 
-class StepInfo:
+class StepInfo(object):
     """
     Helper structure for storing information about steps in progress
     """
@@ -46,7 +47,7 @@ class PublishStepStatusRenderer(StatusRenderer):
         try:
             # The conduit returns a structure of {'distributor_type': [reports] }
             # We can ignore the distributor type and just get the first item in the dictionary
-            if progress_report and len(progress_report) > 0:
+            if progress_report:
                 reports = progress_report.values()[0]
                 for report_details in reports:
                     self.render_step(report_details)
@@ -85,7 +86,7 @@ class PublishStepStatusRenderer(StatusRenderer):
         step.processed = step_details[reporting_constants.PROGRESS_NUM_PROCESSED_KEY]
 
         if not step.initialized \
-                and current_state is not reporting_constants.STATE_NOT_STARTED:
+                and current_state != reporting_constants.STATE_NOT_STARTED:
             self.prompt.write(step_details[reporting_constants.PROGRESS_DESCRIPTION_KEY])
             if step.total > 1:
                 step.progress_bar = self.prompt.create_progress_bar()
