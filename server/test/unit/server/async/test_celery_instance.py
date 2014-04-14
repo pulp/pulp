@@ -141,7 +141,9 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             reload(celery_instance)
             ACTUAL_BROKER_USE_SSL = celery_instance.celery.conf['BROKER_USE_SSL']
-            self.assertDictEqual(EXPECTED_BROKER_USE_SSL, ACTUAL_BROKER_USE_SSL)
+            self.assertEqual(set(EXPECTED_BROKER_USE_SSL.keys()), set(ACTUAL_BROKER_USE_SSL.keys()))
+            for key in EXPECTED_BROKER_USE_SSL.keys():
+                self.assertEqual(EXPECTED_BROKER_USE_SSL[key], ACTUAL_BROKER_USE_SSL[key])
 
     def tearDown(self):
         """
