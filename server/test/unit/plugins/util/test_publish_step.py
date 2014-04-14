@@ -146,6 +146,7 @@ class PublishStepTests(PublisherBase):
         }
 
         compare_dict(report, target_report)
+
     def test_get_progress_report_summary(self):
         step = PublishStep('foo_step')
         step.state = reporting_constants.STATE_COMPLETE
@@ -568,4 +569,3 @@ class BasePublisherTests(PublisherBase):
 
         self.publisher.cancel()
         self.assertEquals(0, mock_step.cancel.call_count)
-
