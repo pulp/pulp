@@ -16,6 +16,7 @@ import urllib2
 import errno
 
 from gettext import gettext as _
+
 from M2Crypto import RSA
 from M2Crypto.util import no_passphrase_callback
 from M2Crypto.X509 import X509Error

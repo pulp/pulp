@@ -107,7 +107,7 @@ class TestSecret(PluginTest):
     @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
     def test_secret(self, fake_bundle):
         bundle = Mock()
-        bundle.uid.return_value = 'test-uid'
+        bundle.uid.return_value = TEST_UID
         fake_bundle.return_value = bundle
 
         # test
@@ -115,7 +115,7 @@ class TestSecret(PluginTest):
 
         # validation
         bundle.uid.assert_called_with()
-        self.assertEqual(secret, bundle.uid())
+        self.assertEqual(secret, TEST_UID)
 
     @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
     def test_no_secret(self, fake_bundle):

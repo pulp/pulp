@@ -17,7 +17,6 @@ Contains recurring actions and remote classes.
 """
 
 import os
-import errno
 
 from logging import getLogger
 
@@ -142,9 +141,9 @@ class ConsumerX509Bundle(Bundle):
         """
         try:
             return Bundle.cn(self)
-        except (X509Error):
+        except X509Error:
             log.warn('certificate: %s, not valid', self.path)
-            
+
     def uid(self):
         """
         Get the userid (UID) part of the certificate subject.
@@ -155,7 +154,7 @@ class ConsumerX509Bundle(Bundle):
         """
         try:
             return Bundle.uid(self)
-        except (X509Error):
+        except X509Error:
             log.warn('certificate: %s, not valid', self.path)
 
 
