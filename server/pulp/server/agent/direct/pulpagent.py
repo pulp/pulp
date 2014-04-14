@@ -108,6 +108,7 @@ class Consumer(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             async=True)
@@ -130,6 +131,7 @@ class Consumer(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             ctag=context.reply_queue,
@@ -152,6 +154,7 @@ class Consumer(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             ctag=context.reply_queue,
@@ -180,6 +183,7 @@ class Content(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             ctag=context.reply_queue,
@@ -202,6 +206,7 @@ class Content(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             ctag=context.reply_queue,
@@ -224,6 +229,7 @@ class Content(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             ctag=context.reply_queue,
@@ -247,6 +253,7 @@ class Profile(object):
         agent = Agent(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport)
         profile = agent.Profile()

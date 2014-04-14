@@ -30,7 +30,7 @@ ADMIN_SPLITTER = ':'
 class CertGenerationManager(object):
     
     def make_admin_user_cert(self, user):
-        '''
+        """
         Generates a x509 certificate for an admin user.
 
         @param user: identification the certificate will be created for; may not be None
@@ -38,28 +38,32 @@ class CertGenerationManager(object):
 
         @return: tuple of PEM encoded private key and certificate
         @rtype:  (str, str)
-        '''
+        """
         expiration = config.config.getint('security', 'user_cert_expiration')
         return self.make_cert(self.encode_admin_user(user), expiration)
 
-    def make_cert(self, uid, expiration):
+    def make_cert(self, cn, expiration, uid=None):
         """
-        Generate an x509 certificate with the Subject set to the uid passed into this method:
+        Generate an x509 certificate with the Subject set to the cn passed into this method:
         Subject: CN=someconsumer.example.com
 
-        @param uid: ID to be embedded in the certificate
-        @type  uid: string
+        @param cn: ID to be embedded in the certificate
+        @type  cn: string
+
+        @param uid: The optional userid.  In pulp, this is the DB document _id
+            for both users and consumers.
+        @type uid: str
 
         @return: tuple of PEM encoded private key and certificate
         @rtype:  (str, str)
         """
         # Ensure we are dealing with a string and not unicode
         try:
-            uid = str(uid)
+            cn = str(cn)
         except UnicodeEncodeError:
-            uid = encode_unicode(uid)
+            cn = encode_unicode(cn)
 
-        log.debug("make_cert: [%s]" % uid)
+        log.debug("make_cert: [%s]" % cn)
 
         #Make a private key
         # Don't use M2Crypto directly as it leads to segfaults when trying to convert
@@ -71,7 +75,7 @@ class CertGenerationManager(object):
                                   callback=util.no_passphrase_callback)
 
         # Make the Cert Request
-        req, pub_key = _make_cert_request(uid, rsa)
+        req, pub_key = _make_cert_request(cn, rsa, uid=uid)
 
         # Sign it with the Pulp server CA
         # We can't do this in m2crypto either so we have to shell out
@@ -232,20 +236,20 @@ def _make_priv_key():
     return pem_str
 
 
-def _make_cert_request(uid, rsa):
+def _make_cert_request(cn, rsa, uid=None):
     pub_key = EVP.PKey()
-    x = X509.Request()
+    request = X509.Request()
     pub_key.assign_rsa(rsa)
-    rsa = None # should not be freed here
-    x.set_pubkey(pub_key)
-    name = x.get_subject()
-    name.CN = "%s" % uid
-    ext2 = X509.new_extension('nsComment',
-        'Pulp Generated Identity Certificate for Consumer: [%s]' % uid)
-    extstack = X509.X509_Extension_Stack()
-    extstack.push(ext2)
-    x.add_extensions(extstack)
-    x.sign(pub_key,'sha1')
-    pk2 = x.get_pubkey()
-    return x, pub_key
+    request.set_pubkey(pub_key)
+    subject = request.get_subject()
+    subject.nid['UID'] = 458  # openssl lacks support for userid
+    subject.CN = "%s" % cn
+    if uid:
+        subject.UID = uid
+    ext2 = X509.new_extension('nsComment', 'Pulp Identity Certificate for Consumer: [%s]' % cn)
+    extensions = X509.X509_Extension_Stack()
+    extensions.push(ext2)
+    request.add_extensions(extensions)
+    request.sign(pub_key, 'sha1')
+    return request, pub_key
 

@@ -76,10 +76,11 @@ class TestCertGeneration(unittest.TestCase):
 
     def test_generation(self):
         # Setup
-        cid = "foobarbaz"
+        uid = 'pulp-user'
+        cn = "pulp-consumer"
 
         # Test
-        pk, x509_pem = self.cert_gen_manager.make_cert(cid, 7)
+        pk, x509_pem = self.cert_gen_manager.make_cert(cn, 7, uid=uid)
 
         # Verify
         self.assertTrue(pk is not None)
@@ -87,8 +88,8 @@ class TestCertGeneration(unittest.TestCase):
 
         cert = manager_factory.certificate_manager(content=x509_pem)
         subject = cert.subject()
-        consumer_cert_uid = subject.get('CN', None)
-        self.assertEqual(cid, consumer_cert_uid)
+        self.assertEqual(cn, subject.get('CN'))
+        self.assertEqual(uid, subject.get('UID'))
 
     def test_verify(self):
         # Setup
