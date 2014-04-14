@@ -457,4 +457,3 @@ if not opts.disable_packaging:
         command = 'rsync -avz --delete * pulpadmin@repos.fedorapeople.org:%s/' % \
                   target_repo_dir
         subprocess.check_call(command, shell=True)
-        print command
