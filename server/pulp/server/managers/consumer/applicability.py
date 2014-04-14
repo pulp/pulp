@@ -134,13 +134,20 @@ class ApplicabilityRegenerationManager(object):
         for repo_id in repo_ids:
             # Find all existing applicabilities for given repo_id
             existing_applicabilities = RepoProfileApplicability.get_collection().find(
-                {'repo_id':repo_id})
+                {'repo_id': repo_id})
             for existing_applicability in existing_applicabilities:
                 # Convert cursor to RepoProfileApplicability object
                 existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
                 profile_hash = existing_applicability['profile_hash']
                 unit_profile = UnitProfile.get_collection().find_one({'profile_hash': profile_hash},
                                                                      fields=['id', 'content_type'])
+                if unit_profile is None:
+                    # Unit profiles change whenever packages are installed or removed on consumers,
+                    # and it is possible that existing_applicability references a UnitProfile
+                    # that no longer exists. This is harmless, as Pulp has a monthly cleanup task
+                    # that will identify these dangling references and remove them.
+                    continue
+
                 # Regenerate applicability data for given unit_profile and repo id
                 ApplicabilityRegenerationManager.regenerate_applicability(profile_hash, 
                                                                           unit_profile['content_type'],

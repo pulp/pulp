@@ -24,6 +24,11 @@ New Features
    section of ``/etc/pulp/server.conf``. All logging configuration has been replaced with a single
    ``log_level`` setting in the ``[server]`` section of ``/etc/pulp/server.conf``, and it is also
    optional.
+#. Pulp's server.conf can now be completely empty, and Pulp will choose sane defaults for each
+   setting. The server.conf that comes with a new Pulp server installation has all of the settings
+   commented and set to the default values. Due to this, the OAuth key and secret fields are no
+   longer automatically populated and users will need to provide these values when they wish to
+   configure Pulp installations to use OAuth. OAuth is now disabled by default.
 
 Client Changes
 --------------

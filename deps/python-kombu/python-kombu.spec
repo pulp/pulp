@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.13
-Release:        2.pulp%{?dist}
+Release:        3.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -105,7 +105,9 @@ This subpackage is for python3
 %prep
 %setup -q -n %{srcname}-%{version}
 
-# Add qpid support
+# Add Qpid broker support until the following PR is accepted upstream and
+# included in a release:
+# https://github.com/celery/kombu/pull/335
 %patch0 -p1
 
 # manage requirements on rpm base
@@ -163,6 +165,13 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Apr 11 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.13-3.pulp
+- Disabling two tests temporarily to get tito to build successfully.
+  (bmbouter@gmail.com)
+- Updating patches for python-celery and python-kombu. (bmbouter@gmail.com)
+- Added latest qpid patch to python-kombu and bumped the release.
+  (bmbouter@gmail.com)
+
 * Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 3.0.13-1.pulp
 - Updating with latest stable qpid patch (bmbouter@gmail.com)
 - Bump the Release of python-kombu to match the previously built version

@@ -11,6 +11,8 @@
 
 import os
 import re
+from logging import getLogger
+
 from M2Crypto import X509
 
 
@@ -25,6 +27,8 @@ The bundle at: %s
 must contain both the private key and certificate
 PEM text.  The [%s] PEM text was not found.
 """
+
+log = getLogger(__name__)
 
 
 class KeyNotFound(Exception):
@@ -200,7 +204,7 @@ class Bundle:
             if os.path.exists(self.path):
                 os.unlink(self.path)
         except IOError:
-            log.error(path, exc_info=1)
+            log.exception('unlink %s failed', self.path)
 
     def mkdir(self):
         """
@@ -218,7 +222,17 @@ class Bundle:
         """
         if self.valid():
             subject = self.subject()
-            return subject['CN']
+            return subject.get('CN')
+
+    def uid(self):
+        """
+        Get the subject (UID) userid.
+        @return: The subject UID
+        @rtype: str
+        """
+        if self.valid():
+            subject = self.subject()
+            return subject.get('UID')
 
     def subject(self):
         """

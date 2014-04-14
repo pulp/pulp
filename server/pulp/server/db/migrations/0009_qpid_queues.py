@@ -9,14 +9,27 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from gettext import gettext as _
+import logging
 from urlparse import urlparse
 
-from qpidtoollibs import BrokerAgent
-from qpid.messaging import Connection
+QPIDTOOLLIBS_AVAILABLE = True
+try:
+    from qpidtoollibs import BrokerAgent
+except ImportError:
+    QPIDTOOLLIBS_AVAILABLE = False
+
+QPID_MESSAGING_AVAILABLE = True
+try:
+    from qpid.messaging import Connection
+except ImportError:
+    QPID_MESSAGING_AVAILABLE = False
 
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent.direct.services import Services
 from pulp.server.db.model.consumer import Consumer
+
+logger = logging.getLogger(__name__)
 
 
 def migrate(*args, **kwargs):
@@ -29,6 +42,18 @@ def migrate(*args, **kwargs):
     if transport != 'qpid':
         # not using qpid
         return
+
+    if not QPID_MESSAGING_AVAILABLE:
+        msg = _('Migration 0009 did not run because the python package qpid.messaging is not installed.  Please '
+                'install qpid.messaging and rerun the migrations.')
+        logger.error(msg)
+        raise Exception(msg)
+
+    if not QPIDTOOLLIBS_AVAILABLE:
+        msg = _('Migration 0009 did not run because the python package qpidtoollibs is not installed.  Please '
+                'install qpidtoollibs and rerun the migrations.')
+        logger.error(msg)
+        raise Exception(msg)
 
     url = urlparse(pulp_conf.get('messaging', 'url'))
     connection = Connection(

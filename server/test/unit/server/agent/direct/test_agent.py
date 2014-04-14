@@ -34,6 +34,7 @@ class TestConsumerCapability(TestCase):
     def test_unregistered(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -52,6 +53,7 @@ class TestConsumerCapability(TestCase):
         mock_gofer_agent.assert_called_with(
             context.agent_id,
             url=context.url,
+            secret=context.secret,
             authenticator=context.authenticator,
             transport=context.transport,
             async=True)
@@ -62,6 +64,7 @@ class TestConsumerCapability(TestCase):
     def test_bind(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -83,6 +86,7 @@ class TestConsumerCapability(TestCase):
             ctag=context.reply_queue,
             url=context.url,
             transport=context.transport,
+            secret=context.secret,
             authenticator=context.authenticator,
             any=context.details)
 
@@ -92,6 +96,7 @@ class TestConsumerCapability(TestCase):
     def test_unbind(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -113,6 +118,7 @@ class TestConsumerCapability(TestCase):
             ctag=context.reply_queue,
             url=context.url,
             transport=context.transport,
+            secret=context.secret,
             authenticator=context.authenticator,
             any=context.details)
 
@@ -125,6 +131,7 @@ class TestContentCapability(TestCase):
     def test_install(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -146,6 +153,7 @@ class TestContentCapability(TestCase):
             ctag=context.reply_queue,
             url=context.url,
             transport=context.transport,
+            secret=context.secret,
             authenticator=context.authenticator,
             any=context.details)
 
@@ -155,6 +163,7 @@ class TestContentCapability(TestCase):
     def test_update(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -176,6 +185,7 @@ class TestContentCapability(TestCase):
             ctag=context.reply_queue,
             url=context.url,
             transport=context.transport,
+            secret=context.secret,
             authenticator=context.authenticator,
             any=context.details)
 
@@ -185,6 +195,7 @@ class TestContentCapability(TestCase):
     def test_uninstall(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -206,6 +217,7 @@ class TestContentCapability(TestCase):
             ctag=context.reply_queue,
             url=context.url,
             transport=context.transport,
+            secret=context.secret,
             authenticator=context.authenticator,
             any=context.details)
 
@@ -218,6 +230,7 @@ class TestProfileCapability(TestCase):
     def test_send(self, mock_gofer_agent):
         context = Mock()
         context.agent_id = '123'
+        context.secret = 'test-secret'
         context.url = 'http://broker.com'
         context.transport = 'qpid'
         context.authenticator = Mock()
@@ -233,6 +246,7 @@ class TestProfileCapability(TestCase):
             context.agent_id,
             url=context.url,
             transport=context.transport,
+            secret=context.secret,
             authenticator=context.authenticator)
 
         mock_profile.send.assert_called_with()

@@ -32,6 +32,8 @@ class Context(object):
     :ivar agent_id: The agent ID.
         The agent id has the form: 'pulp.agent.<consumer_id>'.
     :type agent_id: str
+    :ivar secret: The shared secret which is the DB consumer object's _id.
+    :type secret: str
     :ivar url: The broker URL.
     :type url: str
     :ivar transport: The name of the gofer transport to be used.
@@ -52,6 +54,7 @@ class Context(object):
         :type details: dict
         """
         self.agent_id = 'pulp.agent.%s' % consumer['id']
+        self.secret = str(consumer['_id'])
         self.url = pulp_conf.get('messaging', 'url')
         self.transport = pulp_conf.get('messaging', 'transport')
         self.details = details
