@@ -41,7 +41,6 @@ class UploadManagerTests(unittest.TestCase):
         self.upload_working_dir = '/tmp/pulp-upload-manager-test'
         if os.path.exists(self.upload_working_dir):
             shutil.rmtree(self.upload_working_dir)
-        os.makedirs(self.upload_working_dir)
 
         # Recreate for each test to minimize necessary cleanup
         self.mock_bindings = mock.Mock()
@@ -65,6 +64,7 @@ class UploadManagerTests(unittest.TestCase):
     def test_init_with_defaults(self):
         context = mock.MagicMock()
         context.config = {'filesystem': {'upload_working_dir': '/a/b/c'}}
+        os.makedirs(self.upload_working_dir)
 
         manager = upload_util.UploadManager.init_with_defaults(context)
 
@@ -72,6 +72,8 @@ class UploadManagerTests(unittest.TestCase):
         self.assertEqual(manager.upload_working_dir, '/a/b/c/default')
 
     def test_initialize_no_trackers(self):
+        os.makedirs(self.upload_working_dir)
+
         # Test
         self.upload_manager.initialize()
 
@@ -81,6 +83,7 @@ class UploadManagerTests(unittest.TestCase):
     def test_initialize_with_trackers(self):
         # Setup
         all_ids = ['tf%s' % i for i in range(0, 2)]
+        os.makedirs(self.upload_working_dir)
 
         for id in all_ids:
             filename = self.upload_manager._tracker_filename(id)
