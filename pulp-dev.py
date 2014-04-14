@@ -59,6 +59,7 @@ DIRS = (
     '/usr/lib/gofer/plugins',
     '/usr/lib/yum-plugins/',
     '/var/lib/pulp',
+    '/var/lib/pulp/nodes/published',
     '/var/lib/pulp_client',
     '/var/lib/pulp_client/admin',
     '/var/lib/pulp_client/admin/extensions',
@@ -71,7 +72,8 @@ DIRS = (
     '/var/lib/pulp/uploads',
     '/var/lib/pulp/static',
     '/var/log/pulp',
-    '/var/www/.python-eggs', # needed for older versions of mod_wsgi
+    '/var/www/pulp',
+    '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
 )
 
 # Str entry assumes same src and dst relative path.
@@ -95,6 +97,7 @@ LINKS = (
     ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
     # Pulp Nodes
+    ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
     ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
     ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
     ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
@@ -300,8 +303,10 @@ def install(opts):
 
     # Generate certificates
     print 'generating certificates'
-    os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
-    os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
+    if not os.path.exists('/etc/pki/pulp/ca.crt'):
+        os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+    if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
+        os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
     # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
     # those world readable. Until we fix this, we cannot close #1048297
