@@ -70,6 +70,17 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
+    def test_parse_basic_options_default_notes(self):
+        data = {
+            OPTION_REPO_ID.keyword : 'test-repo',
+            OPTION_NAME.keyword : 'Test Repository',
+            OPTION_DESCRIPTION.keyword : 'Repository Description',
+            OPTION_NOTES.keyword : [],
+        }
+        repo_id, name, description, notes = self.command._parse_basic_options(data)
+
+        self.assertEqual(notes, {})
+
 
 class CreateAndConfigureRepositoryCommandTests(base.PulpClientTests):
 
