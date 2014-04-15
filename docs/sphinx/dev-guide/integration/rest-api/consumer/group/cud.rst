@@ -95,7 +95,7 @@ Consumer members can be added or removed at anytime using the :doc:`membership c
   "_id": {"$oid": "5344df87e5e71066d17aa889"},
   "id": "test-consumer-group",
   "_href": "/pulp/api/v2/consumer_groups/test-consumer-group/"
-}
+ }
 
 
 Delete a Consumer Group
