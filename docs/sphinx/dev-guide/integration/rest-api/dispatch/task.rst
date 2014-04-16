@@ -19,7 +19,7 @@ task.
 * **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
 * **task_type** *(string)* - the fully qualified (package/method) type of the task that is executing the asynchronous call
-* **progress** *(object)* - arbitrary progress information, usually in the form of an object
+* **progress_report** *(object)* - arbitrary progress information, usually in the form of an object
 * **result** *(any)* - the return value of the call, if any
 * **exception** *(null or string)* - **deprecated** the error exception value, if any
 * **traceback** *(null or array)* - **deprecated** the resulting traceback if an exception was raised
@@ -27,6 +27,7 @@ task.
 * **finish_time** *(null or string)* - the time the call stopped executing
 * **tags** *(array)* - arbitrary tags useful for looking up the call report
 * **spawned_tasks** *(array)* - List of objects containing the uri and task id for any tasks that were spawned by this task.
+* **queue** *(string)* - The queue that the task is placed in
 * **error** *(null or object)* - Any, errors that occurred that did not cause the overall call to fail.  See :ref:`error_details`.
 
 .. note::
@@ -38,6 +39,7 @@ Example Task Report::
  {
   "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/",
   "state": "running",
+  "queue": "reserved_resource_worker-0@your.domain.com",
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
   "task_type": "pulp.server.tasks.repository.sync_with_auto_publish",
   "progress": {}, # contents depend on the operation
