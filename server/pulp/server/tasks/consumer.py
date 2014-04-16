@@ -44,13 +44,13 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config)
 
-    response = binding
+    response = TaskResult(result=binding)
 
-    # Notify the agents of the binding - return a 202 with the list of task ids
+    # Notify the agents of the binding
     if notify_agent:
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.bind(consumer_id, repo_id, distributor_id, agent_options)
-        response = TaskResult(result=binding, spawned_tasks=[task])
+        response.spawned_tasks.append(task)
 
     return response
 
