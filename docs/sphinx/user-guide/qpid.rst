@@ -134,26 +134,26 @@ The following is an example of running the script:
 
   ...
   [messaging]
-  url=ssl://<host>:5671
-  cacert=/etc/pki/pulp/qpid/ca.crt
-  clientcert=/etc/pki/pulp/qpid/client.crt
+  url: ssl://<host>:5671
+  cacert: /etc/pki/pulp/qpid/ca.crt
+  clientcert: /etc/pki/pulp/qpid/client.crt
 
   [tasks]
-  broker_url=qpid://<host>:5671/
-  celery_require_ssl=yes
-  cacert=/etc/pki/pulp/qpid/ca.crt
-  keyfile=/etc/pki/pulp/qpid/client.crt
-  certfile=/etc/pki/pulp/qpid/client.crt
+  broker_url: qpid://<host>:5671/
+  celery_require_ssl: true
+  cacert: /etc/pki/pulp/qpid/ca.crt
+  keyfile: /etc/pki/pulp/qpid/client.crt
+  certfile: /etc/pki/pulp/qpid/client.crt
 
 
   Recommended properties in /etc/pulp/consumer/consumer.conf:
 
   ...
   [messaging]
-  scheme=ssl
-  port=5671
-  cacert=/etc/pki/pulp/qpid/ca.crt
-  clientcert=/etc/pki/pulp/qpid/client.crt
+  scheme: ssl
+  port: 5671
+  cacert: /etc/pki/pulp/qpid/ca.crt
+  clientcert: /etc/pki/pulp/qpid/client.crt
 
 
 The following directory and files are created by the script:
@@ -234,7 +234,7 @@ The following properties in the *tasks* section need to be updated as follows:
     and the correct host. (value: qpid://<host>:5671/)
 
 *celery_require_ssl*
-    Indicate that Pulps use of Celery should require SSL. (value: ``yes``)
+    Indicate that Pulps use of Celery should require SSL. (value: ``true``)
 
 *cacert*
     The fully qualified path to the CA certificate used to validate the broker's SSL

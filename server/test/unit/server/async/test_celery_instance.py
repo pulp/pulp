@@ -129,7 +129,7 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
             'certfile': mock_certfile,
             'cert_reqs': ssl.CERT_REQUIRED,
             'broker_url': 'qpid://guest@localhost/',
-            'celery_require_ssl': 'yes',
+            'celery_require_ssl': 'true',
         }
         EXPECTED_BROKER_USE_SSL = {
             'ca_certs': mock_cacert,
@@ -159,7 +159,8 @@ class TestMongoBackendConfig(unittest.TestCase):
 
     def test_celery_conf_updated(self):
         self.assertEqual(celery_instance.celery.conf['CELERY_RESULT_BACKEND'], 'mongodb')
-        self.assertTrue(isinstance(celery_instance.celery.conf['CELERY_MONGODB_BACKEND_SETTINGS'], dict))
+        self.assertTrue(
+            isinstance(celery_instance.celery.conf['CELERY_MONGODB_BACKEND_SETTINGS'], dict))
 
         conf = celery_instance.celery.conf['CELERY_MONGODB_BACKEND_SETTINGS']
 
