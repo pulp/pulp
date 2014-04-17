@@ -483,8 +483,10 @@ class TaskStatus(Model):
     :type state:       basestring
     :ivar result:      return value of the callable, if any
     :type result:      any
-    :ivar traceback:   string representation of the traceback from callable, if any
-    :type traceback:   basestring
+    :ivar exception:   Deprecated. This is always None.
+    :type exception:   None
+    :ivar traceback:   Deprecated. This is always None.
+    :type traceback:   None
     :ivar start_time:  time the task started executing
     :type start_time:  datetime.datetime
     :ivar finish_time: time the task completed
@@ -513,6 +515,7 @@ class TaskStatus(Model):
         self.tags = tags or []
         self.state = state
         self.result = None
+        self.exception = None
         self.traceback = None
         self.start_time = None
         self.finish_time = None
