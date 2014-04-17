@@ -34,7 +34,7 @@ exception format including the reasons for the response.
 Call Report
 -----------
 
-A 202 ACCEPTED response returns a **Call Rreport** JSON object as the response body
+A 202 ACCEPTED response returns a **Call Report** JSON object as the response body
 that has the following fields:
 
 * **result** *(Object)* - the return value of the call, if any

@@ -523,7 +523,7 @@ class NodeUpdateCommand(PollingCommand):
             return os.EX_DATAERR
 
     def progress(self, task, spinner):
-        self.tracker.display(task.progress)
+        self.tracker.display(task.progress_report)
 
     def succeeded(self, task):
         report = task.result['details'].values()[0]
