@@ -96,6 +96,11 @@ class PluginTest(TestCase):
         mock_read.return_value = Config()
         plugin = __import__('pulp.agent.gofer.pulpplugin', {}, {}, ['pulpplugin'])
         reload(plugin)
+        plugin_cfg = Mock()
+        plugin_cfg.messaging = Mock()
+        plugin.plugin = Mock()
+        plugin.plugin.cfg.return_value = plugin_cfg
+        plugin.path_monitor = Mock()
         return plugin
 
     def setUp(self):
@@ -384,10 +389,41 @@ class TestConduit(PluginTest):
         self.assertTrue(mock_context.cancelled.called)
 
 
-class TestRegistrationMonitor(PluginTest):
+class TestGetAgentId(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.PathMonitor.add')
-    def test_init(self, mock_add):
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_registered(self, mock_bundle):
+        bundle = Mock()
+        bundle.cn.return_value = TEST_CN
+        mock_bundle.return_value = bundle
+
+        # test
+        agent_id = self.plugin.get_agent_id()
+
+        # validation
+        mock_bundle.assert_called_with()
+        bundle.cn.assert_called_with()
+        self.assertEqual(agent_id, 'pulp.agent.%s' % TEST_CN)
+
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_not_registered(self, mock_bundle):
+        bundle = Mock()
+        bundle.cn.return_value = None
+        mock_bundle.return_value = bundle
+
+        # test
+        agent_id = self.plugin.get_agent_id()
+
+        # validation
+        mock_bundle.assert_called_with()
+        bundle.cn.assert_called_with()
+        self.assertEqual(agent_id, None)
+
+
+class TestInitializer(PluginTest):
+
+    @patch('pulp.agent.gofer.pulpplugin.setup_plugin')
+    def test_init_plugin(self, mock_setup):
         test_conf = {
             'filesystem': {
                 'id_cert_dir': TEST_ID_CERT_DIR,
@@ -397,15 +433,21 @@ class TestRegistrationMonitor(PluginTest):
         self.plugin.pulp_conf.update(test_conf)
 
         # test
-        self.plugin.RegistrationMonitor.init()
+        self.plugin.init_plugin()
 
         # validation
-        mock_add.assert_called_with(CERT_PATH, self.plugin.RegistrationMonitor.changed)
+        mock_setup.assert_called_with()
+        self.plugin.path_monitor.add.assert_called_with(
+            os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.registration_changed)
+        self.plugin.path_monitor.start.assert_called_with()
 
-    @patch('pulp.common.bundle.Bundle.cn', return_value=TEST_CN)
-    @patch('pulp.agent.gofer.pulpplugin.Authenticator.load')
-    @patch('pulp.agent.gofer.pulpplugin.Plugin.find')
-    def test_changed_registered(self, mock_find, mock_load, *unused):
+    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
+    @patch('pulp.agent.gofer.pulpplugin.Authenticator')
+    def test_setup_plugin(self, mock_auth, mock_get_agent_id):
+        agent_id = 'pulp.agent.test-id'
+        authenticator = Mock()
+        mock_get_agent_id.return_value = agent_id
+        mock_auth.return_value = authenticator
         test_conf = {
             'server': {
                 'host': 'pulp-host',
@@ -425,130 +467,75 @@ class TestRegistrationMonitor(PluginTest):
         }
         self.plugin.pulp_conf.update(test_conf)
 
-        plugin = Mock()
-        plugin_cfg = Mock()
-        plugin_cfg.messaging = Mock()
-        plugin.cfg = Mock(return_value=plugin_cfg)
-        mock_find.return_value = plugin
-
         # test
-        self.plugin.RegistrationMonitor.changed(CERT_PATH)
+        self.plugin.setup_plugin()
 
         # validation
-        expected_url = 'tcp://pulp-host:5672'
-        self.assertEqual(plugin_cfg.messaging.uuid, 'pulp.agent.%s' % TEST_CN)
-        self.assertEqual(plugin_cfg.messaging.url, expected_url)
+        plugin_cfg = self.plugin.plugin.cfg()
+        self.assertEqual(self.plugin.plugin.authenticator, authenticator)
+        self.assertEqual(plugin_cfg.messaging.uuid, agent_id)
+        self.assertEqual(plugin_cfg.messaging.url, 'tcp://pulp-host:5672')
         self.assertEqual(plugin_cfg.messaging.cacert, 'test-ca')
         self.assertEqual(plugin_cfg.messaging.clientcert, CERT_PATH)
+        authenticator.load.assert_called_with()
 
-        mock_load.assert_called_with()
-        mock_find().attach.assert_called_with()
 
-    @patch('pulp.common.bundle.Bundle.cn', return_value=TEST_CN)
-    @patch('pulp.agent.gofer.pulpplugin.Authenticator.load')
-    @patch('pulp.agent.gofer.pulpplugin.Plugin.find')
-    def test_changed_different_broker_host(self, mock_find, mock_load, *unused):
-        test_conf = {
-            'server': {
-                'host': 'pulp-host',
-                'port': '443',
-            },
-            'filesystem': {
-                'id_cert_dir': TEST_ID_CERT_DIR,
-                'id_cert_filename': TEST_ID_CERT_FILE
-            },
-            'messaging': {
-                'host': 'broker-host',
-                'scheme': 'tcp',
-                'port': '5672',
-                'cacert': 'test-ca',
-                'clientcert': None
-            }
-        }
-        self.plugin.pulp_conf.update(test_conf)
+class TestRegistrationChanged(PluginTest):
 
-        plugin = Mock()
-        plugin_cfg = Mock()
-        plugin_cfg.messaging = Mock()
-        plugin.cfg = Mock(return_value=plugin_cfg)
-        mock_find.return_value = plugin
+    @patch('pulp.agent.gofer.pulpplugin.setup_plugin')
+    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
+    def test_registered(self, mock_get_agent_id, mock_setup_plugin):
+        path = 'test-path'
+        agent_id = 'pulp.agent.test-id'
+        mock_get_agent_id.return_value = agent_id
 
         # test
-        self.plugin.RegistrationMonitor.changed(CERT_PATH)
+        self.plugin.registration_changed(path)
 
         # validation
-        expected_url = 'tcp://broker-host:5672'
-        self.assertEqual(plugin_cfg.messaging.uuid, 'pulp.agent.%s' % TEST_CN)
-        self.assertEqual(plugin_cfg.messaging.url, expected_url)
-        self.assertEqual(plugin_cfg.messaging.cacert, 'test-ca')
-        self.assertEqual(plugin_cfg.messaging.clientcert, CERT_PATH)
+        mock_get_agent_id.assert_called_with()
+        mock_setup_plugin.assert_called_with()
+        self.plugin.plugin.attach.assert_called_with()
 
-        mock_load.assert_called_with()
-        mock_find().attach.assert_called_with()
-
-    @patch('pulp.agent.gofer.pulpplugin.Plugin.find')
-    def test_changed_unregistered(self, mock_find):
-        test_conf = {
-            'server': {
-                'host': 'test-host',
-                'port': '443',
-            },
-            'filesystem': {
-                'id_cert_dir': TEST_ID_CERT_DIR,
-                'id_cert_filename': TEST_ID_CERT_FILE
-            }
-        }
-        self.plugin.pulp_conf.update(test_conf)
+    @patch('pulp.agent.gofer.pulpplugin.setup_plugin')
+    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
+    def test_unregistered(self, mock_get_agent_id, mock_setup_plugin):
+        path = 'test-path'
+        mock_get_agent_id.return_value = None
 
         # test
-        self.plugin.RegistrationMonitor.changed(CERT_PATH)
+        self.plugin.registration_changed(path)
 
         # validation
-        mock_find().detach.assert_called_with()
+        plugin_cfg = self.plugin.plugin.cfg()
+        mock_get_agent_id.assert_called_with()
+        self.assertFalse(mock_setup_plugin.called)
+        self.plugin.plugin.detach.assert_called_with()
+        self.assertTrue(plugin_cfg.messaging.uuid is None)
 
 
-class TestSynchronization(PluginTest):
+class TestProfileAction(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
-    def test_registered(self, mock_bundle):
-        mock_bundle().cn = Mock(return_value=TEST_CN)
-
-        # test
-        registered = self.plugin.Synchronization.registered()
-
-        # validation
-        self.assertTrue(registered)
-
-    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
-    def test_not_registered(self, mock_bundle):
-        mock_bundle().cn = Mock(return_value=None)
-
-        # test
-        registered = self.plugin.Synchronization.registered()
-
-        # validation
-        self.assertFalse(registered)
-
-    @patch('pulp.agent.gofer.pulpplugin.Synchronization.registered')
+    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
     @patch('pulp.agent.gofer.pulpplugin.Profile.send')
-    def test_send_profile_when_registered(self, mock_send, mock_registered):
-        mock_registered.return_value = True
+    def test_send_profile_when_registered(self, mock_send, mock_get_agent_id):
+        mock_get_agent_id.return_value = 'test-id'
         # test
-        self.plugin.Synchronization.profile()
+        self.plugin.update_profile()
 
         # validation
-        mock_registered.assert_called_with()
+        mock_get_agent_id.assert_called_with()
         mock_send.assert_called_with()
 
-    @patch('pulp.agent.gofer.pulpplugin.Synchronization.registered')
+    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
     @patch('pulp.agent.gofer.pulpplugin.Profile.send')
-    def test_nosend_profile_when_not_registered(self, mock_send, mock_registered):
-        mock_registered.return_value = False
+    def test_nosend_profile_when_not_registered(self, mock_send, mock_get_agent_id):
+        mock_get_agent_id.return_value = None
         # test
-        self.plugin.Synchronization.profile()
+        self.plugin.update_profile()
 
         # validation
-        mock_registered.assert_called_with()
+        mock_get_agent_id.assert_called_with()
         self.assertFalse(mock_send.called)
 
 

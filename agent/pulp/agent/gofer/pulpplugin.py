@@ -75,18 +75,16 @@ def setup_plugin():
     host = cfg.messaging.host or cfg.server.host
     port = cfg.messaging.port
     url = '%s://%s:%s' % (scheme, host, port)
-    agent_id = get_agent_id()
     authenticator = Authenticator()
     authenticator.load()
     plugin_conf = plugin.cfg()
     plugin_conf.messaging.url = url
-    plugin_conf.messaging.uuid = agent_id
+    plugin_conf.messaging.uuid = get_agent_id()
     plugin_conf.messaging.cacert = cfg.messaging.cacert
     plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
         os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
     plugin_conf.messaging.transport = cfg.messaging.transport
     plugin.authenticator = authenticator
-    return agent_id
 
 
 def registration_changed(path):
@@ -97,11 +95,13 @@ def registration_changed(path):
     :type path: str
     """
     log.info('changed: %s', path)
-    agent_id = setup_plugin()
+    agent_id = get_agent_id()
     if agent_id:
-        plugin.set_uuid = agent_id
+        setup_plugin()
         plugin.attach()
     else:
+        plugin_conf = plugin.cfg()
+        plugin_conf.messaging.uuid = None
         plugin.detach()
 
 
