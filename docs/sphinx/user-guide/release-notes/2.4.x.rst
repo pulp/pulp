@@ -126,10 +126,10 @@ has been changed significantly. The
 had many more fields than the
 `2.4 Call Report <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/conventions/sync-v-async.html#call-report>`_
 does. The spawned_tasks list within the Call Report object does not contain the full list of all
-tasks that will be scheduled for a given call.  Each spawned task is responsible for spawning
+tasks that will be scheduled for a given call. Each spawned task is responsible for spawning
 whatever additional tasks are needed in order to complete processing. For example, the sync task
 with auto publishing enabled returns a Call Report that only lists the task_id for the sync portion
-of the work.  When the sync task finishes it will have the task created for publishing listed in
+of the work. When the sync task finishes it will have the task created for publishing listed in
 the spawned_tasks field.
 
 Scheduled Calls
@@ -142,7 +142,7 @@ The
 * ``last_run`` is now ``last_run_at``.
 * ``args`` and ``kwargs`` are now top-level attributes of the object.
 * ``task`` is a new attribute that is the python path to the task this schedule will execute.
-* ``resource`` is a new attribute that is a globally-unique identifier for the object
+* ``resource`` is a new attribute that is a globally-unique identifier for the object.
   this task will operate on. It is used internally to query schedules based on a given resource.
 
 CRUD operations on schedules no longer depend on resource locking, so these API
@@ -158,13 +158,13 @@ Here are other APIs that have changed, arranged by path:
 
 ``/v2/queued_calls/``
 
-    This API has been removed in 2.4, as no distinction is made between queued tasks and running
-    tasks in Pulp 2.4.
+    This API has been removed in 2.4, as queued and running tasks are accessed through the same
+    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_.
 
 ``/v2/queued_calls/<call_request_id>/``
 
-    This API has been removed in 2.4, as no distinction is made between queued tasks and running
-    tasks in Pulp 2.4.
+    This API has been removed in 2.4, as queued and running tasks are accessed through the same
+    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_.
 
 ``/v2/task_groups/``
 
@@ -180,13 +180,13 @@ Here are other APIs that have changed, arranged by path:
     change, the data structure returned by the tasks API has changed. One notable change is that
     this API now returns something we call a Task Report, when it used to return a Call Report. The
     term Call Report is still used in Pulp 2.4 to refer to the returned data structure from all
-    APIs that use the HTTP 202 code. That object has links to this API which returns a Task Report.
+    APIs that use the HTTP 202 code. That object has links to this API, which returns a Task Report.
     The notable difference is that the Task Report contains much greater detail. Some notable
     differences between the 2.3 Call Report and the 2.4 Task Report:
 
     * The following attributes no longer exist: ``response``, ``reasons``, ``task_group_id``,
       and ``schedule_id``.
-    * The ``traceback`` and ``exception`` attributes have been deprecated in 2.4, and will always
+    * The ``traceback`` and ``exception`` attributes have been deprecated in 2.4 and will always
       be null.
     * The ``progress`` attribute has been renamed to ``progress_report``.
     * The following attributes are new in 2.4: ``task_type``, ``queue``, ``error``, and
@@ -196,7 +196,7 @@ Here are other APIs that have changed, arranged by path:
     `2.3 Call Report API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.3/integration/rest-api/dispatch/task.html#polling-task-progress>`_
     and the
     `2.4 Task Report API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_
-    for your own comparison.
+    on your own.
 
 ``/v2/tasks/search/``
 
@@ -206,22 +206,22 @@ Here are other APIs that have changed, arranged by path:
 
     This is a new API.
 
-* Deleting units is no longer blocked if the user performing the delete is different
-  than the user that created the unit.  This most notably has the effect of eliminating
+* Deleting units is no longer blocked when the user performing the delete is different
+  than the user that created the unit. This most notably has the effect of eliminating
   the restriction that units could not be deleted from repositories that are synced via a feed.
   However, if a unit is deleted from a repo populated via a feed, syncing the repo again will
   recreate the unit.
-* The exception & traceback fields have been deprecated from the Call Report & Task Status objects
-  In place of those fields a new "error" object has been created and will be returned.
-* TaskGroups are no longer supported.  All usages of the task_group_id have been removed.
-* When asynchronous tasks are created they will be returned in the waiting state.  The
+* The exception and traceback fields have been deprecated from the Call Report and Task Status
+  objects. In place of those fields a new "error" object has been created and will be returned.
+* TaskGroups are no longer supported. All uses of the task_group_id have been removed.
+* When asynchronous tasks are created they will be returned in the waiting state. The
   postponed or rejected states are no longer supported.
 * Agent related tasks no longer timeout, and it is now at the caller's discretion as to how long
   to wait for task completion. The task *state* now reflects the progression of the task on the
   agent.
-* The original applicability generation API didn't allow a consumer to be able to request
-  regeneration of its own applicability. To be able to allow this, we have introduced a new API
-  which can be used by consumers and is documented on the same page as other applicability APIs.
+* The original applicability generation API didn't allow a consumer to request regeneration of its
+  own applicability. To allow this, we have introduced a new API which can be used by consumers and
+  is documented on the same page as other applicability APIs.
 
 Binding API Changes
 -------------------
@@ -243,8 +243,8 @@ Plugin API Changes
 
 If you are a plugin author, these changes are relevant to you:
 
-* The Importer and Distributor cancellation method signatures have changed. cancel_sync_repo() and
-  cancel_publish_repo() both used to take multiple arguments. With the conversion to Celery, we no
-  longer had a need for those extra arguments, and so both of these now receive only the Importer or
+* The Importer and Distributor cancellation method signatures have changed. ``cancel_sync_repo()``
+  and ``cancel_publish_repo()`` both used to take multiple arguments. With the conversion to Celery,
+  we no longer had a need for those extra arguments, so each call now receives only the Importer or
   Distributor instance (self). If you have written an Importer or a Distributor, you will need to
   adjust your method signatures accordingly in order to work with this release of Pulp.
