@@ -145,6 +145,9 @@ popd
 
 
 %changelog
+* Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.1.11-1
+- Upgrade to celery-3.1.11. (rbarlow@redhat.com)
+
 * Fri Apr 11 2014 Brian Bouterse <bmbouter@gmail.com> 3.1.9-2.pulp
 - Add patch manifest to python-celery spec file. (bmbouter@gmail.com)
 - Updating patches for python-celery and python-kombu. (bmbouter@gmail.com)
