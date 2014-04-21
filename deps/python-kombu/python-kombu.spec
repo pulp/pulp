@@ -165,6 +165,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-1.pulp
+- Upgrade to kombu-3.0.15. (rbarlow@redhat.com)
+- New qpid patch for kombu and bump release. (bmbouter@gmail.com)
+
 * Fri Apr 11 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.13-3.pulp
 - Disabling two tests temporarily to get tito to build successfully.
   (bmbouter@gmail.com)
