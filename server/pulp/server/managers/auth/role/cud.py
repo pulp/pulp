@@ -30,7 +30,7 @@ from pulp.server.util import Delta
 
 
 SUPER_USER_ROLE = 'super-users'
-_ROLE_NAME_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_ROLE_NAME_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
 
 
 class RoleManager(object):
@@ -51,7 +51,7 @@ class RoleManager(object):
         :raise DuplicateResource: if there is already a role with the requested name
         :raise InvalidValue:      if any of the fields are unacceptable
         """
-        existing_role = Role.get_collection().find_one({'id' : role_id})
+        existing_role = Role.get_collection().find_one({'id': role_id})
         if existing_role is not None:
             raise DuplicateResource(role_id)
 
@@ -66,7 +66,7 @@ class RoleManager(object):
         Role.get_collection().save(create_me, safe=True)
 
         # Retrieve the role to return the SON object
-        created = Role.get_collection().find_one({'id' : role_id})
+        created = Role.get_collection().find_one({'id': role_id})
 
         return created
 
@@ -86,7 +86,7 @@ class RoleManager(object):
         """
         delta.pop('id', None)
 
-        role = Role.get_collection().find_one({'id' : role_id})
+        role = Role.get_collection().find_one({'id': role_id})
         if role is None:
             raise MissingResource(role_id)
 
@@ -109,7 +109,7 @@ class RoleManager(object):
     def delete_role(role_id):
         """
         Deletes the given role. This has the side-effect of revoking any permissions granted
-        to the role from the users in the role, unless those permissions are also granted 
+        to the role from the users in the role, unless those permissions are also granted
         through another role the user is a memeber of.
 
         :param role_id:         identifies the role being deleted
@@ -122,7 +122,7 @@ class RoleManager(object):
             raise InvalidValue(['role_id'])
 
         # Check whether role exists
-        role = Role.get_collection().find_one({'id' : role_id})
+        role = Role.get_collection().find_one({'id': role_id})
         if role is None:
             raise MissingResource(role_id)
 
@@ -142,12 +142,12 @@ class RoleManager(object):
             user['roles'].remove(role_id)
             factory.user_manager().update_user(user['login'], Delta(user, 'roles'))
 
-        Role.get_collection().remove({'id' : role_id}, safe=True)
+        Role.get_collection().remove({'id': role_id}, safe=True)
 
     @staticmethod
     def add_permissions_to_role(role_id, resource, operations):
         """
-        Add permissions to a role. 
+        Add permissions to a role.
 
         :param role_id:         role identifier
         :type  role_id:         str
@@ -179,8 +179,8 @@ class RoleManager(object):
     @staticmethod
     def remove_permissions_from_role(role_id, resource, operations):
         """
-        Remove permissions from a role. 
-        
+        Remove permissions from a role.
+
         :param role_id:         role identifier
         :type  role_id:         str
         :param resource:        resource path to revoke permissions from
@@ -192,7 +192,7 @@ class RoleManager(object):
         if role_id == SUPER_USER_ROLE:
             raise PulpDataException(_('super-users role cannot be changed'))
 
-        role = Role.get_collection().find_one({'id' : role_id})
+        role = Role.get_collection().find_one({'id': role_id})
         if role is None:
             raise MissingResource(role_id)
 
@@ -223,7 +223,7 @@ class RoleManager(object):
         """
         Add a user to a role. This has the side-effect of granting all the
         permissions granted to the role to the user.
-        
+
         :param role_id:         role identifier
         :type  role_id:         str
         :param login:           login of user
@@ -232,11 +232,11 @@ class RoleManager(object):
         :rtype:                 bool
         :raise MissingResource: if the given role or user does not exist
         """
-        role = Role.get_collection().find_one({'id' : role_id})
+        role = Role.get_collection().find_one({'id': role_id})
         if role is None:
             raise MissingResource(role_id)
 
-        user = User.get_collection().find_one({'login' : login})
+        user = User.get_collection().find_one({'login': login})
         if user is None:
             raise MissingResource(login)
 
@@ -255,7 +255,7 @@ class RoleManager(object):
         Remove a user from a role. This has the side-effect of revoking all the
         permissions granted to the role from the user, unless the permissions are
         also granted by another role.
-        
+
         :param role_id:         role identifier
         :type  role_id:         str
         :param login:           name of user
@@ -264,11 +264,11 @@ class RoleManager(object):
         :rtype:                 bool
         :raise MissingResource: if the given role or user does not exist
         """
-        role = Role.get_collection().find_one({'id' : role_id})
+        role = Role.get_collection().find_one({'id': role_id})
         if role is None:
             raise MissingResource(role_id)
 
-        user = User.get_collection().find_one({'login' : login})
+        user = User.get_collection().find_one({'login': login})
         if user is None:
             raise MissingResource(login)
 
@@ -294,7 +294,7 @@ class RoleManager(object):
         """
         Ensure that the super user role exists.
         """
-        role = Role.get_collection().find_one({'id' : SUPER_USER_ROLE})
+        role = Role.get_collection().find_one({'id': SUPER_USER_ROLE})
         if role is None:
             role = self.create_role(SUPER_USER_ROLE, 'Super Users',
                                     'Role indicates users with admin privileges')

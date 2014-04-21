@@ -68,7 +68,8 @@ def iter_entry_points(name):
 # modified to allow read_data to just be a str.
 # http://www.voidspace.org.uk/python/mock/0.8/examples.html?highlight=open#mocking-open
 if inPy3k:
-    file_spec = ['_CHUNK_SIZE', '__enter__', '__eq__', '__exit__',
+    file_spec = [
+        '_CHUNK_SIZE', '__enter__', '__eq__', '__exit__',
         '__format__', '__ge__', '__gt__', '__hash__', '__iter__', '__le__',
         '__lt__', '__ne__', '__next__', '__repr__', '__str__',
         '_checkClosed', '_checkReadable', '_checkSeekable',
@@ -112,6 +113,54 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
+    @patch('logging.config.fileConfig')
+    @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.manage.factory')
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
+    @patch('pulp.server.db.manage.UserManager.ensure_admin')
+    @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
+           migration_packages.platform)
+    @patch('sys.argv', ["pulp-manage-db"])
+    @patch('sys.stdout')
+    @patch.object(models.MigrationPackage, 'apply_migration')
+    def test_admin_is_ensured(self, apply_migration, stdout, ensure_admin, ensure_super_user_role,
+                              getLogger, factory, fileConfig):
+        """
+        pulp-manage-db is responsible for making sure the admin user and role are in place. This
+        test makes sure the manager methods that do that are called.
+        """
+        logger = MagicMock()
+
+        def get_logger(*args):
+            """
+            This is used to side effect getLogger so that we can mock the logger.
+            """
+            return logger
+
+        getLogger.side_effect = get_logger
+
+        code = manage.main()
+
+        self.assertEqual(code, os.EX_OK)
+
+        # Make sure all the right logging and printing happens
+        expected_messages = ('Ensuring the admin role and user are in place.',
+                             'Admin role and user are in place.')
+        stdout_messages = ''.join([mock_call[1][0] for mock_call in stdout.mock_calls])
+        info_messages = ''.join([mock_call[1][0] for mock_call in logger.info.mock_calls])
+        for msg in expected_messages:
+            self.assertTrue(msg in stdout_messages)
+            self.assertTrue(msg in info_messages)
+
+        # Make sure the admin user and role creation methods were called. We'll leave it up to other
+        # tests to make sure they work.
+        ensure_admin.assert_called_once_with()
+        ensure_super_user_role.assert_called_once_with()
+
+        # Also, make sure the factory was initialized
+        factory.initialize.assert_called_once_with()
+
     @patch('sys.stderr')
     @patch('os.getuid', return_value=0)
     def test_wont_run_as_root(self, mock_getuid, mock_stderr):
@@ -125,13 +174,15 @@ class TestManageDB(MigrationTest):
         self.assertTrue('apache' in mock_stderr.write.call_args_list[0][0][0])
 
     @patch('sys.stderr')
+    @patch('sys.stdout')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.manage.logger')
     @patch('logging.config.fileConfig')
-    def test_current_version_too_high(self, mocked_file_config, mocked_logger, mocked_stderr):
+    def test_current_version_too_high(self, mocked_file_config, mocked_logger, mocked_stdout,
+                                      mocked_stderr):
         """
         Set the current package version higher than latest available version, then sit back and eat
         popcorn.
@@ -150,19 +201,21 @@ class TestManageDB(MigrationTest):
         expected_stderr_calls = [
             ('The database for migration package unit.server.db.migration_packages.platform is at '
              'version 9999999, which is larger than the latest version available, 1.'), '\n']
-        stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
+        stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
 
     @patch('sys.stderr')
+    @patch('sys.stdout')
     @patch.object(models.MigrationPackage, 'apply_migration',
-           side_effect=models.MigrationPackage.apply_migration, autospec=True)
+                  side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.manage.logger')
     @patch('logging.config.fileConfig')
-    def test_migrate(self, file_config_mock, logger_mock, mocked_apply_migration, mocked_stderr):
+    def test_migrate(self, file_config_mock, logger_mock, mocked_apply_migration, mocked_stdout,
+                     mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get
         called in the correct order.
@@ -181,10 +234,11 @@ class TestManageDB(MigrationTest):
         expected_stderr_calls = [
             ('Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
              'failed.'), ' ', ' See log for details.', '\n']
-        stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
+        stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
 
-        migration_modules_called = [call[1][1].name for call in mocked_apply_migration.mock_calls]
+        migration_modules_called = [
+            mock_call[1][1].name for mock_call in mocked_apply_migration.mock_calls]
         # Note that none of the migrations that don't meet our criteria show up in this list. Also,
         # Note that migration_packages.raise_exception.0003_shouldnt_run doesn't appear
         # since migration_packages.raise_exception.0002_oh_no raised an Exception. Note
@@ -207,16 +261,19 @@ class TestManageDB(MigrationTest):
                 self.assertEqual(package.current_version, 1)
 
     @patch('sys.stderr')
+    @patch('sys.stdout')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.manage.logger')
     @patch('pulp.server.db.manage._start_logging')
-    def test_migrate_with_new_packages(self, start_logging_mock, logger_mock, mocked_stderr):
+    def test_migrate_with_new_packages(self, start_logging_mock, logger_mock, mocked_stdout,
+                                       mocked_stderr):
         """
         Adding new packages to a system that doesn't have any trackers should advance
-        each package to the latest available version, applying all migrate() functions along the way.
+        each package to the latest available version, applying all migrate() functions along the
+        way.
         """
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
@@ -235,6 +292,7 @@ class TestManageDB(MigrationTest):
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db"])
+    @patch('sys.stdout', MagicMock())
     @patch('pulp.server.db.manage._start_logging')
     def test_pulp_manage_db_loads_types(self, start_logging_mock, listdir_mock):
         """
@@ -273,14 +331,15 @@ class TestManageDB(MigrationTest):
                                           u'attribute_1_1', u'attribute_3_1'])
 
     @patch('sys.stderr')
+    @patch('sys.stdout')
     @patch.object(models.MigrationPackage, 'apply_migration',
-           side_effect=models.MigrationPackage.apply_migration, autospec=True)
+                  side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--test"])
     @patch('pulp.server.db.manage.logging')
-    def test_migrate_with_test_flag(self, start_logging_mock, mocked_apply_migration,
+    def test_migrate_with_test_flag(self, start_logging_mock, mocked_apply_migration, mocked_stdout,
                                     mocked_stderr):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
@@ -300,9 +359,10 @@ class TestManageDB(MigrationTest):
         expected_stderr_calls = [
             ('Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
              'failed.'), ' ', ' See log for details.', '\n']
-        stderr_calls = [call[1][0] for call in mocked_stderr.mock_calls]
+        stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
-        migration_modules_called = [call[1][1].name for call in mocked_apply_migration.mock_calls]
+        migration_modules_called = [
+            mock_call[1][1].name for mock_call in mocked_apply_migration.mock_calls]
         # Note that none of the migrations that don't meet our criteria show up in this list. Also,
         # Note that migration_packages.raise_exception.0003_shouldnt_run doesn't appear
         # since migration_packages.raise_exception.0002_oh_no raised an Exception. Note
@@ -416,9 +476,9 @@ class TestMigrationPackage(MigrationTest):
         error_message = 'There are two migration modules that share version 2 in ' +\
             'unit.server.db.migration_packages.duplicate_versions.'
         try:
-            mp = models.MigrationPackage(migration_packages.duplicate_versions)
+            models.MigrationPackage(migration_packages.duplicate_versions)
             self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
-                'but was not raised.')
+                      'but was not raised.')
         except models.MigrationPackage.DuplicateVersions, e:
             self.assertEquals(str(e), error_message)
 
@@ -482,7 +542,7 @@ class TestMigrationPackage(MigrationTest):
                  'have a migrate function. It will be ignored.'),
             call('The module '
                  'unit.server.db.migration_packages.z.doesnt_conform_to_naming_convention doesn\'t '
-                 'conform to the migration package naming conventions. It will be ignored.'),])
+                 'conform to the migration package naming conventions. It will be ignored.')])
 
     def test_unapplied_migrations(self):
         mp = models.MigrationPackage(migration_packages.z)
@@ -492,7 +552,8 @@ class TestMigrationPackage(MigrationTest):
         unapplied = mp.unapplied_migrations
         self.assertEqual(len(unapplied), 2)
         self.assertEqual([m.version for m in unapplied], [2, 3])
-        self.assertEqual([m._module.__name__ for m in unapplied],
+        self.assertEqual(
+            [m._module.__name__ for m in unapplied],
             ['unit.server.db.migration_packages.z.0002_test',
              'unit.server.db.migration_packages.z.0003_test'])
 
@@ -507,7 +568,7 @@ class TestMigrationPackage(MigrationTest):
         try:
             models.MigrationPackage(migration_packages.version_zero)
             self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
-                'but was not raised.')
+                      'but was not raised.')
         except models.MigrationPackage.DuplicateVersions, e:
             self.assertEquals(str(e), error_message)
 
@@ -520,7 +581,7 @@ class TestMigrationPackage(MigrationTest):
         try:
             models.MigrationPackage(migration_packages.version_gap)
             self.fail('The MigrationPackage.MissingVersion exception should have been raised, '
-                'but was not raised.')
+                      'but was not raised.')
         except models.MigrationPackage.MissingVersion, e:
             self.assertEquals(str(e), error_message)
 
@@ -669,5 +730,5 @@ class TestMigrationUtils(MigrationTest):
         expected_log_calls = [call('There are two migration modules that share version 2 in '
                               'unit.server.db.migration_packages.duplicate_versions.'),
                               call('Migration version 2 is missing in '
-                              'unit.server.db.migration_packages.version_gap.')]
+                                   'unit.server.db.migration_packages.version_gap.')]
         log_mock.assert_has_calls(expected_log_calls)

@@ -22,6 +22,9 @@ from pulp.plugins.loader.api import load_content_types
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
+from pulp.server.managers import factory
+from pulp.server.managers.auth.role.cud import RoleManager
+from pulp.server.managers.auth.user.cud import UserManager
 
 
 connection.initialize()
@@ -58,14 +61,15 @@ def migrate_database(options):
     migration_packages = models.get_migration_packages()
     for migration_package in migration_packages:
         if migration_package.current_version > migration_package.latest_available_version:
-            msg = _('The database for migration package %(p)s is at version %(v)s, which is larger than the '
-                    'latest version available, %(a)s.')
+            msg = _('The database for migration package %(p)s is at version %(v)s, which is larger '
+                    'than the latest version available, %(a)s.')
             msg = msg % ({'p': migration_package.name, 'v': migration_package.current_version,
                           'a': migration_package.latest_available_version})
             raise DataError(msg)
         if migration_package.current_version == migration_package.latest_available_version:
             message = _('Migration package %(p)s is up to date at version %(v)s')
-            message = message % {'p': migration_package.name, 'v': migration_package.latest_available_version}
+            message = message % {'p': migration_package.name,
+                                 'v': migration_package.latest_available_version}
             logger.info(message)
             print message
             continue
@@ -81,7 +85,8 @@ def migrate_database(options):
                 migration_package.apply_migration(migration,
                                                   update_current_version=not options.test)
                 message = _('Migration to %(p)s version %(v)s complete.')
-                message = message % {'p': migration_package.name, 'v': migration_package.current_version}
+                message = message % {'p': migration_package.name,
+                                     'v': migration_package.current_version}
                 print message
                 logger.info(message)
         except Exception, e:
@@ -117,6 +122,7 @@ def main():
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_SOFTWARE
+    return os.EX_OK
 
 
 def _auto_manage_db(options):
@@ -131,6 +137,20 @@ def _auto_manage_db(options):
     logger.info(message)
     load_content_types()
     message = _('Content types loaded.')
+    print message
+    logger.info(message)
+
+    message = _('Ensuring the admin role and user are in place.')
+    print message
+    logger.info(message)
+    # Due to the silliness of the factory, we have to initialize it because the UserManager and
+    # RoleManager are going to try to use it.
+    factory.initialize()
+    role_manager = RoleManager()
+    role_manager.ensure_super_user_role()
+    user_manager = UserManager()
+    user_manager.ensure_admin()
+    message = _('Admin role and user are in place.')
     print message
     logger.info(message)
 
