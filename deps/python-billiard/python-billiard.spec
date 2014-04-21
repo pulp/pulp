@@ -108,6 +108,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.17-1
+- Update to python-billiard-3.3.0.17. (rbarlow@redhat.com)
+
 * Thu Mar 13 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.16-3
 - Change the logic for whether to run billiard tests. (rbarlow@redhat.com)
 
