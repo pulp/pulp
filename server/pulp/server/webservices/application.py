@@ -12,24 +12,28 @@
 import logging
 import sys
 
-# This keeps the web.py wsgi app from trying to handle otherwise unhandled
-# exceptions and lets Pulp error handling middleware handle them instead
-# This exists here as it is the first place that Pulp imports web.py, so all
-# web.py applications will be instantiated *after* their base class is patched
+
 def _handle_with_processors(self):
+    """
+    This keeps the web.py wsgi app from trying to handle otherwise unhandled
+    exceptions and lets Pulp error handling middleware handle them instead
+    This exists here as it is the first place that Pulp imports web.py, so all
+    web.py applications will be instantiated *after* their base class is patched
+    """
     def process(processors):
         if processors:
             p, processors = processors[0], processors[1:]
-            return p(lambda : process(processors))
+            return p(lambda: process(processors))
         else:
             return self.handle()
     return process(self.processors)
+
 
 import web
 
 web.application.handle_with_processors = _handle_with_processors
 
-from pulp.server import config # automatically loads config
+from pulp.server import config  # automatically loads config
 from pulp.server import logs
 
 # We need to read the config, start the logging, and initialize the db
@@ -40,7 +44,6 @@ from pulp.server import initialization
 
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.debugging import StacktraceDumper
-from pulp.server.managers import factory as manager_factory
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
     agent, consumer_groups, consumers, contents, dispatch, events, permissions,
@@ -73,7 +76,6 @@ _IS_INITIALIZED = False
 
 STACK_TRACER = None
 
-# -- initialization -----------------------------------------------------------
 
 def _initialize_pulp():
 
@@ -99,7 +101,7 @@ def _initialize_pulp():
     try:
         migration_models.check_package_versions()
     except Exception:
-        msg  = 'The database has not been migrated to the current version. '
+        msg = 'The database has not been migrated to the current version. '
         msg += 'Run pulp-manage-db and restart the application.'
         raise initialization.InitializationException(msg), None, sys.exc_info()[2]
 
@@ -107,12 +109,6 @@ def _initialize_pulp():
     # The previous two are likely user errors, but the remainder represent
     # something gone horribly wrong. As such, I'm not going to account for each
     # and instead simply let the exception itself bubble up.
-
-    # Ensure the minimal auth configuration
-    role_manager = manager_factory.role_manager()
-    role_manager.ensure_super_user_role()
-    user_manager = manager_factory.user_manager()
-    user_manager.ensure_admin()
 
     # start agent services
     AgentServices.start()
