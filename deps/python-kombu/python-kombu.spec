@@ -10,8 +10,8 @@
 Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
-Version:        3.0.13
-Release:        4.pulp%{?dist}
+Version:        3.0.15
+Release:        1.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -52,17 +52,17 @@ BuildRequires: python-mock
 BuildRequires: python-simplejson
 BuildRequires: PyYAML
 BuildRequires: python-msgpack
-BuildRequires: python-amqp >= 1.4.3
+BuildRequires: python-amqp >= 1.4.5
 
 %if 0%{?with_python3}
-BuildRequires: python3-amqp >= 1.4.3
+BuildRequires: python3-amqp >= 1.4.5
 %endif
 
 # For documentation
 #BuildRequires:  pymongo python-sphinx
 #This causes tests error, needs fixing upstream. Incompatible with python > 2.7
 #BuildRequires:  python-couchdb
-Requires: python-amqp >= 1.4.3
+Requires: python-amqp >= 1.4.5
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
 %if 0%{?rhel} == 6
@@ -87,7 +87,7 @@ Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-amqp >= 1.4.3
+Requires:       python3-amqp >= 1.4.5
 
 %description -n python3-kombu
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
