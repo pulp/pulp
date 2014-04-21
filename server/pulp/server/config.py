@@ -85,7 +85,7 @@ _default_values = {
     },
     'tasks': {
         'broker_url': 'qpid://guest@localhost/',
-        'celery_require_ssl': 'no',
+        'celery_require_ssl': 'false',
         'cacert': '/etc/pki/pulp/qpid/ca.crt',
         'keyfile': '/etc/pki/pulp/qpid/client.crt',
         'certfile': '/etc/pki/pulp/qpid/client.crt',
@@ -94,7 +94,6 @@ _default_values = {
 
 # to add a default configuration file, list the full path here
 _config_files = ['/etc/pulp/server.conf']
-
 
 
 def check_config_files():

@@ -80,7 +80,7 @@ celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())
 
-if config.get('tasks', 'celery_require_ssl') == 'yes':
+if config.getboolean('tasks', 'celery_require_ssl'):
     BROKER_USE_SSL = {
         'ca_certs': config.get('tasks', 'cacert'),
         'keyfile': config.get('tasks', 'keyfile'),

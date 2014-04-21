@@ -235,7 +235,7 @@ clientcert: $INST_DIR/client.crt
 
 [tasks]
 broker_url: qpid://<host>:5671/
-celery_require_ssl: yes
+celery_require_ssl: true
 cacert: /etc/pki/pulp/qpid/ca.crt
 keyfile: /etc/pki/pulp/qpid/client.crt
 certfile: /etc/pki/pulp/qpid/client.crt
