@@ -100,8 +100,6 @@ def registration_changed(path):
         setup_plugin()
         plugin.attach()
     else:
-        plugin_conf = plugin.cfg()
-        plugin_conf.messaging.uuid = None
         plugin.detach()
 
 

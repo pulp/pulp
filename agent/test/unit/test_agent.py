@@ -511,7 +511,6 @@ class TestRegistrationChanged(PluginTest):
         mock_get_agent_id.assert_called_with()
         self.assertFalse(mock_setup_plugin.called)
         self.plugin.plugin.detach.assert_called_with()
-        self.assertTrue(plugin_cfg.messaging.uuid is None)
 
 
 class TestProfileAction(PluginTest):
