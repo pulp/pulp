@@ -1,11 +1,6 @@
 Team owner: bbouters
 
-Celery 3.1.9 requires kombu>=3.0.12,<4.0, which is not in Fedora<=20 or EPEL 6.
-
-The Kombu dep we use is 3.0.13, which is a version newer than Celery 3.1.9
-requires, but it seems to work well enough, and the Kombu changelog supports
-that conclusion also.  The next time Celery is updated, we will update Kombu to
-the recommended version so they are more syncrhonized.
+Celery 3.1.11 requires kombu>=3.0.15,<4.0, which is not in Fedora<=20, EPEL 6, or EPEL 7.
 
 Pulp would like to use the Qpid transport through a PR celery/kombu#335 that
 has been submitted upstream, but not yet merged.  This patch is introduced

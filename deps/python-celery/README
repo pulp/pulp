@@ -1,13 +1,3 @@
 Team owner: rbarlow
 
-Pulp requires celery 3.1, which is not available in Fedora <= 20 or EPEL 6.
-
-For Pulp to use SSL with Celery, Celery bug celery/celery#1973 needs to be
-fixed.  A PR celery/celery#1975 has been submitted upstream, but not yet
-merged.  This patch is introduced through the spec file, and can be removed
-once:
-
-1.  celery/celery#1975 is merged upstream.
-2.  celery/celery#1975  is included in a Kombu release
-3.  This dependency is updated to the release containing celery/celery#1975
-
+Pulp requires celery 3.1, which is not available in Fedora <= 20 or EPEL <= 7.

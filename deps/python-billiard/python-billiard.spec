@@ -15,8 +15,8 @@
 %endif
 
 Name:           python-%{srcname}
-Version:        3.3.0.16
-Release:        3%{?dist}
+Version:        3.3.0.17
+Release:        1%{?dist}
 # We need this to be 1 for Fedora systems, since the official Fedora billiards package is epoch 1. If we don't
 # that package will always be considered "newer" than ours, even when our version string is greater.
 Epoch:          1
@@ -108,6 +108,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.17-1
+- Update to python-billiard-3.3.0.17. (rbarlow@redhat.com)
+
 * Thu Mar 13 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.16-3
 - Change the logic for whether to run billiard tests. (rbarlow@redhat.com)
 

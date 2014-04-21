@@ -6,25 +6,24 @@
 %endif
 
 Name:           python-celery
-Version:        3.1.9
-Release:        2.pulp%{?dist}
+Version:        3.1.11
+Release:        1%{?dist}
 Summary:        Distributed Task Queue
 
 Group:          Development/Languages
 License:        BSD
 URL:            http://celeryproject.org
 Source0:        http://pypi.python.org/packages/source/c/celery/celery-%{version}.tar.gz
-Patch0:         celery_bug_1973_fix.patch
 
 BuildArch:      noarch
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 Requires:       python-anyjson
 Requires:       python-dateutil
-Requires:       python-kombu >= 3.0.12
+Requires:       python-kombu >= 3.0.15
 Requires:       python-setuptools
 Requires:       pyparsing
-Requires:       python-billiard >= 3.3.0.14
+Requires:       python-billiard >= 3.3.0.17
 Requires:       python-amqp
 Requires:	pytz
 %if ! (0%{?fedora} > 13 || 0%{?rhel} > 6)
@@ -67,10 +66,10 @@ Summary:        Distributed Task Queue
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-kombu >= 3.0.12
+Requires:       python3-kombu >= 3.0.15
 Requires:       python3-pytz
 Requires:       python3-dateutil
-Requires:       python3-billiard >= 3.3.0.14
+Requires:       python3-billiard >= 3.3.0.17
 Requires:       python3-amqp
 %description -n python3-celery
 An open source asynchronous task queue/job queue based on
@@ -98,9 +97,6 @@ for Redis, Beanstalk, MongoDB, CouchDB and databases
 
 %prep
 %setup -q -n celery-%{version}
-
-# Bugfix for Celery https://github.com/celery/celery/issues/1973
-%patch0 -p1
 
 %if 0%{?with_python3}
 cp -a . %{py3dir}
@@ -149,6 +145,9 @@ popd
 
 
 %changelog
+* Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.1.11-1
+- Upgrade to celery-3.1.11. (rbarlow@redhat.com)
+
 * Fri Apr 11 2014 Brian Bouterse <bmbouter@gmail.com> 3.1.9-2.pulp
 - Add patch manifest to python-celery spec file. (bmbouter@gmail.com)
 - Updating patches for python-celery and python-kombu. (bmbouter@gmail.com)
