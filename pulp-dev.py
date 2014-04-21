@@ -23,58 +23,63 @@ import sys
 WARNING_COLOR = '\033[31m'
 WARNING_RESET = '\033[0m'
 
-DIRS = (
+DIRS = [
     '/etc',
     '/etc/bash_completion.d',
-    '/etc/httpd',
-    '/etc/httpd/conf.d',
-    '/etc/pulp',
-    '/etc/pulp/admin',
-    '/etc/pulp/admin/conf.d',
-    '/etc/pulp/consumer',
-    '/etc/pulp/consumer/conf.d',
-    '/etc/pulp/server',
-    '/etc/pulp/server/plugins.conf.d',
-    '/etc/pulp/content/sources/conf.d',
-    '/etc/pulp/server/plugins.conf.d/nodes/importer',
-    '/etc/pulp/server/plugins.conf.d/nodes/distributor',
-    '/etc/pulp/agent',
-    '/etc/pulp/agent/conf.d',
-    '/etc/pulp/vhosts80',
     '/etc/gofer',
     '/etc/gofer/plugins',
     '/etc/pki/pulp',
     '/etc/pki/pulp/consumer/server',
-    '/etc/pki/pulp/content',
-    '/srv',
-    '/srv/pulp',
+    '/etc/pulp',
+    '/etc/pulp/admin',
+    '/etc/pulp/admin/conf.d',
+    '/etc/pulp/agent',
+    '/etc/pulp/agent/conf.d',
+    '/etc/pulp/consumer',
+    '/etc/pulp/consumer/conf.d',
+    '/usr/lib/gofer',
+    '/usr/lib/gofer/plugins',
     '/usr/lib/pulp/',
     '/usr/lib/pulp/agent',
     '/usr/lib/pulp/agent/handlers',
-    '/usr/lib/pulp/admin',
-    '/usr/lib/pulp/admin/extensions',
     '/usr/lib/pulp/consumer',
     '/usr/lib/pulp/consumer/extensions',
-    '/usr/lib/gofer',
-    '/usr/lib/gofer/plugins',
     '/usr/lib/yum-plugins/',
     '/var/lib/pulp',
-    '/var/lib/pulp/nodes/published',
     '/var/lib/pulp_client',
     '/var/lib/pulp_client/admin',
     '/var/lib/pulp_client/admin/extensions',
     '/var/lib/pulp_client/consumer',
     '/var/lib/pulp_client/consumer/extensions',
-    '/usr/lib/pulp/plugins',
-    '/usr/lib/pulp/plugins/types',
-    '/var/lib/pulp/celery',
-    '/var/lib/pulp/published',
-    '/var/lib/pulp/uploads',
-    '/var/lib/pulp/static',
-    '/var/log/pulp',
-    '/var/www/pulp',
-    '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
-)
+]
+
+# We only support Python >= 2.6 for the server code
+if sys.version_info >= (2, 6):
+    DIRS.extend([
+        '/etc/httpd',
+        '/etc/httpd/conf.d',
+        '/etc/pki/pulp/content',
+        '/etc/pulp/content/sources/conf.d',
+        '/etc/pulp/server',
+        '/etc/pulp/server/plugins.conf.d',
+        '/etc/pulp/server/plugins.conf.d/nodes/importer',
+        '/etc/pulp/server/plugins.conf.d/nodes/distributor',
+        '/etc/pulp/vhosts80',
+        '/srv',
+        '/srv/pulp',
+        '/usr/lib/pulp/admin',
+        '/usr/lib/pulp/admin/extensions',
+        '/usr/lib/pulp/plugins',
+        '/usr/lib/pulp/plugins/types',
+        '/var/lib/pulp/celery',
+        '/var/lib/pulp/nodes/published',
+        '/var/lib/pulp/published',
+        '/var/lib/pulp/static',
+        '/var/lib/pulp/uploads',
+        '/var/log/pulp',
+        '/var/www/pulp',
+        '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
+    ])
 
 # Str entry assumes same src and dst relative path.
 # Tuple entry is explicit (src, dst)
@@ -86,31 +91,37 @@ DIR_ADMIN_EXTENSIONS = '/usr/lib/pulp/admin/extensions/'
 DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 DIR_PLUGINS = '/usr/lib/pulp/plugins'
 
-LINKS = (
-    # Server Configuration
+LINKS = [
+    # Consumer Configuration
     ('agent/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
-    ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
-    ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
-
-    # Server Web Configuration
     ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
-    ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+    ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
+]
 
-    # Pulp Nodes
-    ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
-    ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
-    ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
-    ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
-     '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
-    ('nodes/parent/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf',
-     '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'),
-    ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
-    ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
+# We only support Python >= 2.6 for the server code
+if sys.version_info >= (2, 6):
+    LINKS.extend([
+        # Admin conf
+        ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
 
-    # Static Content
-    ('/etc/pki/pulp/rsa_pub.key', '/var/lib/pulp/static/rsa_pub.key'),
-)
+        # Server Web Configuration
+        ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
+        # Pulp Nodes
+        ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
+        ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
+        ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
+        ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
+         '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
+        ('nodes/parent/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf',
+         '/etc/pulp/server/plugins.conf.d/nodes/distributor/http.conf'),
+        ('nodes/child/etc/pulp/agent/conf.d/nodes.conf', '/etc/pulp/agent/conf.d/nodes.conf'),
+        ('nodes/child/pulp_node/importers/types/nodes.json', DIR_PLUGINS + '/types/node.json'),
+
+        # Static Content
+        ('/etc/pki/pulp/rsa_pub.key', '/var/lib/pulp/static/rsa_pub.key'),
+    ])
+    
 
 try:
     LSB_VENDOR = subprocess.Popen(['lsb_release', '-si'],
@@ -191,34 +202,39 @@ def get_paths_to_copy():
     :return: List of dictionaries describing copy operations that should be performed.
     :rtype:  list
     """
-    paths = [{'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
-              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False}]
-    if LSB_VERSION >= 7.0:
-        paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
-                      'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
-                      'group': 'root', 'mode': '644', 'overwrite': True})
-        paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
-                      'destination': '/etc/systemd/system/pulp_resource_manager.service',
-                      'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
-        paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
-                      'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
-                      'group': 'root', 'mode': '644', 'overwrite': True})
+    paths = []
+    # We don't support server code on EL 5.
+    if LSB_VERSION >= 6.0:
+        paths.extend([{'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
+                       'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False}])
+        if LSB_VERSION >= 7.0:
+            paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
+                          'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
+                          'group': 'root', 'mode': '644', 'overwrite': True})
+            paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
+                          'destination': '/etc/systemd/system/pulp_resource_manager.service',
+                          'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
+            paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
+                          'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
+                          'group': 'root', 'mode': '644', 'overwrite': True})
 
     return paths
 
 
 def gen_rsa_keys():
-    print 'generating RSA keys'
-    for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
-        key_path = os.path.join(key_dir, 'rsa.key')
-        key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
-        if not os.path.exists(key_path):
-            os.system('openssl genrsa -out %s 2048' % key_path)
-        if not os.path.exists(key_path_pub):
-            os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
-        os.system('chmod 640 %s' % key_path)
-        os.system('chown root:apache %s' % key_path)
-        os.system('chown root:apache %s' % key_path_pub)
+    # We don't need to make keys for EL 5
+    if LSB_VERSION >= 6.0:
+        print 'generating RSA keys'
+        for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
+            key_path = os.path.join(key_dir, 'rsa.key')
+            key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
+            if not os.path.exists(key_path):
+                os.system('openssl genrsa -out %s 2048' % key_path)
+            if not os.path.exists(key_path_pub):
+                os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
+            os.system('chmod 640 %s' % key_path)
+            os.system('chown root:apache %s' % key_path)
+            os.system('chown root:apache %s' % key_path_pub)
 
 
 def getlinks():
@@ -250,7 +266,7 @@ def getlinks():
 
         links.append((src, dst))
 
-    if LSB_VERSION < 7.0:
+    if LSB_VERSION >= 6.0 and LSB_VERSION < 7.0:
         links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
         links.append(('server/etc/rc.d/init.d/pulp_workers',
                       '/etc/rc.d/init.d/pulp_workers'))
@@ -260,7 +276,7 @@ def getlinks():
         links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))
         links.append(('server/etc/default/upstart_pulp_resource_manager',
                       '/etc/default/pulp_resource_manager'))
-    else:
+    elif LSB_VERSION >= 7.0:
         links.append(('server/etc/default/systemd_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
         links.append(('server/etc/default/systemd_pulp_workers', '/etc/default/pulp_workers'))
         links.append(('server/etc/default/systemd_pulp_resource_manager',
@@ -287,38 +303,39 @@ def install(opts):
             os.system('chown %s:%s %s' % (path['owner'], path['group'], path['destination']))
             os.system('chmod %s %s' % (path['mode'], path['destination']))
 
-    # Grant apache write access to the pulp tools log file and pulp
-    # packages dir
-    os.system('chown -R apache:apache /var/log/pulp')
-    os.system('chown -R apache:apache /var/lib/pulp')
+    if LSB_VERSION >= 6.0:
+        # Grant apache write access to the pulp tools log file and pulp
+        # packages dir
+        os.system('chown -R apache:apache /var/log/pulp')
+        os.system('chown -R apache:apache /var/lib/pulp')
 
-    # The Celery init script will get angry if /etc/default things aren't root owned
-    os.system('chown root:root /etc/default/pulp_celerybeat')
-    os.system('chown root:root /etc/default/pulp_workers')
-    os.system('chown root:root /etc/default/pulp_resource_manager')
+        # The Celery init script will get angry if /etc/default things aren't root owned
+        os.system('chown root:root /etc/default/pulp_celerybeat')
+        os.system('chown root:root /etc/default/pulp_workers')
+        os.system('chown root:root /etc/default/pulp_resource_manager')
 
-    # Guarantee apache always has write permissions
-    os.system('chmod 3775 /var/log/pulp')
-    os.system('chmod 3775 /var/lib/pulp')
+        # Guarantee apache always has write permissions
+        os.system('chmod 3775 /var/log/pulp')
+        os.system('chmod 3775 /var/lib/pulp')
 
-    # Generate certificates
-    print 'generating certificates'
-    if not os.path.exists('/etc/pki/pulp/ca.crt'):
-        os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
-    if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
-        os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
+        # Generate certificates
+        print 'generating certificates'
+        if not os.path.exists('/etc/pki/pulp/ca.crt'):
+            os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+        if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
+            os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
-    # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
-    # those world readable. Until we fix this, we cannot close #1048297
-    os.system('chmod 644 /etc/pki/pulp/ca.*')
-    os.system('chown apache:apache /etc/pki/pulp/content')
+        # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
+        # those world readable. Until we fix this, we cannot close #1048297
+        os.system('chmod 644 /etc/pki/pulp/ca.*')
+        os.system('chown apache:apache /etc/pki/pulp/content')
 
-    # Link between pulp and apache
-    create_link(opts, '/var/lib/pulp/published', '/var/www/pub')
+        # Link between pulp and apache
+        create_link(opts, '/var/lib/pulp/published', '/var/www/pub')
 
-    # Grant apache write access permissions
-    os.system('chmod 3775 /var/www/pub')
-    os.system('chown -R apache:apache /var/lib/pulp/published')
+        # Grant apache write access permissions
+        os.system('chmod 3775 /var/www/pub')
+        os.system('chown -R apache:apache /var/lib/pulp/published')
 
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"
