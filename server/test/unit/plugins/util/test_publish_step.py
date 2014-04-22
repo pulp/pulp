@@ -276,10 +276,12 @@ class UnitPublishStepTests(PublisherBase):
         step.process()
         self.assertEquals(step.state, reporting_constants.STATE_SKIPPED)
 
+    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_process_step_no_units(self, mock_update):
+    def test_process_step_no_units(self, mock_update, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 0}
         mock_method = mock.Mock()
+        mock_get_units.return_value = []
         step = UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
         step.process_unit = mock_method
