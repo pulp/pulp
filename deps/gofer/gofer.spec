@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.0.5
+Version: 1.0.7
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -252,10 +252,19 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 1.0.5-1
-- Log to syslog instead of /var/log/gofer/ and support userid/password and vhost
-  properties. (jortel@redhat.com)
+* Tue Apr 22 2014 Jeff Ortel <jortel@redhat.com> 1.0.7-1
+- Support extends= in plugin descriptors.  Defines another plugin to extend.
+  (jortel@redhat.com)
 
+* Thu Apr 17 2014 Jeff Ortel <jortel@redhat.com> 1.0.6-1
+- Inject inbound transport name on request receipt and used to reply when
+  unable to route to a plugin. (jortel@redhat.com)
+- Trash plugin implements get_url() and get_transport(). (jortel@redhat.com)
+- Log when plugin not found and request is trashed. (jortel@redhat.com)
+- PathMonitor initialized to prevent initial notification. (jortel@redhat.com)
+- Add @initializer decorator and plugin support. (jortel@redhat.com)
+- Fix pending message leak when uuid not matched to a plugin.
+  (jortel@redhat.com)
 * Mon Mar 31 2014 Jeff Ortel <jortel@redhat.com> 1.0.5-1
 - Log to syslog instead of /var/log/gofer/. (jortel@redhat.com)
 - Support userid/password in the broker url. (jortel@redhat.com)
