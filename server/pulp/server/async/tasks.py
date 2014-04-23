@@ -12,9 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from datetime import datetime, timedelta
 from gettext import gettext as _
+import json
 import logging
 import re
 import signal
+from subprocess import Popen, PIPE
 
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
@@ -40,13 +42,20 @@ logger = logging.getLogger(__name__)
 RESERVED_WORKER_NAME_PREFIX = 'reserved_resource_worker-'
 
 
+def subprocess_active_queues():
+    command = ['python', '-m', 'pulp.server.async.active_queues']
+    p1 = Popen(command, stdout=PIPE)
+    active_queues = json.loads(p1.communicate()[0])
+    return active_queues
+
+
 @task
 def babysit():
     """
     Babysit the workers, updating our tables with information about their queues.
     """
     # Inspect the available workers to build our state variables
-    active_queues = controller.inspect().active_queues()
+    active_queues = subprocess_active_queues()
     # Now we need the entire list of AvailableQueues from the database, though we only need their
     # _id and missing_since attributes. This is preferrable to using a Map/Reduce operation to get
     # Mongo to tell us which workers Celery knows about that aren't found in the database.
