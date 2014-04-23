@@ -85,6 +85,7 @@ def setup_plugin():
         os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
     plugin_conf.messaging.transport = cfg.messaging.transport
     plugin.authenticator = authenticator
+    log.info('plugin configuration updated')
 
 
 def registration_changed(path):
@@ -106,7 +107,7 @@ def registration_changed(path):
 def get_agent_id():
     """
     Get the agent ID.
-    Format: pulp.agent.<consumer_id>.
+    Format: pulp.agent.<consumer_id>
     :return: The agent ID or None when not registered.
     :rtype: str
     """
