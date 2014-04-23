@@ -360,13 +360,9 @@ class PublishStep(object):
         _LOG.debug('Processing publish step of type %(type)s for repository: %(repo)s' %
                    {'type': self.step_id, 'repo': self.parent.repo.id})
 
-        total = 0
         try:
             self.total_units = self._get_total()
-            total = self.total_units
-            if total == 0:
-                self.state = reporting_constants.STATE_COMPLETE
-                return
+            self.report_progress()
             self.initialize()
             self.report_progress()
             self._process_block()
@@ -381,9 +377,7 @@ class PublishStep(object):
 
         finally:
             try:
-                # Only finalize the metadata if we would have made it to initialization
-                if total != 0:
-                    self.finalize()
+                self.finalize()
             except Exception, e:
                 # on the off chance that one of the finalize steps raise an exception we need to
                 # record it as a failure.  If a finalize does fail that error should take precedence
