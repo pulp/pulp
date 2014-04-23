@@ -499,9 +499,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.0.5
-Requires: python-gofer-qpid >= 1.0.5
-Requires: gofer >= 1.0.5
+Requires: python-gofer >= 1.0.7
+Requires: python-gofer-qpid >= 1.0.7
+Requires: gofer >= 1.0.7
 Requires: m2crypto
 
 %description agent

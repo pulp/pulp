@@ -44,8 +44,79 @@ log = getLogger(__name__)
 pulp_conf = read_config()
 cfg = pulp_conf.graph()
 
+# monitor file paths
+path_monitor = PathMonitor()
 
-# --- utils ------------------------------------------------------------------
+# this plugin object
+plugin = Plugin.find(__name__)
+
+
+@initializer
+def init_plugin():
+    """
+    Plugin initialization.
+    Called exactly once after the plugin has been loaded.
+      1. Update the plugin configuration using the consumer configuration.
+      2. Register the consumer certificate bundle path for monitoring.
+      3. Start the path monitor.
+    """
+    setup_plugin()
+    path = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
+    path_monitor.add(path, registration_changed)
+    path_monitor.start()
+
+
+def setup_plugin():
+    """
+    Plugin setup.
+    Update the plugin configuration using the consumer configuration.
+    """
+    scheme = cfg.messaging.scheme
+    host = cfg.messaging.host or cfg.server.host
+    port = cfg.messaging.port
+    url = '%s://%s:%s' % (scheme, host, port)
+    authenticator = Authenticator()
+    authenticator.load()
+    plugin_conf = plugin.cfg()
+    plugin_conf.messaging.url = url
+    plugin_conf.messaging.uuid = get_agent_id()
+    plugin_conf.messaging.cacert = cfg.messaging.cacert
+    plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
+        os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
+    plugin_conf.messaging.transport = cfg.messaging.transport
+    plugin.authenticator = authenticator
+    log.info('plugin configuration updated')
+
+
+def registration_changed(path):
+    """
+    The consumer certificate bundle has changed.
+    This indicates a change in registration to pulp.
+    :param path: The absolute path to the changed bundle.
+    :type path: str
+    """
+    log.info('changed: %s', path)
+    agent_id = get_agent_id()
+    if agent_id:
+        setup_plugin()
+        plugin.attach()
+    else:
+        plugin.detach()
+
+
+def get_agent_id():
+    """
+    Get the agent ID.
+    Format: pulp.agent.<consumer_id>
+    :return: The agent ID or None when not registered.
+    :rtype: str
+    """
+    bundle = ConsumerX509Bundle()
+    consumer_id = bundle.cn()
+    if consumer_id:
+        return 'pulp.agent.%s' % consumer_id
+    else:
+        return None
 
 
 def get_secret():
@@ -215,100 +286,19 @@ class Conduit(HandlerConduit):
         return context.cancelled()
 
 
-# --- actions ----------------------------------------------------------------
+# --- scheduled actions ------------------------------------------------------
 
 
-class RegistrationMonitor:
+@action(minutes=cfg.profile.minutes)
+def update_profile():
     """
-    Monitor the registration (consumer) certificate for changes.
-    When a change is detected, the bus attachment is changed
-    as appropriate.  When removed, we set our UUID to None which
-    will cause us to detach.  When changed, our UUID is changed
-    which causes a detach/attach to be sure we are attached with
-    the correct UUID.
-    @cvar pmon: A path monitor object.
-    :type pmon: PathMonitor
+    Report the unit profile(s).
     """
-
-    pmon = PathMonitor()
-
-    @classmethod
-    @action(days=0x8E94)
-    def init(cls):
-        """
-        Start path monitor to track changes in the
-        pulp identity certificate.
-        """
-        path = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-        cls.pmon.add(path, cls.changed)
-        cls.pmon.start()
-
-    @classmethod
-    def changed(cls, path):
-        """
-        A change in the pulp certificate has been detected.
-        When the certificate has been deleted: the connection to the broker is
-        terminated by calling plugin.detach().
-        When the certificate has been added/updated: the plugin's configuration is
-        updated using the pulp configuration; the uuid is updated to the agent_id
-        which has the form: 'pulp.agent.<consumer_id>' and the connection
-        to the broker is established by calling plugin.attach().
-        :param path: The changed file (ignored).
-        :type path: str
-        """
-        log.info('changed: %s', path)
-        plugin = Plugin.find(__name__)
-        bundle = ConsumerX509Bundle()
-        consumer_id = bundle.cn()
-        if consumer_id:
-            scheme = cfg.messaging.scheme
-            host = cfg.messaging.host or cfg.server.host
-            port = cfg.messaging.port
-            url = '%s://%s:%s' % (scheme, host, port)
-            agent_id = 'pulp.agent.%s' % consumer_id
-            authenticator = Authenticator()
-            authenticator.load()
-            plugin_conf = plugin.cfg()
-            plugin_conf.messaging.url = url
-            plugin_conf.messaging.uuid = agent_id
-            plugin_conf.messaging.cacert = cfg.messaging.cacert
-            plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
-                os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-            plugin_conf.messaging.transport = cfg.messaging.transport
-            plugin.authenticator = authenticator
-            plugin.attach()
-        else:
-            plugin.detach()
-
-
-class Synchronization:
-    """
-    Misc actions used to synchronize with the server.
-    """
-
-    @staticmethod
-    @action(minutes=cfg.profile.minutes)
-    def profile():
-        """
-        Report the unit profile(s).
-        """
-        if Synchronization.registered():
-            profile = Profile()
-            profile.send()
-        else:
-            log.info('not registered, profile report skipped')
-
-    @staticmethod
-    def registered():
-        """
-        Get registration status.
-        :return: True when a valid consumer ID can be obtained
-            from the consumer certificate bundle.
-        :rtype: bool
-        """
-        bundle = ConsumerX509Bundle()
-        consumer_id = bundle.cn()
-        return consumer_id is not None
+    if get_agent_id():
+        profile = Profile()
+        profile.send()
+    else:
+        log.info('not registered, profile report skipped')
 
 
 # --- API --------------------------------------------------------------------
