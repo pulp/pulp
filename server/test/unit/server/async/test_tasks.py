@@ -98,12 +98,13 @@ class TestBabysit(ResourceReservationTests):
         # This should not cause any Exception
         tasks.babysit()
 
-    @mock.patch('celery.app.control.Inspect.active_queues',
+    @mock.patch('pulp.server.async.tasks.subprocess_active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.cancel')
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
     @mock.patch('pulp.server.async.tasks.logger')
-    def test_babysit_cancels_correct_tasks(self, logger, add_consumer, cancel, active_queues):
+    def test_babysit_cancels_correct_tasks(self, logger, add_consumer, cancel,
+                                           subprocess_active_queues):
         """
         When babysit() discovers that a worker has gone missing, it should cancel all of the tasks
         that were in its queue.
@@ -146,17 +147,17 @@ class TestBabysit(ResourceReservationTests):
         self.assertTrue(missing_available_queue.name in logger.mock_calls[0][1][0])
         self.assertTrue('Canceling the tasks' in logger.mock_calls[0][1][0])
 
-    @mock.patch('celery.app.control.Inspect.active_queues',
+    @mock.patch('pulp.server.async.tasks.subprocess_active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    def test_babysit_creates_correct_records(self, add_consumer, active_queues):
+    def test_babysit_creates_correct_records(self, add_consumer, subprocess_active_queues):
         """
         Test babysit() with a blank database. It should create the correct AvailableQueues.
         """
         tasks.babysit()
 
-        # babysit() should have called the active_queues() method
-        active_queues.assert_called_once_with()
+        # babysit() should have called the subprocess_active_queues() method
+        subprocess_active_queues.assert_called_once_with()
         # There should be three ActiveQueues, one for each reserved worker in the mock data
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 3)
@@ -168,13 +169,13 @@ class TestBabysit(ResourceReservationTests):
         add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
                                              destination=(RESERVED_WORKER_3,))
 
-    @mock.patch('celery.app.control.Inspect.active_queues',
+    @mock.patch('pulp.server.async.tasks.subprocess_active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks._delete_queue.apply_async',
                 side_effect=tasks._delete_queue.apply_async)
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
     def test_babysit_deletes_correct_records(self, add_consumer, _delete_queue_apply_async,
-                                             active_queues):
+                                             subprocess_active_queues):
         """
         Test babysit() with pre-existing state. It should create the correct AvailableQueues, and
         delete other ones, and leave others in place.
@@ -202,8 +203,8 @@ class TestBabysit(ResourceReservationTests):
         # This should cause queue 4 to get deleted, and 6 to get marked as missing.
         tasks.babysit()
 
-        # babysit() should have called the active_queues() method
-        active_queues.assert_called_once_with()
+        # babysit() should have called the subprocess_active_queues() method
+        subprocess_active_queues.assert_called_once_with()
         # There should be five ActiveQueues, one for each reserved worker in the mock data (3), and
         # numbers 5 and 6 that we created above should also remain because they have been missing
         # for less than five minutes.
@@ -240,10 +241,11 @@ class TestBabysit(ResourceReservationTests):
         _delete_queue_apply_async.assert_called_once_with(
             args=('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX,), queue=tasks.RESOURCE_MANAGER_QUEUE)
 
-    @mock.patch('celery.app.control.Inspect.active_queues',
+    @mock.patch('pulp.server.async.tasks.subprocess_active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    def test_babysit_resets_missing_since_on_reappearing_workers(self, add_consumer, active_queues):
+    def test_babysit_resets_missing_since_on_reappearing_workers(self, add_consumer,
+                                                                 subprocess_active_queues):
         """
         Let's simulate an AvailableQueue having been missing in the past by setting its
         missing_since attribute to two minutes ago. It is part of the mocked active_queues() call,
@@ -257,8 +259,8 @@ class TestBabysit(ResourceReservationTests):
 
         tasks.babysit()
 
-        # babysit() should have called the active_queues() method
-        active_queues.assert_called_once_with()
+        # babysit() should have called the subprocess_active_queues() method
+        subprocess_active_queues.assert_called_once_with()
         # There should be three ActiveQueues, one for each reserved worker in the mock data
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 3)
@@ -273,11 +275,11 @@ class TestDeleteQueue(ResourceReservationTests):
     Test the _delete_queue() Task.
     """
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    @mock.patch('celery.app.control.Inspect.active_queues',
+    @mock.patch('pulp.server.async.tasks.subprocess_active_queues',
                 return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.cancel')
     @mock.patch('pulp.server.async.tasks.logger')
-    def test__delete_queue(self, logger, cancel, active_queues, mock_add_consumer):
+    def test__delete_queue(self, logger, cancel, subprocess_active_queues, mock_add_consumer):
         """
         Assert that the correct Tasks get canceled when their queue is deleted, and that the queue
         is removed from the database.
@@ -336,6 +338,32 @@ class TestInitializeWorker(unittest.TestCase):
 
         # babysit() should have been called with no args
         babysit.assert_called_once_with()
+
+
+class TestSubprocessActiveQueues(unittest.TestCase):
+    """
+    Test the subprocess_active_queues() function.
+    """
+
+    @mock.patch('pulp.server.async.tasks.json')
+    @mock.patch('pulp.server.async.tasks.Popen')
+    @mock.patch('pulp.server.async.tasks.PIPE')
+    def test_subprocess_active_queues(self, PIPE, Popen, json):
+        """
+        Test that subprocess_active_queues() makes the correct calls.
+        """
+        command = ['python', '-m', 'pulp.server.async.active_queues']
+        json_argument = mock.Mock()
+        communicate_result = [json_argument]
+        popen_result = mock.Mock()
+        popen_result.communicate.return_value = communicate_result
+        Popen.return_value = popen_result
+        active_queues = mock.Mock()
+        json.loads.return_value = active_queues
+        result = tasks.subprocess_active_queues()
+        Popen.assert_called_with(command, stdout=PIPE)
+        json.loads.assert_called_with(json_argument)
+        self.assertTrue(result is active_queues)
 
 
 class TestQueueReleaseResource(ResourceReservationTests):
