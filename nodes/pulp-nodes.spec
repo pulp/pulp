@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.4.0
-Release: 0.9.beta%{?dist}
+Release: 0.10.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -247,6 +247,9 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.10.beta
+- 1087863 - Fix progress reporting in node sync command. (jortel@redhat.com)
+
 * Mon Apr 14 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.9.beta
 - 1085545 - Fix permissions on /etc/pulp/server/plugins.conf.d/nodes/importer.
   (jortel@redhat.com)
