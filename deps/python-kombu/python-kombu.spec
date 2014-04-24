@@ -171,6 +171,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-3.pulp
+- Update the qpid_transport.patch. (rbarlow@redhat.com)
+
 * Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-2.pulp
 - Added a patch to skip some Redis tests. (rbarlow@redhat.com)
 
