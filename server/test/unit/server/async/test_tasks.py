@@ -88,12 +88,13 @@ class TestBabysit(ResourceReservationTests):
     """
     Test the babysit() function.
     """
-    @mock.patch('celery.app.control.Inspect.active_queues', return_value=None)
-    def test_active_queues_none(self, active_queues):
+    @mock.patch('pulp.server.async.tasks.subprocess_active_queues', return_value=None)
+    def test_active_queues_none(self, subprocess_active_queues):
         """
-        When there are no active queues, Celery's Inspect.active_queues() returns None instead of an empty
-        iterable. We had a traceback upon the first worker's startup due to this, so this test makes sure that
-        babysit() handles this scenario gracefully.
+        When there are no active queues, the active_queues.py subprocess will print null.
+        subprocess_active_queues will in turn return None. We had a traceback upon the first
+        worker's startup due to this, so this test makes sure that babysit() handles this scenario
+        gracefully.
         """
         # This should not cause any Exception
         tasks.babysit()
