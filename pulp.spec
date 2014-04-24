@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.9.beta%{?dist}
+Release: 0.10.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -574,6 +574,16 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.10.beta
+- 1074670 - Save initialize & finalize in step processing even if no units are
+  processed. (bcourt@redhat.com)
+- 1080609 - pulp-manage-db now ensures the admin. (rbarlow@redhat.com)
+- 1087863 - Fix progress reporting in node sync command. (jortel@redhat.com)
+- 1087633 - Fix bind task to support node binding. (jortel@redhat.com)
+- 1084716 - Register with Celery's setup_logging. (rbarlow@redhat.com)
+- 1086437 - Fixes consumer reregistration. (jortel@redhat.com)
+- 1065450 - updating repo delete api docs for responses (skarmark@redhat.com)
+
 * Mon Apr 14 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.9.beta
 - 1080647 - added validation that a unit profile is not None before requesting
   applicability regeneration by repos (skarmark@redhat.com)
