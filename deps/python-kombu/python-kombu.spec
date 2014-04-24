@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.15
-Release:        3.pulp%{?dist}
+Release:        4.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -43,17 +43,18 @@ BuildRequires:  python3-mock
 %endif
 %endif # if with_python3
 
-BuildRequires:  python-setuptools
-BuildRequires:  python-nose
 BuildRequires:  python-anyjson
+BuildRequires:  python-nose
+BuildRequires:  python-setuptools
 
 # required for tests:
-BuildRequires: python-unittest2
-BuildRequires: python-mock
-BuildRequires: python-simplejson
-BuildRequires: PyYAML
-BuildRequires: python-msgpack
 BuildRequires: python-amqp >= 1.4.5
+BuildRequires: python-mock
+BuildRequires: python-msgpack
+BuildRequires: python-qpid
+BuildRequires: python-simplejson
+BuildRequires: python-unittest2
+BuildRequires: PyYAML
 
 %if 0%{?with_python3}
 BuildRequires: python3-amqp >= 1.4.5
