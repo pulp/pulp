@@ -31,6 +31,7 @@ from pulp.server.content.sources import ContentContainer, Request, ContentSource
 from pulp.server.content.sources.descriptor import to_seconds, is_valid, nectar_config
 from pulp.server.content.sources import model
 from pulp.server.content.sources.container import NectarListener
+from pulp.server.content.sources import constants
 
 
 PRIMARY = 'primary'
@@ -142,6 +143,7 @@ class MockCataloger(object):
         self.exception = exception
         self.refresh = Mock(side_effect=self._refresh)
 
+    @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
     def get_downloader(self, conduit, config, url):
         if url.startswith('http'):
             return HTTPThreadedDownloader(nectar_config(config))
@@ -256,21 +258,6 @@ class TestLoading(ContainerTest):
         self.assertEqual(urls[1], 'file:///underground/fedora/18/i386/')
         self.assertEqual(urls[2], 'file:///underground/fedora/19/x86_64/')
         self.assertEqual(urls[3], 'file:///underground/fedora/19/i386/')
-
-    @patch('pulp.server.content.sources.model.ContentSource.enabled', return_value=True)
-    def test_nectar_config(self, *unused):
-        sources = ContentSource.load_all(self.tmp_dir)
-        unit_world = sources[UNIT_WORLD_SECURE]
-        downloader = unit_world.get_downloader()
-        self.assertEqual(downloader.config.max_concurrent, 10)
-        self.assertEqual(downloader.config.max_speed, 1000)
-        self.assertEqual(downloader.config.ssl_validation, True)
-        self.assertEqual(downloader.config.ssl_client_cert, '/my-client-cert')
-        self.assertEqual(downloader.config.ssl_client_key, '/my-client-key')
-        self.assertEqual(downloader.config.proxy_url, '/my-proxy-url')
-        self.assertEqual(downloader.config.proxy_port, 9090)
-        self.assertEqual(downloader.config.proxy_username, 'proxy-user')
-        self.assertEqual(downloader.config.proxy_password, 'proxy-password')
 
 
 class TestDownloading(ContainerTest):
@@ -703,6 +690,32 @@ class TestDescriptor(TestCase):
         sources = ContentSource.load_all(self.tmp_dir)
         for source_id, source in sources.items():
             self.assertFalse(is_valid(source_id, source.descriptor))
+
+    @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
+    def test_nectar_config(self):
+        descriptor = {
+            constants.MAX_CONCURRENT: '10',
+            constants.MAX_SPEED: '1024',
+            constants.SSL_VALIDATION: 'true',
+            constants.SSL_CA_CERT: 'ssl-ca-certificate',
+            constants.SSL_CLIENT_KEY: 'ssl-client-key',
+            constants.SSL_CLIENT_CERT: 'ssl-client-certificate',
+            constants.PROXY_URL: 'proxy-url',
+            constants.PROXY_PORT: '5000',
+            constants.PROXY_USERID: 'proxy-userid',
+            constants.PROXY_PASSWORD: 'proxy-password'
+        }
+        conf = nectar_config(descriptor)
+        self.assertEqual(conf.max_concurrent, 10)
+        self.assertEqual(conf.max_speed, 1024)
+        self.assertEqual(conf.ssl_validation, True)
+        self.assertEqual(conf.ssl_ca_cert_path, descriptor[constants.SSL_CA_CERT])
+        self.assertEqual(conf.ssl_client_key_path, descriptor[constants.SSL_CLIENT_KEY])
+        self.assertEqual(conf.ssl_client_cert_path, descriptor[constants.SSL_CLIENT_CERT])
+        self.assertEqual(conf.proxy_url, descriptor[constants.PROXY_URL])
+        self.assertEqual(conf.proxy_port, 5000)
+        self.assertEqual(conf.proxy_username, descriptor[constants.PROXY_USERID])
+        self.assertEqual(conf.proxy_password, descriptor[constants.PROXY_PASSWORD])
 
 
 class TestModel(TestCase):
