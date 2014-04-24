@@ -43,6 +43,22 @@ RESERVED_WORKER_NAME_PREFIX = 'reserved_resource_worker-'
 
 
 def subprocess_active_queues():
+    """
+    Get the active queues using an external python module called as a script.
+
+    The use of active_queues inside a celery task causes errors to occur.  Tasks run in a child
+    processes that has already been forked by celery, but qpid.messaging is not fork safe since the
+    connection of the parent process is shared by the child process.
+
+    By calling out to a fresh python interpreter using subprocess, the issue is avoided because the
+    new process does not have a reference to any of the existing connections.
+
+    The external python module is called as a script, and returns the json output via stdout.  This
+    method deserializes the data and returns it.
+
+    :return: The output of active_queues as a dictionary.
+    :rtype: dict
+    """
     command = ['python', '-m', 'pulp.server.async.active_queues']
     p1 = Popen(command, stdout=PIPE)
     active_queues = json.loads(p1.communicate()[0])
@@ -304,7 +320,7 @@ class ReservedTaskMixin(object):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
         Celery's apply_async(), while also making the named resource. No two tasks that claim the
-        same resource reservation can execute concurrently. It accepts type and id of a resource 
+        same resource reservation can execute concurrently. It accepts type and id of a resource
         and combines them to form a resource id.
 
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
@@ -367,7 +383,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         # the task state to 'waiting' only on an insert.
         TaskStatus.get_collection().update(
             {'task_id': async_result.id},
-            {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
+            {'$setOnInsert': {'state': dispatch_constants.CALL_WAITING_STATE},
              '$set': {'queue': queue, 'tags': tags, 'task_type': self.name}},
             upsert=True)
         return async_result
