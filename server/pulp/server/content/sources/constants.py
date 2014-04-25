@@ -34,18 +34,19 @@ PROXY_USERID = 'proxy_username'
 PROXY_PASSWORD = 'proxy_password'
 HEADERS = 'headers'
 
+# format: <property>, <nectar-property>, <conversion-function>
 NECTAR_PROPERTIES = (
-    (MAX_CONCURRENT, int),
-    (MAX_SPEED, int),
-    (SSL_VALIDATION, parse_bool),
-    (SSL_CA_CERT, str),
-    (SSL_CLIENT_KEY, str),
-    (SSL_CLIENT_CERT, str),
-    (PROXY_URL, str),
-    (PROXY_PORT, int),
-    (PROXY_USERID, str),
-    (PROXY_PASSWORD, str),
-    (HEADERS, str),
+    (MAX_CONCURRENT, 'max_concurrent', int),
+    (MAX_SPEED, 'max_speed', int),
+    (SSL_VALIDATION, 'ssl_validation', parse_bool),
+    (SSL_CA_CERT, 'ssl_ca_cert_path', str),
+    (SSL_CLIENT_KEY, 'ssl_client_key_path', str),
+    (SSL_CLIENT_CERT, 'ssl_client_cert_path', str),
+    (PROXY_URL, 'proxy_url', str),
+    (PROXY_PORT, 'proxy_port', int),
+    (PROXY_USERID, 'proxy_username', str),
+    (PROXY_PASSWORD, 'proxy_password', str),
+    (HEADERS, 'headers', str),
 )
 
 SOURCE_ID = 'source_id'
