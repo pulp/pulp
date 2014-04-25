@@ -58,7 +58,7 @@ expires: 3d
 name: Content World
 type: yum
 base_url: http://content-world/content/
-url: f18/x86_64/os/ \
+paths: f18/x86_64/os/ \
      f18/i386/os/ \
      f19/x86_64/os \
      f19/i386/os
