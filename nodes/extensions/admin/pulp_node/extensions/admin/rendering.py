@@ -73,8 +73,12 @@ class ProgressTracker:
         self.snapshot = []
 
     def display(self, report):
+        if report is None:
+            # nothing to render
+            return
         reports = report.get('progress')
         if reports is None:
+            # nothing to render
             return
 
         # On the 2nd+ report, update the last in-progress report.
