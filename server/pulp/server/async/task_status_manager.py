@@ -29,20 +29,20 @@ class TaskStatusManager(object):
     @staticmethod
     def create_task_status(task_id, queue, tags=None, state=None):
         """
-        Creates a new task status for given task_id. 
+        Creates a new task status for given task_id.
 
-        :param task_id: identity of the task this status corresponds to
-        :type  task_id: basestring
-        :param queue:   The name of the queue that the Task is in
-        :type  queue:   basestring
-        :param tags: custom tags on the task
-        :type  tags: list of basestrings or None
-        :param state: state of callable in its lifecycle
-        :type  state: basestring or None
-        :return: task status document
-        :rtype:  dict
+        :param task_id:           identity of the task this status corresponds to
+        :type  task_id:           basestring
+        :param queue:             The name of the queue that the Task is in
+        :type  queue:             basestring
+        :param tags:              custom tags on the task
+        :type  tags:              list of basestrings or None
+        :param state:             state of callable in its lifecycle
+        :type  state:             basestring
+        :return:                  task status document
+        :rtype:                   dict
         :raise DuplicateResource: if there is already a task status entry with the requested task id
-        :raise InvalidValue: if any of the fields are unacceptable
+        :raise InvalidValue:      if any of the fields are unacceptable
         """
         invalid_values = []
         if task_id is None:
@@ -59,13 +59,13 @@ class TaskStatusManager(object):
         if not state:
             state = dispatch_constants.CALL_WAITING_STATE
 
-        task_status = TaskStatus(task_id, queue, tags=tags, state=state)
+        task_status = TaskStatus(task_id=task_id, queue=queue, tags=tags, state=state)
         try:
             TaskStatus.get_collection().save(task_status, safe=True)
         except DuplicateKeyError:
             raise DuplicateResource(task_id)
 
-        created = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        created = TaskStatus.get_collection().find_one({'task_id': task_id})
         return created
 
     @staticmethod
@@ -178,11 +178,11 @@ class TaskStatusManager(object):
         :raise MissingResource: if the given task status does not exist
         :raise InvalidValue: if task_id is invalid
         """
-        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
         if task_status is None:
             raise MissingResource(task_id)
 
-        TaskStatus.get_collection().remove({'task_id' : task_id}, safe=True)
+        TaskStatus.get_collection().remove({'task_id': task_id}, safe=True)
 
     @staticmethod
     def find_all():
@@ -204,7 +204,7 @@ class TaskStatusManager(object):
         :return: serialized task status
         :rtype:  dict or None
         """
-        task_status = TaskStatus.get_collection().find_one({'task_id' : task_id})
+        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
         return task_status
 
     @staticmethod
@@ -215,8 +215,7 @@ class TaskStatusManager(object):
         :param criteria:    A Criteria object representing a search you want
                             to perform
         :type  criteria:    pulp.server.db.model.criteria.Criteria
-        :return:    pymongo cursor for the TaskStatus instances satisfying the query 
+        :return:    pymongo cursor for the TaskStatus instances satisfying the query
         :rtype:     pymongo.cursor.Cursor
         """
         return TaskStatus.get_collection().query(criteria)
-

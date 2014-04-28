@@ -102,8 +102,9 @@ def babysit():
 @worker_ready.connect
 def _initialize_worker(*args, **kwargs):
     """
-    This gets called by Celery when the worker is ready to accept work. It initializes Pulp and runs our
-    babysit() function synchronously so that the application is aware of this worker immediately.
+    This gets called by Celery when the worker is ready to accept work. It initializes Pulp and runs
+    our babysit() function synchronously so that the application is aware of this worker
+    immediately.
 
     :param args:   unused
     :type  args:   list
@@ -295,7 +296,7 @@ class ReservedTaskMixin(object):
         """
         This method allows the caller to schedule the ReservedTask to run asynchronously just like
         Celery's apply_async(), while also making the named resource. No two tasks that claim the
-        same resource reservation can execute concurrently. It accepts type and id of a resource 
+        same resource reservation can execute concurrently. It accepts type and id of a resource
         and combines them to form a resource id.
 
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
@@ -303,11 +304,11 @@ class ReservedTaskMixin(object):
 
         :param resource_type: A string that identifies type of a resource
         :type resource_type:  basestring
-        :param resource_id:   A string that identifies some named resource, guaranteeing that only one
-                              task reserving this same string can happen at a time.
+        :param resource_id:   A string that identifies some named resource, guaranteeing that only
+                              one task reserving this same string can happen at a time.
         :type  resource_id:   basestring
-        :param tags:          A list of tags (strings) to place onto the task, used for searching for
-                              tasks by tag
+        :param tags:          A list of tags (strings) to place onto the task, used for searching
+                              for tasks by tag
         :type  tags:          list
         :return:              An AsyncResult instance as returned by Celery's apply_async
         :rtype:               celery.result.AsyncResult
@@ -353,14 +354,13 @@ class Task(CeleryTask, ReservedTaskMixin):
         async_result.tags = tags
 
         # Create a new task status with the task id and tags.
+        task_status = TaskStatus(
+            task_id=async_result.id, task_type=self.name,
+            state=dispatch_constants.CALL_WAITING_STATE, queue=queue, tags=tags)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        TaskStatus.get_collection().update(
-            {'task_id': async_result.id},
-            {'$setOnInsert': {'state':dispatch_constants.CALL_WAITING_STATE},
-             '$set': {'queue': queue, 'tags': tags, 'task_type': self.name}},
-            upsert=True)
+        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
         return async_result
 
     def __call__(self, *args, **kwargs):
@@ -470,9 +470,9 @@ def cancel(task_id):
     if task_status['state'] in dispatch_constants.CALL_COMPLETE_STATES:
         raise PulpCodedException(PLP0023, task_id=task_id)
     controller.revoke(task_id, terminate=True)
-    TaskStatus.get_collection().find_and_modify({'task_id': task_id,
-                                                 'state': {'$nin': dispatch_constants.CALL_COMPLETE_STATES}},
-                                                {'$set': {'state': dispatch_constants.CALL_CANCELED_STATE}})
+    TaskStatus.get_collection().find_and_modify(
+        {'task_id': task_id, 'state': {'$nin': dispatch_constants.CALL_COMPLETE_STATES}},
+        {'$set': {'state': dispatch_constants.CALL_CANCELED_STATE}})
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)
