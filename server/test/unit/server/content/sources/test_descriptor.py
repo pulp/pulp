@@ -12,6 +12,8 @@
 from unittest import TestCase
 from StringIO import StringIO
 
+from mock import patch, Mock
+
 from pulp.common.config import Config
 from pulp.server.content.sources import constants
 from pulp.server.content.sources.descriptor import is_valid, to_seconds, nectar_config
@@ -75,27 +77,28 @@ class TestDescriptor(TestCase):
             for source_id, descriptor in config.items():
                 self.assertFalse(is_valid(source_id, descriptor))
 
+    @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
     def test_nectar_config(self):
         descriptor = {
             constants.MAX_CONCURRENT: '10',
-            constants.MAX_SPEED: '1000',
-            constants.SSL_VALIDATION: 'True',
-            constants.SSL_CA_CERT: '/my-ca-cert',
-            constants.SSL_CLIENT_CERT: '/my-client-cert',
-            constants.SSL_CLIENT_KEY: '/my-client-key',
-            constants.PROXY_URL: '/my-proxy-url',
-            constants.PROXY_PORT: '9090',
-            constants.PROXY_USERID: 'proxy-user',
-            constants.PROXY_PASSWORD: 'proxy-password',
-            constants.HEADERS: {'A': 1},
+            constants.MAX_SPEED: '1024',
+            constants.SSL_VALIDATION: 'true',
+            constants.SSL_CA_CERT: 'ssl-ca-certificate',
+            constants.SSL_CLIENT_KEY: 'ssl-client-key',
+            constants.SSL_CLIENT_CERT: 'ssl-client-certificate',
+            constants.PROXY_URL: 'proxy-url',
+            constants.PROXY_PORT: '5000',
+            constants.PROXY_USERID: 'proxy-userid',
+            constants.PROXY_PASSWORD: 'proxy-password'
         }
-
-        # test
-
         conf = nectar_config(descriptor)
-
-        # validation
-
-        for key, function in constants.NECTAR_PROPERTIES:
-            self.assertTrue(key in descriptor, msg=key)
-            self.assertEqual(function(descriptor[key]), getattr(conf, key))
+        self.assertEqual(conf.max_concurrent, 10)
+        self.assertEqual(conf.max_speed, 1024)
+        self.assertEqual(conf.ssl_validation, True)
+        self.assertEqual(conf.ssl_ca_cert_path, descriptor[constants.SSL_CA_CERT])
+        self.assertEqual(conf.ssl_client_key_path, descriptor[constants.SSL_CLIENT_KEY])
+        self.assertEqual(conf.ssl_client_cert_path, descriptor[constants.SSL_CLIENT_CERT])
+        self.assertEqual(conf.proxy_url, descriptor[constants.PROXY_URL])
+        self.assertEqual(conf.proxy_port, 5000)
+        self.assertEqual(conf.proxy_username, descriptor[constants.PROXY_USERID])
+        self.assertEqual(conf.proxy_password, descriptor[constants.PROXY_PASSWORD])

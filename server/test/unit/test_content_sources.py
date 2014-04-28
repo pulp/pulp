@@ -691,32 +691,6 @@ class TestDescriptor(TestCase):
         for source_id, source in sources.items():
             self.assertFalse(is_valid(source_id, source.descriptor))
 
-    @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
-    def test_nectar_config(self):
-        descriptor = {
-            constants.MAX_CONCURRENT: '10',
-            constants.MAX_SPEED: '1024',
-            constants.SSL_VALIDATION: 'true',
-            constants.SSL_CA_CERT: 'ssl-ca-certificate',
-            constants.SSL_CLIENT_KEY: 'ssl-client-key',
-            constants.SSL_CLIENT_CERT: 'ssl-client-certificate',
-            constants.PROXY_URL: 'proxy-url',
-            constants.PROXY_PORT: '5000',
-            constants.PROXY_USERID: 'proxy-userid',
-            constants.PROXY_PASSWORD: 'proxy-password'
-        }
-        conf = nectar_config(descriptor)
-        self.assertEqual(conf.max_concurrent, 10)
-        self.assertEqual(conf.max_speed, 1024)
-        self.assertEqual(conf.ssl_validation, True)
-        self.assertEqual(conf.ssl_ca_cert_path, descriptor[constants.SSL_CA_CERT])
-        self.assertEqual(conf.ssl_client_key_path, descriptor[constants.SSL_CLIENT_KEY])
-        self.assertEqual(conf.ssl_client_cert_path, descriptor[constants.SSL_CLIENT_CERT])
-        self.assertEqual(conf.proxy_url, descriptor[constants.PROXY_URL])
-        self.assertEqual(conf.proxy_port, 5000)
-        self.assertEqual(conf.proxy_username, descriptor[constants.PROXY_USERID])
-        self.assertEqual(conf.proxy_password, descriptor[constants.PROXY_PASSWORD])
-
 
 class TestModel(TestCase):
 
