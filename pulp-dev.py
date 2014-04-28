@@ -222,17 +222,17 @@ def get_paths_to_copy():
 
 
 def gen_rsa_keys():
-    # We don't need to make keys for EL 5
-    if LSB_VERSION >= 6.0:
-        print 'generating RSA keys'
-        for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
-            key_path = os.path.join(key_dir, 'rsa.key')
-            key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
-            if not os.path.exists(key_path):
-                os.system('openssl genrsa -out %s 2048' % key_path)
-            if not os.path.exists(key_path_pub):
-                os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
-            os.system('chmod 640 %s' % key_path)
+    print 'generating RSA keys'
+    for key_dir in ('/etc/pki/pulp/', '/etc/pki/pulp/consumer'):
+        key_path = os.path.join(key_dir, 'rsa.key')
+        key_path_pub = os.path.join(key_dir, 'rsa_pub.key')
+        if not os.path.exists(key_path):
+            os.system('openssl genrsa -out %s 2048' % key_path)
+        if not os.path.exists(key_path_pub):
+            os.system('openssl rsa -in %s -pubout > %s' % (key_path, key_path_pub))
+        os.system('chmod 640 %s' % key_path)
+        # The keys won't be apache owned in EL 5
+        if LSB_VERSION >= 6.0:
             os.system('chown root:apache %s' % key_path)
             os.system('chown root:apache %s' % key_path_pub)
 
