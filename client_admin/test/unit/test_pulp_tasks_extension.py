@@ -81,6 +81,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
         # test is happy. Quick check to make sure at least something was displayed
         # to the user.
         self.assertTrue('No tasks found\n' not in self.recorder.lines)
+        self.assertTrue('Result:           Incomplete\n' not in self.recorder.lines)
 
     def test_details(self):
         # Setup
@@ -96,6 +97,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
         # test is happy. Quick check to make sure at least something was displayed
         # to the user.
         self.assertTrue(len(self.recorder.lines) > 0)
+        self.assertTrue('Result:           Incomplete\n' in self.recorder.lines)
 
     def test_details_failed_task(self):
         # Setup
