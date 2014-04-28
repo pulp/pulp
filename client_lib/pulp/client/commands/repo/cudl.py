@@ -27,8 +27,10 @@ additional options as necessary for its custom behavior.
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
+from pulp.bindings.responses import Task
 from pulp.client import arg_utils
-from pulp.client.commands.options import OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES, OPTION_REPO_ID
+from pulp.client.commands.options import OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES, \
+    OPTION_REPO_ID
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
 
@@ -181,7 +183,7 @@ class DeleteRepositoryCommand(PollingCommand):
         self.prompt.render_success_message(msg)
 
 
-class UpdateRepositoryCommand(PulpCliCommand):
+class UpdateRepositoryCommand(PollingCommand):
     """
     Updates the metadata about just a repository, not its importers/distributors.
     """
@@ -193,7 +195,7 @@ class UpdateRepositoryCommand(PulpCliCommand):
         if method is None:
             method = self.run
 
-        super(UpdateRepositoryCommand, self).__init__(name, description, method)
+        super(UpdateRepositoryCommand, self).__init__(name, description, method, context)
 
         self.add_option(OPTION_REPO_ID)
         self.add_option(OPTION_NAME)
@@ -203,7 +205,11 @@ class UpdateRepositoryCommand(PulpCliCommand):
     def run(self, **kwargs):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        delta.pop(OPTION_REPO_ID.keyword) # not needed in the delta
+        repo_id = delta.pop(OPTION_REPO_ID.keyword) # not needed in the delta
+
+        repo_config = {}
+        importer_config = None
+        distributor_configs = None
 
         # Translate the argument to key name
         if delta.pop(OPTION_NAME.keyword, None) is not None:
@@ -212,13 +218,25 @@ class UpdateRepositoryCommand(PulpCliCommand):
         if delta.pop(OPTION_NOTES.keyword, None) is not None:
             delta['notes'] = kwargs[OPTION_NOTES.keyword]
 
+        if delta.pop('distributor_configs', None) is not None:
+            distributor_configs = kwargs['distributor_configs']
+
+        if delta.pop('importer_configs', None) is not None:
+            importer_config = kwargs['importer_configs']
+
+        repo_config['delta'] = delta
+
         try:
-            self.context.server.repo.update(kwargs[OPTION_REPO_ID.keyword], delta)
-            msg = _('Repository [%(r)s] successfully updated')
-            self.prompt.render_success_message(msg % {'r' : kwargs[OPTION_REPO_ID.keyword]})
+            result = self.context.server.repo.update(repo_id, delta,
+                                                     importer_config, distributor_configs)
+            if result.is_async():
+                self.poll([result.response_body], kwargs)
+            else:
+                msg = _('Repository [%(r)s] successfully updated')
+                self.prompt.render_success_message(msg % {'r': repo_id})
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
-            self.prompt.write(msg % {'r' : kwargs[OPTION_REPO_ID.keyword]}, tag='not-found')
+            self.prompt.write(msg % {'r': repo_id}, tag='not-found')
 
 
 class ListRepositoriesCommand(PulpCliCommand):

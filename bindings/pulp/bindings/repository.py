@@ -99,9 +99,34 @@ class RepositoryAPI(PulpAPI):
         path = self.base_path + "%s/" % id
         return self.server.DELETE(path)
 
-    def update(self, id, delta):
-        path = self.base_path + "%s/" % id
-        body = {'delta' : delta}
+    def update(self, repo_id, delta, importer_configs=None, distributor_configs=None):
+        """
+        Update the configuration for a repository and the associated importers & exporters
+
+        :param repo_id: The ID of the repository to update
+        :type repo_id: str
+        :param delta: The updated configuration items for the repository object itself
+        :type delta: dict
+        :param importer_configs: The updated configuration items for each importer associated with
+                                the repository
+        :type importer_configs: dict
+        :param distributor_configs: The updated configuration items for each distributor associated
+                                    with the repository
+        :type distributor_configs: dict
+        :return:    Response object
+        :rtype:     pulp.bindings.responses.Response
+
+        :raises:    ConnectionException or one of the RequestExceptions
+                    (depending on response codes) in case of unsuccessful
+                    request
+        """
+        path = self.base_path + "%s/" % repo_id
+        body = {'delta': delta}
+        if importer_configs:
+            body['importer_configs'] = importer_configs
+        if distributor_configs:
+            body['distributor_configs'] = distributor_configs
+
         return self.server.PUT(path, body)
 
     def update_repo_and_plugins(self, id, display_name, description, notes,

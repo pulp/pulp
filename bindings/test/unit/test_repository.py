@@ -16,7 +16,7 @@ import unittest
 import mock
 
 from pulp.bindings.server import PulpConnection
-from pulp.bindings.repository import (RepositorySearchAPI, RepositoryUnitAPI,
+from pulp.bindings.repository import (RepositorySearchAPI, RepositoryUnitAPI, RepositoryAPI,
                                       RepositoryDistributorAPI, RepositoryHistoryAPI)
 from pulp.common import constants
 
@@ -198,4 +198,28 @@ class TestRespositoryHistoryAPI(unittest.TestCase):
                                           start_date='2013-01-01T00:00:00Z', end_date='2013-01-01T00:00:00Z')
         self.api.server.GET.assert_called_once_with(expected_path, expected_query)
         self.assertEqual(result, self.api.server.GET.return_value)
+
+
+class TestRepositoryUpdateAPI(unittest.TestCase):
+
+    def setUp(self):
+        self.api = RepositoryAPI(mock.MagicMock(spec=PulpConnection))
+        self.expected_path = self.api.base_path + "foo/"
+        self.repo_id = 'foo'
+
+    def test_repo_only(self):
+
+        self.api.update(self.repo_id, {'baz': 'qux'})
+        expected_body = {'delta': {'baz': 'qux'}}
+        self.api.server.PUT.assert_called_once_with(self.expected_path, expected_body)
+
+    def test_distributors(self):
+        self.api.update(self.repo_id, {}, distributor_configs={'foo': {'bar': 'baz'}})
+        expected_body = {'delta': {}, 'distributor_configs': {'foo': {'bar': 'baz'}}}
+        self.api.server.PUT.assert_called_once_with(self.expected_path, expected_body)
+
+    def test_importers(self):
+        self.api.update(self.repo_id, {}, importer_configs={'foo': {'bar': 'baz'}})
+        expected_body = {'delta': {}, 'importer_configs': {'foo': {'bar': 'baz'}}}
+        self.api.server.PUT.assert_called_once_with(self.expected_path, expected_body)
 

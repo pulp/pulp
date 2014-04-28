@@ -13,8 +13,9 @@
 
 import mock
 
-from pulp.bindings.responses import STATE_FINISHED
-from pulp.client.commands.polling import PollingCommand
+from pulp.devel.unit.util import compare_dict
+from pulp.bindings.responses import STATE_FINISHED, Task
+from pulp.client.commands.polling import PollingCommand, FLAG_BACKGROUND
 from pulp.client.commands.repo import cudl
 from pulp.client.commands.options import OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_TITLE
@@ -199,6 +200,7 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
         # Ensure all of the expected options are there
         found_options = set(self.command.options)
         expected_options = set([OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID])
+        expected_options.add(FLAG_BACKGROUND)
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -212,10 +214,12 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
         # Setup
         repo_id = 'test-repo'
         data = {
-            OPTION_REPO_ID.keyword : repo_id,
-            OPTION_NAME.keyword : 'Test Repository',
-            OPTION_DESCRIPTION.keyword : 'Repository Description',
-            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
+            OPTION_REPO_ID.keyword: repo_id,
+            OPTION_NAME.keyword: 'Test Repository',
+            OPTION_DESCRIPTION.keyword: 'Repository Description',
+            OPTION_NOTES.keyword: {'a': 'a', 'b': 'b'},
+            'distributor_configs': {'alpha': {'beta': 'gamma'}},
+            'importer_configs': {'delta': {'epsilon': 'zeta'}}
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -232,12 +236,64 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
 
         body = self.server_mock.request.call_args[0][2]
         body = json.loads(body)
-        self.assertEqual(body['delta']['display_name'], 'Test Repository')
-        self.assertEqual(body['delta']['description'], 'Repository Description')
-        self.assertEqual(body['delta']['notes'], {'a' : 'a', 'b' : 'b'})
+
+        body_target = {
+            'delta': {
+                'display_name': 'Test Repository',
+                'description': 'Repository Description',
+                'notes': {'a': 'a', 'b': 'b'}
+            },
+            'distributor_configs': {'alpha': {'beta': 'gamma'}},
+            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+
+        }
+        compare_dict(body, body_target)
 
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
+
+    def test_run_async(self):
+        # Setup
+        repo_id = 'test-repo'
+        data = {
+            OPTION_REPO_ID.keyword: repo_id,
+            OPTION_NAME.keyword: 'Test Repository',
+            OPTION_DESCRIPTION.keyword: 'Repository Description',
+            OPTION_NOTES.keyword: {'a' : 'a', 'b' : 'b'},
+            'distributor_configs': {'alpha': {'beta': 'gamma'}},
+            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+        }
+
+        result_task = Task({})
+        self.server_mock.request.return_value = 200, result_task
+        self.command.poll = mock.Mock()
+
+        # Test
+        self.command.run(**data)
+
+        # Verify
+        self.assertEqual(1, self.server_mock.request.call_count)
+        self.assertEqual('PUT', self.server_mock.request.call_args[0][0])
+
+        url = self.server_mock.request.call_args[0][1]
+        self.assertTrue(url.endswith('/repositories/%s/' % repo_id))
+
+        body = self.server_mock.request.call_args[0][2]
+        body = json.loads(body)
+
+        body_target = {
+            'delta': {
+                'display_name': 'Test Repository',
+                'description': 'Repository Description',
+                'notes': {'a': 'a', 'b': 'b'}
+            },
+            'distributor_configs': {'alpha': {'beta': 'gamma'}},
+            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+
+        }
+        compare_dict(body, body_target)
+
+        self.command.poll.assert_called_once_with([result_task], mock.ANY)
 
     def test_run_not_found(self):
         # Setup
