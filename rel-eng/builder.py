@@ -79,8 +79,8 @@ parser.add_argument("--update-tag-package-list", action="store_true", default=Fa
                          "any packages that are added to the tag.")
 parser.add_argument("--disable-build", action="store_true", default=False,
                     help="Disable koji building.")
-parser.add_argument("--disable-packaging", action="store_true", default=False,
-                    help="Do not package or create repos")
+parser.add_argument("--disable-repo-build", action="store_true", default=False,
+                    help="Do not create repos")
 parser.add_argument("--push", action="store_true", default=False,
                     help="Push the created repos to fedorapeople.")
 parser.add_argument("--scratch", action="store_true", default=False,
@@ -471,7 +471,7 @@ if not opts.disable_build:
     wait_for_completion(builds)
 
 # Don't build the repos if we are building a dependency
-if not opts.disable_packaging:
+if not opts.disable_repo_build:
     # Download the rpms and create the yum repos
     for distkey, distvalue in DISTRIBUTION_INFO.iteritems():
         build_target = "%s-%s" % (build_tag, distvalue.get(DIST_KOJI_NAME))
