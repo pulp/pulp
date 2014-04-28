@@ -10,9 +10,9 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import calendar
 from datetime import datetime
+import calendar
+import copy
 import logging
 import pickle
 import time
@@ -44,7 +44,7 @@ class CallResource(Model):
         super(CallResource, self).__init__()
         self.call_request_id = call_request_id
         self.resource_type = resource_type
-        self.resource_id  = resource_id
+        self.resource_id = resource_id
         self.operation = operation
 
 
@@ -84,12 +84,11 @@ class ScheduledCall(Model):
     Serialized scheduled call request
     """
     USER_UPDATE_FIELDS = frozenset(['iso_schedule', 'args', 'kwargs', 'enabled',
-                          'failure_threshold'])
+                                    'failure_threshold'])
 
     collection_name = 'scheduled_calls'
     unique_indices = ()
     search_indices = ('resource', 'last_updated')
-
 
     def __init__(self, iso_schedule, task, total_run_count=0, next_run=None,
                  schedule=None, args=None, kwargs=None, principal=None, last_updated=None,
@@ -113,53 +112,55 @@ class ScheduledCall(Model):
         :param args:                list of arguments that should be passed to the
                                     task's apply_async function as its "args" argument
         :type  args:                list
-        :param kwargs:              dict of keyword arguments that should be passed to the task's apply_async
-                                    function as its "kwargs" argument
+        :param kwargs:              dict of keyword arguments that should be passed to the task's
+                                    apply_async function as its "kwargs" argument
         :type  kwargs:              dict
         :param principal:           pickled instance of pulp.server.db.model.auth.User
                                     representing the pulp user who the task
                                     should be run as. This is optional.
         :type  principal:           basestring or None
-        :param last_updated:        timestamp for the last time this schedule was updated in the database as
-                                    seconds since the epoch
+        :param last_updated:        timestamp for the last time this schedule was updated in the
+                                    database as seconds since the epoch
         :type  last_updated:        float
-        :param consecutive_failures:    number of times this task has failed consecutively. This gets reset to
-                                        zero if the task succeeds.
+        :param consecutive_failures:    number of times this task has failed consecutively. This
+                                        gets reset to zero if the task succeeds.
         :type  consecutive_failures:    int
-        :param enabled:             boolean indicating whether this schedule should be actively run by the
-                                    scheduler. If False, the schedule will be ignored.
+        :param enabled:             boolean indicating whether this schedule should be actively run
+                                    by the scheduler. If False, the schedule will be ignored.
         :type  enabled:             bool
         :param failure_threshold:   number of consecutive failures after which this task should be
-                                    automatically disabled. Because these tasks run asynchronously, they may
-                                    finish in a different order than they were queued in. Thus, it is possible
-                                    that n consecutive failures will be reported by jobs that were not queued
-                                    consecutively. So do not depend on the queuing order when using this
-                                    feature. If this value is 0, no automatic disabling will occur.
+                                    automatically disabled. Because these tasks run asynchronously,
+                                    they may finish in a different order than they were queued in.
+                                    Thus, it is possible that n consecutive failures will be
+                                    reported by jobs that were not queued consecutively. So do not
+                                    depend on the queuing order when using this feature. If this
+                                    value is 0, no automatic disabling will occur.
         :type  failure_threshold:   int
         :param last_run_at:         ISO8601 string representing when this schedule last ran.
         :type  last_run_at:         basestring
-        :param first_run:           ISO8601 string or datetime instance (in UTC timezone) representing when
-                                    this schedule should run or should have been run for the first time. If
-                                    the schedule has a specified date and time to start, this will be that
-                                    value. If not, the value from the first time the schedule was actually run
-                                    will be used.
+        :param first_run:           ISO8601 string or datetime instance (in UTC timezone)
+                                    representing when this schedule should run or should have been
+                                    run for the first time. If the schedule has a specified date and
+                                    time to start, this will be that value. If not, the value from
+                                    the first time the schedule was actually run will be used.
         :type  first_run:           basestring or datetime.datetime or NoneType
-        :param remaining_runs:      number of runs remaining until this schedule will be automatically
-                                    disabled.
+        :param remaining_runs:      number of runs remaining until this schedule will be
+                                    automatically disabled.
         :type  remaining_runs:      int or NoneType
         :param id:                  unique ID used by mongodb to identify this schedule
         :type  id:                  basestring
         :param tags:                ignored, but allowed to exist as historical
                                     data for now
-        :param name:                ignored, because the "id" value is used for this now. The value is here
-                                    for backward compatibility.
-        :param options:             dictionary that should be passed to the apply_async function as its
-                                    "options" argument.
+        :param name:                ignored, because the "id" value is used for this now. The value
+                                    is here for backward compatibility.
+        :param options:             dictionary that should be passed to the apply_async function as
+                                    its "options" argument.
         :type  options:             dict
-        :param resource:            optional string indicating a unique resource that should be used to find
-                                    this schedule. For example, to find all schedules for a given repository,
-                                    a resource string will be derived for that repo, and this collection will
-                                    be searched for that resource string.
+        :param resource:            optional string indicating a unique resource that should be used
+                                    to find this schedule. For example, to find all schedules for a
+                                    given repository, a resource string will be derived for that
+                                    repo, and this collection will be searched for that resource
+                                    string.
         :type  resource:            basestring
         """
         if id is None:
@@ -199,8 +200,8 @@ class ScheduledCall(Model):
         self.total_run_count = total_run_count
 
         if first_run is None:
-            # get the date and time from the iso_schedule value, and if it does not have a date and time, use
-            # the current date and time
+            # get the date and time from the iso_schedule value, and if it does not have a date and
+            # time, use the current date and time
             self.first_run = dateutils.format_iso8601_datetime(
                 dateutils.parse_iso8601_interval(iso_schedule)[1] or
                 datetime.utcnow().replace(tzinfo=isodate.UTC))
@@ -339,7 +340,7 @@ class ScheduledCall(Model):
         since_first_s = now_s - first_run_s
         run_every_s = timedelta_seconds(self.as_schedule_entry().schedule.run_every)
         # don't want this to be negative
-        expected_runs = max(int(since_first_s/run_every_s), 0)
+        expected_runs = max(int(since_first_s / run_every_s), 0)
         last_scheduled_run_s = first_run_s + expected_runs * run_every_s
 
         return now_s, first_run_s, since_first_s, run_every_s, last_scheduled_run_s, expected_runs
@@ -358,7 +359,7 @@ class ScheduledCall(Model):
         :rtype:     str
         """
         now_s, first_run_s, since_first_s, run_every_s, \
-                last_scheduled_run_s, expected_runs = self._calculate_times()
+            last_scheduled_run_s, expected_runs = self._calculate_times()
 
         # if first run is in the future, return that time
         if first_run_s > now_s:
@@ -424,7 +425,7 @@ class ScheduleEntry(beat.ScheduleEntry):
         :rtype:     tuple of (bool, number)
         """
         now_s, first_run_s, since_first_s, run_every_s, \
-                last_scheduled_run_s, expected_runs = self._scheduled_call._calculate_times()
+            last_scheduled_run_s, expected_runs = self._scheduled_call._calculate_times()
 
         # seconds remaining until the next time this should run, not counting
         # whether it gets run now or not
@@ -476,7 +477,7 @@ class TaskStatus(Model):
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
     :ivar task_type:   the fully qualified (package/method) type of the task
-    :type task_type:   str
+    :type task_type:   basestring
     :ivar tags:        custom tags on the task
     :type tags:        list
     :ivar state:       state of callable in its lifecycle
@@ -505,20 +506,81 @@ class TaskStatus(Model):
     unique_indices = ('task_id',)
     search_indices = ('task_id', 'tags', 'state')
 
-    def __init__(self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None,
-                 progress_report=None):
+    def __init__(
+            self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None,
+            progress_report=None, task_type=None, start_time=None, finish_time=None, result=None):
+        """
+        Initialize the TaskStatus based on the provided attributes. All parameters besides task_id
+        and queue are optional.
+
+        :param task_id:         identity of the task this status corresponds to
+        :type  task_id:         basestring
+        :param queue:           The queue that the Task was queued in
+        :type  queue:           basestring
+        :param tags:            custom tags on the task
+        :type  tags:            list
+        :param state:           state of callable in its lifecycle
+        :type  state:           basestring
+        :param error:           Any errors or collections of errors that occurred while this task
+                                was running
+        :type  error:           dict (created from a PulpException)
+        :param spawned_tasks:   List of tasks that were spawned during the running of this task
+        :type  spawned_tasks:   list of basestrings
+        :param progress_report: A report containing information about task's progress
+        :type  progress_report: dict
+        :param task_type:       the fully qualified (package/method) type of the task
+        :type  task_type:       basestring
+        :param start_time:      time the task started executing
+        :type  start_time:      datetime.datetime
+        :param finish_time:     time the task completed
+        :type  finish_time:     datetime.datetime
+        :param result:          return value of the callable, if any
+        :type  result:          any
+        """
         super(TaskStatus, self).__init__()
 
         self.task_id = task_id
-        self.task_type = None
+        self.task_type = task_type
+        self.state = state
         self.queue = queue
         self.tags = tags or []
-        self.state = state
-        self.result = None
-        self.exception = None
-        self.traceback = None
-        self.start_time = None
-        self.finish_time = None
-        self.error = error
+        self.start_time = start_time
+        self.finish_time = finish_time
         self.spawned_tasks = spawned_tasks or []
         self.progress_report = progress_report or {}
+        self.result = result
+        self.error = error
+        # These are deprecated, and will always be None
+        self.exception = None
+        self.traceback = None
+
+    def save(self, fields_to_set_on_insert=None):
+        """
+        Save the current state of the TaskStatus to the database, using an upsert operiation. If
+        fields_to_set_on_insert is provided as a list of field names, the upsert operation will only
+        set those fields if this becomes an insert operation, otherwise those fields will be
+        ignored.
+
+        :param fields_to_set_on_insert: A list of field names that should be updated with Mongo's
+                                        $setOnInsert operator.
+        :type  fields_to_set_on_insert: list
+        """
+        stuff_to_update = dict(copy.deepcopy(self))
+
+        # Let's pop the $setOnInsert attributes out of the copy of self so that we can pass the
+        # remaining attributes to the $set operator in the query below.
+        fields_to_set_on_insert = fields_to_set_on_insert or []
+        set_on_insert = {}
+        for field in fields_to_set_on_insert:
+            set_on_insert[field] = stuff_to_update.pop(field)
+        task_id = stuff_to_update.pop('task_id')
+        # MongoDB will be angry with us if we try to update the _id field
+        stuff_to_update.pop('_id')
+
+        update = {'$set': stuff_to_update}
+        if set_on_insert:
+            update['$setOnInsert'] = set_on_insert
+        self.get_collection().update(
+            {'task_id': task_id},
+            update,
+            upsert=True)

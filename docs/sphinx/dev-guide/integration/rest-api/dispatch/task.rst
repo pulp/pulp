@@ -42,10 +42,12 @@ Example Task Report::
   "queue": "reserved_resource_worker-0@your.domain.com",
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
   "task_type": "pulp.server.tasks.repository.sync_with_auto_publish",
-  "progress": {}, # contents depend on the operation
+  "progress_report": {}, # contents depend on the operation
   "result": null,
   "start_time": "2012-05-17T16:48:00Z",
   "finish_time": null,
+  "exception": null,
+  "traceback": null,
   "tags": [
     "pulp:repository:f16",
     "pulp:action:sync"
