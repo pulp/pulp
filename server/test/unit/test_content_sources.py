@@ -15,7 +15,6 @@ import shutil
 from uuid import uuid4
 from tempfile import mkdtemp
 from mock import patch, Mock
-from unittest import TestCase
 from threading import Event
 
 from nectar.config import DownloaderConfig
@@ -28,10 +27,7 @@ from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
-from pulp.server.content.sources.descriptor import to_seconds, is_valid, nectar_config
-from pulp.server.content.sources import model
-from pulp.server.content.sources.container import NectarListener
-from pulp.server.content.sources import constants
+from pulp.server.content.sources.descriptor import nectar_config
 
 
 PRIMARY = 'primary'
