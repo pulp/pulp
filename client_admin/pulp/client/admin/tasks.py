@@ -21,7 +21,9 @@ from pulp.client.extensions.exceptions import PulpServerException
 # -- constants ----------------------------------------------------------------
 
 # Guidance for render_document_list on how to display task info
-TASK_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time', 'result', 'task_id']
+TASK_DETAILS_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time',
+                          'result', 'task_id']
+TASK_LIST_DOC_ORDER = ['operations', 'resources', 'state', 'start_time', 'finish_time', 'task_id']
 
 # -- framework hooks ----------------------------------------------------------
 
@@ -86,17 +88,16 @@ class BaseTasksSection(PulpCliSection):
             actions, resources = self.parse_tags(task)
 
             task_doc = {
-                'operations' : ', '.join(actions),
-                'resources' : ', '.join(resources),
-                'task_id' : task.task_id,
-                'state' : state,
-                'start_time' : start_time,
-                'finish_time' : finish_time,
-                'result' : result,
+                'operations': ', '.join(actions),
+                'resources': ', '.join(resources),
+                'task_id': task.task_id,
+                'state': state,
+                'start_time': start_time,
+                'finish_time': finish_time,
             }
             task_documents.append(task_doc)
 
-        self.context.prompt.render_document_list(task_documents, order=TASK_DOC_ORDER)
+        self.context.prompt.render_document_list(task_documents, order=TASK_LIST_DOC_ORDER)
 
     def details(self, **kwargs):
         """
@@ -115,14 +116,14 @@ class BaseTasksSection(PulpCliSection):
 
         # Assemble document to be displayed
         task_doc = {
-            'operations' : ', '.join(actions),
-            'resources' : ', '.join(resources),
-            'task_id' : task.task_id,
-            'state' : state,
-            'start_time' : start_time,
-            'finish_time' : finish_time,
-            'result' : result,
-            'progress_report' : task.progress_report,
+            'operations': ', '.join(actions),
+            'resources': ', '.join(resources),
+            'task_id': task.task_id,
+            'state': state,
+            'start_time': start_time,
+            'finish_time': finish_time,
+            'result': result,
+            'progress_report': task.progress_report,
         }
 
         if task.exception:
@@ -131,7 +132,7 @@ class BaseTasksSection(PulpCliSection):
         if task.traceback:
             task_doc['traceback'] = task.traceback
 
-        self.context.prompt.render_document(task_doc, order=TASK_DOC_ORDER)
+        self.context.prompt.render_document(task_doc, order=TASK_DETAILS_DOC_ORDER)
 
     def cancel(self, **kwargs):
         """
