@@ -135,8 +135,7 @@ the spawned_tasks field.
 Scheduled Calls
 ^^^^^^^^^^^^^^^
 
-The
-`Scheduled Call data structure <https://pulp-dev-guide.readthedocs.org/en/latest/conventions/scheduled.html#scheduled-tasks>`_
+The `Scheduled Call data structure <https://pulp-dev-guide.readthedocs.org/en/latest/conventions/scheduled.html#scheduled-tasks>`_
  has changed substantially.
 
 * ``last_run`` is now ``last_run_at``.
@@ -237,6 +236,9 @@ Binding API Changes
       the API.
    #. The ``response`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
    #. The ``is_rejected()`` and ``is_postponed()`` methods have been removed.
+
+* Our ``pulp.bindings.repository.update_repo_and_plugins(...)`` method has been deprecated in favor of
+  ``pulp.bindings.repository.update(...)``.
 
 Plugin API Changes
 ------------------

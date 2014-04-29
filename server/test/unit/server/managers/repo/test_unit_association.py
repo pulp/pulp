@@ -534,7 +534,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         criteria = UnitAssociationCriteria.from_client_input(criteria_doc)
 
-        self.manager.unassociate_by_criteria(self.repo_id, criteria, OWNER_TYPE_USER, 'admin')
+        result = self.manager.unassociate_by_criteria(self.repo_id, criteria,
+                                                      OWNER_TYPE_USER, 'admin')
+        self.assertEquals(result, {})
 
         self.assertTrue(self.manager.association_exists(self.repo_id, 'unit-1', 'type-1'))
         self.assertTrue(self.manager.association_exists(self.repo_id, 'unit-2', 'type-1'))
