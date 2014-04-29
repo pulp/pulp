@@ -99,17 +99,17 @@ class RepositoryAPI(PulpAPI):
         path = self.base_path + "%s/" % id
         return self.server.DELETE(path)
 
-    def update(self, repo_id, delta, importer_configs=None, distributor_configs=None):
+    def update(self, id, delta, importer_config=None, distributor_configs=None):
         """
         Update the configuration for a repository and the associated importers & exporters
 
-        :param repo_id: The ID of the repository to update
-        :type repo_id: str
+        :param id: The ID of the repository to update
+        :type id: str
         :param delta: The updated configuration items for the repository object itself
         :type delta: dict
-        :param importer_configs: The updated configuration items for each importer associated with
+        :param importer_config: The updated configuration items for the importer associated with
                                 the repository
-        :type importer_configs: dict
+        :type importer_config: dict
         :param distributor_configs: The updated configuration items for each distributor associated
                                     with the repository
         :type distributor_configs: dict
@@ -120,10 +120,10 @@ class RepositoryAPI(PulpAPI):
                     (depending on response codes) in case of unsuccessful
                     request
         """
-        path = self.base_path + "%s/" % repo_id
+        path = self.base_path + "%s/" % id
         body = {'delta': delta}
-        if importer_configs:
-            body['importer_configs'] = importer_configs
+        if importer_config:
+            body['importer_config'] = importer_config
         if distributor_configs:
             body['distributor_configs'] = distributor_configs
 
@@ -132,6 +132,9 @@ class RepositoryAPI(PulpAPI):
     def update_repo_and_plugins(self, id, display_name, description, notes,
                                 importer_config, distributor_configs):
         """
+        :deprecated: 2.4
+        Use :func:`update` instead.
+
         Calls the server-side aggregate method for updating a repository and
         its associated plugins in a single call. They will be updated in the
         following order:

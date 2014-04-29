@@ -221,8 +221,8 @@ class UpdateRepositoryCommand(PollingCommand):
         if delta.pop('distributor_configs', None) is not None:
             distributor_configs = kwargs['distributor_configs']
 
-        if delta.pop('importer_configs', None) is not None:
-            importer_config = kwargs['importer_configs']
+        if delta.pop('importer_config', None) is not None:
+            importer_config = kwargs['importer_config']
 
         repo_config['delta'] = delta
 

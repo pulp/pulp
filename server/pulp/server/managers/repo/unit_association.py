@@ -370,8 +370,9 @@ class RepoUnitAssociationManager(object):
         association_query_manager = manager_factory.repo_unit_association_query_manager()
         unassociate_units = association_query_manager.get_units(repo_id, criteria=criteria)
 
-        if len(unassociate_units) is 0:
+        if len(unassociate_units) == 0:
             return {}
+
         unit_map = {}  # maps unit_type_id to a list of unit_ids
 
         for unit in unassociate_units:

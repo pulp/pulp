@@ -219,7 +219,7 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
             OPTION_DESCRIPTION.keyword: 'Repository Description',
             OPTION_NOTES.keyword: {'a': 'a', 'b': 'b'},
             'distributor_configs': {'alpha': {'beta': 'gamma'}},
-            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+            'importer_config': {'delta': 'epsilon'}
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -244,7 +244,7 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
                 'notes': {'a': 'a', 'b': 'b'}
             },
             'distributor_configs': {'alpha': {'beta': 'gamma'}},
-            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+            'importer_config': {'delta': 'epsilon'}
 
         }
         compare_dict(body, body_target)
@@ -261,7 +261,7 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
             OPTION_DESCRIPTION.keyword: 'Repository Description',
             OPTION_NOTES.keyword: {'a' : 'a', 'b' : 'b'},
             'distributor_configs': {'alpha': {'beta': 'gamma'}},
-            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+            'importer_config': {'delta': 'epsilon'}
         }
 
         result_task = Task({})
@@ -288,7 +288,7 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
                 'notes': {'a': 'a', 'b': 'b'}
             },
             'distributor_configs': {'alpha': {'beta': 'gamma'}},
-            'importer_configs': {'delta': {'epsilon': 'zeta'}}
+            'importer_config': {'delta': 'epsilon'}
 
         }
         compare_dict(body, body_target)

@@ -218,8 +218,8 @@ class TestRepositoryUpdateAPI(unittest.TestCase):
         expected_body = {'delta': {}, 'distributor_configs': {'foo': {'bar': 'baz'}}}
         self.api.server.PUT.assert_called_once_with(self.expected_path, expected_body)
 
-    def test_importers(self):
-        self.api.update(self.repo_id, {}, importer_configs={'foo': {'bar': 'baz'}})
-        expected_body = {'delta': {}, 'importer_configs': {'foo': {'bar': 'baz'}}}
+    def test_importer(self):
+        self.api.update(self.repo_id, {}, importer_config={'foo': 'bar'})
+        expected_body = {'delta': {}, 'importer_config': {'foo': 'bar'}}
         self.api.server.PUT.assert_called_once_with(self.expected_path, expected_body)
 
