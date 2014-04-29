@@ -296,42 +296,6 @@ def build_repos(output_dir, dist):
     shutil.rmtree(noarch_dir, ignore_errors=True)
 
 
-def run_destination_ssh_step(ssh_command):
-    """
-    Executes the given command on the destination host.
-    """
-    command = 'ssh %s@%s \'%s\'' % ('pulpadmin', 'fedorapeople.org', ssh_command)
-    subprocess.check_call(command, shell=True)
-
-
-def upload_and_unpack_binary_repository(target_directory, tar_file):
-    """
-    Uploads the binary repository tarball to the destination and unzips it to the
-    appropriate path for the repository.
-
-    :param target_directory: The location on the hosting server
-    :type target_directory: str
-    :param tar_file: The fully qualified name & path of the tar file to upload
-    :type tar_file: str
-    """
-
-    # First make sure the directory exists on the host
-    command = 'mkdir -p %s' % target_directory
-    run_destination_ssh_step(command)
-
-    # Upload the built repos
-    command = 'scp %s %s@%s:%s' % (tar_file, 'pulpadmin', 'fedorapeople.org', target_directory)
-    subprocess.check_call(command)
-
-    # Untar the repo
-    command = 'cd %s && tar xvf %s' % (target_directory, 'repo.tar')
-    run_destination_ssh_step(command)
-
-    # Delete the repo tarball
-    command = 'rm %s/repo.tar' % (target_directory)
-    run_destination_ssh_step(command)
-
-
 def get_tag_packages(tag):
     """
     Get the set of packages currently associated with a tag
@@ -486,15 +450,10 @@ if not opts.disable_repo_build:
     # Push to hosted location
     if opts.push:
         print "Push has not been implemented yet."
+        # rsync the mash directory with the proper location
         repos_dir = '/srv/repos/pulp/pulp'
-        target_repo_dir = "%s/%s/%s" % (repos_dir, build_stream, pulp_version)
-        # tar up all the files
+        target_repo_dir = os.path.join(repos_dir, build_stream, pulp_version)
         os.chdir(MASH_DIR)
-        subprocess.check_call("tar cvf repo.tar *", shell=True)
-        tar_file = os.path.join(MASH_DIR, "repo.tar")
-        print "Need to %s to sync to fedorapeople %s " % (tar_file, target_repo_dir)
-        # print "Cleaning out previously published repo directory"
-        # command = 'rm -rf %s' % target_repo_dir
-        # run_destination_ssh_step(command)
-        # upload_and_unpack_binary_repository(target_repo_dir, os.path.join(MASH_DIR, 'repo.tar'))
-        # print "Finished updating repo"
+        command = 'rsync -avz --delete * pulpadmin@repos.fedorapeople.org:%s/' % \
+                  target_repo_dir
+        subprocess.check_call(command, shell=True)
