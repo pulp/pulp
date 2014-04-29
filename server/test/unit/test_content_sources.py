@@ -15,7 +15,6 @@ import shutil
 from uuid import uuid4
 from tempfile import mkdtemp
 from mock import patch, Mock
-from unittest import TestCase
 from threading import Event
 
 from nectar.config import DownloaderConfig
@@ -28,10 +27,7 @@ from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
-from pulp.server.content.sources.descriptor import to_seconds, is_valid, nectar_config
-from pulp.server.content.sources import model
-from pulp.server.content.sources.container import NectarListener
-from pulp.server.content.sources import constants
+from pulp.server.content.sources.descriptor import nectar_config
 
 
 PRIMARY = 'primary'
@@ -621,108 +617,3 @@ class TestRefreshing(ContainerTest):
         self.assertEqual(collection.find({'source_id': ORPHANED}).count(), 0)
         self.assertEqual(collection.find({'source_id': UNDERGROUND}).count(), 10)
         self.assertEqual(collection.find({'source_id': UNIT_WORLD}).count(), 10)
-
-
-class TestNectarListener(TestCase):
-
-    @patch('pulp.server.content.sources.model.ContentSource.load_all', returns={})
-    def test_notification(self, *unused):
-        request = Request('', {}, '', '')
-        listener = MockListener()
-        listener.download_started = Mock(side_effect=ValueError)
-        container = ContentContainer('')
-        event = Event()
-        nectar_listener = NectarListener(event, Mock(), listener)
-        report = Mock()
-        report.data = request
-        # started
-        nectar_listener.download_started(report)
-        listener.download_started.assert_called_with(request)
-        # succeeded
-        nectar_listener.download_succeeded(report)
-        listener.download_succeeded.assert_called_with(request)
-        # failed
-        nectar_listener.download_failed(report)
-        listener.download_failed.assert_called_with(request)
-
-    @patch('pulp.server.content.sources.model.ContentSource.load_all', returns={})
-    def test_notification_no_listener(self, *unused):
-        request = Request('', {}, '', '')
-        container = ContentContainer('')
-        event = Event()
-        nectar_listener = NectarListener(event, Mock())
-        nectar_listener._notify = Mock()
-        report = Mock()
-        report.data = request
-        # started
-        nectar_listener.download_started(report)
-        self.assertFalse(nectar_listener._notify.called)
-        # succeeded
-        nectar_listener.download_succeeded(report)
-        self.assertFalse(nectar_listener._notify.called)
-        # failed
-        nectar_listener.download_failed(report)
-        self.assertFalse(nectar_listener._notify.called)
-
-
-class TestDescriptor(TestCase):
-
-    def setUp(self):
-        self.tmp_dir = mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.tmp_dir, ignore_errors=True)
-
-    def test_to_seconds(self):
-        self.assertEqual(to_seconds('10'), 10)
-        self.assertEqual(to_seconds('10s'), 10)
-        self.assertEqual(to_seconds('10m'), 600)
-        self.assertEqual(to_seconds('10h'), 36000)
-        self.assertEqual(to_seconds('10d'), 864000)
-
-    @patch('pulp.server.content.sources.model.ContentSource.is_valid', return_value=True)
-    @patch('pulp.server.content.sources.model.ContentSource.enabled', return_value=True)
-    def test_invalid(self, *unused):
-        path = os.path.join(self.tmp_dir, 'other.conf')
-        with open(path, 'w+') as fp:
-            for other in (MISSING_ENABLED, MISSING_TYPE, MISSING_BASE_URL):
-                fp.write(other)
-        sources = ContentSource.load_all(self.tmp_dir)
-        for source_id, source in sources.items():
-            self.assertFalse(is_valid(source_id, source.descriptor))
-
-    @patch('nectar.config.DownloaderConfig._process_ssl_settings', Mock())
-    def test_nectar_config(self):
-        descriptor = {
-            constants.MAX_CONCURRENT: '10',
-            constants.MAX_SPEED: '1024',
-            constants.SSL_VALIDATION: 'true',
-            constants.SSL_CA_CERT: 'ssl-ca-certificate',
-            constants.SSL_CLIENT_KEY: 'ssl-client-key',
-            constants.SSL_CLIENT_CERT: 'ssl-client-certificate',
-            constants.PROXY_URL: 'proxy-url',
-            constants.PROXY_PORT: '5000',
-            constants.PROXY_USERID: 'proxy-userid',
-            constants.PROXY_PASSWORD: 'proxy-password'
-        }
-        conf = nectar_config(descriptor)
-        self.assertEqual(conf.max_concurrent, 10)
-        self.assertEqual(conf.max_speed, 1024)
-        self.assertEqual(conf.ssl_validation, True)
-        self.assertEqual(conf.ssl_ca_cert_path, descriptor[constants.SSL_CA_CERT])
-        self.assertEqual(conf.ssl_client_key_path, descriptor[constants.SSL_CLIENT_KEY])
-        self.assertEqual(conf.ssl_client_cert_path, descriptor[constants.SSL_CLIENT_CERT])
-        self.assertEqual(conf.proxy_url, descriptor[constants.PROXY_URL])
-        self.assertEqual(conf.proxy_port, 5000)
-        self.assertEqual(conf.proxy_username, descriptor[constants.PROXY_USERID])
-        self.assertEqual(conf.proxy_password, descriptor[constants.PROXY_PASSWORD])
-
-
-class TestModel(TestCase):
-
-    @patch('pulp.server.content.sources.model.ContentSource.refresh')
-    def test_primary(self, mock_refresh):
-        primary = model.PrimarySource(LocalFileDownloader(DownloaderConfig()))
-        event = Event()
-        primary.refresh(event)
-        self.assertEqual(mock_refresh.call_count, 0)
