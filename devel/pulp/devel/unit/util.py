@@ -109,5 +109,5 @@ def touch(path):
     if not os.path.exists(parent):
         os.makedirs(parent)
 
-    with open(path, 'w'):
-        pass
+    file_handle = open(path, 'w')
+    file_handle.close()
