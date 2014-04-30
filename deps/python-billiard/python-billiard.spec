@@ -27,6 +27,7 @@ License:        BSD
 URL:            http://pypi.python.org/pypi/billiard
 Source0:        http://pypi.python.org/packages/source/b/%{srcname}/%{srcname}-%{version}.tar.gz
 
+BuildRequires:  gcc
 BuildRequires:  python2-devel
 BuildRequires:  python-setuptools
 BuildRequires:  python-mock
