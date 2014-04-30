@@ -113,6 +113,10 @@ For systemd::
     $ sudo systemctl enable pulp_resource_manager
     $ sudo systemctl start pulp_resource_manager
 
+On each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
+message authentication.
+
+
 Rest API Changes
 ----------------
 
