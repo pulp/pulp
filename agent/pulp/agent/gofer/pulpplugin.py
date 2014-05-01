@@ -75,8 +75,6 @@ def setup_plugin():
     host = cfg.messaging.host or cfg.server.host
     port = cfg.messaging.port
     url = '%s://%s:%s' % (scheme, host, port)
-    authenticator = Authenticator()
-    authenticator.load()
     plugin_conf = plugin.cfg()
     plugin_conf.messaging.url = url
     plugin_conf.messaging.uuid = get_agent_id()
@@ -84,7 +82,7 @@ def setup_plugin():
     plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
         os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
     plugin_conf.messaging.transport = cfg.messaging.transport
-    plugin.authenticator = authenticator
+    plugin.authenticator = Authenticator()
     log.info('plugin configuration updated')
 
 
@@ -136,34 +134,7 @@ class Authenticator(object):
     Provides message authentication using RSA keys.
     The server and the agent sign sent messages using their private keys
     and validate received messages using each others public keys.
-    :ivar rsa_key: The private RSA key used for signing.
-    :type rsa_key: RSA.RSA
-    :ivar rsa_pub: The public RSA key used for validation.
-    :type rsa_pub: RSA.RSA
     """
-
-    def __init__(self):
-        self.rsa_key = None
-        self.rsa_pub = None
-
-    def load(self):
-        """
-        Load both private and public RSA keys.
-        """
-        fp = open(cfg.authentication.rsa_key)
-        try:
-            pem = fp.read()
-            bfr = BIO.MemoryBuffer(pem)
-            self.rsa_key = RSA.load_key_bio(bfr)
-        finally:
-            fp.close()
-        fp = open(cfg.server.rsa_pub)
-        try:
-            pem = fp.read()
-            bfr = BIO.MemoryBuffer(pem)
-            self.rsa_pub = RSA.load_pub_key_bio(bfr)
-        finally:
-            fp.close()
 
     def sign(self, digest):
         """
@@ -173,7 +144,14 @@ class Authenticator(object):
         :return: The message signature.
         :rtype: str
         """
-        return self.rsa_key.sign(digest)
+        fp = open(cfg.authentication.rsa_key)
+        try:
+            pem = fp.read()
+            bfr = BIO.MemoryBuffer(pem)
+            key = RSA.load_key_bio(bfr)
+            return key.sign(digest)
+        finally:
+            fp.close()
 
     def validate(self, uuid, digest, signature):
         """
@@ -186,11 +164,18 @@ class Authenticator(object):
         :type signature: str
         :raises ValidationFailed: when message is not valid.
         """
+        fp = open(cfg.server.rsa_pub)
         try:
-            if not self.rsa_pub.verify(digest, signature):
+            pem = fp.read()
+            bfr = BIO.MemoryBuffer(pem)
+            key = RSA.load_pub_key_bio(bfr)
+            try:
+                if not key.verify(digest, signature):
+                    raise ValidationFailed()
+            except RSA.RSAError:
                 raise ValidationFailed()
-        except RSA.RSAError:
-            raise ValidationFailed()
+        finally:
+            fp.close()
 
 
 class ConsumerX509Bundle(Bundle):
