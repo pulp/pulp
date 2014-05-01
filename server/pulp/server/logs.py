@@ -69,9 +69,12 @@ def start_logging(*args, **kwargs):
     root_logger.handlers = []
     root_logger.addHandler(handler)
 
-
-    # Celery uses warnings so let's capture those with this logger too
-    logging.captureWarnings(True)
+    try:
+        # Celery uses warnings so let's capture those with this logger too. captureWarnings is new
+        # in Python 2.7, which is why we want to catch the AttributeError and move on.
+        logging.captureWarnings(True)
+    except AttributeError:
+        pass
 
     _blacklist_loggers()
 
