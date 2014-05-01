@@ -26,9 +26,10 @@ class TestServices(TestCase):
     def test_init(self, mock_broker):
         Services.init()
         url = pulp_conf.get('messaging', 'url')
+        transport = pulp_conf.get('messaging', 'transport')
         ca_cert = pulp_conf.get('messaging', 'cacert')
         client_cert = pulp_conf.get('messaging', 'clientcert')
-        mock_broker.assert_called_with(url)
+        mock_broker.assert_called_with(url, transport=transport)
         broker = mock_broker()
         self.assertEqual(broker.cacert, ca_cert)
         self.assertEqual(broker.clientcert, client_cert)
@@ -50,9 +51,10 @@ class TestReplyHandler(TestCase):
     @patch('pulp.server.agent.direct.services.ReplyConsumer')
     def test_construction(self, mock_consumer, mock_queue):
         url = 'http://broker'
+        transport = pulp_conf.get('messaging', 'transport')
         handler = ReplyHandler(url)
-        mock_queue.assert_called_with(Services.REPLY_QUEUE)
-        mock_consumer.assert_called_with(mock_queue(), url=url)
+        mock_queue.assert_called_with(Services.REPLY_QUEUE, transport=transport)
+        mock_consumer.assert_called_with(mock_queue(), url=url, transport=transport)
         handler.consumer = mock_consumer()
 
     def test_start(self):
