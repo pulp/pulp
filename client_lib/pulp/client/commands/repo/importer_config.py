@@ -51,7 +51,7 @@ class OptionsBundle(object):
 
         # -- proxy options ------------------------------------------------------------
 
-        d = _('hostname of the proxy server to use')
+        d = _('proxy server url to use')
         self.opt_proxy_host = PulpCliOption('--proxy-host', d, required=False)
 
         d = _('port on the proxy server to make requests')
