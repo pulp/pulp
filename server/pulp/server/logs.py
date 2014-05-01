@@ -14,7 +14,7 @@
 This module defines and configures Pulp's logging system.
 """
 import ConfigParser
-import logging.handlers
+import logging
 import os
 
 from celery.signals import setup_logging
@@ -68,6 +68,10 @@ def start_logging(*args, **kwargs):
     handler.setFormatter(formatter)
     root_logger.handlers = []
     root_logger.addHandler(handler)
+
+
+    # Celery uses warnings so let's capture those with this logger too
+    logging.captureWarnings(True)
 
     _blacklist_loggers()
 

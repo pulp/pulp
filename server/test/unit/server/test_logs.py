@@ -480,6 +480,15 @@ class TestStartLogging(unittest.TestCase):
 
         _blacklist_loggers.assert_called_once_with()
 
+    @mock.patch('pulp.server.logs.logging')
+    def test_calls__captureWarnings(self, _logging):
+        """
+        Ensure that start_logging() calls _blacklist_loggers().
+        """
+        logs.start_logging()
+
+        _logging.captureWarnings.assert_called_once_with(True)
+
     @mock.patch('pulp.server.logs.config.config.get', return_value='something wrong')
     @mock.patch('pulp.server.logs.logging.getLogger')
     def test_log_level_invalid(self, getLogger, get):
