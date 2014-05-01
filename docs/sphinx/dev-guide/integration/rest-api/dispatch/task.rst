@@ -81,13 +81,19 @@ Cancelling a Task
 Some asynchronous tasks may be cancelled by the user before they complete. A
 task must be in the *waiting* or *running* states in order to be cancelled.
 
+.. Note::
+
+   It is possible for a task to complete or experience an error before the cancellation request is
+   processed, so it is not guaranteed that a task's final state will be 'canceled' as a result of
+   this call. In these instances this method call will still return a response code of 200.
+
 | :method:`delete`
 | :path:`/v2/tasks/<task_id>/`
 | :permission:`delete`
 
 | :response_list:`_`
 
-* :response_code:`200, if the task was successfully cancelled`
+* :response_code:`200, if the task cancellation request was successfully received`
 * :response_code:`404, if the task is not found`
 * :response_code:`500, if the task is already in a complete state`
 

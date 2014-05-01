@@ -5,7 +5,7 @@ Tasks
 Introduction
 ------------
 
-The Pulp server uses an internal tasking system to handle requests that may
+The Pulp server uses `Celery <http://www.celeryproject.org>`_ to handle requests that may
 take longer than a HTTP request timeout to execute. Many of the commands from the
 **pulp-admin** command line client will return messages along the lines of
 
@@ -70,10 +70,10 @@ Canceling a Task
 ----------------
 
 Tasks may be canceled before they are run (i.e. in the waiting state) or while
-they are running if they support cancellation.
+they are running.
 
 The **pulp-admin** command line client provides the ``tasks`` section and the
-``cancel`` command to try and cancel a task identified by the required
+``cancel`` command to cancel a task identified by the required
 ``--task-id`` flag.
 
 ::
@@ -139,12 +139,8 @@ The **pulp-admin** command line client provides the ``tasks`` section and the
      Metadata:
        State: FINISHED
 
-It is important to note that not all tasks support cancellation once they enter
-the running state. If you try to cancel one of these tasks you will get the
-following message
+.. Note::
 
-::
-
- $ pulp-admin tasks cancel --task-id e0e0a250-eded-468f-9d97-0419a00b130f
- Cancel Not Implemented for Task: e0e0a250-eded-468f-9d97-0419a00b130f
-
+   It is possible for tasks to complete or experience an error before the task cancellation request
+   is processed. In these instances, the task's final state might not be "canceled" even though a
+   cancel was requested.
