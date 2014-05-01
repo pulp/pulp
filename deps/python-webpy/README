@@ -1,0 +1,3 @@
+Team owner: cduryee
+
+This is the same as the EPEL6 srpm. It is included here for building for el7, since EPEL7 does not carry python-webpy.
