@@ -30,6 +30,7 @@ from pulp.server.db.model import consumer, dispatch, repo_group, repository
 # Task to determine how old documents should be (in days) before they are removed.
 _COLLECTION_TIMEDELTAS = {
     dispatch.ArchivedCall: 'archived_calls',
+    dispatch.TaskStatus: 'task_history',
     consumer.ConsumerHistoryEvent: 'consumer_history',
     repository.RepoSyncResult: 'repo_sync_history',
     repository.RepoPublishResult: 'repo_publish_history',

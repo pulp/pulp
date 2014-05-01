@@ -34,6 +34,7 @@ _default_values = {
         'repo_sync_history': '60',
         'repo_publish_history': '60',
         'repo_group_publish_history': '60',
+        'task_history': '7',
     },
     'database': {
         'name': 'pulp_database',
