@@ -45,14 +45,14 @@ class TestReplyHandler(TestCase):
     @patch('pulp.server.agent.direct.services.Queue', Mock())
     @patch('pulp.server.agent.direct.services.ReplyConsumer', Mock())
     def reply_handler(self):
-        return ReplyHandler('')
+        return ReplyHandler('', '')
 
     @patch('pulp.server.agent.direct.services.Queue')
     @patch('pulp.server.agent.direct.services.ReplyConsumer')
     def test_construction(self, mock_consumer, mock_queue):
         url = 'http://broker'
         transport = pulp_conf.get('messaging', 'transport')
-        handler = ReplyHandler(url)
+        handler = ReplyHandler(url, transport)
         mock_queue.assert_called_with(Services.REPLY_QUEUE, transport=transport)
         mock_consumer.assert_called_with(mock_queue(), url=url, transport=transport)
         handler.consumer = mock_consumer()
