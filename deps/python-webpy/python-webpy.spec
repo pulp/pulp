@@ -3,7 +3,7 @@
 
 Name:           python-%{pkgname}
 Version:        0.37
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        A simple web framework for Python
 Group:          Development/Libraries
 
@@ -49,6 +49,9 @@ echo "from cherrypy.wsgiserver import *" >> web/wsgiserver/__init__.py
 
 
 %changelog
+* Thu May 01 2014 Chris Duryee <cduryee@redhat.com> 0.37-3
+- new package built with tito
+
 * Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.37-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
