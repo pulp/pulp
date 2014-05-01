@@ -67,45 +67,42 @@ REPOSITORIES_FAILED = _('The following repositories had errors')
 
 
 class ProgressTracker:
+    """
+    Track and render repository progress reports.
+    Each report has the following format:
+      {repo_id: <str>,
+       state: <str>,
+       unit_add: {
+         total: <int>,
+         completed: <int>,
+         details: <str>)
+       }
+    """
 
-    def __init__(self, prompt):
-        self.prompt = prompt
-        self.snapshot = []
-
-    def display(self, report):
-        reports = report.get('progress')
-        if reports is None:
-            return
-
-        # On the 2nd+ report, update the last in-progress report.
-        if self.snapshot:
-            report, pb = self.snapshot[-1]
-            repo_id = report['repo_id']
-            report = self._find(repo_id, reports)
-            self._render(report, pb)
-
-        # The latency in polling can causes gaps in the reported progress.
-        # This includes the gap between never having processed a report and receiving
-        # the 1st report.  Here, we get caught up in all cases.
-        in_progress = self._in_progress(reports)
-        for i in range(len(self.snapshot), len(in_progress)):
-            r = in_progress[i]
-            pb = self.prompt.create_progress_bar()
-            self.snapshot.append((r, pb))
-            repo_id = r['repo_id']
-            self.prompt.write('\n')
-            self.prompt.write(REPOSITORY_FIELD % {'n': i + 1, 't': len(reports), 'id': repo_id})
-            self._render(r, pb)
-
-    def _find(self, repo_id, reports):
+    @staticmethod
+    def _find(repo_id, reports):
+        """
+        Find a report by repo_id.
+        :param repo_id: A repository ID.
+        :type repo_id: str
+        :param reports: List of repository progress reports.
+        :type reports: list
+        :return: The found report or None
+        :rtype: dict
+        """
         for r in reports:
             if r['repo_id'] == repo_id:
                 return r
 
-    def _in_progress(self, reports):
-        return [r for r in reports if r['state'] != RepositoryProgress.PENDING]
-
-    def _render(self, report, pb):
+    @staticmethod
+    def _render(report, progress_bar):
+        """
+        Render the specified report and progress bar.
+        :param report: A repository progress report.
+        :type report: dict
+        :param progress_bar: An okaara progress bar.
+        :type progress_bar: okaara.progress.ProgressBar
+        """
         state = report['state']
         unit_add = report['unit_add']
         total = unit_add['total']
@@ -114,10 +111,12 @@ class ProgressTracker:
 
         # just display the file part of paths because the directory
         # is not interesting and clutters up the display.
+
         if '/' in details:
             details = details.rsplit('/', 1)[1]
 
         # message part of the progress bar
+
         if state == RepositoryProgress.ADDING_UNITS:
             message = '\n'.join(
                 (STEP_FIELD % {'s': PROGRESS_STATES[state]},
@@ -127,15 +126,60 @@ class ProgressTracker:
 
         # prevent divide by zero and make sure the progress bar and
         # make sure the progress bar shows complete when the report is finished.
+
         if total < 1:
             if state == RepositoryProgress.FINISHED:
-                pb.render(1, 1)
+                progress_bar.render(1, 1)
             else:
-                pb.render(0.01, 1)
+                progress_bar.render(0.01, 1)
         else:
-            pb.render(completed, total, message)
+            progress_bar.render(completed, total, message)
 
-        return pb
+        return progress_bar
+
+    def __init__(self, prompt):
+        """
+        :param prompt: An okaara prompt.
+        :type prompt: okaara.prompt.Prompt
+        """
+        self.prompt = prompt
+        self.snapshot = []
+
+    def display(self, report):
+        """
+        Display the specified progress report.
+        :param report: A serialized pulp_node.reports.RepositoryProgress.
+        :type report: dict
+        """
+        if report is None:
+            # nothing to render
+            return
+        reports = report.get('progress')
+        if reports is None:
+            # nothing to render
+            return
+
+        # On the 2nd+ report, update the last in-progress report.
+
+        if self.snapshot:
+            report, progress_bar = self.snapshot[-1]
+            repo_id = report['repo_id']
+            report = self._find(repo_id, reports)
+            self._render(report, progress_bar)
+
+        # The latency in polling can causes gaps in the reported progress.
+        # This includes the gap between never having processed a report and receiving
+        # the 1st report.  Here, we get caught up in all cases.
+
+        in_progress = [r for r in reports if r['state'] != RepositoryProgress.PENDING]
+        for i in range(len(self.snapshot), len(in_progress)):
+            r = in_progress[i]
+            progress_bar = self.prompt.create_progress_bar()
+            self.snapshot.append((r, progress_bar))
+            repo_id = r['repo_id']
+            self.prompt.write('\n')
+            self.prompt.write(REPOSITORY_FIELD % {'n': i + 1, 't': len(reports), 'id': repo_id})
+            self._render(r, progress_bar)
 
 
 class UpdateRenderer(object):
