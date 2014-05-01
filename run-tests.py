@@ -22,20 +22,9 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 
 PACKAGES = [
-    'agent/pulp',
-    'bindings/pulp',
-    'client_admin/pulp',
-    'client_consumer/pulp',
-    'client_lib/pulp',
-    'common/pulp',
-    'devel/pulp',
-    'nodes/child/pulp_node',
-    'nodes/common/pulp_node',
-    'nodes/extensions/admin/pulp_node',
-    'nodes/extensions/consumer/pulp_node',
-    'nodes/parent/pulp_node',
-    'server/pulp',
-]
+    os.path.dirname(__file__),
+    'pulp',
+    'pulp_node',]
 
 
 TESTS_ALL_PLATFORMS = [
