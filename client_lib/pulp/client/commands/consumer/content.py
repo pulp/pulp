@@ -111,6 +111,9 @@ class ConsumerContentInstallCommand(PollingCommand):
 
         else:
             task = response.response_body
+            for task_id in [t.task_id for t in task.spawned_tasks]:
+                msg = _('Install task created with id [ %(t)s ]') % {'t': task_id}
+                self.context.prompt.render_success_message(msg)
 
             self.poll([task], kwargs)
 
@@ -222,8 +225,9 @@ class ConsumerContentUpdateCommand(PollingCommand):
 
         else:
             task = response.response_body
-            msg = _('Update task created with id [ %(t)s ]') % {'t': task.task_id}
-            self.context.prompt.render_success_message(msg)
+            for task_id in [t.task_id for t in task.spawned_tasks]:
+                msg = _('Update task created with id [ %(t)s ]') % {'t': task_id}
+                self.context.prompt.render_success_message(msg)
 
             self.poll([task], kwargs)
 
@@ -330,8 +334,9 @@ class ConsumerContentUninstallCommand(PollingCommand):
 
         else:
             task = response.response_body
-            msg = _('Uninstall task created with id [ %(t)s ]') % {'t': task.task_id}
-            self.context.prompt.render_success_message(msg)
+            for task_id in [t.task_id for t in task.spawned_tasks]:
+                msg = _('Uninstall task created with id [ %(t)s ]') % {'t': task_id}
+                self.context.prompt.render_success_message(msg)
 
             self.poll([task], kwargs)
 
