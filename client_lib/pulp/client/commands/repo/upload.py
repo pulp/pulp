@@ -72,8 +72,9 @@ class PerformUploadCommand(polling.PollingCommand):
     """
     UploadCommand and ResumeCommand both need the same perform_upload() method, but they have
     incompatible initialization so it doesn't make sense for ResumeCommand to subclass
-    UploadCommand. They both subclass this class so they can get the same method.
+    UploadCommand. They both subclass this class so they can get the perform_upload() method.
     """
+
     def perform_upload(self, context, upload_manager, upload_ids, user_input):
         """
         Uploads (resumes if necessary) uploading the given upload requests. The
@@ -91,8 +92,8 @@ class PerformUploadCommand(polling.PollingCommand):
         """
 
         d = _('Starting upload of selected units. If this process is stopped through '
-             'ctrl+c, the uploads will be paused and may be resumed later using the '
-             'resume command or cancelled entirely using the cancel command.')
+              'ctrl+c, the uploads will be paused and may be resumed later using the '
+              'resume command or cancelled entirely using the cancel command.')
         context.prompt.render_paragraph(d)
 
         # Upload and import each upload. The try block is inside of the loop to
@@ -111,7 +112,7 @@ class PerformUploadCommand(polling.PollingCommand):
 
                     def progress_callback(item, total):
                         msg = _('%(i)s/%(t)s bytes')
-                        bar.render(item, total, msg % {'i' : item, 't' : total})
+                        bar.render(item, total, msg % {'i': item, 't': total})
 
                     upload_manager.upload(upload_id, progress_callback)
 
@@ -151,6 +152,9 @@ class PerformUploadCommand(polling.PollingCommand):
 
 
 class UploadCommand(PerformUploadCommand):
+    """
+    This is the PulpCLICommand that handles unit uploads to the Pulp server.
+    """
 
     def __init__(self, context, upload_manager=None, name='upload',
                  description=DESC_UPLOAD, method=None, upload_files=True):
@@ -189,13 +193,19 @@ class UploadCommand(PerformUploadCommand):
 
         self.add_flag(FLAG_VERBOSE)
 
-    def run(self, **kwargs):
+    def run(self, **user_input):
+        """
+        This is the main method that gets called when an upload is requested.
+
+        :param user_input: The user provided settings
+        :type  user_input: dict
+        """
         self.prompt.render_title(_('Unit Upload'))
 
-        repo_id = kwargs[options.OPTION_REPO_ID.keyword]
-        specified_files = kwargs.get(OPTION_FILE.keyword) or []
-        specified_dirs = kwargs.get(OPTION_DIR.keyword) or []
-        verbose = kwargs.get(FLAG_VERBOSE.keyword) or False
+        repo_id = user_input[options.OPTION_REPO_ID.keyword]
+        specified_files = user_input.get(OPTION_FILE.keyword) or []
+        specified_dirs = user_input.get(OPTION_DIR.keyword) or []
+        verbose = user_input.get(FLAG_VERBOSE.keyword) or False
 
         self._verify_repo_exists(repo_id)
 
@@ -238,7 +248,8 @@ class UploadCommand(PerformUploadCommand):
                 bar.render(i + 1, len(orig_file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
 
                 try:
-                    unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename, **kwargs)
+                    unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename,
+                                                                                  **user_input)
                 except MetadataException, e:
                     msg = _('Metadata for %(name)s could not be generated. The '
                             'specific error is as follows:')
@@ -248,13 +259,13 @@ class UploadCommand(PerformUploadCommand):
                     self.prompt.render_failure_message(e.message)
                     return os.EX_DATAERR
 
-                type_id = self.determine_type_id(filename, **kwargs)
+                type_id = self.determine_type_id(filename, **user_input)
                 file_bundle.type_id = type_id
                 file_bundle.unit_key.update(unit_key)
                 file_bundle.metadata.update(unit_metadata)
         else:
             try:
-                unit_key, unit_metadata = self.generate_unit_key_and_metadata(None, **kwargs)
+                unit_key, unit_metadata = self.generate_unit_key_and_metadata(None, **user_input)
             except MetadataException, e:
                 msg = _('Metadata for the unit to create could not be generated. '
                         'The specific error is as follows:')
@@ -263,7 +274,7 @@ class UploadCommand(PerformUploadCommand):
                 self.prompt.render_failure_message(e.message)
                 return os.EX_DATAERR
 
-            type_id = self.determine_type_id(None, **kwargs)
+            type_id = self.determine_type_id(None, **user_input)
             file_bundle = FileBundle(None, type_id, unit_key, unit_metadata)
             orig_file_bundles.append(file_bundle)
 
@@ -271,7 +282,7 @@ class UploadCommand(PerformUploadCommand):
         self.prompt.render_spacer()
 
         # Give the subclass a chance to remove any files that shouldn't be uploaded
-        file_bundles = self.create_upload_list(orig_file_bundles, **kwargs)
+        file_bundles = self.create_upload_list(orig_file_bundles, **user_input)
 
         # Display the list of files to upload
         if verbose and self.upload_files:
@@ -319,7 +330,7 @@ class UploadCommand(PerformUploadCommand):
         self.prompt.render_spacer()
 
         # Start the upload process
-        self.perform_upload(self.context, self.upload_manager, upload_ids, kwargs)
+        self.perform_upload(self.context, self.upload_manager, upload_ids, user_input)
 
     def matching_files_in_dir(self, directory):
         """
@@ -486,12 +497,12 @@ class ResumeCommand(PerformUploadCommand):
         self.prompt = context.prompt
         self.upload_manager = upload_manager
 
-    def run(self, **kwargs):
+    def run(self, **user_input):
         """
         This performs the work to resume the upload.
 
-        :param kwargs: The user specified flags
-        :type  kwargs: dict
+        :param user_input: The user specified flags
+        :type  user_input: dict
         """
         self.context.prompt.render_title(_('Upload Requests'))
 
@@ -525,9 +536,9 @@ class ResumeCommand(PerformUploadCommand):
         selected_ids = [u.upload_id for u in selected_uploads]
 
         self.context.prompt.render_paragraph(
-            _('Resuming upload for: %(u)s') % {'u' : ', '.join(selected_filenames)})
+            _('Resuming upload for: %(u)s') % {'u': ', '.join(selected_filenames)})
 
-        self.perform_upload(self.context, self.upload_manager, selected_ids, kwargs)
+        self.perform_upload(self.context, self.upload_manager, selected_ids, user_input)
 
 
 class ListCommand(PulpCliCommand):
