@@ -119,3 +119,34 @@ All currently running and waiting tasks may be listed. This returns an array of
 
 | :return:`array of` :ref:`task_report`
 
+Searching for Tasks
+-------------------
+
+API callers may also search for tasks. This uses a :ref:`search criteria document <search_criteria>`.
+
+| :method:`post`
+| :path:`/v2/tasks/search/`
+| :permission:`read`
+| :param_list:`post` include the key "criteria" whose value is a mapping structure as defined in :ref:`search_criteria`
+| :response_list:`_`
+
+* :response_code:`200,containing the list of tasks`
+
+| :return:`the same format as retrieving a single task, except the base of the
+return value is a list. If no results are found, an empty list is returned.`
+
+
+| :method:`get`
+| :path:`/v2/tasks/search/`
+| :permission:`read`
+| :param_list:`get` query params should match the attributes of a Criteria
+ object as defined in :ref:`search_criteria`. The exception is that field names
+ should be specified in singular form with as many 'field=foo' pairs as needed.
+
+For example::
+
+  /pulp/api/v2/tasks/search/?field=id&field=task_type&limit=20
+
+| :response_list:`_`
+
+* :response_code:`200,containing the array of tasks.`
