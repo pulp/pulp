@@ -245,6 +245,11 @@ Requires: genisoimage
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9
 %endif
+%if %{pulp_systemd} == 1
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
+%endif
 Obsoletes: pulp
 
 %description server
@@ -323,6 +328,11 @@ then
   pulp-gen-ca-certificate
 fi
 %endif # End pulp_server if block
+
+%postun server
+%if %{pulp_systemd} == 1
+%systemd_postun
+%endif
 
 
 # ---- Common ------------------------------------------------------------------
