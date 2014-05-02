@@ -150,7 +150,12 @@ def _delete_queue(queue):
                   name.
     :type  queue: basestring
     """
-    queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
+    queue_list = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))
+    if len(queue_list) == 0:
+        # Potentially _delete_queue() may be called with the database not containing any entries.
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1091922
+        return
+    queue = queue_list[0]
 
     # Cancel all of the tasks that were assigned to this queue
     msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')

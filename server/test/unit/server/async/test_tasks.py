@@ -325,6 +325,16 @@ class TestDeleteQueue(ResourceReservationTests):
         # The other queues (1 and 3) should remain
         self.assertEqual(aqc.find().count(), 2)
 
+    def test__delete_queue_no_database_entry(self):
+        """
+        Call _delete_queue() with a queue that is not in the database.  _delete_queue() relies on
+        the database information, so it should return without error when called in this way.
+        """
+        try:
+            tasks._delete_queue('does not exist queue name')
+        except Exception:
+            self.fail('_delete_queue() on a queue that is not in the database caused an Exception')
+
 
 class TestInitializeWorker(unittest.TestCase):
     """
