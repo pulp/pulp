@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.10.beta%{?dist}
+Release: 0.11.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -574,6 +574,22 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri May 02 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.11.beta
+- 1093417 - propagate transport configuration property. (jortel@redhat.com)
+- 1086278 - Convert upload into a polling command. (rbarlow@redhat.com)
+- 1091919 - agent load rsa keys on demand. (jortel@redhat.com)
+- 1090570 - Fix content commands handling of returned call report.
+  (jortel@redhat.com)
+- 1073065 - Better document task cancellations. (rbarlow@redhat.com)
+- 1072955 - Create TaskStatuses with all attributes. (rbarlow@redhat.com)
+- 1087015 - Capture warnings with the pulp logger (bmbouter@gmail.com)
+- 1091530 - fix rendering a progress report = None. (jortel@redhat.com)
+- 1091090 - alt-content sources updated to work with nectar 1.2.1.
+  (jortel@redhat.com)
+- 1073999 - removing result from task list and adding it to the task details
+  (skarmark@redhat.com)
+- 1069909 - Don't run server code on EL5 for pulp-dev.py. (rbarlow@redhat.com)
+
 * Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.10.beta
 - 1074670 - Save initialize & finalize in step processing even if no units are
   processed. (bcourt@redhat.com)
