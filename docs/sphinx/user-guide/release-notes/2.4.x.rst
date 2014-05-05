@@ -203,7 +203,7 @@ Here are other APIs that have changed, arranged by path:
 
 ``/v2/tasks/search/``
 
-    This is a new API.
+    This is a new API to search tasks by criteria.
 
 ``/v2/catalog/<source_id>/``
 
