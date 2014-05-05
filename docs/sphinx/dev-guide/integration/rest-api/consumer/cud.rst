@@ -43,20 +43,22 @@ its identification.
 :sample_response:`201` ::
 
  {
-   "display_name": "test-consumer",
-  "description": "Fedora 16 test build machine",
-  "certificate": "-----BEGIN RSA PRIVATE KEY-----[snip]-----END CERTIFICATE-----",
-  "_ns": "gc_consumers",
-  "notes": {
-    "arch": "x86_64",
-    "os": "fedora16"
+  "consumer": {
+    "display_name": "test-consumer",
+    "description": "Fedora 16 test build machine",
+    "_ns": "consumers",
+    "notes": {},
+    "rsa_pub": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgw...K7\newIDAP//\n-----END PUBLIC KEY-----\n",
+    "capabilities": {},
+    "_id": {
+      "$oid": "5367e982e13823076517f976"
+    },
+    "id": "test-consumer",
+    "_href": {
+      "_href": "/pulp/api/v2/consumers/test-consumer/"
+    }
   },
-  "capabilities": {},
-  "unit_profile": [],
-  "_id": {
-    "$oid": "4fa8b370e5e7101087000009"
-  },
-  "id": "test-consumer"
+  "certificate": "-----BEGIN RSA PRIVATE KEY-----\nMIICX...at9E1vT0=\n-----END CERTIFICATE-----"
  }
 
 
@@ -99,21 +101,24 @@ The update consumer call is used to change the details of an existing consumer.
 :sample_response:`200` ::
 
  {
-
-  "display_name": "test-consumer",
-  "description": "QA automation testing machine",
-  "certificate": "-----BEGIN CERTIFICATE-----[snip]-----END CERTIFICATE-----",
-  "_ns": "gc_consumers",
-  "notes": {
-    "arch": "x86_64"
+  "consumer": {
+    "display_name": "Test Consumer",
+    "description": "QA automation testing machine",
+    "_ns": "consumers",
+    "notes": {
+      "arch": "x86_64"
+    },
+    "rsa_pub": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgw...K7\newIDAP//\n-----END PUBLIC KEY-----\n",
+    "capabilities": {},
+    "_id": {
+      "$oid": "5367e982e13823076517f976"
+    },
+    "id": "test-consumer",
+    "_href": {
+      "_href": "/pulp/api/v2/consumers/test-consumer/"
+    }
   },
-  "capabilities": {},
-  "unit_profile": [],
-  "_id": {
-    "$oid": "4fbd1f8ce5e710295000000b"
-  },
-  "id": "test-consumer"
-
+  "certificate": "-----BEGIN RSA PRIVATE KEY-----\nMIICX...at9E1vT0=\n-----END CERTIFICATE-----"
  }
 
 Unregister a Consumer
