@@ -35,6 +35,7 @@ REFRESHING = 'Refreshing [%s] url:%s'
 REFRESH_SUCCEEDED = 'Refresh [%s] succeeded.  Added: %d, Deleted: %d'
 REFRESH_FAILED = 'Refresh [%s] url: %s, failed: %s'
 
+PRIMARY_ID = '___/primary/___'
 
 class Request(object):
     """
@@ -343,7 +344,7 @@ class PrimarySource(ContentSource):
         :param downloader: A nectar downloader.
         :type downloader: nectar.downloaders.base.Downloader
         """
-        ContentSource.__init__(self, '__primary__', {})
+        ContentSource.__init__(self, PRIMARY_ID, {})
         self._downloader = downloader
 
     @property

@@ -125,7 +125,7 @@ class TestContainer(TestCase):
         container = ContentContainer('')
         container.refresh = Mock()
         container.collated = fake_collated
-        container.download(canceled, fake_primary, request_list, fake_listener)
+        report = container.download(canceled, fake_primary, request_list, fake_listener)
 
         # validation
         container.refresh.assert_called_with(canceled)
@@ -140,6 +140,7 @@ class TestContainer(TestCase):
             self.assertEqual(listener.cancel_event, canceled)
             self.assertEqual(listener.downloader, downloader)
             self.assertEqual(listener.listener, fake_listener)
+            self.assertEqual(report, dict(download_totals=[('s-0', 0), ('s-1', 0), ('s-2', 0)]))
             downloader.download.assert_called_with(collated[0][source])
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all', Mock())
@@ -151,11 +152,12 @@ class TestContainer(TestCase):
         container = ContentContainer('')
         container.refresh = Mock()
         container.collated = Mock()
-        container.download(canceled, None, [], None)
+        report = container.download(canceled, None, [], None)
 
         container.refresh.assert_called_with(canceled)
 
         self.assertFalse(container.collated.called)
+        self.assertEqual(report, dict(download_totals=[]))
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all', Mock())
     def test_download_canceled_after_collated(self):
@@ -190,7 +192,7 @@ class TestContainer(TestCase):
         container = ContentContainer('')
         container.refresh = Mock()
         container.collated = fake_collated
-        container.download(canceled, fake_primary, request_list, fake_listener)
+        report = container.download(canceled, fake_primary, request_list, fake_listener)
 
         # validation
         container.refresh.assert_called_with(canceled)
@@ -204,6 +206,7 @@ class TestContainer(TestCase):
                 called += 1
 
         self.assertEqual(called, 1)
+        self.assertEqual(report, dict(download_totals=[('s-2', 0)]))
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')

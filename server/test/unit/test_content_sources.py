@@ -28,6 +28,7 @@ from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
 from pulp.server.content.sources.descriptor import nectar_config
+from pulp.server.content.sources.model import PRIMARY_ID
 
 
 PRIMARY = 'primary'
@@ -290,7 +291,7 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = Event()
-        container.download(event, downloader, request_list, listener)
+        report = container.download(event, downloader, request_list, listener)
         # unit-world
         for i in range(0, 10):
             request = request_list[i]
@@ -310,21 +311,24 @@ class TestDownloading(ContainerTest):
         self.assertEqual(listener.download_started.call_count, len(request_list))
         self.assertEqual(listener.download_succeeded.call_count, len(request_list))
         self.assertEqual(listener.download_failed.call_count, 0)
+        self.assertEqual(report, dict(download_totals=[(PRIMARY_ID, 9), (UNIT_WORLD, 10)]))
 
     def test_download_cancelled_during_refreshing(self):
         downloader = LocalFileDownloader(DownloaderConfig())
         container = ContentContainer(path=self.tmp_dir)
         container.collated = Mock()
         event = CancelEvent(1)
-        container.download(event, downloader, [])
+        report = container.download(event, downloader, [])
         self.assertFalse(container.collated.called)
+        self.assertEqual(report, dict(download_totals=[]))
 
     def test_download_cancelled_in_download(self):
         container = ContentContainer(path=self.tmp_dir)
         container.collated = Mock()
         event = CancelEvent(1)
-        container.download(event, None, [])
+        report = container.download(event, None, [])
         self.assertFalse(container.collated.called)
+        self.assertEqual(report, dict(download_totals=[]))
 
     @patch('nectar.downloaders.base.Downloader.cancel')
     def test_download_cancelled_in_started(self, mock_cancel):
@@ -347,8 +351,9 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = CancelEvent(2)
-        container.download(event, downloader, request_list)
+        report = container.download(event, downloader, request_list)
         self.assertTrue(mock_cancel.called)
+        self.assertEqual(report, dict(download_totals=[(PRIMARY_ID, 5)]))
 
     @patch('nectar.downloaders.base.Downloader.cancel')
     @patch('pulp.server.content.sources.container.NectarListener.download_started')
@@ -372,9 +377,10 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = CancelEvent(2)
-        container.download(event, downloader, request_list)
+        report = container.download(event, downloader, request_list)
         self.assertTrue(mock_started.called)
         self.assertTrue(mock_cancel.called)
+        self.assertEqual(report, dict(download_totals=[(PRIMARY_ID, 5)]))
 
     @patch('nectar.downloaders.base.Downloader.cancel')
     @patch('pulp.server.content.sources.container.NectarListener.download_started')
@@ -397,9 +403,10 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = CancelEvent(2)
-        container.download(event, downloader, request_list)
+        report = container.download(event, downloader, request_list)
         self.assertTrue(mock_started.called)
         self.assertTrue(mock_cancel.called)
+        self.assertEqual(report, dict(download_totals=[(PRIMARY_ID, 0)]))
 
     def test_download_with_errors(self):
         request_list = []
@@ -435,7 +442,7 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = Event()
-        container.download(event, downloader, request_list, listener)
+        report = container.download(event, downloader, request_list, listener)
         # unit-world
         for i in range(0, 10):
             request = request_list[i]
@@ -455,6 +462,8 @@ class TestDownloading(ContainerTest):
         self.assertEqual(listener.download_started.call_count, len(request_list))
         self.assertEqual(listener.download_succeeded.call_count, len(request_list))
         self.assertEqual(listener.download_failed.call_count, 0)
+        self.assertEqual(
+            report, dict(download_totals=[(PRIMARY_ID, 9), (UNDERGROUND, 10), (UNIT_WORLD, 0)]))
 
     def test_download_fail_completely(self):
         request_list = []
@@ -480,7 +489,7 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = Event()
-        container.download(event, downloader, request_list, listener)
+        report = container.download(event, downloader, request_list, listener)
         # primary
         for i in range(0, len(request_list)):
             request = request_list[i]
@@ -489,6 +498,7 @@ class TestDownloading(ContainerTest):
         self.assertEqual(listener.download_started.call_count, len(request_list))
         self.assertEqual(listener.download_succeeded.call_count, 0)
         self.assertEqual(listener.download_failed.call_count, len(request_list))
+        self.assertEqual(report, dict(download_totals=[(PRIMARY_ID, 0)]))
 
     def test_download_with_unsupported_url(self):
         request_list = []
@@ -521,7 +531,7 @@ class TestDownloading(ContainerTest):
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = Event()
-        container.download(event, downloader, request_list, listener)
+        report = container.download(event, downloader, request_list, listener)
         for i in range(0, len(request_list)):
             request = request_list[i]
             self.assertTrue(request.downloaded)
@@ -532,6 +542,7 @@ class TestDownloading(ContainerTest):
         self.assertEqual(listener.download_started.call_count, len(request_list))
         self.assertEqual(listener.download_succeeded.call_count, len(request_list))
         self.assertEqual(listener.download_failed.call_count, 0)
+        self.assertEqual(report, dict(download_totals=[(PRIMARY_ID, 19)]))
 
 
 class TestRefreshing(ContainerTest):

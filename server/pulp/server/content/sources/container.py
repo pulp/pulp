@@ -77,7 +77,10 @@ class ContentContainer(object):
         :type request_list: list
         :param listener: An optional download request listener.
         :type listener: Listener
+        :return: The report. {download_totals: [(source_id, unit_count),]}
+        :rtype: dict
         """
+        download_totals = {}
         self.refresh(cancel_event)
         primary = PrimarySource(downloader)
         for request in request_list:
@@ -92,8 +95,12 @@ class ContentContainer(object):
                 downloader = source.get_downloader()
                 downloader.event_listener = NectarListener(cancel_event, downloader, listener)
                 downloader.download(nectar_list)
+                total = download_totals.setdefault(source.id, 0)
+                total += downloader.event_listener.total_downloaded
+                download_totals[source.id] = total
                 if cancel_event.isSet():
                     break
+        return dict(download_totals=sorted(download_totals.items()))
 
     def refresh(self, cancel_event, force=False):
         """
@@ -189,6 +196,7 @@ class NectarListener(DownloadEventListener):
         self.cancel_event = cancel_event
         self.downloader = downloader
         self.listener = listener
+        self.total_downloaded = 0
 
     def download_started(self, report):
         """
@@ -214,6 +222,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
+        self.total_downloaded += 1
         if self.cancel_event.isSet():
             self.downloader.cancel()
             return
