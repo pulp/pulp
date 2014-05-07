@@ -209,6 +209,13 @@ Here are other APIs that have changed, arranged by path:
 
     This is a new API.
 
+``/v2/repositories/``
+    Documentation for POST states that each distributor object should contain a
+    key named ``distributor_type_id``, but the API was actually requiring it to
+    be named ``distributor_type``. The API has been changed to match the
+    documentation, so any code providing distributors to that API will need to
+    be modified.
+
 * Deleting units is no longer blocked when the user performing the delete is different
   than the user that created the unit. This most notably has the effect of eliminating
   the restriction that units could not be deleted from repositories that are synced via a feed.
