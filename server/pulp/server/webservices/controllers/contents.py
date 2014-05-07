@@ -319,12 +319,13 @@ class OrphanResource(JSONController):
 
 
 class DeleteOrphansAction(JSONController):
-    # TODO: Do we really need this in addition to the OrphanResource.DELETE method?
+    # deprecated in 2.4, please use the more restful OrphanResoruce delete instead
     @auth_required(DELETE)
     def POST(self):
+        orphans = self.params()
         tags = [action_tag('delete_orphans'),
                 resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        async_task = orphan.delete_orphans_by_id.apply_async((orphan,), tags=tags)
+        async_task = orphan.delete_orphans_by_id.apply_async([orphans], tags=tags)
         raise OperationPostponed(async_task)
 
 
@@ -350,7 +351,7 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/$', OrphanCollection,
          '/orphans/([^/]+)/$', OrphanTypeSubCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
-         '/actions/delete_orphans/$', DeleteOrphansAction,
+         '/actions/delete_orphans/$', DeleteOrphansAction,  # deprecated in 2.4
          '/catalog/([^/]+)$', CatalogResource,)
 
 application = web.application(_URLS, globals())

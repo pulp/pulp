@@ -226,6 +226,10 @@ Here are other APIs that have changed, arranged by path:
   own applicability. To allow this, we have introduced a new API which can be used by consumers and
   is documented on the same page as other applicability APIs.
 
+``/v2/content/actions/delete_orphans/``
+
+    This has been deprecated in version 2.4, in favor of ``/v2/content/orphans/``.
+
 Binding API Changes
 -------------------
 
