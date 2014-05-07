@@ -201,15 +201,16 @@ def get_paths_to_copy():
     :return: List of dictionaries describing copy operations that should be performed.
     :rtype:  list
     """
-    paths = []
+    paths = [
+        {'source': 'client_consumer/etc/pulp/consumer/consumer.conf',
+         'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
+         'mode': '644', 'overwrite': False},
+    ]
     # We don't support server code on EL 5.
     if LSB_VERSION >= 6.0:
         paths.extend([
             {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
-            {'source': 'client_consumer/etc/pulp/consumer/consumer.conf',
-             'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
-             'mode': '644', 'overwrite': False},
         ])
         if LSB_VERSION >= 7.0:
             paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
