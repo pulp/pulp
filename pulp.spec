@@ -329,8 +329,8 @@ then
 fi
 %endif # End pulp_server if block
 
-%postun server
 %if %{pulp_systemd} == 1
+%postun server
 %systemd_postun
 %endif
 
