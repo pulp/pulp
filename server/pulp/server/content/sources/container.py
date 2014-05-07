@@ -15,7 +15,8 @@ from nectar.listener import DownloadEventListener
 from nectar.request import DownloadRequest
 
 from pulp.server.managers import factory as managers
-from pulp.server.content.sources.model import ContentSource, PrimarySource, RefreshReport
+from pulp.server.content.sources.model import ContentSource, PrimarySource, \
+    DownloadReport, DownloadDetails, RefreshReport
 
 
 log = getLogger(__name__)
@@ -77,30 +78,33 @@ class ContentContainer(object):
         :type request_list: list
         :param listener: An optional download request listener.
         :type listener: Listener
-        :return: The report. {download_totals: [(source_id, unit_count),]}
-        :rtype: dict
+        :return: A download report.
+        :rtype: DownloadReport
         """
-        download_totals = {}
         self.refresh(cancel_event)
+        report = DownloadReport()
         primary = PrimarySource(downloader)
         for request in request_list:
             request.find_sources(primary, self.sources)
+        report.total_sources = len(self.sources)
         while not cancel_event.isSet():
             collated = self.collated(request_list)
             if not collated:
                 #  Either we have exhausted our content sources or all
                 #  of the requests have been satisfied.
                 break
+            report.total_passes += 1
             for source, nectar_list in collated.items():
                 downloader = source.get_downloader()
-                downloader.event_listener = NectarListener(cancel_event, downloader, listener)
+                nectar_listener = NectarListener(cancel_event, downloader, listener)
+                downloader.event_listener = nectar_listener
                 downloader.download(nectar_list)
-                total = download_totals.setdefault(source.id, 0)
-                total += downloader.event_listener.total_downloaded
-                download_totals[source.id] = total
+                downloads = report.downloads.setdefault(source.id, DownloadDetails())
+                downloads.total_succeeded += nectar_listener.total_succeeded
+                downloads.total_failed += nectar_listener.total_failed
                 if cancel_event.isSet():
                     break
-        return dict(download_totals=sorted(download_totals.items()))
+        return report
 
     def refresh(self, cancel_event, force=False):
         """
@@ -196,7 +200,8 @@ class NectarListener(DownloadEventListener):
         self.cancel_event = cancel_event
         self.downloader = downloader
         self.listener = listener
-        self.total_downloaded = 0
+        self.total_succeeded = 0
+        self.total_failed = 0
 
     def download_started(self, report):
         """
@@ -222,7 +227,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
-        self.total_downloaded += 1
+        self.total_succeeded += 1
         if self.cancel_event.isSet():
             self.downloader.cancel()
             return
@@ -242,6 +247,7 @@ class NectarListener(DownloadEventListener):
         :param report: A nectar download report.
         :type report: nectar.report.DownloadReport
         """
+        self.total_failed += 1
         if self.cancel_event.isSet():
             self.downloader.cancel()
             return

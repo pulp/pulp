@@ -93,13 +93,15 @@ class TestContainer(TestCase):
         # validation
         fake_load.assert_called_with(path)
 
-    @patch('pulp.server.content.sources.container.ContentSource.load_all', Mock())
-    def test_download(self):
+    @patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_download(self, fake_load):
         sources = []
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.get_downloader = Mock()
             sources.append(s)
+
+        fake_load.return_value = sources
 
         request_list = []
         for n in range(6):
@@ -133,6 +135,13 @@ class TestContainer(TestCase):
         for r in request_list:
             r.find_sources.assert_called_with(fake_primary, container.sources)
 
+        self.assertEqual(report.total_passes, 1)
+        self.assertEqual(report.total_sources, len(sources))
+        self.assertEqual(len(report.downloads), 3)
+        for source in sources:
+            self.assertEqual(report.downloads[source.id].total_succeeded, 0)
+            self.assertEqual(report.downloads[source.id].total_failed, 0)
+
         for source in sources:
             source.get_downloader.assert_called_with()
             downloader = source.get_downloader()
@@ -140,11 +149,11 @@ class TestContainer(TestCase):
             self.assertEqual(listener.cancel_event, canceled)
             self.assertEqual(listener.downloader, downloader)
             self.assertEqual(listener.listener, fake_listener)
-            self.assertEqual(report, dict(download_totals=[('s-0', 0), ('s-1', 0), ('s-2', 0)]))
             downloader.download.assert_called_with(collated[0][source])
 
-    @patch('pulp.server.content.sources.container.ContentSource.load_all', Mock())
-    def test_download_canceled_before_collated(self):
+    @patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_download_canceled_before_collated(self, fake_load):
+        fake_load.return_value = []
         canceled = FakeEvent()
         canceled.set()
 
@@ -157,15 +166,19 @@ class TestContainer(TestCase):
         container.refresh.assert_called_with(canceled)
 
         self.assertFalse(container.collated.called)
-        self.assertEqual(report, dict(download_totals=[]))
+        self.assertEqual(report.total_passes, 0)
+        self.assertEqual(report.total_sources, 0)
+        self.assertEqual(len(report.downloads), 0)
 
-    @patch('pulp.server.content.sources.container.ContentSource.load_all', Mock())
-    def test_download_canceled_after_collated(self):
+    @patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_download_canceled_after_collated(self, fake_load):
         sources = []
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.get_downloader = Mock()
             sources.append(s)
+
+        fake_load.return_value = sources
 
         request_list = []
         for n in range(6):
@@ -206,7 +219,11 @@ class TestContainer(TestCase):
                 called += 1
 
         self.assertEqual(called, 1)
-        self.assertEqual(report, dict(download_totals=[('s-2', 0)]))
+        self.assertEqual(report.total_passes, 1)
+        self.assertEqual(report.total_sources, len(sources))
+        self.assertEqual(len(report.downloads), 1)
+        self.assertEqual(report.downloads[sources[2].id].total_succeeded, 0)
+        self.assertEqual(report.downloads[sources[2].id].total_failed, 0)
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')

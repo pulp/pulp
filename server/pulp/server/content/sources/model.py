@@ -369,9 +369,42 @@ class PrimarySource(ContentSource):
         pass
 
 
+class DownloadDetails(object):
+    """
+    Download details.
+    :ivar total_succeeded: The total number of downloads that succeeded.
+    :type total_succeeded: int
+    :ivar total_failed: The total number of downloads that failed.
+    :type total_failed: int
+    """
+
+    def __init__(self):
+        self.total_succeeded = 0
+        self.total_failed = 0
+
+
+class DownloadReport(object):
+    """
+    Download report.
+    :ivar total_passes: The total number of passes through the download logic.
+    :type total_passes: int
+    :ivar total_sources: The total number of loaded sources.
+    :type total_sources: int
+    :ivar downloads: Dict of: DownloadDetails keyed by source ID.
+    :type downloads: dict
+    """
+
+    def __init__(self):
+        self.total_passes = 0
+        self.total_sources = 0
+        self.downloads = {}
+
+
 class RefreshReport(object):
     """
     Refresh report.
+    :ivar source_id: The content source ID.
+    :type source_id: str
     :ivar succeeded: Indicates whether the refresh was successful.
     :type succeeded: bool
     :ivar added_count: The number of entries added to the catalog.
