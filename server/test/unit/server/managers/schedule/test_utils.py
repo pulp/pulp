@@ -68,6 +68,9 @@ class TestGet(unittest.TestCase):
 
         mock_get_collection.assert_called_once_with()
 
+    def test_invalid_schedule_id(self):
+        self.assertRaises(exceptions.InvalidValue, utils.get, ['notavilidid'])
+
 
 class TestGetByResource(unittest.TestCase):
     @mock.patch('pulp.server.db.connection.PulpCollection.query')
@@ -213,6 +216,9 @@ class TestDelete(unittest.TestCase):
 
         mock_get_collection.assert_called_once_with()
 
+    def test_invalid_schedule_id(self):
+        self.assertRaises(exceptions.InvalidValue, utils.delete, 'notavalidid')
+
 
 class TestDeleteByResource(unittest.TestCase):
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
@@ -271,6 +277,9 @@ class TestUpdate(unittest.TestCase):
         self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id, {'enabled': True})
         self.assertEqual(mock_find.call_count, 1)
 
+    def test_invalid_schedule_id(self):
+        self.assertRaises(exceptions.InvalidValue, utils.update, 'notavalidid', {'enabled': True})
+
 
 class TestResetFailureCount(unittest.TestCase):
     schedule_id = str(ObjectId())
@@ -297,6 +306,9 @@ class TestResetFailureCount(unittest.TestCase):
         ret = utils.reset_failure_count(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
+
+    def test_invalid_schedule_id(self):
+        self.assertRaises(exceptions.InvalidValue, utils.reset_failure_count, 'notavalidid')
 
 
 class TestIncrementFailureCount(unittest.TestCase):
@@ -377,6 +389,9 @@ class TestIncrementFailureCount(unittest.TestCase):
         last_updated = mock_update.call_args[0][1]['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second
         self.assertTrue(time.time() - last_updated < .1)
+
+    def test_invalid_schedule_id(self):
+        self.assertRaises(exceptions.InvalidValue, utils.increment_failure_count, 'notavalidid')
 
 
 SCHEDULES = [
