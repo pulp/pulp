@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.0.9
+Version: 1.0.10
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -110,9 +110,9 @@ Summary: Gofer python lib modules
 Group: Development/Languages
 Obsoletes: %{name}-lib
 BuildRequires: python
-Requires: python-simplejson
 Requires: PyPAM
 %if 0%{?rhel} && 0%{?rhel} < 6
+Requires: python-simplejson
 Requires: python-hashlib
 Requires: python-uuid
 %endif
@@ -252,6 +252,8 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Tue May 06 2014 Jeff Ortel <jortel@redhat.com> 1.0.10-1
+- Condition Requires: and import of simplejson. (jortel@redhat.com)
 * Fri May 02 2014 Jeff Ortel <jortel@redhat.com> 1.0.9-1
 - Fix url syntax for userid:password; get vhost from url path component.
   (jortel@redhat.com)
