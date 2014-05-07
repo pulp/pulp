@@ -14,7 +14,7 @@ Listing Schedules
 -----------------
 
 | :method:`GET`
-| :path:`/v2/consumers/<consumer id>/schedules/<action>/`
+| :path:`/v2/consumers/<consumer id>/schedules/content/<action>/`
 | :permission:`READ`
 | :response_list:`_`
 
@@ -71,7 +71,7 @@ Creating a Schedule
 -------------------
 
 | :method:`POST`
-| :path:`/v2/consumers/<consumer id>/schedules/<action>/`
+| :path:`/v2/consumers/<consumer id>/schedules/content/<action>/`
 | :permission:`CREATE`
 | :param_list:`POST`
 
@@ -142,7 +142,7 @@ Retrieving a Schedule
 ---------------------
 
 | :method:`GET`
-| :path:`/v2/consumers/<consumer id>/schedules/<action>/<schedule id>/`
+| :path:`/v2/consumers/<consumer id>/schedules/content/<action>/<schedule id>/`
 | :permission:`READ`
 | :response_list:`_`
 
@@ -197,7 +197,7 @@ Updating a Schedule
 -------------------
 
 | :method:`PUT`
-| :path:`/v2/consumers/<consumer id>/schedules/<action>/<schedule id>/`
+| :path:`/v2/consumers/<consumer id>/schedules/content/<action>/<schedule id>/`
 | :permission:`UPDATE`
 | :param_list:`PUT`
 
@@ -282,7 +282,7 @@ Deleting a Schedule
 -------------------
 
 | :method:`DELETE`
-| :path:`/v2/consumers/<consumer id>/schedules/<action>/<schedule id>/`
+| :path:`/v2/consumers/<consumer id>/schedules/content/<action>/<schedule id>/`
 | :permission:`DELETE`
 | :response_list:`_`
 
