@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.11.beta%{?dist}
+Release: 0.12.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -584,6 +584,14 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.12.beta
+- 1094637 - fixing consumer schedule API urls in the documentation
+  (mhrivnak@redhat.com)
+- 1094653 - correctly handling the case where an invalid schedule ID is
+  provided to the REST API (mhrivnak@redhat.com)
+- 1087514 - correct dev-guide for create/update user. (jortel@redhat.com)
+- 1091922  - Fix _delete_queue() traceback. (bmbouter@gmail.com)
+
 * Fri May 02 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.11.beta
 - 1093417 - propagate transport configuration property. (jortel@redhat.com)
 - 1086278 - Convert upload into a polling command. (rbarlow@redhat.com)
