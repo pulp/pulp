@@ -172,6 +172,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-5.pulp
+- Update to the latest qpid patch. (rbarlow@redhat.com)
+
 * Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-4.pulp
 - Add a BuildRequires on python-qpid. (rbarlow@redhat.com)
 
