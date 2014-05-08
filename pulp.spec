@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.12.beta%{?dist}
+Release: 0.13.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -584,6 +584,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu May 08 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.13.beta
+- Pulp rebuild
+
 * Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.12.beta
 - 1094637 - fixing consumer schedule API urls in the documentation
   (mhrivnak@redhat.com)
