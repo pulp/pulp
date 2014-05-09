@@ -16,8 +16,8 @@ import traceback as traceback_module
 
 import pulp.common.dateutils as dateutils
 from pulp.server.db.model.base import Model
+from pulp.server.db.model.reaper_base import ReaperMixin
 
-# -- repository classes --------------------------------------------------------
 
 class Repo(Model):
     """
@@ -61,7 +61,7 @@ class Repo(Model):
         self.display_name = display_name
         self.description = description
         self.notes = notes or {}
-        self.scratchpad = {} # default to dict in hopes the plugins will just add/remove from it
+        self.scratchpad = {}  # default to dict in hopes the plugins will just add/remove from it
         self.content_unit_counts = content_unit_counts or {}
 
         # Timeline
@@ -238,7 +238,7 @@ class RepoContentUnit(Model):
     @type created: str
 
     @ivar updated: iso8601 formatted timestamp indicating the last time the association was
-                   updated (effectively when it was attempted to be created again but already existed)
+                   updated (effectively when it was attempted to be created but already existed)
     @type updated: str
     """
 
@@ -248,7 +248,7 @@ class RepoContentUnit(Model):
     # modifying the following index
     unique_indices = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
     search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'),
-                       ('unit_type_id', 'created'), # default sort order on get_units query, do not remove
+                       ('unit_type_id', 'created'),  # default sort order on get_units query, do not remove
                        'unit_id',
                      )
 
@@ -273,9 +273,11 @@ class RepoContentUnit(Model):
         self.updated = self.created
 
 
-class RepoSyncResult(Model):
+class RepoSyncResult(Model, ReaperMixin):
     """
     Stores the results of a repo sync.
+
+    The documents in this collection may be reaped, so it inherits from ReaperMixin.
     """
 
     collection_name = 'repo_sync_results'
@@ -286,7 +288,8 @@ class RepoSyncResult(Model):
     RESULT_CANCELED = 'canceled'
 
     @classmethod
-    def error_result(cls, repo_id, importer_id, importer_type_id, started, completed, exception, traceback):
+    def error_result(cls, repo_id, importer_id, importer_type_id, started, completed, exception,
+                     traceback):
         """
         Creates a new history entry for a failed sync. The details of the error
         raised from the plugin are captured.
@@ -313,7 +316,8 @@ class RepoSyncResult(Model):
         @type  traceback: traceback
         """
 
-        r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed, RepoSyncResult.RESULT_ERROR)
+        r = RepoSyncResult(repo_id, importer_id, importer_type_id, started, completed,
+                           RepoSyncResult.RESULT_ERROR)
         r.error_message = str(exception)
         r.exception = repr(exception)
         r.traceback = traceback_module.format_tb(traceback)
@@ -396,9 +400,11 @@ class RepoSyncResult(Model):
         self.details = None
 
 
-class RepoPublishResult(Model):
+class RepoPublishResult(Model, ReaperMixin):
     """
     Stores the results of a repo publish.
+
+    The documents in this collection may be reaped, so it inherits from ReaperMixin.
     """
 
     collection_name = 'repo_publish_results'
@@ -408,7 +414,8 @@ class RepoPublishResult(Model):
     RESULT_ERROR = 'error'
 
     @classmethod
-    def error_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, exception, traceback):
+    def error_result(cls, repo_id, distributor_id, distributor_type_id, started, completed,
+                     exception, traceback):
         """
         Creates a new history entry for a failed publish. The details of the error
         raised from the plugin are captured.
@@ -480,7 +487,8 @@ class RepoPublishResult(Model):
         return r
 
     @classmethod
-    def failed_result(cls, repo_id, distributor_id, distributor_type_id, started, completed, summary, details):
+    def failed_result(cls, repo_id, distributor_id, distributor_type_id, started, completed,
+                      summary, details):
         """
         Creates a new history entry for a gracefully failed publish.
 
