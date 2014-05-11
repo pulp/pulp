@@ -27,13 +27,14 @@ import sys
 from celery import task
 import pymongo
 
-from pulp.server.exceptions import error_codes
+from pulp.common.tags import action_tag, resource_tag
+from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.tasks import Task, TaskResult
-from pulp.server.tasks import repository
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
-from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource, \
-    PulpExecutionException, PulpCodedException
+from pulp.server.exceptions import (DuplicateResource, error_codes, InvalidValue, MissingResource,
+                                    PulpExecutionException, PulpCodedException)
+from pulp.server.tasks import repository
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
@@ -413,7 +414,6 @@ class RepoManager(object):
         :return: updated repository object, same as returned from update_repo
         :rtype: TaskResult
         """
-
         # Repo Update
         if repo_delta is None:
             repo_delta = {}
@@ -424,22 +424,22 @@ class RepoManager(object):
             importer_manager = manager_factory.repo_importer_manager()
             importer_manager.update_importer_config(repo_id, importer_config)
 
-        errors = []
         additional_tasks = []
         # Distributor Update
         if distributor_configs is not None:
             for dist_id, dist_config in distributor_configs.items():
-                update_result = repository.distributor_update(repo_id, dist_id, dist_config, None)
-                additional_tasks.extend(update_result.spawned_tasks)
-                if update_result.error:
-                    errors.append(update_result.error)
+                tags = [
+                    resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
+                    resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                                 dist_id),
+                    action_tag('update_distributor')
+                ]
+                async_result = repository.distributor_update.apply_async_with_reservation(
+                    dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
+                    [repo_id, dist_id, dist_config, None], tags=tags)
+                additional_tasks.append(async_result)
 
-        error = None
-        if len(errors) > 0:
-            error = PulpCodedException(error_code=error_codes.PLP0006,
-                                       repo_id=repo_id)
-            error.child_exceptions = errors
-        return TaskResult(repo, error, additional_tasks)
+        return TaskResult(repo, None, additional_tasks)
 
     def get_repo_scratchpad(self, repo_id):
         """

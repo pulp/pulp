@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import os
 import unittest
@@ -23,15 +11,16 @@ from pulp.common.util import encode_unicode
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import TaskResult
+from pulp.server.db.model import dispatch
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
-import pulp.server.managers.repo.cud as repo_manager
+from pulp.server.tasks import repository
+import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
-import pulp.server.exceptions as exceptions
+import pulp.server.managers.repo.cud as repo_manager
 
-# -- test cases ---------------------------------------------------------------
 
-class RepoManagerTests(base.PulpServerTests):
+class RepoManagerTests(base.ResourceReservationTests):
 
     def setUp(self):
         super(RepoManagerTests, self).setUp()
@@ -451,10 +440,24 @@ class RepoManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' == e.resources['resource_id'])
 
-    def test_update_repo_and_plugins(self):
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    @mock.patch('pulp.server.tasks.repository.distributor_update.apply_async_with_reservation',
+                side_effect=repository.distributor_update.apply_async_with_reservation)
+    def test_update_repo_and_plugins(self, distributor_update, _reserve_resource):
         """
         Tests the aggregate call to update a repo and its plugins.
         """
+        class _AsyncTask(object):
+            """
+            Fake the return value of _reserve_resource().
+            """
+            def get(self):
+                """
+                Fake the available queue.
+                """
+                return 'some_queue'
+
+        _reserve_resource.return_value = _AsyncTask()
 
         # Setup
         self.manager.create_repo('repo-1', 'Original', 'Original Description')
@@ -463,8 +466,10 @@ class RepoManagerTests(base.PulpServerTests):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         importer_manager.set_importer('repo-1', 'mock-importer', {'key-i1': 'orig-1'})
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'}, True, distributor_id='dist-1')
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d2' : 'orig-2'}, True, distributor_id='dist-2')
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'},
+                                            True, distributor_id='dist-1')
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d2' : 'orig-2'},
+                                            True, distributor_id='dist-2')
 
         # Test
         repo_delta = {'display_name' : 'Updated'}
@@ -473,7 +478,10 @@ class RepoManagerTests(base.PulpServerTests):
             'dist-1' : {'key-d1' : 'updated-1'},
         } # only update one of the two distributors
 
-        result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config, new_distributor_configs)
+        result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config,
+                                                      new_distributor_configs)
+
+        self.assertTrue(isinstance(result, TaskResult))
         self.assertEquals(None, result.error)
         repo = result.return_value
         # Verify
@@ -490,32 +498,10 @@ class RepoManagerTests(base.PulpServerTests):
         dist_2 = distributor_manager.get_distributor('repo-1', 'dist-2')
         self.assertEqual(dist_2['config'], {'key-d2' : 'orig-2'})
 
-    @mock.patch('pulp.server.managers.repo.cud.RepoManager')
-    @mock.patch('pulp.server.managers.repo.cud.manager_factory')
-    @mock.patch('pulp.server.managers.repo.cud.repository.distributor_update')
-    def test_update_repo_and_plugins_with_errors(self, mock_distributor_update, mock_manager_factory, mock_repo_manager):
-        """
-        Tests the aggregate call to update a repo and its plugins with errors
-        """
-
-        # Test
-        repo_delta = {'display_name' : 'Updated'}
-        new_importer_config = {'key-i1' : 'updated-1', 'key-i2' : 'new-1'}
-        new_distributor_configs = {
-            'dist-1' : {'key-d1' : 'updated-1'},
-        } # only update one of the two distributors
-
-        update_error = exceptions.PulpException('foo')
-        mock_distributor_update.return_value = TaskResult(error=update_error)
-
-        result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config,
-                                                      new_distributor_configs)
-        self.assertTrue(result.error is not None)
-        error = result.error
-        self.assertEquals(error.error_code, error_codes.PLP0006)
-        self.assertEquals(len(error.child_exceptions), 1)
-        self.assertEquals(error.child_exceptions[0], update_error)
-
+        # There should have been a spawned task for the new distributor config
+        expected_task_id = dispatch.TaskStatus.get_collection().find_one(
+            {'tags': 'pulp:repository_distributor:dist-1'})['task_id']
+        self.assertEqual(result.spawned_tasks, [{'task_id': expected_task_id}])
 
     def test_update_repo_and_plugins_partial(self):
         """
