@@ -145,7 +145,6 @@ cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd
 cp server/etc/default/upstart_pulp_celerybeat %{buildroot}/%{_sysconfdir}/default/pulp_celerybeat
 cp server/etc/default/upstart_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
 cp server/etc/default/upstart_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
-ln -s %{_initddir}/pulp_workers %{buildroot}/%{_initddir}/pulp_resource_manager
 cp -d server/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
 # We don't want to install pulp-manage-workers in upstart systems
 rm -rf %{buildroot}/%{_libexecdir}

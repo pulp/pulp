@@ -13,21 +13,12 @@
 # Provides:          pulp_celery_workers
 # Required-Start:    $network $local_fs $remote_fs
 # Required-Stop:     $network $local_fs $remote_fs
-# Default-Start:     2 3 4 5
+# Should-Start:      mongod qpidd rabbitmq-server
+# Default-Start:     3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: pulp's celery task worker daemon
 ### END INIT INFO
-#
-#
-# To implement separate init scripts, create symlinks to this script with different
-# names:
-# I.e., if my new application, "little-worker" needs an init, I
-# should just use:
-#
-#   ln -s /etc/init.d/pulp_celery_workers /etc/init.d/little-worker
-#
-# You can then configure this by manipulating /etc/default/little-worker.
-#
+
 VERSION=10.0
 echo "celery init v${VERSION}."
 if [ "$EUID" != "0" ]; then
@@ -44,7 +35,6 @@ if [ -L "$0" ]; then
 else
     SCRIPT_FILE="$0"
 fi
-SCRIPT_FILE="$0"
 SCRIPT_NAME="$(basename "$SCRIPT_FILE")"
 
 DEFAULT_USER="celery"
