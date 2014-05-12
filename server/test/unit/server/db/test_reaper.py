@@ -61,8 +61,8 @@ class TestReapInheritance(unittest.TestCase):
     def test_assert_inheritance(self):
         """
         The reaper relies on a classmethod to do the document deletion of old documents in a given
-        collection.  Any model type that needs to be reaped should inherit that classmethod from
-        the reaper_base.ReaperMixin class.  The reaper runs on any document used as a key in
+        collection. Any model type that needs to be reaped should inherit that classmethod from
+        the reaper_base.ReaperMixin class. The reaper runs on any document used as a key in
         reaper._COLLECTION_TIMEDELTAS, so each of those should be asserted as inheriting from
         ReaperMixin.
         """

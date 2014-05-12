@@ -17,7 +17,7 @@ class CeleryResult(Model, ReaperMixin):
         """
         Delete old Celery task results from the celery_taskmeta collection.
 
-        This overrides the inherited classmethod provided by ReaperMixin.  The default
+        This overrides the inherited classmethod provided by ReaperMixin. The default
         functionality is not correct because Celery overrides the use of `_id` in the
         celery_taskmeta collection.
 
