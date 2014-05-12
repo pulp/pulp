@@ -466,16 +466,16 @@ class RepoManagerTests(base.ResourceReservationTests):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         importer_manager.set_importer('repo-1', 'mock-importer', {'key-i1': 'orig-1'})
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'},
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1': 'orig-1'},
                                             True, distributor_id='dist-1')
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d2' : 'orig-2'},
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d2': 'orig-2'},
                                             True, distributor_id='dist-2')
 
         # Test
-        repo_delta = {'display_name' : 'Updated'}
-        new_importer_config = {'key-i1' : 'updated-1', 'key-i2' : 'new-1'}
+        repo_delta = {'display_name': 'Updated'}
+        new_importer_config = {'key-i1': 'updated-1', 'key-i2': 'new-1'}
         new_distributor_configs = {
-            'dist-1' : {'key-d1' : 'updated-1'},
+            'dist-1' : {'key-d1': 'updated-1'},
         } # only update one of the two distributors
 
         result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config,

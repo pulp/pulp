@@ -32,8 +32,8 @@ from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
-from pulp.server.exceptions import (DuplicateResource, error_codes, InvalidValue, MissingResource,
-                                    PulpExecutionException, PulpCodedException)
+from pulp.server.exceptions import (DuplicateResource, InvalidValue, MissingResource,
+                                    PulpExecutionException)
 from pulp.server.tasks import repository
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
