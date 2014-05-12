@@ -75,8 +75,6 @@ def _merge_related_objects(name, manager, repos):
 
     return repos
 
-# -- repo controllers ---------------------------------------------------------
-
 
 class RepoCollection(JSONController):
 
