@@ -192,6 +192,9 @@ The task created will have the following tag.  ``"pulp:content_unit:orphans"``
 
 Remove Orphaned Content Units by Type and Id
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. deprecated:: 2.4
+   Please use `/v2/content/orphans/` instead for deletions.
+
 Individual content units across types may be deleted by this call. The body of
 the call consists of an array of JSON objects with the fields:
 
