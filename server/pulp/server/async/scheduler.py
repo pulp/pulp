@@ -88,8 +88,26 @@ class FailureWatcher(object):
             recv = app.events.Receiver(connection, handlers={
                 'task-failed': self.handle_failed_task,
                 'task-succeeded': self.handle_succeeded_task,
+                #'worker-heartbeat': self.handle_worker_heartbeat,
+                'worker-online': self.handle_worker_online,
+                'worker-offline': self.handle_worker_offline,
             })
             recv.capture(limit=None, timeout=None, wakeup=False)
+
+    def handle_worker_heartbeat(self, *args, **kwargs):
+        logging.error('worker-heartbeat')
+        logging.error(args)
+        logging.error(kwargs)
+
+    def handle_worker_online(self, *args, **kwargs):
+        logging.error('worker-online')
+        logging.error(args)
+        logging.error(kwargs)
+
+    def handle_worker_offline(self, *args, **kwargs):
+        logging.error('worker-offline')
+        logging.error(args)
+        logging.error(kwargs)
 
     def handle_succeeded_task(self, event):
         """
