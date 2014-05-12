@@ -473,9 +473,10 @@ class ArchivedCall(Model, ReaperMixin):
         self.serialized_call_report = call_report.serialize()
 
 
-class TaskStatus(Model):
+class TaskStatus(Model, ReaperMixin):
     """
     Represents current state of a task.
+    The documents in this collection may be reaped, so it inherits from ReaperMixin.
 
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
