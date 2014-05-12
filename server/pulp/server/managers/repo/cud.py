@@ -178,7 +178,7 @@ class RepoManager(object):
 
             try:
                 # Don't bother with any validation here, the manager will run it
-                type_id = distributor.get('distributor_type')
+                type_id = distributor.get('distributor_type_id')
                 plugin_config = distributor.get('distributor_config')
                 auto_publish = distributor.get('auto_publish', False)
                 distributor_id = distributor.get('distributor_id')

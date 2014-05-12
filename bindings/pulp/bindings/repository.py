@@ -59,7 +59,7 @@ class RepositoryAPI(PulpAPI):
         descriptions. Each distributor is specified as a dict containing the
         following keys:
 
-          distributor_type - ID of the type of distributor being added
+          distributor_type_id - ID of the type of distributor being added
           distributor_config - values sent to the distributor when used by
                                this repository
           auto_publish - boolean indicating if the distributor should automatically
