@@ -27,12 +27,12 @@ from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, 
 # Task to determine how old documents should be (in days) before they are removed.
 _COLLECTION_TIMEDELTAS = {
     dispatch.ArchivedCall: 'archived_calls',
-    dispatch.TaskStatus: 'task_history',
+    dispatch.TaskStatus: 'task_status_history',
     consumer.ConsumerHistoryEvent: 'consumer_history',
     repository.RepoSyncResult: 'repo_sync_history',
     repository.RepoPublishResult: 'repo_publish_history',
     repo_group.RepoGroupPublishResult: 'repo_group_publish_history',
-    celery_result.CeleryResult: 'task_history',
+    celery_result.CeleryResult: 'task_result_history',
 }
 
 

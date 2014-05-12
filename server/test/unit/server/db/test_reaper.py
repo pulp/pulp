@@ -21,7 +21,7 @@ import mock
 from ... import base
 from pulp.server.compat import ObjectId
 from pulp.server.db import reaper
-from pulp.server.db.model import consumer, dispatch, repo_group, repository
+from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, repository
 from pulp.server.db.model.consumer import ConsumerHistoryEvent
 from pulp.server.db.model.reaper_base import _create_expired_object_id, ReaperMixin
 
@@ -39,19 +39,21 @@ class TestReaperCollectionConfig(unittest.TestCase):
                                consumer.ConsumerHistoryEvent,
                                repository.RepoSyncResult,
                                repository.RepoPublishResult,
-                               repo_group.RepoGroupPublishResult]
+                               repo_group.RepoGroupPublishResult,
+                               celery_result.CeleryResult]
         for key in collections_to_reap:
             self.assertTrue(key in reaper._COLLECTION_TIMEDELTAS)
         # Also check the values.
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.ArchivedCall], 'archived_calls')
-        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.TaskStatus], 'task_history')
+        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.TaskStatus], 'task_status_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[consumer.ConsumerHistoryEvent], 'consumer_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoSyncResult], 'repo_sync_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoPublishResult],
                          'repo_publish_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repo_group.RepoGroupPublishResult],
                          'repo_group_publish_history')
-
+        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[celery_result.CeleryResult],
+                         'task_result_history')
 
 class TestCreateExpiredObjectId(unittest.TestCase):
     """
