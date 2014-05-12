@@ -16,6 +16,7 @@ import hashlib
 import json
 
 from pulp.server.db.model.base import Model
+from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.common import dateutils
 
 
@@ -310,9 +311,11 @@ class UnitProfile(Model):
         return hasher.hexdigest()
 
 
-class ConsumerHistoryEvent(Model):
+class ConsumerHistoryEvent(Model, ReaperMixin):
     """
     Represents a consumer history event.
+
+    The documents in this collection may be reaped, so it inherits from ReaperMixin.
 
     :ivar consumer_id: identifies the consumer
     :type consumer_id: str
@@ -321,8 +324,12 @@ class ConsumerHistoryEvent(Model):
     :type originator: str
 
     :param type: event type
-                 current supported event types: 'consumer_registered', 'consumer_unregistered', 'repo_bound', 'repo_unbound',
-                 'content_unit_installed', 'content_unit_uninstalled', 'unit_profile_changed', 'added_to_group', 'removed_from_group'
+                 current supported event types: 'consumer_registered', 'consumer_unregistered',
+                                                'repo_bound', 'repo_unbound',
+                                                'content_unit_installed',
+                                                'content_unit_uninstalled',
+                                                'unit_profile_changed', 'added_to_group',
+                                                'removed_from_group'
     :type  type: str
 
     :param details: event details
@@ -350,7 +357,7 @@ class ConsumerGroup(Model):
     search_indices = ('display_name', 'consumer_ids')
 
     def __init__(self, consumer_group_id, display_name=None, description=None,
-            consumer_ids=None, notes=None):
+                 consumer_ids=None, notes=None):
         super(ConsumerGroup, self).__init__()
 
         self.id = consumer_group_id
