@@ -32,7 +32,7 @@ def _create_expired_object_id(age):
     """
     By default, MongoDB uses a primary key that has the date that each document was created encoded
     into it. This method generates a pulp.server.compat.ObjectId that corresponds to the timstamp of
-    now minues age, where age is a timedelta. For example, if age is 60 seconds, this will
+    now minus age, where age is a timedelta. For example, if age is 60 seconds, this will
     return an ObjectId that has the UTC time that it was 60 seconds ago encoded into it. This is
     useful in this module, as we want to automatically delete documents that are older than a
     particular age, and so we can issue a remove query to MongoDB for objects with _id attributes
