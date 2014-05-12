@@ -475,10 +475,11 @@ class BindTestNoWSGI(PulpWebservicesTests):
         bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
                                                   'distributor_id': 'bar-distributor',
                                                   'notify_agent': False})
-        mock_bind_task.return_value = None
+        mock_bind_task.return_value = TaskResult()
 
         # Test
-        bindings.POST('consumer-id')
+        call_report = bindings.POST('consumer-id')
+        self.assertEqual(call_report, '{"spawned_tasks": [], "result": null, "error": null}')
         mock_bind_task.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor',
                                                False, mock.ANY, mock.ANY)
 
@@ -508,8 +509,9 @@ class BindTestNoWSGI(PulpWebservicesTests):
     def test_unbind(self, mock_unbind):
         binding = consumers.Binding()
         binding.params = mock.Mock(return_value={})
-        mock_unbind.return_value = None
-        binding.DELETE('consumer-id', 'foo-repo', 'bar-distributor')
+        mock_unbind.return_value = TaskResult()
+        call_report = binding.DELETE('consumer-id', 'foo-repo', 'bar-distributor')
+        self.assertEqual(call_report, '{"spawned_tasks": [], "result": null, "error": null}')
         mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
         self.validate_auth(authorization.DELETE)
 
@@ -526,8 +528,9 @@ class BindTestNoWSGI(PulpWebservicesTests):
     def test_unbind_force(self, mock_unbind):
         binding = consumers.Binding()
         binding.params = mock.Mock(return_value={'force': True})
-        mock_unbind.return_value = None
-        binding.DELETE('consumer-id', 'foo-repo', 'bar-distributor')
+        mock_unbind.return_value = TaskResult()
+        call_report = binding.DELETE('consumer-id', 'foo-repo', 'bar-distributor')
+        self.assertEqual(call_report, '{"spawned_tasks": [], "result": null, "error": null}')
         mock_unbind.assert_called_once_with('consumer-id', 'foo-repo', 'bar-distributor', mock.ANY)
 
     @mock.patch('pulp.server.tasks.consumer.force_unbind')

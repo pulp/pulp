@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.10.beta%{?dist}
+Release: 0.13.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -145,7 +145,6 @@ cp server/etc/httpd/conf.d/pulp_apache_22.conf %{buildroot}/%{_sysconfdir}/httpd
 cp server/etc/default/upstart_pulp_celerybeat %{buildroot}/%{_sysconfdir}/default/pulp_celerybeat
 cp server/etc/default/upstart_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
 cp server/etc/default/upstart_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
-ln -s %{_initddir}/pulp_workers %{buildroot}/%{_initddir}/pulp_resource_manager
 cp -d server/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
 # We don't want to install pulp-manage-workers in upstart systems
 rm -rf %{buildroot}/%{_libexecdir}
@@ -234,8 +233,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.0.5
-Requires: python-gofer-qpid >= 1.0.5
+Requires: python-gofer >= 1.0.10
+Requires: python-gofer-qpid >= 1.0.10
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -244,6 +243,11 @@ Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9
+%endif
+%if %{pulp_systemd} == 1
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
 %endif
 Obsoletes: pulp
 
@@ -323,6 +327,11 @@ then
   pulp-gen-ca-certificate
 fi
 %endif # End pulp_server if block
+
+%if %{pulp_systemd} == 1
+%postun server
+%systemd_postun
+%endif
 
 
 # ---- Common ------------------------------------------------------------------
@@ -499,9 +508,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.0.7
-Requires: python-gofer-qpid >= 1.0.7
-Requires: gofer >= 1.0.7
+Requires: python-gofer >= 1.0.10
+Requires: python-gofer-qpid >= 1.0.10
+Requires: gofer >= 1.0.10
 Requires: m2crypto
 
 %description agent
@@ -574,6 +583,33 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu May 08 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.13.beta
+- Pulp rebuild
+
+* Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.12.beta
+- 1094637 - fixing consumer schedule API urls in the documentation
+  (mhrivnak@redhat.com)
+- 1094653 - correctly handling the case where an invalid schedule ID is
+  provided to the REST API (mhrivnak@redhat.com)
+- 1087514 - correct dev-guide for create/update user. (jortel@redhat.com)
+- 1091922  - Fix _delete_queue() traceback. (bmbouter@gmail.com)
+
+* Fri May 02 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.11.beta
+- 1093417 - propagate transport configuration property. (jortel@redhat.com)
+- 1086278 - Convert upload into a polling command. (rbarlow@redhat.com)
+- 1091919 - agent load rsa keys on demand. (jortel@redhat.com)
+- 1090570 - Fix content commands handling of returned call report.
+  (jortel@redhat.com)
+- 1073065 - Better document task cancellations. (rbarlow@redhat.com)
+- 1072955 - Create TaskStatuses with all attributes. (rbarlow@redhat.com)
+- 1087015 - Capture warnings with the pulp logger (bmbouter@gmail.com)
+- 1091530 - fix rendering a progress report = None. (jortel@redhat.com)
+- 1091090 - alt-content sources updated to work with nectar 1.2.1.
+  (jortel@redhat.com)
+- 1073999 - removing result from task list and adding it to the task details
+  (skarmark@redhat.com)
+- 1069909 - Don't run server code on EL5 for pulp-dev.py. (rbarlow@redhat.com)
+
 * Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.10.beta
 - 1074670 - Save initialize & finalize in step processing even if no units are
   processed. (bcourt@redhat.com)

@@ -139,78 +139,76 @@ class TestSecret(PluginTest):
 class TestAuthentication(PluginTest):
 
     @patch('__builtin__.open')
-    def test_load(self, mock_open):
-        test_conf = {
-            'server': {
-                'rsa_pub': '/etc/pki/pulp/consumer/server/rsa_pub.pem'
-            },
-            'authentication': {
-                'rsa_key': '/etc/pki/pulp/rsa.pem',
-            }
-        }
+    def test_signing(self, mock_open):
+        message = 'hello'
+        key_path = '/etc/pki/pulp/rsa.pem'
+        key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
 
+        test_conf = {'authentication': {'rsa_key': key_path}}
         self.plugin.pulp_conf.update(test_conf)
 
         mock_fp = Mock()
-        mock_fp.read = Mock(side_effect=[RSA_KEY, RSA_PUB])
+        mock_fp.read = Mock(return_value=RSA_KEY)
         mock_open.return_value = mock_fp
 
         # test
 
         authenticator = self.plugin.Authenticator()
-        authenticator.load()
-
-        # validation
-        mock_fp.close.assert_called_with()
-        self.assertTrue(isinstance(authenticator.rsa_key, RSA.RSA))
-        self.assertTrue(isinstance(authenticator.rsa_pub, RSA.RSA))
-
-    def test_signing(self):
-        message = 'hello'
-        key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
-
-        # test
-
-        authenticator = self.plugin.Authenticator()
-        authenticator.rsa_key = key
         signature = authenticator.sign(message)
 
         #validation
 
+        mock_open.assert_called_with(key_path)
         self.assertEqual(signature, key.sign(message))
+        mock_fp.close.assert_called_with()
 
-    def test_validated(self):
+    @patch('__builtin__.open')
+    def test_validated(self, mock_open):
         uuid = 'test-uuid'
         message = 'hello'
+        key_path = '/etc/pki/pulp/consumer/server/rsa_pub.pem'
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
-        key_pub = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
+
+        test_conf = {'server': {'rsa_pub': key_path}}
+        self.plugin.pulp_conf.update(test_conf)
+
+        mock_fp = Mock()
+        mock_fp.read = Mock(return_value=RSA_PUB)
+        mock_open.return_value = mock_fp
 
         # test
 
         authenticator = self.plugin.Authenticator()
-        authenticator.rsa_key = key
-        authenticator.rsa_pub = key_pub
         authenticator.validate(uuid, message, key.sign(message))
 
-    def test_not_validated(self):
+        # validation
+
+        mock_open.assert_called_with(key_path)
+        mock_fp.close.assert_called_with()
+
+    @patch('__builtin__.open')
+    def test_not_validated(self, mock_open):
         uuid = 'test-uuid'
         message = 'hello'
+        key_path = '/etc/pki/pulp/consumer/server/rsa_pub.pem'
         key = RSA.load_key_bio(BIO.MemoryBuffer(OTHER_KEY))
-        key_pub = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
+
+        test_conf = {'server': {'rsa_pub': key_path}}
+        self.plugin.pulp_conf.update(test_conf)
+
+        mock_fp = Mock()
+        mock_fp.read = Mock(return_value=RSA_PUB)
+        mock_open.return_value = mock_fp
 
         # test
 
         authenticator = self.plugin.Authenticator()
-        authenticator.rsa_key = key
-        authenticator.rsa_pub = key_pub
         self.assertRaises(
             ValidationFailed, authenticator.validate, uuid, message, key.sign(message))
 
-    def test_not_validated_not_raised(self):
-        authenticator = self.plugin.Authenticator()
-        authenticator.rsa_pub = Mock()
-        authenticator.rsa_pub.verify = Mock(return_value=False)
-        self.assertRaises(ValidationFailed, authenticator.validate, '', '', '')
+        # validation
+        mock_open.assert_called_with(key_path)
+        mock_fp.close.assert_called_with()
 
 
 class TestBundle(PluginTest):
@@ -477,7 +475,6 @@ class TestInitializer(PluginTest):
         self.assertEqual(plugin_cfg.messaging.url, 'tcp://pulp-host:5672')
         self.assertEqual(plugin_cfg.messaging.cacert, 'test-ca')
         self.assertEqual(plugin_cfg.messaging.clientcert, CERT_PATH)
-        authenticator.load.assert_called_with()
 
 
 class TestRegistrationChanged(PluginTest):

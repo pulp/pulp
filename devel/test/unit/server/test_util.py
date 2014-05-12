@@ -1,21 +1,11 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
+from xml.etree import ElementTree
 
 from mock import Mock
 
 from pulp.common import error_codes
 from pulp.devel.unit.server import util
+from pulp.devel.unit.server.util import compare_element
 from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
 
 
@@ -67,3 +57,66 @@ class TestAssertValidationExceptionRaised(unittest.TestCase):
         mock_method = Mock()
         self.assertRaises(AssertionError, util.assert_validation_exception, mock_method,
                           error_codes=[error_codes.PLP0001])
+
+
+class TestCompareEtree(unittest.TestCase):
+
+    def test_compare_element_equality(self):
+        source_string = '<foo alpha="bar">some text <baz></baz></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(source_string)
+        compare_element(source, target)
+
+    def test_compare_element_inequality_tags(self):
+        source_string = '<foo></foo>'
+        target_string = '<bar></bar>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source, target)
+
+    def test_compare_element_inequality_text(self):
+        source_string = '<foo>alpha</foo>'
+        target_string = '<foo>beta</foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source, target)
+
+    def test_compare_element_inequality_keys(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo beta="bar"></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source, target)
+
+    def test_compare_element_inequality_values(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo alpha="foo"></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source, target)
+
+    def test_compare_element_source_not_element(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo alpha="foo"></foo>'
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source_string, target)
+
+    def test_compare_element_target_not_element(self):
+        source_string = '<foo alpha="bar"></foo>'
+        target_string = '<foo alpha="foo"></foo>'
+        source = ElementTree.fromstring(source_string)
+        self.assertRaises(AssertionError, compare_element, source, target_string)
+
+    def test_compare_element_child_different(self):
+        source_string = '<foo alpha="bar">some text <baz>qux</baz></foo>'
+        target_string = '<foo alpha="bar">some text <baz>zap</baz></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source, target)
+
+    def test_compare_element_child_different_number(self):
+        source_string = '<foo alpha="bar">some text <baz>qux</baz></foo>'
+        target_string = '<foo alpha="bar">some text <baz>zap</baz><fuz></fuz></foo>'
+        source = ElementTree.fromstring(source_string)
+        target = ElementTree.fromstring(target_string)
+        self.assertRaises(AssertionError, compare_element, source, target)

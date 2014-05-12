@@ -26,6 +26,7 @@ import isodate
 from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model.base import Model
+from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.managers import factory
 
 
@@ -453,9 +454,11 @@ class ScheduleEntry(beat.ScheduleEntry):
             return False, remaining_s
 
 
-class ArchivedCall(Model):
+class ArchivedCall(Model, ReaperMixin):
     """
     Call history
+
+    The documents in this collection may be reaped, so it inherits from ReaperMixin.
     """
 
     collection_name = 'archived_calls'

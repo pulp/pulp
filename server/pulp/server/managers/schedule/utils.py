@@ -42,7 +42,10 @@ def get(schedule_ids):
     :return:    iterator of ScheduledCall instances
     :rtype:     iterator
     """
-    object_ids = map(ObjectId, schedule_ids)
+    try:
+        object_ids = map(ObjectId, schedule_ids)
+    except InvalidId:
+        raise exceptions.InvalidValue(['schedule_ids'])
     criteria = Criteria(filters={'_id': {'$in': object_ids}})
     schedules = ScheduledCall.get_collection().query(criteria)
     return itertools.imap(ScheduledCall.from_db, schedules)
@@ -138,7 +141,10 @@ def update(schedule_id, delta):
 
     delta['last_updated'] = time.time()
 
-    spec = {'_id': ObjectId(schedule_id)}
+    try:
+        spec = {'_id': ObjectId(schedule_id)}
+    except InvalidId:
+        raise exceptions.InvalidValue(['schedule_id'])
     schedule = ScheduledCall.get_collection().find_and_modify(
         query=spec, update={'$set': delta}, safe=True, new=True)
     if schedule is None:
@@ -154,7 +160,10 @@ def reset_failure_count(schedule_id):
     :param schedule_id: ID of the schedule whose count should be reset
     :type  schedule_id: str
     """
-    spec = {'_id': ObjectId(schedule_id)}
+    try:
+        spec = {'_id': ObjectId(schedule_id)}
+    except InvalidId:
+        raise exceptions.InvalidValue(['schedule_id'])
     delta = {'$set': {
         'consecutive_failures': 0,
         'last_updated': time.time(),
@@ -170,7 +179,10 @@ def increment_failure_count(schedule_id):
     :param schedule_id: ID of the schedule whose count should be incremented
     :type  schedule_id: str
     """
-    spec = {'_id': ObjectId(schedule_id)}
+    try:
+        spec = {'_id': ObjectId(schedule_id)}
+    except InvalidId:
+        raise exceptions.InvalidValue(['schedule_id'])
     delta = {
         '$inc': {'consecutive_failures': 1},
         '$set': {'last_updated': time.time()},

@@ -78,7 +78,8 @@ def unbind(consumer_id, repo_id, distributor_id, options):
 
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
-    response = None
+
+    response = TaskResult(result=binding)
 
     if binding['notify_agent']:
         # Unbind the consumer from the repo on the server
@@ -87,7 +88,7 @@ def unbind(consumer_id, repo_id, distributor_id, options):
         # The agent notification handler will delete the binding from the server
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        response = TaskResult(result=binding, spawned_tasks=[task])
+        response.spawned_tasks.append(task)
     else:
         # Since there was no agent notification, perform the delete immediately
         bind_manager.delete(consumer_id, repo_id, distributor_id, True)
@@ -121,12 +122,13 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
     bind_manager = managers.consumer_bind_manager()
     binding = bind_manager.get_bind(consumer_id, repo_id, distributor_id)
     bind_manager.delete(consumer_id, repo_id, distributor_id, True)
-    response = None
+
+    response = TaskResult()
 
     if binding['notify_agent']:
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        response = TaskResult(spawned_tasks=[task])
+        response.spawned_tasks.append(task)
 
     return response
 

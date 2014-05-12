@@ -23,6 +23,7 @@ from pulp.server.compat import ObjectId
 from pulp.server.db import reaper
 from pulp.server.db.model import consumer, dispatch, repo_group, repository
 from pulp.server.db.model.consumer import ConsumerHistoryEvent
+from pulp.server.db.model.reaper_base import _create_expired_object_id, ReaperMixin
 
 
 class TestReaperCollectionConfig(unittest.TestCase):
@@ -56,11 +57,12 @@ class TestCreateExpiredObjectId(unittest.TestCase):
     """
     Assert correct behavior from _create_expired_object_id().
     """
+
     def test_expired_object_id(self):
         """
         Make sure that _create_expired_object_id() generates correct ObjectIds.
         """
-        expired_oid = reaper._create_expired_object_id(timedelta(seconds=1))
+        expired_oid = _create_expired_object_id(timedelta(seconds=1))
 
         # The oid should be about a second, but since we didn't create the now_oid until after we
         # ran the _create_expired_object_id() function, we can't assert that the timedelta is
@@ -74,6 +76,26 @@ class TestCreateExpiredObjectId(unittest.TestCase):
             (now_oid.generation_time - expired_oid.generation_time) < timedelta(seconds=2))
         # Also, let's make sure the type is correct
         self.assertTrue(isinstance(expired_oid, ObjectId))
+
+
+class TestReapInheritance(unittest.TestCase):
+    """
+    Check class inheritance related to ReaperMixin
+
+    Assert that any class used as a key in reaper._COLLECTION_TIMEDELTAS properly inherits from
+    reaper_base.ReaperMixin
+    """
+
+    def test_assert_inheritance(self):
+        """
+        The reaper relies on a classmethod to do the document deletion of old documents in a given
+        collection. Any model type that needs to be reaped should inherit that classmethod from
+        the reaper_base.ReaperMixin class. The reaper runs on any document used as a key in
+        reaper._COLLECTION_TIMEDELTAS, so each of those should be asserted as inheriting from
+        ReaperMixin.
+        """
+        for model in reaper._COLLECTION_TIMEDELTAS.keys():
+            self.assertTrue(issubclass(model, ReaperMixin))
 
 
 class TestReapExpiredDocuments(base.PulpServerTests):

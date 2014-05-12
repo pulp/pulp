@@ -41,7 +41,8 @@ class Services:
     @staticmethod
     def init():
         url = config.get('messaging', 'url')
-        broker = Broker(url)
+        transport = config.get('messaging', 'transport')
+        broker = Broker(url, transport=transport)
         broker.cacert = config.get('messaging', 'cacert')
         broker.clientcert = config.get('messaging', 'clientcert')
         log.info('AMQP broker configured: %s', broker)
@@ -49,8 +50,9 @@ class Services:
     @classmethod
     def start(cls):
         url = config.get('messaging', 'url')
+        transport = config.get('messaging', 'transport')
         # asynchronous reply
-        cls.reply_handler = ReplyHandler(url)
+        cls.reply_handler = ReplyHandler(url, transport)
         cls.reply_handler.start()
         log.info('AMQP reply handler started')
 
@@ -115,9 +117,15 @@ class ReplyHandler(Listener):
     # added for clarity
     _unbind_failed = _bind_failed
 
-    def __init__(self, url):
-        queue = Queue(Services.REPLY_QUEUE)
-        self.consumer = ReplyConsumer(queue, url=url)
+    def __init__(self, url, transport):
+        """
+        :param url: The broker URL.
+        :type url: str
+        :param transport: The gofer transport.
+        :type transport: str
+        """
+        queue = Queue(Services.REPLY_QUEUE, transport=transport)
+        self.consumer = ReplyConsumer(queue, url=url, transport=transport)
 
     # --- agent replies ------------------------------------------------------
 

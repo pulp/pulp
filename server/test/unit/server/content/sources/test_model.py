@@ -17,6 +17,7 @@ from mock import patch, Mock
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.content.sources import constants
 from pulp.server.content.sources.model import Request, PrimarySource, ContentSource, RefreshReport
+from pulp.server.content.sources.model import PRIMARY_ID, DownloadDetails, DownloadReport
 
 TYPE = '1234'
 TYPE_ID = 'ABCD'
@@ -530,7 +531,7 @@ class TestPrimarySource(TestCase):
     def test_construction(self):
         downloader = Mock()
         primary = PrimarySource(downloader)
-        self.assertEqual(primary.id, '__primary__')
+        self.assertEqual(primary.id, PRIMARY_ID)
         self.assertEqual(primary._downloader, downloader)
 
     def test_downloader(self):
@@ -548,7 +549,24 @@ class TestPrimarySource(TestCase):
         self.assertEqual(primary.priority, sys.maxint)
 
 
-class TestReport(TestCase):
+class TestDownloadDetails(TestCase):
+
+    def test_construction(self):
+        details = DownloadDetails()
+        self.assertEqual(details.total_succeeded, 0)
+        self.assertEqual(details.total_failed, 0)
+
+
+class TestDownloadReport(TestCase):
+
+    def test_construction(self):
+        report = DownloadReport()
+        self.assertEqual(report.total_passes, 0)
+        self.assertEqual(report.total_sources, 0)
+        self.assertEqual(report.downloads, {})
+
+
+class TestRefreshReport(TestCase):
 
     def test_construction(self):
         source_id = 's-1'

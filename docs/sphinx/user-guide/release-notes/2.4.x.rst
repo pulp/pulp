@@ -113,6 +113,10 @@ For systemd::
     $ sudo systemctl enable pulp_resource_manager
     $ sudo systemctl start pulp_resource_manager
 
+On each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
+message authentication.
+
+
 Rest API Changes
 ----------------
 
@@ -199,11 +203,18 @@ Here are other APIs that have changed, arranged by path:
 
 ``/v2/tasks/search/``
 
-    This is a new API.
+    This is a new API to search tasks by criteria.
 
 ``/v2/catalog/<source_id>/``
 
     This is a new API.
+
+``/v2/repositories/``
+    Documentation for POST states that each distributor object should contain a
+    key named ``distributor_type_id``, but the API was actually requiring it to
+    be named ``distributor_type``. The API has been changed to match the
+    documentation, so any code providing distributors to that API will need to
+    be modified.
 
 * Deleting units is no longer blocked when the user performing the delete is different
   than the user that created the unit. This most notably has the effect of eliminating
@@ -221,6 +232,10 @@ Here are other APIs that have changed, arranged by path:
 * The original applicability generation API didn't allow a consumer to request regeneration of its
   own applicability. To allow this, we have introduced a new API which can be used by consumers and
   is documented on the same page as other applicability APIs.
+
+``/v2/content/actions/delete_orphans/``
+
+    This has been deprecated in version 2.4, in favor of ``/v2/content/orphans/``.
 
 Binding API Changes
 -------------------

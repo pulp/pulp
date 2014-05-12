@@ -20,16 +20,12 @@ from pulp.devel.test_runner import run_tests
 PROJECT_DIR = os.path.dirname(__file__)
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
+
 PACKAGES = [
+    os.path.dirname(__file__),
     'pulp',
-    'pulp_admin_auth',
-    'pulp_admin_consumer',
-    'pulp_consumer',
-    'pulp_node',
-    'pulp_repo',
-    'pulp_server_info',
-    'pulp_tasks',
-]
+    'pulp_node',]
+
 
 TESTS_ALL_PLATFORMS = [
     'agent/test/unit',

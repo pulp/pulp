@@ -95,7 +95,6 @@ LINKS = [
     # Consumer Configuration
     ('agent/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
     ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
-    ('client_consumer/etc/pulp/consumer/consumer.conf', '/etc/pulp/consumer/consumer.conf'),
 ]
 
 # We only support Python >= 2.6 for the server code
@@ -202,11 +201,17 @@ def get_paths_to_copy():
     :return: List of dictionaries describing copy operations that should be performed.
     :rtype:  list
     """
-    paths = []
+    paths = [
+        {'source': 'client_consumer/etc/pulp/consumer/consumer.conf',
+         'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
+         'mode': '644', 'overwrite': False},
+    ]
     # We don't support server code on EL 5.
     if LSB_VERSION >= 6.0:
-        paths.extend([{'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
-                       'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False}])
+        paths.extend([
+            {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
+             'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
+        ])
         if LSB_VERSION >= 7.0:
             paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
                           'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
@@ -270,7 +275,7 @@ def getlinks():
         links.append(('server/etc/rc.d/init.d/pulp_celerybeat', '/etc/rc.d/init.d/pulp_celerybeat'))
         links.append(('server/etc/rc.d/init.d/pulp_workers',
                       '/etc/rc.d/init.d/pulp_workers'))
-        links.append(('/etc/rc.d/init.d/pulp_workers',
+        links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
                       '/etc/rc.d/init.d/pulp_resource_manager'))
         links.append(('server/etc/default/upstart_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
         links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))
