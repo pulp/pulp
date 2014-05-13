@@ -60,12 +60,20 @@ class RepoUnitAssociationQueryManagerTests(unittest.TestCase):
         associated_units_copy = copy.deepcopy(associated_units)
 
         # Let's run the generator by passing it to list()
-        list(association_query_manager.RepoUnitAssociationQueryManager._merged_units_unique_units(
-            associations_lookup, associated_units))
+        return_value = list(
+            association_query_manager.RepoUnitAssociationQueryManager._merged_units_unique_units(
+                associations_lookup, associated_units))
 
         # Now let's ensure that the data structures have not changed
         self.assertEqual(associations_lookup, associations_lookup_copy)
         self.assertEqual(associated_units, associated_units_copy)
+
+        # Assert that the return value is correct
+        expected_return_value = [
+            {'some': 'unit', 'metadata': {'_id': 'some_id', '_content_type_id': 'rpm'}},
+            {'some': 'unit', 'metadata': {'_id': 'some_other_id', '_content_type_id': 'rpm'}}
+        ]
+        self.assertEqual(return_value, expected_return_value)
 
 
 class UnitAssociationQueryTests(base.PulpServerTests):
