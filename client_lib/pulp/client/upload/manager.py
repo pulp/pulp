@@ -19,6 +19,7 @@ client-side tracking of upload requests on the server.
 """
 
 import copy
+import errno
 import os
 import pickle
 import sys
@@ -305,16 +306,24 @@ class UploadManager(object):
         @rtype:  list
         """
         # Load all tracker files from the working directory
-        for filename in os.listdir(self.upload_working_dir):
-            full_filename = os.path.join(self.upload_working_dir, filename)
-            # If the upload requests are getting processed at this time,
-            # resulting in the tracker files getting deleted, we want to
-            # ignore the IOError and try to load as many tracker files as we can.
-            try:
-                tracker_file = UploadTracker.load(full_filename)
-                self.tracker_files[tracker_file.upload_id] = tracker_file
-            except (IOError, OSError):
-                pass
+        try:
+            for filename in os.listdir(self.upload_working_dir):
+                full_filename = os.path.join(self.upload_working_dir, filename)
+                # If the upload requests are getting processed at this time,
+                # resulting in the tracker files getting deleted, we want to
+                # ignore the IOError and try to load as many tracker files as we can.
+                try:
+                    tracker_file = UploadTracker.load(full_filename)
+                    self.tracker_files[tracker_file.upload_id] = tracker_file
+                except (IOError, OSError):
+                    pass
+        except OSError, e:
+            # 1092989: if we get ENOENT (no working dir), assume no uploads are
+            # taking place
+            if e.errno == errno.ENOENT:
+                return []
+            else:
+                raise
 
         cached_trackers = self._all_tracker_files()
         copies = [copy.copy(t) for t in cached_trackers] # copy for safety
