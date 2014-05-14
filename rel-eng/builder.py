@@ -25,6 +25,7 @@ ARCH = 'arch'
 REPO_NAME = 'repo_name'
 DIST_KOJI_NAME = 'koji_name'
 PULP_PACKAGES = 'pulp_packages'
+REPO_CHECKSUM_TYPE = 'checksum'
 
 # Mapping for the package keys in the DISTRIBUTION_INFO to the locations on disk
 PULP_PACKAGE_LOCATIONS = {
@@ -34,30 +35,37 @@ PULP_PACKAGE_LOCATIONS = {
     'pulp-puppet': 'pulp_puppet'
 }
 
+# Using 'sha' instead of 'sha1' for EL5 because createrepo documentation
+# indicates that 'sha1' may not be compatible with older versions of yum.
+
 DISTRIBUTION_INFO = {
     'el5': {
         ARCH: ['i386', 'x86_64'],
         REPO_NAME: '5Server',
         DIST_KOJI_NAME: 'rhel5',
-        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet']
+        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha'
     },
     'el6': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: '6Server',
         DIST_KOJI_NAME: 'rhel6',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha256'
     },
     'fc19': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-19',
         DIST_KOJI_NAME: 'fedora19',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha256'
     },
     'fc20': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-20',
         DIST_KOJI_NAME: 'fedora20',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet']
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha256'
     },
 }
 
@@ -277,6 +285,7 @@ def build_repos(output_dir, dist):
     noarch_dir = os.path.join(output_dir, 'noarch')
     comps_file = os.path.join(WORKSPACE, 'pulp', 'comps.xml')
     arch_list = (DISTRIBUTION_INFO.get(dist)).get(ARCH)
+    checksum = (DISTRIBUTION_INFO.get(dist)).get(REPO_CHECKSUM_TYPE)
     for arch in arch_list:
         arch_dir = os.path.join(output_dir, arch)
         ensure_dir(arch_dir, False)
@@ -285,7 +294,7 @@ def build_repos(output_dir, dist):
         command = "cp -R %s/* %s" % (noarch_dir, arch_dir)
         subprocess.check_call(command, shell=True)
         # create the repo
-        command = "createrepo -g %s %s" % (comps_file, arch_dir)
+        command = "createrepo -s %s -g %s %s" % (checksum, comps_file, arch_dir)
         subprocess.check_call(command, shell=True)
 
     # If there is an i686 directory rename it i386 since that is what the distributions expect
