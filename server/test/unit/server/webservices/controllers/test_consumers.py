@@ -738,18 +738,20 @@ class TestProfilesNoWSGI(PulpWebservicesTests):
     @mock.patch('pulp.server.tasks.consumer.managers.consumer_profile_manager')
     def test_post(self, mock_manager, mock_created):
         # Setup
+        created_report = {'foo': 'bar'}
+        mock_created.return_value = created_report
         profiles = consumers.Profiles()
-        profiles.params = mock.Mock(return_value={'content_type': 'bar',
-                                                  'profile': 'baz'})
-        mock_manager.return_value.create.return_value = {'foo': 'bar'}
+        profiles.params = mock.Mock(return_value={'content_type': 'bar', 'profile': 'baz'})
+        mock_manager.return_value.create.return_value = created_report
 
         # Test
-        profiles.POST('consumer-foo')
+        profile = profiles.POST('consumer-foo')
         mock_manager.return_value.create.assert_called_once_with('consumer-foo', 'bar', 'baz')
-        self.assertTrue(mock_created.called)
+        mock_created.assert_called_with(
+            '/mock/consumer-foo/bar/', {'foo': 'bar', '_href': '/mock/consumer-foo/bar/'})
+        self.assertEqual(profile, created_report)
         uri_path = self.get_mock_uri_path('consumer-foo', 'bar')
-        compare_dict(mock_created.mock_calls[0][1][1], {'foo': 'bar',
-                                                        '_href': uri_path})
+        compare_dict(mock_created.mock_calls[0][1][1], {'foo': 'bar', '_href': uri_path})
 
         self.validate_auth(authorization.CREATE)
 
