@@ -1,22 +1,8 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class for performing queries for repo-unit associations.
 """
 
 import copy
-import logging
 
 import pymongo
 
@@ -24,9 +10,6 @@ from pulp.plugins.types import database as types_db
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 
-# -- constants ----------------------------------------------------------------
-
-_LOG = logging.getLogger(__name__)
 
 # Valid sort strings
 SORT_TYPE_ID = 'type_id'
@@ -42,7 +25,6 @@ SORT_DESCENDING = pymongo.DESCENDING
 
 _VALID_DIRECTIONS = (SORT_ASCENDING, SORT_DESCENDING)
 
-# -- manager ------------------------------------------------------------------
 
 class RepoUnitAssociationQueryManager(object):
 
@@ -591,6 +573,9 @@ class RepoUnitAssociationQueryManager(object):
             # Use the associations_lookup to determine how many times to return
             # the unit in the results.
             for association in associations_lookup[unit['_content_type_id']][unit['_id']]:
+                # We don't want to add the unit to the associations_lookup, as that will consume a
+                # large amount of RAM.
+                association = association.copy()
                 association['metadata'] = unit
                 yield association
 
