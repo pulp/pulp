@@ -444,7 +444,7 @@ class Profiles(JSONController):
         new_profile = manager.create(consumer_id, content_type, profile)
         link = serialization.link.child_link_obj(consumer_id, content_type)
         new_profile.update(link)
-        self.created(link['_href'], new_profile)
+        return self.created(link['_href'], new_profile)
 
 
 class Profile(JSONController):
