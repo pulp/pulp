@@ -52,6 +52,7 @@ def to_transfer_repo(repo_data):
                    repo_data['notes'], content_unit_counts=repo_data['content_unit_counts'])
     return r
 
+
 def to_related_repo(repo_data, configs):
     """
     Converts the given database representation of a repository into a plugin's

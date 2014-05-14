@@ -21,7 +21,7 @@ from pulp.plugins.model import PublishReport
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.server.async import tasks
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.exceptions import InvalidValue, PulpExecutionException
+from pulp.server.exceptions import InvalidValue, MissingResource
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
@@ -237,7 +237,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('gonna-bail')
         self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', {}, False, distributor_id='bad-dist')
 
-        self.assertRaises(publish_manager.PulpExecutionException, self.publish_manager.publish,
+        self.assertRaises(Exception, self.publish_manager.publish,
                           'gonna-bail', 'bad-dist')
 
         # Verify
@@ -246,7 +246,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertTrue(repo_distributor is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
-        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'gonna-bail'}))
+        entries = list(RepoPublishResult.get_collection().find({'repo_id': 'gonna-bail'}))
         self.assertEqual(1, len(entries))
         self.assertEqual('gonna-bail', entries[0]['repo_id'])
         self.assertEqual('bad-dist', entries[0]['distributor_id'])
@@ -352,6 +352,19 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Verify
         self.assertTrue(last is None)
+
+    def test_last_missing_distributor(self):
+        """
+        Tests getting last publish for a distributor that doesn't exist
+        """
+
+        # Setup
+        dist = RepoDistributor('repo-1', 'dist-1', 'type-1', None, True)
+        RepoDistributor.get_collection().save(dist)
+
+        # Test
+        self.assertRaises(MissingResource, self.publish_manager.last_publish, 'repo-1',
+                          'random-dist')
 
     def test_publish_no_plugin_report(self):
         """

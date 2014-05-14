@@ -140,8 +140,8 @@ class RepoPublishManager(object):
             publish_result_coll.save(result, safe=True)
 
             logger.exception(
-                _('Exception caught from plugin during publish for repo [%(r)s]' % {'r' : repo_id}))
-            raise PulpExecutionException(), None, sys.exc_info()[2]
+                _('Exception caught from plugin during publish for repo [%(r)s]' % {'r': repo_id}))
+            raise
 
         publish_end_timestamp = _now_timestamp()
 
