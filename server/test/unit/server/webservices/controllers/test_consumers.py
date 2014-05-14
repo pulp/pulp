@@ -1476,6 +1476,27 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 200)
 
+    def test_get_scheduled_install_404(self):
+        schedule = 'R1/P1DT'
+        zsh_unit = {'type_id': 'rpm',
+                    'unit_key': {'name': 'zsh'}}
+        options = {'importkeys': True}
+
+        path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
+        body = {'schedule': schedule,
+                'units': [zsh_unit],
+                'options': options}
+
+        status, response = self.post(path, body)
+
+        self.assertEqual(status, 201)
+
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, '111111111111111')
+
+        status, response = self.get(path)
+
+        self.assertEqual(status, 404)
+
     def test_get_all_scheduled_installs(self):
         schedule = 'R1/P1DT'
         zsh_unit = {'type_id': 'rpm',

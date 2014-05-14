@@ -689,9 +689,12 @@ class UnitActionScheduleResource(JSONController):
 
     @auth_required(READ)
     def GET(self, consumer_id, schedule_id):
-        try:
-            scheduled_call = list(self.manager.get(consumer_id, self.ACTION))[0]
-        except IndexError:
+        scheduled_call = None
+        for call in self.manager.get(consumer_id, self.ACTION):
+            if call.id == schedule_id:
+                scheduled_call = call
+                break
+        if scheduled_call is None:
             raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
 
         scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call.for_display())
