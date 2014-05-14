@@ -135,21 +135,6 @@ class TestDeleteQueue(ResourceReservationTests):
             self.fail('_delete_queue() on a queue that is not in the database caused an Exception')
 
 
-class TestInitializeWorker(unittest.TestCase):
-    """
-    Test the initialize_worker() function.
-    """
-    @mock.patch('pulp.server.async.tasks.babysit')
-    def test_initialize_worker(self, babysit):
-        """
-        Test that initialize_worker() makes the correct calls.
-        """
-        tasks._initialize_worker()
-
-        # babysit() should have been called with no args
-        babysit.assert_called_once_with()
-
-
 class TestQueueReleaseResource(ResourceReservationTests):
     """
     Test the _queue_release_resource() function.
@@ -217,9 +202,10 @@ class TestReleaseResource(ResourceReservationTests):
         should not decrement the queue task count into the negative range.
         """
         # Set up two available queues, the second with a task count of 0
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 0)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 0)
         available_queue_2.save()
         # Set up two reserved resources, and let's make it so the second one is out of sync with its
         # queue's task count by setting its num_reservations to 1
@@ -254,9 +240,10 @@ class TestReleaseResource(ResourceReservationTests):
         the resource from the database.
         """
         # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 1)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 1)
         available_queue_2.save()
         # Set up two reserved resources
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -291,9 +278,10 @@ class TestReleaseResource(ResourceReservationTests):
         decrement the task_count for the resource, but should not remove it from the database.
         """
         # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 2)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 2)
         available_queue_2.save()
         # Set up two resource reservations, using our available_queues from above
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -335,7 +323,8 @@ class TestReserveResource(ResourceReservationTests):
         It should return the queue listed in the database, and increment the reservation counter.
         """
         # Set up an available queue with a reservation count of 1
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 1)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 1)
         available_queue_1.save()
         # Set up a resource reservation, using our available_queue from above
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -646,7 +635,8 @@ class TestTask(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
-        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue'),
+        now = datetime.utcnow()
+        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue', now),
                                              state=CALL_CANCELED_STATE)
         apply_async.return_value = celery.result.AsyncResult(task_id)
 

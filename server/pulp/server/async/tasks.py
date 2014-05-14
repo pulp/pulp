@@ -92,9 +92,11 @@ def _release_resource(resource_id):
         # Now we need to decrement the AvailabeQueue that the reserved_resource was using. If the
         # ReservedResource does not exist for some reason, we won't know its assigned_queue, but
         # these next lines won't execute anyway.
-        available_queue = AvailableQueue(reserved_resource.assigned_queue)
+        aqc = Criteria(filters={'_id': reserved_resource.assigned_queue})
+        aq_list = list(resources.filter_available_queues(aqc))
+        available_queue = aq_list[0]
         available_queue.decrement_num_reservations()
-    except DoesNotExist:
+    except IndexError:
         # If we are trying to decrement the count on one of these obejcts, and they don't exist,
         # that's OK
         pass
@@ -129,7 +131,9 @@ def _reserve_resource(resource_id):
         # reserved resource
         reserved_resource.increment_num_reservations()
 
-    AvailableQueue(reserved_resource.assigned_queue).increment_num_reservations()
+    aqc = Criteria(filters={'_id': reserved_resource.assigned_queue})
+    aq_list = list(resources.filter_available_queues(aqc))
+    aq_list[0].increment_num_reservations()
     return reserved_resource.assigned_queue
 
 
