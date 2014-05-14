@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains management functions for the models found in the
 pulp.server.db.model.resources module.
@@ -52,23 +40,6 @@ def get_least_busy_available_queue():
     return resources.AvailableQueue.from_bson(available_queue)
 
 
-def get_or_create_available_queue(name):
-    """
-    Get or create an AvailableQueue object with the given name. If the object is created, initialize
-    its num_reservations attribute to 0.
-
-    :param name: The name of the requested AvailableQueue
-    :type  name: basestring
-    :return:     An AvailableQueue object for the given name
-    :rtype:      pulp.server.db.model.resources.AvailableQueue
-    """
-    available_queue = resources.AvailableQueue.get_collection().find_and_modify(
-        query={'_id': name},
-        update={'$setOnInsert': {'num_reservations': 0, 'missing_since': None}},
-        upsert=True, new=True)
-    return resources.AvailableQueue.from_bson(available_queue)
-
-
 def get_or_create_reserved_resource(name):
     """
     Get or create a ReservedResource instance with the given name. If the object is created,
@@ -89,7 +60,7 @@ def get_or_create_reserved_resource(name):
 
 
 class NoAvailableQueues(Exception):
-    """ 
+    """
     This Exception is raised by _get_least_busy_available_queue() if there are no AvailableQueue
     objects.
     """

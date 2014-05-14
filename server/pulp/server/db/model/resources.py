@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains models that are used by the resource manager to persist its state so that it
 can survive being restarted.
@@ -26,36 +14,33 @@ class AvailableQueue(Model):
     :type name:             unicode
     :ivar num_reservations: The number of outstanding reservations on the queue
     :type num_reservations: int
-    :ivar missing_since:    A timestamp representing the time when the babysitter noticed that this
-                            AvailableQueue's worker was missing. Set to None when the AvailableQueue
-                            is not missing.
-    :type missing_since:    datetime.datetime
+    :ivar last_heartbeat:   A timestamp of the last heartbeat from the worker
+    :type last_heartbeat:   datetime.datetime
     """
     collection_name = 'available_queues'
     unique_indices = tuple()
-    # The compound index with _id and missing since will help the babysit() Task to be able to
-    # retrieve the data it needs without accessing the disk
-    search_indices = ('num_reservations', ('_id', 'missing_since'))
+    # The compound index with _id and last_heartbeat will help the
+    # async.scheduler.WorkerTimeoutMonitor to be able to retrieve the data it needs without
+    # accessing the disk
+    search_indices = ('num_reservations', ('_id', 'last_heartbeat'))
 
-    def __init__(self, name, num_reservations=0, missing_since=None):
+    def __init__(self, name, last_heartbeat, num_reservations=0):
         """
-        Initialize the AvailableQueue. A new AvailableQueue always has a num_reservations of 0.
+        Initialize the AvailableQueue. A new AvailableQueue has a default num_reservations of 0.
 
         :param name:             The name of the AvailableQueue, which should correspond to the name
                                  of a queue that a worker is assigned to.
         :type  name:             basestring
+        :param last_heartbeat:   A timestamp of the last heartbeat from the worker
+        :type  last_heartbeat:   datetime.datetime
         :param num_reservations: The number of reservations in the AvailableQueue. Defaults to 0.
         :type  num_reservations: int
-        :param missing_since:    A timestamp representing the time when the babysitter noticed that
-                                 this AvailableQueue's worker was missing. Set to None when the
-                                 AvailableQueue is not missing. Defaults to None.
-        :type  missing_since:    datetime.datetime or None
         """
         super(AvailableQueue, self).__init__()
 
         self.name = name
+        self.last_heartbeat = last_heartbeat
         self.num_reservations = num_reservations
-        self.missing_since = missing_since
 
         # We don't need these
         del self['_id']
@@ -84,7 +69,7 @@ class AvailableQueue(Model):
 
         # Update the attributes to match what was in the database
         self.num_reservations = new_queue['num_reservations']
-        self.missing_since = new_queue['missing_since']
+        self.last_heartbeat = new_queue['last_heartbeat']
 
     def delete(self):
         """
@@ -109,7 +94,7 @@ class AvailableQueue(Model):
         return cls(
             name=bson_queue['_id'],
             num_reservations=bson_queue.get('num_reservations', None),
-            missing_since=bson_queue.get('missing_since', None))
+            last_heartbeat=bson_queue.get('last_heartbeat', None))
 
     def increment_num_reservations(self):
         """
@@ -128,7 +113,7 @@ class AvailableQueue(Model):
 
         # Update the attributes to match what was in the database
         self.num_reservations = new_queue['num_reservations']
-        self.missing_since = new_queue['missing_since']
+        self.last_heartbeat = new_queue['last_heartbeat']
 
     def save(self):
         """
@@ -137,7 +122,7 @@ class AvailableQueue(Model):
         """
         self.get_collection().save(
             {'_id': self.name, 'num_reservations': self.num_reservations,
-             'missing_since': self.missing_since},
+             'last_heartbeat': self.last_heartbeat},
             manipulate=False, safe=True)
 
 

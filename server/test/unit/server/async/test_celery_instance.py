@@ -21,7 +21,6 @@ import unittest
 import mock
 
 from pulp.server.async import celery_instance
-from pulp.server.async.tasks import babysit
 from pulp.server.config import config, _default_values
 from pulp.server.db.reaper import reap_expired_documents
 from pulp.server.maintenance.monthly import monthly_maintenance
@@ -40,19 +39,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         # Please read the docblock to this test if you find yourself needing to adjust this
         # assertion.
-        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 3)
-
-    def test_babysit(self):
-        """
-        Make sure the babysit Task is present and properly configured.
-        """
-        expected_babysit = {
-            'task': babysit.name,
-            'schedule': timedelta(seconds=60),
-            'args': tuple(),
-        }
-        self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['babysit'],
-                         expected_babysit)
+        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 2)
 
     def test_reap_expired_documents(self):
         """

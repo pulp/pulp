@@ -1,19 +1,8 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software;
-# if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 from collections import namedtuple
+from datetime import datetime, timedelta
 from gettext import gettext as _
 import logging
+import re
 import threading
 import time
 
@@ -22,11 +11,76 @@ from celery.result import AsyncResult
 import itertools
 
 from pulp.server.async.celery_instance import celery as app
+from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
+from pulp.server.db.model.resources import AvailableQueue
+from pulp.server.managers import resources
 from pulp.server.managers.schedule import utils
+from pulp.server.async.tasks import _delete_queue
 
 
 _logger = logging.getLogger(__name__)
+
+
+RESOURCE_MANAGER_PREFIX = 'resource_manager@'
+
+
+class WorkerWatcher(object):
+
+    @classmethod
+    def _is_resource_manager(cls, event):
+        if re.match('^%s' % RESOURCE_MANAGER_PREFIX, event['hostname']):
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _parse_and_log_event(cls, event):
+        event_info = {'timestamp': datetime.fromtimestamp(event['timestamp']),
+                      'type': event['type'],
+                      'worker_name': event['hostname']}
+        cls._log_event(event_info)
+        return event_info
+
+    @classmethod
+    def _log_event(cls, event_info):
+        msg = "received '%(type)s' from %(worker_name)s at time: %(timestamp)s" % event_info
+        _logger.debug(_(msg))
+
+    @classmethod
+    def handle_worker_heartbeat(cls, event):
+        event_info = WorkerWatcher._parse_and_log_event(event)
+
+        # if this is the resource_manager do nothing
+        if WorkerWatcher._is_resource_manager(event):
+            return
+
+        find_worker_criteria = Criteria(filters={'_id': event_info['worker_name']},
+                                        fields=('_id', 'last_heartbeat', 'num_reservations'))
+        find_worker_list = list(resources.filter_available_queues(find_worker_criteria))
+
+        if find_worker_list:
+            existing_worker = find_worker_list[0]
+            existing_worker.last_heartbeat = event_info['timestamp']
+            existing_worker.save()
+        else:
+            new_available_queue = AvailableQueue(event_info['worker_name'], event_info['timestamp'])
+            msg = "New worker '%(worker_name)s' discovered" % event_info
+            _logger.info(_(msg))
+            new_available_queue.save()
+
+    @classmethod
+    def handle_worker_offline(cls, event):
+        event_info = WorkerWatcher._parse_and_log_event(event)
+
+        # if this is the resource_manager do nothing
+        if WorkerWatcher._is_resource_manager(event):
+            return
+
+        msg = "Worker '%(worker_name)s' shutdown" % event_info
+        _logger.info(_(msg))
+        _delete_queue.apply_async(args=(event_info['worker_name'],), queue=RESOURCE_MANAGER_QUEUE)
 
 
 class FailureWatcher(object):
@@ -78,37 +132,6 @@ class FailureWatcher(object):
         """
         return self._watches.pop(task_id, self._default_pop)[1:]
 
-    def monitor_events(self):
-        """
-        Receives events from celery and matches each with the appropriate
-        handler function. This will not return, and thus should be called in
-        its own thread.
-        """
-        with app.connection() as connection:
-            recv = app.events.Receiver(connection, handlers={
-                'task-failed': self.handle_failed_task,
-                'task-succeeded': self.handle_succeeded_task,
-                #'worker-heartbeat': self.handle_worker_heartbeat,
-                'worker-online': self.handle_worker_online,
-                'worker-offline': self.handle_worker_offline,
-            })
-            recv.capture(limit=None, timeout=None, wakeup=False)
-
-    def handle_worker_heartbeat(self, *args, **kwargs):
-        logging.error('worker-heartbeat')
-        logging.error(args)
-        logging.error(kwargs)
-
-    def handle_worker_online(self, *args, **kwargs):
-        logging.error('worker-online')
-        logging.error(args)
-        logging.error(kwargs)
-
-    def handle_worker_offline(self, *args, **kwargs):
-        logging.error('worker-offline')
-        logging.error(args)
-        logging.error(kwargs)
-
     def handle_succeeded_task(self, event):
         """
         Celery event handler for succeeded tasks. This will check if we are
@@ -147,14 +170,76 @@ class FailureWatcher(object):
         """
         schedule_id, has_failure = self.pop(event['uuid'])
         if schedule_id:
-            _logger.info(_('incrementing consecutive failure count for schedule %(id)s') % {'id': schedule_id})
+            msg = 'incrementing consecutive failure count for schedule %s' % schedule_id
+            _logger.info(_(msg))
             utils.increment_failure_count(schedule_id)
 
     def __len__(self):
         return len(self._watches)
 
 
+class EventMonitor(object):
+
+    def __init__(self, _failure_watcher):
+        self._failure_watcher = _failure_watcher
+
+    def monitor_events(self):
+        """
+        Receives events from celery and matches each with the appropriate
+        handler function. This will not return, and thus should be called in
+        its own thread.
+        """
+        with app.connection() as connection:
+            recv = app.events.Receiver(connection, handlers={
+                'task-failed': self._failure_watcher.handle_failed_task,
+                'task-succeeded': self._failure_watcher.handle_succeeded_task,
+                'worker-heartbeat': WorkerWatcher.handle_worker_heartbeat,
+                'worker-offline': WorkerWatcher.handle_worker_offline,
+            })
+            _logger.info(_('Event Monitor Starting'))
+            recv.capture(limit=None, timeout=None, wakeup=True)
+
+
+class WorkerTimeoutMonitor(object):
+
+    WORKER_TIMEOUT_SECONDS = 300
+    FREQUENCY = 60
+
+    def run(self):
+        _logger.info(_('Worker Timeout Monitor Started'))
+        while True:
+            time.sleep(self.FREQUENCY)
+            self.check_workers()
+
+    def check_workers(self):
+        msg = 'Looking for workers missing for more than %s seconds' % self.WORKER_TIMEOUT_SECONDS
+        _logger.debug(_(msg))
+        oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
+        worker_criteria = Criteria(filters={'last_heartbeat': {'$lt': oldest_heartbeat_time}},
+                                   fields=('_id', 'last_heartbeat', 'num_reservations'))
+        worker_list = list(resources.filter_available_queues(worker_criteria))
+        for worker in worker_list:
+            msg = "Workers '%s' has gone missing, removing from list of workers" % worker.name
+            _logger.error(_(msg))
+            _delete_queue.apply_async(args=(worker.name,), queue=RESOURCE_MANAGER_QUEUE)
+
+
 class Scheduler(beat.Scheduler):
+    """
+    This is a custom Scheduler object to be used by celery beat.
+
+    This object has two purposes: Implement a dynamic periodic task schedule, and start helper
+    threads related to celery event monitoring.
+
+    Celery uses lazy instantiation, so this object may be created multiple times, with some objects
+    being thrown away after being created. The spawning of threads needs to be done on the actual
+    object, and not any intermediate objects, so __init__ conditionally spawns threads based on
+    this case. Threads are spawned using spawn_pulp_monitor_threads().
+
+    Two threads are started, one that uses EventMonitor, and handles all Celery events.  The
+    second, is a WorkerTimeoutMonitor thread that watches for cases where all workers disappear
+    at once.
+    """
     Entry = ScheduleEntry
 
     # the superclass reads this attribute, which is the maximum number of seconds
@@ -162,16 +247,43 @@ class Scheduler(beat.Scheduler):
     max_interval = 90
 
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the Scheduler object.
+
+        __init__ may be called multiple times because of the lazy instantiation behavior of Celery.
+        If a keyword argument named 'lazy' is set to False, this instantiation is the 'real' one,
+        and should create the necessary pulp helper threads using spawn_pulp_monitor_threads().
+        """
         self._schedule = None
         self._failure_watcher = FailureWatcher()
+        self._event_monitor = EventMonitor(self._failure_watcher)
+        self._worker_timeout_monitor = WorkerTimeoutMonitor()
         self._loaded_from_db_count = 0
-        # start monitoring events in a thread
-        thread = threading.Thread(target=self._failure_watcher.monitor_events)
-        thread.daemon = True
-        thread.start()
-
-        kwargs['app'] = app
+        # Leave helper threads starting here if lazy=False due to Celery lazy instantiation
+        # https://github.com/celery/celery/issues/1549
+        if kwargs.get('lazy', True) == False:
+            self.spawn_pulp_monitor_threads()
         super(Scheduler, self).__init__(*args, **kwargs)
+
+    def spawn_pulp_monitor_threads(self):
+        """
+        Start two threads that are important to Pulp. One monitors workers, the other, events.
+
+        Two threads are started, one that uses EventMonitor, and handles all Celery events.  The
+        second, is a WorkerTimeoutMonitor thread that watches for cases where all workers
+        disappear at once.
+
+        This method should be called only in certain situations, see docstrings on the object for
+        more details.
+        """
+        # start monitoring events in a thread
+        event_thread = threading.Thread(target=self._event_monitor.monitor_events)
+        event_thread.daemon = True
+        event_thread.start()
+        # start monitoring workers who may timeout
+        worker_timeout_thread = threading.Thread(target=self._worker_timeout_monitor.run)
+        worker_timeout_thread.daemon = True
+        worker_timeout_thread.start()
 
     def tick(self):
         """

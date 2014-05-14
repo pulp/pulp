@@ -19,7 +19,6 @@ import signal
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
-from celery.signals import worker_ready
 
 from pulp.common import dateutils
 from pulp.common.error_codes import PLP0023
@@ -35,83 +34,6 @@ from pulp.server.managers import resources
 
 controller = control.Control(app=celery)
 logger = logging.getLogger(__name__)
-
-
-RESERVED_WORKER_NAME_PREFIX = 'reserved_resource_worker-'
-
-
-@task
-def babysit():
-    """
-    Babysit the workers, updating our tables with information about their queues.
-    """
-    # Inspect the available workers to build our state variables
-    active_queues = controller.inspect().active_queues()
-    # Now we need the entire list of AvailableQueues from the database, though we only need their
-    # _id and missing_since attributes. This is preferrable to using a Map/Reduce operation to get
-    # Mongo to tell us which workers Celery knows about that aren't found in the database.
-    all_queues_criteria = Criteria(filters={}, fields=('_id', 'missing_since'))
-    all_queues = list(resources.filter_available_queues(all_queues_criteria))
-    all_queues_set = set([q.name for q in all_queues])
-
-    active_queues_set = set()
-    # If there are no active queues, active_queues will be None
-    if active_queues is not None:
-        for worker, queues in active_queues.items():
-            # If this worker is a reserved task worker, let's make sure we know about it in our
-            # available_queues collection, and make sure it is processing a queue with its own name
-            if re.match('^%s' % RESERVED_WORKER_NAME_PREFIX, worker):
-                # Make sure that this worker is subscribed to a queue of his own name. If not,
-                # subscribe him to one
-                if not worker in [queue['name'] for queue in queues]:
-                    controller.add_consumer(queue=worker, destination=(worker,))
-                active_queues_set.add(worker)
-
-    # Determine which queues are in active_queues_set that aren't in all_queues_set. These are new
-    # workers and we need to add them to the database.
-    for worker in (active_queues_set - all_queues_set):
-        resources.get_or_create_available_queue(worker)
-
-    # If there are any AvalailableQueues that have their missing_since attribute set and they are
-    # present now, let's set their missing_since attribute back to None.
-    missing_since_queues = set([q.name for q in all_queues if q.missing_since is not None])
-    for queue in (active_queues_set & missing_since_queues):
-        active_queue = resources.get_or_create_available_queue(queue)
-        active_queue.missing_since = None
-        active_queue.save()
-
-    # Now we must delete queues for workers that don't exist anymore, but only if they've been
-    # missing for at least five minutes.
-    for queue in (all_queues_set - active_queues_set):
-        active_queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
-
-        # We only want to delete this queue if it has been missing for at least 5 minutes. If this
-        # AvailableQueue doesn't have a missing_since attribute, that means it has just now gone
-        # missing. Let's mark its missing_since attribute and continue.
-        if active_queue.missing_since is None:
-            active_queue.missing_since = datetime.utcnow()
-            active_queue.save()
-            continue
-
-        # This queue has been missing for some time. Let's check to see if it's been 5 minutes yet,
-        # and if it has, let's delete it.
-        if active_queue.missing_since < datetime.utcnow() - timedelta(minutes=5):
-            _delete_queue.apply_async(args=(queue,), queue=RESOURCE_MANAGER_QUEUE)
-
-
-@worker_ready.connect
-def _initialize_worker(*args, **kwargs):
-    """
-    This gets called by Celery when the worker is ready to accept work. It initializes Pulp and runs
-    our babysit() function synchronously so that the application is aware of this worker
-    immediately.
-
-    :param args:   unused
-    :type  args:   list
-    :param kwargs: unused
-    :type  kwargs: dict
-    """
-    babysit()
 
 
 @task
