@@ -138,4 +138,6 @@ def handle_worker_offline(event):
 
     msg = _("Worker '%(worker_name)s' shutdown") % event_info
     _logger.info(msg)
-    _delete_queue.apply_async(args=(event_info['worker_name'],), queue=RESOURCE_MANAGER_QUEUE)
+    _delete_queue.apply_async(args=(event_info['worker_name'],),
+                              kwargs={'normal_shutdown': True},
+                              queue=RESOURCE_MANAGER_QUEUE)

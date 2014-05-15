@@ -147,6 +147,17 @@ class TestDeleteQueue(ResourceReservationTests):
         except Exception:
             self.fail('_delete_queue() on a queue that is not in the database caused an Exception')
 
+    @mock.patch('pulp.server.async.tasks._')
+    @mock.patch('pulp.server.async.tasks.logger')
+    def test__delete_queue_normal_shutdown_true(self, mock_logger, mock_underscore):
+        """
+        Call _delete_queue() with the normal_shutdown keyword argument set to True. This should
+        not make any calls to _() or logger().
+        """
+        tasks._delete_queue('does not exist queue name')
+        self.assertTrue(not mock_underscore.called)
+        self.assertTrue(not mock_logger.called)
+
 
 class TestQueueReleaseResource(ResourceReservationTests):
     """
@@ -374,7 +385,8 @@ class TestReserveResource(ResourceReservationTests):
 
         queue = tasks._reserve_resource('resource_1')
 
-        self.assertEqual(queue, RESERVED_WORKER_1)
+        worker_1_queue_name = RESERVED_WORKER_1 + '.dq'
+        self.assertEqual(queue, worker_1_queue_name)
         # Make sure that the AvailableQueue is correct
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 1)
@@ -384,7 +396,7 @@ class TestReserveResource(ResourceReservationTests):
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 1)
         rr_1 = rrc.find_one({'_id': 'resource_1'})
-        self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
+        self.assertEqual(rr_1['assigned_queue'], worker_1_queue_name)
         self.assertEqual(rr_1['num_reservations'], 1)
 
 
