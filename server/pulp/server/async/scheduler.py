@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 from gettext import gettext as _
 import itertools
 import logging
-import re
 import threading
 import time
 
@@ -209,7 +208,7 @@ class WorkerTimeoutMonitor(threading.Thread):
         Look for missing workers, and dispatch a cleanup task if one goes missing.
 
         To find a missing worker, filter the AvailableQueues model for entries older than
-        utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in naive UTC, so this is
+        utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
         a comparable datetime.
 
         For each missing worker found, dispatch a _delete_queue task requesting that the resource
