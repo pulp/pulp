@@ -37,7 +37,7 @@ class WorkerWatcher(object):
 
     @classmethod
     def _parse_and_log_event(cls, event):
-        event_info = {'timestamp': datetime.fromtimestamp(event['timestamp']),
+        event_info = {'timestamp': datetime.utcfromtimestamp(event['timestamp']),
                       'type': event['type'],
                       'worker_name': event['hostname']}
         cls._log_event(event_info)

@@ -57,7 +57,6 @@ def create_mongo_config():
         mongo_config['password'] = config.get('database', 'password')
     return mongo_config
 
-
 celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
 celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')

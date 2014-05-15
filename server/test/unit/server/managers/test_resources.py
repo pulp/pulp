@@ -34,11 +34,12 @@ class TestFilterAvailableQueues(ResourceReservationTests):
         Test a filter operation to make sure the results appear to be correct.
         """
         # Make three queues. We'll filter for two of them.
-        aq_1 = AvailableQueue('queue_1', 1)
+        now = datetime.utcnow()
+        aq_1 = AvailableQueue('queue_1', now, 1)
         aq_1.save()
-        aq_2 = AvailableQueue('queue_2', 2)
+        aq_2 = AvailableQueue('queue_2', now, 2)
         aq_2.save()
-        aq_3 = AvailableQueue('queue_3', 3)
+        aq_3 = AvailableQueue('queue_3', now, 3)
         aq_3.save()
         criteria = Criteria(filters={'_id': {'$gt': 'queue_1'}}, sort=[('_id', pymongo.ASCENDING)])
 

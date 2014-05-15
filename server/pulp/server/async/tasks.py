@@ -96,7 +96,7 @@ def _release_resource(resource_id):
         aq_list = list(resources.filter_available_queues(aqc))
         available_queue = aq_list[0]
         available_queue.decrement_num_reservations()
-    except IndexError:
+    except DoesNotExist:
         # If we are trying to decrement the count on one of these obejcts, and they don't exist,
         # that's OK
         pass
