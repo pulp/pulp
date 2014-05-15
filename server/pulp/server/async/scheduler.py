@@ -121,9 +121,10 @@ class WorkerWatcher(object):
         find_worker_list = list(resources.filter_available_queues(find_worker_criteria))
 
         if find_worker_list:
-            existing_worker = find_worker_list[0]
-            existing_worker.last_heartbeat = event_info['timestamp']
-            existing_worker.save()
+            AvailableQueue.get_collection().find_and_modify(
+                query={'_id': event_info['worker_name']},
+                update={'$set': {'last_heartbeat': event_info['timestamp']}}
+            )
         else:
             new_available_queue = AvailableQueue(event_info['worker_name'], event_info['timestamp'])
             msg = _("New worker '%(worker_name)s' discovered") % event_info
