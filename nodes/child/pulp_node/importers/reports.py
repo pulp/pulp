@@ -9,10 +9,11 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+from pulp.server.content.sources.model import DownloadReport
 from pulp_node.error import ErrorList
 
-
 # --- utils -----------------------------------------------------------------------------
+
 
 def key_and_repr(units):
     """
@@ -37,19 +38,30 @@ class SummaryReport(object):
     of content units associated with a repository.
     :ivar errors: List of errors.
     :type errors: ErrorList
+    :ivar download_report: The download report.
+    :type download_report: DownloadReport
     """
 
     def __init__(self):
         self.errors = ErrorList()
+        self.download_report = DownloadReport()
 
     def update(self, **details):
         self.errors.update(**details)
 
     def dict(self):
         """
-        Get a dictionary representation.
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
         """
-        return dict(errors=[e.dict() for e in self.errors])
+        errors = [e.dict() for e in self.errors]
+        downloads = [(k, v.__dict__) for k, v in self.download_report.downloads.items()]
+        download_report = dict(
+            total_passes=self.download_report.total_passes,
+            total_sources=self.download_report.total_sources,
+            downloads=downloads)
+        return dict(errors=errors, download_report=download_report)
 
 
 class ProgressListener(object):

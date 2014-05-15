@@ -272,7 +272,8 @@ class ImporterStrategy(object):
         if request.cancelled():
             return
         container = ContentContainer()
-        container.download(request.cancel_event, request.downloader, download_list, listener)
+        request.summary.download_report = \
+            container.download(request.cancel_event, request.downloader, download_list, listener)
         request.summary.errors.extend(listener.error_list)
 
     def _update_units(self, request, unit_inventory):
