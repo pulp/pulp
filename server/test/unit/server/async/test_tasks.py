@@ -1,8 +1,9 @@
 """
 This module contains tests for the pulp.server.async.tasks module.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 import signal
+import time
 import unittest
 import uuid
 
@@ -15,7 +16,7 @@ from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException, PulpCodedException
-from pulp.server.async import tasks
+from pulp.server.async import tasks, worker_watcher
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
@@ -86,6 +87,17 @@ class TestDeleteQueue(ResourceReservationTests):
         Assert that the correct Tasks get canceled when their queue is deleted, and that the queue
         is removed from the database.
         """
+        # cause two workers to be added to the database as having available queues
+        worker_watcher.handle_worker_heartbeat({
+            'timestamp': time.time(),
+            'type': 'worker-heartbeat',
+            'hostname': RESERVED_WORKER_1,
+        })
+        worker_watcher.handle_worker_heartbeat({
+            'timestamp': time.time(),
+            'type': 'worker-heartbeat',
+            'hostname': RESERVED_WORKER_2,
+        })
         # Let's simulate three tasks being assigned to RESERVED_WORKER_2, with two of them being
         # in an incomplete state and one in a complete state. We will delete RESERVED_WORKER_2's
         # queue, which should cause the two to get canceled. Let's put task_1 in progress
@@ -99,7 +111,8 @@ class TestDeleteQueue(ResourceReservationTests):
         # Let's make a task in a worker that is still present just to make sure it isn't touched.
         TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
                                              state=CALL_RUNNING_STATE)
-        # Let's just make sure the babysit() worked and that we have an AvailableQueue with RR2
+
+        # Let's just make sure the setup worked and that we have an AvailableQueue with RR2
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 1)
 
@@ -121,8 +134,8 @@ class TestDeleteQueue(ResourceReservationTests):
 
         # The queue should have been deleted
         self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 0)
-        # The other queues (1 and 3) should remain
-        self.assertEqual(aqc.find().count(), 2)
+        # the queue for RW1 should remain
+        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_1}).count(), 1)
 
     def test__delete_queue_no_database_entry(self):
         """
@@ -163,9 +176,9 @@ class TestReleaseResource(ResourceReservationTests):
         gracefully handled, and result in no changes to the database.
         """
         # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, datetime.utcnow(), 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 3)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, datetime.utcnow(), 3)
         available_queue_2.save()
         # Set up two resource reservations, using our available_queues from above
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
