@@ -28,28 +28,28 @@ RESOURCE_MANAGER_PREFIX = 'resource_manager@'
 
 class WorkerWatcher(object):
 
-    @classmethod
-    def _is_resource_manager(cls, event):
+    @staticmethod
+    def _is_resource_manager(event):
         if re.match('^%s' % RESOURCE_MANAGER_PREFIX, event['hostname']):
             return True
         else:
             return False
 
-    @classmethod
-    def _parse_and_log_event(cls, event):
+    @staticmethod
+    def _parse_and_log_event(event):
         event_info = {'timestamp': datetime.utcfromtimestamp(event['timestamp']),
                       'type': event['type'],
                       'worker_name': event['hostname']}
-        cls._log_event(event_info)
+        WorkerWatcher._log_event(event_info)
         return event_info
 
-    @classmethod
-    def _log_event(cls, event_info):
+    @staticmethod
+    def _log_event(event_info):
         msg = "received '%(type)s' from %(worker_name)s at time: %(timestamp)s" % event_info
         _logger.debug(_(msg))
 
-    @classmethod
-    def handle_worker_heartbeat(cls, event):
+    @staticmethod
+    def handle_worker_heartbeat(event):
         event_info = WorkerWatcher._parse_and_log_event(event)
 
         # if this is the resource_manager do nothing
@@ -70,8 +70,8 @@ class WorkerWatcher(object):
             _logger.info(_(msg))
             new_available_queue.save()
 
-    @classmethod
-    def handle_worker_offline(cls, event):
+    @staticmethod
+    def handle_worker_offline(event):
         event_info = WorkerWatcher._parse_and_log_event(event)
 
         # if this is the resource_manager do nothing
