@@ -68,7 +68,8 @@ class TaskSimulator(object):
         """
         bindings.tasks = self
 
-    def add_task_state(self, task_id, state, progress_report=None, spawned_tasks=None):
+    def add_task_state(self, task_id, state, progress_report=None, spawned_tasks=None,
+                       result=None):
         """
         Adds a new state entry for the given task ID. If the there are currently no states listed
         for the given ID, this call will cause the new task ID to be created and thus returned from
@@ -85,6 +86,7 @@ class TaskSimulator(object):
         new_task_dict['task_id'] = task_id
         new_task_dict['state'] = state
         new_task_dict['progress_report'] = progress_report
+        new_task_dict['result'] = result
 
         new_task = responses.Task(new_task_dict)
 
