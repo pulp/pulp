@@ -147,10 +147,11 @@ class Scheduler(beat.Scheduler):
         self._schedule = None
         self._failure_watcher = FailureWatcher()
         self._loaded_from_db_count = 0
-        # start monitoring events in a thread
-        thread = threading.Thread(target=self._failure_watcher.monitor_events)
-        thread.daemon = True
-        thread.start()
+        if kwargs.get('lazy', True) is False:
+            # start monitoring events in a thread
+            thread = threading.Thread(target=self._failure_watcher.monitor_events)
+            thread.daemon = True
+            thread.start()
 
         kwargs['app'] = app
         super(Scheduler, self).__init__(*args, **kwargs)

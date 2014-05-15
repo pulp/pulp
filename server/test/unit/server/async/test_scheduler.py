@@ -194,12 +194,18 @@ class TestHandleFailedTask(unittest.TestCase):
 class TestSchedulerInit(unittest.TestCase):
     @mock.patch('threading.Thread')
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule', new=mock.MagicMock())
-    def test_starts_monitor(self, mock_thread):
-        sched_instance = scheduler.Scheduler()
+    def test_starts_monitor_lazy_False(self, mock_thread):
+        sched_instance = scheduler.Scheduler(lazy=False)
 
         mock_thread.assert_called_once_with(target=sched_instance._failure_watcher.monitor_events)
         mock_thread.return_value.start.assert_called_once_with()
         self.assertTrue(mock_thread.return_value.daemon is True)
+
+    @mock.patch('threading.Thread')
+    @mock.patch.object(scheduler.Scheduler, 'setup_schedule', new=mock.MagicMock())
+    def test_starts_monitor_lazy_True(self, mock_thread):
+        scheduler.Scheduler(lazy=True)
+        self.assertTrue(not mock_thread.called)
 
 
 class TestSchedulerTick(unittest.TestCase):

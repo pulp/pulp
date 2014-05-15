@@ -426,11 +426,11 @@ class Profile:
         bindings = PulpBindings()
         dispatcher = Dispatcher()
         report = dispatcher.profile(conduit)
-        log.info('profile: %s' % report)
+        log.debug('reporting profiles: %s', report)
         for type_id, profile_report in report.details.items():
             if not profile_report['succeeded']:
                 continue
             details = profile_report['details']
             http = bindings.profile.send(consumer_id, type_id, details)
-            log.debug('profile (%s), reported: %d', type_id, http.response_code)
+            log.info('profile (%s), reported: %d', type_id, http.response_code)
         return report.dict()
