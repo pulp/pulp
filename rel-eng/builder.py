@@ -123,7 +123,7 @@ if opts.build_dependency:
     dist_list_file = os.path.join(DEPS_DIR, opts.build_dependency, 'dist_list.txt')
     try:
         with open(dist_list_file, 'r') as handle:
-            line = handle.readline()
+            line = handle.readline().strip()
             dists_from_dep = line.split(' ')
             # Verify that all the dists specified are valid
             if not set(dists_from_dep).issubset(DIST_LIST):
