@@ -30,7 +30,7 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 
 # -- constants ----------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 # -- exceptions ---------------------------------------------------------------
 
@@ -75,7 +75,7 @@ class RepoScratchPadMixin(object):
             value = repo_manager.get_repo_scratchpad(self.repo_id)
             return value
         except Exception, e:
-            _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            logger.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
     def set_repo_scratchpad(self, value):
@@ -94,7 +94,7 @@ class RepoScratchPadMixin(object):
             repo_manager = manager_factory.repo_manager()
             repo_manager.set_repo_scratchpad(self.repo_id, value)
         except Exception, e:
-            _LOG.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            logger.exception(_('Error setting repository scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
     def update_repo_scratchpad(self, scratchpad):
@@ -108,7 +108,7 @@ class RepoScratchPadMixin(object):
             manager.update_repo_scratchpad(self.repo_id, scratchpad)
         except Exception, e:
             msg = _('Error updating repository scratchpad for repo [%(r)s]') % {'r': self.repo_id}
-            _LOG.exception(msg)
+            logger.exception(msg)
             raise self.exception_class(e), None, sys.exc_info()[2]
 
 
@@ -134,7 +134,7 @@ class RepoScratchpadReadMixin(object):
             value = repo_manager.get_repo_scratchpad(repo_id)
             return value
         except Exception, e:
-            _LOG.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : repo_id})
+            logger.exception(_('Error getting repository scratchpad for repo [%(r)s]') % {'r' : repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
 
@@ -217,7 +217,7 @@ class SearchUnitsMixin(object):
             return transfer_units
 
         except Exception, e:
-            _LOG.exception('Exception from server requesting all units of type [%s]' % type_id)
+            logger.exception('Exception from server requesting all units of type [%s]' % type_id)
             raise self.exception_class(e), None, sys.exc_info()[2]
 
 
@@ -244,7 +244,7 @@ class ImporterScratchPadMixin(object):
             value = importer_manager.get_importer_scratchpad(self.repo_id)
             return value
         except Exception, e:
-            _LOG.exception(_('Error getting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            logger.exception(_('Error getting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
@@ -264,7 +264,7 @@ class ImporterScratchPadMixin(object):
             importer_manager = manager_factory.repo_importer_manager()
             importer_manager.set_importer_scratchpad(self.repo_id, value)
         except Exception, e:
-            _LOG.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
+            logger.exception(_('Error setting scratchpad for repo [%(r)s]') % {'r' : self.repo_id})
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
 
@@ -290,7 +290,7 @@ class DistributorScratchPadMixin(object):
             value = distributor_manager.get_distributor_scratchpad(self.repo_id, self.distributor_id)
             return value
         except Exception, e:
-            _LOG.exception('Error getting scratchpad for repository [%s]' % self.repo_id)
+            logger.exception('Error getting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
@@ -310,7 +310,7 @@ class DistributorScratchPadMixin(object):
             distributor_manager = manager_factory.repo_distributor_manager()
             distributor_manager.set_distributor_scratchpad(self.repo_id, self.distributor_id, value)
         except Exception, e:
-            _LOG.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
+            logger.exception('Error setting scratchpad for repository [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
 
@@ -336,7 +336,7 @@ class RepoGroupDistributorScratchPadMixin(object):
             value = distributor_manager.get_distributor_scratchpad(self.group_id, self.distributor_id)
             return value
         except Exception, e:
-            _LOG.exception('Error getting scratchpad for repository [%s]' % self.group_id)
+            logger.exception('Error getting scratchpad for repository [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
     def set_scratchpad(self, value):
@@ -356,7 +356,7 @@ class RepoGroupDistributorScratchPadMixin(object):
             distributor_manager = manager_factory.repo_group_distributor_manager()
             distributor_manager.set_distributor_scratchpad(self.group_id, self.distributor_id, value)
         except Exception, e:
-            _LOG.exception('Error setting scratchpad for repository [%s]' % self.group_id)
+            logger.exception('Error setting scratchpad for repository [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
 
@@ -450,7 +450,7 @@ class AddUnitMixin(object):
             u = Unit(type_id, unit_key, metadata, path)
             return u
         except Exception, e:
-            _LOG.exception('Exception from server requesting unit filename for relative path [%s]' % relative_path)
+            logger.exception('Exception from server requesting unit filename for relative path [%s]' % relative_path)
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def save_unit(self, unit):
@@ -492,7 +492,7 @@ class AddUnitMixin(object):
 
             return unit
         except Exception, e:
-            _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
+            logger.exception(_('Content unit association failed [%s]' % str(unit)))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def link_unit(self, from_unit, to_unit, bidirectional=False):
@@ -522,7 +522,7 @@ class AddUnitMixin(object):
             if bidirectional:
                 content_manager.link_referenced_content_units(to_unit.type_id, to_unit.id, from_unit.type_id, [from_unit.id])
         except Exception, e:
-            _LOG.exception(_('Child link from parent [%(parent)s] to child [%(child)s] failed' %
+            logger.exception(_('Child link from parent [%(parent)s] to child [%(child)s] failed' %
                              {'parent': str(from_unit), 'child': str(to_unit)}))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
@@ -555,9 +555,9 @@ class StatusMixin(object):
             delta = {'progress_report': self.progress_report}
             TaskStatusManager.update_task_status(self.task_id, delta)
         except Exception, e:
-            _LOG.exception('Exception from server setting progress for report [%s]' % self.report_id)
+            logger.exception('Exception from server setting progress for report [%s]' % self.report_id)
             try:
-                _LOG.error('Progress value: %s' % str(status))
+                logger.error('Progress value: %s' % str(status))
             except Exception:
                 # Best effort to print this, but if its that grossly unserializable
                 # the log will tank and we don't want that exception to bubble up
@@ -613,7 +613,6 @@ class PublishReportMixin(object):
         r.canceled_flag = True
         return r
 
-# -- utilities ----------------------------------------------------------------
 
 def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
     """
@@ -640,6 +639,6 @@ def do_get_repo_units(repo_id, criteria, exception_class, as_generator=False):
         return list(_transfer_object_generator())
 
     except Exception, e:
-        _LOG.exception('Exception from server requesting all content units for repository [%s]' % repo_id)
+        logger.exception('Exception from server requesting all content units for repository [%s]' % repo_id)
         raise exception_class(e), None, sys.exc_info()[2]
 
