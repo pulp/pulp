@@ -1,6 +1,7 @@
 from collections import namedtuple
 from datetime import datetime, timedelta
 from gettext import gettext as _
+import itertools
 import logging
 import re
 import threading
@@ -8,7 +9,6 @@ import time
 
 from celery import beat
 from celery.result import AsyncResult
-import itertools
 
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
@@ -399,7 +399,7 @@ class Scheduler(beat.Scheduler):
         self._loaded_from_db_count = 0
         # Leave helper threads starting here if lazy=False due to Celery lazy instantiation
         # https://github.com/celery/celery/issues/1549
-        if kwargs.get('lazy', True) == False:
+        if kwargs.get('lazy', True) is False:
             self.spawn_pulp_monitor_threads()
         super(Scheduler, self).__init__(*args, **kwargs)
 
