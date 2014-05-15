@@ -94,8 +94,8 @@ class WorkerWatcher(object):
                            included in the log output.
         :type event_info: dict
         """
-        msg = "received '%(type)s' from %(worker_name)s at time: %(timestamp)s" % event_info
-        _logger.debug(_(msg))
+        msg = _("received '%(type)s' from %(worker_name)s at time: %(timestamp)s") % event_info
+        _logger.debug(msg)
 
     @staticmethod
     def handle_worker_heartbeat(event):
@@ -126,8 +126,8 @@ class WorkerWatcher(object):
             existing_worker.save()
         else:
             new_available_queue = AvailableQueue(event_info['worker_name'], event_info['timestamp'])
-            msg = "New worker '%(worker_name)s' discovered" % event_info
-            _logger.info(_(msg))
+            msg = _("New worker '%(worker_name)s' discovered") % event_info
+            _logger.info(msg)
             new_available_queue.save()
 
     @staticmethod
@@ -153,8 +153,8 @@ class WorkerWatcher(object):
         if WorkerWatcher._is_resource_manager(event):
             return
 
-        msg = "Worker '%(worker_name)s' shutdown" % event_info
-        _logger.info(_(msg))
+        msg = _("Worker '%(worker_name)s' shutdown") % event_info
+        _logger.info(msg)
         _delete_queue.apply_async(args=(event_info['worker_name'],), queue=RESOURCE_MANAGER_QUEUE)
 
 
@@ -224,7 +224,8 @@ class FailureWatcher(object):
         if schedule_id:
             return_value = AsyncResult(event_id, app=app).result
             if isinstance(return_value, AsyncResult):
-                _logger.debug(_('watching child event %(id)s for failure') % {'id': return_value.id})
+                msg = _('watching child event %(id)s for failure') % {'id': return_value.id}
+                _logger.debug(msg)
                 self.add(return_value.id, schedule_id, has_failure)
             elif has_failure:
                 _logger.info(_('resetting consecutive failure count for schedule %(id)s')
@@ -245,8 +246,8 @@ class FailureWatcher(object):
         """
         schedule_id, has_failure = self.pop(event['uuid'])
         if schedule_id:
-            msg = 'incrementing consecutive failure count for schedule %s' % schedule_id
-            _logger.info(_(msg))
+            msg = _('incrementing consecutive failure count for schedule %s') % schedule_id
+            _logger.info(msg)
             utils.increment_failure_count(schedule_id)
 
     def __len__(self):
@@ -350,15 +351,15 @@ class WorkerTimeoutMonitor(object):
 
         This method logs and the debug and error levels.
         """
-        msg = 'Looking for workers missing for more than %s seconds' % self.WORKER_TIMEOUT_SECONDS
-        _logger.debug(_(msg))
+        msg = _('Looking for workers missing for more than %s seconds') % self.WORKER_TIMEOUT_SECONDS
+        _logger.debug(msg)
         oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
         worker_criteria = Criteria(filters={'last_heartbeat': {'$lt': oldest_heartbeat_time}},
                                    fields=('_id', 'last_heartbeat', 'num_reservations'))
         worker_list = list(resources.filter_available_queues(worker_criteria))
         for worker in worker_list:
-            msg = "Workers '%s' has gone missing, removing from list of workers" % worker.name
-            _logger.error(_(msg))
+            msg = _("Workers '%s' has gone missing, removing from list of workers") % worker.name
+            _logger.error(msg)
             _delete_queue.apply_async(args=(worker.name,), queue=RESOURCE_MANAGER_QUEUE)
 
 
