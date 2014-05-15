@@ -1,3 +1,3 @@
 Team owner: skarmarkar
 
-nectar requires version 2.2.1 or greater, which is not available in EPEL or Fedora
+nectar requires version 2.2.1 or greater, which is not available in EPEL <= 7 or Fedora <= 20.

@@ -2,7 +2,7 @@ Team owner: mhrivnak
 
 This is required for pulp-puppet-plugins.
 
-This is not currently in epel or fedora.
+This is not currently in epel <= 7 or fedora <= 20.
 
 There are no known restrictions on what version to use.
 

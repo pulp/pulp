@@ -53,6 +53,13 @@ DISTRIBUTION_INFO = {
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256'
     },
+    'el7': {
+        ARCH: ['x86_64'],
+        REPO_NAME: '7Server',
+        DIST_KOJI_NAME: 'rhel7',
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha256'
+    },
     'fc19': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-19',
@@ -95,8 +102,8 @@ parser.add_argument("--scratch", action="store_true", default=False,
                     help="Use the scratch option for the koji builder.")
 parser.add_argument("--build-dependency",
                     help="If specified, only build the specified dependency")
-parser.add_argument("--distribution", choices=DIST_LIST, nargs='+',
-                    help="If specified, only build for the specified distribution")
+parser.add_argument("--distributions", choices=DIST_LIST, nargs='+',
+                    help="If specified, only build for the specified distributions")
 parser.add_argument("--tito-tag", help="The specific tito tag that should be built.  "
                                        "If not specified the latest will be used.")
 
@@ -131,9 +138,9 @@ if opts.build_dependency:
 
 # If a specific distribution or list of distributions has been specified on the command line
 # use that list
-if opts.distribution:
-    print "Building for %s only" % opts.distribution
-    DIST_LIST = opts.distribution
+if opts.distributions:
+    print "Building for %s only" % opts.distributions
+    DIST_LIST = opts.distributions
 
 
 def ensure_dir(target_dir, clean=True):
