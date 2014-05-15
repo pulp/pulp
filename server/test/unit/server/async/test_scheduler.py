@@ -192,8 +192,7 @@ class TestSchedulerInit(unittest.TestCase):
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule', new=mock.MagicMock())
     @mock.patch('celery.beat.Scheduler.__init__')
     @mock.patch.object(scheduler.Scheduler, 'spawn_pulp_monitor_threads')
-    @mock.patch('pulp.server.async.scheduler.EventMonitor')
-    def test__init__(self, mock_event_monitor, mock_spawn_pulp_monitor_threads, mock_base_init):
+    def test__init__(self, mock_spawn_pulp_monitor_threads, mock_base_init):
         arg1 = mock.Mock()
         arg2 = mock.Mock()
         kwarg1 = mock.Mock()
@@ -203,10 +202,6 @@ class TestSchedulerInit(unittest.TestCase):
 
         self.assertTrue(my_scheduler._schedule is None)
         self.assertTrue(isinstance(my_scheduler._failure_watcher, scheduler.FailureWatcher))
-        self.assertTrue(
-            isinstance(my_scheduler._worker_timeout_monitor,scheduler.WorkerTimeoutMonitor))
-        self.assertTrue(my_scheduler._event_monitor is mock_event_monitor.return_value)
-        mock_event_monitor.assert_called_once_with(my_scheduler._failure_watcher)
         self.assertTrue(my_scheduler._loaded_from_db_count == 0)
         self.assertTrue(not mock_spawn_pulp_monitor_threads.called)
         mock_base_init.assert_called_once_with(arg1, arg2, kwarg1=kwarg1, kwarg2=kwarg2)
@@ -229,15 +224,21 @@ class TestSchedulerInit(unittest.TestCase):
 
 
 class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
-    @mock.patch('threading.Thread')
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
-    def test_spawn_pulp_monitor_threads(self, mock_thread):
+    @mock.patch('pulp.server.async.scheduler.EventMonitor')
+    @mock.patch('pulp.server.async.scheduler.WorkerTimeoutMonitor')
+    def test_spawn_pulp_monitor_threads(self, mock_worker_timeout_monitor, mock_event_monitor):
         my_scheduler = scheduler.Scheduler()
+
         my_scheduler.spawn_pulp_monitor_threads()
-        mock_thread.assert_any_call(target=my_scheduler._event_monitor.monitor_events)
-        mock_thread.return_value.start.assert_any_call()
-        self.assertTrue(mock_thread.return_value.start.call_count == 2)
-        self.assertTrue(mock_thread.return_value.daemon is True)
+
+        mock_event_monitor.assert_called_once_with(my_scheduler._failure_watcher)
+        self.assertTrue(mock_event_monitor.return_value.daemon)
+        mock_event_monitor.return_value.start.assert_called_once()
+
+        mock_worker_timeout_monitor.assert_called_once_with()
+        self.assertTrue(mock_worker_timeout_monitor.return_value.daemon)
+        mock_worker_timeout_monitor.return_value.start.assert_called_once()
 
 
 class TestSchedulerTick(unittest.TestCase):

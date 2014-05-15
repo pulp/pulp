@@ -255,7 +255,7 @@ class FailureWatcher(object):
         return len(self._watches)
 
 
-class EventMonitor(object):
+class EventMonitor(threading.Thread):
     """
     A thread dedicated to processing Celery events.
 
@@ -267,6 +267,7 @@ class EventMonitor(object):
     """
 
     def __init__(self, _failure_watcher):
+        super(EventMonitor, self).__init__()
         self._failure_watcher = _failure_watcher
 
     def run(self):
@@ -311,7 +312,7 @@ class EventMonitor(object):
             recv.capture(limit=None, timeout=None, wakeup=True)
 
 
-class WorkerTimeoutMonitor(object):
+class WorkerTimeoutMonitor(threading.Thread):
     """
     A thread dedicated to processing Celery events.
 
@@ -396,8 +397,6 @@ class Scheduler(beat.Scheduler):
         """
         self._schedule = None
         self._failure_watcher = FailureWatcher()
-        self._event_monitor = EventMonitor(self._failure_watcher)
-        self._worker_timeout_monitor = WorkerTimeoutMonitor()
         self._loaded_from_db_count = 0
         # Leave helper threads starting here if lazy=False due to Celery lazy instantiation
         # https://github.com/celery/celery/issues/1549
@@ -413,17 +412,20 @@ class Scheduler(beat.Scheduler):
         second, is a WorkerTimeoutMonitor thread that watches for cases where all workers
         disappear at once.
 
+        Both threads are set with daemon = True so that if the main thread exits, both will
+        close automatically. After being daemonized they are each started with a call to start().
+
         This method should be called only in certain situations, see docstrings on the object for
         more details.
         """
         # start monitoring events in a thread
-        event_thread = threading.Thread(target=self._event_monitor.run)
-        event_thread.daemon = True
-        event_thread.start()
+        event_monitor = EventMonitor(self._failure_watcher)
+        event_monitor.daemon = True
+        event_monitor.start()
         # start monitoring workers who may timeout
-        worker_timeout_thread = threading.Thread(target=self._worker_timeout_monitor.run)
-        worker_timeout_thread.daemon = True
-        worker_timeout_thread.start()
+        worker_timeout_monitor = WorkerTimeoutMonitor()
+        worker_timeout_monitor.daemon = True
+        worker_timeout_monitor.start()
 
     def tick(self):
         """
