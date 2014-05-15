@@ -92,7 +92,9 @@ def _release_resource(resource_id):
         # Now we need to decrement the AvailabeQueue that the reserved_resource was using. If the
         # ReservedResource does not exist for some reason, we won't know its assigned_queue, but
         # these next lines won't execute anyway.
-        aqc = Criteria(filters={'_id': reserved_resource.assigned_queue})
+        # Remove the '.dq' from the queue name to get the worker name
+        worker_name = reserved_resource.assigned_queue.rstrip('.dq')
+        aqc = Criteria(filters={'_id': worker_name})
         aq_list = list(resources.filter_available_queues(aqc))
         available_queue = aq_list[0]
         available_queue.decrement_num_reservations()
@@ -124,14 +126,17 @@ def _reserve_resource(resource_id):
     if reserved_resource.assigned_queue is None:
         # The assigned_queue will be None if the reserved_resource was just created, so we'll
         # need to assign a queue to it
-        reserved_resource.assigned_queue = resources.get_least_busy_available_queue().name
+        # get the dedicated queue name by adding '.dq' to the end of the worker name
+        reserved_resource.assigned_queue = resources.get_least_busy_available_queue().name + '.dq'
         reserved_resource.save()
     else:
         # The assigned_queue is set, so we just need to increment the num_reservations on the
         # reserved resource
         reserved_resource.increment_num_reservations()
 
-    aqc = Criteria(filters={'_id': reserved_resource.assigned_queue})
+    # Remove the '.dq' from the queue name to get the worker name
+    worker_name = reserved_resource.assigned_queue.rstrip('.dq')
+    aqc = Criteria(filters={'_id': worker_name})
     aq_list = list(resources.filter_available_queues(aqc))
     aq_list[0].increment_num_reservations()
     return reserved_resource.assigned_queue

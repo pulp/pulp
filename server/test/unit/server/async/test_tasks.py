@@ -361,7 +361,8 @@ class TestReserveResource(ResourceReservationTests):
 
         queue = tasks._reserve_resource('resource_1')
 
-        self.assertEqual(queue, RESERVED_WORKER_1)
+        worker_1_queue_name = RESERVED_WORKER_1 + '.dq'
+        self.assertEqual(queue, worker_1_queue_name)
         # Make sure that the AvailableQueue is correct
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 1)
@@ -371,7 +372,7 @@ class TestReserveResource(ResourceReservationTests):
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 1)
         rr_1 = rrc.find_one({'_id': 'resource_1'})
-        self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
+        self.assertEqual(rr_1['assigned_queue'], worker_1_queue_name)
         self.assertEqual(rr_1['num_reservations'], 1)
 
 

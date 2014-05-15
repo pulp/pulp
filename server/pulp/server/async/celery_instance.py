@@ -62,6 +62,7 @@ celery.conf.update(CELERYBEAT_SCHEDULE=CELERYBEAT_SCHEDULE)
 celery.conf.update(CELERYBEAT_SCHEDULER='pulp.server.async.scheduler.Scheduler')
 celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())
+celery.conf.update(CELERY_WORKER_DIRECT=True)
 
 if config.getboolean('tasks', 'celery_require_ssl'):
     BROKER_USE_SSL = {
