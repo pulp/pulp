@@ -27,9 +27,34 @@ RESOURCE_MANAGER_PREFIX = 'resource_manager@'
 
 
 class WorkerWatcher(object):
+    """
+    An object designed to handle celery events related to workers.
+
+    Two celery events that need processing are the 'worker-heartbeat' and 'worker-offline'
+    events. Each 'worker-heartbeat' event is passed to handle_worker_heartbeat() as an event for
+    handling. Each 'worker-offline' event is passed to handle_worker_offline() for handling.
+    See the individual method docblocks for more detail on how each event type is handled.
+
+    The use of an 'event' or 'celery event' throughout this object refers to a dict built by celery
+    that contains event information. Read more about this in the docs for celery.events.
+
+    Other methods on this object are helper methods designed to deduplicate the amount of shared
+    code between the event handlers.
+
+    This object does not have any meaningful internal state, and all methods are used directly as
+    static methods.
+    """
 
     @staticmethod
     def _is_resource_manager(event):
+        """
+        Determine if this event is for a resource manager.
+
+        :param event: A celery event
+        :type event: dict
+        :return: True if this event is from a resource manager, False otherwise.
+        :rtype: bool
+        """
         if re.match('^%s' % RESOURCE_MANAGER_PREFIX, event['hostname']):
             return True
         else:
@@ -37,6 +62,22 @@ class WorkerWatcher(object):
 
     @staticmethod
     def _parse_and_log_event(event):
+        """
+        Parse and return the event information we are interested in. Also log it.
+
+        A new dict is returned containing the keys 'timestamp', 'type', and 'worker_name'. The
+        only data transformation here is on the timestamp. The timestamp arrives as seconds since
+        the epoch, and is converted to UTC time, and returned as a naive datetime.datetime object.
+
+        Logging is done through a call to the _log_event static method.
+
+        :param event: A celery event
+        :type event: dict
+        :return: A dict containing the keys 'timestamp', 'type', and 'worker_name'. 'timestamp'
+                 is a naive datetime.datetime reported in UTC. 'type' is the event name as a string
+                 (ie: 'worker-heartbeat'), and 'worker_name' is the name of the worker as a string.
+        :rtype: dict
+        """
         event_info = {'timestamp': datetime.utcfromtimestamp(event['timestamp']),
                       'type': event['type'],
                       'worker_name': event['hostname']}
@@ -45,11 +86,30 @@ class WorkerWatcher(object):
 
     @staticmethod
     def _log_event(event_info):
+        """
+        Log the type, worker_name, and timestamp of an event at the debug log level.
+
+        :param event_info: A dict expected to contain the keys 'type', 'worker_name', and
+                           'timestamp'. The value of each key will be converted to a string and
+                           included in the log output.
+        :type event_info: dict
+        """
         msg = "received '%(type)s' from %(worker_name)s at time: %(timestamp)s" % event_info
         _logger.debug(_(msg))
 
     @staticmethod
     def handle_worker_heartbeat(event):
+        """
+        Celery event handler for 'worker-heartbeat' events.
+
+        The event is first parsed and logged. If this event is from the resource manager, there is
+        no further processing to be done. Then the existing AvailableQueue objects are searched
+        for one to update. If an existing one is found, it is updated. Otherwise a new
+        AvailableQueue entry is created. Logging at the info and debug level is also done.
+
+        :param event: A celery event to handle.
+        :type event: dict
+        """
         event_info = WorkerWatcher._parse_and_log_event(event)
 
         # if this is the resource_manager do nothing
@@ -72,6 +132,21 @@ class WorkerWatcher(object):
 
     @staticmethod
     def handle_worker_offline(event):
+        """
+        Celery event handler for 'worker-offline' events.
+
+        The 'worker-offline' event is emitted when a worker gracefully shuts down. It is not
+        emitted when a worker is killed instantly.
+
+        The event is first parsed and logged. If this event is from the resource manager, there is
+        no further processing to be done. Otherwise, a worker is shutting down, and a
+        _delete_queue() task is dispatched so that the resource manager will remove the record,
+        and handle any work cleanup associated with a worker going offline. Logging at the info
+        and debug level is also done.
+
+        :param event: A celery event to handle.
+        :type event: dict
+        """
         event_info = WorkerWatcher._parse_and_log_event(event)
 
         # if this is the resource_manager do nothing
@@ -179,15 +254,49 @@ class FailureWatcher(object):
 
 
 class EventMonitor(object):
+    """
+    A thread dedicated to processing Celery events.
+
+    This object has two primary concerns: worker discovery/departure and task status monitoring.
+
+    :param _failure_watcher: The FailureWatcher that will also be used by the Scheduler. The
+                             callback handlers to be called need to be on the instantiated object.
+    :type _failure_watcher: FailureWatcher
+    """
 
     def __init__(self, _failure_watcher):
         self._failure_watcher = _failure_watcher
 
+    def run(self):
+        """
+        The thread entry point, which calls monitor_events().
+
+        monitor_events() is a blocking call, but in the case where an unexpected Exception is
+        raised, a log-but-continue behavior is desired. This is especially the case given this is
+        a background thread. Exiting is not a concern because this is a daemon=True thread. The
+        method loops unconditionally using a try/except pattern around the call to
+        monitor_events() to log and then re-enter if an exception is encountered.
+        """
+        while True:
+            try:
+                self.monitor_events()
+            except Exception as e:
+                _logger.error(e)
+
     def monitor_events(self):
         """
-        Receives events from celery and matches each with the appropriate
-        handler function. This will not return, and thus should be called in
-        its own thread.
+        Process celery events.
+
+        Receives events from celery and matches each with the appropriate handler function. The
+        following events are monitored for: 'task-failed', 'task-succeeded', 'worker-heartbeat',
+        and 'worker-offline'. The call to capture() is blocking, and does not return.
+
+        Capture is called with wakeup=True causing a gratuitous 'worker-heartbeat' to be sent
+        from all workers. This should handle the case of worker discovery where workers already
+        exist, and this EventMonitor is started afterwards.
+
+        The call to capture is wrapped in a log-but-continue try/except statement, which along
+        with the loop will cause the capture method to be re-entered.
         """
         with app.connection() as connection:
             recv = app.events.Receiver(connection, handlers={
@@ -201,17 +310,46 @@ class EventMonitor(object):
 
 
 class WorkerTimeoutMonitor(object):
+    """
+    A thread dedicated to processing Celery events.
 
+    This object is designed to wakeup periodically and look for workers who have gone missing.
+    """
+
+    # The amount of time in seconds before a worker is considered missing
     WORKER_TIMEOUT_SECONDS = 300
+
+    # The frequency in seconds with which this thread should look for missing workers.
     FREQUENCY = 60
 
     def run(self):
+        """
+        The thread entry point. It sleeps for FREQUENCY seconds, and then calls check_workers()
+
+        This method has a try/except block around check_workers() to add durability to this
+        background thread.
+        """
         _logger.info(_('Worker Timeout Monitor Started'))
         while True:
             time.sleep(self.FREQUENCY)
-            self.check_workers()
+            try:
+                self.check_workers()
+            except Exception as e:
+                _logger.error(e)
 
     def check_workers(self):
+        """
+        Look for missing workers, and dispatch a cleanup task if one goes missing.
+
+        To find a missing worker, filter the AvailableQueues model for entries older than
+        utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in naive UTC, so this is
+        a comparable datetime.
+
+        For each missing worker found, dispatch a _delete_queue task requesting that the resource
+        manager delete the queue and cleanup any associated work.
+
+        This method logs and the debug and error levels.
+        """
         msg = 'Looking for workers missing for more than %s seconds' % self.WORKER_TIMEOUT_SECONDS
         _logger.debug(_(msg))
         oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
@@ -236,7 +374,7 @@ class Scheduler(beat.Scheduler):
     object, and not any intermediate objects, so __init__ conditionally spawns threads based on
     this case. Threads are spawned using spawn_pulp_monitor_threads().
 
-    Two threads are started, one that uses EventMonitor, and handles all Celery events.  The
+    Two threads are started, one that uses EventMonitor, and handles all Celery events. The
     second, is a WorkerTimeoutMonitor thread that watches for cases where all workers disappear
     at once.
     """
@@ -269,7 +407,7 @@ class Scheduler(beat.Scheduler):
         """
         Start two threads that are important to Pulp. One monitors workers, the other, events.
 
-        Two threads are started, one that uses EventMonitor, and handles all Celery events.  The
+        Two threads are started, one that uses EventMonitor, and handles all Celery events. The
         second, is a WorkerTimeoutMonitor thread that watches for cases where all workers
         disappear at once.
 
@@ -277,7 +415,7 @@ class Scheduler(beat.Scheduler):
         more details.
         """
         # start monitoring events in a thread
-        event_thread = threading.Thread(target=self._event_monitor.monitor_events)
+        event_thread = threading.Thread(target=self._event_monitor.run)
         event_thread.daemon = True
         event_thread.start()
         # start monitoring workers who may timeout

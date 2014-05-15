@@ -399,7 +399,7 @@ def cancel(task_id):
 
 def get_current_task_id():
     """"
-    Get the current task id from celery.  If this is called outside of a running
+    Get the current task id from celery. If this is called outside of a running
     celery task it will return None
 
     :return: The ID of the currently running celery task or None if not in a task

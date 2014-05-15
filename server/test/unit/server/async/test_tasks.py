@@ -126,7 +126,7 @@ class TestDeleteQueue(ResourceReservationTests):
 
     def test__delete_queue_no_database_entry(self):
         """
-        Call _delete_queue() with a queue that is not in the database.  _delete_queue() relies on
+        Call _delete_queue() with a queue that is not in the database. _delete_queue() relies on
         the database information, so it should return without error when called in this way.
         """
         try:
