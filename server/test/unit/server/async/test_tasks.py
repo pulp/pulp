@@ -147,6 +147,17 @@ class TestDeleteQueue(ResourceReservationTests):
         except Exception:
             self.fail('_delete_queue() on a queue that is not in the database caused an Exception')
 
+    @mock.patch('pulp.server.async.tasks._')
+    @mock.patch('pulp.server.async.tasks.logger')
+    def test__delete_queue_normal_shutdown_true(self, mock_logger, mock_underscore):
+        """
+        Call _delete_queue() with the normal_shutdown keyword argument set to True. This should
+        not make any calls to _() or logger().
+        """
+        tasks._delete_queue('does not exist queue name')
+        self.assertTrue(not mock_underscore.called)
+        self.assertTrue(not mock_logger.called)
+
 
 class TestQueueReleaseResource(ResourceReservationTests):
     """

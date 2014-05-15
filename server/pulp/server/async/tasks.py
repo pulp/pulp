@@ -25,15 +25,21 @@ logger = logging.getLogger(__name__)
 
 
 @task
-def _delete_queue(queue):
+def _delete_queue(queue, normal_shutdown=False):
     """
     Delete the AvailableQueue with _id queue from the database. This Task can only safely be
     performed by the resource manager at this time, so be sure to queue it in the
     RESOURCE_MANAGER_QUEUE.
 
+    If the worker shutdown normally, no message is logged, otherwise an error level message is
+    logged. Default is to assume the work did not shut down normally.
+
     :param queue: The name of the queue you wish to delete. In the database, the _id field is the
                   name.
     :type  queue: basestring
+    :param normal_shutdown: True if the worker associated with the queue shutdown normally, False
+                            otherwise.  Defaults to False.
+    :type normal_shutdown:  bool
     """
     queue_list = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))
     if len(queue_list) == 0:
@@ -42,10 +48,12 @@ def _delete_queue(queue):
         return
     queue = queue_list[0]
 
+    if normal_shutdown is False:
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.') % \
+              {'name': queue.name}
+        logger.error(msg)
+
     # Cancel all of the tasks that were assigned to this queue
-    msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-    msg = msg % {'name': queue.name}
-    logger.error(msg)
     for task in TaskStatusManager.find_by_criteria(
             Criteria(
                 filters={'queue': queue.name,
