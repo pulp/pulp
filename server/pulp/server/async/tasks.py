@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from gettext import gettext as _
 import logging
-import re
 import signal
 
 from celery import task, Task as CeleryTask, current_task
@@ -16,7 +15,7 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource, PulpCodedException
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
+from pulp.server.db.model.resources import DoesNotExist, ReservedResource
 from pulp.server.managers import resources
 
 
@@ -49,8 +48,8 @@ def _delete_queue(queue, normal_shutdown=False):
     queue = queue_list[0]
 
     if normal_shutdown is False:
-        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.') % \
-              {'name': queue.name}
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.') % {
+            'name': queue.name}
         logger.error(msg)
 
     # Cancel all of the tasks that were assigned to this queue
