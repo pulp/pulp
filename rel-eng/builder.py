@@ -103,7 +103,7 @@ parser.add_argument("--scratch", action="store_true", default=False,
 parser.add_argument("--build-dependency",
                     help="If specified, only build the specified dependency")
 parser.add_argument("--distributions", choices=DIST_LIST, nargs='+',
-                    help="If specified, only build for the specified distributions")
+                    help="If specified, only build for the specified distributions.")
 parser.add_argument("--tito-tag", help="The specific tito tag that should be built.  "
                                        "If not specified the latest will be used.")
 
