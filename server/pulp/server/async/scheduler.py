@@ -23,9 +23,6 @@ from pulp.server.async.tasks import _delete_queue
 _logger = logging.getLogger(__name__)
 
 
-RESOURCE_MANAGER_PREFIX = 'resource_manager@'
-
-
 class WorkerWatcher(object):
     """
     An object designed to handle celery events related to workers.
@@ -55,7 +52,7 @@ class WorkerWatcher(object):
         :return: True if this event is from a resource manager, False otherwise.
         :rtype: bool
         """
-        if re.match('^%s' % RESOURCE_MANAGER_PREFIX, event['hostname']):
+        if re.match('^%s' % RESOURCE_MANAGER_QUEUE, event['hostname']):
             return True
         else:
             return False
