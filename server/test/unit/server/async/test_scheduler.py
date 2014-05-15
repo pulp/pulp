@@ -1,13 +1,16 @@
+from datetime import datetime, timedelta
 import time
 import unittest
 
 from celery.beat import ScheduleEntry
 import mock
 
-from pulp.server.managers.factory import initialize
 from pulp.server.async import scheduler
-from pulp.server.async.celery_instance import celery as app
-from pulp.server.db.model import dispatch
+from pulp.server.async.celery_instance import celery as app, \
+    RESOURCE_MANAGER_QUEUE
+from pulp.server.db.model import dispatch, resources
+from pulp.server.db.model.criteria import Criteria
+from pulp.server.managers.factory import initialize
 
 
 initialize()
@@ -440,6 +443,87 @@ class TestSchedulerApplyAsync(unittest.TestCase):
 
         # make sure the entry was added, because it has a failure threshold
         self.assertEqual(len(sched_instance._failure_watcher), 1)
+
+
+class TestWorkerTimeoutMonitorRun(unittest.TestCase):
+    class SleepException(Exception):
+        pass
+
+    @mock.patch.object(scheduler.WorkerTimeoutMonitor, 'check_workers', spec_set=True)
+    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
+    def test_sleeps(self, mock_sleep, mock_check_workers):
+        # raising an exception is the only way we have to break out of the
+        # infinite loop
+        mock_sleep.side_effect = self.SleepException
+
+        self.assertRaises(self.SleepException, scheduler.WorkerTimeoutMonitor().run)
+
+        # verify the frequency
+        mock_sleep.assert_called_once_with(60)
+
+    @mock.patch.object(scheduler._logger, 'error', spec_set=True)
+    @mock.patch.object(scheduler.WorkerTimeoutMonitor, 'check_workers', spec_set=True)
+    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
+    def test_checks_workers(self, mock_sleep, mock_check_workers, mock_log_error):
+
+        # raising an exception is the only way we have to break out of the
+        # infinite loop
+        mock_check_workers.side_effect = self.SleepException
+        mock_log_error.side_effect = self.SleepException
+
+        self.assertRaises(self.SleepException, scheduler.WorkerTimeoutMonitor().run)
+
+        mock_check_workers.assert_called_once_with()
+
+    @mock.patch.object(scheduler._logger, 'error', spec_set=True)
+    @mock.patch.object(scheduler.WorkerTimeoutMonitor, 'check_workers', spec_set=True)
+    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
+    def test_logs_exception(self, mock_sleep, mock_check_workers, mock_log_error):
+
+        # raising an exception is the only way we have to break out of the
+        # infinite loop
+        mock_check_workers.side_effect = self.SleepException
+        mock_log_error.side_effect = self.SleepException
+
+        self.assertRaises(self.SleepException, scheduler.WorkerTimeoutMonitor().run)
+
+        self.assertEqual(mock_log_error.call_count, 1)
+
+
+class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
+    @mock.patch('pulp.server.managers.resources.filter_available_queues', spec_set=True)
+    def test_calls_filter(self, mock_filter):
+        mock_filter.return_value = []
+
+        scheduler.WorkerTimeoutMonitor().check_workers()
+
+        # verify that filter was called with the right argument
+        self.assertEqual(mock_filter.call_count, 1)
+        self.assertEqual(len(mock_filter.call_args[0]), 1)
+        call_arg = mock_filter.call_args[0][0]
+        self.assertTrue(isinstance(call_arg, Criteria))
+
+        # make sure the timestamp being searched for is within the appropriate timeout,
+        # plus a 1-second grace period to account for execution time of test code.
+        timestamp = call_arg.filters['last_heartbeat']['$lt']
+        self.assertTrue(isinstance(timestamp, datetime))
+        self.assertTrue(datetime.utcnow() - timestamp <
+                        timedelta(scheduler.WorkerTimeoutMonitor.WORKER_TIMEOUT_SECONDS + 1))
+
+    @mock.patch('pulp.server.async.tasks._delete_queue.apply_async', spec_set=True)
+    @mock.patch('pulp.server.managers.resources.filter_available_queues', spec_set=True)
+    def test_deletes_queues(self, mock_filter, mock_delete):
+        mock_filter.return_value = [
+            resources.AvailableQueue('name1', datetime.utcnow()),
+            resources.AvailableQueue('name2', datetime.utcnow()),
+        ]
+
+        scheduler.WorkerTimeoutMonitor().check_workers()
+
+        # make sure only these two queues were deleted
+        mock_delete.assert_any_call(args=('name1',), queue=RESOURCE_MANAGER_QUEUE)
+        mock_delete.assert_any_call(args=('name2',), queue=RESOURCE_MANAGER_QUEUE)
+        self.assertEqual(mock_delete.call_count, 2)
 
 
 SCHEDULES = [
