@@ -71,7 +71,9 @@ class TestUnbind(unittest.TestCase):
         mock_bind_manager.consumer_bind_manager.return_value.delete.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', True)
 
-        self.assertEquals(None, result)
+        self.assertEqual(result.error, None)
+        self.assertEqual(result.return_value, {'notify_agent': False})
+        self.assertEqual(result.spawned_tasks, [])
 
         #Make sure we didn't process the agent
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
@@ -105,7 +107,9 @@ class TestForceUnbind(unittest.TestCase):
         mock_bind_manager.consumer_bind_manager.return_value.delete.assert_called_once_with(
             'foo_consumer_id', 'foo_repo_id', 'foo_distributor_id', True)
 
-        self.assertEquals(None, result)
+        self.assertEqual(result.error, None)
+        self.assertEqual(result.return_value, None)
+        self.assertEqual(result.spawned_tasks, [])
 
         #Make sure we didn't process the agent
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)

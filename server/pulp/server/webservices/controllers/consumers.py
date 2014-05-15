@@ -208,8 +208,8 @@ class Bindings(JSONController):
         be raised by manager.
         @param consumer_id: The consumer to bind.
         @type consumer_id: str
-        @return: The list of call_reports
-        @rtype: list
+        @return: A call_report
+        @rtype: TaskResult
         """
         # get other options and validate them
         body = self.params()
@@ -222,10 +222,13 @@ class Bindings(JSONController):
         if not isinstance(binding_config, dict):
             raise BadRequest()
 
-        call_request = consumer.bind(consumer_id, repo_id, distributor_id, notify_agent,
-                                     binding_config, options)
-        if call_request:
-            raise OperationPostponed(call_request)
+        call_report = consumer.bind(
+            consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
+
+        if call_report.spawned_tasks:
+            raise OperationPostponed(call_report)
+        else:
+            return self.ok(call_report.serialize())
 
 
 class Binding(JSONController):
@@ -269,19 +272,21 @@ class Binding(JSONController):
         @type repo_id: str
         @param distributor_id: A distributor ID.
         @type distributor_id: str
-        @return: The list of call_reports
-        @rtype: list
+        @return: A call_report
+        @rtype: TaskResult
         """
         body = self.params()
         forced = body.get('force', False)
         options = body.get('options', {})
         if forced:
-            result = consumer.force_unbind(consumer_id, repo_id, distributor_id, options)
+            call_report = consumer.force_unbind(consumer_id, repo_id, distributor_id, options)
         else:
-            result = consumer.unbind(consumer_id, repo_id, distributor_id, options)
+            call_report = consumer.unbind(consumer_id, repo_id, distributor_id, options)
 
-        if isinstance(result, TaskResult):
-            raise OperationPostponed(result)
+        if call_report.spawned_tasks:
+            raise OperationPostponed(call_report)
+        else:
+            return self.ok(call_report.serialize())
 
 
 class BindingSearch(SearchController):
@@ -439,7 +444,7 @@ class Profiles(JSONController):
         new_profile = manager.create(consumer_id, content_type, profile)
         link = serialization.link.child_link_obj(consumer_id, content_type)
         new_profile.update(link)
-        self.created(link['_href'], new_profile)
+        return self.created(link['_href'], new_profile)
 
 
 class Profile(JSONController):
@@ -684,9 +689,12 @@ class UnitActionScheduleResource(JSONController):
 
     @auth_required(READ)
     def GET(self, consumer_id, schedule_id):
-        try:
-            scheduled_call = list(self.manager.get(consumer_id, self.ACTION))[0]
-        except IndexError:
+        scheduled_call = None
+        for call in self.manager.get(consumer_id, self.ACTION):
+            if call.id == schedule_id:
+                scheduled_call = call
+                break
+        if scheduled_call is None:
             raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
 
         scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call.for_display())

@@ -1,22 +1,14 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+"""
+This module contains tests for the pulp.server.managers.repo.unit_association_query module.
+"""
+import copy
 import datetime
 import math
+import unittest
 
 import mock
 
-import base
+from .... import base
 from pulp.common import dateutils
 from pulp.plugins.types import database, model
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
@@ -41,6 +33,48 @@ TYPE_DEF_EPSILON = model.TypeDefinition('epsilon', 'Epsilon', 'Test Type Epsilon
     ['key_1'], [], [])
 
 _QUERY_TYPES = [TYPE_DEF_ALPHA, TYPE_DEF_BETA, TYPE_DEF_GAMMA, TYPE_DEF_DELTA, TYPE_DEF_EPSILON]
+
+
+class RepoUnitAssociationQueryManagerTests(unittest.TestCase):
+    """
+    Tests for the RepoUnitAssociationQueryManager class.
+    """
+    def test__merged_units_unique_units_doesnt_change_args(self):
+        """
+        We had a bug[0] where it was discovered that _merged_units_unique_units() was altering
+        its associations_lookup parameter, which led to large memory usage. This test asserts that
+        its parameters are not altered.
+
+        [0] https://bugzilla.redhat.com/show_bug.cgi?id=1093870
+        """
+        associations_lookup = {
+            'rpm': {'some_id': [{'some': 'unit'}], 'some_other_id': [{'some': 'unit'}]}
+        }
+        associated_units = [
+            {'_content_type_id': 'rpm', '_id': 'some_id'},
+            {'_content_type_id': 'rpm', '_id': 'some_other_id'},
+        ]
+        # Let's keep a copy of each data structure, so we can ensure that this method didn't change
+        # them
+        associations_lookup_copy = copy.deepcopy(associations_lookup)
+        associated_units_copy = copy.deepcopy(associated_units)
+
+        # Let's run the generator by passing it to list()
+        return_value = list(
+            association_query_manager.RepoUnitAssociationQueryManager._merged_units_unique_units(
+                associations_lookup, associated_units))
+
+        # Now let's ensure that the data structures have not changed
+        self.assertEqual(associations_lookup, associations_lookup_copy)
+        self.assertEqual(associated_units, associated_units_copy)
+
+        # Assert that the return value is correct
+        expected_return_value = [
+            {'some': 'unit', 'metadata': {'_id': 'some_id', '_content_type_id': 'rpm'}},
+            {'some': 'unit', 'metadata': {'_id': 'some_other_id', '_content_type_id': 'rpm'}}
+        ]
+        self.assertEqual(return_value, expected_return_value)
+
 
 class UnitAssociationQueryTests(base.PulpServerTests):
 

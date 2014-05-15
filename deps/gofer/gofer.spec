@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.0.10
+Version: 1.0.12
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -252,6 +252,11 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Wed May 14 2014 Jeff Ortel <jortel@redhat.com> 1.0.12-1
+- 1097732 - broker configured during attach. (jortel@redhat.com)
+- Support loading plugins from the PYTHON path. (jortel@redhat.com)
+- Support custom plugin naming. (jortel@redhat.com)
+
 * Tue May 06 2014 Jeff Ortel <jortel@redhat.com> 1.0.10-1
 - Condition Requires: and import of simplejson. (jortel@redhat.com)
 * Fri May 02 2014 Jeff Ortel <jortel@redhat.com> 1.0.9-1

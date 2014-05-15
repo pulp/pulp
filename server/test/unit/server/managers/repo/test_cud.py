@@ -189,9 +189,9 @@ class RepoManagerTests(base.ResourceReservationTests):
         importer_type_id = 'mock-importer'
         importer_repo_plugin_config = {'i' : 'i'}
         distributors = [
-            dict(distributor_type='mock-distributor', distributor_config={'d' : 'd'},
+            dict(distributor_type_id='mock-distributor', distributor_config={'d' : 'd'},
                  auto_publish=True, distributor_id='dist1'),
-            dict(distributor_type='mock-distributor', distributor_config={'d' : 'd'},
+            dict(distributor_type_id='mock-distributor', distributor_config={'d' : 'd'},
                  auto_publish=True, distributor_id='dist2')
         ]
 
@@ -215,7 +215,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         for d in distributors:
             distributor = RepoDistributor.get_collection().find_one({'id' : d['distributor_id']})
             self.assertEqual(distributor['repo_id'], repo_id)
-            self.assertEqual(distributor['distributor_type_id'], d['distributor_type'])
+            self.assertEqual(distributor['distributor_type_id'], d['distributor_type_id'])
             self.assertEqual(distributor['auto_publish'], d['auto_publish'])
             self.assertEqual(distributor['config'], d['distributor_config'])
 

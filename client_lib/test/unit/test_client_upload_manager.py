@@ -11,6 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import errno
 import math
 import os
 import shutil
@@ -79,6 +80,34 @@ class UploadManagerTests(unittest.TestCase):
 
         # Verify
         self.assertEqual(0, len(self.upload_manager.list_uploads()))
+
+    @mock.patch('os.listdir')
+    def test_no_workingdir(self, mock_listdir):
+        ex = OSError('a mock error (ENOENT)')
+        ex.errno = errno.ENOENT
+        mock_listdir.side_effect = ex
+
+        os.makedirs(self.upload_working_dir)
+
+        # Test
+        self.upload_manager.initialize()
+
+        # Verify
+        self.assertEqual(0, len(self.upload_manager.list_uploads()))
+
+    @mock.patch('os.listdir')
+    def test_workingdir_err(self, mock_listdir):
+        ex = OSError('a mock error (EIO)')
+        ex.errno = errno.EIO
+        mock_listdir.side_effect = ex
+
+        os.makedirs(self.upload_working_dir)
+
+        # Test
+        self.upload_manager.initialize()
+
+        # Verify
+        self.assertRaises(OSError, self.upload_manager.list_uploads)
 
     def test_initialize_with_trackers(self):
         # Setup
