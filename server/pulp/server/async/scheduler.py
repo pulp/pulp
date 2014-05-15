@@ -282,6 +282,7 @@ class EventMonitor(threading.Thread):
                 self.monitor_events()
             except Exception as e:
                 _logger.error(e)
+            time.sleep(10)
 
     def monitor_events(self):
         """
