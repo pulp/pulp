@@ -21,8 +21,8 @@ import re
 from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 from pulp.server.async.tasks import _delete_queue
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model import resources
 from pulp.server.db.model.resources import AvailableQueue
+from pulp.server.managers import resources
 
 
 _logger = logging.getLogger(__name__)
