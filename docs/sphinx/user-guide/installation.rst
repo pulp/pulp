@@ -124,7 +124,7 @@ Server
    that you will run Pulp on, or it can be elsewhere as you please. For yum based systems, you can
    install Qpid with this command::
     
-    $ sudo yum install qpid-cpp-server
+    $ sudo yum install qpid-cpp-server python-qpid-qmf python-qpid
 
    Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``.  For Qpid 0.24+ the
    config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the
