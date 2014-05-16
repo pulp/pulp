@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import sys
@@ -659,7 +660,7 @@ class TestSaveTarFilePublishStep(unittest.TestCase):
         touch(os.path.join(source_dir, 'foo.txt'))
         step.process_main()
 
-        with tarfile.open(target_file) as tar_file:
+        with contextlib.closing(tarfile.open(target_file)) as tar_file:
             names = tar_file.getnames()
             self.assertEquals(names, ['', 'foo.txt'])
 
