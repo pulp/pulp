@@ -37,6 +37,12 @@ Examples should not include long lines that will require horizontal scrolling.
 All example commands should begin with only ``$ `` as a prompt. Commands that
 must be run as root should be shown using ``sudo``.
 
+Docs Layout
+-----------
+
+Relative to the root of pulp, the user guide is stored at ``dev/sphinx/user-guide/``
+and the dev guide is stored at ``docs/sphinx/dev-guide/``.
+
 
 Read the Docs
 -------------
@@ -50,9 +56,22 @@ RTD Versions
 ------------
 
 When viewing docs on Read the Docs, there are multiple versions linked in the
-upper-left corner of the page. The "latest" version corresponds to the version
-of Pulp currently under development. Past releases each have a link named
-"pulp-x.y".
+bottom-left corner of the page. The "latest" version corresponds to the version
+of Pulp currently under development, and is built from the most recent commit of
+the Pulp master branch. Past releases each have a link named "pulp-x.y", and are
+built from the most recent commit on the corresponding "pulp-x.y" branch. Docs
+shown on Read the Docs must be merged onto the appropriate branch for it to be
+displayed.
+
+Docs automatically get built when a commit happens to a corresponding branch.
+However, it seems that builds may not happen automatically when only a merge
+takes place.
+
+   .. note::
+
+      You can manually start a build on Read the Docs for a specific version
+      using the `user guide build page <https://readthedocs.org/builds/pulp-user-guide/>`_
+      or the `dev guide build page<https://readthedocs.org/builds/pulp-dev-guide/>`_.
 
 There may be a "staging" version at times. This build is used by the team to
 share documentation that has not yet been reviewed.
@@ -61,10 +80,13 @@ share documentation that has not yet been reviewed.
 Building the Docs
 -----------------
 
-Anyone can induce a build of Pulp's documentation on Read the Docs. When viewing
-the docs, click the icon in the bottom-right corner of the page. This brings you
-to a page where you can select a version and build it.
+Anyone can build the docs in their own dev environment, which is useful for
+proofing changes to the docs before committing them. For either the user guide
+or the dev guide, navigate to the base docs folder and run ``make html``. Once
+run, the html is available in ``_build/html``.
 
-This will not generally be necessary, as the docs automatically get built when
-a commit happens to a corresponding branch. However, it seems that builds may
-not happen automatically when only a merge takes place.
+The html is built with the vanilla sphinx theme, so the look and feel is
+different than Read the Docs look and feel.
+
+You do not need to clean the docs before rebuilding. If you do need to
+clean the docs, you should run ``make clean`` from the documentation root.
