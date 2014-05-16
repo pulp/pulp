@@ -6,8 +6,8 @@ from celery.beat import ScheduleEntry
 import mock
 
 from pulp.server.async import scheduler
-from pulp.server.async.celery_instance import celery as app, \
-    RESOURCE_MANAGER_QUEUE
+from pulp.server.async.celery_instance import celery as app
+from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 from pulp.server.db.model import dispatch, resources
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.factory import initialize
