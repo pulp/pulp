@@ -662,7 +662,8 @@ class TestSaveTarFilePublishStep(unittest.TestCase):
 
         with contextlib.closing(tarfile.open(target_file)) as tar_file:
             names = tar_file.getnames()
-            self.assertEquals(names, ['', 'foo.txt'])
+            # the first item is either '' or '.' depending on if this is py2.7 or py2.6
+            self.assertEquals(names[1:], ['foo.txt'])
 
 
 class TestCopyDirectoryStep(unittest.TestCase):
