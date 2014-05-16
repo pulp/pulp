@@ -123,7 +123,7 @@ class RepoQueryManagerTests(base.PulpServerTests):
         repos = self.query_manager.find_by_id_list(['repo-b', 'repo-c'])
 
         # Verify
-        self.assertEqual(2, len(repos))
+        self.assertEqual(2, repos.count())
 
         ids = [r['id'] for r in repos]
         self.assertTrue('repo-b' in ids)

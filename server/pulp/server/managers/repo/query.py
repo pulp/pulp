@@ -82,9 +82,9 @@ class RepoQueryManager(object):
         @type  repo_id_list: list of str
 
         @return: list of serialized repositories
-        @rtype:  list of dict
+        @rtype:  generator of dict
         """
-        repos = list(Repo.get_collection().find({'id' : {'$in' : repo_id_list}}))
+        repos = Repo.get_collection().find({'id': {'$in': repo_id_list}})
         return repos
 
     def find_with_distributor_type(self, distributor_type_id):
