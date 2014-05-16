@@ -6,14 +6,15 @@ import tempfile
 import time
 import traceback
 import unittest
+
 import mock
 from mock import Mock, patch
 
 from pulp.common.plugins import reporting_constants
 from pulp.devel.unit.util import touch, compare_dict
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Repository
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
+from pulp.plugins.model import Repository
 from pulp.plugins.util.publish_step import PublishStep, UnitPublishStep, \
     AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep
 

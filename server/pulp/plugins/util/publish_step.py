@@ -10,7 +10,6 @@ import traceback
 import uuid
 
 from pulp.common.plugins import reporting_constants
-from pulp.plugins.conduits.mixins import StatusMixin
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 
 _LOG = logging.getLogger(__name__)
@@ -31,15 +30,15 @@ def _post_order(step):
 
 class Step(object):
     """
-    Base class for step processing, the only tie to the platofrm is an assumption of
+    Base class for step processing. The only tie to the platofrm is an assumption of
     the use of a conduit that extends StatusMixin for reporting status along the way.
-
     """
+
     def __init__(self, step_type, status_conduit=None):
         """
         :param step_type: The id of the step this processes
         :type step_type: str
-        :param status_conduit: The
+        :param status_conduit: The conduit used for reporting status as the step executes
         :type status_conduit: pulp.plugins.conduits.mixins.StatusMixin
         """
         self.status_conduit = status_conduit
@@ -354,7 +353,7 @@ class PublishStep(Step):
 
     def get_repo(self):
         """
-        :returns: the repoository for this publish action
+        :returns: the repository for this publish action
         :rtype: pulp.plugins.model.Repository
         """
         if self.repo:
@@ -464,7 +463,7 @@ class PublishStep(Step):
 
     def _build_final_report(self):
         """
-        Build the PublishReport to be returned as the result task completion
+        Build the PublishReport to be returned as the result after task completion
 
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
@@ -569,6 +568,9 @@ class UnitPublishStep(PublishStep):
         Return the total number of units that are processed by this step.
         This is used generally for progress reporting.  The value returned should not change
         during the processing of the step.
+
+        :param id_list: List of type ids to get the total count of
+        :type id_list: list of str
         """
         if id_list is None:
             id_list = self.unit_type
@@ -577,7 +579,7 @@ class UnitPublishStep(PublishStep):
             # We have no good way to get this count without iterating over all units so punt
             total = 1
         else:
-            types_to_query = (set(self.unit_type)).difference(self.skip_list)
+            types_to_query = (set(id_list)).difference(self.skip_list)
             for type_id in types_to_query:
                 total += self.parent.repo.content_unit_counts.get(type_id, 0)
         return total
@@ -708,28 +710,30 @@ class SaveTarFilePublishStep(PublishStep):
 
 class CopyDirectoryStep(PublishStep):
     """
-    Save a directory as a tar file
+    Copy a directory from another directory
 
-    :param source_dir: The directory to turn into a tar file
+    :param source_dir: The directory to copy
     :type source_dir: str
-    :param target_dir: Fully qualified name of the final location for the generated tar file
+    :param target_dir: Fully qualified name of the final location to copy to
     :type target_dir: str
     :param step_type: The id of the step, so that this step can be used with custom names.
     :type step_type: str
+    :param delete_before_copy: Whether or not the contents of the target_dir should be cleared
+                              before copying from source_dir
+    :type delete_before_copy: bool
     """
-    def __init__(self, source_dir, target_dir, step_type=None, delete_befor_copy=True):
+    def __init__(self, source_dir, target_dir, step_type=None, delete_before_copy=True):
         step_type = step_type if step_type else reporting_constants.PUBLISH_STEP_TAR
         super(CopyDirectoryStep, self).__init__(step_type)
         self.source_dir = source_dir
         self.target_dir = target_dir
-        self.delete_before_copy=delete_befor_copy
+        self.delete_before_copy = delete_before_copy
         self.description = _('Copying files')
 
     def process_main(self):
         """
-        Publish a directory from to a tar file
+        Copy one directory to another.
         """
         if self.delete_before_copy:
             shutil.rmtree(self.target_dir, ignore_errors=True)
         shutil.copytree(self.source_dir, self.target_dir)
-
