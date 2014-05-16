@@ -445,6 +445,51 @@ class TestSchedulerApplyAsync(unittest.TestCase):
         self.assertEqual(len(sched_instance._failure_watcher), 1)
 
 
+class TestEventMonitorRun(unittest.TestCase):
+    class SleepException(Exception):
+        pass
+
+    @mock.patch.object(scheduler.EventMonitor, 'monitor_events', spec_set=True)
+    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
+    def test_sleeps(self, mock_sleep, mock_monitor_events):
+        # raising an exception is the only way we have to break out of the
+        # infinite loop
+        mock_sleep.side_effect = self.SleepException
+
+        self.assertRaises(self.SleepException, scheduler.EventMonitor(mock.Mock()).run)
+
+        # verify the frequency
+        mock_sleep.assert_called_once_with(10)
+
+    @mock.patch.object(scheduler._logger, 'error', spec_set=True)
+    @mock.patch.object(scheduler.EventMonitor, 'monitor_events', spec_set=True)
+    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
+    def test_monitor_events(self, mock_sleep, mock_monitor_events, mock_log_error):
+
+        # raising an exception is the only way we have to break out of the
+        # infinite loop
+        mock_monitor_events.side_effect = self.SleepException
+        mock_log_error.side_effect = self.SleepException
+
+        self.assertRaises(self.SleepException, scheduler.EventMonitor(mock.Mock()).run)
+
+        mock_monitor_events.assert_called_once_with()
+
+    @mock.patch.object(scheduler._logger, 'error', spec_set=True)
+    @mock.patch.object(scheduler.EventMonitor, 'monitor_events', spec_set=True)
+    @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
+    def test_logs_exception(self, mock_sleep, mock_monitor_events, mock_log_error):
+
+        # raising an exception is the only way we have to break out of the
+        # infinite loop
+        mock_monitor_events.side_effect = self.SleepException
+        mock_log_error.side_effect = self.SleepException
+
+        self.assertRaises(self.SleepException, scheduler.EventMonitor(mock.Mock()).run)
+
+        self.assertEqual(mock_log_error.call_count, 1)
+
+
 class TestWorkerTimeoutMonitorRun(unittest.TestCase):
     class SleepException(Exception):
         pass
