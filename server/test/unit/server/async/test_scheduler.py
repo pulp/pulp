@@ -87,13 +87,18 @@ class TestFailureWatcherPop(unittest.TestCase):
         self.assertEqual(len(watcher), 0)
 
 
-class TestEventMonitor(unittest.TestCase):
+class TestEventMonitorInit(unittest.TestCase):
+    @mock.patch('threading.Thread.__init__')
+    def test_event_monitor__init__(self, mock_thread__init__):
+        failure_watcher = scheduler.FailureWatcher()
+        event_monitor = scheduler.EventMonitor(failure_watcher)
+        mock_thread__init__.assert_called_once_with()
+        self.assertTrue(failure_watcher is event_monitor._failure_watcher)
+
+class TestEventMonitorEvents(unittest.TestCase):
     def setUp(self):
         self.failure_watcher = scheduler.FailureWatcher()
         self.event_monitor = scheduler.EventMonitor(self.failure_watcher)
-
-    def test__init__(self):
-        self.assertTrue(self.failure_watcher is self.event_monitor._failure_watcher)
 
     @mock.patch('pulp.server.async.scheduler.app.events.Receiver')
     def test_handlers_declared(self, mock_receiver):
