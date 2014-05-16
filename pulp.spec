@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.13.beta%{?dist}
+Release: 0.14.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -583,6 +583,23 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu May 15 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.14.beta
+- 1096968 - return created profile; log reported profiles at debug in the
+  agent. (jortel@redhat.com)
+- 1094647 - GET of consumer schedule that doesn't exist now returns 404
+  (mhrivnak@redhat.com)
+- 1097817 - agent SSL properties applied. (jortel@redhat.com)
+- 1093870 - Use far less RAM during publish. (rbarlow@redhat.com)
+- 1093009 - Don't use symlinks for init scripts. (rbarlow@redhat.com)
+- 1091348 - Always perform distributor updates asyncronously.
+  (rbarlow@redhat.com)
+- 1094825 - bind/unbind return call_report; 200/202 based on spawned tasks.
+  (jortel@redhat.com)
+- 1095691 - Adding cleanup of Celery Task Results to Reaper
+  (bmbouter@gmail.com)
+- 1093429 - Changing repo create API to match documented key name.
+  (mhrivnak@redhat.com)
+
 * Thu May 08 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.13.beta
 - Pulp rebuild
 

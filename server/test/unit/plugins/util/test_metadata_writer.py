@@ -180,13 +180,40 @@ class MetadataWriterTests(unittest.TestCase):
 
         context._open_metadata_file_handle()
         context._write_file_header()
-        context._close_metadata_file_handle()
         context.finalize()
 
         expected_metadata_file_name = context.checksum + '-' + 'test.xml'
         expected_metadata_file_path = os.path.join(self.metadata_file_dir,
                                                    expected_metadata_file_name)
         self.assertEquals(expected_metadata_file_path, context.metadata_file_path)
+
+    @patch('pulp.plugins.util.metadata_writer._LOG.exception')
+    def test_finalize_error_on_footer(self, mock_logger):
+
+        path = os.path.join(self.metadata_file_dir, 'test.xml')
+        context = MetadataFileContext(path)
+        context._write_file_footer = Mock(side_effect=Exception('foo'))
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+
+        context.finalize()
+
+        self.assertTrue(mock_logger.called)
+
+    @patch('pulp.plugins.util.metadata_writer._LOG.exception')
+    def test_finalize_error_on_close(self, mock_logger):
+
+        path = os.path.join(self.metadata_file_dir, 'test.xml')
+        context = MetadataFileContext(path)
+        context._close_metadata_file_handle = Mock(side_effect=Exception('foo'))
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+
+        context.finalize()
+
+        self.assertTrue(mock_logger.called)
 
     @patch('pulp.plugins.util.metadata_writer._LOG')
     def test_exit_error(self, mock_log):
