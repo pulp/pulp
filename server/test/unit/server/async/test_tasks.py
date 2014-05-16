@@ -1,20 +1,9 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.server.async.tasks module.
 """
-from datetime import datetime, timedelta
+from datetime import datetime
 import signal
+import time
 import unittest
 import uuid
 
@@ -27,7 +16,7 @@ from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException, PulpCodedException
-from pulp.server.async import tasks
+from pulp.server.async import tasks, worker_watcher
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
@@ -35,9 +24,9 @@ from pulp.server.async.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STAT
                                          CALL_RUNNING_STATE, CALL_WAITING_STATE)
 
 
-RESERVED_WORKER_1 = '%s1' % tasks.RESERVED_WORKER_NAME_PREFIX
-RESERVED_WORKER_2 = '%s2' % tasks.RESERVED_WORKER_NAME_PREFIX
-RESERVED_WORKER_3 = '%s3' % tasks.RESERVED_WORKER_NAME_PREFIX
+RESERVED_WORKER_1 = 'reserved_resource_worker-1'
+RESERVED_WORKER_2 = 'reserved_resource_worker-2'
+RESERVED_WORKER_3 = 'reserved_resource_worker-3'
 # This is used as the mock return value for the celery.app.control.Inspect.active_queues() method
 MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
     # This is a plain old default Celery worker, subscribed to the general Celery queue
@@ -84,190 +73,6 @@ MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
          u'auto_delete': False}]}
 
 
-class TestBabysit(ResourceReservationTests):
-    """
-    Test the babysit() function.
-    """
-    @mock.patch('celery.app.control.Inspect.active_queues', return_value=None)
-    def test_active_queues_none(self, active_queues):
-        """
-        When there are no active queues, Celery's Inspect.active_queues() returns None instead of
-        an empty iterable. We had a traceback upon the first worker's startup due to this,
-        so this test makes sure that babysit() handles this scenario gracefully.
-        """
-        # This should not cause any Exception
-        tasks.babysit()
-
-    @mock.patch('celery.app.control.Inspect.active_queues',
-                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
-    @mock.patch('pulp.server.async.tasks.cancel')
-    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    @mock.patch('pulp.server.async.tasks.logger')
-    def test_babysit_cancels_correct_tasks(self, logger, add_consumer, cancel, active_queues):
-        """
-        When babysit() discovers that a worker has gone missing, it should cancel all of the tasks
-        that were in its queue.
-        """
-        # Let's start off by creating the existing queues and what not by calling babysit
-        tasks.babysit()
-        # Now, let's add another AvailableQueue that isn't found in our active_queues mock so that
-        # babysit() can notice that it appears to have gone missing next time it's called. We need
-        # to also mark it as having been missing for at least 5 minutes.
-        missing_available_queue = AvailableQueue('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX, 2,
-                                                 datetime.utcnow() - timedelta(minutes=5))
-        missing_available_queue.save()
-        # Let's simulate three tasks being assigned to this AvailableQueue, with two of them being
-        # in an incomplete state and one in a complete state. The two should get canceled.
-        # Let's put task_1 in progress
-        TaskStatusManager.create_task_status('task_1', missing_available_queue.name,
-                                             state=CALL_RUNNING_STATE)
-        TaskStatusManager.create_task_status('task_2', missing_available_queue.name,
-                                             state=CALL_WAITING_STATE)
-        # This task shouldn't get canceled because it isn't in an incomplete state
-        TaskStatusManager.create_task_status('task_3', missing_available_queue.name,
-                                             state=CALL_FINISHED_STATE)
-        # Let's make a task in a worker that is still present just to make sure it isn't touched.
-        TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
-                                             state=CALL_RUNNING_STATE)
-
-        # Now, let's call babysit() again. This time, it should delete the AvailableQueue, and it
-        # should cancel task_1 and task_2. task_3 should be left alone.
-        tasks.babysit()
-
-        # cancel() should have been called twice with task_1 and task_2 as parameters
-        self.assertEqual(cancel.call_count, 2)
-        # Let's build a set out of the two times that cancel was called. We can't know for sure
-        # which order the Tasks got canceled in, but we can assert that the correct two tasks were
-        # canceled (task_3 should not appear in this set).
-        cancel_param_set = set([c[1] for c in cancel.mock_calls])
-        self.assertEqual(cancel_param_set, set([('task_1',), ('task_2',)]))
-        # We should have logged that we are canceling the tasks
-        self.assertEqual(logger.call_count, 0)
-        self.assertTrue(missing_available_queue.name in logger.mock_calls[0][1][0])
-        self.assertTrue('Canceling the tasks' in logger.mock_calls[0][1][0])
-
-    @mock.patch('celery.app.control.Inspect.active_queues',
-                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
-    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    def test_babysit_creates_correct_records(self, add_consumer, active_queues):
-        """
-        Test babysit() with a blank database. It should create the correct AvailableQueues.
-        """
-        tasks.babysit()
-
-        # babysit() should have called the active_queues() method
-        active_queues.assert_called_once_with()
-        # There should be three ActiveQueues, one for each reserved worker in the mock data
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 3)
-        # Let's make sure their names and num_reservations counts are correct
-        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_1})['num_reservations'], 0)
-        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_2})['num_reservations'], 0)
-        self.assertEqual(aqc.find_one({'_id': RESERVED_WORKER_3})['num_reservations'], 0)
-        # Reserved worker 3 wasn't assigned to a queue, so babysit() should have assigned it to one
-        add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
-                                             destination=(RESERVED_WORKER_3,))
-
-    @mock.patch('celery.app.control.Inspect.active_queues',
-                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
-    @mock.patch('pulp.server.async.tasks._delete_queue.apply_async',
-                side_effect=tasks._delete_queue.apply_async)
-    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    def test_babysit_deletes_correct_records(self, add_consumer, _delete_queue_apply_async,
-                                             active_queues):
-        """
-        Test babysit() with pre-existing state. It should create the correct AvailableQueues, and
-        delete other ones, and leave others in place.
-        """
-        # This AvailableQueue should remain in the DB
-        available_queue_2 = AvailableQueue(name=RESERVED_WORKER_2)
-        available_queue_2.save()
-        # This AvailableQueue doesn't exist anymore since it's not in the mock results, and it's
-        # been missing for five minutes, so it should get deleted
-        available_queue_4 = AvailableQueue(name='%s4' % tasks.RESERVED_WORKER_NAME_PREFIX,
-                                           missing_since=datetime.utcnow() - timedelta(minutes=5))
-        available_queue_4.save()
-        # This AvailableQueue doesn't exist anymore since it's not in the mock results, but it's
-        # been missing for less than five minutes, so it should not get deleted
-        available_queue_5 = AvailableQueue(name='%s5' % tasks.RESERVED_WORKER_NAME_PREFIX,
-                                           missing_since=datetime.utcnow() - timedelta(minutes=2))
-        available_queue_5.save()
-        # This AvailableQueue doesn't exist anymore since it's not in the mock results, but it
-        # hasn't been missing before (i.e., it's missing_since attribute is None), so it should not
-        # get deleted. It's missing_since attribute should be set to a datetime, however.
-        available_queue_6 = AvailableQueue(name='%s6' % tasks.RESERVED_WORKER_NAME_PREFIX,
-                                           missing_since=None)
-        available_queue_6.save()
-
-        # This should cause queue 4 to get deleted, and 6 to get marked as missing.
-        tasks.babysit()
-
-        # babysit() should have called the active_queues() method
-        active_queues.assert_called_once_with()
-        # There should be five ActiveQueues, one for each reserved worker in the mock data (3), and
-        # numbers 5 and 6 that we created above should also remain because they have been missing
-        # for less than five minutes.
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 5)
-        # Let's make sure their names, num_reservations counts, and missing_since attributes are
-        # correct
-        aq_1 = aqc.find_one({'_id': RESERVED_WORKER_1})
-        self.assertEqual(aq_1['num_reservations'], 0)
-        self.assertEqual(aq_1['missing_since'], None)
-        aq_2 = aqc.find_one({'_id': RESERVED_WORKER_2})
-        self.assertEqual(aq_2['num_reservations'], 0)
-        self.assertEqual(aq_2['missing_since'], None)
-        aq_3 = aqc.find_one({'_id': RESERVED_WORKER_3})
-        self.assertEqual(aq_3['num_reservations'], 0)
-        self.assertEqual(aq_3['missing_since'], None)
-
-        # Numbers 5 and 6 should exist, with non-null missing_since attributes
-        aq_5 = aqc.find_one({'_id': '%s5' % tasks.RESERVED_WORKER_NAME_PREFIX})
-        self.assertEqual(aq_5['num_reservations'], 0)
-        self.assertEqual(type(aq_5['missing_since']), datetime)
-        self.assertTrue(aq_5['missing_since'] < datetime.utcnow() - timedelta(minutes=2))
-        aq_6 = aqc.find_one({'_id': '%s6' % tasks.RESERVED_WORKER_NAME_PREFIX})
-        self.assertEqual(aq_6['num_reservations'], 0)
-        self.assertEqual(type(aq_6['missing_since']), datetime)
-        self.assertTrue(aq_6['missing_since'] < datetime.utcnow())
-
-        # Reserved worker 3 wasn't assigned to a queue, so babysit() should have assigned it to one
-        add_consumer.assert_called_once_with(queue=RESERVED_WORKER_3,
-                                             destination=(RESERVED_WORKER_3,))
-
-        # Make sure that _delete_queue was called for #4, and that the delete task was sent to the
-        # RESOURCE_MANAGER_QUEUE
-        _delete_queue_apply_async.assert_called_once_with(
-            args=('%s4' % tasks.RESERVED_WORKER_NAME_PREFIX,), queue=tasks.RESOURCE_MANAGER_QUEUE)
-
-    @mock.patch('celery.app.control.Inspect.active_queues',
-                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
-    @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    def test_babysit_resets_missing_since_on_reappearing_workers(self, add_consumer, active_queues):
-        """
-        Let's simulate an AvailableQueue having been missing in the past by setting its
-        missing_since attribute to two minutes ago. It is part of the mocked active_queues() call,
-        so we expect babysit() to set its missing_since attribute back to None. Note that this one
-        has been missing for more than five minutes, but it got lucky because it is back just in
-        time to avoid being deleted.
-        """
-        available_queue_2 = AvailableQueue(name=RESERVED_WORKER_2,
-                                           missing_since=datetime.utcnow() - timedelta(minutes=6))
-        available_queue_2.save()
-
-        tasks.babysit()
-
-        # babysit() should have called the active_queues() method
-        active_queues.assert_called_once_with()
-        # There should be three ActiveQueues, one for each reserved worker in the mock data
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 3)
-        # Make sure it's set back to None
-        aq_2 = aqc.find_one({'_id': RESERVED_WORKER_2})
-        self.assertEqual(aq_2['num_reservations'], 0)
-        self.assertEqual(aq_2['missing_since'], None)
-
-
 class TestDeleteQueue(ResourceReservationTests):
     """
     Test the _delete_queue() Task.
@@ -282,8 +87,17 @@ class TestDeleteQueue(ResourceReservationTests):
         Assert that the correct Tasks get canceled when their queue is deleted, and that the queue
         is removed from the database.
         """
-        # Let's start off by creating the existing queues and what not by calling babysit
-        tasks.babysit()
+        # cause two workers to be added to the database as having available queues
+        worker_watcher.handle_worker_heartbeat({
+            'timestamp': time.time(),
+            'type': 'worker-heartbeat',
+            'hostname': RESERVED_WORKER_1,
+        })
+        worker_watcher.handle_worker_heartbeat({
+            'timestamp': time.time(),
+            'type': 'worker-heartbeat',
+            'hostname': RESERVED_WORKER_2,
+        })
         # Let's simulate three tasks being assigned to RESERVED_WORKER_2, with two of them being
         # in an incomplete state and one in a complete state. We will delete RESERVED_WORKER_2's
         # queue, which should cause the two to get canceled. Let's put task_1 in progress
@@ -297,7 +111,8 @@ class TestDeleteQueue(ResourceReservationTests):
         # Let's make a task in a worker that is still present just to make sure it isn't touched.
         TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
                                              state=CALL_RUNNING_STATE)
-        # Let's just make sure the babysit() worked and that we have an AvailableQueue with RR2
+
+        # Let's just make sure the setup worked and that we have an AvailableQueue with RR2
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 1)
 
@@ -319,12 +134,12 @@ class TestDeleteQueue(ResourceReservationTests):
 
         # The queue should have been deleted
         self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 0)
-        # The other queues (1 and 3) should remain
-        self.assertEqual(aqc.find().count(), 2)
+        # the queue for RW1 should remain
+        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_1}).count(), 1)
 
     def test__delete_queue_no_database_entry(self):
         """
-        Call _delete_queue() with a queue that is not in the database.  _delete_queue() relies on
+        Call _delete_queue() with a queue that is not in the database. _delete_queue() relies on
         the database information, so it should return without error when called in this way.
         """
         try:
@@ -332,20 +147,16 @@ class TestDeleteQueue(ResourceReservationTests):
         except Exception:
             self.fail('_delete_queue() on a queue that is not in the database caused an Exception')
 
-
-class TestInitializeWorker(unittest.TestCase):
-    """
-    Test the initialize_worker() function.
-    """
-    @mock.patch('pulp.server.async.tasks.babysit')
-    def test_initialize_worker(self, babysit):
+    @mock.patch('pulp.server.async.tasks._')
+    @mock.patch('pulp.server.async.tasks.logger')
+    def test__delete_queue_normal_shutdown_true(self, mock_logger, mock_underscore):
         """
-        Test that initialize_worker() makes the correct calls.
+        Call _delete_queue() with the normal_shutdown keyword argument set to True. This should
+        not make any calls to _() or logger().
         """
-        tasks._initialize_worker()
-
-        # babysit() should have been called with no args
-        babysit.assert_called_once_with()
+        tasks._delete_queue('does not exist queue name')
+        self.assertTrue(not mock_underscore.called)
+        self.assertTrue(not mock_logger.called)
 
 
 class TestQueueReleaseResource(ResourceReservationTests):
@@ -376,9 +187,9 @@ class TestReleaseResource(ResourceReservationTests):
         gracefully handled, and result in no changes to the database.
         """
         # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, datetime.utcnow(), 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 3)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, datetime.utcnow(), 3)
         available_queue_2.save()
         # Set up two resource reservations, using our available_queues from above
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -415,9 +226,10 @@ class TestReleaseResource(ResourceReservationTests):
         should not decrement the queue task count into the negative range.
         """
         # Set up two available queues, the second with a task count of 0
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 0)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 0)
         available_queue_2.save()
         # Set up two reserved resources, and let's make it so the second one is out of sync with its
         # queue's task count by setting its num_reservations to 1
@@ -452,9 +264,10 @@ class TestReleaseResource(ResourceReservationTests):
         the resource from the database.
         """
         # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 1)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 1)
         available_queue_2.save()
         # Set up two reserved resources
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -489,9 +302,10 @@ class TestReleaseResource(ResourceReservationTests):
         decrement the task_count for the resource, but should not remove it from the database.
         """
         # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, 2)
+        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 2)
         available_queue_2.save()
         # Set up two resource reservations, using our available_queues from above
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -533,7 +347,8 @@ class TestReserveResource(ResourceReservationTests):
         It should return the queue listed in the database, and increment the reservation counter.
         """
         # Set up an available queue with a reservation count of 1
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 1)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 1)
         available_queue_1.save()
         # Set up a resource reservation, using our available_queue from above
         reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
@@ -570,7 +385,8 @@ class TestReserveResource(ResourceReservationTests):
 
         queue = tasks._reserve_resource('resource_1')
 
-        self.assertEqual(queue, RESERVED_WORKER_1)
+        worker_1_queue_name = RESERVED_WORKER_1 + '.dq'
+        self.assertEqual(queue, worker_1_queue_name)
         # Make sure that the AvailableQueue is correct
         aqc = AvailableQueue.get_collection()
         self.assertEqual(aqc.count(), 1)
@@ -580,7 +396,7 @@ class TestReserveResource(ResourceReservationTests):
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 1)
         rr_1 = rrc.find_one({'_id': 'resource_1'})
-        self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
+        self.assertEqual(rr_1['assigned_queue'], worker_1_queue_name)
         self.assertEqual(rr_1['num_reservations'], 1)
 
 
@@ -844,7 +660,8 @@ class TestTask(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
-        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue'),
+        now = datetime.utcnow()
+        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue', now),
                                              state=CALL_CANCELED_STATE)
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
@@ -872,7 +689,8 @@ class TestCancel(PulpServerTests):
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
     def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
-        test_queue = AvailableQueue('test_queue')
+        now = datetime.utcnow()
+        test_queue = AvailableQueue('test_queue', now)
         TaskStatusManager.create_task_status(task_id, test_queue.name)
         tasks.cancel(task_id)
 
@@ -888,7 +706,8 @@ class TestCancel(PulpServerTests):
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
     def test_cancel_after_task_finished(self, logger, revoke):
         task_id = '1234abcd'
-        test_queue = AvailableQueue('test_queue')
+        now = datetime.utcnow()
+        test_queue = AvailableQueue('test_queue', now)
         TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, tasks.cancel, task_id)
 

@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.server.managers.resources module.
 """
@@ -46,11 +34,12 @@ class TestFilterAvailableQueues(ResourceReservationTests):
         Test a filter operation to make sure the results appear to be correct.
         """
         # Make three queues. We'll filter for two of them.
-        aq_1 = AvailableQueue('queue_1', 1)
+        now = datetime.utcnow()
+        aq_1 = AvailableQueue('queue_1', now, 1)
         aq_1.save()
-        aq_2 = AvailableQueue('queue_2', 2)
+        aq_2 = AvailableQueue('queue_2', now, 2)
         aq_2.save()
-        aq_3 = AvailableQueue('queue_3', 3)
+        aq_3 = AvailableQueue('queue_3', now, 3)
         aq_3.save()
         criteria = Criteria(filters={'_id': {'$gt': 'queue_1'}}, sort=[('_id', pymongo.ASCENDING)])
 
@@ -85,11 +74,12 @@ class TestGetLeastBusyAvailableQueue(ResourceReservationTests):
         """
         # Set up three available queues, with the least busy one in the middle so that we can
         # demonstrate that it did pick the least busy and not the last or first.
-        available_queue_1 = AvailableQueue('busy_queue', 7)
+        now = datetime.utcnow()
+        available_queue_1 = AvailableQueue('busy_queue', now, 7)
         available_queue_1.save()
-        available_queue_2 = AvailableQueue('less_busy_queue', 3)
+        available_queue_2 = AvailableQueue('less_busy_queue', now, 3)
         available_queue_2.save()
-        available_queue_3 = AvailableQueue('most_busy_queue', 10)
+        available_queue_3 = AvailableQueue('most_busy_queue', now, 10)
         available_queue_3.save()
 
         queue = resources.get_least_busy_available_queue()
@@ -97,60 +87,6 @@ class TestGetLeastBusyAvailableQueue(ResourceReservationTests):
         self.assertEqual(type(queue), AvailableQueue)
         self.assertEqual(queue.num_reservations, 3)
         self.assertEqual(queue.name, 'less_busy_queue')
-
-
-class TestGetOrCreateAvailableQueue(ResourceReservationTests):
-    """
-    Test the get_or_create_available_queue() function.
-    """
-    def test_create(self):
-        """
-        Test for the case when the requested queue does not exist.
-        """
-        # Let's add an AvailableQueue just to make sure that it doesn't return any existing queue.
-        aq_1 = AvailableQueue('queue_1')
-        aq_1.save()
-
-        aq_2 = resources.get_or_create_available_queue('queue_2')
-
-        # Assert that the returned instance is correct
-        self.assertEqual(type(aq_2), AvailableQueue)
-        self.assertEqual(aq_2.name, 'queue_2')
-        # A new queue should default to 0 reservations
-        self.assertEqual(aq_2.num_reservations, 0)
-        # missing_since defaults to None
-        self.assertEqual(aq_2.missing_since, None)
-        # Now we need to assert that it made it to the database as well
-        aqc = aq_2.get_collection()
-        aq_bson = aqc.find_one({'_id': 'queue_2'})
-        # Make sure the default values were set correctly
-        self.assertEqual(aq_bson['num_reservations'], 0)
-        self.assertEqual(aq_bson['missing_since'], None)
-
-    def test_get(self):
-        """
-        Test for the case when the requested queue does exist.
-        """
-        # Let's add two AvailableQueues just to make sure that it doesn't return the wrong queue.
-        aq_1 = AvailableQueue('queue_1')
-        aq_1.save()
-        missing_since = datetime(2013, 12, 16)
-        aq_2 = AvailableQueue('queue_2', 7, missing_since)
-        aq_2.save()
-
-        aq_2 = resources.get_or_create_available_queue('queue_2')
-
-        # Assert that the returned instance is correct
-        self.assertEqual(type(aq_2), AvailableQueue)
-        self.assertEqual(aq_2.name, 'queue_2')
-        # Make sure the instance attributes are correct
-        self.assertEqual(aq_2.num_reservations, 7)
-        self.assertEqual(aq_2.missing_since, missing_since)
-        # Now we need to assert that the DB is still correct
-        aqc = aq_2.get_collection()
-        aq_bson = aqc.find_one({'_id': 'queue_2'})
-        self.assertEqual(aq_bson['num_reservations'], 7)
-        self.assertEqual(aq_bson['missing_since'], missing_since)
 
 
 class TestGetOrCreateReservedResource(ResourceReservationTests):

@@ -86,7 +86,7 @@ class RepoCollection(JSONController):
     def _process_repos(repos, importers=False, distributors=False):
         """
         Apply standard processing to a collection of repositories being returned
-        to a client.  Adds the object link and optionally adds related importers
+        to a client. Adds the object link and optionally adds related importers
         and distributors.
 
         @param repos: collection of repositories

@@ -1,25 +1,11 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from datetime import datetime, timedelta
+from datetime import datetime
 from gettext import gettext as _
 import logging
-import re
 import signal
 
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
-from celery.signals import worker_ready
 
 from pulp.common import dateutils
 from pulp.common.error_codes import PLP0023
@@ -29,7 +15,7 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource, PulpCodedException
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import AvailableQueue, DoesNotExist, ReservedResource
+from pulp.server.db.model.resources import DoesNotExist, ReservedResource
 from pulp.server.managers import resources
 
 
@@ -37,93 +23,22 @@ controller = control.Control(app=celery)
 logger = logging.getLogger(__name__)
 
 
-RESERVED_WORKER_NAME_PREFIX = 'reserved_resource_worker-'
-
-
 @task
-def babysit():
-    """
-    Babysit the workers, updating our tables with information about their queues.
-    """
-    # Inspect the available workers to build our state variables
-    active_queues = controller.inspect().active_queues()
-    # Now we need the entire list of AvailableQueues from the database, though we only need their
-    # _id and missing_since attributes. This is preferrable to using a Map/Reduce operation to get
-    # Mongo to tell us which workers Celery knows about that aren't found in the database.
-    all_queues_criteria = Criteria(filters={}, fields=('_id', 'missing_since'))
-    all_queues = list(resources.filter_available_queues(all_queues_criteria))
-    all_queues_set = set([q.name for q in all_queues])
-
-    active_queues_set = set()
-    # If there are no active queues, active_queues will be None
-    if active_queues is not None:
-        for worker, queues in active_queues.items():
-            # If this worker is a reserved task worker, let's make sure we know about it in our
-            # available_queues collection, and make sure it is processing a queue with its own name
-            if re.match('^%s' % RESERVED_WORKER_NAME_PREFIX, worker):
-                # Make sure that this worker is subscribed to a queue of his own name. If not,
-                # subscribe him to one
-                if not worker in [queue['name'] for queue in queues]:
-                    controller.add_consumer(queue=worker, destination=(worker,))
-                active_queues_set.add(worker)
-
-    # Determine which queues are in active_queues_set that aren't in all_queues_set. These are new
-    # workers and we need to add them to the database.
-    for worker in (active_queues_set - all_queues_set):
-        resources.get_or_create_available_queue(worker)
-
-    # If there are any AvalailableQueues that have their missing_since attribute set and they are
-    # present now, let's set their missing_since attribute back to None.
-    missing_since_queues = set([q.name for q in all_queues if q.missing_since is not None])
-    for queue in (active_queues_set & missing_since_queues):
-        active_queue = resources.get_or_create_available_queue(queue)
-        active_queue.missing_since = None
-        active_queue.save()
-
-    # Now we must delete queues for workers that don't exist anymore, but only if they've been
-    # missing for at least five minutes.
-    for queue in (all_queues_set - active_queues_set):
-        active_queue = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))[0]
-
-        # We only want to delete this queue if it has been missing for at least 5 minutes. If this
-        # AvailableQueue doesn't have a missing_since attribute, that means it has just now gone
-        # missing. Let's mark its missing_since attribute and continue.
-        if active_queue.missing_since is None:
-            active_queue.missing_since = datetime.utcnow()
-            active_queue.save()
-            continue
-
-        # This queue has been missing for some time. Let's check to see if it's been 5 minutes yet,
-        # and if it has, let's delete it.
-        if active_queue.missing_since < datetime.utcnow() - timedelta(minutes=5):
-            _delete_queue.apply_async(args=(queue,), queue=RESOURCE_MANAGER_QUEUE)
-
-
-@worker_ready.connect
-def _initialize_worker(*args, **kwargs):
-    """
-    This gets called by Celery when the worker is ready to accept work. It initializes Pulp and runs
-    our babysit() function synchronously so that the application is aware of this worker
-    immediately.
-
-    :param args:   unused
-    :type  args:   list
-    :param kwargs: unused
-    :type  kwargs: dict
-    """
-    babysit()
-
-
-@task
-def _delete_queue(queue):
+def _delete_queue(queue, normal_shutdown=False):
     """
     Delete the AvailableQueue with _id queue from the database. This Task can only safely be
     performed by the resource manager at this time, so be sure to queue it in the
     RESOURCE_MANAGER_QUEUE.
 
+    If the worker shutdown normally, no message is logged, otherwise an error level message is
+    logged. Default is to assume the work did not shut down normally.
+
     :param queue: The name of the queue you wish to delete. In the database, the _id field is the
                   name.
     :type  queue: basestring
+    :param normal_shutdown: True if the worker associated with the queue shutdown normally, False
+                            otherwise.  Defaults to False.
+    :type normal_shutdown:  bool
     """
     queue_list = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))
     if len(queue_list) == 0:
@@ -132,10 +47,12 @@ def _delete_queue(queue):
         return
     queue = queue_list[0]
 
+    if normal_shutdown is False:
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.') % {
+            'name': queue.name}
+        logger.error(msg)
+
     # Cancel all of the tasks that were assigned to this queue
-    msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-    msg = msg % {'name': queue.name}
-    logger.error(msg)
     for task in TaskStatusManager.find_by_criteria(
             Criteria(
                 filters={'queue': queue.name,
@@ -182,7 +99,11 @@ def _release_resource(resource_id):
         # Now we need to decrement the AvailabeQueue that the reserved_resource was using. If the
         # ReservedResource does not exist for some reason, we won't know its assigned_queue, but
         # these next lines won't execute anyway.
-        available_queue = AvailableQueue(reserved_resource.assigned_queue)
+        # Remove the '.dq' from the queue name to get the worker name
+        worker_name = reserved_resource.assigned_queue.rstrip('.dq')
+        aqc = Criteria(filters={'_id': worker_name})
+        aq_list = list(resources.filter_available_queues(aqc))
+        available_queue = aq_list[0]
         available_queue.decrement_num_reservations()
     except DoesNotExist:
         # If we are trying to decrement the count on one of these obejcts, and they don't exist,
@@ -212,14 +133,19 @@ def _reserve_resource(resource_id):
     if reserved_resource.assigned_queue is None:
         # The assigned_queue will be None if the reserved_resource was just created, so we'll
         # need to assign a queue to it
-        reserved_resource.assigned_queue = resources.get_least_busy_available_queue().name
+        # get the dedicated queue name by adding '.dq' to the end of the worker name
+        reserved_resource.assigned_queue = resources.get_least_busy_available_queue().name + '.dq'
         reserved_resource.save()
     else:
         # The assigned_queue is set, so we just need to increment the num_reservations on the
         # reserved resource
         reserved_resource.increment_num_reservations()
 
-    AvailableQueue(reserved_resource.assigned_queue).increment_num_reservations()
+    # Remove the '.dq' from the queue name to get the worker name
+    worker_name = reserved_resource.assigned_queue.rstrip('.dq')
+    aqc = Criteria(filters={'_id': worker_name})
+    aq_list = list(resources.filter_available_queues(aqc))
+    aq_list[0].increment_num_reservations()
     return reserved_resource.assigned_queue
 
 
@@ -485,7 +411,7 @@ def cancel(task_id):
 
 def get_current_task_id():
     """"
-    Get the current task id from celery.  If this is called outside of a running
+    Get the current task id from celery. If this is called outside of a running
     celery task it will return None
 
     :return: The ID of the currently running celery task or None if not in a task
