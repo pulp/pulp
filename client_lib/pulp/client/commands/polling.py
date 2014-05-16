@@ -144,8 +144,6 @@ class PollingCommand(PulpCliCommand):
 
                 # Display the appropriate message based on the result of the task
                 self.prompt.render_spacer(1)
-                if task.was_successful():
-                    self.succeeded(task)
 
                 if task.was_failure():
                     self.failed(task)
@@ -154,6 +152,14 @@ class PollingCommand(PulpCliCommand):
                     if task and task.result and 'error_message' in task.result:
                         self.context.prompt.render_failure_message(task.result['error_message'])
                     break
+                elif task.result and task.result.get('details') \
+                        and task.result.get('details').get('errors'):
+                    # Check the {result: {details:{errors: [...]}}} - Used by the upload command
+                    self.failed(task)
+                    for error in task.result.get('details').get('errors'):
+                        self.context.prompt.render_failure_message(error)
+                elif task.was_successful():
+                    self.succeeded(task)
 
                 if task.was_cancelled():
                     self.cancelled(task)

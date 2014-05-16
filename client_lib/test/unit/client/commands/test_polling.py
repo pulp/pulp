@@ -311,6 +311,42 @@ class PollingCommandTests(base.PulpClientTests):
                          ]
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
+    def test_success_task_error_in_result_details(self):
+        """
+        Task Count: 3
+        Statuses: None, tasks will run to completion
+        Results: 1 Success, 1 Failed, 1 Skipped
+        """
+
+        # Setup
+        sim = TaskSimulator()
+        sim.install(self.bindings)
+
+        states_1 = [STATE_WAITING, STATE_FINISHED]
+        states_3 = [STATE_WAITING, STATE_SKIPPED]
+
+        sim.add_task_states('1', states_1)
+        sim.add_task_state('2', STATE_WAITING)
+        sim.add_task_state('2', STATE_FINISHED, result={'details': {'errors': ['Foo_error']}})
+        sim.add_task_states('3', states_3)
+
+        # Test
+        task_list = sim.get_all_tasks().response_body
+        completed_tasks = self.command.poll(task_list, {})
+
+        # Verify
+        self.assertTrue(isinstance(completed_tasks, list))
+        self.assertEqual(3, len(completed_tasks))
+
+        expected_tags = ['abort',
+                         'header', 'delayed-spinner', 'running-spinner', 'succeeded', # states_1
+                         'header', 'delayed-spinner', 'running-spinner', 'failed',
+                         'failure',  # states_2
+                         'header', 'delayed-spinner', 'running-spinner'  # state_3
+                         ]
+        tags_written = self.prompt.get_write_tags()
+        self.assertEqual(expected_tags, tags_written)
+
     def test_cancelled_task(self):
         """
         Task Count: 1
