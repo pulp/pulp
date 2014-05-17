@@ -126,6 +126,10 @@ Server
     
     $ sudo yum install qpid-cpp-server python-qpid-qmf python-qpid
 
+   .. note::
+      If running Qpid 0.18 or earlier, you also need to install the qpid-cpp-server-store package
+      with the command:  ``sudo yum install qpid-cpp-server-store``
+
    Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``.  For Qpid 0.24+ the
    config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the
    config file at ``/etc/qpidd.conf``.  If not using authentication for the broker, either add or
