@@ -154,13 +154,23 @@ contains the hostname of your machine as returned by the 'hostname' command. If 
 /etc/hosts and run 'apachectl restart'. 
 
 
-
 Qpid connection issues when starting services or executing tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When setting up Pulp, or adjusting its configuration, you may encounter connection issues between Pulp and
-Qpid.  If Pulp services cannot connect to the Qpid broker then Pulp cannot continue.  The most common root
-cause of this issue is the Qpid broker not being configured as expected due to changes being put into a
-``qpidd.conf`` that the Qpid broker is not reading from.  For Qpid 0.24+ the qpidd.conf file should be
-located at ``/etc/qpid/qpidd.conf`` and for earlier Qpid versions, it should be located at
-``/etc/qpidd.conf``.  The user who you run qpidd as must be able to read the ``qpidd.conf`` file.  
+When setting up Pulp, or adjusting its configuration, you may encounter connection issues between
+Pulp and Qpid.  If Pulp services cannot connect to the Qpid broker then Pulp cannot continue. The
+most common root cause of this issue is the Qpid broker not being configured as expected due to
+changes being put into a ``qpidd.conf`` that the Qpid broker is not reading from.  For Qpid 0.24+
+the qpidd.conf file should be located at ``/etc/qpid/qpidd.conf`` and for earlier Qpid versions, it
+should be located at ``/etc/qpidd.conf``.  The user who you run qpidd as must be able to read the
+``qpidd.conf`` file.
+
+
+I see 'NotFound: no such queue: pulp.task' in the logs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is experienced on a Pulp installation that uses Qpid 0.18 or earlier, and does not have the
+qpid-cpp-server-store package installed with their broker. Later version of Qpid do not require this
+package to be installed. This exception may not occur until the Qpid broker is restarted
+unexpectedly with other Pulp services running. The exception is shown as Pulp recovers from a Qpid
+availability issue.

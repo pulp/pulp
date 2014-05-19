@@ -61,6 +61,10 @@ Ensure you have the necessary dependencies installed by running::
 
     $ sudo yum install python-qpid-qmf python-qpid
 
+.. note::
+   If you are using Qpid 0.18 or earlier, you also need to install the qpid-cpp-server-store package
+   using the command: ``sudo yum install qpid-cpp-server-store``
+
 To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
 latest RPMs from the Pulp repository and run the database migrations::
 
