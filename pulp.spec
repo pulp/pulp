@@ -326,12 +326,12 @@ if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
 fi
-%endif # End pulp_server if block
 
 %if %{pulp_systemd} == 1
 %postun server
 %systemd_postun
 %endif
+%endif # End pulp_server if block
 
 
 # ---- Common ------------------------------------------------------------------
