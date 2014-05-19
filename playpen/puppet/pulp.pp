@@ -10,24 +10,42 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-class pulp_prereq {
-  $os_downcase = downcase($::operatingsystem)
 
-  yumrepo {
-    'pulp-v2-stable':
-    name     =>'pulp-v2-stable',
-    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/stable/2/\
-${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
-    enabled  =>0,
-    gpgcheck =>0,
+class pulp_prereq {
+
+  if $::operatingsystem == "RedHat" {
+    $major_release_num = regsubst("${::operatingsystemrelease}", '^(\d+)\.(\d+)', '\1')
+    $os_pathname = "${major_release_num}Server"
   }
-  yumrepo {
-    'pulp-v2-testing':
-    name     =>'pulp-v2-testing',
-    baseurl  =>"http://repos.fedorapeople.org/repos/pulp/pulp/testing/\
-${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
-    enabled  =>1,
-    gpgcheck =>0,
+  elsif $::operatingsystem == "Fedora" {
+    $os_pathname = "downcase($::operatingsystem)-${::operatingsystemrelease}"
+  }
+
+  if ($::operatingsystem == 'RedHat' and $::operatingsystemrelease <= 6) or
+      ($::operatingsystem == 'Fedora' and $::operatingsystemrelease <= 19) {
+    yumrepo { "pulp-stable":
+      name     => "pulp-stable",
+      baseurl  => "http://repos.fedorapeople.org/repos/pulp/pulp/stable/latest/\
+$os_pathname/${::architecture}/",
+      enabled  => 1,
+      gpgcheck => 0,
+    }
+  }
+
+  yumrepo { "pulp-2.4-beta":
+    name     => "pulp-2.4-beta",
+    baseurl  => "http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4/\
+$os_pathname/${::architecture}/",
+    enabled  => 1,
+    gpgcheck => 0,
+  }
+
+  yumrepo { "pulp-testing":
+    name     => "pulp-testing",
+    baseurl  => "http://repos.fedorapeople.org/repos/pulp/pulp/testing/\
+$os_pathname/${::architecture}/",
+    enabled  => 1,
+    gpgcheck => 0,
   }
 
   #packages needed for pulp server
@@ -53,7 +71,7 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'openssl',
     'policycoreutils-python',
     'pyliblzma',
-    'python-BeautifulSoup',
+    'python-celery',
     'python-isodate', # >= 0.5.0-1.pulp
     'python-iniparse',
     'python-gofer',
@@ -65,7 +83,7 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'python-pymongo',
     'python-qpid',
     'python-rhsm', # >= 1.8.0
-    'python-semantic_version',
+    'python-semantic-version',
     'python-setuptools',
     'python-webpy',
     'selinux-policy-targeted',
@@ -76,16 +94,24 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
     'checkpolicy',
     'hardlink',
     'make',
+    'redhat-lsb',
     'rpm-python',
     'selinux-policy-devel'
     ]
-  $list_to_flatten = [$base_packages,$build_requires,$pulp_server_packages]
+
+  # These are things that are nice to have
+  $extras = [
+    'vim',
+    ]
+
+  $list_to_flatten = [$base_packages,$build_requires,$extras,$pulp_server_packages]
   $package_list = flatten($list_to_flatten)
   #only install if RHEL 6
   $pulp_rhel_packages = ['nss']
   if $::operatingsystem == 'RedHat' and $::operatingsystemrelease == 6 {
     $package_list = concat($package_list,$pulp_rhel_packages)
   }
+
   package { $package_list:
       ensure => 'installed'
   }
@@ -114,13 +140,20 @@ ${os_downcase}-${::operatingsystemrelease}/${::architecture}/",
   }
 }
 
+
 class pulp_test_prereq {
   #packages needed to run unit tests
   $testPackages = ['python-nose','python-coverage','python-mock','git','python-pip','gcc','python-devel','python-paste']
   package { $testPackages:
       ensure => 'installed'
   }
+
+  exec { "pip install":
+    command => "pip install nosexcover",
+    path    => "/usr/local/bin/:/bin/",
+  }
 }
+
 
 include pulp_prereq
 include pulp_test_prereq
