@@ -23,5 +23,5 @@ class TestAddUnits(TestCase):
         strategy._add_units(fake_request, fake_inventory)
 
         # validation
-        self.assertEqual(fake_request.summary.download_report, fake_download())
+        self.assertEqual(fake_request.summary.sources, fake_download())
 

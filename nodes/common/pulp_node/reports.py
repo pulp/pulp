@@ -20,7 +20,9 @@ class RepositoryReport(object):
     :ivar action: The action taken on the repository.
     :param action: str
     :ivar units: A content unit report.
-    :param units: UnitReport
+    :type units: UnitReport
+    :ivar sources: The content sources container statistics.
+    :type sources: dict
     """
 
     # actions
@@ -40,6 +42,7 @@ class RepositoryReport(object):
         self.repo_id = repo_id
         self.action = action
         self.units = UnitReport()
+        self.sources = {}
 
     def dict(self):
         """
@@ -47,7 +50,11 @@ class RepositoryReport(object):
         :return: A dictionary representation.
         :rtype: dict
         """
-        return dict(repo_id=self.repo_id, action=self.action, units=self.units.dict())
+        return dict(
+            repo_id=self.repo_id,
+            action=self.action,
+            units=self.units.dict(),
+            sources=self.sources)
 
 
 class UnitReport(object):
