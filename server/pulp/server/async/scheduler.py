@@ -12,10 +12,16 @@ from celery.result import AsyncResult
 from pulp.server.async.celery_instance import celery as app, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.tasks import _delete_queue
 from pulp.server.async import worker_watcher
+from pulp.server.db import connection as db_connection
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
 from pulp.server.managers import resources
 from pulp.server.managers.schedule import utils
+
+# This import is not used in this module, but it needs to be kept here. This module is the first
+# Pulp module to be imported by celerybeat, and by importing pulp.server.logs, it configures the
+# celerybeat logging to log like Pulp
+import pulp.server.logs
 
 
 _logger = logging.getLogger(__name__)
@@ -250,6 +256,9 @@ class Scheduler(beat.Scheduler):
     # that will ever elapse before the scheduler looks for new or changed schedules.
     max_interval = 90
 
+    # allows mongo initialization to occur exactly once during the first call to setup_schedule()
+    _mongo_initialized = False
+
     def __init__(self, *args, **kwargs):
         """
         Initialize the Scheduler object.
@@ -261,6 +270,10 @@ class Scheduler(beat.Scheduler):
         self._schedule = None
         self._failure_watcher = FailureWatcher()
         self._loaded_from_db_count = 0
+
+        # Force the use of the Pulp celery_instance when this custom Scheduler is used.
+        kwargs['app'] = app
+
         # Leave helper threads starting here if lazy=False due to Celery lazy instantiation
         # https://github.com/celery/celery/issues/1549
         if kwargs.get('lazy', True) is False:
@@ -309,6 +322,9 @@ class Scheduler(beat.Scheduler):
         This loads enabled schedules from the database and adds them to the
         "_schedule" dictionary as instances of celery.beat.ScheduleEntry
         """
+        if not Scheduler._mongo_initialized:
+            _logger.debug('Initializing Mongo client connection to read celerybeat schedule')
+            db_connection.initialize()
         _logger.debug(_('loading schedules from app'))
         self._schedule = {}
         for key, value in self.app.conf.CELERYBEAT_SCHEDULE.iteritems():
@@ -363,7 +379,10 @@ class Scheduler(beat.Scheduler):
                     the schedules currently in active use by the scheduler.
         :rtype:     dict
         """
-        if self._schedule is None or self.schedule_changed:
+        if self._schedule is None:
+            return self.get_schedule()
+
+        if self.schedule_changed:
             self.setup_schedule()
 
         return self._schedule

@@ -107,14 +107,11 @@ DEFAULT_LOG_FILE="/var/log/pulp/celerybeat.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_CELERYBEAT="$CELERY_BIN beat"
 
+PULP_SCHEDULER="--scheduler=pulp.server.async.scheduler.Scheduler"
+
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 
-# Sets --app argument for CELERY_BIN
-CELERY_APP_ARG=""
-if [ ! -z "$CELERY_APP" ]; then
-    CELERY_APP_ARG="--app=$CELERY_APP"
-fi
 
 CELERYBEAT_USER=${CELERYBEAT_USER:-${CELERYD_USER:-$DEFAULT_USER}}
 
@@ -242,7 +239,7 @@ _chuid () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    _chuid $CELERY_APP_ARG $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
+    _chuid $PULP_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
 
