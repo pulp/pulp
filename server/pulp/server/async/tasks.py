@@ -337,9 +337,14 @@ class Task(CeleryTask, ReservedTaskMixin):
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            delta = {'state': dispatch_constants.CALL_FINISHED_STATE,
-                     'finish_time': finish_time,
+            delta = {'finish_time': finish_time,
                      'result': retval}
+            task_status = TaskStatusManager.find_by_task_id(task_id)
+            # Only set the state to finished if it's not already in a complete state. This is
+            # important for when the task has been canceled, so we don't move the task from canceled
+            # to finished.
+            if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
+                delta['state'] = dispatch_constants.CALL_FINISHED_STATE
             if isinstance(retval, TaskResult):
                 delta['result'] = retval.return_value
                 if retval.error:
