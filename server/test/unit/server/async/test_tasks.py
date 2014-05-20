@@ -17,11 +17,11 @@ from pulp.common import dateutils
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException, PulpCodedException
 from pulp.server.async import tasks, worker_watcher
+from pulp.server.async.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
+                                         CALL_RUNNING_STATE, CALL_WAITING_STATE)
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
-from pulp.server.async.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
-                                         CALL_RUNNING_STATE, CALL_WAITING_STATE)
 
 
 RESERVED_WORKER_1 = 'reserved_resource_worker-1'
@@ -566,6 +566,31 @@ class TestTask(ResourceReservationTests):
         # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
         dateutils.parse_iso8601_datetime(new_task_status['finish_time'])
         self.assertEqual(new_task_status['spawned_tasks'], ['foo-id'])
+
+    @mock.patch('pulp.server.async.tasks.Task.request')
+    def test_on_success_with_canceled_task(self, mock_request):
+        """
+        Make sure on_success() does not move a canceled Task to 'finished' state.
+        """
+        retval = 'random_return_value'
+        task_id = str(uuid.uuid4())
+        args = [1, 'b', 'iii']
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        mock_request.called_directly = False
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue',
+                                                           state=CALL_CANCELED_STATE)
+        task = tasks.Task()
+
+        # This should not update the task status to finished, since this task was canceled.
+        task.on_success(retval, task_id, args, kwargs)
+
+        updated_task_status = TaskStatusManager.find_by_task_id(task_id)
+        # Make sure the task is still canceled.
+        self.assertEqual(updated_task_status['state'], CALL_CANCELED_STATE)
+        self.assertEqual(updated_task_status['result'], retval)
+        self.assertFalse(updated_task_status['finish_time'] is None)
+        # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
+        dateutils.parse_iso8601_datetime(updated_task_status['finish_time'])
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_failure_handler(self, mock_request):
