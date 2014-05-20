@@ -107,8 +107,6 @@ DEFAULT_LOG_FILE="/var/log/pulp/celerybeat.log"
 DEFAULT_LOG_LEVEL="INFO"
 DEFAULT_CELERYBEAT="$CELERY_BIN beat"
 
-PULP_SCHEDULER="--scheduler=pulp.server.async.scheduler.Scheduler"
-
 CELERYBEAT=${CELERYBEAT:-$DEFAULT_CELERYBEAT}
 CELERYBEAT_LOG_LEVEL=${CELERYBEAT_LOG_LEVEL:-${CELERYBEAT_LOGLEVEL:-$DEFAULT_LOG_LEVEL}}
 
@@ -239,7 +237,7 @@ _chuid () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    _chuid $PULP_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
+    _chuid --scheduler=$CELERY_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
 

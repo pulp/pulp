@@ -325,6 +325,7 @@ class Scheduler(beat.Scheduler):
         if not Scheduler._mongo_initialized:
             _logger.debug('Initializing Mongo client connection to read celerybeat schedule')
             db_connection.initialize()
+            Scheduler._mongo_initialized = True
         _logger.debug(_('loading schedules from app'))
         self._schedule = {}
         for key, value in self.app.conf.CELERYBEAT_SCHEDULE.iteritems():

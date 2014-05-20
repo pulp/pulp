@@ -212,7 +212,8 @@ class TestSchedulerInit(unittest.TestCase):
         self.assertTrue(isinstance(my_scheduler._failure_watcher, scheduler.FailureWatcher))
         self.assertTrue(my_scheduler._loaded_from_db_count == 0)
         self.assertTrue(not mock_spawn_pulp_monitor_threads.called)
-        mock_base_init.assert_called_once_with(arg1, arg2, kwarg1=kwarg1, kwarg2=kwarg2)
+        self.assertTrue(scheduler.Scheduler._mongo_initialized is False)
+        mock_base_init.assert_called_once_with(arg1, arg2, app=app, kwarg1=kwarg1, kwarg2=kwarg2)
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch.object(scheduler.Scheduler, 'spawn_pulp_monitor_threads')
@@ -271,10 +272,34 @@ class TestSchedulerTick(unittest.TestCase):
 
 
 class TestSchedulerSetupSchedule(unittest.TestCase):
+
+    @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('itertools.imap')
+    @mock.patch('pulp.server.async.scheduler.db_connection')
+    def test_initialize_mongo_db_correctly(self, mock_db_connection, mock_imap):
+        sched_instance = scheduler.Scheduler()
+
+        sched_instance.setup_schedule()
+
+        mock_db_connection.initialize.assert_called_once_with()
+        self.assertTrue(scheduler.Scheduler._mongo_initialized)
+
+    @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('itertools.imap')
+    @mock.patch('pulp.server.async.scheduler.db_connection')
+    def test_ignore_mongo_db_when_appropriate(self, mock_db_connection, mock_imap):
+        scheduler.Scheduler._mongo_initialized = True
+        sched_instance = scheduler.Scheduler()
+
+        sched_instance.setup_schedule()
+
+        self.assertTrue(not mock_db_connection.initialize.called)
+        self.assertTrue(scheduler.Scheduler._mongo_initialized)
+
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled', return_value=[])
     def test_loads_app_schedules(self, mock_get_enabled):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
 
         # make sure we have some real data to test with
         self.assertTrue(len(sched_instance.app.conf.CELERYBEAT_SCHEDULE) > 0)
@@ -288,7 +313,7 @@ class TestSchedulerSetupSchedule(unittest.TestCase):
     def test_loads_db_schedules(self, mock_get_enabled):
         mock_get_enabled.return_value = SCHEDULES
 
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
         # remove schedules we're not testing for
         for key in scheduler.app.conf.CELERYBEAT_SCHEDULE:
             del sched_instance._schedule[key]
@@ -310,7 +335,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
     def test_count_changed(self, mock_updated_since, mock_get_enabled):
         mock_updated_since.return_value.count.return_value = 0
         mock_get_enabled.return_value = SCHEDULES
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
 
         mock_get_enabled.return_value = mock.MagicMock()
         mock_get_enabled.return_value.count.return_value = sched_instance._loaded_from_db_count + 1
@@ -322,7 +347,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
     @mock.patch('pulp.server.managers.schedule.utils.get_updated_since')
     def test_new_updated(self, mock_updated_since, mock_get_enabled):
         mock_get_enabled.return_value = SCHEDULES
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
 
         mock_get_enabled.return_value = mock.MagicMock()
         mock_get_enabled.return_value.count.return_value = sched_instance._loaded_from_db_count
@@ -336,7 +361,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
     def test_no_changes(self, mock_updated_since, mock_get_enabled):
         mock_updated_since.return_value.count.return_value = 0
         mock_get_enabled.return_value = SCHEDULES
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
 
         mock_get_enabled.return_value = mock.MagicMock()
         # -1 because there is an ignored schedule that has 0 remaining runs
@@ -347,23 +372,21 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
 
 class TestSchedulerSchedule(unittest.TestCase):
     @mock.patch('threading.Thread', new=mock.MagicMock())
-    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    def test_schedule_is_None(self, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+    @mock.patch.object(scheduler.Scheduler, 'get_schedule')
+    def test_schedule_is_None(self, mock_get_schedule):
+        sched_instance = scheduler.Scheduler()
         sched_instance._schedule = None
-        mock_setup_schedule.reset_mock()
 
         ret = sched_instance.schedule
 
-        # make sure it called the setup_schedule() method
-        mock_setup_schedule.assert_called_once_with()
+        # make sure it called the get_schedule() method inherited from the baseclass
+        mock_get_schedule.assert_called_once_with()
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     @mock.patch.object(scheduler.Scheduler, 'schedule_changed', new=True)
     def test_schedule_changed(self, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
-        mock_setup_schedule.reset_mock()
+        sched_instance = scheduler.Scheduler()
 
         ret = sched_instance.schedule
 
@@ -371,11 +394,14 @@ class TestSchedulerSchedule(unittest.TestCase):
         mock_setup_schedule.assert_called_once_with()
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch.object(scheduler.Scheduler, 'schedule_changed', return_value=False)
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
-    def test_schedule_returns_value(self, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+    def test_schedule_returns_value(self, mock_setup_schedule, mock_schedule_changed):
+        sched_instance = scheduler.Scheduler()
+        sched_instance._schedule = mock.Mock()
 
         ret = sched_instance.schedule
+
         self.assertTrue(ret is sched_instance._schedule)
 
 
@@ -383,7 +409,7 @@ class TestSchedulerAdd(unittest.TestCase):
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     def test_not_implemented(self, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
 
         self.assertRaises(NotImplementedError, sched_instance.add)
 
@@ -393,7 +419,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     @mock.patch('celery.beat.Scheduler.apply_async')
     def test_not_custom_entry(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
         mock_entry = mock.MagicMock()
 
         ret = sched_instance.apply_async(mock_entry)
@@ -405,7 +431,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     @mock.patch('celery.beat.Scheduler.apply_async')
     def test_celery_entry(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
         call = dispatch.ScheduledCall('PT1H', 'fake.task')
         entry = call.as_schedule_entry()
 
@@ -417,7 +443,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     @mock.patch('celery.beat.Scheduler.apply_async')
     def test_returns_superclass_value(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
         mock_entry = mock.MagicMock()
 
         ret = sched_instance.apply_async(mock_entry)
@@ -428,7 +454,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     @mock.patch('celery.beat.Scheduler.apply_async')
     def test_no_failure_threshold(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
         entry = dispatch.ScheduledCall.from_db(SCHEDULES[1]).as_schedule_entry()
 
         ret = sched_instance.apply_async(entry)
@@ -441,7 +467,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
     @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
     @mock.patch('celery.beat.Scheduler.apply_async')
     def test_failure_threshold(self, mock_apply_async, mock_setup_schedule):
-        sched_instance = scheduler.Scheduler(app)
+        sched_instance = scheduler.Scheduler()
         entry = dispatch.ScheduledCall.from_db(SCHEDULES[0]).as_schedule_entry()
 
         ret = sched_instance.apply_async(entry)
