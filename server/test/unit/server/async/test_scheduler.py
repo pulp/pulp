@@ -95,6 +95,7 @@ class TestEventMonitorInit(unittest.TestCase):
         mock_thread__init__.assert_called_once_with()
         self.assertTrue(failure_watcher is event_monitor._failure_watcher)
 
+
 class TestEventMonitorEvents(unittest.TestCase):
     def setUp(self):
         self.failure_watcher = scheduler.FailureWatcher()
@@ -120,7 +121,7 @@ class TestEventMonitorEvents(unittest.TestCase):
         self.assertTrue(mock_receiver.call_args[0][0] is
                         mock_connection.return_value.__enter__.return_value)
         capture = mock_receiver.return_value.capture
-        capture.assert_called_once_with(limit=None,timeout=None, wakeup=True)
+        capture.assert_called_once_with(limit=None, timeout=None, wakeup=True)
 
 
 class TestHandleSucceededTask(unittest.TestCase):
@@ -220,7 +221,7 @@ class TestSchedulerInit(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.EventMonitor')
     def test__init__lazy_is_True(self, mock_event_monitor, mock_spawn_pulp_monitor_threads):
         mock_app = mock.Mock()
-        my_scheduler = scheduler.Scheduler(mock_app, lazy=True)
+        scheduler.Scheduler(mock_app, lazy=True)
         self.assertTrue(not mock_spawn_pulp_monitor_threads.called)
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
@@ -228,7 +229,7 @@ class TestSchedulerInit(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.EventMonitor')
     def test__init__lazy_is_False(self, mock_event_monitor, mock_spawn_pulp_monitor_threads):
         mock_app = mock.Mock()
-        my_scheduler = scheduler.Scheduler(mock_app, lazy=False)
+        scheduler.Scheduler(mock_app, lazy=False)
         self.assertTrue(mock_spawn_pulp_monitor_threads.called)
 
 
@@ -378,7 +379,7 @@ class TestSchedulerSchedule(unittest.TestCase):
         sched_instance = scheduler.Scheduler()
         sched_instance._schedule = None
 
-        ret = sched_instance.schedule
+        sched_instance.schedule
 
         # make sure it called the get_schedule() method inherited from the baseclass
         mock_get_schedule.assert_called_once_with()
@@ -389,7 +390,7 @@ class TestSchedulerSchedule(unittest.TestCase):
     def test_schedule_changed(self, mock_setup_schedule):
         sched_instance = scheduler.Scheduler()
 
-        ret = sched_instance.schedule
+        sched_instance.schedule
 
         # make sure it called the setup_schedule() method
         mock_setup_schedule.assert_called_once_with()
@@ -436,7 +437,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
         call = dispatch.ScheduledCall('PT1H', 'fake.task')
         entry = call.as_schedule_entry()
 
-        ret = sched_instance.apply_async(entry)
+        sched_instance.apply_async(entry)
 
         self.assertEqual(len(sched_instance._failure_watcher), 0)
 
@@ -458,7 +459,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
         sched_instance = scheduler.Scheduler()
         entry = dispatch.ScheduledCall.from_db(SCHEDULES[1]).as_schedule_entry()
 
-        ret = sched_instance.apply_async(entry)
+        sched_instance.apply_async(entry)
 
         # make sure the entry wasn't added, because it does not have a
         # failure threshold
@@ -471,7 +472,7 @@ class TestSchedulerApplyAsync(unittest.TestCase):
         sched_instance = scheduler.Scheduler()
         entry = dispatch.ScheduledCall.from_db(SCHEDULES[0]).as_schedule_entry()
 
-        ret = sched_instance.apply_async(entry)
+        sched_instance.apply_async(entry)
 
         # make sure the entry was added, because it has a failure threshold
         self.assertEqual(len(sched_instance._failure_watcher), 1)
