@@ -14,8 +14,10 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 %if 0%{?rhel} == 5
+%define pulp_admin 0
 %define pulp_server 0
 %else
+%define pulp_admin 1
 %define pulp_server 1
 %endif
 
@@ -56,12 +58,19 @@ Pulp provides replication, access, and accounting for software repositories.
 %setup -q
 
 %build
-for directory in agent bindings client_admin client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common
 do
     pushd $directory
     %{__python} setup.py build
     popd
 done
+
+# pulp-admin build block
+%if %{pulp_admin}
+pushd client_admin
+%{__python} setup.py build
+popd
+%endif # End pulp-admin build block
 
 %if %{pulp_server}
 pushd server
@@ -77,7 +86,7 @@ cd -
 
 %install
 rm -rf %{buildroot}
-for directory in agent bindings client_admin client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common
 do
     pushd $directory
     %{__python} setup.py install -O1 --skip-build --root %{buildroot}
@@ -86,8 +95,6 @@ done
 
 # Directories
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
@@ -98,8 +105,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server
 mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
@@ -107,6 +112,20 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
+
+# pulp-admin installation
+%if %{pulp_admin}
+pushd client_admin
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
+
+cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
+%endif # End pulp_admin installation block
 
 # Server installation
 %if %{pulp_server}
@@ -190,7 +209,6 @@ touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 
 # Configuration
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
-cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
 cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
 
 # Agent
@@ -428,7 +446,7 @@ for content, bind and system specific operations.
 
 
 # ---- Admin Client (CLI) ------------------------------------------------------
-
+%if %{pulp_admin}
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
@@ -454,6 +472,7 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
+%endif # End of pulp_admin if block
 
 
 # ---- Consumer Client (CLI) ---------------------------------------------------
