@@ -37,7 +37,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.16.beta%{?dist}
+Release: 0.17.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -583,6 +583,15 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.17.beta
+- 1096822 - Don't set a canceled Task to finished. (rbarlow@redhat.com)
+- 1099168 - move %%postun block inside pulp_server if block
+  (cduryee@redhat.com)
+- 1096935 - Adds info about qpid-cpp-server-store package to docs
+  (bmbouter@gmail.com)
+- 1091980 - Update install and upgrade docs with qpid client deps
+  (bmbouter@gmail.com)
+
 * Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.16.beta
 - Pulp rebuild
 
