@@ -25,21 +25,21 @@ Supported Operating Systems
 ---------------------------
 Server
 
-* RHEL 6
+* RHEL 6 & 7
 * Fedora 19 & 20
-* CentOS 6
+* CentOS 6 & 7
 
 Consumer
 
-* RHEL 5 & 6
+* RHEL 5, 6, & 7
 * Fedora 19 & 20
-* CentOS 5 & 6
+* CentOS 5, 6 & 7
 
 Admin Client
 
-* RHEL 6
-* Fedora 18 & 19
-* CentOS 6
+* RHEL 6 & 7
+* Fedora 19 & 20
+* CentOS 6 & 7
 
 Prerequisites
 -------------
