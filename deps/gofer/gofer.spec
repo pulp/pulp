@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.0.12
+Version: 1.0.13
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -252,6 +252,10 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 1.0.13-1
+- Fix setting logging levels in agent.conf. (jortel@redhat.com)
+- In the amqplib transport, message durable=True. (jortel@redhat.com)
+
 * Wed May 14 2014 Jeff Ortel <jortel@redhat.com> 1.0.12-1
 - 1097732 - broker configured during attach. (jortel@redhat.com)
 - Support loading plugins from the PYTHON path. (jortel@redhat.com)
