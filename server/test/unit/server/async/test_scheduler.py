@@ -274,6 +274,7 @@ class TestSchedulerTick(unittest.TestCase):
 class TestSchedulerSetupSchedule(unittest.TestCase):
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch.object(scheduler.Scheduler, '_mongo_initialized', new=False)
     @mock.patch('itertools.imap')
     @mock.patch('pulp.server.async.scheduler.db_connection')
     def test_initialize_mongo_db_correctly(self, mock_db_connection, mock_imap):
@@ -285,10 +286,10 @@ class TestSchedulerSetupSchedule(unittest.TestCase):
         self.assertTrue(scheduler.Scheduler._mongo_initialized)
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch.object(scheduler.Scheduler, '_mongo_initialized', new=True)
     @mock.patch('itertools.imap')
     @mock.patch('pulp.server.async.scheduler.db_connection')
     def test_ignore_mongo_db_when_appropriate(self, mock_db_connection, mock_imap):
-        scheduler.Scheduler._mongo_initialized = True
         sched_instance = scheduler.Scheduler()
 
         sched_instance.setup_schedule()
