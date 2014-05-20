@@ -237,7 +237,7 @@ _chuid () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    _chuid --scheduler=$CELERY_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
+    _chuid --scheduler=$CELERYBEAT_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
 
