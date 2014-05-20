@@ -14,11 +14,11 @@ import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
+from pulp.common.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
+                                   CALL_RUNNING_STATE, CALL_WAITING_STATE)
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException, PulpCodedException
 from pulp.server.async import tasks, worker_watcher
-from pulp.server.async.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
-                                         CALL_RUNNING_STATE, CALL_WAITING_STATE)
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource

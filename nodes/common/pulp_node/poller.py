@@ -13,7 +13,7 @@ import httplib
 from time import sleep
 from gettext import gettext as _
 
-from pulp.server.async.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
+from pulp.common.constants import CALL_COMPLETE_STATES, CALL_ERROR_STATE
 
 
 # --- i18m ------------------------------------------------------------------------------

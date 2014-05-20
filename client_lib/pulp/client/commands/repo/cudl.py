@@ -27,12 +27,12 @@ additional options as necessary for its custom behavior.
 from gettext import gettext as _
 
 from pulp.bindings.exceptions import NotFoundException
-from pulp.bindings.responses import Task
 from pulp.client import arg_utils
 from pulp.client.commands.options import OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES, \
     OPTION_REPO_ID
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
+from pulp.common import tags
 
 # -- constants ----------------------------------------------------------------
 
@@ -237,6 +237,24 @@ class UpdateRepositoryCommand(PollingCommand):
         except NotFoundException:
             msg = _('Repository [%(r)s] does not exist on the server')
             self.prompt.write(msg % {'r': repo_id}, tag='not-found')
+
+    def task_header(self, task):
+        """
+        Uses task tags to determine what kind of task is happening, and if the
+        type is recognized, reports relevant info to the user.
+
+        :param task:    the task object being reported
+        :type  task:    pulp.bindings.responses.Task
+        """
+        if tags.action_tag(tags.ACTION_UPDATE_DISTRIBUTOR) in task.tags:
+            msg = _('Updating distributor')
+            # try to figure out which distributor is being updated
+            for tag in task.tags:
+                dist_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, '')
+                if tag.startswith(dist_tag):
+                    msg += ': %s' % tag[len(dist_tag):]
+                    break
+            self.prompt.write(msg, tag=tags.ACTION_UPDATE_DISTRIBUTOR)
 
 
 class ListRepositoriesCommand(PulpCliCommand):

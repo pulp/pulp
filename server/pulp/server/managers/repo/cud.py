@@ -27,8 +27,7 @@ import sys
 from celery import task
 import pymongo
 
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server.async import constants as dispatch_constants
+from pulp.common import tags
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
@@ -428,15 +427,15 @@ class RepoManager(object):
         # Distributor Update
         if distributor_configs is not None:
             for dist_id, dist_config in distributor_configs.items():
-                tags = [
-                    resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                    resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
+                task_tags = [
+                    tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                    tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
                                  dist_id),
-                    action_tag('update_distributor')
+                    tags.action_tag(tags.ACTION_UPDATE_DISTRIBUTOR)
                 ]
                 async_result = repository.distributor_update.apply_async_with_reservation(
-                    dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
-                    [repo_id, dist_id, dist_config, None], tags=tags)
+                    tags.RESOURCE_REPOSITORY_TYPE, repo_id,
+                    [repo_id, dist_id, dist_config, None], tags=task_tags)
                 additional_tasks.append(async_result)
 
         return TaskResult(repo, None, additional_tasks)

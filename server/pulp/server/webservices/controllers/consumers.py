@@ -16,8 +16,8 @@ import logging
 import web
 from web.webapi import BadRequest
 
-from pulp.common.tags import action_tag
-from pulp.server.async import constants as dispatch_constants
+from pulp.common import constants
+from pulp.common import tags
 from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
@@ -32,7 +32,6 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
-from pulp.server.config import config as pulp_conf
 import pulp.server.managers.factory as managers
 
 
@@ -599,12 +598,12 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise InvalidValue('consumer_criteria')
 
-        tags = [action_tag('content_applicability_regeneration')]
+        task_tags = [tags.action_tag('content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
-                                dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-                                dispatch_constants.RESOURCE_ANY_ID,
+                                tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                                tags.RESOURCE_ANY_ID,
                                 (consumer_criteria.as_dict(),),
-                                tags=tags)
+                                tags=task_tags)
         raise OperationPostponed(async_result)
 
 
@@ -627,12 +626,12 @@ class ConsumerContentApplicabilityRegeneration(JSONController):
             raise MissingResource(consumer_id=consumer_id)
         consumer_criteria = Criteria(filters={'consumer_id': consumer_id})
 
-        tags = [action_tag('consumer_content_applicability_regeneration')]
+        task_tags = [tags.action_tag('consumer_content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_CONSUMER_TYPE,
+            tags.RESOURCE_CONSUMER_TYPE,
             consumer_id,
             (consumer_criteria.as_dict(),),
-            tags=tags)
+            tags=task_tags)
         raise OperationPostponed(async_result)
 
 

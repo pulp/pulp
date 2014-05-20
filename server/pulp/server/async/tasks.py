@@ -7,9 +7,8 @@ from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
 
-from pulp.common import dateutils
+from pulp.common import constants, dateutils
 from pulp.common.error_codes import PLP0023
-from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource, PulpCodedException
@@ -56,7 +55,7 @@ def _delete_queue(queue, normal_shutdown=False):
     for task in TaskStatusManager.find_by_criteria(
             Criteria(
                 filters={'queue': queue.name,
-                         'state': {'$in': dispatch_constants.CALL_INCOMPLETE_STATES}})):
+                         'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
         cancel(task['task_id'])
 
     # Finally, delete the queue
@@ -287,7 +286,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(
             task_id=async_result.id, task_type=self.name,
-            state=dispatch_constants.CALL_WAITING_STATE, queue=queue, tags=tags)
+            state=constants.CALL_WAITING_STATE, queue=queue, tags=tags)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
@@ -301,7 +300,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         """
         # Check task status and skip running the task if task state is 'canceled'.
         task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
-        if task_status and task_status['state'] == dispatch_constants.CALL_CANCELED_STATE:
+        if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
             logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
         # Update start_time and set the task state to 'running' for asynchronous tasks.
@@ -314,7 +313,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             # above.
             TaskStatus.get_collection().update(
                 {'task_id': self.request.id},
-                {'$set': {'state': dispatch_constants.CALL_RUNNING_STATE,
+                {'$set': {'state': constants.CALL_RUNNING_STATE,
                           'start_time': start_time}},
                 upsert=True)
         # Run the actual task
@@ -343,8 +342,8 @@ class Task(CeleryTask, ReservedTaskMixin):
             # Only set the state to finished if it's not already in a complete state. This is
             # important for when the task has been canceled, so we don't move the task from canceled
             # to finished.
-            if task_status['state'] not in dispatch_constants.CALL_COMPLETE_STATES:
-                delta['state'] = dispatch_constants.CALL_FINISHED_STATE
+            if task_status['state'] not in constants.CALL_COMPLETE_STATES:
+                delta['state'] = constants.CALL_FINISHED_STATE
             if isinstance(retval, TaskResult):
                 delta['result'] = retval.return_value
                 if retval.error:
@@ -379,7 +378,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            delta = {'state': dispatch_constants.CALL_ERROR_STATE,
+            delta = {'state': constants.CALL_ERROR_STATE,
                      'finish_time': finish_time,
                      'traceback': einfo.traceback}
             if not isinstance(exc, PulpException):
@@ -403,12 +402,12 @@ def cancel(task_id):
     task_status = TaskStatusManager.find_by_task_id(task_id)
     if task_status is None:
         raise MissingResource(task_id)
-    if task_status['state'] in dispatch_constants.CALL_COMPLETE_STATES:
+    if task_status['state'] in constants.CALL_COMPLETE_STATES:
         raise PulpCodedException(PLP0023, task_id=task_id)
     controller.revoke(task_id, terminate=True)
     TaskStatus.get_collection().find_and_modify(
-        {'task_id': task_id, 'state': {'$nin': dispatch_constants.CALL_COMPLETE_STATES}},
-        {'$set': {'state': dispatch_constants.CALL_CANCELED_STATE}})
+        {'task_id': task_id, 'state': {'$nin': constants.CALL_COMPLETE_STATES}},
+        {'$set': {'state': constants.CALL_CANCELED_STATE}})
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)

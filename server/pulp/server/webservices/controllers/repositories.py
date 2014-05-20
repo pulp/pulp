@@ -16,9 +16,7 @@ import sys
 
 import web
 
-from pulp.common import constants
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server.async import constants as dispatch_constants
+from pulp.common import constants, tags
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
@@ -250,13 +248,13 @@ class RepoResource(JSONController):
         manager_factory.repo_query_manager().get_repository(repo_id)
 
         # delete
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            action_tag('delete')
+        task_tags = [
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+            tags.action_tag('delete')
         ]
         async_result = repository.delete.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id], tags=tags)
+            tags.RESOURCE_REPOSITORY_TYPE, repo_id,
+            [repo_id], tags=task_tags)
 
         raise exceptions.OperationPostponed(async_result)
 
@@ -312,13 +310,13 @@ class RepoImporters(JSONController):
         # Note: If the plugin raises an exception during initialization, let it
         #  bubble up and be handled like any other 500.
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('add_importer')]
-        async_result = set_importer.apply_async_with_reservation(dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.action_tag('add_importer')]
+        async_result = set_importer.apply_async_with_reservation(tags.RESOURCE_REPOSITORY_TYPE,
                                                                  repo_id,
                                                                  [repo_id, importer_type],
                                                                  {'repo_plugin_config': importer_config},
-                                                                 tags=tags)
+                                                                 tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -343,14 +341,14 @@ class RepoImporter(JSONController):
     @auth_required(UPDATE)
     def DELETE(self, repo_id, importer_id):
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
-                action_tag('delete_importer')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
+                     tags.action_tag('delete_importer')]
         async_result = remove_importer.apply_async_with_reservation(
-                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                tags.RESOURCE_REPOSITORY_TYPE,
                                                 repo_id,
                                                 [repo_id],
-                                                tags=tags)
+                                                tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
     @auth_required(UPDATE)
@@ -364,12 +362,12 @@ class RepoImporter(JSONController):
             logger.error('Missing configuration updating importer for repository [%s]' % repo_id)
             raise exceptions.MissingValue(['importer_config'])
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
-                action_tag('update_importer')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
+                     tags.action_tag('update_importer')]
         async_result = update_importer_config.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE,
-            repo_id, [repo_id], {'importer_config': importer_config}, tags=tags)
+            tags.RESOURCE_REPOSITORY_TYPE,
+            repo_id, [repo_id], {'importer_config': importer_config}, tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -493,15 +491,15 @@ class RepoDistributor(JSONController):
         manager = manager_factory.repo_distributor_manager()
         manager.get_distributor(repo_id, distributor_id)
         # delete
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('remove_distributor')
+        task_tags = [
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            tags.action_tag('remove_distributor')
         ]
 
         async_result = repository.distributor_delete.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
-            tags=tags)
+            tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
+            tags=task_tags)
 
         raise exceptions.OperationPostponed(async_result)
 
@@ -534,14 +532,14 @@ class RepoDistributor(JSONController):
                 repo_id)
             raise exceptions.MissingValue(['distributor_config'])
         # update
-        tags = [
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-            resource_tag(dispatch_constants.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
-            action_tag('update_distributor')
+        task_tags = [
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
+            tags.action_tag('update_distributor')
         ]
         async_result = repository.distributor_update.apply_async_with_reservation(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id, distributor_id, config, delta], tags=tags)
+            tags.RESOURCE_REPOSITORY_TYPE, repo_id,
+            [repo_id, distributor_id, config, delta], tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -705,11 +703,11 @@ class RepoSync(JSONController):
         manager_factory.repo_query_manager().get_repository(repo_id)
 
         # Execute the sync asynchronously
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('sync')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.action_tag('sync')]
         async_result = repository.sync_with_auto_publish.apply_async_with_reservation(
-                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
-                                                repo_id, [repo_id, overrides], {}, tags=tags)
+                                                tags.RESOURCE_REPOSITORY_TYPE,
+                                                repo_id, [repo_id, overrides], {}, tags=task_tags)
 
         # this raises an exception that is handled by the middleware,
         # so no return is needed
@@ -770,15 +768,15 @@ class RepoAssociate(JSONController):
                 logger.error('Error parsing association criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, source_repo_id),
-                action_tag('associate')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
+                     tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, source_repo_id),
+                     tags.action_tag('associate')]
         async_result = associate_from_repo.apply_async_with_reservation(
-                                                dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                                tags.RESOURCE_REPOSITORY_TYPE,
                                                 dest_repo_id,
                                                 [source_repo_id, dest_repo_id],
                                                 {'criteria': criteria, 'import_config_override': overrides},
-                                                tags=tags)
+                                                tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -800,14 +798,14 @@ class RepoUnassociate(JSONController):
                 logger.error('Error parsing unassociation criteria [%s]' % criteria)
                 raise exceptions.PulpDataException(), None, sys.exc_info()[2]
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('unassociate')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.action_tag('unassociate')]
         async_result = unassociate_by_criteria.apply_async_with_reservation(
-                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                    tags.RESOURCE_REPOSITORY_TYPE,
                                     repo_id,
                                     [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
                                      manager_factory.principal_manager().get_principal()['login']],
-                                    tags=tags)
+                                    tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -832,13 +830,13 @@ class RepoImportUpload(JSONController):
         unit_key = params['unit_key']
         unit_metadata = params.pop('unit_metadata', None)
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_TYPE, repo_id),
-                action_tag('import_upload')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.action_tag('import_upload')]
         async_result = import_uploaded_unit.apply_async_with_reservation(
-                                    dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+                                    tags.RESOURCE_REPOSITORY_TYPE,
                                     repo_id,
                                     [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
-                                    tags=tags)
+                                    tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -928,10 +926,10 @@ class ContentApplicabilityRegeneration(JSONController):
         except:
             raise exceptions.InvalidValue('repo_criteria')
 
-        regeneration_tag = action_tag('content_applicability_regeneration')
+        regeneration_tag = tags.action_tag('content_applicability_regeneration')
         async_result = regenerate_applicability_for_repos.apply_async_with_reservation(
-                            dispatch_constants.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-                            dispatch_constants.RESOURCE_ANY_ID,
+                            tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
+                            tags.RESOURCE_ANY_ID,
                             (repo_criteria.as_dict(),),
                             tags=[regeneration_tag])
         raise exceptions.OperationPostponed(async_result)
