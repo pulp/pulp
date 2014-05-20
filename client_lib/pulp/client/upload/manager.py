@@ -24,7 +24,7 @@ import os
 import pickle
 import sys
 
-from pulp.client.lock import LockFile
+from pulp.common.lock import LockFile
 
 # -- constants ----------------------------------------------------------------
 
