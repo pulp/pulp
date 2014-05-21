@@ -17,10 +17,14 @@ import mock
 from qpid.messaging import Connection
 from qpid.messaging.exceptions import ConnectionError, MessagingError
 
+# needed to create unserializable ID
+from bson.objectid import ObjectId as _test_objid
+
 from pulp.common.compat import json
 from pulp.server.config import config
 from pulp.server.event import data
 from pulp.server.managers.event.remote import TopicPublishManager
+
 
 class TestTopicPublishManager(unittest.TestCase):
     def setUp(self):
@@ -117,4 +121,14 @@ class TestTopicPublishManager(unittest.TestCase):
         sender = mock_connection.return_value.session.return_value.sender
         self.assertEqual(sender.call_count, 1)
         self.assertTrue(sender.call_args[0][0].startswith(expected_destination))
+
+    # test for bz 1099945
+    @mock.patch.object(TopicPublishManager, 'connection')
+    def test_publish_serialize_objectid(self, mock_connection):
+        mock_event = mock.MagicMock()
+        mock_event.data.return_value = {'foo': _test_objid()}
+        mock_event.event_type = data.TYPE_REPO_PUBLISH_FINISHED
+        # no TypeError = success
+        self.manager.publish(mock_event, 'pulp')
+
 

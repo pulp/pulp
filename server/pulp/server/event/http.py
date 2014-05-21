@@ -27,7 +27,7 @@ import httplib
 import logging
 import threading
 
-from pulp.server.compat import json
+from pulp.server.compat import json, json_util
 
 # -- constants ----------------------------------------------------------------
 
@@ -45,7 +45,7 @@ def handle_event(notifier_config, event):
 
     LOG.info(data)
 
-    body = json.dumps(data)
+    body = json.dumps(data, default=json_util.default)
 
     thread = threading.Thread(target=_send_post, args=[notifier_config, body])
     thread.setDaemon(True)

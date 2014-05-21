@@ -21,7 +21,7 @@ except ImportError:
     # python 2.4 version
     from email.MIMEText import MIMEText
 
-from pulp.server.compat import json
+from pulp.server.compat import json, json_util
 from pulp.server.config import config
 
 TYPE_ID = 'email'
@@ -43,7 +43,7 @@ def handle_event(notifier_config, event):
     """
     if not config.getboolean('email', 'enabled'):
         return
-    body = json.dumps(event.data(), indent=2)
+    body = json.dumps(event.data(), indent=2, default=json_util.default)
     subject = notifier_config['subject']
     addresses = notifier_config['addresses']
 
