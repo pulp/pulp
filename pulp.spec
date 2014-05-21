@@ -39,7 +39,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.17.beta%{?dist}
+Release: 0.18.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -602,6 +602,13 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed May 21 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.18.beta
+- 1099945 - use correct serializer when publishing http events
+  (cduryee@redhat.com)
+- 1096931 - improving repo update command to better detect spawned tasks
+  (mhrivnak@redhat.com)
+- 1051700 - Don't build pulp-admin on RHEL 5. (rbarlow@redhat.com)
+
 * Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.17.beta
 - 1096822 - Don't set a canceled Task to finished. (rbarlow@redhat.com)
 - 1099168 - move %%postun block inside pulp_server if block
