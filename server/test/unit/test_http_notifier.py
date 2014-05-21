@@ -16,6 +16,9 @@ import time
 
 import mock
 
+# needed to create unserializable ID
+from bson.objectid import ObjectId as _test_objid
+
 from pulp.server.compat import json
 from pulp.server.event import http
 from pulp.server.event.data import Event
@@ -89,6 +92,25 @@ class TestHTTPNotifierTests(base.PulpServerTests):
         # Verify
         self.assertEqual(1, mock_create.call_count)
         self.assertEqual(1, mock_connection.request.call_count)
+
+    # test bz 1099945
+    @mock.patch('pulp.server.event.http._create_connection')
+    def test_handle_event_with_serialize_error(self, mock_create):
+        # Setup
+        notifier_config = {'url' : 'https://localhost/api/'}
+
+        event = Event('type-1', {'k1' : 'v1', '_id': _test_objid()})
+
+        mock_connection = mock.Mock()
+        mock_response = mock.Mock()
+
+        mock_response.status = httplib.NOT_FOUND
+
+        mock_connection.getresponse.return_value = mock_response
+        mock_create.return_value = mock_connection
+
+        # Test
+        http.handle_event(notifier_config, event) # should not throw TypeError
 
     @mock.patch('pulp.server.event.http._create_connection')
     def test_handle_event_missing_url(self, mock_create):

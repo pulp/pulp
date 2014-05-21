@@ -17,6 +17,7 @@ from qpid.messaging import Connection
 from qpid.messaging.exceptions import ConnectionError, MessagingError
 
 from pulp.common.compat import json
+from pulp.server.compat import json_util
 from pulp.server.config import config
 
 
@@ -84,7 +85,7 @@ class TopicPublishManager(object):
             destination = '%s/%s; {create:always, node:{type:topic}, link:{x-declare:{auto-delete:True}}}' % (
                 exchange or cls.EXCHANGE, subject)
 
-            data = json.dumps(event.data())
+            data = json.dumps(event.data(), default=json_util.default)
             try:
                 cls.connection().session().sender(destination).send(data)
             except MessagingError, e:
