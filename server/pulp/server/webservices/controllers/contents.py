@@ -15,8 +15,7 @@ from gettext import gettext as _
 
 import web
 
-from pulp.common.tags import action_tag, resource_tag
-from pulp.server.async import constants as dispatch_constants
+from pulp.common import tags
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import MissingResource, InvalidValue, OperationPostponed
@@ -277,8 +276,8 @@ class OrphanCollection(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self):
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        async_task = orphan.delete_all_orphans.apply_async(tags=tags)
+        task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        async_task = orphan.delete_all_orphans.apply_async(tags=task_tags)
         raise OperationPostponed(async_task)
 
 
@@ -296,7 +295,7 @@ class OrphanTypeSubCollection(JSONController):
 
     @auth_required(DELETE)
     def DELETE(self, content_type):
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = orphan.delete_orphans_by_type.apply_async((content_type,), tags=tags)
         raise OperationPostponed(async_task)
 
@@ -313,8 +312,8 @@ class OrphanResource(JSONController):
     @auth_required(DELETE)
     def DELETE(self, content_type, content_id):
         ids = [{'content_type_id': content_type, 'unit_id': content_id}]
-        tags = [resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        async_task = orphan.delete_orphans_by_id.apply_async((ids,), tags=tags)
+        task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        async_task = orphan.delete_orphans_by_id.apply_async((ids,), tags=task_tags)
         raise OperationPostponed(async_task)
 
 
@@ -323,9 +322,9 @@ class DeleteOrphansAction(JSONController):
     @auth_required(DELETE)
     def POST(self):
         orphans = self.params()
-        tags = [action_tag('delete_orphans'),
-                resource_tag(dispatch_constants.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        async_task = orphan.delete_orphans_by_id.apply_async([orphans], tags=tags)
+        task_tags = [tags.action_tag('delete_orphans'),
+                tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+        async_task = orphan.delete_orphans_by_id.apply_async([orphans], tags=task_tags)
         raise OperationPostponed(async_task)
 
 

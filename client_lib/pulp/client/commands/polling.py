@@ -129,13 +129,13 @@ class PollingCommand(PulpCliCommand):
             completed_task_list = []
 
             for task in task_list:
+                task = self._poll_task(task)
 
                 # If there are more than one tasks to poll, we need to display a divider so
                 # the user knows which task is being followed.
                 if len(task_list) > 1:
                     self.task_header(task)
 
-                task = self._poll_task(task)
 
                 # Look for new tasks that we need to start polling for
                 task_list.extend(self._get_tasks_to_poll(task))

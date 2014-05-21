@@ -17,10 +17,7 @@ _NAMESPACE_DELIMITER = ':'
 _PULP_NAMESPACE = 'pulp'
 _ACTION_NAMESPACE = 'action'
 
-# These are duplicated from pulp.server.async.constants. We can't import
-# those directly as this module lives in common and will run on the client.
-# I didn't change dispatch to import from here because it just felt dirty.
-
+RESOURCE_ANY_ID = "RESOURCE_ANY_ID"
 RESOURCE_CDS_TYPE = 'cds'
 RESOURCE_CONSUMER_TYPE = 'consumer'
 RESOURCE_CONSUMER_BINDING_TYPE = 'consumer_binding'
@@ -30,9 +27,11 @@ RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE = 'repository_distributor'
 RESOURCE_REPOSITORY_IMPORTER_TYPE = 'repository_importer'
 RESOURCE_REPOSITORY_GROUP_TYPE = 'repository_group'
 RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE = 'repository_group_distributor'
+RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE = 'repository_profile_applicability'
 RESOURCE_ROLE_TYPE = 'role'
 RESOURCE_SCHEDULE_TYPE = 'schedule'
 RESOURCE_USER_TYPE = 'user'
+
 
 ACTION_SYNC_TYPE = 'sync'
 ACTION_AUTO_PUBLISH_TYPE = 'auto_publish'
@@ -45,6 +44,7 @@ ACTION_DELETE_BINDING = 'delete_binding'
 ACTION_AGENT_UNIT_INSTALL = 'unit_install'
 ACTION_AGENT_UNIT_UPDATE = 'unit_update'
 ACTION_AGENT_UNIT_UNINSTALL = 'unit_uninstall'
+ACTION_UPDATE_DISTRIBUTOR = 'update_distributor'
 
 # -- public -------------------------------------------------------------------
 

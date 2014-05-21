@@ -7,8 +7,8 @@ import uuid
 import mock
 
 from .... import base
+from pulp.common import constants
 from pulp.devel.unit.server.base import PulpWebservicesTests
-from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue
@@ -53,7 +53,7 @@ class TestTaskResource(PulpWebservicesTests):
         now = datetime.utcnow()
         test_queue = AvailableQueue('test_queue', now)
         TaskStatusManager.create_task_status(task_id, test_queue.name,
-                                             state=dispatch_constants.CALL_FINISHED_STATE)
+                                             state=constants.CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, self.task_resource.DELETE, task_id)
 
     def test_DELETE_non_existing_celery_task(self):

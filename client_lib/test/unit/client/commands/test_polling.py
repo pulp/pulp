@@ -121,7 +121,7 @@ class PollingCommandTests(base.PulpClientTests):
                          'running-spinner', 'running-spinner', 'succeeded',
                          ]
         found_tags = self.prompt.get_write_tags()
-        self.assertEqual(expected_tags, found_tags)
+        self.assertEqual(set(expected_tags), set(found_tags))
 
         self.assertTrue(isinstance(completed_tasks, list))
         self.assertEqual(3, len(completed_tasks))
@@ -167,7 +167,7 @@ class PollingCommandTests(base.PulpClientTests):
                          'running-spinner', 'running-spinner', 'succeeded',
                          ]
         found_tags = self.prompt.get_write_tags()
-        self.assertEqual(expected_tags, found_tags)
+        self.assertEqual(set(expected_tags), set(found_tags))
 
         self.assertTrue(isinstance(completed_tasks, list))
         self.assertEqual(3, len(completed_tasks))
@@ -214,7 +214,7 @@ class PollingCommandTests(base.PulpClientTests):
                          'running-spinner',  'succeeded',
                          ]
         found_tags = self.prompt.get_write_tags()
-        self.assertEqual(expected_tags, found_tags)
+        self.assertEqual(set(expected_tags), set(found_tags))
 
         self.assertTrue(isinstance(completed_tasks, list))
         self.assertEqual(3, len(completed_tasks))
@@ -309,7 +309,7 @@ class PollingCommandTests(base.PulpClientTests):
                          'header', 'delayed-spinner', 'running-spinner', 'succeeded', # states_1
                          'header', 'delayed-spinner', 'running-spinner', 'failed', # states_2
                          ]
-        self.assertEqual(expected_tags, self.prompt.get_write_tags())
+        self.assertEqual(set(expected_tags), set(self.prompt.get_write_tags()))
 
     def test_cancelled_task(self):
         """
