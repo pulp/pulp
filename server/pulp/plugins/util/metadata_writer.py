@@ -71,7 +71,7 @@ class MetadataFileContext(object):
         """
         Write the footer into the metadata file and close it.
         """
-        if self.metadata_file_handle is None:
+        if self._is_closed(self.metadata_file_handle):
             # finalize has already been run or initialize has not been run
             return
 
@@ -159,9 +159,34 @@ class MetadataFileContext(object):
         Flush any cached writes to the metadata file handle and close it.
         """
         _LOG.debug('Closing metadata file: %s' % self.metadata_file_path)
+        if not self._is_closed(self.metadata_file_handle):
+            self.metadata_file_handle.flush()
+            self.metadata_file_handle.close()
 
-        self.metadata_file_handle.flush()
-        self.metadata_file_handle.close()
+    @staticmethod
+    def _is_closed(file_object):
+        """
+        Determine if the file object has been closed. If it is None, it is assumed to be closed.
+
+        :param file_object: a file object
+        :type  file_object: file
+
+        :return:    True if the file object is closed or is None, otherwise False
+        :rtype:     bool
+        """
+        if file_object is None:
+            # finalize has already been run or initialize has not been run
+            return True
+
+        try:
+            return file_object.closed
+        except AttributeError:
+            # python 2.6 doesn't have a "closed" attribute on a GzipFile,
+            # so we must look deeper.
+            if isinstance(file_object, gzip.GzipFile):
+                return file_object.myfileobj is None or file_object.myfileobj.closed
+            else:
+                raise
 
 
 class JSONArrayFileContext(MetadataFileContext):

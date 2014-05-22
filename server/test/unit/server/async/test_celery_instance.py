@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.server.async.celery_instance module.
 """
@@ -21,7 +9,6 @@ import unittest
 import mock
 
 from pulp.server.async import celery_instance
-from pulp.server.async.tasks import babysit
 from pulp.server.config import config, _default_values
 from pulp.server.db.reaper import reap_expired_documents
 from pulp.server.maintenance.monthly import monthly_maintenance
@@ -40,19 +27,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         # Please read the docblock to this test if you find yourself needing to adjust this
         # assertion.
-        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 3)
-
-    def test_babysit(self):
-        """
-        Make sure the babysit Task is present and properly configured.
-        """
-        expected_babysit = {
-            'task': babysit.name,
-            'schedule': timedelta(seconds=60),
-            'args': tuple(),
-        }
-        self.assertEqual(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['babysit'],
-                         expected_babysit)
+        self.assertEqual(len(celery_instance.celery.conf['CELERYBEAT_SCHEDULE']), 2)
 
     def test_reap_expired_documents(self):
         """

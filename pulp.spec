@@ -14,8 +14,10 @@
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
 %if 0%{?rhel} == 5
+%define pulp_admin 0
 %define pulp_server 0
 %else
+%define pulp_admin 1
 %define pulp_server 1
 %endif
 
@@ -37,7 +39,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.14.beta%{?dist}
+Release: 0.18.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -56,12 +58,19 @@ Pulp provides replication, access, and accounting for software repositories.
 %setup -q
 
 %build
-for directory in agent bindings client_admin client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common
 do
     pushd $directory
     %{__python} setup.py build
     popd
 done
+
+# pulp-admin build block
+%if %{pulp_admin}
+pushd client_admin
+%{__python} setup.py build
+popd
+%endif # End pulp-admin build block
 
 %if %{pulp_server}
 pushd server
@@ -77,7 +86,7 @@ cd -
 
 %install
 rm -rf %{buildroot}
-for directory in agent bindings client_admin client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common
 do
     pushd $directory
     %{__python} setup.py install -O1 --skip-build --root %{buildroot}
@@ -86,8 +95,6 @@ done
 
 # Directories
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
-mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/agent/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/consumer
@@ -98,8 +105,6 @@ mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server
 mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
-mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
@@ -107,6 +112,20 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
+
+# pulp-admin installation
+%if %{pulp_admin}
+pushd client_admin
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
+mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
+mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
+
+cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
+%endif # End pulp_admin installation block
 
 # Server installation
 %if %{pulp_server}
@@ -190,7 +209,6 @@ touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 
 # Configuration
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
-cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
 cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
 
 # Agent
@@ -233,8 +251,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.0.12
-Requires: python-gofer-qpid >= 1.0.12
+Requires: python-gofer >= 1.0.13
+Requires: python-gofer-qpid >= 1.0.13
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -326,12 +344,12 @@ if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
 fi
-%endif # End pulp_server if block
 
 %if %{pulp_systemd} == 1
 %postun server
 %systemd_postun
 %endif
+%endif # End pulp_server if block
 
 
 # ---- Common ------------------------------------------------------------------
@@ -428,7 +446,7 @@ for content, bind and system specific operations.
 
 
 # ---- Admin Client (CLI) ------------------------------------------------------
-
+%if %{pulp_admin}
 %package admin-client
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
@@ -454,6 +472,7 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
+%endif # End of pulp_admin if block
 
 
 # ---- Consumer Client (CLI) ---------------------------------------------------
@@ -508,9 +527,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.0.12
-Requires: python-gofer-qpid >= 1.0.12
-Requires: gofer >= 1.0.12
+Requires: python-gofer >= 1.0.13
+Requires: python-gofer-qpid >= 1.0.13
+Requires: gofer >= 1.0.13
 Requires: m2crypto
 
 %description agent
@@ -583,6 +602,28 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed May 21 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.18.beta
+- 1099945 - use correct serializer when publishing http events
+  (cduryee@redhat.com)
+- 1096931 - improving repo update command to better detect spawned tasks
+  (mhrivnak@redhat.com)
+- 1051700 - Don't build pulp-admin on RHEL 5. (rbarlow@redhat.com)
+
+* Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.17.beta
+- 1096822 - Don't set a canceled Task to finished. (rbarlow@redhat.com)
+- 1099168 - move %%postun block inside pulp_server if block
+  (cduryee@redhat.com)
+- 1096935 - Adds info about qpid-cpp-server-store package to docs
+  (bmbouter@gmail.com)
+- 1091980 - Update install and upgrade docs with qpid client deps
+  (bmbouter@gmail.com)
+
+* Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.16.beta
+- Pulp rebuild
+
+* Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.15.beta
+- Pulp rebuild
+
 * Thu May 15 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.14.beta
 - 1096968 - return created profile; log reported profiles at debug in the
   agent. (jortel@redhat.com)

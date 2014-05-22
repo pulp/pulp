@@ -1,25 +1,14 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.server.webservices.dispatch module.
 """
+from datetime import datetime
 import uuid
 
 import mock
 
 from .... import base
+from pulp.common import constants
 from pulp.devel.unit.server.base import PulpWebservicesTests
-from pulp.server.async import constants as dispatch_constants
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import AvailableQueue
@@ -48,7 +37,8 @@ class TestTaskResource(PulpWebservicesTests):
         coordinator is aware of. This should cause a revoke call to Celery's Controller.
         """
         task_id = '1234abcd'
-        test_queue = AvailableQueue('test_queue')
+        now = datetime.utcnow()
+        test_queue = AvailableQueue('test_queue', now)
         TaskStatusManager.create_task_status(task_id, test_queue.name)
 
         self.task_resource.DELETE(task_id)
@@ -60,9 +50,10 @@ class TestTaskResource(PulpWebservicesTests):
         Test the DELETE() method raises a TaskComplete exception if the task is already complete.
         """
         task_id = '1234abcd'
-        test_queue = AvailableQueue('test_queue')
+        now = datetime.utcnow()
+        test_queue = AvailableQueue('test_queue', now)
         TaskStatusManager.create_task_status(task_id, test_queue.name,
-                                             state=dispatch_constants.CALL_FINISHED_STATE)
+                                             state=constants.CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, self.task_resource.DELETE, task_id)
 
     def test_DELETE_non_existing_celery_task(self):
@@ -81,7 +72,8 @@ class TestTaskResource(PulpWebservicesTests):
         task_id = '1234abcd'
         spawned_task_id = 'spawned_task'
         spawned_by_spawned_task_id = 'spawned_by_spawned_task'
-        test_queue = AvailableQueue('test_queue')
+        now = datetime.utcnow()
+        test_queue = AvailableQueue('test_queue', now)
         TaskStatusManager.create_task_status(task_id, test_queue.name)
         TaskStatusManager.create_task_status(spawned_task_id, test_queue.name)
         TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_queue.name)
@@ -188,7 +180,7 @@ class TestTaskCollection(base.PulpWebserviceTests):
         task_id2 = str(uuid.uuid4())
         queue_2 = 'queue_2'
         state2 = 'running'
-        tags = ['random','tags']
+        tags = ['random', 'tags']
 
         TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
         TaskStatusManager.create_task_status(task_id2, queue_2, tags, state2)

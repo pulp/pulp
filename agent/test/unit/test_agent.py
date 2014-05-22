@@ -463,12 +463,14 @@ class TestInitializer(PluginTest):
                 'clientcert': None
             }
         }
-        self.plugin.pulp_conf.update(test_conf)
 
         # test
-        self.plugin.setup_plugin()
+        with patch('pulp.agent.gofer.pulpplugin.read_config') as mock_read:
+            mock_read.return_value = test_conf
+            self.plugin.setup_plugin()
 
         # validation
+        mock_read.assert_called_with()
         plugin_cfg = self.plugin.plugin.cfg()
         self.assertEqual(self.plugin.plugin.authenticator, authenticator)
         self.assertEqual(plugin_cfg.messaging.uuid, agent_id)

@@ -13,6 +13,7 @@
 
 import mock
 
+from pulp.common import tags
 from pulp.devel.unit.util import compare_dict
 from pulp.bindings.responses import STATE_FINISHED, Task
 from pulp.client.commands.polling import PollingCommand, FLAG_BACKGROUND
@@ -209,6 +210,43 @@ class UpdateRepositoryCommandTests(base.PulpClientTests):
         # Ensure the correct metadata
         self.assertEqual(self.command.name, 'update')
         self.assertEqual(self.command.description, cudl.DESC_UPDATE)
+
+    def test_task_header_no_tags(self):
+        task = Task({})
+        task.tags = []
+
+        self.command.task_header(task)
+
+        self.assertEqual(self.prompt.get_write_tags(), [])
+
+    def test_task_header_unrelated_tags(self):
+        task = Task({})
+        task.tags = ['foo', 'bar']
+
+        self.command.task_header(task)
+
+        self.assertEqual(self.prompt.get_write_tags(), [])
+
+    def test_task_header_action_tag_only(self):
+        task = Task({})
+        task.tags = [tags.action_tag(tags.ACTION_UPDATE_DISTRIBUTOR)]
+
+        self.command.task_header(task)
+
+        self.assertEqual(self.prompt.get_write_tags(), [tags.ACTION_UPDATE_DISTRIBUTOR])
+
+    def test_task_header_with_dist_tags(self):
+        task = Task({})
+        task.tags = [
+            tags.action_tag(tags.ACTION_UPDATE_DISTRIBUTOR),
+            tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, 'some_distributor'),
+        ]
+
+        self.command.task_header(task)
+
+        self.assertEqual(self.prompt.get_write_tags(), [tags.ACTION_UPDATE_DISTRIBUTOR])
+        # the message in this case should end with the distributor type
+        self.assertTrue(self.recorder.lines[0].strip().endswith('some_distributor'))
 
     def test_run(self):
         # Setup

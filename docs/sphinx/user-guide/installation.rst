@@ -25,21 +25,21 @@ Supported Operating Systems
 ---------------------------
 Server
 
-* RHEL 6
+* RHEL 6 & 7
 * Fedora 19 & 20
-* CentOS 6
+* CentOS 6 & 7
 
 Consumer
 
-* RHEL 5 & 6
+* RHEL 5, 6, & 7
 * Fedora 19 & 20
-* CentOS 5 & 6
+* CentOS 5, 6 & 7
 
 Admin Client
 
-* RHEL 6
-* Fedora 18 & 19
-* CentOS 6
+* RHEL 6 & 7
+* Fedora 19 & 20
+* CentOS 6 & 7
 
 Prerequisites
 -------------
@@ -124,7 +124,11 @@ Server
    that you will run Pulp on, or it can be elsewhere as you please. For yum based systems, you can
    install Qpid with this command::
     
-    $ sudo yum install qpid-cpp-server
+    $ sudo yum install qpid-cpp-server python-qpid-qmf python-qpid
+
+   .. note::
+      If running Qpid 0.18 or earlier, you also need to install the qpid-cpp-server-store package
+      with the command:  ``sudo yum install qpid-cpp-server-store``
 
    Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``.  For Qpid 0.24+ the
    config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the

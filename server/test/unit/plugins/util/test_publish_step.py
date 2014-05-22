@@ -1,16 +1,23 @@
+import contextlib
 import os
+import shutil
 import sys
+import tarfile
 import tempfile
+import time
 import traceback
 import unittest
+
 import mock
+from mock import Mock, patch
 
 from pulp.common.plugins import reporting_constants
 from pulp.devel.unit.util import touch, compare_dict
 from pulp.plugins.config import PluginCallConfiguration
-from pulp.plugins.model import Repository
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
-from pulp.plugins.util.publish_step import PublishStep, UnitPublishStep, BasePublisher
+from pulp.plugins.model import Repository
+from pulp.plugins.util.publish_step import PublishStep, UnitPublishStep, \
+    AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep
 
 
 class PublisherBase(unittest.TestCase):
@@ -27,34 +34,82 @@ class PublisherBase(unittest.TestCase):
         self.conduit.get_repo_scratchpad = mock.Mock(return_value={})
 
         self.config = PluginCallConfiguration(None, None)
-        self.publisher = BasePublisher(self.repo, self.conduit, self.config)
+        self.publisher = PublishStep("base-step", self.repo, self.conduit, self.config,
+                                     'test_distributor_type')
+
+
+class PostOrderTests(unittest.TestCase):
+
+    def test_ordered_output(self):
+        class Node:
+            def __init__(self, value):
+                self.value = value
+                self.children = []
+
+        n1 = Node(1)
+        n2 = Node(2)
+        n3 = Node(3)
+        n4 = Node(4)
+        n5 = Node(5)
+
+        n5.children = [n1, n4]
+        n4.children = [n2, n3]
+
+        value_list = [n.value for n in _post_order(n5)]
+        self.assertEquals(value_list, [1, 2, 3, 4, 5])
 
 
 class PublishStepTests(PublisherBase):
 
-    def test_get_working_dir(self):
+    def test_get_working_dir_already_calculated(self):
         step = PublishStep('foo_step')
-        step.parent = mock.Mock()
-        step.parent.working_dir = 'foo'
-        working_dir = step.get_working_dir()
-        self.assertEquals(working_dir, 'foo')
+        step.working_dir = 'foo'
+        self.assertEquals('foo', step.get_working_dir())
+
+    def test_get_working_dir_from_repo(self):
+        step = PublishStep('foo_step')
+        step.get_repo = Mock(return_value=Mock(working_dir='foo'))
+        self.assertEquals('foo', step.get_working_dir())
 
     def test_get_repo(self):
         step = PublishStep('foo_step')
-        step.parent = mock.Mock(repo='foo')
+        step.repo = 'foo'
         self.assertEquals('foo', step.get_repo())
+
+    def test_get_repo_from_parent(self):
+        step = PublishStep('foo_step')
+        step.publish_conduit = 'foo'
+        step.parent = mock.Mock()
+        step.parent.get_repo.return_value = 'foo'
+        self.assertEquals('foo', step.get_repo())
+
+    def test_get_distributor_type(self):
+        step = PublishStep('foo_step')
+        step.distributor_type = 'foo'
+        self.assertEquals('foo', step.get_distributor_type())
+
+    def test_get_distributor_type_none(self):
+        step = PublishStep('foo_step')
+        self.assertEquals(None, step.get_distributor_type())
+
+    def test_get_distributor_type_from_parent(self):
+        step = PublishStep('foo_step')
+        step.publish_conduit = 'foo'
+        step.parent = mock.Mock()
+        step.parent.get_distributor_type.return_value = 'foo'
+        self.assertEquals('foo', step.get_distributor_type())
 
     def test_get_conduit(self):
         step = PublishStep('foo_step')
-        step.parent = mock.Mock(conduit='foo')
+        step.publish_conduit = 'foo'
         self.assertEquals('foo', step.get_conduit())
 
-    def test_get_step(self):
+    def test_get_conduit_from_parent(self):
         step = PublishStep('foo_step')
+        step.publish_conduit = 'foo'
         step.parent = mock.Mock()
-        other_step = step.get_step('other')
-        step.parent.get_step.assert_called_once_with('other')
-        self.assertEquals(other_step, step.parent.get_step())
+        step.parent.get_conduit.return_value = 'foo'
+        self.assertEquals('foo', step.get_conduit())
 
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
@@ -82,7 +137,7 @@ class PublishStepTests(PublisherBase):
         publish_step = PublishStep('foo_step')
         publish_step.parent = mock.Mock()
         publish_step.report_progress()
-        publish_step.parent.report_progress.assert_called_once_with()
+        publish_step.parent.report_progress.assert_called_once_with(False)
 
     def test_record_failure(self):
         publish_step = PublishStep('foo_step')
@@ -112,14 +167,15 @@ class PublishStepTests(PublisherBase):
         report = step.get_progress_report()
 
         target_report = {
-            reporting_constants.PROGRESS_STEP_ID_KEY: 'foo_step',
+            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'foo_step',
             reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
             reporting_constants.PROGRESS_STATE_KEY: step.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
             reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
-            reporting_constants.PROGRESS_DESCRIPTION_KEY: ''
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: '',
+            reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
         compare_dict(report, target_report)
@@ -135,22 +191,25 @@ class PublishStepTests(PublisherBase):
         report = step.get_progress_report()
 
         target_report = {
-            reporting_constants.PROGRESS_STEP_ID_KEY: 'bar_step',
+            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'bar_step',
             reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
             reporting_constants.PROGRESS_STATE_KEY: step.state,
             reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
             reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
-            reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar'
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar',
+            reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
         compare_dict(report, target_report)
 
     def test_get_progress_report_summary(self):
+        parent_step = PublishStep('parent_step')
         step = PublishStep('foo_step')
+        parent_step.add_child(step)
         step.state = reporting_constants.STATE_COMPLETE
-        report = step.get_progress_report_summary()
+        report = parent_step.get_progress_report_summary()
         target_report = {
             'foo_step': reporting_constants.STATE_COMPLETE
         }
@@ -261,12 +320,111 @@ class PublishStepTests(PublisherBase):
         step = PublishStep("foo")
         self.assertEquals(1, step._get_total())
 
+    def test_clear_children(self):
+        step = PublishStep("foo")
+        step.children = ['bar']
+        step.clear_children()
+        self.assertEquals(0, len(step.children))
+
+    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
+    def test_publish(self, mock_rmtree):
+        step = PublishStep("foo")
+        work_dir = os.path.join(self.working_dir, 'foo')
+        step.working_dir = work_dir
+        step.process_lifecycle = Mock()
+        step._build_final_report = Mock()
+
+        step.publish()
+        self.assertTrue(step.process_lifecycle.called)
+        self.assertTrue(step._build_final_report.called)
+        mock_rmtree.assert_called_once_with(work_dir, ignore_errors=True)
+
+    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
+    def test_publish_exception_still_removes_working_dir(self, mock_rmtree):
+        step = PublishStep("foo")
+        work_dir = os.path.join(self.working_dir, 'foo')
+        step.working_dir = work_dir
+        step.process_lifecycle = Mock(side_effect=Exception('foo'))
+        step._build_final_report = Mock()
+
+        self.assertRaises(Exception, step.publish)
+        self.assertTrue(step.process_lifecycle.called)
+        self.assertFalse(step._build_final_report.called)
+        mock_rmtree.assert_called_once_with(work_dir, ignore_errors=True)
+
+    def test_process_lifecycle(self):
+        step = PublishStep('parent')
+        step.process = Mock()
+        child_step = PublishStep('child')
+        child_step.process = Mock()
+        step.add_child(child_step)
+        step.report_progress = Mock()
+
+        step.process_lifecycle()
+
+        step.process.assert_called_once_with()
+        child_step.process.assert_called_once_with()
+        step.report_progress.assert_called_once_with(force=True)
+
+    def test_process_lifecycle_reports_on_error(self):
+        step = PublishStep('parent')
+        step.process = Mock(side_effect=Exception('Foo'))
+        step.report_progress = Mock()
+
+        self.assertRaises(Exception, step.process_lifecycle)
+
+        step.report_progress.assert_called_once_with(force=True)
+
+    def test_process_child_on_error_notifies_parent(self):
+        step = PublishStep('parent')
+        child_step = PublishStep('child')
+        child_step.initialize = Mock(side_effect=Exception('boo'))
+        child_step.on_error = Mock(side_effect=Exception('flux'))
+        step.on_error = Mock()
+
+        step.add_child(child_step)
+
+        self.assertRaises(Exception, step.process_lifecycle)
+
+        self.assertEquals(reporting_constants.STATE_FAILED, step.state)
+        self.assertEquals(reporting_constants.STATE_FAILED, child_step.state)
+        self.assertTrue(step.on_error.called)
+        self.assertTrue(child_step.on_error.called)
+
+    def test_build_final_report_success(self):
+
+        step_one = PublishStep('step_one')
+        step_one.state = reporting_constants.STATE_COMPLETE
+        step_two = PublishStep('step_two')
+        step_two.state = reporting_constants.STATE_COMPLETE
+        self.publisher.add_child(step_one)
+        self.publisher.add_child(step_two)
+
+        report = self.publisher._build_final_report()
+
+        self.assertTrue(report.success_flag)
+
+    def test_build_final_report_failure(self):
+
+        self.publisher.state = reporting_constants.STATE_FAILED
+        step_one = PublishStep('step_one')
+        step_one.state = reporting_constants.STATE_COMPLETE
+        step_two = PublishStep('step_two')
+        step_two.state = reporting_constants.STATE_FAILED
+        self.publisher.add_child(step_one)
+        self.publisher.add_child(step_two)
+
+        report = self.publisher._build_final_report()
+
+        self.assertFalse(report.success_flag)
+
 
 class UnitPublishStepTests(PublisherBase):
 
     def _step_canceler(self, unit):
         if unit is 'cancel':
             self.publisher.cancel()
+
 
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     def test_process_step_skip_units(self, mock_update):
@@ -329,8 +487,7 @@ class UnitPublishStepTests(PublisherBase):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
         mock_get_units.return_value = ['cancel', 'bar_unit']
         step = UnitPublishStep('foo_step', 'FOO_TYPE')
-        self.publisher._add_steps([step], self.publisher.process_steps)
-        step.parent = self.publisher
+        self.publisher.add_child(step)
 
         step.process_unit = self._step_canceler
         step.process()
@@ -339,6 +496,26 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(step.progress_successes, 1)
         self.assertEquals(step.progress_failures, 0)
         self.assertEquals(step.total_units, 2)
+
+    def test_is_skipped_list(self):
+        step = UnitPublishStep("foo", 'bar')
+        step.config = PluginCallConfiguration(None, {'skip': ['bar', 'baz']})
+        self.assertTrue(step.is_skipped())
+
+    def test_is_skipped_dict(self):
+        step = UnitPublishStep("foo", 'bar')
+        step.config = PluginCallConfiguration(None, {'skip': {'bar': True, 'baz': True}})
+        self.assertTrue(step.is_skipped())
+
+    def test_is_skipped_list_not_skipped(self):
+        step = UnitPublishStep("foo", 'bar')
+        step.config = PluginCallConfiguration(None, None)
+        self.assertFalse(step.is_skipped())
+
+    def test_is_skipped_dict_not_skipped(self):
+        step = UnitPublishStep("foo", 'bar')
+        step.config = PluginCallConfiguration(None, None)
+        self.assertFalse(step.is_skipped())
 
     def test_get_total(self):
         step = UnitPublishStep("foo", ['bar', 'baz'])
@@ -354,6 +531,12 @@ class UnitPublishStepTests(PublisherBase):
         total = step._get_total()
         self.assertEquals(2, total)
 
+    def test_get_with_association_filter(self):
+        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step.association_filters = {'foo': 'bar'}
+        total = step._get_total()
+        self.assertEquals(1, total)
+
     def test_get_total_for_none(self):
         step = UnitPublishStep("foo", ['bar', 'baz'])
         step.parent = mock.Mock()
@@ -361,213 +544,147 @@ class UnitPublishStepTests(PublisherBase):
         total = step._get_total()
         self.assertEquals(0, total)
 
+
     def test_process_unit_with_no_work(self):
         # Run the blank process unit to ensure no exceptions are raised
         step = UnitPublishStep("foo", ['bar', 'baz'])
         step.process_unit('foo')
 
 
-class BasePublisherTests(PublisherBase):
+class TestAtomicDirectoryPublishStep(unittest.TestCase):
 
-    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_publish(self, mock_get_units):
-        mock_get_units.return_value = []
-        metadata_step = PublishStep('metadata')
-        metadata_step.initialize = mock.Mock()
-        metadata_step.finalize = mock.Mock()
-        process_step = PublishStep('process')
-        process_step.process = mock.Mock()
-        post_process_step = PublishStep('post_process')
-        post_process_step.process = mock.Mock()
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config,
-                                     initialize_steps=[metadata_step],
-                                     process_steps=[process_step],
-                                     finalize_steps=[metadata_step],
-                                     post_process_steps=[post_process_step])
+    def setUp(self):
+        self.working_directory = tempfile.mkdtemp()
+        self.repo = Mock()
 
-        base_publish.publish()
-        metadata_step.initialize.assert_called_once_with()
-        metadata_step.finalize.assert_called_once_with()
-        process_step.process.assert_called_once_with()
-        post_process_step.process.assert_called_once_with()
+    def tearDown(self):
+        shutil.rmtree(self.working_directory)
 
-    @mock.patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_publish_initialize_working_dir(self, mock_get_units):
-        mock_get_units.return_value = []
-        metadata_step = PublishStep('metadata')
-        metadata_step.initialize = mock.Mock()
-        metadata_step.finalize = mock.Mock()
-        process_step = PublishStep('process')
-        process_step.process = mock.Mock()
-        post_process_step = PublishStep('post_process')
-        post_process_step.process = mock.Mock()
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config,
-                                     initialize_steps=[metadata_step],
-                                     process_steps=[process_step],
-                                     finalize_steps=[metadata_step],
-                                     post_process_steps=[post_process_step])
+    def test_process_main_alternate_id(self):
+        step = AtomicDirectoryPublishStep('foo', 'bar', 'baz', step_type='alternate')
+        self.assertEquals(step.step_id, 'alternate')
 
-        base_publish.working_dir = os.path.join(base_publish.working_dir, 'foo')
-        base_publish.publish()
-        metadata_step.initialize.assert_called_once_with()
-        metadata_step.finalize.assert_called_once_with()
-        process_step.process.assert_called_once_with()
-        post_process_step.process.assert_called_once_with()
+    def test_process_main_default_id(self):
+        step = AtomicDirectoryPublishStep('foo', 'bar', 'baz')
+        self.assertEquals(step.step_id, reporting_constants.PUBLISH_STEP_DIRECTORY)
 
-    def test_publish_with_error(self):
-        mock_metadata_step = mock.MagicMock(spec=PublishStep)
-        mock_metadata_step.step_id = 'metadata'
-        mock_metadata_step.initialize.side_effect = Exception('foo')
-        mock_process_step = mock.MagicMock(spec=PublishStep)
-        mock_process_step.step_id = 'process'
-        mock_post_process_step = mock.MagicMock(spec=PublishStep)
-        mock_post_process_step.step_id = 'post_process'
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config,
-                                     initialize_steps=[mock_metadata_step],
-                                     process_steps=[mock_process_step],
-                                     finalize_steps=[mock_metadata_step],
-                                     post_process_steps=[mock_post_process_step])
-        self.assertRaises(Exception, base_publish.publish)
-        mock_metadata_step.initialize.assert_called_once_with()
+    def test_process_main(self):
+        source_dir = os.path.join(self.working_directory, 'source')
+        master_dir = os.path.join(self.working_directory, 'master')
+        publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
+        publish_dir += '/'
+        step = AtomicDirectoryPublishStep(source_dir,
+                                                        [('/', publish_dir)], master_dir)
+        step.parent = Mock(timestamp=str(time.time()))
 
-        self.assertTrue(mock_metadata_step.finalize.called)
-        self.assertFalse(mock_process_step.process.called)
-        self.assertFalse(mock_post_process_step.process.called)
+        # create some files to test
+        sub_file = os.path.join(source_dir, 'foo', 'bar.html')
+        touch(sub_file)
 
-    def test_two_step_with_same_id_fails(self):
-        mock_metadata_step = mock.MagicMock(spec=PublishStep)
-        mock_metadata_step.step_id = 'metadata'
-        mock_metadata_step_2 = mock.MagicMock(spec=PublishStep)
-        mock_metadata_step_2.step_id = 'metadata'
-        self.assertRaises(ValueError, BasePublisher, self.publisher.repo,
-                          self.publisher.conduit,
-                          self.publisher.config,
-                          initialize_steps=[mock_metadata_step, mock_metadata_step_2])
+        # Create an old directory to test
+        old_dir = os.path.join(master_dir, 'foo')
+        os.makedirs(old_dir)
+        step.process_main()
 
-    def test_add_initialize_metadata_steps(self):
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config)
-        base_publish._add_steps = mock.Mock()
-        steps = [PublishStep('foo')]
-        base_publish.add_initialize_metadata_steps(steps)
-        base_publish._add_steps.assert_called_once_with(steps,
-                                                        base_publish.initialize_metadata_steps)
+        target_file = os.path.join(publish_dir, 'foo', 'bar.html')
+        self.assertEquals(True, os.path.exists(target_file))
+        self.assertEquals(1, len(os.listdir(master_dir)))
 
-    def test_add_process_steps(self):
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config)
-        base_publish._add_steps = mock.Mock()
-        steps = [PublishStep('foo')]
-        base_publish.add_process_steps(steps)
-        base_publish._add_steps.assert_called_once_with(steps, base_publish.process_steps)
+    def test_process_main_multiple_targets(self):
+        source_dir = os.path.join(self.working_directory, 'source')
+        master_dir = os.path.join(self.working_directory, 'master')
+        publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
+        publish_dir += '/'
+        # create some files to test
+        sub_file = os.path.join(source_dir, 'foo', 'bar.html')
+        touch(sub_file)
+        sub_file = os.path.join(source_dir, 'qux', 'quux.html')
+        touch(sub_file)
 
-    def test_add_finalize_metadata_steps(self):
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config)
-        base_publish._add_steps = mock.Mock()
-        steps = [PublishStep('foo')]
-        base_publish.add_finalize_metadata_steps(steps)
-        base_publish._add_steps.assert_called_once_with(steps, base_publish.finalize_metadata_steps)
+        target_qux = os.path.join(self.working_directory, 'publish', 'qux.html')
 
-    def test_add_post_process_steps(self):
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config)
-        base_publish._add_steps = mock.Mock()
-        steps = [PublishStep('foo')]
-        base_publish.add_post_process_steps(steps)
-        base_publish._add_steps.assert_called_once_with(steps,
-                                                        base_publish.post_metadata_process_steps)
+        step = AtomicDirectoryPublishStep(source_dir,
+                                                        [('/', publish_dir),
+                                                         ('qux/quux.html', target_qux)
+                                                         ], master_dir)
+        step.parent = Mock(timestamp=str(time.time()))
 
-    def test_get_step(self):
-        mock_metadata_step = mock.MagicMock(spec=PublishStep)
-        mock_metadata_step.step_id = 'metadata'
-        mock_process_step = mock.MagicMock(spec=PublishStep)
-        mock_process_step.step_id = 'process'
-        mock_post_process_step = mock.MagicMock(spec=PublishStep)
-        mock_post_process_step.step_id = 'post_process'
-        base_publish = BasePublisher(self.publisher.repo,
-                                     self.publisher.conduit,
-                                     self.publisher.config,
-                                     initialize_steps=[mock_metadata_step],
-                                     process_steps=[mock_process_step],
-                                     finalize_steps=[mock_metadata_step],
-                                     post_process_steps=[mock_post_process_step])
+        step.process_main()
 
-        self.assertEquals(mock_metadata_step, base_publish.get_step('metadata'))
-        self.assertEquals(mock_process_step, base_publish.get_step('process'))
-        self.assertEquals(mock_post_process_step, base_publish.get_step('post_process'))
+        target_file = os.path.join(publish_dir, 'foo', 'bar.html')
+        self.assertEquals(True, os.path.exists(target_file))
+        self.assertEquals(True, os.path.exists(target_qux))
 
-    def test_build_final_report_success(self):
+    def test_process_main_only_publish_directory_contents(self):
+        source_dir = os.path.join(self.working_directory, 'source')
+        master_dir = os.path.join(self.working_directory, 'master')
+        publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
+        publish_dir += '/'
+        step = AtomicDirectoryPublishStep(source_dir, [('/', publish_dir)], master_dir,
+                                          only_publish_directory_contents=True)
+        step.parent = Mock(timestamp=str(time.time()))
 
-        step_one = PublishStep('step_one')
-        step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PublishStep('step_two')
-        step_two.state = reporting_constants.STATE_COMPLETE
-        self.publisher._add_steps([step_one, step_two], self.publisher.process_steps)
+        # create some files to test
+        sub_file = os.path.join(source_dir, 'bar.html')
+        touch(sub_file)
 
-        report = self.publisher._build_final_report()
+        # create an existing file that will be maintained
+        existing_file = os.path.join(source_dir, 'bar.html')
+        touch(existing_file)
 
-        self.assertTrue(report.success_flag)
+        # Create an old directory to test
+        old_dir = os.path.join(master_dir, 'foo')
+        os.makedirs(old_dir)
+        step.process_main()
 
-    def test_build_final_report_failure(self):
+        target_file = os.path.join(publish_dir, 'bar.html')
+        self.assertEquals(True, os.path.exists(target_file))
+        self.assertTrue(os.path.exists(existing_file))
+        self.assertEquals(1, len(os.listdir(master_dir)))
 
-        step_one = PublishStep('step_one')
-        step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PublishStep('step_two')
-        step_two.state = reporting_constants.STATE_FAILED
-        self.publisher._add_steps([step_one, step_two], self.publisher.process_steps)
 
-        report = self.publisher._build_final_report()
+class TestSaveTarFilePublishStep(unittest.TestCase):
+    def setUp(self):
+        self.working_directory = tempfile.mkdtemp()
+        self.repo = Mock()
 
-        self.assertFalse(report.success_flag)
+    def tearDown(self):
+        shutil.rmtree(self.working_directory)
 
-    def test_skip_list_with_list(self):
-        mock_config = mock.Mock()
-        mock_config.get.return_value = ['foo', 'bar']
-        publisher = BasePublisher(self.publisher.repo, self.publisher.conduit, mock_config)
+    def test_process_main(self):
+        source_dir = os.path.join(self.working_directory, 'source')
+        os.makedirs(source_dir)
+        target_file = os.path.join(self.working_directory, 'target', 'target.tar')
+        step = SaveTarFilePublishStep(source_dir, target_file)
 
-        skip_list = publisher.skip_list
-        self.assertEquals(2, len(skip_list))
-        self.assertEquals(skip_list[0], 'foo')
-        self.assertEquals(skip_list[1], 'bar')
+        touch(os.path.join(source_dir, 'foo.txt'))
+        step.process_main()
 
-    def test_skip_list_with_dict(self):
-        mock_config = mock.Mock()
-        mock_config.get.return_value = {'rpm': True, 'distro': False, 'errata': True}
-        self.publisher.config = mock_config
-        skip_list = self.publisher.skip_list
-        self.assertEquals(2, len(skip_list))
-        self.assertEquals(skip_list[0], 'rpm')
-        self.assertEquals(skip_list[1], 'errata')
+        with contextlib.closing(tarfile.open(target_file)) as tar_file:
+            names = tar_file.getnames()
+            # the first item is either '' or '.' depending on if this is py2.7 or py2.6
+            self.assertEquals(names[1:], ['foo.txt'])
 
-    def test_cancel(self):
-        mock_step = mock.Mock(step_id='foo')
-        self.publisher._add_steps([mock_step], self.publisher.process_steps)
-        self.publisher.cancel()
 
-        self.assertTrue(self.publisher.canceled)
-        mock_step.cancel.assert_called_once_with()
+class TestCopyDirectoryStep(unittest.TestCase):
+    def setUp(self):
+        self.working_directory = tempfile.mkdtemp()
+        self.repo = Mock()
 
-    def test_cancel_twice(self):
-        mock_step = mock.Mock(step_id='foo')
-        self.publisher._add_steps([mock_step], self.publisher.process_steps)
-        self.publisher.cancel()
+    def tearDown(self):
+        shutil.rmtree(self.working_directory)
 
-        self.assertTrue(self.publisher.canceled)
-        mock_step.cancel.assert_called_once_with()
+    def test_process_main(self):
+        source_dir = os.path.join(self.working_directory, 'source')
+        os.makedirs(source_dir)
+        touch(os.path.join(source_dir, 'foo.txt'))
+        target_dir = os.path.join(self.working_directory, 'target')
 
-        #reset the step cancel
-        mock_step.cancel.reset_mock()
+        target_file = os.path.join(target_dir, 'foo.txt')
 
-        self.publisher.cancel()
-        self.assertEquals(0, mock_step.cancel.call_count)
+        step = CopyDirectoryStep(source_dir, target_dir)
+
+        touch(os.path.join(source_dir, 'foo.txt'))
+        step.process_main()
+
+        self.assertTrue(os.path.exists(target_file))

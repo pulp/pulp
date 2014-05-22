@@ -22,8 +22,12 @@ except ImportError:
 
 import mock
 
+# needed to create unserializable ID
+from bson.objectid import ObjectId as _test_objid
+
 from pulp.server.compat import json
 from pulp.server.config import config
+from pulp.server.event.data import Event
 from pulp.server.event import data, mail
 from pulp.server.managers import factory
 
@@ -103,6 +107,15 @@ class TestHandleEvent(unittest.TestCase):
         self.assertEqual(message.get('Subject', None), self.notifier_config['subject'])
         self.assertEqual(message.get('From', None), config.get('email', 'from'))
         self.assertTrue(message.get('To', None) in self.notifier_config['addresses'])
+
+    # tests bz 1099945
+    @mock.patch('threading.Thread', new=dummy_threading.Thread)
+    @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=True)
+    @mock.patch('smtplib.SMTP')
+    def test_email_serialize_objid(self, mock_smtp, mock_getbool):
+        event_with_id = Event('test-1', {'foo': _test_objid()})
+        # no TypeError = success
+        mail.handle_event(self.notifier_config, event_with_id)
 
 
 class TestSystem(unittest.TestCase):

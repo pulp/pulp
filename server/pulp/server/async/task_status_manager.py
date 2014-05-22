@@ -14,8 +14,7 @@
 from datetime import datetime
 from pymongo.errors import DuplicateKeyError
 
-from pulp.common import dateutils
-from pulp.server.async import constants as dispatch_constants
+from pulp.common import constants, dateutils
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import DuplicateResource, InvalidValue, MissingResource
 
@@ -57,7 +56,7 @@ class TaskStatusManager(object):
             raise InvalidValue(invalid_values)
 
         if not state:
-            state = dispatch_constants.CALL_WAITING_STATE
+            state = constants.CALL_WAITING_STATE
 
         task_status = TaskStatus(task_id=task_id, queue=queue, tags=tags, state=state)
         try:
@@ -76,7 +75,7 @@ class TaskStatusManager(object):
         :type  task_id: basestring
         """
         delta = {
-            'state': dispatch_constants.CALL_ACCEPTED_STATE
+            'state': constants.CALL_ACCEPTED_STATE
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
 
@@ -90,7 +89,7 @@ class TaskStatusManager(object):
         now = datetime.now(dateutils.utc_tz())
         start_time = dateutils.format_iso8601_datetime(now)
         delta = {
-            'state': dispatch_constants.CALL_RUNNING_STATE,
+            'state': constants.CALL_RUNNING_STATE,
             'start_time': start_time,
         }
         TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
@@ -107,7 +106,7 @@ class TaskStatusManager(object):
         now = datetime.now(dateutils.utc_tz())
         finish_time = dateutils.format_iso8601_datetime(now)
         delta = {
-            'state': dispatch_constants.CALL_FINISHED_STATE,
+            'state': constants.CALL_FINISHED_STATE,
             'finish_time': finish_time,
             'result': result
         }
@@ -125,7 +124,7 @@ class TaskStatusManager(object):
         now = datetime.now(dateutils.utc_tz())
         finish_time = dateutils.format_iso8601_datetime(now)
         delta = {
-            'state': dispatch_constants.CALL_ERROR_STATE,
+            'state': constants.CALL_ERROR_STATE,
             'finish_time': finish_time,
             'traceback': traceback
         }

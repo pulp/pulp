@@ -20,12 +20,11 @@ from bson import ObjectId
 from celery.result import AsyncResult
 import mock
 
-from pulp.common import dateutils
+from pulp.common import dateutils, tags
 from pulp.devel import dummy_plugins, mock_plugins
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict, assert_body_matches_async_task
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.async import constants as dispatch_constants
 from pulp.server.auth import authorization
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
@@ -398,7 +397,7 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
         task_tags = ['pulp:repository:foo-repo',
                      'pulp:action:delete']
         mock_delete_task.apply_async_with_reservation. \
-            assert_called_once_with(dispatch_constants.RESOURCE_REPOSITORY_TYPE,
+            assert_called_once_with(tags.RESOURCE_REPOSITORY_TYPE,
                                     'foo-repo', ['foo-repo', ], tags=task_tags)
         #validate the permissions
         self.validate_auth(authorization.DELETE)
@@ -914,7 +913,7 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
                      'pulp:repository_distributor:foo-distributor',
                      'pulp:action:remove_distributor']
         mock_delete_task.apply_async_with_reservation.assert_called_once_with(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
+            tags.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
             ['foo-repo', 'foo-distributor'], tags=task_tags)
 
         #validate the permissions
@@ -941,7 +940,7 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
                      'pulp:repository_distributor:foo-distributor',
                      'pulp:action:update_distributor']
         mock_update_task.apply_async_with_reservation.assert_called_once_with(
-            dispatch_constants.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
+            tags.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
             ['foo-repo', 'foo-distributor', new_config, {}], tags=task_tags)
 
         #validate the permissions

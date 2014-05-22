@@ -14,9 +14,8 @@
 import web
 
 from pulp.common.plugins import distributor_constants
-from pulp.common.tags import action_tag, resource_tag
+from pulp.common import tags
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.async import constants as dispatch_constants
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup
@@ -233,16 +232,16 @@ class PublishAction(JSONController):
         if distributor_id is None:
             raise MissingValue(['id'])
 
-        tags = [resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
-                resource_tag(dispatch_constants.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE,
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
+                tags.resource_tag(tags.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE,
                              distributor_id),
-                action_tag('publish')]
+                tags.action_tag('publish')]
         async_result = publish.apply_async_with_reservation(
-                                                dispatch_constants.RESOURCE_REPOSITORY_GROUP_TYPE,
+                                                tags.RESOURCE_REPOSITORY_GROUP_TYPE,
                                                 repo_group_id,
                                                 args=[repo_group_id, distributor_id],
                                                 kwargs={'publish_config_override' : overrides},
-                                                tags=tags)
+                                                tags=task_tags)
         raise OperationPostponed(async_result)
 
 # web.py application -----------------------------------------------------------

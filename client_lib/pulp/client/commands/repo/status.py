@@ -65,7 +65,7 @@ class PublishStepStatusRenderer(StatusRenderer):
         if not step_details:
             return
 
-        step_id = step_details[reporting_constants.PROGRESS_STEP_ID_KEY]
+        step_id = step_details[reporting_constants.PROGRESS_STEP_UUID]
         current_state = step_details[reporting_constants.PROGRESS_STATE_KEY]
 
         if current_state == reporting_constants.STATE_CANCELLED:

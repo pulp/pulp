@@ -21,8 +21,7 @@ from datetime import datetime
 
 from ... import base
 
-from pulp.common import dateutils
-from pulp.server.async import constants
+from pulp.common import constants, dateutils
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus

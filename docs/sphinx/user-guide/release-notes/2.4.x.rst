@@ -56,6 +56,15 @@ You can see the complete list of bugs that were
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
 
+Pulp 2.4 introduces new client library dependencies if you are using Qpid as your message broker.
+Ensure you have the necessary dependencies installed by running::
+
+    $ sudo yum install python-qpid-qmf python-qpid
+
+.. note::
+   If you are using Qpid 0.18 or earlier, you also need to install the qpid-cpp-server-store package
+   using the command: ``sudo yum install qpid-cpp-server-store``
+
 To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
 latest RPMs from the Pulp repository and run the database migrations::
 

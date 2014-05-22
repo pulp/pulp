@@ -134,6 +134,60 @@ class MetadataWriterTests(unittest.TestCase):
         self.assertEquals(0, context._write_file_header.call_count)
         context.finalize()
 
+    def test_is_closed_gzip_file(self):
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
+
+        file_object = gzip.open(path)
+        file_object.close()
+
+        self.assertTrue(MetadataFileContext._is_closed(file_object))
+
+    def test_is_open_gzip_file(self):
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
+
+        file_object = gzip.open(path)
+
+        self.assertFalse(MetadataFileContext._is_closed(file_object))
+
+        file_object.close()
+
+    def test_is_closed_file(self):
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
+
+        # opening as a regular file, not with gzip
+        file_object = open(path)
+        file_object.close()
+
+        self.assertTrue(MetadataFileContext._is_closed(file_object))
+
+    def test_is_open_file(self):
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
+
+        # opening as a regular file, not with gzip
+        file_object = open(path)
+
+        self.assertFalse(MetadataFileContext._is_closed(file_object))
+
+        file_object.close()
+
+    def test_is_closed_file_attribute_error(self):
+        # passing in a list gives it an object that does not have a closed attribute, thus triggering
+        # an Attribute error that cannot be solved with the python 2.6 compatibility code
+        self.assertRaises(AttributeError, MetadataFileContext._is_closed, [])
+
+    def test_finalize_closed_gzip_file(self):
+        # this test makes sure that we can properly detect the closed state of
+        # a gzip file, because on python 2.6 we have to take special measures
+        # to do so.
+        path = os.path.join(os.path.dirname(__file__), '../../../data/foo.tar.gz')
+
+        context = MetadataFileContext('/a/b/c')
+        context.metadata_file_handle = gzip.open(path)
+        context.metadata_file_handle.close()
+
+        # just make sure this doesn't complain.
+        context.finalize()
+
     def test_finalize_checksum_type_none(self):
 
         path = os.path.join(self.metadata_file_dir, 'test.xml')
@@ -180,13 +234,40 @@ class MetadataWriterTests(unittest.TestCase):
 
         context._open_metadata_file_handle()
         context._write_file_header()
-        context._close_metadata_file_handle()
         context.finalize()
 
         expected_metadata_file_name = context.checksum + '-' + 'test.xml'
         expected_metadata_file_path = os.path.join(self.metadata_file_dir,
                                                    expected_metadata_file_name)
         self.assertEquals(expected_metadata_file_path, context.metadata_file_path)
+
+    @patch('pulp.plugins.util.metadata_writer._LOG.exception')
+    def test_finalize_error_on_footer(self, mock_logger):
+
+        path = os.path.join(self.metadata_file_dir, 'test.xml')
+        context = MetadataFileContext(path)
+        context._write_file_footer = Mock(side_effect=Exception('foo'))
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+
+        context.finalize()
+
+        self.assertTrue(mock_logger.called)
+
+    @patch('pulp.plugins.util.metadata_writer._LOG.exception')
+    def test_finalize_error_on_close(self, mock_logger):
+
+        path = os.path.join(self.metadata_file_dir, 'test.xml')
+        context = MetadataFileContext(path)
+        context._close_metadata_file_handle = Mock(side_effect=Exception('foo'))
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+
+        context.finalize()
+
+        self.assertTrue(mock_logger.called)
 
     @patch('pulp.plugins.util.metadata_writer._LOG')
     def test_exit_error(self, mock_log):

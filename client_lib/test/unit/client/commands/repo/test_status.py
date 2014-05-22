@@ -13,7 +13,8 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.context.prompt = self.prompt
         self.renderer = status.PublishStepStatusRenderer(self.context)
         self.step = {
-            reporting_constants.PROGRESS_STEP_ID_KEY: u'foo_step',
+            reporting_constants.PROGRESS_STEP_TYPE_KEY: u'foo_step',
+            reporting_constants.PROGRESS_STEP_UUID: u'abcde',
             reporting_constants.PROGRESS_DESCRIPTION_KEY: u'foo description',
             reporting_constants.PROGRESS_STATE_KEY: reporting_constants.STATE_NOT_STARTED,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 1,
@@ -48,7 +49,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.step[reporting_constants.PROGRESS_STATE_KEY] = reporting_constants.STATE_RUNNING
         self.renderer.render_step(self.step)
 
-        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_ID_KEY]]
+        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
         self.assertTrue(step.spinner.next.called)
         self.assertEquals(step.state, reporting_constants.STATE_RUNNING)
 
@@ -58,7 +59,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.step[reporting_constants.PROGRESS_NUM_SUCCESSES_KEY] = 5
         self.renderer.render_step(self.step)
 
-        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_ID_KEY]]
+        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
         self.assertTrue(step.progress_bar.render.called)
         self.assertEquals(step.state, reporting_constants.STATE_RUNNING)
 
@@ -66,7 +67,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.step[reporting_constants.PROGRESS_STATE_KEY] = reporting_constants.STATE_COMPLETE
         self.renderer.render_step(self.step)
 
-        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_ID_KEY]]
+        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
         step.spinner.next.assert_called_once_with(finished=True)
         self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
 
@@ -74,7 +75,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.step[reporting_constants.PROGRESS_STATE_KEY] = reporting_constants.STATE_SKIPPED
         self.renderer.render_step(self.step)
 
-        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_ID_KEY]]
+        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
         self.assertEquals(step.state, reporting_constants.STATE_SKIPPED)
         self.assertTrue(step.done)
 
@@ -83,7 +84,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.step[reporting_constants.PROGRESS_ERROR_DETAILS_KEY].append({'error': 'foo'})
         self.renderer.render_step(self.step)
 
-        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_ID_KEY]]
+        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
         self.assertTrue(step.done)
         self.assertEquals(step.state, reporting_constants.STATE_FAILED)
         self.prompt.render_failure_message.assert_called_once_with('foo')
@@ -96,7 +97,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.step[reporting_constants.PROGRESS_STATE_KEY] = reporting_constants.STATE_COMPLETE
         self.renderer.render_step(self.step)
 
-        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_ID_KEY]]
+        step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
 
         step.spinner.next.reset_mock()
         self.renderer.render_step(self.step)
