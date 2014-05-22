@@ -71,6 +71,7 @@ def setup_plugin():
     Plugin setup.
     Update the plugin configuration using the consumer configuration.
     """
+    pulp_conf.update(read_config())
     scheme = cfg.messaging.scheme
     host = cfg.messaging.host or cfg.server.host
     port = cfg.messaging.port
