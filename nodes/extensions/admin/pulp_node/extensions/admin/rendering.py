@@ -219,7 +219,8 @@ class UpdateRenderer(object):
                 'repository': {
                     'id': repo_report['repo_id'],
                     'action': ACTIONS[repo_report['action']],
-                    'units': repo_report['units']
+                    'units': repo_report['units'],
+                    'sources': repo_report['sources']
                 },
             }
             documents.append(document)
