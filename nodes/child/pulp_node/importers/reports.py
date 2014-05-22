@@ -46,6 +46,9 @@ class SummaryReport(object):
         self.errors = ErrorList()
         self.sources = DownloadReport()
 
+    def update(self, **details):
+        self.errors.update(**details)
+
     def dict(self):
         """
         Dictionary representation.
