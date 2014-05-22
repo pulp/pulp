@@ -293,21 +293,25 @@ check_status () {
     found_pids=0
 
     local one_failed=
-    for pid_file in "$CELERYD_PID_DIR"/*.pid; do
-        local node=`basename "$pid_file" .pid`
-        local pid=`cat "$pid_file"`
-        local cleaned_pid=`echo "$pid" | sed -e 's/[^0-9]//g'`
-        if [ -z "$pid" ] || [ "$cleaned_pid" != "$pid" ]; then
-            echo "bad pid file ($pid_file)"
+    for node in $CELERYD_NODES; do
+        local pid_file="$CELERYD_PID_DIR/$node.pid"
+        if [ ! -e $pid_file ]; then
+            local pid=
+        else
+            local pid=`cat "$pid_file"`
+        fi
+
+        if [ -z "$pid" ]; then
+            echo "node $node is stopped..."
             one_failed=true
         else
             local failed=
             kill -0 $pid 2> /dev/null || failed=true
             if [ "$failed" ]; then
-                echo "${SCRIPT_NAME} (node $node) (pid $pid) is stopped, but pid file exists!"
+                echo "node $node (pid $pid) is missing..."
                 one_failed=true
             else
-                echo "${SCRIPT_NAME} (node $node) (pid $pid) is running..."
+                echo "node $node (pid $pid) is running..."
             fi
         fi
     done
