@@ -171,6 +171,11 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri May 23 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-6.pulp
+- Testing new Patch for Kombu that may fix NoAvailableQueues issue.
+  (bmbouter@gmail.com)
+- Build for EL 7. (rbarlow@redhat.com)
+
 * Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-5.pulp
 - Update to the latest qpid patch. (rbarlow@redhat.com)
 
