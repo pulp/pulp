@@ -436,7 +436,7 @@ class TestRenderers(ClientTests):
         handler_report.set_succeeded(details=summary_report.dict())
         renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
         renderer.render()
-        self.assertEqual(len(self.recorder.lines), 32)
+        self.assertEqual(len(self.recorder.lines), 38)
 
     def test_update_rendering_with_errors(self):
         repo_ids = ['repo_%d' % n for n in range(0, 3)]
@@ -449,7 +449,7 @@ class TestRenderers(ClientTests):
         handler_report.set_failed(details=summary_report.dict())
         renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
         renderer.render()
-        self.assertEqual(len(self.recorder.lines), 42)
+        self.assertEqual(len(self.recorder.lines), 48)
 
 
 class TestProgressTracking(ClientTests):

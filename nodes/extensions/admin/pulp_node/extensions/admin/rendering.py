@@ -12,6 +12,8 @@
 from gettext import gettext as _
 from operator import itemgetter
 
+from pulp.server.content.sources.model import PRIMARY_ID
+
 from pulp_node.error import *
 from pulp_node.reports import RepositoryProgress, RepositoryReport
 
@@ -62,6 +64,7 @@ FAILED_MSG = _('Error occurred during synchronization, check the child node logs
 REPORTED_ERRORS = _('The following [%(n)d] errors were reported')
 REPOSITORIES_FAILED = _('The following repositories had errors')
 
+PARENT_NODE = _('Parent Node')
 
 # --- rendering --------------------------------------------------------------
 
@@ -215,12 +218,19 @@ class UpdateRenderer(object):
     def render(self):
         documents = []
         for repo_report in sorted(self.repositories, key=itemgetter('repo_id')):
+            sources = repo_report['sources']
+            downloads = sources.get('downloads', {})
+            for source_id, stat in downloads.items():
+                if source_id == PRIMARY_ID:
+                    source_id = PARENT_NODE
+                stat['source_id'] = source_id
+            sources['downloads'] = downloads.values()
             document = {
                 'repository': {
                     'id': repo_report['repo_id'],
                     'action': ACTIONS[repo_report['action']],
                     'units': repo_report['units'],
-                    'sources': repo_report['sources']
+                    'content_sources': sources
                 },
             }
             documents.append(document)
