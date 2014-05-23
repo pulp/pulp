@@ -19,6 +19,8 @@ from base import ClientTests, Response, Task
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
 from pulp.agent.lib.report import ContentReport
+from pulp.server.content.sources.model import DownloadReport, DownloadDetails, PRIMARY_ID
+
 from pulp_node.extensions.admin.commands import *
 from pulp_node.extensions.admin.rendering import ProgressTracker
 from pulp_node.error import *
@@ -433,10 +435,14 @@ class TestRenderers(ClientTests):
         summary_report.setup([{'repo_id': r} for r in repo_ids])
         for r in summary_report.repository.values():
             r.action = RepositoryReport.ADDED
+            download_report = DownloadReport()
+            download_report.downloads[PRIMARY_ID] = DownloadDetails()
+            download_report.downloads['content-world'] = DownloadDetails()
+            r.sources = download_report.dict()
         handler_report.set_succeeded(details=summary_report.dict())
         renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
         renderer.render()
-        self.assertEqual(len(self.recorder.lines), 38)
+        self.assertEqual(len(self.recorder.lines), 62)
 
     def test_update_rendering_with_errors(self):
         repo_ids = ['repo_%d' % n for n in range(0, 3)]
