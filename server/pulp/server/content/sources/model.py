@@ -382,6 +382,14 @@ class DownloadDetails(object):
         self.total_succeeded = 0
         self.total_failed = 0
 
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return self.__dict__
+
 
 class DownloadReport(object):
     """
@@ -398,6 +406,17 @@ class DownloadReport(object):
         self.total_passes = 0
         self.total_sources = 0
         self.downloads = {}
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return dict(
+            total_passes=self.total_passes,
+            total_sources=self.total_sources,
+            downloads=dict([(k, v.dict()) for k, v in self.downloads.items()]))
 
 
 class RefreshReport(object):

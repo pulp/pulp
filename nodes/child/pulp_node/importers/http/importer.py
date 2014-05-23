@@ -139,7 +139,7 @@ class NodesHttpImporter(Importer):
             if downloader is not None:
                 downloader.config.finalize()
 
-        summary_report.update(repo_id=repo.id)
+        summary_report.errors.update(repo_id=repo.id)
         report = conduit.build_success_report({}, summary_report.dict())
         return report
 

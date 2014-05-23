@@ -556,6 +556,10 @@ class TestDownloadDetails(TestCase):
         self.assertEqual(details.total_succeeded, 0)
         self.assertEqual(details.total_failed, 0)
 
+    def test_dict(self):
+        details = DownloadDetails()
+        self.assertEqual(details.dict(), {'total_failed': 0, 'total_succeeded': 0})
+
 
 class TestDownloadReport(TestCase):
 
@@ -564,6 +568,20 @@ class TestDownloadReport(TestCase):
         self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 0)
         self.assertEqual(report.downloads, {})
+
+    def test_dict(self):
+        report = DownloadReport()
+        report.downloads['s1'] = DownloadDetails()
+        report.downloads['s2'] = DownloadDetails()
+        expected = {
+            'total_passes': 0,
+            'total_sources': 0,
+            'downloads': {
+                's1': {'total_failed': 0, 'total_succeeded': 0},
+                's2': {'total_failed': 0, 'total_succeeded': 0}
+            },
+        }
+        self.assertEqual(report.dict(), expected)
 
 
 class TestRefreshReport(TestCase):

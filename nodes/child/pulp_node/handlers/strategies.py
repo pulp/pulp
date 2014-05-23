@@ -204,6 +204,7 @@ class HandlerStrategy(object):
         _report.units.added = importer_report['added_count']
         _report.units.updated = importer_report['updated_count']
         _report.units.removed = importer_report['removed_count']
+        _report.sources = details['sources']
 
     def _delete_repositories(self, request):
         """
