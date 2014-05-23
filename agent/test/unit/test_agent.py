@@ -439,9 +439,10 @@ class TestInitializer(PluginTest):
             os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.registration_changed)
         self.plugin.path_monitor.start.assert_called_with()
 
+    @patch('pulp.agent.gofer.pulpplugin.read_config')
     @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
     @patch('pulp.agent.gofer.pulpplugin.Authenticator')
-    def test_setup_plugin(self, mock_auth, mock_get_agent_id):
+    def test_setup_plugin(self, mock_auth, mock_get_agent_id, mock_read):
         agent_id = 'pulp.agent.test-id'
         authenticator = Mock()
         mock_get_agent_id.return_value = agent_id
@@ -463,11 +464,11 @@ class TestInitializer(PluginTest):
                 'clientcert': None
             }
         }
+        mock_read.return_value = test_conf
 
         # test
-        with patch('pulp.agent.gofer.pulpplugin.read_config') as mock_read:
-            mock_read.return_value = test_conf
-            self.plugin.setup_plugin()
+        self.plugin.setup_plugin()
+
 
         # validation
         mock_read.assert_called_with()
