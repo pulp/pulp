@@ -172,6 +172,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue May 27 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-8.pulp
+- Fix test compatability for Python 2.6 (bmbouter@gmail.com)
+
 * Tue May 27 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-7.pulp
 - Adds new qpid patch for synchronous transport, and bumps spec file.
   (bmbouter@gmail.com)
