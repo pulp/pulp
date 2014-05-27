@@ -194,10 +194,10 @@ index 85b8f5e..acd1713 100644
      :keyword userid: Default user name if not provided in the URL.
 diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
 new file mode 100644
-index 0000000..df82342
+index 0000000..951b147
 --- /dev/null
 +++ b/kombu/tests/transport/test_qpid.py
-@@ -0,0 +1,1260 @@
+@@ -0,0 +1,1261 @@
 +from __future__ import absolute_import
 +
 +import datetime
@@ -1355,8 +1355,9 @@ index 0000000..df82342
 +        except socket.timeout:
 +            pass
 +        end_time = datetime.datetime.now()
-+        elapsed_time = end_time - start_time
-+        self.assertTrue(elapsed_time.total_seconds() >= 1)
++        td = end_time - start_time
++        elapsed_time_in_s = (td.microseconds + td.seconds * 10**6) / 10**6
++        self.assertTrue(elapsed_time_in_s >= 1)
 +
 +    def test_callback_is_called(self):
 +        self.transport.session.next_receiver = self.mock_next_receiver
