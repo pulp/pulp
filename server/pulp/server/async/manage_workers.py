@@ -95,14 +95,23 @@ def _stop_workers():
     Stop all the workers that have unit files at _SYSTEMD_UNIT_PATH.
     """
     glob_path = os.path.join(_SYSTEMD_UNIT_PATH, _UNIT_FILENAME_TEMPLATE % '*')
+    pipes = []
     for worker in glob(glob_path):
-        pipe = subprocess.Popen('systemctl stop %s' % os.path.basename(worker),
-                                stdout=subprocess.PIPE, shell=True)
+        pipes.append(subprocess.Popen('systemctl stop %s' % os.path.basename(worker),
+                                      stdout=subprocess.PIPE, shell=True))
+    exit_code = os.EX_OK
+    for pipe in pipes:
         stdout, stderr = pipe.communicate()
-        print stdout
-        if pipe.returncode != 0:
+        if stdout:
+            print stdout
+        if stderr:
             sys.stderr.write(str(stderr))
-            sys.exit(pipe.returncode)
+        if pipe.returncode != os.EX_OK:
+            # This is arbitrary, but we're going to pick the exit code of the last worker that
+            # failed for our process to return.
+            exit_code = pipe.returncode
+    if exit_code != os.EX_OK:
+        sys.exit(exit_code)
 
 
 def main():
