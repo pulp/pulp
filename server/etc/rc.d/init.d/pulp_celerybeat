@@ -14,7 +14,7 @@
 # Required-Stop:     $network $local_fs $remote_fs
 # Should-Start:      mongod qpidd rabbitmq-server
 # Default-Start:     3 4 5
-# Default-Stop:      0 1 6
+# Default-Stop:      0 1 2 6
 # Short-Description: pulp's celery periodic task scheduler
 ### END INIT INFO
 
@@ -192,6 +192,28 @@ check_paths() {
 }
 
 
+check_status() {
+    if [ ! -e $CELERYBEAT_PID_FILE ]; then
+        local pid=
+    else
+        local pid=`cat "$CELERYBEAT_PID_FILE"`
+    fi
+
+    if [ -z "$pid" ]; then
+        echo "${SCRIPT_NAME} is stopped."
+        exit 1
+    fi
+    local failed=
+    kill -0 $pid 2> /dev/null || failed=true
+    if [ "$failed" ]; then
+        echo "${SCRIPT_NAME} is missing."
+        exit 1
+    fi
+    echo "${SCRIPT_NAME} (pid $pid) is running."
+    exit 0
+}
+
+
 create_paths () {
     create_default_dir "$CELERYBEAT_LOG_DIR"
     create_default_dir "$CELERYBEAT_PID_DIR"
@@ -263,6 +285,9 @@ case "$1" in
         check_dev_null
         start_beat
     ;;
+    status)
+        check_status
+    ;;
     create-paths)
         check_dev_null
         create_paths
@@ -272,7 +297,7 @@ case "$1" in
         check_paths
     ;;
     *)
-        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|create-paths|check-paths}"
+        echo "Usage: /etc/init.d/${SCRIPT_NAME} {start|stop|restart|status|create-paths|check-paths}"
         exit 64  # EX_USAGE
     ;;
 esac
