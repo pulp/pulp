@@ -46,6 +46,26 @@ with an importer that supports the type of units being copied.
   }
 
 
+**Sample result value**::
+
+    "result": {
+      "units_successful": [
+        {
+          "unit_key": {
+            "name": "whale",
+            "checksum": "3b34234afc8b8931d627f8466f0e4fd352145a2512681ec29db0a051a0c9d893",
+            "epoch": "0",
+            "version": "0.2",
+            "release": "1",
+            "arch": "noarch",
+            "checksumtype": "sha256"
+          },
+          "type_id": "rpm"
+        }
+      ]
+    }
+
+
 **Tags:**
 The task created will have the following tags.  ``"pulp:repository:<source_repo_id>",
 "pulp:consumer:<destination_repo_id>",

@@ -204,9 +204,10 @@ class RepoUnitAssociationManager(object):
         :type  criteria:               UnitAssociationCriteria
         :param import_config_override: optional config containing values to use for this import only
         :type  import_config_override: dict
-        :return:                       list of unit IDs (see pulp.plugins.model.Unit.to_id_dict) for
+        :return:                       dict with key 'units_successful' whose
+                                       value is a list of unit keys that were copied.
                                        units that were associated by this operation
-        :rtype:                        list
+        :rtype:                        dict
         :raise MissingResource:        if either of the specified repositories don't exist
         """
         # Validation
@@ -232,9 +233,9 @@ class RepoUnitAssociationManager(object):
             associate_us = load_associated_units(source_repo_id, criteria)
 
             # If units were supposed to be filtered but none matched, we're done
-            if len(associate_us) is 0:
+            if len(associate_us) == 0:
                 # Return an empty list to indicate nothing was copied
-                return []
+                return {'units_successful': []}
 
         # Now we can make sure the destination repository's importer is capable
         # of importing either the selected units or all of the units

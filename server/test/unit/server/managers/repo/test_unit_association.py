@@ -343,10 +343,11 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Test
         criteria = UnitAssociationCriteria(type_ids=['mock-type'], unit_filters={'key-1' : 'no way this matches squat'})
-        self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
+        ret = self.manager.associate_from_repo(source_repo_id, dest_repo_id, criteria=criteria)
 
         # Verify
         self.assertEqual(0, mock_plugins.MOCK_IMPORTER.import_units.call_count)
+        self.assertEqual(ret.get('units_successful'), [])
 
     def test_associate_from_repo_missing_source(self):
         # Setup
