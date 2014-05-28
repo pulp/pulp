@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.15
-Release:        5.pulp%{?dist}
+Release:        8.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -172,6 +172,18 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue May 27 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-8.pulp
+- Fix test compatability for Python 2.6 (bmbouter@gmail.com)
+
+* Tue May 27 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-7.pulp
+- Adds new qpid patch for synchronous transport, and bumps spec file.
+  (bmbouter@gmail.com)
+
+* Fri May 23 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-6.pulp
+- Testing new Patch for Kombu that may fix NoAvailableQueues issue.
+  (bmbouter@gmail.com)
+- Build for EL 7. (rbarlow@redhat.com)
+
 * Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 3.0.15-5.pulp
 - Update to the latest qpid patch. (rbarlow@redhat.com)
 
