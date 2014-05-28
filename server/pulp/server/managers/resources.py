@@ -6,6 +6,7 @@ from gettext import gettext as _
 import pymongo
 
 from pulp.server.db.model import resources
+from pulp.server import exceptions
 
 
 def filter_available_queues(criteria):
@@ -34,8 +35,7 @@ def get_least_busy_available_queue():
         sort=[('num_reservations', pymongo.ASCENDING)])
 
     if available_queue is None:
-        msg = _('There are no available queues in the system for reserved task work.')
-        raise NoAvailableQueues(msg)
+        raise exceptions.NoAvailableQueues()
 
     return resources.AvailableQueue.from_bson(available_queue)
 
@@ -57,11 +57,3 @@ def get_or_create_reserved_resource(name):
     return resources.ReservedResource(
         name=reserved_resource['_id'], assigned_queue=reserved_resource['assigned_queue'],
         num_reservations=reserved_resource['num_reservations'])
-
-
-class NoAvailableQueues(Exception):
-    """
-    This Exception is raised by _get_least_busy_available_queue() if there are no AvailableQueue
-    objects.
-    """
-    pass

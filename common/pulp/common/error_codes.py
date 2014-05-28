@@ -1,18 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from collections import namedtuple
 from gettext import gettext as _
+
 
 Error = namedtuple('Error', ['code', 'message', 'required_fields'])
 """
@@ -78,6 +66,11 @@ PLP0022 = Error("PLP0022",
                 _("Errors occurred uninstalling content for the consumer group %(group_id)s."),
                 ['group_id'])
 PLP0023 = Error("PLP0023", _("Task is already in a complete state: %(task_id)s"), ['task_id'])
+PLP0024 = Error("PLP0024",
+                _("There are no available workers in the system for reserved task work. "
+                  "Please ensure that both the pulp_workers and pulp_celerybeat services are "
+                  "running."),
+                [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific

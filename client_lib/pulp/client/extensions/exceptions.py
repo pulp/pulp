@@ -206,15 +206,13 @@ class ExceptionHandler:
 
         :return: appropriate exit code for this error
         """
-
         self._log_server_exception(e)
 
         # This is a very vague error condition; the best we can do is rely on
         # the exception dump to the log file
 
-        msg = _('An internal error occurred on the Pulp server. More information '
-                'can be found in the client log file %(l)s.')
-        msg = msg % {'l' : self._log_filename()}
+        msg = _('An internal error occurred on the Pulp server:\n\n%(e)s')
+        msg = msg % {'e': str(e)}
 
         self.prompt.render_failure_message(msg)
         return CODE_PULP_SERVER_EXCEPTION

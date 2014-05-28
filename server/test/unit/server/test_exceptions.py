@@ -13,9 +13,11 @@
 
 import unittest
 
+import mock
+
+from pulp.common import error_codes
 from pulp.devel.unit.util import compare_dict
 from pulp.server import exceptions
-from pulp.common import error_codes
 
 
 class TestPulpException(unittest.TestCase):
@@ -109,3 +111,38 @@ class TestPulpCodedValidationException(unittest.TestCase):
                                                      exceptions.PulpCodedException()])
         self.assertEquals(e.error_code, error_codes.PLP1000)
         self.assertEquals(len(e.child_exceptions), 2)
+
+
+class TestNoAvailableQueues(unittest.TestCase):
+    """
+    Tests for the NoAvailableQueues Exception class.
+    """
+    @mock.patch('pulp.server.exceptions.PulpExecutionException.__init__')
+    def test___init__(self, super___init__):
+        """
+        Ensure correct operation of __init__().
+        """
+        e = exceptions.NoAvailableQueues()
+
+        self.assertEqual(e.error_code, error_codes.PLP0024)
+        super___init__.assert_called_once_with()
+
+    def test___str__(self):
+        """
+        Ensure correct operation of __str__().
+        """
+        e = exceptions.NoAvailableQueues()
+
+        msg = str(e)
+
+        self.assertEqual(msg, error_codes.PLP0024.message)
+
+    def test_data_dict(self):
+        """
+        Ensure that data_dict returns {}.
+        """
+        e = exceptions.NoAvailableQueues()
+
+        d = e.data_dict()
+
+        self.assertEqual(d, {})

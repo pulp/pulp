@@ -8,6 +8,7 @@ import mock
 import pymongo
 
 from ...base import ResourceReservationTests
+from pulp.server import exceptions
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.resources import AvailableQueue, ReservedResource
 from pulp.server.managers import resources
@@ -66,7 +67,7 @@ class TestGetLeastBusyAvailableQueue(ResourceReservationTests):
         It should raise a NoAvailableQueues Exception.
         """
         # When no queues are available, a NoAvailableQueues Exception should be raised
-        self.assertRaises(resources.NoAvailableQueues, resources.get_least_busy_available_queue)
+        self.assertRaises(exceptions.NoAvailableQueues, resources.get_least_busy_available_queue)
 
     def test_picks_least_busy_queue(self):
         """
