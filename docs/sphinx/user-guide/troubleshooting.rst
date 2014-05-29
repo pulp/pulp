@@ -174,3 +174,19 @@ qpid-cpp-server-store package installed with their broker. Later version of Qpid
 package to be installed. This exception may not occur until the Qpid broker is restarted
 unexpectedly with other Pulp services running. The exception is shown as Pulp recovers from a Qpid
 availability issue.
+
+No available workers
+^^^^^^^^^^^^^^^^^^^^
+
+Pulp requires three Celery services to be running: ``pulp_celerybeat``, ``pulp_resource_manager``,
+and ``pulp_workers``. If you are experiencing this error, you may see a message similar to "There
+are no available workers in the system for reserved task work. Please ensure that both the
+pulp_workers and pulp_celerybeat services are running" in the logs or from the CLI. Pulp will not
+work correctly if any of the required services are not running, so please ensure that they are all
+started and configured to start after a reboot.
+
+.. warning::
+
+   Remember that ``pulp_celerybeat`` and ``pulp_resource_manager`` must be singletons across the
+   entire Pulp distributed installation. Please be sure to only start one instance of each of these.
+   ``pulp_workers`` is safe to start on as many machines as you like.

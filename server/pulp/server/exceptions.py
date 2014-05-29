@@ -1,23 +1,9 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import httplib
 from datetime import timedelta
 from gettext import gettext as _
 from pprint import pformat
 
 from pulp.common import error_codes
-# base exception class ---------------------------------------------------------
 
 
 class PulpException(Exception):
@@ -73,8 +59,6 @@ class PulpException(Exception):
 
     def data_dict(self):
         return {'args': self.args}
-
-# execution exceptions ---------------------------------------------------------
 
 
 class PulpExecutionException(PulpException):
@@ -213,6 +197,40 @@ class OperationTimedOut(PulpExecutionException):
         return {'timeout': self.timeout}
 
 
+class NoAvailableQueues(PulpExecutionException):
+    """
+    This Exception is raised when there are no Celery workers available to perform asynchronous
+    tasks.
+    """
+    http_status_code = httplib.SERVICE_UNAVAILABLE
+
+    def __init__(self):
+        """
+        Initialize the NoAvailableQueues Exception by setting its error code and message.
+        """
+        super(NoAvailableQueues, self).__init__()
+        self.error_code = error_codes.PLP0024
+
+    def __str__(self):
+        """
+        Return a string representation of self.
+
+        :return: str of self
+        :rtype:  str
+        """
+        msg = self.error_code.message
+        return msg.encode('utf-8')
+
+    def data_dict(self):
+        """
+        Return an empty dictionary, as there is no data for this error.
+
+        :return: empty dictionary
+        :rtype:  dict
+        """
+        return {}
+
+
 class OperationPostponed(PulpExecutionException):
     """
     Base class for handling operations postponed by the coordinator.
@@ -260,8 +278,6 @@ class NotImplemented(PulpExecutionException):
 
     def data_dict(self):
         return {'operation_name': self.operation_name}
-
-# data exceptions --------------------------------------------------------------
 
 
 class PulpDataException(PulpException):
