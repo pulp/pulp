@@ -103,7 +103,7 @@ Server
 
     $ sudo yum install mongodb-server
 
-   You need mongodb-server with version >= 2.0 installed for Pulp server. After installing MongoDB,
+   You need mongodb-server with version >= 2.4 installed for Pulp server. After installing MongoDB,
    you should configure it to start at boot and start it. For Upstart based systems::
 
     $ sudo service mongod start
