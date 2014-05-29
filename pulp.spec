@@ -39,7 +39,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.18.beta%{?dist}
+Release: 0.19.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -602,6 +602,15 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu May 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.19.beta
+- 1102236 - pass the authenticator to the reply consumer. (jortel@redhat.com)
+- 1099272 - bump mongodb version requirement in docs (cduryee@redhat.com)
+- 1098620 - Report NoAvailableQueues as a coded Exception. (rbarlow@redhat.com)
+- 1101598 - returns the correct data type when copy matches 0 units
+  (mhrivnak@redhat.com)
+- 1097247 - Add status to pulp_celerybeat script. (rbarlow@redhat.com)
+- 1100084 - read consumer.conf during setup_plugin(). (jortel@redhat.com)
+
 * Wed May 21 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.18.beta
 - 1099945 - use correct serializer when publishing http events
   (cduryee@redhat.com)
