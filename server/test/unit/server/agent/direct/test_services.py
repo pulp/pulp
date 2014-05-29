@@ -47,15 +47,17 @@ class TestReplyHandler(TestCase):
     def reply_handler(self):
         return ReplyHandler('', '')
 
+    @patch('pulp.server.agent.direct.services.Authenticator')
     @patch('pulp.server.agent.direct.services.Queue')
     @patch('pulp.server.agent.direct.services.ReplyConsumer')
-    def test_construction(self, mock_consumer, mock_queue):
+    def test_construction(self, mock_consumer, mock_queue, mock_auth):
         url = 'http://broker'
         transport = pulp_conf.get('messaging', 'transport')
         handler = ReplyHandler(url, transport)
         mock_queue.assert_called_with(Services.REPLY_QUEUE, transport=transport)
-        mock_consumer.assert_called_with(mock_queue(), url=url, transport=transport)
-        handler.consumer = mock_consumer()
+        mock_consumer.assert_called_with(
+            mock_queue(), url=url, transport=transport, authenticator=mock_auth())
+        self.assertEqual(handler.consumer, mock_consumer())
 
     def test_start(self):
         handler = self.reply_handler()

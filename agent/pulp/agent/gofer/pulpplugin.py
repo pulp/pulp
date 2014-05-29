@@ -154,11 +154,11 @@ class Authenticator(object):
         finally:
             fp.close()
 
-    def validate(self, uuid, digest, signature):
+    def validate(self, document, digest, signature):
         """
         Validate the specified message and signature.
-        :param uuid: The (unused) uuid of the sender.
-        :type uuid: str
+        :param document: The original signed document.
+        :type document: str
         :param digest: A message digest.
         :type digest: str
         :param signature: A message signature.

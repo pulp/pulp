@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.0.13
+Version: 1.2.0
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -252,6 +252,16 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Thu May 29 2014 Jeff Ortel <jortel@redhat.com> 1.2.0-1
+- Add authenticator param to ReplyConsumer constructor. (jortel@redhat.com)
+- python 2.4 compat. (jortel@redhat.com)
+
+* Wed May 28 2014 Jeff Ortel <jortel@redhat.com> 1.1.0-1
+- Pass original document during auth validation instead of destination uuid.
+  (jortel@redhat.com)
+- Better support for associating an authenticator with a consumer.
+  (jortel@redhat.com)
+
 * Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 1.0.13-1
 - Fix setting logging levels in agent.conf. (jortel@redhat.com)
 - In the amqplib transport, message durable=True. (jortel@redhat.com)
