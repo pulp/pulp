@@ -16,6 +16,8 @@ from logging import getLogger
 from pulp.server.config import config
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.managers import factory as managers
+from pulp.server.agent.auth import Authenticator
+
 from gofer.messaging import Broker
 from gofer.messaging import Queue
 from gofer.rmi.async import ReplyConsumer, Listener
@@ -125,7 +127,7 @@ class ReplyHandler(Listener):
         :type transport: str
         """
         queue = Queue(Services.REPLY_QUEUE, transport=transport)
-        self.consumer = ReplyConsumer(queue, url=url, transport=transport)
+        self.consumer = ReplyConsumer(queue, url=url, transport=transport, authenticator=Authenticator())
 
     # --- agent replies ------------------------------------------------------
 

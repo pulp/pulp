@@ -136,6 +136,8 @@ class TestAuthentication(TestCase):
     def test_validated(self, mock_get):
         message = 'hello'
         consumer_id = 'test-consumer_id'
+        document = Mock()
+        document.any = {'consumer_id': consumer_id}
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
 
         mock_get.return_value = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
@@ -143,12 +145,15 @@ class TestAuthentication(TestCase):
         # test
 
         authenticator = Authenticator()
-        authenticator.validate(consumer_id, message, key.sign(message))
+        authenticator.validate(document, message, key.sign(message))
+        mock_get.assert_called_with(consumer_id)
 
     @patch('pulp.server.agent.auth.Authenticator.get_key')
-    def test_validated(self, mock_get):
+    def test_not_validated(self, mock_get):
         message = 'hello'
         consumer_id = 'test-consumer_id'
+        document = Mock()
+        document.any = {'consumer_id': consumer_id}
         key = RSA.load_key_bio(BIO.MemoryBuffer(OTHER_KEY))
 
         mock_get.return_value = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
@@ -157,16 +162,21 @@ class TestAuthentication(TestCase):
 
         authenticator = Authenticator()
         self.assertRaises(
-            ValidationFailed, authenticator.validate, consumer_id, message, key.sign(message))
+            ValidationFailed, authenticator.validate, document, message, key.sign(message))
+        mock_get.assert_called_with(consumer_id)
 
     @patch('pulp.server.agent.auth.Authenticator.get_key')
     def test_validated_not_raised(self, mock_get):
         mock_get.return_value.verify = Mock(return_value=False)
+        consumer_id = 'test-consumer_id'
+        document = Mock()
+        document.any = {'consumer_id': consumer_id}
 
         # test
 
         authenticator = Authenticator()
-        self.assertRaises(ValidationFailed, authenticator.validate, '', '', '')
+        self.assertRaises(ValidationFailed, authenticator.validate, document, '', '')
+        mock_get.assert_called_with(consumer_id)
 
     def test_validate_not_enabled(self):
         authenticator = Authenticator()

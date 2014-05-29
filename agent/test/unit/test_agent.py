@@ -164,7 +164,7 @@ class TestAuthentication(PluginTest):
 
     @patch('__builtin__.open')
     def test_validated(self, mock_open):
-        uuid = 'test-uuid'
+        document = {}
         message = 'hello'
         key_path = '/etc/pki/pulp/consumer/server/rsa_pub.pem'
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
@@ -179,7 +179,7 @@ class TestAuthentication(PluginTest):
         # test
 
         authenticator = self.plugin.Authenticator()
-        authenticator.validate(uuid, message, key.sign(message))
+        authenticator.validate(document, message, key.sign(message))
 
         # validation
 
@@ -188,7 +188,7 @@ class TestAuthentication(PluginTest):
 
     @patch('__builtin__.open')
     def test_not_validated(self, mock_open):
-        uuid = 'test-uuid'
+        document = {}
         message = 'hello'
         key_path = '/etc/pki/pulp/consumer/server/rsa_pub.pem'
         key = RSA.load_key_bio(BIO.MemoryBuffer(OTHER_KEY))
@@ -204,7 +204,7 @@ class TestAuthentication(PluginTest):
 
         authenticator = self.plugin.Authenticator()
         self.assertRaises(
-            ValidationFailed, authenticator.validate, uuid, message, key.sign(message))
+            ValidationFailed, authenticator.validate, document, message, key.sign(message))
 
         # validation
         mock_open.assert_called_with(key_path)

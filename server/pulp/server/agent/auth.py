@@ -14,6 +14,7 @@ from gofer.messaging.auth import ValidationFailed
 
 from pulp.server.config import config as pulp_conf
 from pulp.server.managers import factory as managers
+from pulp.server.exceptions import MissingResource
 from pulp.common.config import parse_bool
 
 
@@ -53,7 +54,7 @@ class Authenticator(object):
         manager = managers.consumer_manager()
         consumer = manager.get_consumer(consumer_id, fields=[rsa_pub])
         pem = consumer[rsa_pub]
-        bfr = BIO.MemoryBuffer(pem)
+        bfr = BIO.MemoryBuffer(str(pem))
         return RSA.load_pub_key_bio(bfr)
 
     def sign(self, digest):
@@ -69,12 +70,11 @@ class Authenticator(object):
         else:
             return ''
 
-    def validate(self, agent_id, digest, signature):
+    def validate(self, document, digest, signature):
         """
         Validate the specified message and signature.
-        :param agent_id: The id of the agent that sent the request.
-            The agent id has the form: 'pulp.agent.<consumer_id>'.
-        :type agent_id: str
+        :param document: The original signed document.
+        :type document: gofer.messaging.Document
         :param digest: A message digest.
         :type digest: str
         :param signature: A message signature.
@@ -83,10 +83,10 @@ class Authenticator(object):
         """
         if not self.enabled:
             return
-        consumer_id = agent_id.rsplit('.', 1)[-1]
-        key = self.get_key(consumer_id)
         try:
+            consumer_id = document.any['consumer_id']
+            key = self.get_key(consumer_id)
             if not key.verify(digest, signature):
                 raise ValidationFailed()
-        except RSA.RSAError:
+        except (MissingResource, RSA.RSAError):
             raise ValidationFailed()
