@@ -829,14 +829,16 @@ class RepoImportUpload(JSONController):
         unit_type_id = params['unit_type_id']
         unit_key = params['unit_key']
         unit_metadata = params.pop('unit_metadata', None)
+        override_config = params.pop('override_config', None)
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                      tags.action_tag('import_upload')]
         async_result = import_uploaded_unit.apply_async_with_reservation(
-                                    tags.RESOURCE_REPOSITORY_TYPE,
-                                    repo_id,
-                                    [repo_id, unit_type_id, unit_key, unit_metadata, upload_id],
-                                    tags=task_tags)
+                            tags.RESOURCE_REPOSITORY_TYPE,
+                            repo_id,
+                            [repo_id, unit_type_id, unit_key, unit_metadata, upload_id,
+                             override_config],
+                            tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 

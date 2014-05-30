@@ -206,6 +206,7 @@ class UploadCommand(PerformUploadCommand):
         specified_files = user_input.get(OPTION_FILE.keyword) or []
         specified_dirs = user_input.get(OPTION_DIR.keyword) or []
         verbose = user_input.get(FLAG_VERBOSE.keyword) or False
+        override_config = self.generate_override_config(**user_input)
 
         self._verify_repo_exists(repo_id)
 
@@ -429,6 +430,17 @@ class UploadCommand(PerformUploadCommand):
 
         :raise MetadataException: if the metadata cannot be properly determined
                for the unit being uploaded
+        """
+        return {}
+
+    def generate_override_config(self, **kwargs):
+        """
+        Subclasses may override this to introduce an override config value to the upload
+        command. If not overridden, an empty override config will be specified.
+
+        :param kwargs: parsed from the user input
+
+        :return: value to pass the upload call as its override_config parameter
         """
         return {}
 
