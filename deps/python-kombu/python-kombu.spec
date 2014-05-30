@@ -70,7 +70,6 @@ Requires: python-anyjson >= 0.3.3
 %if 0%{?rhel} == 6
 Requires:  python-ordereddict
 %endif
-Requires: python-qpid-qmf
 
 %description
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
