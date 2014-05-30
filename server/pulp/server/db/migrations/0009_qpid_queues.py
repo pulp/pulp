@@ -1,33 +1,28 @@
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from gettext import gettext as _
 import logging
 from urlparse import urlparse
 
-QPIDTOOLLIBS_AVAILABLE = True
 try:
     from qpidtoollibs import BrokerAgent
+    QPIDTOOLLIBS_AVAILABLE = True
 except ImportError:
     QPIDTOOLLIBS_AVAILABLE = False
 
-QPID_MESSAGING_AVAILABLE = True
 try:
     from qpid.messaging import Connection
+    QPID_MESSAGING_AVAILABLE = True
 except ImportError:
     QPID_MESSAGING_AVAILABLE = False
 
 from pulp.server.config import config as pulp_conf
 from pulp.server.agent.direct.services import Services
 from pulp.server.db.model.consumer import Consumer
+
+
+TROUBLESHOOTING_URL = 'http://pulp-user-guide.readthedocs.org/en/pulp-2.4/troubleshooting.html%s'
+QPID_MESSAGING_URL = TROUBLESHOOTING_URL % '#qpid-messaging-is-not-installed'
+QPIDTOOLLIBS_URL = TROUBLESHOOTING_URL % '#qpidtoollibs-is-not-installed'
+
 
 logger = logging.getLogger(__name__)
 
@@ -44,14 +39,18 @@ def migrate(*args, **kwargs):
         return
 
     if not QPID_MESSAGING_AVAILABLE:
-        msg = _('Migration 0009 did not run because the python package qpid.messaging is not installed.  Please '
-                'install qpid.messaging and rerun the migrations.')
+        msg = _('Migration 0009 did not run because the python package qpid.messaging is not '
+                'installed.  Please install qpid.messaging and rerun the migrations. See %s'
+                'for more information.')
+        msg = msg % QPID_MESSAGING_URL
         logger.error(msg)
         raise Exception(msg)
 
     if not QPIDTOOLLIBS_AVAILABLE:
-        msg = _('Migration 0009 did not run because the python package qpidtoollibs is not installed.  Please '
-                'install qpidtoollibs and rerun the migrations.')
+        msg = _('Migration 0009 did not run because the python package qpidtoollibs is not '
+                'installed.  Please install qpidtoollibs and rerun the migrations. See %s for more '
+                'information.')
+        msg = msg % QPIDTOOLLIBS_URL
         logger.error(msg)
         raise Exception(msg)
 

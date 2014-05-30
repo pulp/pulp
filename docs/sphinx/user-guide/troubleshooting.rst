@@ -190,3 +190,15 @@ started and configured to start after a reboot.
    Remember that ``pulp_celerybeat`` and ``pulp_resource_manager`` must be singletons across the
    entire Pulp distributed installation. Please be sure to only start one instance of each of these.
    ``pulp_workers`` is safe to start on as many machines as you like.
+
+qpid.messaging is not installed
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you are using Qpid as your message broker, you will need the Python package ``qpid.messaging``.
+On Red Hat operating systems, this is provided by the ``python-qpid`` package.
+
+qpidtoollibs is not installed
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you are using Qpid as your message broker, you will also need the Python package
+``qpidtoollibs``. On Red Hat operating systems, this is provided by the python-qpid-qmf package.
