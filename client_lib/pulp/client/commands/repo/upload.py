@@ -577,7 +577,14 @@ class ListCommand(PulpCliCommand):
                 state = '[%s]' % self.context.prompt.color(_(' Paused  '), COLOR_PAUSED)
 
             template = '%s %s'
-            message = template % (state, os.path.basename(upload.source_filename))
+
+            # bz 1100892
+            if upload.source_filename:
+                source_name = os.path.basename(upload.source_filename)
+            else:
+                source_name = _('Metadata Upload')
+
+            message = template % (state, source_name)
             self.context.prompt.write(message)
 
         self.context.prompt.render_spacer()
