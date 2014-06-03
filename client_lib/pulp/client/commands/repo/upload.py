@@ -324,7 +324,8 @@ class UploadCommand(PerformUploadCommand):
 
             bar.render(i + 1, len(file_bundles), message=msg)
             upload_id = self.upload_manager.initialize_upload(
-                filename, repo_id, file_bundle.type_id, file_bundle.unit_key, file_bundle.metadata)
+                filename, repo_id, file_bundle.type_id, file_bundle.unit_key, file_bundle.metadata,
+                override_config)
             upload_ids.append(upload_id)
 
         self.prompt.write(_('... completed'))

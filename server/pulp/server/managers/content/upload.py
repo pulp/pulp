@@ -167,7 +167,7 @@ class ContentUploadManager(object):
 
     @staticmethod
     def import_uploaded_unit(repo_id, unit_type_id, unit_key, unit_metadata, upload_id,
-                             override_config):
+                             override_config=None):
         """
         Called to trigger the importer's handling of an uploaded unit. This
         should not be called until the bits have finished uploading. The

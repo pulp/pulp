@@ -37,12 +37,14 @@ class UploadAPI(PulpAPI):
         url = '/v2/content/uploads/%s/' % upload_id
         return self.server.DELETE(url)
 
-    def import_upload(self, upload_id, repo_id, unit_type_id, unit_key, unit_metadata):
+    def import_upload(self, upload_id, repo_id, unit_type_id, unit_key, unit_metadata,
+                      override_config=None):
         url = '/v2/repositories/%s/actions/import_upload/' % repo_id
         body = {
-            'upload_id' : upload_id,
-            'unit_type_id' : unit_type_id,
-            'unit_key' : unit_key,
-            'unit_metadata' : unit_metadata,
+            'upload_id': upload_id,
+            'unit_type_id': unit_type_id,
+            'unit_key': unit_key,
+            'unit_metadata': unit_metadata,
+            'override_config': override_config,
         }
         return self.server.POST(url, body)
