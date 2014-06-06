@@ -341,6 +341,7 @@ def get_supported_dists_for_dep(dep_directory):
     try:
         with open(dist_list_file, 'r') as handle:
             line = handle.readline()
+            line = line.strip()
             dists_from_dep = line.split(' ')
     except IOError:
         print "dist_list.txt file not found for %s." % dep_directory
