@@ -390,6 +390,7 @@ def get_supported_dists_for_dep(dep_directory):
     try:
         with open(dist_list_file, 'r') as handle:
             line = handle.readline()
+            line = line.strip()
             dists_from_dep = line.split(' ')
     except IOError:
         print "dist_list.txt file not found for %s." % dep_directory
@@ -512,7 +513,6 @@ if not opts.disable_repo_build:
         # Get the full build RPMs for the target
         download_rpms_from_tag(build_target, output_dir)
         # Get any scratch build RPMS for the target
-
         download_rpms_from_scratch_tasks(output_dir, distkey)
         build_repos(output_dir, distkey)
 
