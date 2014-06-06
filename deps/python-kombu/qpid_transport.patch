@@ -194,14 +194,18 @@ index 85b8f5e..acd1713 100644
      :keyword userid: Default user name if not provided in the URL.
 diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
 new file mode 100644
-index 0000000..951b147
+index 0000000..b6df92d
 --- /dev/null
 +++ b/kombu/tests/transport/test_qpid.py
-@@ -0,0 +1,1261 @@
+@@ -0,0 +1,1652 @@
 +from __future__ import absolute_import
 +
 +import datetime
++import select
++import ssl
 +import socket
++import sys
++import threading
 +import time
 +
 +from itertools import count
@@ -214,13 +218,14 @@ index 0000000..951b147
 +    QPID_NOT_AVAILABLE = True
 +
 +import kombu.five
-+from kombu.transport.qpid import QpidMessagingExceptionHandler, QoS, Message
-+from kombu.transport.qpid import Channel
-+from kombu.transport.qpid import Connection, Transport
++from kombu.transport.qpid import AuthenticationFailure, QoS, Message
++from kombu.transport.qpid import QpidMessagingExceptionHandler, Channel
++from kombu.transport.qpid import Connection, ReceiversMonitor, Transport
 +from kombu.transport.virtual import Base64
 +from kombu.utils.compat import OrderedDict
 +from kombu.tests.case import Case, Mock, SkipTest
 +from kombu.tests.case import patch, skip_if_not_module
++from mock import PropertyMock, call
 +
 +
 +class ExtraAssertionsMixin(object):
@@ -231,7 +236,7 @@ index 0000000..951b147
 +        Test that two dictionaries are equal.
 +
 +        Implemented here because this method was not available until Python
-+        2.6.  This asserts that the unique set of keys are the same in a and b.
++        2.6. This asserts that the unique set of keys are the same in a and b.
 +        Also asserts that the value of each key is the same in a and b using
 +        the is operator.
 +        """
@@ -469,11 +474,10 @@ index 0000000..951b147
 +        self.assertTrue(m2 is message2)
 +
 +
-+class TestConnection(ExtraAssertionsMixin, Case):
++class ConnectionTestBase(Case):
 +
 +    @patch('qpid.messaging.Connection')
 +    def setUp(self, QpidConnection):
-+        """Setup a Connection with sane connection parameters."""
 +        if QPID_NOT_AVAILABLE:
 +            raise SkipTest('qpid.messaging not installed')
 +        self.connection_options = {'host': 'localhost',
@@ -483,59 +487,126 @@ index 0000000..951b147
 +                                   'transport': 'tcp',
 +                                   'timeout': 10,
 +                                   'sasl_mechanisms': 'PLAIN'}
-+        self.created_connection = Mock()
-+        QpidConnection.establish = Mock(return_value=self.created_connection)
 +        self.mock_qpid_connection = QpidConnection
-+        self.my_connection = Connection(**self.connection_options)
++        self.conn = Connection(**self.connection_options)
 +
-+    def test_init_variables(self):
-+        """Test that all init params are internally stored correctly
-+        """
++
++class TestConnectionInit(ExtraAssertionsMixin, ConnectionTestBase):
++
++    def test_connection__init__stores_connection_options(self):
 +        self.assertDictEqual(self.connection_options,
-+                             self.my_connection.connection_options)
-+        self.assertTrue(isinstance(self.my_connection.channels, list))
-+        self.assertTrue(isinstance(self.my_connection._callbacks, dict))
++                             self.conn.connection_options)
++
++    def test_connection__init__variables(self):
++        self.assertTrue(isinstance(self.conn.channels, list))
++        self.assertTrue(isinstance(self.conn._callbacks, dict))
++
++    def test_connection__init__establishes_connection(self):
 +        self.mock_qpid_connection.establish.assert_called_with(
 +            **self.connection_options)
-+        internal_conn = self.my_connection._qpid_conn
-+        self.assertTrue(self.created_connection is internal_conn)
 +
-+    def test_verify_connection_class_attributes(self):
-+        """Verify that Channel class attribute is set correctly"""
++    def test_connection__init__saves_established_connection(self):
++        created_conn = self.mock_qpid_connection.establish.return_value
++        self.assertTrue(self.conn._qpid_conn is created_conn)
++
++    @patch('kombu.transport.qpid.sys.exc_info')
++    @patch('qpid.messaging.Connection')
++    def test_connection__init__mutates_ConnError_by_message(self, qpid_conn,
++                                                            mock_exc_info):
++        ConnectionError = qpid.messaging.exceptions.ConnectionError
++        my_conn_error = ConnectionError()
++        my_conn_error.text = 'connection-forced: Authentication failed(320)'
++        qpid_conn.establish.side_effect = my_conn_error
++        mock_exc_info.return_value = ('a', 'b', None)
++        try:
++            self.conn = Connection(**self.connection_options)
++        except AuthenticationFailure as error:
++            exc_info = sys.exc_info()
++            self.assertTrue(not isinstance(error, ConnectionError))
++            self.assertTrue(exc_info[1] is 'b')
++            self.assertTrue(exc_info[2] is None)
++        else:
++            self.fail('ConnectionError type was not mutated correctly')
++
++    @patch('kombu.transport.qpid.sys.exc_info')
++    @patch('qpid.messaging.Connection')
++    def test_connection__init__mutates_ConnError_by_code(self, qpid_conn,
++                                                         mock_exc_info):
++        ConnectionError = qpid.messaging.exceptions.ConnectionError
++        my_conn_error = ConnectionError()
++        my_conn_error.code = 320
++        my_conn_error.text = 'someothertext'
++        qpid_conn.establish.side_effect = my_conn_error
++        mock_exc_info.return_value = ('a', 'b', None)
++        try:
++            self.conn = Connection(**self.connection_options)
++        except AuthenticationFailure as error:
++            exc_info = sys.exc_info()
++            self.assertTrue(not isinstance(error, ConnectionError))
++            self.assertTrue(exc_info[1] is 'b')
++            self.assertTrue(exc_info[2] is None)
++        else:
++            self.fail('ConnectionError type was not mutated correctly')
++
++    @patch('qpid.messaging.Connection')
++    def test_connection__init__non_auth_Conn_Error_raises(self, qpid_conn):
++        ConnectionError = qpid.messaging.exceptions.ConnectionError
++        my_conn_error = ConnectionError()
++        my_conn_error.text = 'some non auth related error message'
++        qpid_conn.establish.side_effect = my_conn_error
++        self.assertRaises(ConnectionError, Connection,
++                          **self.connection_options)
++
++    @patch('qpid.messaging.Connection')
++    def test_connection__init__non_qpid_exception_raises(self, qpid_conn):
++        ConnectionError = qpid.messaging.exceptions.ConnectionError
++        my_conn_error = ConnectionError()
++        my_conn_error.text = 'some non auth related error message'
++        qpid_conn.establish.side_effect = IOError()
++        self.assertRaises(IOError, Connection, **self.connection_options)
++
++
++class TestConnectionClassAttributes(ConnectionTestBase):
++
++    def test_connection_verify_class_attributes(self):
 +        self.assertEqual(Channel, Connection.Channel)
 +
-+    def test_get_qpid_connection(self):
-+        """Test that get_qpid_connection returns the connection."""
-+        mock_connection = Mock()
-+        self.my_connection._qpid_conn = mock_connection
-+        returned_connection = self.my_connection.get_qpid_connection()
-+        self.assertTrue(mock_connection is returned_connection)
 +
-+    def test_close_channel_exists(self):
-+        """Test that calling close_channel() with a valid channel removes
-+        the channel from self.channels and sets channel.connection to None.
-+        """
-+        mock_channel = Mock()
-+        self.my_connection.channels = [mock_channel]
-+        mock_channel.connection = True
-+        self.my_connection.close_channel(mock_channel)
-+        self.assertEqual(self.my_connection.channels, [])
-+        self.assertTrue(mock_channel.connection is None)
++class TestConnectionGetQpidConnection(ConnectionTestBase):
 +
-+    def test_close_channel_does_not_exist(self):
-+        """Test that calling close_channel() with an invalid channel does
-+        not raise a ValueError and sets channel.connection to None.
-+        """
-+        self.my_connection.channels = Mock()
-+        self.my_connection.channels.remove = Mock(side_effect=ValueError())
++    def test_connection_get_qpid_connection(self):
++        self.conn._qpid_conn = Mock()
++        returned_connection = self.conn.get_qpid_connection()
++        self.assertTrue(self.conn._qpid_conn is returned_connection)
++
++
++class TestConnectionCloseChannel(ConnectionTestBase):
++
++    def setUp(self):
++        super(TestConnectionCloseChannel, self).setUp()
++        self.conn.channels = Mock()
++
++    def test_connection_close_channel_removes_channel_from_channel_list(self):
 +        mock_channel = Mock()
-+        mock_channel.connection = True
-+        self.my_connection.close_channel(mock_channel)
++        self.conn.close_channel(mock_channel)
++        self.conn.channels.remove.assert_called_once_with(mock_channel)
++
++    def test_connection_close_channel_handles_ValueError_being_raised(self):
++        self.conn.channels.remove = Mock(side_effect=ValueError())
++        try:
++            self.conn.close_channel(Mock())
++        except ValueError:
++            self.fail('ValueError should not have been raised')
++
++    def test_connection_close_channel_set_channel_connection_to_None(self):
++        mock_channel = Mock()
++        mock_channel.connection = False
++        self.conn.channels.remove = Mock(side_effect=ValueError())
++        self.conn.close_channel(mock_channel)
 +        self.assertTrue(mock_channel.connection is None)
 +
 +
 +class ChannelTestBase(Case):
-+    """Provides a basic setup for testing a Channel"""
 +
 +    @skip_if_not_module('qpidtoollibs')
 +    @patch('kombu.transport.qpid.qpidtoollibs.BrokerAgent')
@@ -560,7 +631,8 @@ index 0000000..951b147
 +        address_string = '%s; {assert: always, node: {type: queue}}' % \
 +                         routing_key
 +        self.transport.session.sender.assert_called_with(address_string)
-+        mock_Message_cls.assert_called_with(content=mock_message, subject=None)
++        mock_Message_cls.assert_called_with(content=mock_message,
++                                            subject=None)
 +        mock_sender = self.transport.session.sender.return_value
 +        mock_sender.send.assert_called_with(mock_Message_cls.return_value,
 +                                            sync=True)
@@ -608,7 +680,7 @@ index 0000000..951b147
 +        self.mock_receiver1 = Mock()
 +        self.mock_receiver2 = Mock()
 +        self.channel._receivers = {1: self.mock_receiver1,
-+                                   2:self.mock_receiver2}
++                                   2: self.mock_receiver2}
 +        self.channel.closed = False
 +        self.channel.close()
 +
@@ -700,6 +772,11 @@ index 0000000..951b147
 +        self.channel.basic_cancel(1)
 +        self.assertTrue(1 not in self.channel._receivers)
 +
++    def test_channel_basic_cancel_closes_receiver(self):
++        mock_receiver = self.channel._receivers[1]
++        self.channel.basic_cancel(1)
++        mock_receiver.close.assert_called_once_with()
++
 +    def test_channel_basic_cancel_pops__tag_to_queue(self):
 +        self.channel._tag_to_queue = Mock()
 +        self.channel.basic_cancel(1)
@@ -736,7 +813,8 @@ index 0000000..951b147
 +        mock_tag = Mock()
 +        mock_queue = Mock()
 +        self.channel.basic_consume(mock_queue, Mock(), Mock(), mock_tag)
-+        self.assertDictEqual({mock_tag: mock_queue}, self.channel._tag_to_queue)
++        expected_dict = {mock_tag: mock_queue}
++        self.assertDictEqual(expected_dict, self.channel._tag_to_queue)
 +
 +    def test_channel_basic_consume_adds_entry_to_connection__callbacks(self):
 +        mock_queue = Mock()
@@ -978,6 +1056,8 @@ index 0000000..951b147
 +        self.mock_broker.getQueue.return_value = mock_queue_data
 +        self.my_channel.queue_declare(mock_queue)
 +        mock_queue.startswith.assert_called_with('celeryev')
++        self.mock_broker.addQueue.assert_called_with(
++            mock_queue, options=expected_default_options)
 +
 +    def test_queue_declare_set_ring_policy_for_pidbox(self):
 +        """Test declare_queue sets ring_policy for pidbox"""
@@ -1001,6 +1081,8 @@ index 0000000..951b147
 +        self.mock_broker.getQueue.return_value = mock_queue_data
 +        self.my_channel.queue_declare(mock_queue)
 +        mock_queue.endswith.assert_called_with('pidbox')
++        self.mock_broker.addQueue.assert_called_with(
++            mock_queue, options=expected_default_options)
 +
 +    def test_queue_declare_ring_policy_not_set_as_expected(self):
 +        """Test declare_queue does not set ring_policy as expected"""
@@ -1024,6 +1106,8 @@ index 0000000..951b147
 +        self.my_channel.queue_declare(mock_queue)
 +        mock_queue.startswith.assert_called_with('celeryev')
 +        mock_queue.endswith.assert_called_with('pidbox')
++        self.mock_broker.addQueue.assert_called_with(
++            mock_queue, options=expected_default_options)
 +
 +    def test_queue_declare_test_defaults(self):
 +        """Test declare_queue defaults"""
@@ -1050,7 +1134,6 @@ index 0000000..951b147
 +            options=expected_default_options)
 +
 +    def test_queue_declare_raises_exception_not_silenced(self):
-+        """Test declare_queue, raise an exception that is raised and not silenced"""
 +        unique_exception = Exception('This exception should not be silenced')
 +        mock_queue = Mock()
 +        self.mock_broker.addQueue.side_effect = unique_exception
@@ -1319,6 +1402,134 @@ index 0000000..951b147
 +        self.assertTrue(mock_default is result)
 +
 +
++class ReceiversMonitorTestBase(Case):
++
++    def setUp(self):
++        self.mock_session = Mock()
++        self.mock_w = Mock()
++        self.monitor = ReceiversMonitor(self.mock_session, self.mock_w)
++
++        class BreakOutException(Exception):
++            pass
++        self.BreakOutException = BreakOutException
++
++
++class TestReceiversMonitorType(ReceiversMonitorTestBase):
++
++    def test_qpid_messaging_receivers_monitor_subclass_of_threading(self):
++        self.assertTrue(isinstance(self.monitor, threading.Thread))
++
++
++class TestReceiversMonitorInit(ReceiversMonitorTestBase):
++
++    def setUp(self):
++        thread___init___str = 'kombu.transport.qpid.threading.Thread.__init__'
++        self.patch_parent___init__ = patch(thread___init___str)
++        self.mock_Thread___init__ = self.patch_parent___init__.start()
++        super(TestReceiversMonitorInit, self).setUp()
++
++    def tearDown(self):
++        self.patch_parent___init__.stop()
++
++    def test_qpid_messaging_receivers_monitor_init_saves_session(self):
++        self.assertTrue(self.monitor._session is self.mock_session)
++
++    def test_qpid_messaging_receivers_monitor_init_saves_fd(self):
++        self.assertTrue(self.monitor._w_fd is self.mock_w)
++
++    def test_qpid_messaging_Receivers_monitor_init_calls_parent__init__(self):
++        self.mock_Thread___init__.assert_called_once_with()
++
++
++class TestReceiversMonitorRun(ReceiversMonitorTestBase):
++
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch('kombu.transport.qpid.time.sleep')
++    def test_receivers_monitor_run_calls_monitor_receivers(
++            self, mock_sleep, mock_monitor_receivers):
++        mock_sleep.side_effect = self.BreakOutException()
++        self.assertRaises(self.BreakOutException, self.monitor.run)
++        mock_monitor_receivers.assert_called_once_with()
++
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch('kombu.transport.qpid.time.sleep')
++    @patch('kombu.transport.qpid.logger')
++    def test_receivers_monitors_run_calls_logs_exception_and_sleeps(
++            self, mock_logger, mock_sleep, mock_monitor_receivers):
++        exc_to_raise = IOError()
++        mock_monitor_receivers.side_effect = exc_to_raise
++        mock_sleep.side_effect = self.BreakOutException()
++        self.assertRaises(self.BreakOutException, self.monitor.run)
++        mock_logger.error.assert_called_once_with(exc_to_raise)
++        mock_sleep.assert_called_once_with(10)
++
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch('kombu.transport.qpid.time.sleep')
++    def test_receivers_monitor_run_loops_when_exception_is_raised(
++            self, mock_sleep, mock_monitor_receivers):
++        def return_once_raise_on_second_call(*args):
++            mock_sleep.side_effect = self.BreakOutException()
++            return None
++        mock_sleep.side_effect = return_once_raise_on_second_call
++        self.assertRaises(self.BreakOutException, self.monitor.run)
++        mock_monitor_receivers.has_calls([call(), call()])
++
++
++class TestReceiversMonitorMonitorReceivers(ReceiversMonitorTestBase):
++
++    def test_receivers_monitor_monitor_receivers_calls_next_receivers(self):
++        self.mock_session.next_receiver.side_effect = self.BreakOutException()
++        self.assertRaises(self.BreakOutException,
++                          self.monitor.monitor_receivers)
++        self.mock_session.next_receiver.assert_called_once_with()
++
++    def test_receivers_monitor_monitor_receivers_writes_to_fd(self):
++        with patch('kombu.transport.qpid.os.write') as mock_os_write:
++            mock_os_write.side_effect = self.BreakOutException()
++            self.assertRaises(self.BreakOutException,
++                              self.monitor.monitor_receivers)
++            mock_os_write.assert_called_once_with(self.mock_w, '0')
++
++
++class TestTransportInit(Case):
++
++    def setUp(self):
++        self.patch_a = patch('kombu.transport.qpid.base.Transport.__init__')
++        self.mock_base_Transport__init__ = self.patch_a.start()
++
++        self.patch_b = patch('kombu.transport.qpid.os')
++        self.mock_os = self.patch_b.start()
++        self.mock_r = Mock()
++        self.mock_w = Mock()
++        self.mock_os.pipe.return_value = (self.mock_r, self.mock_w)
++
++        self.patch_c = patch('kombu.transport.qpid.fcntl')
++        self.mock_fcntl = self.patch_c.start()
++
++    def tearDown(self):
++        self.patch_a.stop()
++        self.patch_b.stop()
++        self.patch_c.stop()
++
++    def test_transport__init___calls_parent_class___init__(self):
++        Transport(Mock())
++        self.mock_base_Transport__init__.assert_caled_once_with()
++
++    def test_transport___init___calls_os_pipe(self):
++        Transport(Mock())
++        self.mock_os.pipe.assert_called_once_with()
++
++    def test_transport___init___saves_os_pipe_file_descriptors(self):
++        transport = Transport(Mock())
++        self.assertTrue(transport.r is self.mock_r)
++        self.assertTrue(transport._w is self.mock_w)
++
++    def test_transport___init___sets_non_blocking_behavior_on_r_fd(self):
++        Transport(Mock())
++        self.mock_fcntl.fcntl.assert_called_once_with(
++            self.mock_r,  self.mock_fcntl.F_SETFL,  self.mock_os.O_NONBLOCK)
++
++
 +class TestTransportDrainEvents(Case):
 +
 +    def setUp(self):
@@ -1387,6 +1598,228 @@ index 0000000..951b147
 +        append_method.assert_called_with(self.mock_new_channel)
 +
 +
++class TestTransportEstablishConnection(Case):
++
++    def setUp(self):
++
++        class MockClient(object):
++            pass
++
++        self.client = MockClient()
++        self.client.connect_timeout = 4
++        self.client.ssl = False
++        self.client.transport_options = {}
++        self.transport = Transport(self.client)
++        self.mock_conn = Mock()
++        self.transport.Connection = self.mock_conn
++        self.default_connection_params = {'userid': 'guest',
++                                          'password': 'guest',
++                                          'port': 1234, 'virtual_host': '',
++                                          'hostname': 'localhost',
++                                          'sasl_mechanisms': 'PLAIN'}
++        path_to_mock = 'kombu.transport.qpid.ReceiversMonitor'
++        self.patch_a = patch(path_to_mock)
++        self.mock_ReceiverMonitor = self.patch_a.start()
++        self.patch_b = patch.object(Transport, 'default_connection_params',
++                                    new_callable=PropertyMock)
++        self.mock_params = self.patch_b.start()
++        self.mock_params.return_value = self.default_connection_params
++
++    def tearDown(self):
++        self.patch_a.stop()
++        self.patch_b.stop()
++
++    def test_transport_establish_conn_new_option_overwrites_default(self):
++        new_userid_string = 'new-userid'
++        self.client.userid = new_userid_string
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username=new_userid_string,
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               timeout=4,
++                                               password='guest',
++                                               port=1234,
++                                               transport='tcp')
++
++    def test_transport_establish_conn_empty_client_is_default(self):
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               timeout=4,
++                                               password='guest',
++                                               port=1234,
++                                               transport='tcp')
++
++    def test_transport_establish_conn_additional_transport_option(self):
++        new_param_value = 'mynewparam'
++        self.client.transport_options['new_param'] = new_param_value
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               timeout=4,
++                                               new_param=new_param_value,
++                                               password='guest',
++                                               port=1234,
++                                               transport='tcp')
++
++    def test_transport_establish_conn_transform_localhost_to_127_0_0_1(self):
++        self.client.hostname = 'localhost'
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               timeout=4,
++                                               password='guest',
++                                               port=1234,
++                                               transport='tcp')
++
++    def test_transport_establish_conn_no_ssl_sets_transport_tcp(self):
++        self.client.ssl = False
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               timeout=4,
++                                               password='guest',
++                                               port=1234,
++                                               transport='tcp')
++
++    def test_transport_establish_conn_with_ssl_with_hostname_check(self):
++        self.client.ssl = {'keyfile': 'my_keyfile',
++                           'certfile': 'my_certfile',
++                           'ca_certs': 'my_cacerts',
++                           'cert_reqs': ssl.CERT_REQUIRED}
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               ssl_certfile='my_certfile',
++                                               ssl_trustfile='my_cacerts',
++                                               timeout=4,
++                                               ssl_skip_hostname_check=False,
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               ssl_keyfile='my_keyfile',
++                                               password='guest',
++                                               port=1234, transport='ssl')
++
++    def test_transport_establish_conn_with_ssl_skip_hostname_check(self):
++        self.client.ssl = {'keyfile': 'my_keyfile',
++                           'certfile': 'my_certfile',
++                           'ca_certs': 'my_cacerts',
++                           'cert_reqs': ssl.CERT_OPTIONAL}
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               ssl_certfile='my_certfile',
++                                               ssl_trustfile='my_cacerts',
++                                               timeout=4,
++                                               ssl_skip_hostname_check=True,
++                                               sasl_mechanisms='PLAIN',
++                                               host='127.0.0.1',
++                                               ssl_keyfile='my_keyfile',
++                                               password='guest',
++                                               port=1234, transport='ssl')
++
++    def test_transport_establish_conn_sets_client_on_connection_object(self):
++        self.transport.establish_connection()
++        self.assertTrue(self.mock_conn.return_value.client is self.client)
++
++    def test_transport_establish_conn_creates_session_on_transport(self):
++        self.transport.establish_connection()
++        qpid_conn = self.mock_conn.return_value.get_qpid_connection
++        new_mock_session = qpid_conn.return_value.session.return_value
++        self.assertTrue(self.transport.session is new_mock_session)
++
++    def test_transport_establish_conn_returns_new_connection_object(self):
++        new_conn = self.transport.establish_connection()
++        self.assertTrue(new_conn is self.mock_conn.return_value)
++
++    def test_transport_establish_conn_creates_ReceiversMonitor(self):
++        self.transport.establish_connection()
++        self.mock_ReceiverMonitor.assert_called_once_with(
++            self.transport.session, self.transport._w)
++
++    def test_transport_establish_conn_daemonizes_thread(self):
++        self.transport.establish_connection()
++        self.assertTrue(self.mock_ReceiverMonitor.return_value.daemon)
++
++    def test_transport_establish_conn_starts_thread(self):
++        self.transport.establish_connection()
++        new_receiver_monitor = self.mock_ReceiverMonitor.return_value
++        new_receiver_monitor.start.assert_called_once_with()
++
++
++class TestTransportClassAttributes(Case):
++
++    def test_verify_Connection_attribute(self):
++        self.assertTrue(Connection is Transport.Connection)
++
++    def test_verify_default_port(self):
++        self.assertEqual(5672, Transport.default_port)
++
++    def test_verify_polling_disabled(self):
++        self.assertTrue(Transport.polling_interval is None)
++
++    def test_transport_verify_supports_asynchronous_events(self):
++        self.assertTrue(Transport.supports_ev)
++
++    def test_verify_driver_type_and_name(self):
++        self.assertEqual('qpid', Transport.driver_type)
++        self.assertEqual('qpid', Transport.driver_name)
++
++    def test_transport_channel_error_contains_qpid_ConnectionError(self):
++        self.assertTrue(qpid.messaging.exceptions.ConnectionError in
++                        Transport.connection_errors)
++
++    def test_transport_channel_error_contains_socket_error(self):
++        self.assertTrue(select.error in Transport.connection_errors)
++
++
++class TestTransportRegisterWithEventLoop(Case):
++
++    def test_transport_register_with_event_loop_calls_add_reader(self):
++        transport = Transport(Mock())
++        mock_connection = Mock()
++        mock_loop = Mock()
++        transport.register_with_event_loop(mock_connection, mock_loop)
++        mock_loop.add_reader.assert_called_with(transport.r,
++                                                transport.on_readable,
++                                                mock_connection, mock_loop)
++
++
++class TestTransportOnReadable(Case):
++
++    def setUp(self):
++        self.patch_a = patch('kombu.transport.qpid.os.read')
++        self.mock_os_read = self.patch_a.start()
++        self.patch_b = patch.object(Transport, 'drain_events')
++        self.mock_drain_events = self.patch_b.start()
++        self.transport = Transport(Mock())
++
++    def tearDown(self):
++        self.patch_a.stop()
++
++    def test_transport_on_readable_reads_symbol_from_fd(self):
++        self.transport.on_readable(Mock(), Mock())
++        self.mock_os_read.assert_called_once_with(self.transport.r, 1)
++
++    def test_transport_on_readable_calls_drain_events(self):
++        mock_connection = Mock()
++        self.transport.on_readable(mock_connection, Mock())
++        self.mock_drain_events.assert_called_with(mock_connection)
++
++    def test_transport_on_readable_catches_socket_timeout(self):
++        self.mock_drain_events.side_effect = socket.timeout()
++        try:
++            self.transport.on_readable(Mock(), Mock())
++        except Exception:
++            self.fail('Transport.on_readable did not catch socket.timeout()')
++
++    def test_transport_on_readable_ignores_non_socket_timeout_exception(self):
++        self.mock_drain_events.side_effect = IOError()
++        self.assertRaises(IOError, self.transport.on_readable, Mock(), Mock())
++
++
 +class TestTransport(ExtraAssertionsMixin, Case):
 +
 +    def setUp(self):
@@ -1394,48 +1827,6 @@ index 0000000..951b147
 +        if QPID_NOT_AVAILABLE:
 +            raise SkipTest('qpid.messaging not installed')
 +        self.mock_client = Mock()
-+
-+    def test_verify_Connection_attribute(self):
-+        """Verify that class attribute Connection refers to the connection
-+        object
-+        """
-+        self.assertTrue(Connection is Transport.Connection)
-+
-+    def test_verify_default_port(self):
-+        """Verify that the class attribute default_port refers to the 5672
-+        properly
-+        """
-+        self.assertEqual(5672, Transport.default_port)
-+
-+    def test_verify_polling_disabled(self):
-+        """Verify that polling is disabled"""
-+        self.assertTrue(Transport.polling_interval is None)
-+
-+    def test_verify_does_not_support_asynchronous_events(self):
-+        """Verify that the Transport advertises that it does not support
-+        an asynchronous event model
-+        """
-+        self.assertFalse(Transport.supports_ev)
-+
-+    def test_verify_driver_type_and_name(self):
-+        """Verify that the driver and type are correctly labeled on the
-+        class
-+        """
-+        self.assertEqual('qpid', Transport.driver_type)
-+        self.assertEqual('qpid', Transport.driver_name)
-+
-+    def test_establish_connection_no_ssl(self):
-+        """Test that a call to establish connection creates a connection
-+        object with sane parameters and returns it.
-+        """
-+        self.mock_client.ssl = False
-+        self.mock_client.transport_options = []
-+        my_transport = Transport(self.mock_client)
-+        new_connection = Mock()
-+        my_transport.Connection = Mock(return_value=new_connection)
-+        my_transport.establish_connection()
-+        my_transport.Connection.assert_called_once()
-+        self.assertTrue(new_connection.client is self.mock_client)
 +
 +    def test_close_connection(self):
 +        """Test that close_connection calls close on each channel in the
@@ -1473,10 +1864,10 @@ index 10d62e9..c1d6868 100644
  _transport_cache = {}
 diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
 new file mode 100644
-index 0000000..cda47da
+index 0000000..2c2998a
 --- /dev/null
 +++ b/kombu/transport/qpid.py
-@@ -0,0 +1,1544 @@
+@@ -0,0 +1,1741 @@
 +"""
 +kombu.transport.qpid
 +=======================
@@ -1499,10 +1890,13 @@ index 0000000..cda47da
 +
 +"""Kombu transport using a Qpid broker as a message store."""
 +
++import fcntl
 +import os
 +import select
 +import socket
 +import ssl
++import sys
++import threading
 +import time
 +
 +from itertools import count
@@ -1527,7 +1921,7 @@ index 0000000..cda47da
 +##### Start Monkey Patching #####
 +
 +# This section applies two patches to qpid.messaging that are required for
-+# correct operation.  Each patch fixes a bug.  See links to the bugs below:
++# correct operation. Each patch fixes a bug. See links to the bugs below:
 +# https://issues.apache.org/jira/browse/QPID-5637
 +# https://issues.apache.org/jira/browse/QPID-5557
 +
@@ -1541,7 +1935,7 @@ index 0000000..cda47da
 +# | |\  | |_| || | | |___
 +# |_| \_|\___/ |_| |_____|
 +#
-+#If you have code that also uses qpid.messaging and imports kombu,
++# If you have code that also uses qpid.messaging and imports kombu,
 +# or causes this file to be imported, then you need to make sure that this
 +# import occurs first.
 +#
@@ -1699,6 +2093,10 @@ index 0000000..cda47da
 +__version__ = '.'.join(map(str, VERSION))
 +
 +
++class AuthenticationFailure(Exception):
++    pass
++
++
 +class QpidMessagingExceptionHandler(object):
 +    """An exception handling decorator that silences some exceptions.
 +
@@ -1755,19 +2153,21 @@ index 0000000..cda47da
 +class QoS(object):
 +    """A helper object for message prefetch and ACKing purposes.
 +
-+    This object is instantiated 1-for-1 with a :class:`Channel`.  QoS
++    NOTE: prefetch_count is currently hard set to 1, and needs to be improved
++
++    This object is instantiated 1-for-1 with a :class:`Channel`. QoS
 +    allows prefetch_count to be set to the number of outstanding messages
 +    the corresponding :class:`Channel` should be allowed to prefetch.
 +    Setting prefetch_count to 0 disables prefetch limits, and the object
 +    can hold an arbitrary number of messages.
 +
 +    Messages are added using :meth:`append`, which are held until they are
-+    ACKed asynchronously through a call to :meth:`ack`.  Messages that are
++    ACKed asynchronously through a call to :meth:`ack`. Messages that are
 +    received, but not ACKed will not be delivered by the broker to another
 +    consumer until an ACK is received, or the session is closed. Messages
 +    are referred to using delivery_tag integers, which are unique per
-+    :class:`Channel`.  Delivery tags are managed outside of this object and
-+    are passed in with a message to :meth:`append`.  Un-ACKed messages can
++    :class:`Channel`. Delivery tags are managed outside of this object and
++    are passed in with a message to :meth:`append`. Un-ACKed messages can
 +    be looked up from QoS using :meth:`get` and can be rejected and
 +    forgotten using :meth:`reject`.
 +
@@ -1776,8 +2176,7 @@ index 0000000..cda47da
 +    def __init__(self, session, prefetch_count=1):
 +        """Instantiate a QoS object.
 +
-+        :keyword prefetch_count: Initial prefetch count (defaults to 0,
-+            which disables prefetch limits).
++        :keyword prefetch_count: Initial prefetch count, hard set to 1.
 +        :type prefetch_count: int
 +
 +        """
@@ -1793,7 +2192,7 @@ index 0000000..cda47da
 +        limits.
 +
 +        :returns: True, if this QoS object can accept more messages
-+            without violating the prefetch_count.  If prefetch_count is 0,
++            without violating the prefetch_count. If prefetch_count is 0,
 +            can_consume will always return True.
 +        :rtype: bool
 +        """
@@ -1805,7 +2204,7 @@ index 0000000..cda47da
 +        :class:`Channel`.
 +
 +        Returns an estimated number of outstanding messages that a
-+        :class:`Channel` can accept without exceeding prefetch_count.  If
++        :class:`Channel` can accept without exceeding prefetch_count. If
 +        prefetch_count is 0, then this method returns 1.
 +
 +        :returns: The number of estimated messages that can be fetched
@@ -1818,13 +2217,13 @@ index 0000000..cda47da
 +            return 1
 +
 +    def append(self, message, delivery_tag):
-+        """Append message to the list of unacked messages.
++        """Append message to the list of un-ACKed messages.
 +
 +        Add a message, referenced by the integer delivery_tag, for ACKing,
 +        rejecting, or getting later. Messages are saved into an
 +        :class:`~kombu.utils.compat.OrderedDict` by delivery_tag.
 +
-+        :param message: A received message that has not yet been acked
++        :param message: A received message that has not yet been ACKed.
 +        :type message: qpid.messaging.Message
 +        :param delivery_tag: An integer number to refer to this message by
 +            upon receipt.
@@ -1834,7 +2233,7 @@ index 0000000..cda47da
 +
 +    def get(self, delivery_tag):
 +        """
-+        Get an un-ACKed message by delivery_tag.  If called with an invalid
++        Get an un-ACKed message by delivery_tag. If called with an invalid
 +        delivery_tag a KeyError is raised.
 +
 +        :param delivery_tag: The delivery tag associated with the message
@@ -1867,15 +2266,15 @@ index 0000000..cda47da
 +        delivered.
 +
 +        If requeue is False, then the message is not requeued for delivery
-+        to another consumer.  If requeue is True, then the message is
++        to another consumer. If requeue is True, then the message is
 +        requeued for delivery to another consumer.
 +
 +        :param delivery_tag: The delivery tag associated with the message
 +            to be rejected.
 +        :type delivery_tag: int
 +        :keyword requeue: If True, the broker will be notified to requeue
-+            the message.  If False, the broker will be told to drop the
-+            message entirely.  In both cases, the message will be removed
++            the message. If False, the broker will be told to drop the
++            message entirely. In both cases, the message will be removed
 +            from this object.
 +        :type requeue: bool
 +        """
@@ -1906,7 +2305,7 @@ index 0000000..cda47da
 +
 +    Channels are designed to all share a single TCP connection with a
 +    broker, but provide a level of isolated communication with the broker
-+    while benefiting from a shared TCP connection.  The Channel is given
++    while benefiting from a shared TCP connection. The Channel is given
 +    its :class:`Connection` object by the :class:`Transport` that
 +    instantiates the Channel.
 +
@@ -1916,45 +2315,48 @@ index 0000000..cda47da
 +
 +    Messages sent using this Channel are assigned a delivery_tag. The
 +    delivery_tag is generated for a message as they are prepared for
-+    sending by :meth:`basic_publish`.  The delivery_tag is unique per
-+    Channel instance using :meth:`~itertools.count`.  The delivery_tag has
++    sending by :meth:`basic_publish`. The delivery_tag is unique per
++    Channel instance using :meth:`~itertools.count`. The delivery_tag has
 +    no meaningful context in other objects, and is only maintained in the
-+    memory of this object, and the underlying objects that provide support
-+    (ie: :class:`QoS`).
++    memory of this object, and the underlying :class:`QoS` object that
++    provides support.
 +
 +    Each Channel object instantiates exactly one :class:`QoS` object for
-+    prefetch limiting, and asynchronous acking. The :class:`QoS` object is
-+    lazily instantiated through a property method :meth:`qos`.  The
++    prefetch limiting, and asynchronous ACKing. The :class:`QoS` object is
++    lazily instantiated through a property method :meth:`qos`. The
 +    :class:`QoS` object is a supporting object that should not be accessed
 +    directly except by the Channel itself.
 +
 +    Synchronous reads on a queue are done using a call to :meth:`basic_get`
 +    which uses :meth:`_get` to perform the reading. These methods read
 +    immediately and do not accept any form of timeout. :meth:`basic_get`
-+    reads synchronously and ACKs messages before returning them, or acking
-+    can be disable by the no_ack argument to :meth:`basic_get`.
++    reads synchronously and ACKs messages before returning them. ACKing is
++    done in all cases, because an application that reads messages using
++    qpid.messaging, but does not ACK them will experience a memory leak.
++    The no_ack argument to :meth:`basic_get` does not affect ACKing
++    functionality.
 +
 +    Asynchronous reads on a queue are done by starting a consumer using
-+    :meth:`basic_consume`.  Each call to :meth:`basic_consume` will cause a
-+    thread to be started where a :class:`~qpid.messaging.endpoints.Receiver`
-+    will perform a blocking read on the requested queue. Typically a more
-+    efficient external I/O event notification system such as epoll or
-+    kqueue would allow the kernel to monitor many file descriptors for
-+    inbound data, but the :mod:`qpid.messaging` module does not allow an
-+    external epoll or kqueue loop to be used. Consumers are given a
-+    consumer tag by the caller of consumer_tag. Already started consumers
-+    can be cancelled using by their consumer_tag using :meth:`basic_cancel`.
++    :meth:`basic_consume`. Each call to :meth:`basic_consume` will cause a
++    :class:`~qpid.messaging.endpoints.Receiver` to be created on the
++    :class:`~qpid.messaging.endpoints.Session` started by the :class:
++    `Transport`. The receiver will asynchronously read using
++    qpid.messaging, and prefetch messages before the call to
++    :meth:`Transport.basic_drain` occurs. The prefetch_count value of the
++    :class:`QoS` object is the capacity value of the new receiver. The new
++    receiver capacity must always be at least 1, otherwise none of the
++    receivers will appear to be ready for reading, and will never be read
++    from.
 +
-+    The Channel object handles thread creation of :class:`FDShimThread`
-+    objects which provide asynchronous blocking reads.  FDShimThreads are
-+    given a :class:`Queue.Queue` named delivery_queue to put messages into.
-+    delivery_queue is provided by the creator of the Channel (typically a
-+    :class:`Transport` object).  Cancellation of a consumer causes the
-+    consuming class:`FDShimThread` to be notified it is no longer needed.
++    Each call to :meth:`basic_consume` creates a consumer, which is given a
++    consumer tag that is identified by the caller of :meth:`basic_consume`.
++    Already started consumers can be cancelled using by their consumer_tag
++    using :meth:`basic_cancel`. Cancellation of a consumer causes the
++    :class:`~qpid.messaging.endpoints.Receiver` object to be closed.
 +
-+    Asynchronous message acking is supported through :meth:`basic_ack`,
++    Asynchronous message ACKing is supported through :meth:`basic_ack`,
 +    and is referenced by delivery_tag. The Channel object uses its
-+    :class:`QoS` object to perform the message acking.
++    :class:`QoS` object to perform the message ACKing.
 +
 +    """
 +
@@ -1978,14 +2380,11 @@ index 0000000..cda47da
 +    def __init__(self, connection, transport):
 +        """Instantiate a Channel object.
 +
-+        :param connection: A Connection object that this Channel can reference.
-+            Currently only used to access callbacks.
++        :param connection: A Connection object that this Channel can
++            reference. Currently only used to access callbacks.
 +        :type connection: Connection
 +        :param transport: The Transport this Channel is associated with.
 +        :type transport: Transport
-+        :param delivery_queue: A threadsafe queue that asynchronous
-+            FDShimThread consumers should put arriving messages into.
-+        :type delivery_queue: Queue.Queue
 +        """
 +        self.connection = connection
 +        self.transport = transport
@@ -2002,13 +2401,14 @@ index 0000000..cda47da
 +        An internal method to perform a non-blocking, single-message read
 +        from a queue by name. This method creates a
 +        :class:`~qpid.messaging.endpoints.Receiver` to read from the queue
-+        using the :class:`~qpid.messaging.endpoints.Session` referenced by
-+        _qpid_session.  The receiver is closed before the method exits. If
-+        a message is available, a :class:`qpid.messaging.Message`
-+        object is returned.  If no message is available, a
-+        :class:`qpid.messaging.exceptions.Empty` exception is raised.
++        using the :class:`~qpid.messaging.endpoints.Session` saved on the
++        associated :class:`Transport`. The receiver is closed before the
++        method exits. If a message is available, a
++        :class:`qpid.messaging.Message` object is returned. If no message is
++        available, a :class:`qpid.messaging.exceptions.Empty` exception is
++        raised.
 +
-+        This is an internal method.  External calls for get functionality
++        This is an internal method. External calls for get functionality
 +        should be done using :meth:`basic_get`.
 +
 +        :param queue: The queue name to get the message from
@@ -2028,10 +2428,10 @@ index 0000000..cda47da
 +        """Synchronous send of a single message onto a queue or exchange.
 +
 +        An internal method which synchronously sends a single message onto
-+        a given queue or exchange.  If exchange is not specified,
++        a given queue or exchange. If exchange is not specified,
 +        the message is sent directly to a queue specified by routing_key.
 +        If no queue is found by the name of routing_key while exchange is
-+        not specified an exception is raised.  If an exchange is specified,
++        not specified an exception is raised. If an exchange is specified,
 +        then the message is delivered onto the requested
 +        exchange using routing_key. Message sending is synchronous using
 +        sync=True because large messages in kombu funtests were not being
@@ -2039,8 +2439,9 @@ index 0000000..cda47da
 +
 +        This method creates a :class:`qpid.messaging.endpoints.Sender` to
 +        send the message to the queue using the
-+        :class:`qpid.messaging.endpoints.Session` referenced by
-+        _qpid_session.  The sender is closed before the method exits.
++        :class:`qpid.messaging.endpoints.Session` created and referenced by
++        the associated :class:`Transport`. The sender is closed before the
++        method exits.
 +
 +        External calls for put functionality should be done using
 +        :meth:`basic_publish`.
@@ -2077,8 +2478,8 @@ index 0000000..cda47da
 +        """Purge all undelivered messages from a queue specified by name.
 +
 +        An internal method to purge all undelivered messages from a queue
-+        specified by name.  The queue message depth is first checked,
-+        and then the broker is asked to purge that number of messages.  The
++        specified by name. The queue message depth is first checked,
++        and then the broker is asked to purge that number of messages. The
 +        integer number of messages requested to be purged is returned. The
 +        actual number of messages purged may be different than the
 +        requested number of messages to purge (see below).
@@ -2086,12 +2487,12 @@ index 0000000..cda47da
 +        Sometimes delivered messages are asked to be purged, but are not.
 +        This case fails silently, which is the correct behavior when a
 +        message that has been delivered to a different consumer, who has
-+        not acked the message, and still has an active session with the
++        not ACKed the message, and still has an active session with the
 +        broker. Messages in that case are not safe for purging and will be
-+        retained by the broker.  The client is unable to change this
++        retained by the broker. The client is unable to change this
 +        delivery behavior.
 +
-+        This is an internal method.  External calls for purge functionality
++        This is an internal method. External calls for purge functionality
 +        should be done using :meth:`queue_purge`.
 +
 +        :param queue: the name of the queue to be purged
@@ -2110,7 +2511,7 @@ index 0000000..cda47da
 +        """Get the number of messages in a queue specified by name.
 +
 +        An internal method to return the number of messages in a queue
-+        specified by name.  It returns an integer count of the number
++        specified by name. It returns an integer count of the number
 +        of messages currently in the queue.
 +
 +        :param queue: The name of the queue to be inspected for the number
@@ -2129,10 +2530,10 @@ index 0000000..cda47da
 +
 +        An internal method to delete a queue specified by name and all the
 +        messages on it. First, all messages are purged from a queue using a
-+        call to :meth:`_purge`.  Second, the broker is asked to delete the
++        call to :meth:`_purge`. Second, the broker is asked to delete the
 +        queue.
 +
-+        This is an internal method.  External calls for queue delete
++        This is an internal method. External calls for queue delete
 +        functionality should be done using :meth:`queue_delete`.
 +
 +        :param queue: The name of the queue to be deleted.
@@ -2166,38 +2567,47 @@ index 0000000..cda47da
 +
 +        The queue name is required and specified as the first argument.
 +
-+        If passive is True, the server will not create the queue.  The
++        If passive is True, the server will not create the queue. The
 +        client can use this to check whether a queue exists without
-+        modifying the server state.  Default is False.
++        modifying the server state. Default is False.
 +
-+        If durable is True, the queue will be durable.  Durable queues
++        If durable is True, the queue will be durable. Durable queues
 +        remain active when a server restarts. Non-durable queues (
-+        transient queues) are purged if/when a server restarts.  Note that
++        transient queues) are purged if/when a server restarts. Note that
 +        durable queues do not necessarily hold persistent messages,
 +        although it does not make sense to send persistent messages to a
-+        transient queue.  Default is False.
++        transient queue. Default is False.
 +
 +        If exclusive is True, the queue will be exclusive. Exclusive queues
 +        may only be consumed by the current connection. Setting the
-+        'exclusive' flag always implies 'auto-delete'.  Default is False.
++        'exclusive' flag always implies 'auto-delete'. Default is False.
 +
 +        If auto_delete is True,  the queue is deleted when all consumers
 +        have finished using it. The last consumer can be cancelled either
 +        explicitly or because its channel is closed. If there was no
-+        consumer ever on the queue, it won't be deleted.  Default is True.
++        consumer ever on the queue, it won't be deleted. Default is True.
++        Each queue has an auto_delete timeout, which is set to 3, meaning
++        that queues deletion due to auto_delete will be delayed by 3 seconds.
 +
-+        The nowait parameter is unused.  It was part of the 0-9-1 protocol,
++        The nowait parameter is unused. It was part of the 0-9-1 protocol,
 +        but this AMQP client implements 0-10 which removed the nowait option.
 +
 +        The arguments parameter is a set of arguments for the declaration of
-+        the queue.  Arguments are passed as a dict or None. This field is
-+        ignored if passive is True.  Default is None.
++        the queue. Arguments are passed as a dict or None. This field is
++        ignored if passive is True. Default is None.
 +
 +        This method returns a :class:`~collections.namedtuple` with the name
 +        'queue_declare_ok_t' and the queue name as 'queue', message count
 +        on the queue as 'message_count', and the number of active consumers
-+        as 'consumer_count'.  The named tuple values are ordered as queue,
++        as 'consumer_count'. The named tuple values are ordered as queue,
 +        message_count, and consumer_count respectively.
++
++        Due to Celery's non-ACKing of events, a ring policy is set on any
++        queue that starts with the string 'celeryev' or ends with the string
++        'pidbox'. These are celery event queues, and Celery does not ack
++        them, causing the messages to build-up. Eventually Qpid stops serving
++        messages unless the 'ring' policy is set, at which point the buffer
++        backing the queue becomes circular.
 +
 +        :param queue: The name of the queue to be created.
 +        :type queue: str
@@ -2218,7 +2628,7 @@ index 0000000..cda47da
 +        :type arguments: dict or None
 +
 +        :return: A named tuple representing the declared queue as a named
-+            tuple.  The tuple values are ordered as queue, message count,
++            tuple. The tuple values are ordered as queue, message count,
 +            and the active consumer count.
 +        :rtype: :class:`~collections.namedtuple`
 +
@@ -2245,18 +2655,18 @@ index 0000000..cda47da
 +    def queue_delete(self, queue, if_unused=False, if_empty=False, **kwargs):
 +        """Delete a queue by name.
 +
-+        Delete a queue specified by name.  Using the if_unused keyword
++        Delete a queue specified by name. Using the if_unused keyword
 +        argument, the delete can only occur if there are 0 consumers bound
-+        to it.  Using the if_empty keyword argument, the delete can only
++        to it. Using the if_empty keyword argument, the delete can only
 +        occur if there are 0 messages in the queue.
 +
 +        :param queue: The name of the queue to be deleted.
 +        :type queue: str
 +        :keyword if_unused: If True, delete only if the queue has 0
-+            consumers.  If False, delete a queue even with consumers bound
++            consumers. If False, delete a queue even with consumers bound
 +            to it.
 +        :type if_unused: bool
-+        :keyword if_empty: If True, only delete the queue if it is empty.  If
++        :keyword if_empty: If True, only delete the queue if it is empty. If
 +            False, delete the queue if it is empty or not.
 +        :type if_empty: bool
 +        """
@@ -2275,12 +2685,12 @@ index 0000000..cda47da
 +        """Create a new exchange.
 +
 +        Create an exchange of a specific type, and optionally have the
-+        exchange be durable.  If an exchange of the requested name already
-+        exists, no action is taken and no exceptions are raised.  Durable
++        exchange be durable. If an exchange of the requested name already
++        exists, no action is taken and no exceptions are raised. Durable
 +        exchanges will survive a broker restart, non-durable exchanges will
 +        not.
 +
-+        Exchanges provide behaviors based on their type.  The expected
++        Exchanges provide behaviors based on their type. The expected
 +        behaviors are those defined in the AMQP 0-10 and prior
 +        specifications including 'direct', 'topic', and 'fanout'
 +        functionality.
@@ -2288,7 +2698,7 @@ index 0000000..cda47da
 +        :keyword type: The exchange type. Valid values include 'direct',
 +        'topic', and 'fanout'.
 +        :type type: str
-+        :keyword exchange: The name of the exchange to be created.  If no
++        :keyword exchange: The name of the exchange to be created. If no
 +        exchange is specified, then a blank string will be used as the name.
 +        :type exchange: str
 +        :keyword durable: True if the exchange should be durable, or False
@@ -2310,7 +2720,7 @@ index 0000000..cda47da
 +        """Bind a queue to an exchange with a bind key.
 +
 +        Bind a queue specified by name, to an exchange specified by name,
-+        with a specific bind key.  The queue and exchange must already
++        with a specific bind key. The queue and exchange must already
 +        exist on the broker for the bind to complete successfully. Queues
 +        may be bound to exchanges multiple times with different keys.
 +
@@ -2329,9 +2739,9 @@ index 0000000..cda47da
 +        """Unbind a queue from an exchange with a given bind key.
 +
 +        Unbind a queue specified by name, from an exchange specified by
-+        name, that is already bound with a bind key.  The queue and
++        name, that is already bound with a bind key. The queue and
 +        exchange must already exist on the broker, and bound with the bind
-+        key for the operation to complete successfully.  Queues may be
++        key for the operation to complete successfully. Queues may be
 +        bound to exchanges multiple times with different keys, thus the
 +        bind key is a required field to unbind in an explicit way.
 +
@@ -2349,9 +2759,9 @@ index 0000000..cda47da
 +    def queue_purge(self, queue, **kwargs):
 +        """Remove all undelivered messages from queue.
 +
-+        Purge all undelivered messages from a queue specified by name.  The
++        Purge all undelivered messages from a queue specified by name. The
 +        queue message depth is first checked, and then the broker is asked
-+        to purge that number of messages.  The integer number of messages
++        to purge that number of messages. The integer number of messages
 +        requested to be purged is returned. The actual number of messages
 +        purged may be different than the requested number of messages to
 +        purge.
@@ -2359,9 +2769,9 @@ index 0000000..cda47da
 +        Sometimes delivered messages are asked to be purged, but are not.
 +        This case fails silently, which is the correct behavior when a
 +        message that has been delivered to a different consumer, who has
-+        not acked the message, and still has an active session with the
++        not ACKed the message, and still has an active session with the
 +        broker. Messages in that case are not safe for purging and will be
-+        retained by the broker.  The client is unable to change this
++        retained by the broker. The client is unable to change this
 +        delivery behavior.
 +
 +        Internally, this method relies on :meth:`_purge`.
@@ -2376,19 +2786,18 @@ index 0000000..cda47da
 +        return self._purge(queue)
 +
 +    def basic_get(self, queue, no_ack=False, **kwargs):
-+        """Non-blocking single message get and ack from a queue by name.
++        """Non-blocking single message get and ACK from a queue by name.
 +
-+        Internally this method uses :meth:`_get` to fetch the message.  If
++        Internally this method uses :meth:`_get` to fetch the message. If
 +        an :class:`~qpid.messaging.exceptions.Empty` exception is raised by
-+        :meth:`_get`, this method silences it and returns None.  If
-+        :meth:`_get` does return a message, that message is acked according
-+        to the value of no_ack and returned.  If no_ack is True,
-+        the message is not acked, and if no_ack is False, By default,
-+        the message is acked.  This method never adds fetched Messages to
-+        the internal QoS object for asynchronous acking.
++        :meth:`_get`, this method silences it and returns None. If
++        :meth:`_get` does return a message, that message is ACKed. The no_ack
++        parameter has no effect on ACKing behavior, and all messages are
++        ACKed in all cases. This method never adds fetched Messages to the
++        internal QoS object for asynchronous ACKing.
 +
 +        This method converts the object type of the method as it passes
-+        through.  Fetching from the broker, :meth:`_get` returns a
++        through. Fetching from the broker, :meth:`_get` returns a
 +        :class:`qpid.messaging.Message`, but this method takes the payload
 +        of the :class:`qpid.messaging.Message` and instantiates a
 +        :class:`~kombu.transport.virtual.Message` object with the payload
@@ -2396,8 +2805,9 @@ index 0000000..cda47da
 +
 +        :param queue: The queue name to fetch a message from.
 +        :type queue: str
-+        :keyword no_ack: If True, a message fetched will not be acked. If
-+            False, a message fetched will be acked.
++        :keyword no_ack: The no_ack parameter has no effect on the ACK
++            behavior of this method. Un-ACKed messages create a memory leak in
++            qpid.messaging, and need to be ACKed in all cases.
 +        :type noack: bool
 +
 +        :return: The received message.
@@ -2415,9 +2825,9 @@ index 0000000..cda47da
 +    def basic_ack(self, delivery_tag):
 +        """Acknowledge a message by delivery_tag.
 +
-+        Acknowledges a message referenced by delivery_tag.  Messages can
-+        only be ack'ed using :meth:`basic_ack` if they were acquired using
-+        :meth:`basic_consume`.  This is the acking portion of the
++        Acknowledges a message referenced by delivery_tag. Messages can
++        only be ACKed using :meth:`basic_ack` if they were acquired using
++        :meth:`basic_consume`. This is the ACKing portion of the
 +        asynchronous read behavior.
 +
 +        Internally, this method uses the :class:`QoS` object, which stores
@@ -2433,10 +2843,10 @@ index 0000000..cda47da
 +        """Reject a message by delivery_tag.
 +
 +        Rejects a message that has been received by the Channel, but not
-+        yet acknowledged.  Messages are referenced by their delivery_tag.
++        yet acknowledged. Messages are referenced by their delivery_tag.
 +
 +        If requeue is False, the rejected message will be dropped by the
-+        broker and not delivered to any other consumers.  If requeue is
++        broker and not delivered to any other consumers. If requeue is
 +        True, then the rejected message will be requeued for delivery to
 +        another consumer, potentially to the same consumer who rejected the
 +        message previously.
@@ -2445,7 +2855,7 @@ index 0000000..cda47da
 +            to be rejected.
 +        :type delivery_tag: int
 +        :keyword requeue: If False, the rejected message will be dropped by
-+            the broker and not delivered to any other consumers.  If True,
++            the broker and not delivered to any other consumers. If True,
 +            then the rejected message will be requeued for delivery to
 +            another consumer, potentially to the same consumer who rejected
 +            the message previously.
@@ -2457,42 +2867,41 @@ index 0000000..cda47da
 +    def basic_consume(self, queue, no_ack, callback, consumer_tag, **kwargs):
 +        """Start an asynchronous consumer that reads from a queue.
 +
-+        This method starts a consumer that reads messages from a queue
++        This method starts a consumer of type
++        :class:`~qpid.messaging.endpoints.Receiver` using the
++        :class:`~qpid.messaging.endpoints.Session` created and referenced by
++        the :class:`Transport` that reads messages from a queue
 +        specified by name until stopped by a call to :meth:`basic_cancel`.
-+        Once a message is read, a call to the callback will occur with the
-+        message as the single argument.  The message passed to the callback
-+        is of type self.Message.  Each consumer is referenced by a
-+        consumer_tag, which is provided by the caller of this method.
 +
-+        Consuming is done using a thread of type :class:`FDShimThread` that
-+        is spawned when this method is called.  The child thread is marked as
-+        a daemon, indicating that if all non-daemon threads exit, the child
-+        consumer thread will also exit.  The child consumer thread performs
-+        an efficient blocking read, which wakes up regularly to see if it
-+        should exit.
 +
-+        The child consumer thread does not call the callback directly.
-+        Instead, the child thread is given a threadsafe :class:`Queue.Queue`
-+        object which it should deliver messages into.  This single queue
-+        aggregates all consumer messages, and can be read through a call to
-+        :meth:`~Transport.drain_events` on the Transport object associated
-+        with this Channel object.  This method sets up the callback onto the
-+        self.connection object in a dict keyed by queue name.
-+        :meth:`~Transport.drain_events` is responsible for calling that
-+        callback upon message receipt.
++        Messages are available later through a synchronous call to
++        :meth:`Transport.drain_events`, which will drain from the consumer
++        started by this method. :meth:`Transport.drain_events` is
++        synchronous, but the receiving of messages over the network occurs
++        asynchronously, so it should still perform well.
++        :meth:`Transport.drain_events` calls the callback provided here with
++        the Message of type self.Message.
 +
-+        Depending on the value of the no_ack parameter, the message that is
-+        received can be saved for asynchronous acking later after the
-+        message has been handled by the caller of
-+        :meth:`~Transport.drain_events`. Messages can be acked after being
-+        received through a call to :meth:`basic_ack`. If no_ack is True,
-+        then messages are not saved for acking later. If no_ack is False,
-+        then messages are saved for acking later. Internally the :class:`QoS`
-+        object is used to store messages for acking later.
++        Each consumer is referenced by a consumer_tag, which is provided by
++        the caller of this method.
++
++        This method sets up the callback onto the self.connection object in a
++        dict keyed by queue name. :meth:`~Transport.drain_events` is
++        responsible for calling that callback upon message receipt.
++
++        All messages that are received are added to the QoS object to be
++        saved for asynchronous ACKing later after the message has been
++        handled by the caller of :meth:`~Transport.drain_events`. Messages
++        can be ACKed after being received through a call to :meth:`basic_ack`.
++
++        If no_ack is True, the messages are immediately ACKed to avoid a
++        memory leak in qpid.messaging when messages go un-ACKed. The no_ack
++        flag indicates that the receiver of the message does not intent to
++        call :meth:`basic_ack`.
 +
 +        :meth:`basic_consume` transforms the message object type prior to
-+        calling the callback.  Initially the message comes in as a
-+        :class:`qpid.messaging.Message`.  This method unpacks the payload
++        calling the callback. Initially the message comes in as a
++        :class:`qpid.messaging.Message`. This method unpacks the payload
 +        of the :class:`qpid.messaging.Message` and creates a new object of
 +        type self.Message.
 +
@@ -2500,14 +2909,14 @@ index 0000000..cda47da
 +        function which provides the type transformation from
 +        :class:`qpid.messaging.Message` to
 +        :class:`~kombu.transport.virtual.Message`, and adds the message to
-+        the associated :class:`QoS` object for asynchronous acking
++        the associated :class:`QoS` object for asynchronous ACKing
 +        if necessary.
 +
 +        :param queue: The name of the queue to consume messages from
 +        :type queue: str
-+        :param no_ack: If True, then messages will not be saved for
-+            acking later.  If False, then messages will be saved for acking
-+            later.
++        :param no_ack: If True, then messages will not be saved for ACKing
++            later, but will be ACKed immediately. If False, then messages
++            will be saved for ACKing later with a call to :meth:`basic_ack`.
 +        :type no_ack: bool
 +        :param callback: a callable that will be called when messages
 +            arrive on the queue.
@@ -2524,7 +2933,9 @@ index 0000000..cda47da
 +            delivery_tag = message.delivery_tag
 +            self.qos.append(qpid_message, delivery_tag)
 +            if no_ack:
-+                # Celery will not ack this message later, so we should
++                # Celery will not ack this message later, so we should to
++                # avoid a memory leak in qpid.messaging due to un-ACKed
++                # messages.
 +                self.basic_ack(delivery_tag)
 +            return callback(message)
 +
@@ -2537,23 +2948,19 @@ index 0000000..cda47da
 +        """Cancel consumer by consumer tag.
 +
 +        Request the consumer stops reading messages from its queue. The
-+        consumer is a child thread, and it is told to stop by a call to
-+        the :meth:`kill` method on the thread object.  Killing does not
-+        occur immediately, but will occur once the child completes its
-+        blocking read and checks if it should die or not.  The thread is
-+        not waited on to die because in practice there can be many
-+        consumers, and they are killed through a series of serial calls to
-+        this method, which would take a long time.
++        consumer is a :class:`~qpid.messaging.endpoints.Receiver`, and it is
++        closed using :meth:`~qpid.messaging.endpoints.Receiver.close`.
 +
 +        This method also cleans up all lingering references of the consumer.
 +
 +        :param consumer_tag: The tag which refers to the consumer to be
-+            cancelled.  Originally specified when the consumer was created
++            cancelled. Originally specified when the consumer was created
 +            as a parameter to :meth:`basic_consume`.
 +        :type consumer_tag: an immutable object
 +        """
 +        if consumer_tag in self._receivers:
-+            self._receivers.pop(consumer_tag)
++            receiver = self._receivers.pop(consumer_tag)
++            receiver.close()
 +            queue = self._tag_to_queue.pop(consumer_tag, None)
 +            self.connection._callbacks.pop(queue, None)
 +
@@ -2561,10 +2968,9 @@ index 0000000..cda47da
 +        """Close Channel and all associated messages.
 +
 +        This cancels all consumers by calling :meth:`basic_cancel` for each
-+        known consumer_tag.  It also closes the self._qpid_session and
-+        self._broker sessions.  Closing the sessions implicitly causes all
-+        outstanding, unacked messages to be considered undelivered by the
-+        broker.
++        known consumer_tag. It also closes the self._broker sessions. Closing
++        the sessions implicitly causes all outstanding, un-ACKed messages to
++        be considered undelivered by the broker.
 +        """
 +        if not self.closed:
 +            self.closed = True
@@ -2591,12 +2997,13 @@ index 0000000..cda47da
 +    def basic_qos(self, prefetch_count, *args):
 +        """Change :class:`QoS` settings for this Channel.
 +
-+        Set the number of unacknowledged messages this Channel can fetch and
-+        hold.  For instance prefetch_count=3 will allow a maximum of 3
-+        unacked messages to be received from the broker.
++        Set the number of un-acknowledged messages this Channel can fetch and
++        hold. The prefetch_value is also used as the capacity for any new
++        :class:`~qpid.messaging.endpoints.Receiver` objects.
 +
-+        :param prefetch_count: The number of outstanding, unacked messages
-+            this Channel is allowed to have.
++        Currently, this value is hard coded to 1.
++
++        :param prefetch_count: Not used. This method is hard-coded to 1.
 +        :type prefetch_count: int
 +        """
 +        self.qos.prefetch_count = 1
@@ -2615,7 +3022,7 @@ index 0000000..cda47da
 +            the message.
 +        :type priority: int
 +        :keyword content_type: The content_type the message body should be
-+            treated as.  If this is unset, the
++            treated as. If this is unset, the
 +            :class:`qpid.messaging.endpoints.Sender` object tries to
 +            autodetect the content_type from the body.
 +        :type content_type: str
@@ -2629,7 +3036,7 @@ index 0000000..cda47da
 +        :type properties: dict
 +
 +        :return: Returns a dict object that encapsulates message
-+            attributes.  See parameters for more details on attributes that
++            attributes. See parameters for more details on attributes that
 +            can be set.
 +        :rtype: dict
 +        """
@@ -2647,7 +3054,7 @@ index 0000000..cda47da
 +        """Publish message onto an exchange using a routing key.
 +
 +        Publish a message onto an exchange specified by name using a
-+        routing key specified by routing_key.  Prepares the message in the
++        routing key specified by routing_key. Prepares the message in the
 +        following ways before sending:
 +
 +        - encodes the body using :meth:`encode_body`
@@ -2657,13 +3064,13 @@ index 0000000..cda47da
 +        - assigns a delivery_tag generated through self._delivery_tags
 +        - sets the exchange and routing_key info as delivery_info
 +
-+        Internally uses :meth:`_put` to send the message synchronously.  This
++        Internally uses :meth:`_put` to send the message synchronously. This
 +        message is typically called by
 +        :class:`kombu.messaging.Producer._publish` as the final step in
 +        message publication.
 +
 +        :param message: A dict containing key value pairs with the message
-+            data.  A valid message dict can be generated using the
++            data. A valid message dict can be generated using the
 +            :meth:`prepare_message` method.
 +        :type message: dict
 +        :param exchange: The name of the exchange to submit this message
@@ -2692,20 +3099,20 @@ index 0000000..cda47da
 +        """Encode a body using an optionally specified encoding.
 +
 +        The encoding can be specified by name, and is looked up in
-+        self.codecs.  self.codecs uses strings as its keys which specify
++        self.codecs. self.codecs uses strings as its keys which specify
 +        the name of the encoding, and then the value is an instantiated
 +        object that can provide encoding/decoding of that type through
 +        encode and decode methods.
 +
 +        :param body: The body to be encoded.
 +        :type body: str
-+        :keyword encoding: The encoding type to be used.  Must be a supported
++        :keyword encoding: The encoding type to be used. Must be a supported
 +            codec listed in self.codecs.
 +        :type encoding: str
 +
 +        :return: If encoding is specified, return a tuple with the first
 +            position being the encoded body, and the second position the
-+            encoding used.  If encoding is not specified, the body is passed
++            encoding used. If encoding is not specified, the body is passed
 +            through unchanged.
 +        :rtype: tuple
 +        """
@@ -2717,14 +3124,14 @@ index 0000000..cda47da
 +        """Decode a body using an optionally specified encoding.
 +
 +        The encoding can be specified by name, and is looked up in
-+        self.codecs.  self.codecs uses strings as its keys which specify
++        self.codecs. self.codecs uses strings as its keys which specify
 +        the name of the encoding, and then the value is an instantiated
 +        object that can provide encoding/decoding of that type through
 +        encode and decode methods.
 +
 +        :param body: The body to be encoded.
 +        :type body: str
-+        :keyword encoding: The encoding type to be used.  Must be a supported
++        :keyword encoding: The encoding type to be used. Must be a supported
 +            codec listed in self.codecs.
 +        :type encoding: str
 +
@@ -2740,9 +3147,9 @@ index 0000000..cda47da
 +        """Get the exchange type.
 +
 +        Lookup and return the exchange type for an exchange specified by
-+        name.  Exchange types are expected to be 'direct', 'topic',
++        name. Exchange types are expected to be 'direct', 'topic',
 +        and 'fanout', which correspond with exchange functionality as
-+        specified in AMQP 0-10 and earlier.  If the exchange cannot be
++        specified in AMQP 0-10 and earlier. If the exchange cannot be
 +        found, the default exchange type is returned.
 +
 +        :param exchange: The exchange to have its type lookup up.
@@ -2766,20 +3173,21 @@ index 0000000..cda47da
 +    """Encapsulate a connection object for the :class:`Transport`.
 +
 +    A Connection object is created by a :class:`Transport` during a call to
-+    :meth:`Transport.establish_connection`.  The :class:`Transport` passes in
++    :meth:`Transport.establish_connection`. The :class:`Transport` passes in
 +    connection options as keywords that should be used for any connections
 +    created. Each :class:`Transport` creates exactly one Connection.
 +
-+    Objects that use connections to the broker such as
-+    :class:`Channel`, :class:`QoS`, and :class:`FDShimThread` objects need to
-+    have independent connections generated.  Any part of this codebase can
-+    get a valid connection to the broker with parameters saved in this object
-+    by calling the bound :meth:`get_qpid_connection` method.
++    A Connection object maintains a reference to a
++    :class:`~qpid.messaging.endpoints.Connection` which can be accessed
++    through a bound getter method named :meth:`get_qpid_connection` method.
++    Each Channel uses a the Connection for each
++    :class:`~qpidtoollibs.BrokerAgent`, and the Transport maintains a session
++    for all senders and receivers.
 +
 +    The Connection object is also responsible for maintaining the
 +    dictionary of references to callbacks that should be called when
-+    messages are received.  These callbacks are saved in _callbacks,
-+    and keyed on the queue name associated with the received message.  The
++    messages are received. These callbacks are saved in _callbacks,
++    and keyed on the queue name associated with the received message. The
 +    _callbacks are setup in :meth:`Channel.basic_consume`, removed in
 +    :meth:`Channel.basic_cancel`, and called in
 +    :meth:`Transport.drain_events`.
@@ -2788,7 +3196,8 @@ index 0000000..cda47da
 +    at a minimum:
 +
 +    All keyword arguments are collected into the connection_options dict
-+    and passed directly through to qpid.messaging.
++    and passed directly through to
++    :meth:`qpid.messaging.endpoints.Connection.establish`.
 +    """
 +
 +    # A class reference to the :class:`Channel` object
@@ -2803,25 +3212,45 @@ index 0000000..cda47da
 +        * port: The port that connection should connect to.
 +        * username: The username that connections should connect with.
 +        * password: The password that connections should connect with.
-+        * transport: The transport type that connections should use.  Either
++        * transport: The transport type that connections should use. Either
 +              'tcp', or 'ssl' are expected as values.
-+        * timeout: the timeout to use when a Connection connects to the broker.
-+        * sasl_mechanisms: The sasl authentication mechanism type to use. refer
-+              to SASL documentation for an explanation of valid values.
++        * timeout: the timeout used when a Connection connects to the broker.
++        * sasl_mechanisms: The sasl authentication mechanism type to use.
++              refer to SASL documentation for an explanation of valid values.
 +
 +        Creates a :class:`qpid.messaging.endpoints.Connection` object with
 +        the saved parameters, and stores it as _qpid_conn.
++
++        qpid.messaging has an AuthenticationFailure exception type, but
++        instead raises a ConnectionError with a message that indicates an
++        authentication failure occurred in those situations. ConnectionError
++        is listed as a recoverable error type, so kombu will attempt to retry
++        if a ConnectionError is raised. Retrying the operation without
++        adjusting the credentials is not correct, so this method specifically
++        checks for a ConnectionError that indicates an Authentication Failure
++        occurred. In those situations, the error type is mutated while
++        preserving the original message and raised so kombu will allow the
++        exception to not be considered recoverable.
 +
 +        """
 +        self.connection_options = connection_options
 +        self.channels = []
 +        self._callbacks = {}
-+        self._qpid_conn = qpid.messaging.Connection.establish(**self.connection_options)
++        establish = qpid.messaging.Connection.establish
++        try:
++            self._qpid_conn = establish(**self.connection_options)
++        except qpid.messaging.exceptions.ConnectionError as conn_exc:
++            coded_as_auth_failure = getattr(conn_exc, 'code', None) == 320
++            contains_auth_fail_text = 'Authentication failed' in conn_exc.text
++            if coded_as_auth_failure or contains_auth_fail_text:
++                exc = sys.exc_info()
++                raise AuthenticationFailure, exc[1], exc[2]  # flake8: noqa
++            raise
 +
 +    def get_qpid_connection(self):
 +        """Return the existing connection (singleton).
 +
-+        :return: The existing qpid.messaging connection
++        :return: The existing qpid.messaging.Connection
 +        :rtype: :class:`qpid.messaging.endpoints.Connection`
 +        """
 +        return self._qpid_conn
@@ -2843,34 +3272,94 @@ index 0000000..cda47da
 +            channel.connection = None
 +
 +
++class ReceiversMonitor(threading.Thread):
++    """A monitoring thread that reads and handles messages from all receivers.
++
++    A single instance of ReceiversMonitor is expected to be created by
++    :class:`Transport`.
++
++    In :meth:`monitor_receivers`, the thread monitors all receivers
++    associated with the session created by the Transport using the blocking
++    call to session.next_receiver(). When any receiver has messages
++    available, a symbol '0' is written to the self._w_fd file descriptor. The
++    :meth:`monitor_receivers` is designed not to exit, and loops over
++    session.next_receiver() forever.
++
++    The entry point of the thread is :meth:`run` which calls
++    :meth:`monitor_receivers` and catches and logs all exceptions raised.
++    After an exception is logged, the method sleeps for 10 seconds, and
++    re-enters :meth:`monitor_receivers`
++
++    The thread is designed to be daemonized, and will be forcefully killed
++    when all non-daemon threads have already exited.
++    """
++
++    def __init__(self, session, w):
++        """Instantiate a ReceiversMonitor object
++
++        :param session: The session which needs all of its receivers
++            monitored.
++        :type session: :class:`qpid.messaging.endpoints.Session`
++        :param w: The file descriptor to write the '0' into when
++            next_receiver unblocks.
++        :type w: int
++        """
++        super(ReceiversMonitor, self).__init__()
++        self._session = session
++        self._w_fd = w
++
++    def run(self):
++        """Thread entry point for ReceiversMonitor
++
++        Calls :meth:`monitor_receivers` with a log-and-reenter behavior. This
++        guards against unexpected exceptions which could cause this thread to
++        exit unexpectedly.
++        """
++        while True:
++            try:
++                self.monitor_receivers()
++            except Exception as e:
++                logger.error(e)
++            time.sleep(10)
++
++    def monitor_receivers(self):
++        """Monitor all receivers, and write to _w_fd when a message is ready.
++
++        The call to next_receiver() blocks until a message is ready. Once a
++        message is ready, write a '0' to _w_fd.
++        """
++        while True:
++            self._session.next_receiver()
++            os.write(self._w_fd, '0')
++
++
 +class Transport(base.Transport):
 +    """Kombu native transport for a Qpid broker.
 +
 +    Provide a native transport for Kombu that allows consumers and
-+    producers to read and write messages to/from a broker.  This Transport
++    producers to read and write messages to/from a broker. This Transport
 +    is capable of supporting both synchronous and asynchronous reading.
 +    All writes are synchronous through the :class:`Channel` objects that
 +    support this Transport.
 +
-+    Synchronous reads are done using a call to :meth:`drain_events`,
-+    which synchronously reads events, and then handles them through
-+    calls to the callback handlers maintained on the :class:`Connection`
-+    object.
-+
-+    Asynchronous reads are done by monitoring the file descriptor
-+    self.fd_shim.r which will be sent the signal indicating it is ready for
-+    reading when messages are ready to be read.  When this file
-+    descriptor is ready for reading, the monitor should call
-+    :meth:`on_readable` as the callback, with the message as the
-+    parameter, when the external loop is ready to read and handle
-+    messages that are associated with this Transport.
++    Asynchronous reads are done using a call to :meth:`drain_events`,
++    which synchronously reads messages that were fetched asynchronously, and
++    then handles them through calls to the callback handlers maintained on
++    the :class:`Connection` object.
 +
 +    The Transport also provides methods to establish and close a connection
-+    to the broker.  This Transport establishes a factory-like pattern that
-+    allows for lazy creation of Connections as needed.
++    to the broker. This Transport establishes a factory-like pattern that
++    allows for singleton pattern to consolidate all Connections into a single
++    one.
 +
 +    The Transport can create :class:`Channel` objects to communicate with the
 +    broker with using the :meth:`create_channel` method.
++
++    The Transport identifies recoverable errors, allowing for error recovery
++    when certain exceptions occur. These exception types are stored in the
++    Transport class attribute connection_errors. This adds support for Kombu
++    to retry an operation if a ConnectionError occurs. ConnectionErrors occur
++    when the Transport cannot communicate with the Qpid broker.
 +
 +    """
 +
@@ -2880,15 +3369,111 @@ index 0000000..cda47da
 +    # The default port
 +    default_port = DEFAULT_PORT
 +
-+    # This Transport does not support polling as its primary fetching model.
++    # This Transport does not specify a polling interval.
 +    polling_interval = None
 +
-+    # This Transport does support an asynchronous event model.
-+    supports_ev = False
++    # This Transport does support the Celery asynchronous event model.
++    supports_ev = True
 +
 +    # The driver type and name for identification purposes.
 +    driver_type = 'qpid'
 +    driver_name = 'qpid'
++
++    connection_errors = (
++        qpid.messaging.exceptions.ConnectionError,
++        select.error
++    )
++
++    def __init__(self, *args, **kwargs):
++        """Instantiate a Transport object.
++
++        This method creates a pipe, and saves the read and write file
++        descriptors as attributes. The behavior of the read file descriptor
++        is modified to be non-blocking using fcntl.fcntl.
++        """
++        super(Transport, self).__init__(*args, **kwargs)
++        self.r, self._w = os.pipe()
++        fcntl.fcntl(self.r, fcntl.F_SETFL, os.O_NONBLOCK)
++
++    def on_readable(self, connection, loop):
++        """Handle any messages associated with this Transport.
++
++        This method clears a single message from the externally monitored
++        file descriptor by issuing a read call to the self.r file descriptor
++        which removes a single '0' character that was placed into the pipe
++        by :class:`ReceiversMonitor`. Once a '0' is read, all available
++        events are drained through a call to :meth:`drain_events`.
++
++        The behavior of self.r is adjusted in __init__ to be non-blocking,
++        ensuring that an accidental call to this method when no more messages
++        will arrive will not cause indefinite blocking.
++
++        Nothing is expected to be returned from :meth:`drain_events` because
++        :meth:`drain_events` handles messages by calling callbacks that are
++        maintained on the :class:`Connection` object. When
++        :meth:`drain_events` returns, all associated messages have been
++        handled.
++
++        This method reads as many messages that are available for this
++        Transport, and then returns. It blocks in the sense that reading
++        and handling a large number of messages may take time, but it does
++        not block waiting for a new message to arrive. When
++        :meth:`drain_events` is called a timeout is not specified, which
++        causes this behavior.
++
++        One interesting behavior of note is where multiple messages are
++        ready, and this method removes a single '0' character from
++        self.r, but :meth:`drain_events` may handle an arbitrary amount of
++        messages. In that case, extra '0' characters may be left on self.r
++        to be read, where messages corresponding with those '0' characters
++        have already been handled. The external epoll loop will incorrectly
++        think additional data is ready for reading, and will call
++        on_readable unnecessarily, once for each '0' to be read. Additional
++        calls to :meth:`on_readable` produce no negative side effects,
++        and will eventually clear out the symbols from the self.r file
++        descriptor. If new messages show up during this draining period,
++        they will also be properly handled.
++
++        :param connection: The connection associated with the readable
++            events, which contains the callbacks that need to be called for
++            the readable objects.
++        :type connection: Connection
++        :param loop: The asynchronous loop object that contains epoll like
++            functionality.
++        :type loop: kombu.async.Hub
++        """
++        os.read(self.r, 1)
++        try:
++            self.drain_events(connection)
++        except socket.timeout:
++            pass
++
++    def register_with_event_loop(self, connection, loop):
++        """Register a file descriptor and callback with the loop.
++
++        Register the callback self.on_readable to be called when an
++        external epoll loop sees that the file descriptor registered is
++        ready for reading. The file descriptor is created by this Transport,
++        and is updated by the ReceiversMonitor thread.
++
++        Because supports_ev == True, Celery expects to call this method to
++        give the Transport an opportunity to register a read file descriptor
++        for external monitoring by celery using an Event I/O notification
++        mechanism such as epoll. A callback is also registered that is to
++        be called once the external epoll loop is ready to handle the epoll
++        event associated with messages that are ready to be handled for
++        this Transport.
++
++        The registration call is made exactly once per Transport after the
++        Transport is instantiated.
++
++        :param connection: A reference to the connection associated with
++            this Transport.
++        :type connection: Connection
++        :param loop: A reference to the external loop.
++        :type loop: kombu.async.hub.Hub
++        """
++        loop.add_reader(self.r, self.on_readable, connection, loop)
 +
 +    def establish_connection(self):
 +        """Establish a Connection object.
@@ -2896,11 +3481,16 @@ index 0000000..cda47da
 +        Determines the correct options to use when creating any connections
 +        needed by this Transport, and create a :class:`Connection` object
 +        which saves those values for connections generated as they are
-+        needed.  The options are a mixture of what is passed in through the
++        needed. The options are a mixture of what is passed in through the
 +        creator of the Transport, and the defaults provided by
-+        :meth:`default_connection_params`.  Options cover broker network
++        :meth:`default_connection_params`. Options cover broker network
 +        settings, timeout behaviors, authentication, and identity
 +        verification settings.
++
++        This method also creates and stores a
++        :class:`~qpid.messaging.endpoints.Session` using the
++        :class:`~qpid.messaging.endpoints.Connection` created by this method.
++        The Session is stored on self.
 +
 +        :return: The created :class:`Connection` object is returned.
 +        :rtype: :class:`Connection`
@@ -2935,6 +3525,9 @@ index 0000000..cda47da
 +        conn = self.Connection(**opts)
 +        conn.client = self.client
 +        self.session = conn.get_qpid_connection().session()
++        monitor_thread = ReceiversMonitor(self.session, self._w)
++        monitor_thread.daemon = True
++        monitor_thread.start()
 +        return conn
 +
 +    def close_connection(self, connection):
@@ -2954,24 +3547,21 @@ index 0000000..cda47da
 +    def drain_events(self, connection, timeout=0, **kwargs):
 +        """Handle and call callbacks for all ready Transport messages.
 +
-+        Drains all events that are ready for consuming from :class:`FDShim`.
-+        Messages must pass through :class:`FDShim` so that an external read
-+        file descriptor can be marked as readable, to allow asynchronous I/O
-+        to properly occur.
++        Drains all events that are ready from all
++        :class:`~qpid.messaging.endpoints.Receiver` that are asynchronously
++        fetching messages.
 +
-+        For each drained event, the message is called to the appropriate
-+        callback.  Callbacks are organized by queue name.  The object that
-+        is returned from queue_from_fdshim is a tuple containing the queue
-+        name, and the message, in that order.
++        For each drained message, the message is called to the appropriate
++        callback. Callbacks are organized by queue name.
 +
 +        :param connection: The :class:`Connection` that contains the
 +            callbacks, indexed by queue name, which will be called by this
 +            method.
 +        :type connection: Connection
 +        :keyword timeout: The timeout that limits how long this method will
-+            run for.  The timeout could interrupt a blocking read that is
++            run for. The timeout could interrupt a blocking read that is
 +            waiting for a new message, or cause this method to return before
-+            all messages are drained.  Defaults to 0.
++            all messages are drained. Defaults to 0.
 +        :type timeout: int
 +        """
 +        start_time = time.time()
@@ -2983,8 +3573,6 @@ index 0000000..cda47da
 +                queue = receiver.source
 +            except qpid.messaging.exceptions.Empty:
 +                raise socket.timeout()
-+            except select.error:
-+                return
 +            else:
 +                connection._callbacks[queue](message)
 +            elapsed_time = time.time() - start_time
@@ -2994,7 +3582,7 @@ index 0000000..cda47da
 +        """Create and return a :class:`Channel`.
 +
 +        Creates a new :class:`Channel`, and append the :class:`Channel` to the
-+        list of channels known by the :class:`Connection`.  Once the new
++        list of channels known by the :class:`Connection`. Once the new
 +        :class:`Channel` is created, it is returned.
 +
 +        :param connection: The connection that should support the new
