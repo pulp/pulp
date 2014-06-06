@@ -134,3 +134,16 @@ class UploadCommandTests(base.PulpClientTests):
             self.fail('Exception was not bubbled up')
         except Exception, e:
             self.assertTrue(e is mock_repo_api.side_effect)
+
+
+class ListCommandTests(base.PulpClientTests):
+
+    def test_list_no_filename(self):
+        mock_tracker = mock.MagicMock()
+        mock_tracker.is_running = False
+        mock_tracker.source_filename = None
+
+        self.mock_upload_manager = mock.MagicMock()
+        self.mock_upload_manager.list_uploads.return_value = [mock_tracker]
+        self.list_command = upload.ListCommand(self.context, self.mock_upload_manager)
+        self.list_command.run()
