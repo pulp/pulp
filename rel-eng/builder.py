@@ -228,6 +228,12 @@ def build_with_koji(build_tag_prefix, target_dists, scratch=False):
                 source = "%s/%s" % (upload_prefix, dir_file)
                 task_id = int(mysession.build(source, build_target, {'scratch': scratch}))
                 print "Created Build Task: %i" % task_id
+                if scratch:
+                    # save the task with the arc
+                    if not 'scratch_tasks' in DISTRIBUTION_INFO[dist]:
+                        DISTRIBUTION_INFO[dist]['scratch_tasks'] = []
+                    DISTRIBUTION_INFO[dist]['scratch_tasks'].append(task_id)
+
                 builds.append(task_id)
     return builds
 
@@ -277,6 +283,49 @@ def download_rpms_from_tag(tag, output_directory):
         command = "wget -r -np -nH --cut-dirs=4 -R index.htm*  %s -X %s" % \
                   (location_on_koji, data_dir)
         subprocess.check_call(command, shell=True)
+
+
+def download_rpms_from_task_to_dir(task_id, output_directory):
+    """
+    Download all of the rpm files from a given koji task into a specified directory
+
+    :param task_id: The task id to query
+    :type task_id: str
+    :param output_directory: The directory to save the files in
+    :type output_directory: str
+    """
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+    output_list = mysession.listTaskOutput(int(task_id))
+    for file_name in output_list:
+        if file_name.endswith('.rpm'):
+            print 'Downloading %s to %s' % (file_name, output_directory)
+            result = mysession.downloadTaskOutput(int(task_id), file_name)
+            target_location = os.path.join(output_directory, file_name)
+            with open(target_location, 'w+') as file_writer:
+                file_writer.write(result)
+
+
+def download_rpms_from_scratch_tasks(output_directory, dist):
+    """
+    Download all RPMS from the scratch tasks for a given distribution
+
+    :param output_directory: The root directory for the distribution files to be saved in
+    :type output_directory: str
+    :param dist: The distribution to get the tasks from
+    :type dist: str
+    """
+    # Get the tasks for the distribution
+    parent_tasks = DISTRIBUTION_INFO[dist].get('scratch_tasks', [])
+    for parent_task_id in parent_tasks:
+        descendants = mysession.getTaskDescendents(int(parent_task_id))
+        for task_id in descendants:
+            # Get the task arch
+            taskinfo = mysession.getTaskInfo(int(task_id))
+            arch = taskinfo.get('arch')
+            target_arch_dir = os.path.join(output_directory, arch)
+            print 'Downloading %s to %s' % (task_id, target_arch_dir)
+            download_rpms_from_task_to_dir(task_id, target_arch_dir)
 
 
 def build_repos(output_dir, dist):
@@ -461,7 +510,10 @@ if not opts.disable_repo_build:
         for arch in distvalue.get(ARCH):
             os.makedirs(os.path.join(output_dir, arch))
         print "Downloading tag: %s to %s" % (build_target, output_dir)
+        # Get the full build RPMs for the target
         download_rpms_from_tag(build_target, output_dir)
+        # Get any scratch build RPMS for the target
+        download_rpms_from_scratch_tasks(output_dir, distkey)
         build_repos(output_dir, distkey)
 
     # Push to hosted location
