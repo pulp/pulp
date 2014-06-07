@@ -5,123 +5,83 @@ can survive being restarted.
 from pulp.server.db.model.base import DoesNotExist, Model
 
 
-class AvailableQueue(Model):
+class Worker(Model):
     """
-    Instances of this class represent existing Celery worker queues that are available for use by
+    Instances of this class represent known Celery worker queues that are available for use by
     the resource manager for assigning tasks.
 
     :ivar name:             The name of the queue
     :type name:             unicode
-    :ivar num_reservations: The number of outstanding reservations on the queue
-    :type num_reservations: int
-    :ivar last_heartbeat:   A timestamp of the last heartbeat from the worker
+    :ivar last_heartbeat:   A timestamp of the last heartbeat from the Worker
     :type last_heartbeat:   datetime.datetime
     """
-    collection_name = 'available_queues'
+    collection_name = 'workers'
     unique_indices = tuple()
     # The compound index with _id and last_heartbeat will help the
     # async.scheduler.WorkerTimeoutMonitor to be able to retrieve the data it needs without
     # accessing the disk
-    search_indices = ('num_reservations', ('_id', 'last_heartbeat'))
+    search_indices = (('_id', 'last_heartbeat'),)
 
-    def __init__(self, name, last_heartbeat, num_reservations=0):
+    def __init__(self, name, last_heartbeat):
         """
-        Initialize the AvailableQueue. A new AvailableQueue has a default num_reservations of 0.
+        Initialize the Worker.
 
-        :param name:             The name of the AvailableQueue, which should correspond to the name
-                                 of a queue that a worker is assigned to.
+        :param name:             The name of the Worker.
         :type  name:             basestring
-        :param last_heartbeat:   A timestamp of the last heartbeat from the worker
+        :param last_heartbeat:   A timestamp of the last heartbeat from the Worker
         :type  last_heartbeat:   datetime.datetime
-        :param num_reservations: The number of reservations in the AvailableQueue. Defaults to 0.
-        :type  num_reservations: int
         """
-        super(AvailableQueue, self).__init__()
+        super(Worker, self).__init__()
 
         self.name = name
         self.last_heartbeat = last_heartbeat
-        self.num_reservations = num_reservations
 
         # We don't need these
         del self['_id']
         del self['id']
 
-    def decrement_num_reservations(self):
-        """
-        Reduce self.num_reservations by one in the database, and update self with the current
-        num_reservations (which could be different by more than one if another process also
-        decremented it in between us). This method guarantees that num_reservations will not become
-        negative.
-        """
-        # Perform the update in the database, but only if the value there is greater than 0.
-        new_queue = self.get_collection().find_and_modify(
-            query={'_id': self.name, 'num_reservations': {'$gt': 0}},
-            update={'$inc': {'num_reservations': -1}}, new=True)
-
-        if new_queue is None:
-            # new_queue will be None if we asked Mongo to modify an object that didn't exist, or if
-            # it did exist but its num_reservations was not greater than 0. Let's determine which of
-            # these is the case.
-            new_queue = self.get_collection().find_one({'_id': self.name})
-            if new_queue is None:
-                # Now we can be sure that no queue exists with this name
-                raise DoesNotExist('AvailableQueue with name %s does not exist.' % self.name)
-
-        # Update the attributes to match what was in the database
-        self.num_reservations = new_queue['num_reservations']
-        self.last_heartbeat = new_queue['last_heartbeat']
-
     def delete(self):
         """
-        Delete this AvailableQueue from the database. Take no prisoners.
+        Delete this Worker from the database. Take no prisoners.
         """
         self.get_collection().remove({'_id': self.name})
-        # Also delete ReservedResources referencing this queue. This will prevent new tasks
-        # using existing reservations to enter this deleted queue.
-        ReservedResource.get_collection().remove({'assigned_queue': self.name})
+        # Also delete ReservedResources referencing this Worker's queue. This will prevent new
+        # tasks from using existing reservations to enter this deleted Worker's queue.
+        ReservedResource.get_collection().remove({'assigned_queue': self.queue_name})
 
     @classmethod
-    def from_bson(cls, bson_queue):
+    def from_bson(cls, bson_worker):
         """
-        Instantiate an AvailableQueue from the given bson. A Python dict can also be used in place
-        of bson_queue.
+        Instantiate a Worker from the given bson. A Python dict can also be used in place
+        of bson_worker.
 
-        :param bson_queue: A bson object representing an AvailableQueue from the Mongo DB.
-        :type  bson_queue: bson.BSON or dict
-        :return:           An AvailableQueue representing the given bson
-        :rtype:            pulp.server.db.model.resources.AvailableQueue
+        :param bson_worker: A bson object or a dict representing a Worker.
+        :type  bson_worker: bson.BSON or dict
+        :return:            A Worker representing the given bson_worker
+        :rtype:             pulp.server.db.model.resources.Worker
         """
         return cls(
-            name=bson_queue['_id'],
-            num_reservations=bson_queue.get('num_reservations', None),
-            last_heartbeat=bson_queue.get('last_heartbeat', None))
+            name=bson_worker['_id'],
+            last_heartbeat=bson_worker.get('last_heartbeat', None))
 
-    def increment_num_reservations(self):
+    @property
+    def queue_name(self):
         """
-        Increase self.num_reservations by one in the database, and update self with the current
-        num_reservations (which could be different by more than one if another process also
-        incremented it in between us).
+        This property is a convenience for getting the queue_name that Celery assigns to this
+        Worker.
+
+        :return: The name of the queue that this Worker is uniquely subcribed to.
+        :rtype:  basestring
         """
-        # Perform the update in the database, but only if the value there is greater than 0.
-        new_queue = self.get_collection().find_and_modify(
-            query={'_id': self.name},
-            update={'$inc': {'num_reservations': 1}}, new=True)
-
-        if new_queue is None:
-            # We were asked to increment a queue that doesn't exist in the database.
-            raise DoesNotExist('AvailableQueue with name %s does not exist.' % self.name)
-
-        # Update the attributes to match what was in the database
-        self.num_reservations = new_queue['num_reservations']
-        self.last_heartbeat = new_queue['last_heartbeat']
+        return "%(name)s.dq" % {'name': self.name}
 
     def save(self):
         """
-        Save any changes made to this AvailableQueue to the database. If it doesn't exist, insert a
+        Save any changes made to this Worker to the database. If it doesn't exist, insert a
         new record to represent it.
         """
         self.get_collection().save(
-            {'_id': self.name, 'num_reservations': self.num_reservations,
+            {'_id': self.name,
              'last_heartbeat': self.last_heartbeat},
             manipulate=False, safe=True)
 

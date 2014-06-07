@@ -10,84 +10,142 @@ import pymongo
 from ...base import ResourceReservationTests
 from pulp.server import exceptions
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.resources import AvailableQueue, ReservedResource
+from pulp.server.db.model.resources import Worker, ReservedResource
 from pulp.server.managers import resources
 
 
-class TestFilterAvailableQueues(ResourceReservationTests):
+class TestFilterWorkers(ResourceReservationTests):
     """
-    Test the filter_available_queues() function.
+    Test the filter_workers() function.
     """
-    @mock.patch('pulp.server.db.model.resources.AvailableQueue.get_collection')
+    @mock.patch('pulp.server.db.model.resources.Worker.get_collection')
     def test_criteria_passed_to_mongo(self, get_collection):
         """
         Assert that the Criteria object is passed on to MongoDB.
         """
         criteria = Criteria(filters={'_id': 'some_id'})
 
-        aqs = list(resources.filter_available_queues(criteria))
+        workers = list(resources.filter_workers(criteria))
 
         get_collection.return_value.query.assert_called_once_with(criteria)
-        self.assertEqual(aqs, list())
+        self.assertEqual(workers, list())
 
     def test_filter(self):
         """
         Test a filter operation to make sure the results appear to be correct.
         """
-        # Make three queues. We'll filter for two of them.
+        # Make three workers. We'll filter for two of them.
         now = datetime.utcnow()
-        aq_1 = AvailableQueue('queue_1', now, 1)
-        aq_1.save()
-        aq_2 = AvailableQueue('queue_2', now, 2)
-        aq_2.save()
-        aq_3 = AvailableQueue('queue_3', now, 3)
-        aq_3.save()
-        criteria = Criteria(filters={'_id': {'$gt': 'queue_1'}}, sort=[('_id', pymongo.ASCENDING)])
+        kw_1 = Worker('worker_1', now)
+        kw_1.save()
+        kw_2 = Worker('worker_2', now)
+        kw_2.save()
+        kw_3 = Worker('worker_3', now)
+        kw_3.save()
+        criteria = Criteria(filters={'_id': {'$gt': 'worker_1'}}, sort=[('_id', pymongo.ASCENDING)])
 
-        aqs = resources.filter_available_queues(criteria)
+        workers = resources.filter_workers(criteria)
 
-        # Let's assert that aqs is a generator, and then let's cast it to a list so it's easier to
-        # test that we got the correct instances back.
-        self.assertEqual(type(aqs), types.GeneratorType)
-        aqs = list(aqs)
-        self.assertEqual(all([isinstance(aq, AvailableQueue) for aq in aqs]), True)
-        self.assertEqual(aqs[0].name, 'queue_2')
-        self.assertEqual(aqs[0].num_reservations, 2)
-        self.assertEqual(aqs[1].name, 'queue_3')
-        self.assertEqual(aqs[1].num_reservations, 3)
+        # Let's assert that workers is a generator, and then let's cast it to a list so it's easier
+        # to test that we got the correct instances back.
+        self.assertEqual(type(workers), types.GeneratorType)
+        workers = list(workers)
+        self.assertEqual(all([isinstance(w, Worker) for w in workers]), True)
+        self.assertEqual(workers[0].name, 'worker_2')
+        self.assertEqual(workers[1].name, 'worker_3')
 
 
-class TestGetLeastBusyAvailableQueue(ResourceReservationTests):
+class TestGetLeastBusyWorker(ResourceReservationTests):
     """
-    Test the get_least_busy_available_queue_function().
+    Test the get_least_busy_available_worker() function.
     """
-    def test_no_queues_available(self):
+    def test_ignores_queues_that_arent_workers(self):
         """
-        Test for the case when there are no reserved queues available at all.
-        It should raise a NoAvailableQueues Exception.
+        It is possible for the assigned_queue in a ReservedResource to reference a queue that is not
+        in the workers collection. This test ensures that this queue is properly ignored, even if it
+        is the most "enticing" choice.
         """
-        # When no queues are available, a NoAvailableQueues Exception should be raised
-        self.assertRaises(exceptions.NoAvailableQueues, resources.get_least_busy_available_queue)
-
-    def test_picks_least_busy_queue(self):
-        """
-        Test that the function picks the least busy queue.
-        """
-        # Set up three available queues, with the least busy one in the middle so that we can
+        # Set up three Workers, with the least busy one in the middle so that we can
         # demonstrate that it did pick the least busy and not the last or first.
         now = datetime.utcnow()
-        available_queue_1 = AvailableQueue('busy_queue', now, 7)
-        available_queue_1.save()
-        available_queue_2 = AvailableQueue('less_busy_queue', now, 3)
-        available_queue_2.save()
-        available_queue_3 = AvailableQueue('most_busy_queue', now, 10)
-        available_queue_3.save()
+        worker_1 = Worker('busy_worker', now)
+        worker_2 = Worker('less_busy_worker', now)
+        worker_3 = Worker('most_busy_worker', now)
+        for worker in (worker_1, worker_2, worker_3):
+            worker.save()
+        # Now we need to make some reservations against these Workers' queues. We'll give worker_1
+        # 8 reservations, putting it in the middle of busyness.
+        rr_1 = ReservedResource(name='resource_1', assigned_queue=worker_1.queue_name,
+                                num_reservations=8)
+        # These next two will give worker_2 a total of 7 reservations, so it should get picked.
+        rr_2 = ReservedResource(name='resource_2', assigned_queue=worker_2.queue_name,
+                                num_reservations=3)
+        rr_3 = ReservedResource(name='resource_3', assigned_queue=worker_2.queue_name,
+                                num_reservations=4)
+        # These next three will give worker_3 a total of 9 reservations, so it should be the most
+        # busy.
+        rr_4 = ReservedResource(name='resource_4', assigned_queue=worker_3.queue_name,
+                                num_reservations=2)
+        rr_5 = ReservedResource(name='resource_5', assigned_queue=worker_3.queue_name,
+                                num_reservations=3)
+        rr_6 = ReservedResource(name='resource_6', assigned_queue=worker_3.queue_name,
+                                num_reservations=4)
+        # Now we will make a ReservedResource that references a queue that does not correspond to a
+        # Worker and has the lowest reservation count. This RR should be ignored.
+        rr_7 = ReservedResource(name='resource_7', assigned_queue='doesnt_exist',
+                                num_reservations=1)
+        for rr in (rr_1, rr_2, rr_3, rr_4, rr_5, rr_6, rr_7):
+            rr.save()
 
-        queue = resources.get_least_busy_available_queue()
+        worker = resources.get_least_busy_worker()
 
-        self.assertEqual(type(queue), AvailableQueue)
-        self.assertEqual(queue.num_reservations, 3)
-        self.assertEqual(queue.name, 'less_busy_queue')
+        self.assertEqual(type(worker), Worker)
+        self.assertEqual(worker.name, 'less_busy_worker')
+
+    def test_no_workers_available(self):
+        """
+        Test for the case when there are no Workers at all.
+        It should raise a NoWorkers Exception.
+        """
+        # When no workers are available, a NoWorkers Exception should be raised
+        self.assertRaises(exceptions.NoWorkers, resources.get_least_busy_worker)
+
+    def test_picks_least_busy_worker(self):
+        """
+        Test that the function picks the least busy worker.
+        """
+        # Set up three Workers, with the least busy one in the middle so that we can
+        # demonstrate that it did pick the least busy and not the last or first.
+        now = datetime.utcnow()
+        worker_1 = Worker('busy_worker', now)
+        worker_2 = Worker('less_busy_worker', now)
+        worker_3 = Worker('most_busy_worker', now)
+        for worker in (worker_1, worker_2, worker_3):
+            worker.save()
+        # Now we need to make some reservations against these Workers' queues. We'll give worker_1
+        # 8 reservations, putting it in the middle of busyness.
+        rr_1 = ReservedResource(name='resource_1', assigned_queue=worker_1.queue_name,
+                                num_reservations=8)
+        # These next two will give worker_2 a total of 7 reservations, so it should get picked.
+        rr_2 = ReservedResource(name='resource_2', assigned_queue=worker_2.queue_name,
+                                num_reservations=3)
+        rr_3 = ReservedResource(name='resource_3', assigned_queue=worker_2.queue_name,
+                                num_reservations=4)
+        # These next three will give worker_3 a total of 9 reservations, so it should be the most
+        # busy.
+        rr_4 = ReservedResource(name='resource_4', assigned_queue=worker_3.queue_name,
+                                num_reservations=2)
+        rr_5 = ReservedResource(name='resource_5', assigned_queue=worker_3.queue_name,
+                                num_reservations=3)
+        rr_6 = ReservedResource(name='resource_6', assigned_queue=worker_3.queue_name,
+                                num_reservations=4)
+        for rr in (rr_1, rr_2, rr_3, rr_4, rr_5, rr_6):
+            rr.save()
+
+        worker = resources.get_least_busy_worker()
+
+        self.assertEqual(type(worker), Worker)
+        self.assertEqual(worker.name, 'less_busy_worker')
 
 
 class TestGetOrCreateReservedResource(ResourceReservationTests):

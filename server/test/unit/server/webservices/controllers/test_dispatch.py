@@ -11,7 +11,7 @@ from pulp.common import constants
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import AvailableQueue
+from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import PulpCodedException, MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers import dispatch as dispatch_controller
@@ -38,8 +38,8 @@ class TestTaskResource(PulpWebservicesTests):
         """
         task_id = '1234abcd'
         now = datetime.utcnow()
-        test_queue = AvailableQueue('test_queue', now)
-        TaskStatusManager.create_task_status(task_id, test_queue.name)
+        test_worker = Worker('test_worker', now)
+        TaskStatusManager.create_task_status(task_id, test_worker.name)
 
         self.task_resource.DELETE(task_id)
 
@@ -51,8 +51,8 @@ class TestTaskResource(PulpWebservicesTests):
         """
         task_id = '1234abcd'
         now = datetime.utcnow()
-        test_queue = AvailableQueue('test_queue', now)
-        TaskStatusManager.create_task_status(task_id, test_queue.name,
+        test_worker = Worker('test_worker', now)
+        TaskStatusManager.create_task_status(task_id, test_worker.name,
                                              state=constants.CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, self.task_resource.DELETE, task_id)
 
@@ -73,10 +73,10 @@ class TestTaskResource(PulpWebservicesTests):
         spawned_task_id = 'spawned_task'
         spawned_by_spawned_task_id = 'spawned_by_spawned_task'
         now = datetime.utcnow()
-        test_queue = AvailableQueue('test_queue', now)
-        TaskStatusManager.create_task_status(task_id, test_queue.name)
-        TaskStatusManager.create_task_status(spawned_task_id, test_queue.name)
-        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_queue.name)
+        test_worker = Worker('test_worker', now)
+        TaskStatusManager.create_task_status(task_id, test_worker.queue_name)
+        TaskStatusManager.create_task_status(spawned_task_id, test_worker.queue_name)
+        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_worker.queue_name)
         TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
         TaskStatusManager.update_task_status(spawned_task_id,
                                              delta={'spawned_tasks': [spawned_by_spawned_task_id]})

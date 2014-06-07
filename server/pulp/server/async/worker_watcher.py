@@ -19,9 +19,9 @@ import logging
 import re
 
 from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
-from pulp.server.async.tasks import _delete_queue
+from pulp.server.async.tasks import _delete_worker
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.resources import AvailableQueue
+from pulp.server.db.model.resources import Worker
 from pulp.server.managers import resources
 
 
@@ -85,9 +85,9 @@ def handle_worker_heartbeat(event):
     Celery event handler for 'worker-heartbeat' events.
 
     The event is first parsed and logged. If this event is from the resource manager, there is
-    no further processing to be done. Then the existing AvailableQueue objects are searched
+    no further processing to be done. Then the existing Worker objects are searched
     for one to update. If an existing one is found, it is updated. Otherwise a new
-    AvailableQueue entry is created. Logging at the info and debug level is also done.
+    Worker entry is created. Logging at the info and debug level is also done.
 
     :param event: A celery event to handle.
     :type event: dict
@@ -100,18 +100,18 @@ def handle_worker_heartbeat(event):
 
     find_worker_criteria = Criteria(filters={'_id': event_info['worker_name']},
                                     fields=('_id', 'last_heartbeat', 'num_reservations'))
-    find_worker_list = list(resources.filter_available_queues(find_worker_criteria))
+    find_worker_list = list(resources.filter_workers(find_worker_criteria))
 
     if find_worker_list:
-        AvailableQueue.get_collection().find_and_modify(
+        Worker.get_collection().find_and_modify(
             query={'_id': event_info['worker_name']},
             update={'$set': {'last_heartbeat': event_info['timestamp']}}
         )
     else:
-        new_available_queue = AvailableQueue(event_info['worker_name'], event_info['timestamp'])
+        new_worker = Worker(event_info['worker_name'], event_info['timestamp'])
         msg = _("New worker '%(worker_name)s' discovered") % event_info
         _logger.info(msg)
-        new_available_queue.save()
+        new_worker.save()
 
 
 def handle_worker_offline(event):
@@ -123,7 +123,7 @@ def handle_worker_offline(event):
 
     The event is first parsed and logged. If this event is from the resource manager, there is
     no further processing to be done. Otherwise, a worker is shutting down, and a
-    _delete_queue() task is dispatched so that the resource manager will remove the record,
+    _delete_worker() task is dispatched so that the resource manager will remove the record,
     and handle any work cleanup associated with a worker going offline. Logging at the info
     and debug level is also done.
 
@@ -138,6 +138,6 @@ def handle_worker_offline(event):
 
     msg = _("Worker '%(worker_name)s' shutdown") % event_info
     _logger.info(msg)
-    _delete_queue.apply_async(args=(event_info['worker_name'],),
+    _delete_worker.apply_async(args=(event_info['worker_name'],),
                               kwargs={'normal_shutdown': True},
                               queue=RESOURCE_MANAGER_QUEUE)

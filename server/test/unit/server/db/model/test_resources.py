@@ -8,9 +8,9 @@ from ....base import ResourceReservationTests
 from pulp.server.db.model import base, resources
 
 
-class TestAvailableQueue(ResourceReservationTests):
+class TestWorker(ResourceReservationTests):
     """
-    Test the AvailableQueue class.
+    Test the Worker class.
     """
     @mock.patch('pulp.server.db.model.resources.Model.__init__',
                 side_effect=resources.Model.__init__, autospec=True)
@@ -20,16 +20,15 @@ class TestAvailableQueue(ResourceReservationTests):
         """
         now = datetime.utcnow()
 
-        aq = resources.AvailableQueue('some_name', now, 7)
+        worker = resources.Worker('some_name', now)
 
         # The superclass __init__ should have been called
-        super_init.assert_called_once_with(aq)
+        super_init.assert_called_once_with(worker)
         # Make sure the attributes are correct
-        self.assertEqual(aq.name, 'some_name')
-        self.assertEqual(aq.num_reservations, 7)
-        self.assertEqual(aq.last_heartbeat, now)
-        self.assertEqual('_id' in aq, False)
-        self.assertEqual('id' in aq, False)
+        self.assertEqual(worker.name, 'some_name')
+        self.assertEqual(worker.last_heartbeat, now)
+        self.assertEqual('_id' in worker, False)
+        self.assertEqual('id' in worker, False)
 
     @mock.patch('pulp.server.db.model.resources.Model.__init__',
                 side_effect=resources.Model.__init__, autospec=True)
@@ -38,131 +37,57 @@ class TestAvailableQueue(ResourceReservationTests):
         Test __init__() with default values.
         """
         now = datetime.utcnow()
-        aq = resources.AvailableQueue('some_name', now)
+        worker = resources.Worker('some_name', now)
 
         # The superclass __init__ should have been called
-        super_init.assert_called_once_with(aq)
+        super_init.assert_called_once_with(worker)
         # Make sure the attributes are correct
-        self.assertEqual(aq.name, 'some_name')
-        self.assertEqual(aq.last_heartbeat, now)
-        # num_reservations should default to False
-        self.assertEqual(aq.num_reservations, 0)
-        self.assertEqual('_id' in aq, False)
-        self.assertEqual('id' in aq, False)
-
-    def test_decrement_num_reservations_doesnt_exist(self):
-        """
-        decrement_num_reservations() should raise a DoesNotExist when asked to decrement an
-        AvailableQueue that does not exist in the database.
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('does-not-exist', now)
-
-        self.assertRaises(base.DoesNotExist, aq.decrement_num_reservations)
-
-    def test_decrement_num_reservations_from_one(self):
-        """
-        Test decrement_num_reservations() when num_reservations is 1. It should decrement to 0.
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('a_queue', now, 1)
-        aq.save()
-
-        aq.decrement_num_reservations()
-
-        # The instance should have been updated
-        self.assertEqual(aq.num_reservations, 0)
-        # The database should have also been updated
-        aqc = resources.AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 1)
-        self.assertEqual(aqc.find_one({'_id': 'a_queue'})['num_reservations'], 0)
-
-    def test_decrement_num_reservations_from_zero(self):
-        """
-        Test decrement_num_reservations() when num_reservations is 0. It should remain at 0.
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('a_queue', now, 0)
-        aq.save()
-
-        aq.decrement_num_reservations()
-
-        # The instance should not have been changed
-        self.assertEqual(aq.num_reservations, 0)
-        # The database should also not have been changed
-        aqc = resources.AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 1)
-        self.assertEqual(aqc.find_one({'_id': 'a_queue'})['num_reservations'], 0)
-
-    def test_decrement_num_reservations_updates_attributes(self):
-        """
-        Test decrement_num_reservations() when num_reservations is 1, while simulating another
-        process setting it to 5. It should decrement to 4, and it should update the attributes on
-        the instance.
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('a_queue', now, 1)
-        aq.save()
-        # Now let's simulate another process setting the num_reservations and last_heartbeat
-        # attributes to other values
-        aqc = resources.AvailableQueue.get_collection()
-        last_heartbeat = datetime(2013, 12, 16)
-        aqc.update({'_id': 'a_queue'}, {'num_reservations': 5, 'last_heartbeat': last_heartbeat})
-
-        aq.decrement_num_reservations()
-
-        # The instance should have been updated
-        self.assertEqual(aq.num_reservations, 4)
-        self.assertEqual(aq.last_heartbeat, last_heartbeat)
-        # The database should have also been updated
-        self.assertEqual(aqc.count(), 1)
-        aq_bson = aqc.find_one({'_id': 'a_queue'})
-        self.assertEqual(aq_bson['num_reservations'], 4)
-        self.assertEqual(aq_bson['last_heartbeat'], last_heartbeat)
+        self.assertEqual(worker.name, 'some_name')
+        self.assertEqual(worker.last_heartbeat, now)
+        self.assertEqual('_id' in worker, False)
+        self.assertEqual('id' in worker, False)
 
     def test_delete(self):
         """
         Test delete().
         """
         now = datetime.utcnow()
-        aq = resources.AvailableQueue('wont_exist_for_long', now)
-        aq.save()
-        aqc = resources.AvailableQueue.get_collection()
-        self.assertEqual(aqc.find({'_id': 'wont_exist_for_long'}).count(), 1)
+        worker = resources.Worker('wont_exist_for_long', now)
+        worker.save()
+        workers_collection = resources.Worker.get_collection()
+        self.assertEqual(workers_collection.find({'_id': 'wont_exist_for_long'}).count(), 1)
 
-        aq.delete()
+        worker.delete()
 
-        self.assertEqual(aqc.count(), 0)
+        self.assertEqual(workers_collection.count(), 0)
 
     def test_delete_with_reserved_resources(self):
         """
-        Test delete() for a queue with a ReservedResource referencing it.
+        Test delete() for a Worker with a ReservedResource referencing its queue_name.
         """
         now = datetime.utcnow()
-        aq = resources.AvailableQueue('queue_with_a_reserved_resource', now)
-        aq.save()
-        aqc = resources.AvailableQueue.get_collection()
-        self.assertEqual(aqc.find({'_id': 'queue_with_a_reserved_resource'}).count(), 1)
+        worker = resources.Worker('worker_with_a_reserved_resource', now)
+        worker.save()
+        workers_collection = resources.Worker.get_collection()
+        self.assertEqual(workers_collection.find({'_id': worker.name}).count(), 1)
 
-        # Create 3 resources, 2 referencing the queue to be deleted and 1 with no queue references
-        rr1 = resources.ReservedResource('reserved_resource1',
-                                         assigned_queue='queue_with_a_reserved_resource',
+        # Create 3 resources, 2 referencing the worker to be deleted and 1 with no worker references
+        rr1 = resources.ReservedResource('reserved_resource1', assigned_queue=worker.queue_name,
                                          num_reservations=1)
-        rr2 = resources.ReservedResource('reserved_resource2',
-                                         assigned_queue='queue_with_a_reserved_resource',
+        rr2 = resources.ReservedResource('reserved_resource2', assigned_queue=worker.queue_name,
                                          num_reservations=1)
         rr = resources.ReservedResource('reserved_resource_no_queue', num_reservations=0)
-        rr1.save()
-        rr2.save()
-        rr.save()
+        for r in (rr1, rr2, rr):
+            r.save()
         rrc = resources.ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 3)
-        self.assertEqual(rrc.find({'assigned_queue': 'queue_with_a_reserved_resource'}).count(), 2)
+        self.assertEqual(rrc.find({'assigned_queue': worker.queue_name}).count(), 2)
 
-        aq.delete()
+        worker.delete()
 
-        # Make sure that only the resource with reference to the deleted queue is deleted
-        self.assertEqual(aqc.count(), 0)
+        # Make sure that only the resource with reference to the deleted Worker's queue_name is
+        # deleted
+        self.assertEqual(workers_collection.count(), 0)
         self.assertEqual(rrc.count(), 1)
         self.assertFalse(rrc.find_one(
             {'_id': 'reserved_resource_no_queue', 'num_reservations': 0}) is None)
@@ -172,68 +97,16 @@ class TestAvailableQueue(ResourceReservationTests):
         Test from_bson().
         """
         last_heartbeat = datetime(2013, 12, 16)
-        aq = resources.AvailableQueue('a_queue', last_heartbeat, 13)
-        aq.save()
-        aqc = resources.AvailableQueue.get_collection()
-        aq_bson = aqc.find_one({'_id': 'a_queue'})
+        worker = resources.Worker('a_worker', last_heartbeat)
+        worker.save()
+        workers_collection = resources.Worker.get_collection()
+        worker_bson = workers_collection.find_one({'_id': 'a_worker'})
 
-        # Replace the aq reference with a newly instantiated AvailableQueue from our bson
-        aq = resources.AvailableQueue.from_bson(aq_bson)
+        # Replace the worker reference with a newly instantiated Worker from our bson
+        worker = resources.Worker.from_bson(worker_bson)
 
-        self.assertEqual(aq.name, 'a_queue')
-        self.assertEqual(aq.num_reservations, 13)
-        self.assertEqual(aq.last_heartbeat, last_heartbeat)
-
-    def test_increment_num_reservations(self):
-        """
-        Test increment_num_reservations().
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('some_queue', now, 7)
-        aq.save()
-
-        aq.increment_num_reservations()
-
-        # The instance and the DB record should both have num_reservations of 8 now
-        self.assertEqual(aq.num_reservations, 8)
-        aqc = resources.AvailableQueue.get_collection()
-        self.assertEqual(aqc.find_one({'_id': 'some_queue'})['num_reservations'], 8)
-
-    def test_increment_num_reservations_doesnt_exist(self):
-        """
-        increment_num_reservations() should raise a DoesNotExist when asked to increment an
-        AvailableQueue that does not exist in the database.
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('does-not-exist', now)
-
-        self.assertRaises(base.DoesNotExist, aq.increment_num_reservations)
-
-    def test_increment_num_reservations_updates_attributes(self):
-        """
-        Test increment_num_reservations() when num_reservations is 1, while simulating another
-        process setting it to 5. It should increment to 6, and it should update the attributes on
-        the instance.
-        """
-        now = datetime.utcnow()
-        aq = resources.AvailableQueue('a_queue', now, 1)
-        aq.save()
-        # Now let's simulate another process setting the num_reservations and last_heartbeat
-        # attributes to other values
-        aqc = resources.AvailableQueue.get_collection()
-        last_heartbeat = datetime(2013, 12, 16)
-        aqc.update({'_id': 'a_queue'}, {'num_reservations': 5, 'last_heartbeat': last_heartbeat})
-
-        aq.increment_num_reservations()
-
-        # The instance should have been updated
-        self.assertEqual(aq.num_reservations, 6)
-        self.assertEqual(aq.last_heartbeat, last_heartbeat)
-        # The database should have also been updated
-        self.assertEqual(aqc.count(), 1)
-        aq_bson = aqc.find_one({'_id': 'a_queue'})
-        self.assertEqual(aq_bson['num_reservations'], 6)
-        self.assertEqual(aq_bson['last_heartbeat'], last_heartbeat)
+        self.assertEqual(worker.name, 'a_worker')
+        self.assertEqual(worker.last_heartbeat, last_heartbeat)
 
     def test_save(self):
         """
@@ -241,16 +114,15 @@ class TestAvailableQueue(ResourceReservationTests):
         """
         last_heartbeat = datetime(2013, 12, 16)
 
-        aq = resources.AvailableQueue('a_queue', last_heartbeat, 13)
+        worker = resources.Worker('a_worker', last_heartbeat)
 
-        aq.save()
+        worker.save()
 
         # Make sure the DB has the correct data
-        aqc = resources.AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 1)
-        saved_queue = aqc.find_one({'_id': 'a_queue'})
-        self.assertEqual(saved_queue['num_reservations'], 13)
-        self.assertEqual(saved_queue['last_heartbeat'], last_heartbeat)
+        workers_collection = resources.Worker.get_collection()
+        self.assertEqual(workers_collection.count(), 1)
+        saved_worker = workers_collection.find_one({'_id': 'a_worker'})
+        self.assertEqual(saved_worker['last_heartbeat'], last_heartbeat)
 
 
 class TestReservedResource(ResourceReservationTests):

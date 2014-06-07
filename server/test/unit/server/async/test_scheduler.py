@@ -569,7 +569,7 @@ class TestWorkerTimeoutMonitorRun(unittest.TestCase):
 
 
 class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
-    @mock.patch('pulp.server.managers.resources.filter_available_queues', spec_set=True)
+    @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
     def test_calls_filter(self, mock_filter):
         mock_filter.return_value = []
 
@@ -588,12 +588,12 @@ class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
         self.assertTrue(datetime.utcnow() - timestamp <
                         timedelta(scheduler.WorkerTimeoutMonitor.WORKER_TIMEOUT_SECONDS + 1))
 
-    @mock.patch('pulp.server.async.tasks._delete_queue.apply_async', spec_set=True)
-    @mock.patch('pulp.server.managers.resources.filter_available_queues', spec_set=True)
-    def test_deletes_queues(self, mock_filter, mock_delete):
+    @mock.patch('pulp.server.async.tasks._delete_worker.apply_async', spec_set=True)
+    @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
+    def test_deletes_workers(self, mock_filter, mock_delete):
         mock_filter.return_value = [
-            resources.AvailableQueue('name1', datetime.utcnow()),
-            resources.AvailableQueue('name2', datetime.utcnow()),
+            resources.Worker('name1', datetime.utcnow()),
+            resources.Worker('name2', datetime.utcnow()),
         ]
 
         scheduler.WorkerTimeoutMonitor().check_workers()

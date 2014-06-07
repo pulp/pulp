@@ -21,104 +21,63 @@ from pulp.server.exceptions import PulpException, PulpCodedException
 from pulp.server.async import tasks, worker_watcher
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import AvailableQueue, ReservedResource
+from pulp.server.db.model.resources import Worker, ReservedResource
 
 
-RESERVED_WORKER_1 = 'reserved_resource_worker-1'
-RESERVED_WORKER_2 = 'reserved_resource_worker-2'
-RESERVED_WORKER_3 = 'reserved_resource_worker-3'
-# This is used as the mock return value for the celery.app.control.Inspect.active_queues() method
-MOCK_ACTIVE_QUEUES_RETURN_VALUE = {
-    # This is a plain old default Celery worker, subscribed to the general Celery queue
-    u'worker_1': [
-        {u'exclusive': False, u'name': u'celery', u'exchange': {
-            u'name': u'celery', u'durable': True, u'delivery_mode': 2, u'passive': False,
-            u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'celery', u'no_ack': False, u'alias': None,
-         u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False}],
-    # This is a worker subscribed only to a reserved resource queue on worker_1
-    RESERVED_WORKER_1: [
-        {u'exclusive': False, u'name': RESERVED_WORKER_1, u'exchange': {
-            u'name': RESERVED_WORKER_1, u'durable': True,
-            u'delivery_mode': 2, u'passive': False, u'arguments': None, u'type': u'direct',
-            u'auto_delete': False},
-         u'durable': True, u'routing_key': RESERVED_WORKER_1, u'no_ack': False,
-         u'alias': None, u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False}],
-    # This is a worker subscribed to both a reserved resource queue and the general Celery queue
-    RESERVED_WORKER_2: [
-        {u'exclusive': False, u'name': RESERVED_WORKER_2, u'exchange': {
-            u'name': RESERVED_WORKER_2, u'durable': True,
-            u'delivery_mode': 2, u'passive': False, u'arguments': None, u'type': u'direct',
-            u'auto_delete': False},
-         u'durable': True, u'routing_key': RESERVED_WORKER_2, u'no_ack': False,
-         u'alias': None, u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False},
-        {u'exclusive': False, u'name': u'celery', u'exchange': {
-            u'name': u'celery', u'durable': True, u'delivery_mode': 2, u'passive': False,
-            u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'celery', u'no_ack': False, u'alias': None,
-         u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False}],
-    # This is another worker, but it is not yet subscribed to any queues
-    RESERVED_WORKER_3: [],
-    # This is a worker subscribed to the special ReservationManager queue
-    u'resource_manager': [
-        {u'exclusive': False, u'name': u'resource_manager', u'exchange': {
-            u'name': u'resource_manager', u'durable': True, u'delivery_mode': 2, u'passive': False,
-            u'arguments': None, u'type': u'direct', u'auto_delete': False},
-         u'durable': True, u'routing_key': u'resource_manager', u'no_ack': False, u'alias': None,
-         u'queue_arguments': None, u'binding_arguments': None, u'bindings': [],
-         u'auto_delete': False}]}
+# Worker names
+WORKER_1 = 'worker-1'
+WORKER_2 = 'worker-2'
+WORKER_3 = 'worker-3'
+# Worker queue names
+WORKER_1_QUEUE = '%s.dq' % WORKER_1
+WORKER_2_QUEUE = '%s.dq' % WORKER_2
+WORKER_3_QUEUE = '%s.dq' % WORKER_3
 
 
-class TestDeleteQueue(ResourceReservationTests):
+class TestDeleteWorker(ResourceReservationTests):
     """
-    Test the _delete_queue() Task.
+    Test the _delete_worker() Task.
     """
     @mock.patch('pulp.server.async.tasks.controller.add_consumer')
-    @mock.patch('celery.app.control.Inspect.active_queues',
-                return_value=MOCK_ACTIVE_QUEUES_RETURN_VALUE)
     @mock.patch('pulp.server.async.tasks.cancel')
     @mock.patch('pulp.server.async.tasks.logger')
-    def test__delete_queue(self, logger, cancel, active_queues, mock_add_consumer):
+    def test__delete_worker(self, logger, cancel, mock_add_consumer):
         """
-        Assert that the correct Tasks get canceled when their queue is deleted, and that the queue
+        Assert that the correct Tasks get canceled when their Worker is deleted, and that the Worker
         is removed from the database.
         """
-        # cause two workers to be added to the database as having available queues
+        # cause two workers to be added to the database as having workers
         worker_watcher.handle_worker_heartbeat({
             'timestamp': time.time(),
             'type': 'worker-heartbeat',
-            'hostname': RESERVED_WORKER_1,
+            'hostname': WORKER_1,
         })
         worker_watcher.handle_worker_heartbeat({
             'timestamp': time.time(),
             'type': 'worker-heartbeat',
-            'hostname': RESERVED_WORKER_2,
+            'hostname': WORKER_2,
         })
-        # Let's simulate three tasks being assigned to RESERVED_WORKER_2, with two of them being
-        # in an incomplete state and one in a complete state. We will delete RESERVED_WORKER_2's
-        # queue, which should cause the two to get canceled. Let's put task_1 in progress
-        TaskStatusManager.create_task_status('task_1', RESERVED_WORKER_2,
+        # Let's simulate three tasks being assigned to WORKER_2, with two of them being
+        # in an incomplete state and one in a complete state. We will delete WORKER_2,
+        # which should cause the two to get canceled. Let's put task_1 in progress
+        TaskStatusManager.create_task_status('task_1', WORKER_2_QUEUE,
                                              state=CALL_RUNNING_STATE)
-        TaskStatusManager.create_task_status('task_2', RESERVED_WORKER_2,
+        TaskStatusManager.create_task_status('task_2', WORKER_2_QUEUE,
                                              state=CALL_WAITING_STATE)
         # This task shouldn't get canceled because it isn't in an incomplete state
-        TaskStatusManager.create_task_status('task_3', RESERVED_WORKER_2,
+        TaskStatusManager.create_task_status('task_3', WORKER_2_QUEUE,
                                              state=CALL_FINISHED_STATE)
         # Let's make a task in a worker that is still present just to make sure it isn't touched.
-        TaskStatusManager.create_task_status('task_4', RESERVED_WORKER_1,
+        TaskStatusManager.create_task_status('task_4', WORKER_1_QUEUE,
                                              state=CALL_RUNNING_STATE)
 
-        # Let's just make sure the setup worked and that we have an AvailableQueue with RR2
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 1)
+        # Let's just make sure the setup worked and that we have a Worker with RR2
+        worker_collection = Worker.get_collection()
+        self.assertEqual(worker_collection.find({'_id': WORKER_2}).count(), 1)
 
-        # Now let's delete the queue named RESERVED_WORKER_2
-        tasks._delete_queue.apply_async(args=(RESERVED_WORKER_2,),
-                                        queue=tasks.RESOURCE_MANAGER_QUEUE)
+        # Now let's delete the Worker named WORKER_2
+        tasks._delete_worker.apply_async(args=(WORKER_2,),
+                                         queue=tasks.RESOURCE_MANAGER_QUEUE)
 
         # cancel() should have been called twice with task_1 and task_2 as parameters
         self.assertEqual(cancel.call_count, 2)
@@ -129,32 +88,33 @@ class TestDeleteQueue(ResourceReservationTests):
         self.assertEqual(cancel_param_set, set([('task_1',), ('task_2',)]))
         # We should have logged that we are canceling the tasks
         self.assertEqual(logger.call_count, 0)
-        self.assertTrue(RESERVED_WORKER_2 in logger.mock_calls[0][1][0])
+        self.assertTrue(WORKER_2 in logger.mock_calls[0][1][0])
         self.assertTrue('Canceling the tasks' in logger.mock_calls[0][1][0])
 
-        # The queue should have been deleted
-        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_2}).count(), 0)
-        # the queue for RW1 should remain
-        self.assertEqual(aqc.find({'_id': RESERVED_WORKER_1}).count(), 1)
+        # The Worker should have been deleted
+        self.assertEqual(worker_collection.find({'_id': WORKER_2}).count(), 0)
+        # the Worker for RW1 should remain
+        self.assertEqual(worker_collection.find({'_id': WORKER_1}).count(), 1)
 
-    def test__delete_queue_no_database_entry(self):
+    def test__delete_worker_no_database_entry(self):
         """
-        Call _delete_queue() with a queue that is not in the database. _delete_queue() relies on
+        Call _delete_worker() with a Worker that is not in the database. _delete_worker() relies on
         the database information, so it should return without error when called in this way.
         """
         try:
-            tasks._delete_queue('does not exist queue name')
+            tasks._delete_worker('does not exist Worker name')
         except Exception:
-            self.fail('_delete_queue() on a queue that is not in the database caused an Exception')
+            self.fail('_delete_worker() on a Worker that is not in the database caused an '
+                      'Exception')
 
     @mock.patch('pulp.server.async.tasks._')
     @mock.patch('pulp.server.async.tasks.logger')
-    def test__delete_queue_normal_shutdown_true(self, mock_logger, mock_underscore):
+    def test__delete_worker_normal_shutdown_true(self, mock_logger, mock_underscore):
         """
-        Call _delete_queue() with the normal_shutdown keyword argument set to True. This should
+        Call _delete_worker() with the normal_shutdown keyword argument set to True. This should
         not make any calls to _() or logger().
         """
-        tasks._delete_queue('does not exist queue name')
+        tasks._delete_worker('does not exist Worker name')
         self.assertTrue(not mock_underscore.called)
         self.assertTrue(not mock_logger.called)
 
@@ -186,30 +146,28 @@ class TestReleaseResource(ResourceReservationTests):
         Test _release_resource() with a resource that is not in the database. This should be
         gracefully handled, and result in no changes to the database.
         """
-        # Set up two available queues
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, datetime.utcnow(), 7)
-        available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, datetime.utcnow(), 3)
-        available_queue_2.save()
-        # Set up two resource reservations, using our available_queues from above
-        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
-                                               available_queue_1.num_reservations)
+        # Set up two workers
+        worker_1 = Worker(WORKER_1, datetime.utcnow())
+        worker_1.save()
+        worker_2 = Worker(WORKER_2, datetime.utcnow())
+        worker_2.save()
+        # Set up two resource reservations, using our workers from above
+        reserved_resource_1 = ReservedResource('resource_1', worker_1.name, 7)
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name,
-                                               available_queue_2.num_reservations)
+        reserved_resource_2 = ReservedResource('resource_2', worker_2.name, 3)
         reserved_resource_2.save()
 
-        # This should not raise any Exception, but should also not alter either the AvailableQueue
+        # This should not raise any Exception, but should also not alter either the Worker
         # collection or the ReservedResource collection
         tasks._release_resource('made_up_resource_id')
 
-        # Make sure that the available queues collection has not been altered
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 2)
-        aq_1 = aqc.find_one({'_id': available_queue_1.name})
-        self.assertEqual(aq_1['num_reservations'], 7)
-        aq_2 = aqc.find_one({'_id': available_queue_2.name})
-        self.assertEqual(aq_2['num_reservations'], 3)
+        # Make sure that the workers collection has not been altered
+        worker_collection = Worker.get_collection()
+        self.assertEqual(worker_collection.count(), 2)
+        worker_1 = worker_collection.find_one({'_id': worker_1.name})
+        self.assertTrue(worker_1)
+        worker_2 = worker_collection.find_one({'_id': worker_2.name})
+        self.assertTrue(worker_2)
         # Make sure that the reserved resources collection has not been altered
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 2)
@@ -220,75 +178,26 @@ class TestReleaseResource(ResourceReservationTests):
         self.assertEqual(rr_2['assigned_queue'], reserved_resource_2.assigned_queue)
         self.assertEqual(rr_2['num_reservations'], 3)
 
-    def test__release_resource_queue_task_count_zero(self):
-        """
-        Test _release_resource() with a resource that has a queue with a task count of zero. This
-        should not decrement the queue task count into the negative range.
-        """
-        # Set up two available queues, the second with a task count of 0
-        now = datetime.utcnow()
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
-        available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 0)
-        available_queue_2.save()
-        # Set up two reserved resources, and let's make it so the second one is out of sync with its
-        # queue's task count by setting its num_reservations to 1
-        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
-                                               available_queue_1.num_reservations)
-        reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name, 1)
-        reserved_resource_2.save()
-
-        # This should remove resource_2 from the _resource_map, but should leave the queue's task
-        # count at 0.
-        tasks._release_resource('resource_2')
-
-        # The _available_queue_task_counts should remain as they were before, since we don't want
-        # queue lengths below zero
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 2)
-        aq_1 = aqc.find_one({'_id': available_queue_1.name})
-        self.assertEqual(aq_1['num_reservations'], 7)
-        aq_2 = aqc.find_one({'_id': available_queue_2.name})
-        self.assertEqual(aq_2['num_reservations'], 0)
-        # resource_2 should have been removed from the database
-        rrc = ReservedResource.get_collection()
-        self.assertEqual(rrc.count(), 1)
-        rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
-        self.assertEqual(rr_1['assigned_queue'], reserved_resource_1.assigned_queue)
-        self.assertEqual(rr_1['num_reservations'], 7)
-
     def test__release_resource_task_count_one(self):
         """
         Test _release_resource() with a resource that has a task count of one. This should remove
         the resource from the database.
         """
-        # Set up two available queues
+        # Set up two workers
         now = datetime.utcnow()
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
-        available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 1)
-        available_queue_2.save()
+        worker_1 = Worker(WORKER_1, now)
+        worker_1.save()
+        worker_2 = Worker(WORKER_2, now)
+        worker_2.save()
         # Set up two reserved resources
-        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
-                                               available_queue_1.num_reservations)
+        reserved_resource_1 = ReservedResource('resource_1', worker_1.name, 7)
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name,
-                                               available_queue_2.num_reservations)
+        reserved_resource_2 = ReservedResource('resource_2', worker_2.name, 1)
         reserved_resource_2.save()
 
-        # This should remove resource_2 from the _resource_map, and should reduce the queue's task
-        # count to 0.
+        # This should remove resource_2 from the _resource_map.
         tasks._release_resource('resource_2')
 
-        # available_queue_2 should have had its num_reservations reduced to 0, and the other one
-        # should have remained the same
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 2)
-        aq_1 = aqc.find_one({'_id': available_queue_1.name})
-        self.assertEqual(aq_1['num_reservations'], 7)
-        aq_2 = aqc.find_one({'_id': available_queue_2.name})
-        self.assertEqual(aq_2['num_reservations'], 0)
         # resource_2 should have been removed from the database
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 1)
@@ -301,31 +210,21 @@ class TestReleaseResource(ResourceReservationTests):
         Test _release_resource() with a resource that has a task count of two. This should simply
         decrement the task_count for the resource, but should not remove it from the database.
         """
-        # Set up two available queues
+        # Set up two workers
         now = datetime.utcnow()
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 7)
-        available_queue_1.save()
-        available_queue_2 = AvailableQueue(RESERVED_WORKER_2, now, 2)
-        available_queue_2.save()
-        # Set up two resource reservations, using our available_queues from above
-        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
-                                               available_queue_1.num_reservations)
+        worker_1 = Worker(WORKER_1, now)
+        worker_1.save()
+        worker_2 = Worker(WORKER_2, now)
+        worker_2.save()
+        # Set up two resource reservations, using our workers from above
+        reserved_resource_1 = ReservedResource('resource_1', worker_1.name, 7)
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource('resource_2', available_queue_2.name,
-                                               available_queue_2.num_reservations)
+        reserved_resource_2 = ReservedResource('resource_2', worker_2.name, 2)
         reserved_resource_2.save()
 
-        # This should reduce the reserved_resource_2 num_reservations to 1, and should also reduce
-        # available_queue_2's num_reservations to 1.
+        # This should reduce the reserved_resource_2 num_reservations to 1.
         tasks._release_resource('resource_2')
 
-        # Make sure that the AvailableQueues are correct
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 2)
-        aq_1 = aqc.find_one({'_id': available_queue_1.name})
-        self.assertEqual(aq_1['num_reservations'], 7)
-        aq_2 = aqc.find_one({'_id': available_queue_2.name})
-        self.assertEqual(aq_2['num_reservations'], 1)
         # Make sure the ReservedResources are also correct
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 2)
@@ -346,64 +245,51 @@ class TestReserveResource(ResourceReservationTests):
         Test _reserve_resource() with a resource that has an existing reservation in the database.
         It should return the queue listed in the database, and increment the reservation counter.
         """
-        # Set up an available queue with a reservation count of 1
+        # Set up a worker with a reservation count of 1
         now = datetime.utcnow()
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, now, 1)
-        available_queue_1.save()
-        # Set up a resource reservation, using our available_queue from above
-        reserved_resource_1 = ReservedResource('resource_1', available_queue_1.name,
-                                               available_queue_1.num_reservations)
+        worker_1 = Worker(WORKER_1, now)
+        worker_1.save()
+        # Set up a resource reservation, using our worker from above
+        reserved_resource_1 = ReservedResource('resource_1', worker_1.queue_name, 1)
         reserved_resource_1.save()
 
-        # This should increase the reserved_resource_1 num_reservations to 2, and should also
-        # increase available_queue_1's num_reservations to 2. available_queue_1's name should be
-        # returned
+        # This should increase the reserved_resource_1 num_reservations to 2. worker_1's name should
+        # be returned
         queue = tasks._reserve_resource('resource_1')
 
-        self.assertEqual(queue, RESERVED_WORKER_1)
-        # Make sure that the AvailableQueue is correct
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 1)
-        aq_1 = aqc.find_one({'_id': available_queue_1.name})
-        self.assertEqual(aq_1['num_reservations'], 2)
-        # Make sure the ReservedResource is also correct
+        self.assertEqual(queue, WORKER_1_QUEUE)
+        # Make sure the ReservedResource is correct
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 1)
         rr_1 = rrc.find_one({'_id': reserved_resource_1.name})
-        self.assertEqual(rr_1['assigned_queue'], RESERVED_WORKER_1)
+        self.assertEqual(rr_1['assigned_queue'], WORKER_1_QUEUE)
         self.assertEqual(rr_1['num_reservations'], 2)
 
     def test__reserve_resource_without_existing_reservation(self):
         """
         Test _reserve_resource() with a resource that does not have an existing reservation in the
-        database. It should find the least busy queue, add a reservation to the database with that
-        queue, and then return the queue.
+        database. It should find the least busy worker, add a reservation to the database with that
+        worker's queue, and then return the queue name.
         """
-        # Set up an available queue
-        available_queue_1 = AvailableQueue(RESERVED_WORKER_1, 0)
-        available_queue_1.save()
+        # Set up a worker
+        worker_1 = Worker(WORKER_1, datetime.utcnow())
+        worker_1.save()
 
         queue = tasks._reserve_resource('resource_1')
 
-        worker_1_queue_name = RESERVED_WORKER_1 + '.dq'
-        self.assertEqual(queue, worker_1_queue_name)
-        # Make sure that the AvailableQueue is correct
-        aqc = AvailableQueue.get_collection()
-        self.assertEqual(aqc.count(), 1)
-        aq_1 = aqc.find_one({'_id': available_queue_1.name})
-        self.assertEqual(aq_1['num_reservations'], 1)
-        # Make sure the ReservedResource is also correct
+        self.assertEqual(queue, WORKER_1_QUEUE)
+        # Make sure the ReservedResource is correct
         rrc = ReservedResource.get_collection()
         self.assertEqual(rrc.count(), 1)
         rr_1 = rrc.find_one({'_id': 'resource_1'})
-        self.assertEqual(rr_1['assigned_queue'], worker_1_queue_name)
+        self.assertEqual(rr_1['assigned_queue'], WORKER_1_QUEUE)
         self.assertEqual(rr_1['num_reservations'], 1)
 
 
 def _reserve_resource_apply_async():
     class MockAsyncResult(object):
         def get(self):
-            return RESERVED_WORKER_1
+            return WORKER_1_QUEUE
     return MockAsyncResult()
 
 
@@ -442,7 +328,7 @@ class TestTask(ResourceReservationTests):
         mock_async_result = MockAsyncResult()
         apply_async.return_value = mock_async_result
         some_args = [1, 'b', 'iii']
-        some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': RESERVED_WORKER_1}
+        some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': WORKER_1_QUEUE}
         resource_id = 'three_to_get_ready'
         resource_type = 'reserve_me'
         task = tasks.Task()
@@ -456,7 +342,7 @@ class TestTask(ResourceReservationTests):
                                                   queue=tasks.RESOURCE_MANAGER_QUEUE)
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
         _queue_release_resource.apply_async.assert_called_once_with((expected_resource_id,),
-                                                                    queue=RESERVED_WORKER_1)
+                                                                    queue=WORKER_1_QUEUE)
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_success_handler(self, mock_request):
@@ -466,7 +352,7 @@ class TestTask(ResourceReservationTests):
         retval = 'random_return_value'
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
@@ -496,7 +382,7 @@ class TestTask(ResourceReservationTests):
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
@@ -524,7 +410,7 @@ class TestTask(ResourceReservationTests):
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
@@ -549,7 +435,7 @@ class TestTask(ResourceReservationTests):
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
         mock_request.called_directly = False
 
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
@@ -575,7 +461,7 @@ class TestTask(ResourceReservationTests):
         retval = 'random_return_value'
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_2}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
         mock_request.called_directly = False
         task_status = TaskStatusManager.create_task_status(task_id, 'some_queue',
                                                            state=CALL_CANCELED_STATE)
@@ -634,7 +520,7 @@ class TestTask(ResourceReservationTests):
         Assert that apply_async() creates new task status.
         """
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': RESERVED_WORKER_1}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_1_QUEUE}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
         task = tasks.Task()
 
@@ -644,7 +530,7 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'], RESERVED_WORKER_1)
+        self.assertEqual(new_task_status['queue'], WORKER_1_QUEUE)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
         self.assertEqual(new_task_status['error'], None)
@@ -686,7 +572,7 @@ class TestTask(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
         now = datetime.utcnow()
-        TaskStatusManager.create_task_status(task_id, AvailableQueue('test-queue', now),
+        TaskStatusManager.create_task_status(task_id, Worker('test-worker', now),
                                              state=CALL_CANCELED_STATE)
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
@@ -715,8 +601,8 @@ class TestCancel(PulpServerTests):
     def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
         now = datetime.utcnow()
-        test_queue = AvailableQueue('test_queue', now)
-        TaskStatusManager.create_task_status(task_id, test_queue.name)
+        test_worker = Worker('test_worker', now)
+        TaskStatusManager.create_task_status(task_id, test_worker.name)
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
@@ -732,8 +618,8 @@ class TestCancel(PulpServerTests):
     def test_cancel_after_task_finished(self, logger, revoke):
         task_id = '1234abcd'
         now = datetime.utcnow()
-        test_queue = AvailableQueue('test_queue', now)
-        TaskStatusManager.create_task_status(task_id, test_queue.name, state=CALL_FINISHED_STATE)
+        test_worker = Worker('test_worker', now)
+        TaskStatusManager.create_task_status(task_id, test_worker.name, state=CALL_FINISHED_STATE)
         self.assertRaises(PulpCodedException, tasks.cancel, task_id)
 
         task_status = TaskStatusManager.find_by_task_id(task_id)
