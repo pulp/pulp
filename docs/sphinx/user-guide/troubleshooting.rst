@@ -151,7 +151,7 @@ apr_sockaddr_info_get() failed error when starting apache on F18
 You may run into apr_sockaddr_info_get() failed error when starting apache on F18.
 This is because of incorrect hostname configuration. Make sure your /etc/hosts file
 contains the hostname of your machine as returned by the 'hostname' command. If not, update
-/etc/hosts and run 'apachectl restart'. 
+/etc/hosts and run 'apachectl restart'.
 
 
 Qpid connection issues when starting services or executing tasks
@@ -179,11 +179,12 @@ No available workers
 ^^^^^^^^^^^^^^^^^^^^
 
 Pulp requires three Celery services to be running: ``pulp_celerybeat``, ``pulp_resource_manager``,
-and ``pulp_workers``. If you are experiencing this error, you may see a message similar to "There
-are no Celery workers found in the system for reserved task work. Please ensure that there is at
-least one Celery worker running, and that the celerybeat service is also running." in the logs or
-from the CLI. Pulp will not work correctly if any of the required services are not running, so
-please ensure that they are all started and configured to start after a reboot.
+and ``pulp_workers``. If you are using systemd, please see the special note about ``pulp_workers``
+below. If you are experiencing this error, you may see a message similar to "There are no Celery
+workers found in the system for reserved task work. Please ensure that there is at least one Celery
+worker running, and that the celerybeat service is also running." in the logs or from the CLI. Pulp
+will not work correctly if any of the required services are not running, so please ensure that they
+are all started and configured to start after a reboot.
 
 .. note::
 
