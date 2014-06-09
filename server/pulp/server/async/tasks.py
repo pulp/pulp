@@ -23,43 +23,43 @@ logger = logging.getLogger(__name__)
 
 
 @task
-def _delete_queue(queue, normal_shutdown=False):
+def _delete_worker(name, normal_shutdown=False):
     """
-    Delete the AvailableQueue with _id queue from the database. This Task can only safely be
+    Delete the Worker with _id name from the database. This Task can only safely be
     performed by the resource manager at this time, so be sure to queue it in the
     RESOURCE_MANAGER_QUEUE.
 
     If the worker shutdown normally, no message is logged, otherwise an error level message is
     logged. Default is to assume the work did not shut down normally.
 
-    :param queue: The name of the queue you wish to delete. In the database, the _id field is the
-                  name.
-    :type  queue: basestring
-    :param normal_shutdown: True if the worker associated with the queue shutdown normally, False
-                            otherwise.  Defaults to False.
+    :param name:            The name of the worker you wish to delete. In the database, the _id
+                            field is the name.
+    :type  name:            basestring
+    :param normal_shutdown: True if the worker shutdown normally, False otherwise.  Defaults to
+                            False.
     :type normal_shutdown:  bool
     """
-    queue_list = list(resources.filter_available_queues(Criteria(filters={'_id': queue})))
-    if len(queue_list) == 0:
-        # Potentially _delete_queue() may be called with the database not containing any entries.
+    worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
+    if len(worker_list) == 0:
+        # Potentially _delete_worker() may be called with the database not containing any entries.
         # https://bugzilla.redhat.com/show_bug.cgi?id=1091922
         return
-    queue = queue_list[0]
+    worker = worker_list[0]
 
     if normal_shutdown is False:
-        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.') % {
-            'name': queue.name}
+        msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
+        msg = msg % {'name': worker.name}
         logger.error(msg)
 
-    # Cancel all of the tasks that were assigned to this queue
+    # Cancel all of the tasks that were assigned to this worker's queue
     for task in TaskStatusManager.find_by_criteria(
             Criteria(
-                filters={'queue': queue.name,
+                filters={'queue': worker.queue_name,
                          'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
         cancel(task['task_id'])
 
-    # Finally, delete the queue
-    queue.delete()
+    # Finally, delete the worker
+    worker.delete()
 
 
 @task
@@ -95,17 +95,8 @@ def _release_resource(resource_id):
     try:
         reserved_resource = ReservedResource(resource_id)
         reserved_resource.decrement_num_reservations()
-        # Now we need to decrement the AvailabeQueue that the reserved_resource was using. If the
-        # ReservedResource does not exist for some reason, we won't know its assigned_queue, but
-        # these next lines won't execute anyway.
-        # Remove the '.dq' from the queue name to get the worker name
-        worker_name = reserved_resource.assigned_queue.rstrip('.dq')
-        aqc = Criteria(filters={'_id': worker_name})
-        aq_list = list(resources.filter_available_queues(aqc))
-        available_queue = aq_list[0]
-        available_queue.decrement_num_reservations()
     except DoesNotExist:
-        # If we are trying to decrement the count on one of these obejcts, and they don't exist,
+        # If we are trying to decrement the count on one of these objects, and they don't exist,
         # that's OK
         pass
 
@@ -132,19 +123,13 @@ def _reserve_resource(resource_id):
     if reserved_resource.assigned_queue is None:
         # The assigned_queue will be None if the reserved_resource was just created, so we'll
         # need to assign a queue to it
-        # get the dedicated queue name by adding '.dq' to the end of the worker name
-        reserved_resource.assigned_queue = resources.get_least_busy_available_queue().name + '.dq'
+        reserved_resource.assigned_queue = resources.get_least_busy_worker().queue_name
         reserved_resource.save()
     else:
         # The assigned_queue is set, so we just need to increment the num_reservations on the
         # reserved resource
         reserved_resource.increment_num_reservations()
 
-    # Remove the '.dq' from the queue name to get the worker name
-    worker_name = reserved_resource.assigned_queue.rstrip('.dq')
-    aqc = Criteria(filters={'_id': worker_name})
-    aq_list = list(resources.filter_available_queues(aqc))
-    aq_list[0].increment_num_reservations()
     return reserved_resource.assigned_queue
 
 

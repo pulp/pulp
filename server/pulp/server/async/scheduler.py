@@ -10,7 +10,7 @@ from celery import beat
 from celery.result import AsyncResult
 
 from pulp.server.async.celery_instance import celery as app, RESOURCE_MANAGER_QUEUE
-from pulp.server.async.tasks import _delete_queue
+from pulp.server.async.tasks import _delete_worker
 from pulp.server.async import worker_watcher
 from pulp.server.db import connection as db_connection
 from pulp.server.db.model.criteria import Criteria
@@ -214,12 +214,12 @@ class WorkerTimeoutMonitor(threading.Thread):
         """
         Look for missing workers, and dispatch a cleanup task if one goes missing.
 
-        To find a missing worker, filter the AvailableQueues model for entries older than
+        To find a missing worker, filter the Workers model for entries older than
         utcnow() - WORKER_TIMEOUT_SECONDS. The heartbeat times are stored in native UTC, so this is
         a comparable datetime.
 
-        For each missing worker found, dispatch a _delete_queue task requesting that the resource
-        manager delete the queue and cleanup any associated work.
+        For each missing worker found, dispatch a _delete_worker task requesting that the resource
+        manager delete the Worker and cleanup any associated work.
 
         This method logs and the debug and error levels.
         """
@@ -228,11 +228,11 @@ class WorkerTimeoutMonitor(threading.Thread):
         oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
         worker_criteria = Criteria(filters={'last_heartbeat': {'$lt': oldest_heartbeat_time}},
                                    fields=('_id', 'last_heartbeat', 'num_reservations'))
-        worker_list = list(resources.filter_available_queues(worker_criteria))
+        worker_list = list(resources.filter_workers(worker_criteria))
         for worker in worker_list:
             msg = _("Workers '%s' has gone missing, removing from list of workers") % worker.name
             _logger.error(msg)
-            _delete_queue.apply_async(args=(worker.name,), queue=RESOURCE_MANAGER_QUEUE)
+            _delete_worker.apply_async(args=(worker.name,), queue=RESOURCE_MANAGER_QUEUE)
 
 
 class Scheduler(beat.Scheduler):

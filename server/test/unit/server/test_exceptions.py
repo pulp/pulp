@@ -113,16 +113,16 @@ class TestPulpCodedValidationException(unittest.TestCase):
         self.assertEquals(len(e.child_exceptions), 2)
 
 
-class TestNoAvailableQueues(unittest.TestCase):
+class TestNoWorkers(unittest.TestCase):
     """
-    Tests for the NoAvailableQueues Exception class.
+    Tests for the NoWorkers Exception class.
     """
     @mock.patch('pulp.server.exceptions.PulpExecutionException.__init__')
     def test___init__(self, super___init__):
         """
         Ensure correct operation of __init__().
         """
-        e = exceptions.NoAvailableQueues()
+        e = exceptions.NoWorkers()
 
         self.assertEqual(e.error_code, error_codes.PLP0024)
         super___init__.assert_called_once_with()
@@ -131,7 +131,7 @@ class TestNoAvailableQueues(unittest.TestCase):
         """
         Ensure correct operation of __str__().
         """
-        e = exceptions.NoAvailableQueues()
+        e = exceptions.NoWorkers()
 
         msg = str(e)
 
@@ -141,7 +141,7 @@ class TestNoAvailableQueues(unittest.TestCase):
         """
         Ensure that data_dict returns {}.
         """
-        e = exceptions.NoAvailableQueues()
+        e = exceptions.NoWorkers()
 
         d = e.data_dict()
 

@@ -19,7 +19,6 @@ import pulp.server.managers.repo.unit_association_query as association_query_man
 import pulp.server.managers.content.cud as content_cud_manager
 import pulp.server.managers.factory as manager_factory
 
-# -- constants ----------------------------------------------------------------
 
 TYPE_DEF_ALPHA = model.TypeDefinition('alpha', 'Alpha', 'Test Type Alpha',
     ['key_1'], ['search_1'], [])
@@ -731,8 +730,6 @@ class GetUnitsStressTest(base.PulpServerTests):
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
 
-        print('Scenario 1: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
-
     def test_2(self):
         """
         Scenario: Abnormally large repository with all 15,000 units spread out
@@ -768,8 +765,6 @@ class GetUnitsStressTest(base.PulpServerTests):
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
 
-        print('Scenario 2: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
-
     def test_3(self):
         """
         Scenario: Absurdly large repository with all 50,000 units spread out
@@ -804,8 +799,6 @@ class GetUnitsStressTest(base.PulpServerTests):
         self.assertEqual(50000, len(units))
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
-
-        print('Scenario 3: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
 
     def test_4(self):
         """
@@ -845,8 +838,6 @@ class GetUnitsStressTest(base.PulpServerTests):
         end = datetime.datetime.now()
         test_ellapsed = (end - start).seconds
 
-        print('Scenario 4: Test ran in [%d] seconds. Setup ran in [%d] seconds.' % (test_ellapsed, setup_ellapsed))
-
 class GetUnitsByTypeStressTest(base.PulpServerTests):
 
     ENABLED = False
@@ -874,10 +865,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
 
         header = 'Query Time   Total Num Units   Units per Type   Setup Time'
         report = '%+10s   %+15s   %+14s   %+10s'
-
-        print('Scenario: Retrieving all units of a given type from a repository')
-        print('----------------------------------------------------------------')
-        print(header)
 
         offset = 0
         step = 3000
@@ -914,10 +901,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
 
             offset += step
 
-            print(report % (test_ellapsed, offset, (offset / different_types), setup_ellapsed))
-
-        print('')
-
     def test_2(self):
         """
         Scenario: Filtering by association and unit metdata, both indexed and
@@ -929,10 +912,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
 
         header = 'Query Time   Query Type   Total Num Units   Matching   Setup Time'
         report = '%+10s   %+10s   %+15s   %+8s   %+10s'
-
-        print('Scenario: Filtering by association and unit metadata, both indexed and non-indexed, with limited unit metadata')
-        print('--------------------------------------------------------------------------------------------------------------')
-        print(header)
 
         offset = 0
         step = 3000
@@ -999,12 +978,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
 
             offset += step
 
-            print(report % (association_ellapsed, 'Assoc', offset, (offset / match_frequency), setup_ellapsed))
-            print(report % (index_ellapsed, 'Index', offset, (offset / match_frequency), setup_ellapsed))
-            print(report % (non_index_ellapsed, 'Non-index', offset, (offset / match_frequency), setup_ellapsed))
-
-        print('')
-
     def _run_sort_test(self, repo_id, step, limit, metadata_fields, sort_entropy):
         """
         @param repo_id: repo to associate against
@@ -1027,8 +1000,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
 
         header = 'Query Time   Query Type   Total Num Units   Setup Time'
         report = '%+10s   %+10s   %+15s   %+10s'
-
-        print(header)
 
         offset = 0
         for i in range(0, limit, step):
@@ -1111,17 +1082,7 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
 
             offset += step
 
-            print(report % (association_index_ellapsed, 'Assoc Ind', offset, setup_ellapsed))
-            print(report % (association_non_index_ellapsed, 'Assoc Non', offset, setup_ellapsed))
-            print(report % (index_ellapsed, 'Unit Ind', offset, setup_ellapsed))
-            print(report % (non_index_ellapsed, 'Unit Non', offset, setup_ellapsed))
-            print('')
-
     def test_3(self):
-        print('-------------------------------------------------------------------------')
-        print('Scenario: Sorting with 5 metadata fields per unit and sort entropy at 100')
-        print('-------------------------------------------------------------------------')
-
         repo_id = 'repo-3'
         step = 3000
         limit = 21000
@@ -1131,10 +1092,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
         self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_4(self):
-        print('--------------------------------------------------------------------------')
-        print('Scenario: Sorting with 25 metadata fields per unit and sort entropy at 100')
-        print('--------------------------------------------------------------------------')
-
         repo_id = 'repo-4'
         step = 3000
         limit = 21000
@@ -1144,10 +1101,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
         self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_5(self):
-        print('--------------------------------------------------------------------------')
-        print('Scenario: Sorting with 50 metadata fields per unit and sort entropy at 100')
-        print('--------------------------------------------------------------------------')
-
         repo_id = 'repo-5'
         step = 3000
         limit = 21000
@@ -1157,10 +1110,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
         self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_6(self):
-        print('---------------------------------------------------------------------------')
-        print('Scenario: Sorting with 10 metadata fields per unit and sort entropy at 2500')
-        print('---------------------------------------------------------------------------')
-
         repo_id = 'repo-5'
         step = 3000
         limit = 21000
@@ -1170,10 +1119,6 @@ class GetUnitsByTypeStressTest(base.PulpServerTests):
         self._run_sort_test(repo_id, step, limit, metadata_fields, sort_entropy)
 
     def test_7(self):
-        print('---------------------------------------------------------------------------')
-        print('Scenario: Sorting with 50 metadata fields per unit and sort entropy at 2500')
-        print('---------------------------------------------------------------------------')
-
         repo_id = 'repo-7'
         step = 3000
         limit = 21000

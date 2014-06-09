@@ -197,7 +197,7 @@ class OperationTimedOut(PulpExecutionException):
         return {'timeout': self.timeout}
 
 
-class NoAvailableQueues(PulpExecutionException):
+class NoWorkers(PulpExecutionException):
     """
     This Exception is raised when there are no Celery workers available to perform asynchronous
     tasks.
@@ -206,9 +206,9 @@ class NoAvailableQueues(PulpExecutionException):
 
     def __init__(self):
         """
-        Initialize the NoAvailableQueues Exception by setting its error code and message.
+        Initialize the NoWorkers Exception by setting its error code and message.
         """
-        super(NoAvailableQueues, self).__init__()
+        super(NoWorkers, self).__init__()
         self.error_code = error_codes.PLP0024
 
     def __str__(self):
