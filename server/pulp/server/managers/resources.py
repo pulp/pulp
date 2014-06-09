@@ -4,6 +4,7 @@ pulp.server.db.model.resources module.
 """
 from gettext import gettext as _
 import pymongo
+import random
 
 from pulp.server.db.model import criteria, resources
 from pulp.server import exceptions
@@ -44,14 +45,15 @@ def get_least_busy_worker():
             reservation_map[reserved_resource['assigned_queue']]['num_reservations'] += \
                 reserved_resource['num_reservations']
 
-    # Now let's flatten the reservation map into a list of 2-tuples, where the first element
-    # is the num_reservations on the queue, and the second element is the worker. This will be easy
-    # to sort and get the least busy worker
-    results = [(v['num_reservations'], v['worker']) for k, v in reservation_map.items()]
+    # Now let's flatten the reservation map into a list of 3-tuples, where the first element
+    # is the num_reservations on the queue, the second element is a pseudorandom tie-breaker, and
+    # the third is the worker. This will be easy to sort and get the least busy worker
+    results = [
+        (v['num_reservations'], random.random(), v['worker']) for k, v in reservation_map.items()]
     results.sort()
 
     # Since results is sorted by least busy worker, we can just return the first one
-    return results[0][1]
+    return results[0][2]
 
 
 def get_or_create_reserved_resource(name):

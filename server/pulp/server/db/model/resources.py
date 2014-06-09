@@ -7,7 +7,7 @@ from pulp.server.db.model.base import DoesNotExist, Model
 
 class Worker(Model):
     """
-    Instances of this class represent known Celery worker queues that are available for use by
+    Instances of this class represent known Celery workers that are available for use by
     the resource manager for assigning tasks.
 
     :ivar name:             The name of the queue
