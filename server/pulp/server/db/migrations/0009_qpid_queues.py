@@ -41,7 +41,7 @@ def migrate(*args, **kwargs):
 
     if not QPID_MESSAGING_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpid.messaging is not '
-                'installed.  Please install qpid.messaging and rerun the migrations. See %s'
+                'installed. Please install qpid.messaging and rerun the migrations. See %s'
                 'for more information.')
         msg = msg % QPID_MESSAGING_URL
         logger.error(msg)
@@ -49,7 +49,7 @@ def migrate(*args, **kwargs):
 
     if not QPIDTOOLLIBS_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpidtoollibs is not '
-                'installed.  Please install qpidtoollibs and rerun the migrations. See %s for more '
+                'installed. Please install qpidtoollibs and rerun the migrations. See %s for more '
                 'information.')
         msg = msg % QPIDTOOLLIBS_URL
         logger.error(msg)
@@ -127,6 +127,7 @@ def _del_agent_queues(broker):
             # nothing to delete
             continue
         _del_queue_catch_queue_in_use_exception(broker, name)
+
 
 def _del_queue_catch_queue_in_use_exception(broker, name):
     """

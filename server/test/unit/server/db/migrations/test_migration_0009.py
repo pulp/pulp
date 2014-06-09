@@ -70,11 +70,11 @@ class TestMigration(TestCase):
     @patch(MIGRATION + '._migrate_agent_queues')
     @patch(MIGRATION + '.pulp_conf')
     def test_migrate_not_qpid(self,
-                     fake_conf,
-                     fake_migrate_agent_queues,
-                     fake_migrate_reply_queue,
-                     fake_connection,
-                     fake_broker):
+                              fake_conf,
+                              fake_migrate_agent_queues,
+                              fake_migrate_reply_queue,
+                              fake_connection,
+                              fake_broker):
 
         fake_conf.get.return_value = 'not-qpid'
 
@@ -100,7 +100,6 @@ class TestMigration(TestCase):
         # validation
         fake_add_agent_queues.assert_called_with(fake_broker)
         fake_del_agent_queues.assert_called_with(fake_broker)
-
 
     @patch('pulp.server.db.model.consumer.Consumer.get_collection')
     def test_add_agent_queues(self, fake_get):

@@ -133,12 +133,12 @@ Server
       but may not available in all versions. You can install 'qpid-cpp-server-store' using the
       command: ``sudo yum install qpid-cpp-server-store``
 
-   Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``.  For Qpid 0.24+ the
+   Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``. For Qpid 0.24+ the
    config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the
-   config file at ``/etc/qpidd.conf``.  If not using authentication for the broker, either add or
-   change the auth setting to be off by having ``auth=no`` on its own line.  The server can be
+   config file at ``/etc/qpidd.conf``. If not using authentication for the broker, either add or
+   change the auth setting to be off by having ``auth=no`` on its own line. The server can be
    *optionally* configured so that it will connect to the broker using SSL by following the steps
-   defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.  By default, the
+   defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`. By default, the
    server will connect to the broker using a plain TCP connection to localhost.
 
    After installing and configuring Qpid, you should configure it to start at boot and start it. For
@@ -362,7 +362,7 @@ MongoDB Authentication
 
 To configure Pulp for connecting to the MongoDB with username/password authentication, use the
 following steps:
-1. Configure MongoDB for username password authentication.  See
+1. Configure MongoDB for username password authentication. See
 `MongoDB - Enable Authentication <http://docs.mongodb.org/manual/tutorial/enable-authentication/>`_
 for details.
 2. In ``/etc/pulp/server.conf``, find the ``[database]`` section and edit the ``username`` and
