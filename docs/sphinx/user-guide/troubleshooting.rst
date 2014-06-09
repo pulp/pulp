@@ -180,10 +180,20 @@ No available workers
 
 Pulp requires three Celery services to be running: ``pulp_celerybeat``, ``pulp_resource_manager``,
 and ``pulp_workers``. If you are experiencing this error, you may see a message similar to "There
-are no available workers in the system for reserved task work. Please ensure that both the
-pulp_workers and pulp_celerybeat services are running" in the logs or from the CLI. Pulp will not
-work correctly if any of the required services are not running, so please ensure that they are all
-started and configured to start after a reboot.
+are no Celery workers found in the system for reserved task work. Please ensure that there is at
+least one Celery worker running, and that the celerybeat service is also running." in the logs or
+from the CLI. Pulp will not work correctly if any of the required services are not running, so
+please ensure that they are all started and configured to start after a reboot.
+
+.. note::
+
+   If you are using systemd, the pulp_workers service is really a proxy that starts pulp_worker-0,
+   pulp_worker-1, pulp_worker-2... and so forth, depending on the number of workers you have
+   configured. ``systemctl status pulp_workers`` will not report status on the real workers, but
+   rather will report status on itself. Therefore if you see a successful status from pulp_workers
+   it only means that it was able to start pulp_worker-0, pulp_worker-1, etc. It does not mean that
+   those services are still running. It is possible to ask for pulp_worker statuses using wildcards,
+   such as ``systemctl status pulp_worker-\* -a``, for example.
 
 .. warning::
 
