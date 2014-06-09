@@ -67,9 +67,9 @@ PLP0022 = Error("PLP0022",
                 ['group_id'])
 PLP0023 = Error("PLP0023", _("Task is already in a complete state: %(task_id)s"), ['task_id'])
 PLP0024 = Error("PLP0024",
-                _("There are no Celery workers in the system for reserved task work. "
-                  "Please ensure that both the pulp_workers and pulp_celerybeat services are "
-                  "running."),
+                _("There are no Celery workers found in the system for reserved task work. "
+                  "Please ensure that there is at least one Celery worker running, and that the "
+                  "celerybeat service is also running."),
                 [])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
