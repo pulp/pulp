@@ -322,7 +322,7 @@ is provided by the ``qpid-cpp-server-ssl`` package.  Make sure this package is i
 Step #8 - Restart services
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Now that the Qpid and pulp configurations have been updated, the corresponding services
+Now that the Qpid and Pulp configurations have been updated, the corresponding services
 need to be restarted.
 
 On the Pulp server:

@@ -13,7 +13,7 @@ New Features
 #. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
    version 2.5.2.
 #. Publishing Puppet repositories to flattened directories.
-#. All messaging between the pulp server and agents is signed and authenticated using asymmetric
+#. All messaging between the Pulp server and agents is signed and authenticated using asymmetric
    keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
    must run: ``pulp-consumer update --keys`` and restart the pulp-agent service for messaging between
    the server and agent to continue working properly.
@@ -53,22 +53,53 @@ All Bugs
 You can see the complete list of bugs that were
 `fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.0&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
 
+.. _2.3.x_upgrade_to_2.4.0:
+
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
 
-Pulp 2.4 introduces new client library dependencies if you are using Qpid as your message broker.
-Ensure you have the necessary dependencies installed by running::
+Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. Pulp 2.3.x servers
+and nodes are not compatible with Pulp 2.4.0 and vice versa. All consumers must be upgraded first,
+but will not be usable until they are re-registered with their new Pulp 2.4.0 server or node.
+
+The 2.3.x --> 2.4.0 server or node upgrade process require all associated consumers to either be
+upgraded or off. The upgrade process will not continue if there are active 2.3.x consumers still
+connected to the message bus. After the server and node installations are upgraded, the upgraded
+consumers need to be re-registered.
+
+To upgrade a consumer from 2.3.x --> 2.4.0, run the command ``sudo yum groupupdate pulp-consumer``
+
+The upgrade will create a file called ``consumer.conf.rpmnew``, which contains the default
+``consumer.conf`` for Pulp 2.4.0 consumers. The new ``consumer.conf.rpmnew`` file needs to be
+merged into your existing ``consumer.conf`` by hand as new, required configuration properties are
+introduced with 2.4.0, but portions of the old config will likely still be useful.
+
+Once the consumer.conf file is setup to use the new configuration, restart the consumer. On
+Upstart systems the restart is done using::
+
+    $ sudo service pulp-agent restart
+
+For systemd systems::
+
+    $ sudo systemctl restart pulp-agent
+
+A message broker is required for Pulp 2.4.0. Pulp 2.3.x required Qpid specifically as the message
+broker, but Pulp 2.4 will work with either Qpid or RabbitMQ. If using Qpid, ensure that you are
+using Qpid 0.18 or later. Any Pulp 2.4.0 server or node that is being used with Qpid, also
+requires a new client library dependency to be installed on the server or node by running::
 
     $ sudo yum install python-qpid-qmf python-qpid
 
 .. note::
-   If you are using Qpid 0.18 or earlier, you also need to install the qpid-cpp-server-store package
-   using the command: ``sudo yum install qpid-cpp-server-store``
+   If using Qpid, you will also need to install either the 'qpid-cpp-server-store' or
+   'qpid-cpp-server-linearstore' package. The 'qpid-cpp-server-linearstore' is better performing,
+   but may not available in all versions. You can install 'qpid-cpp-server-store' using the
+   command: ``sudo yum install qpid-cpp-server-store``
 
 To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
 latest RPMs from the Pulp repository and run the database migrations::
 
-    $ sudo yum upgrade
+    $ sudo yum groupupdate pulp-server
     $ sudo -u apache pulp-manage-db  # run this as the same user apache runs as
 
 You can remove ``/etc/pulp/logging/`` if you like, as it is no longer used. Also, you can
@@ -122,7 +153,8 @@ For systemd::
     $ sudo systemctl enable pulp_resource_manager
     $ sudo systemctl start pulp_resource_manager
 
-On each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
+After all Pulp servers and nodes have been upgrade, all consumers need to be re-registered. On
+each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
 message authentication.
 
 

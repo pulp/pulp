@@ -120,15 +120,18 @@ Server
       connections until it finishes. When this happens, it is possible for Pulp to fail to start.
       If this occurs, give MongoDB a few minutes to finish initializing and start Pulp again.
 
-#. You must also provide a running Qpid instance for Pulp to use. This can also be on the same host
-   that you will run Pulp on, or it can be elsewhere as you please. For yum based systems, you can
-   install Qpid with this command::
+#. You must also provide a message bus for Pulp to use. Pulp will work with Qpid or RabbitMQ, but
+   is tested with Qpid, and uses Qpid by default. This can also be on the same host that you will
+   run Pulp on, or it can be elsewhere as you please. To install Qpid on a yum based system, use
+   this command::
     
-    $ sudo yum install qpid-cpp-server python-qpid-qmf python-qpid
+    $ sudo yum install qpid-cpp-server
 
    .. note::
-      If running Qpid 0.18 or earlier, you also need to install the qpid-cpp-server-store package
-      with the command:  ``sudo yum install qpid-cpp-server-store``
+      If using Qpid, you will also need to install either the 'qpid-cpp-server-store' or
+      'qpid-cpp-server-linearstore' package. The 'qpid-cpp-server-linearstore' is better performing,
+      but may not available in all versions. You can install 'qpid-cpp-server-store' using the
+      command: ``sudo yum install qpid-cpp-server-store``
 
    Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``.  For Qpid 0.24+ the
    config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the
@@ -158,6 +161,11 @@ Server
    .. warning::
       Each host that participates in the distributed Pulp application will need to have access to a
       shared /var/lib/pulp filesystem, including both the web servers and the task workers.
+
+   Any Pulp 2.4.0 server or node that is being used with Qpid, also requires a new client library
+   dependency to be installed on the server or node by running::
+
+    $ sudo yum install python-qpid-qmf python-qpid
 
 #. For each host that you've installed the Pulp server on, edit ``/etc/pulp/server.conf``. Most
    defaults will work, but these are sections you might consider looking at before proceeding. Each
@@ -352,7 +360,7 @@ If you want to use SSL with Qpid, see the
 MongoDB Authentication
 ----------------------
 
-To configure pulp for connecting to the MongoDB with username/password authentication, use the
+To configure Pulp for connecting to the MongoDB with username/password authentication, use the
 following steps:
 1. Configure MongoDB for username password authentication.  See
 `MongoDB - Enable Authentication <http://docs.mongodb.org/manual/tutorial/enable-authentication/>`_
