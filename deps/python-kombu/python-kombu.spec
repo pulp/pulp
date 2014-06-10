@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.15
-Release:        8.pulp%{?dist}
+Release:        10.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -171,6 +171,14 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Jun 06 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-10.pulp
+- Removing PropertyMock from test code. (bmbouter@gmail.com)
+
+* Fri Jun 06 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-9.pulp
+- Testing build of python-kombu-3.0.15-9.pulp (bmbouter@gmail.com)
+- Remove the Requires on python-qpid-qmf from our Kombu package.
+  (rbarlow@redhat.com)
+
 * Tue May 27 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-8.pulp
 - Fix test compatability for Python 2.6 (bmbouter@gmail.com)
 
