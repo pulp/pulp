@@ -71,7 +71,7 @@ takes place.
 
       You can manually start a build on Read the Docs for a specific version
       using the `user guide build page <https://readthedocs.org/builds/pulp-user-guide/>`_
-      or the `dev guide build page<https://readthedocs.org/builds/pulp-dev-guide/>`_.
+      or the `dev guide build page <https://readthedocs.org/builds/pulp-dev-guide/>`_.
 
 There may be a "staging" version at times. This build is used by the team to
 share documentation that has not yet been reviewed.
