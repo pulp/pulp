@@ -22,6 +22,7 @@ from pulp.server.db.model.consumer import Consumer
 TROUBLESHOOTING_URL = 'http://pulp-user-guide.readthedocs.org/en/pulp-2.4/troubleshooting.html%s'
 QPID_MESSAGING_URL = TROUBLESHOOTING_URL % '#qpid-messaging-is-not-installed'
 QPIDTOOLLIBS_URL = TROUBLESHOOTING_URL % '#qpidtoollibs-is-not-installed'
+CANNOT_DELETE_QUEUE_URL = TROUBLESHOOTING_URL % '#pulp-manage-db-gives-an-error-cannot-delete-queue'
 
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,7 @@ def migrate(*args, **kwargs):
 
     if not QPID_MESSAGING_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpid.messaging is not '
-                'installed.  Please install qpid.messaging and rerun the migrations. See %s'
+                'installed. Please install qpid.messaging and rerun the migrations. See %s'
                 'for more information.')
         msg = msg % QPID_MESSAGING_URL
         logger.error(msg)
@@ -48,7 +49,7 @@ def migrate(*args, **kwargs):
 
     if not QPIDTOOLLIBS_AVAILABLE:
         msg = _('Migration 0009 did not run because the python package qpidtoollibs is not '
-                'installed.  Please install qpidtoollibs and rerun the migrations. See %s for more '
+                'installed. Please install qpidtoollibs and rerun the migrations. See %s for more '
                 'information.')
         msg = msg % QPIDTOOLLIBS_URL
         logger.error(msg)
@@ -82,7 +83,7 @@ def _migrate_reply_queue(broker):
         # nothing to migrate
         return
     if queue.values['exclusive'] or queue.values['arguments'].get('exclusive', False):
-        broker.delQueue(name)
+        _del_queue_catch_queue_in_use_exception(broker, name)
         broker.addQueue(name, durable=True)
 
 
@@ -125,4 +126,30 @@ def _del_agent_queues(broker):
         if not queue:
             # nothing to delete
             continue
+        _del_queue_catch_queue_in_use_exception(broker, name)
+
+
+def _del_queue_catch_queue_in_use_exception(broker, name):
+    """
+    Delete a queue, and catch a 'queue in use' exception. If the queue is in use, raise an exception.
+
+    :param broker: The broker instance to delete the queue with.
+    :type broker: BrokerAgent
+    :param name: The name of the queue to delete
+    :type name: basestring
+    :return:
+    """
+    try:
         broker.delQueue(name)
+    except Exception as exc:
+        if 'Cannot delete queue' in exc.message and 'queue in use' in exc.message:
+            msg_data = {'queue_name': name, 'cannot_delete_queue_url': CANNOT_DELETE_QUEUE_URL}
+            msg = _(
+                "Consumers are still bound to the queue '%(queue_name)s'. "
+                "All consumers must be unregistered, upgraded, or off "
+                "before you can continue. Read more about this issue "
+                "here:\n\n%(cannot_delete_queue_url)s")
+            msg = msg % msg_data
+            logger.error(msg)
+            raise Exception(msg)
+        raise

@@ -158,11 +158,11 @@ Qpid connection issues when starting services or executing tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When setting up Pulp, or adjusting its configuration, you may encounter connection issues between
-Pulp and Qpid.  If Pulp services cannot connect to the Qpid broker then Pulp cannot continue. The
+Pulp and Qpid. If Pulp services cannot connect to the Qpid broker then Pulp cannot continue. The
 most common root cause of this issue is the Qpid broker not being configured as expected due to
-changes being put into a ``qpidd.conf`` that the Qpid broker is not reading from.  For Qpid 0.24+
+changes being put into a ``qpidd.conf`` that the Qpid broker is not reading from. For Qpid 0.24+
 the qpidd.conf file should be located at ``/etc/qpid/qpidd.conf`` and for earlier Qpid versions, it
-should be located at ``/etc/qpidd.conf``.  The user who you run qpidd as must be able to read the
+should be located at ``/etc/qpidd.conf``. The user who you run qpidd as must be able to read the
 ``qpidd.conf`` file.
 
 
@@ -213,3 +213,13 @@ qpidtoollibs is not installed
 
 If you are using Qpid as your message broker, you will also need the Python package
 ``qpidtoollibs``. On Red Hat operating systems, this is provided by the python-qpid-qmf package.
+
+pulp-manage-db gives an error "Cannot delete queue"
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+While running pulp-manage-db, you may see "Cannot delete queue xxxxxxxxxxxxxx; queue in use".
+
+You will encounter this while upgrading to Pulp 2.4.0 if there are still 2.3.x or earlier consumers
+running. All consumers must be upgraded first, or turned off, prior to running the
+pulp-manage-db that is part of the Pulp 2.3.x --> 2.4.0 upgrade. For more information see the
+:ref:`Pulp 2.3.x --> 2.4.0 upgrade docs <2.3.x_upgrade_to_2.4.0>`.
