@@ -2,7 +2,7 @@
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 Name: gofer
-Version: 1.2.0
+Version: 1.2.1
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -252,6 +252,8 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Jun 09 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
+- 1107244 - python 2.4 compat issues. (jortel@redhat.com)
 * Thu May 29 2014 Jeff Ortel <jortel@redhat.com> 1.2.0-1
 - Add authenticator param to ReplyConsumer constructor. (jortel@redhat.com)
 - python 2.4 compat. (jortel@redhat.com)
