@@ -99,7 +99,7 @@ requires a new client library dependency to be installed on the server or node b
 To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
 latest RPMs from the Pulp repository and run the database migrations::
 
-    $ sudo yum groupupdate pulp-server
+    $ sudo yum upgrade
     $ sudo -u apache pulp-manage-db  # run this as the same user apache runs as
 
 You can remove ``/etc/pulp/logging/`` if you like, as it is no longer used. Also, you can
