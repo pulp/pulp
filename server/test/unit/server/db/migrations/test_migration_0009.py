@@ -132,7 +132,7 @@ class TestMigration(TestCase):
 
         fake_broker.getQueue.assert_any('pulp.agent.dog')
         fake_broker.getQueue.assert_any('pulp.agent.cat')
-        fake_broker.addQueue.assert_called_with('pulp.agent.dog', durable=True)
+        fake_broker.addQueue.assert_called__once_with('pulp.agent.dog', durable=True)
 
 
 class TestMigrateReplyQueue(TestCase):
@@ -271,6 +271,7 @@ class TestDelQueueCatchQueueInUseException(TestCase):
         migration = MigrationModule(MIGRATION)._module
         try:
             migration._del_queue_catch_queue_in_use_exception(fake_broker, mock_name)
+            self.fail('An exception should have been raised, and was not.')
         except Exception as error:
             string_a = 'Consumers are still bound to the queue'
             string_b = 'All consumers must be unregistered, upgraded, or off before you can continue'

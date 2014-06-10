@@ -153,7 +153,7 @@ For systemd::
     $ sudo systemctl enable pulp_resource_manager
     $ sudo systemctl start pulp_resource_manager
 
-After all Pulp servers and nodes have been upgrade, all consumers need to be re-registered. On
+After all Pulp servers and nodes have been upgraded, all consumers need to be re-registered. On
 each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
 message authentication.
 

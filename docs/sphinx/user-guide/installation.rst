@@ -130,7 +130,7 @@ Server
    .. note::
       If using Qpid, you will also need to install either the 'qpid-cpp-server-store' or
       'qpid-cpp-server-linearstore' package. The 'qpid-cpp-server-linearstore' is better performing,
-      but may not available in all versions. You can install 'qpid-cpp-server-store' using the
+      but may not be available in all versions. You can install 'qpid-cpp-server-store' using the
       command: ``sudo yum install qpid-cpp-server-store``
 
    Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``. For Qpid 0.24+ the
@@ -162,7 +162,7 @@ Server
       Each host that participates in the distributed Pulp application will need to have access to a
       shared /var/lib/pulp filesystem, including both the web servers and the task workers.
 
-   Any Pulp 2.4.0 server or node that is being used with Qpid, also requires a new client library
+   Any Pulp 2.4.0 server or node that is being used with Qpid also requires a new client library
    dependency to be installed on the server or node by running::
 
     $ sudo yum install python-qpid-qmf python-qpid

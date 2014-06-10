@@ -204,11 +204,11 @@ If you are using Qpid as your message broker, you will also need the Python pack
 ``qpidtoollibs``. On Red Hat operating systems, this is provided by the python-qpid-qmf package.
 
 pulp-manage-db gives an error "Cannot delete queue"
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 While running pulp-manage-db, you may see "Cannot delete queue xxxxxxxxxxxxxx; queue in use".
 
 You will encounter this while upgrading to Pulp 2.4.0 if there are still 2.3.x or earlier consumers
-still running. All consumers must be upgraded first, or turned off, prior to running the
+running. All consumers must be upgraded first, or turned off, prior to running the
 pulp-manage-db that is part of the Pulp 2.3.x --> 2.4.0 upgrade. For more information see the
 :ref:`Pulp 2.3.x --> 2.4.0 upgrade docs <2.3.x_upgrade_to_2.4.0>`.
