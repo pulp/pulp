@@ -32,3 +32,17 @@ to run. This test will result in one of three situations:
 The client will indicate which of the three possibilities occurred and provides
 commands to work with tasks for a given resource (for instance,
 the :ref:`repository tasks <repo-tasks>` series of commands).
+
+Recovery from Worker Failure
+----------------------------
+
+If a worker dies unexpectedly, the dispatched Pulp tasks destined for that worker will stall for
+at most six minutes before being cancelled. A monitoring component inside of pulp_celerybeat
+monitors all workers using heartbeats. If a worker does not heartbeat within five minutes, it is
+considered missing. This check occurs once a minute, causing a maximum delay of six minutes
+before a worker is considered missing by Pulp.
+
+A missing worker has all tasks destined for it cancelled, and no new work is assigned to the
+missing worker. This causes new Pulp operations dispatched to continue normally with the other
+available workers. If a worker with the same name is started again after being missing, it is
+added into the pool of workers as any worker starting up normally would.
