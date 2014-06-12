@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 from gettext import gettext as _
 
 from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID, OPTION_REPO_ID
@@ -26,9 +13,41 @@ FLAG_FORCE = PulpCliFlag('--force',
                          _('delete the binding immediately without tracking the progress'))
 
 
-# consumer bindings management commands ----------------------------------------
+class BindRelatedPollingCommand(PollingCommand):
+    """
+    Unfortunately, the Pulp server will report bind/unbind tasks as successful even though they
+    failed. Due to this, we must override the PollingCommand's succeeded() and failed() methods.
+    This is a superclass for ConsumerBindCommand and ConsumerUnbindCommand so we can solve this
+    issue in one place.
+    """
+    def succeeded(self, task):
+        """
+        The server will lie to us and tell us that the bind/unbind task is succeeded when it is not.
+        We must inspect the task's progress report to find out what really happened. If it
+        succeeded, call the superclass method. If not, call self.failed().
 
-class ConsumerBindCommand(PollingCommand):
+        :param task: The task to inspect for success or failure
+        :type  task: pulp.bindings.responses.Task
+        """
+        if task.result['succeeded']:
+            super(BindRelatedPollingCommand, self).succeeded(task)
+        else:
+            self.failed(task)
+
+    def failed(self, task):
+        """
+        The server does not put error messages in the standard locations for Pulp Tasks, so we need
+        a custom failure message renderer. This method prints the error message.
+
+        :param task: The task to inspect for success or failure
+        :type  task: pulp.bindings.responses.Task
+        """
+        super(BindRelatedPollingCommand, self).failed(task)
+        msg = _("Please see the Pulp server logs for details.")
+        self.context.prompt.render_failure_message(msg, tag='error_message')
+
+
+class ConsumerBindCommand(BindRelatedPollingCommand):
     """
     Base class that binds a consumer to a repository and an arbitrary
     distributor.
@@ -107,7 +126,7 @@ class ConsumerBindCommand(PollingCommand):
         self.prompt.write(_('-- Notifying the Consumer --'), tag='agent-bind-header')
 
 
-class ConsumerUnbindCommand(PollingCommand):
+class ConsumerUnbindCommand(BindRelatedPollingCommand):
     """
     Base class that unbinds a consumer from a repository and an arbitrary
     distributor.
