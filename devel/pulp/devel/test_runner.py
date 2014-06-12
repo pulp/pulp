@@ -34,6 +34,9 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
     :param tests_non_rhel5: List of test directories to inspect for tests that are run on
                             all platforms except rhel 5
     :type tests_non_rhel5: list of str
+
+    :return: the exit code from nosetests 
+    :rtype:  integer
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--xunit-file')
@@ -82,5 +85,5 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
     if arguments.xunit_file:
         args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
-    # Call the test process
-    subprocess.call(args)
+    # Call the test process, and return its exit code
+    return subprocess.call(args)
