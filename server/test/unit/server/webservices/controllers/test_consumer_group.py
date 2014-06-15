@@ -80,7 +80,7 @@ class ConsumerGroupAssociationTests(base.PulpWebserviceTests):
 
 class ContentTest(PulpWebservicesTests):
 
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group.install_content')
+    @mock.patch('pulp.server.managers.consumer.group.cud.ConsumerGroupManager.install_content')
     def test_install(self, mock_task):
         # Setup
         webservice = consumer_groups.ConsumerGroupContentAction()
@@ -92,7 +92,7 @@ class ContentTest(PulpWebservicesTests):
         self.assertRaises(OperationPostponed, webservice.install, 'consumer-foo')
         mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.consumer_group.update_content')
+    @mock.patch('pulp.server.managers.consumer.group.cud.ConsumerGroupManager.update_content')
     def test_update(self, mock_task):
         # Setup
         webservice = consumer_groups.ConsumerGroupContentAction()
@@ -104,8 +104,7 @@ class ContentTest(PulpWebservicesTests):
         self.assertRaises(OperationPostponed, webservice.update, 'consumer-foo')
         mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
-    @mock.patch('pulp.server.webservices.controllers.consumer_groups.'
-                'consumer_group.uninstall_content')
+    @mock.patch('pulp.server.managers.consumer.group.cud.ConsumerGroupManager.uninstall_content')
     def test_uninstall(self, mock_task):
         # Setup
         webservice = consumer_groups.ConsumerGroupContentAction()
@@ -122,8 +121,7 @@ class BindTestNoWSGI(PulpWebservicesTests):
     """
     Tests that have been converted to no longer require the full web.py stack
     """
-
-    @mock.patch('pulp.server.tasks.consumer_group.bind', autospec=True)
+    @mock.patch('pulp.server.managers.consumer.group.cud.bind')
     def test_bind(self, mock_bind_task):
         bindings = consumer_groups.ConsumerGroupBindings()
         bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
@@ -132,38 +130,19 @@ class BindTestNoWSGI(PulpWebservicesTests):
         mock_bind_task.apply_async.return_value.id = 'foo'
 
         self.assertRaises(OperationPostponed, bindings.POST, 'consumer-group-id')
-        mock_bind_task.apply_async.assert_called_once_with(('consumer-group-id',
-                                                            'foo-repo',
-                                                            'bar-distributor',
-                                                            True, mock.ANY, mock.ANY))
+        mock_bind_task.apply_async.assert_called_once()
 
         #validate the permissions
         self.validate_auth(authorization.CREATE)
 
-    @mock.patch('pulp.server.tasks.consumer_group.bind', autospec=True)
-    def test_bind_no_agent_notification(self, mock_bind_task):
-        bindings = consumer_groups.ConsumerGroupBindings()
-        bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
-                                                  'distributor_id': 'bar-distributor',
-                                                  'notify_agent': False})
-        mock_bind_task.apply_async.return_value.id = 'foo'
-
-        self.assertRaises(OperationPostponed, bindings.POST, 'consumer-group-id')
-        mock_bind_task.apply_async.assert_called_once_with(('consumer-group-id',
-                                                            'foo-repo',
-                                                            'bar-distributor',
-                                                            False, mock.ANY, mock.ANY))
-
-    @mock.patch('pulp.server.tasks.consumer_group.unbind', autospec=True)
+    @mock.patch('pulp.server.managers.consumer.group.cud.unbind')
     def test_unbind(self, mock_bind_task):
         binding = consumer_groups.ConsumerGroupBinding()
         mock_bind_task.apply_async.return_value.id = 'foo'
 
         self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-group-id', 'repo-id',
                           'dist-id')
-        mock_bind_task.apply_async.assert_called_once_with(('consumer-group-id',
-                                                            'repo-id',
-                                                            'dist-id', mock.ANY))
+        mock_bind_task.apply_async.assert_called_once()
 
         #validate the permissions
         self.validate_auth(authorization.DELETE)
