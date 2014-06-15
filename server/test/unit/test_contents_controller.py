@@ -329,7 +329,41 @@ class ImportUnitTests(BaseUploadTest):
         assert_body_matches_async_task(body, mock_apply_async.return_value)
         exepcted_call_args = ['repo-upload', 'dummy-type',
                               {'name': 'foo'}, {'stuff': 'bar'}, 
-                              upload_id]
+                              upload_id, None]
+        self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])
+
+    @mock.patch('celery.Task.apply_async')
+    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    def test_post_with_override_config(self, _reserve_resource, mock_apply_async):
+        # Setup
+        task_id = str(uuid.uuid4())
+        mock_apply_async.return_value = AsyncResult(task_id)
+        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        upload_id = self.upload_manager.initialize_upload()
+        self.upload_manager.save_data(upload_id, 0, 'string data')
+
+        repo_manager = manager_factory.repo_manager()
+        repo_manager.create_repo('repo-upload')
+        importer_manager = manager_factory.repo_importer_manager()
+        importer_manager.set_importer('repo-upload', 'dummy-importer', {})
+
+        # Test
+        test_override_config = {'key1': 'value1', 'key2': 'value2'}
+        body = {
+            'upload_id' : upload_id,
+            'unit_type_id' : 'dummy-type',
+            'unit_key' : {'name' : 'foo'},
+            'unit_metadata' : {'stuff' : 'bar'},
+            'override_config': test_override_config,
+        }
+        status, body = self.post('/v2/repositories/repo-upload/actions/import_upload/', body)
+
+        # Verify
+        self.assertEqual(202, status)
+        assert_body_matches_async_task(body, mock_apply_async.return_value)
+        exepcted_call_args = ['repo-upload', 'dummy-type',
+                              {'name': 'foo'}, {'stuff': 'bar'},
+                              upload_id, test_override_config]
         self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])
 
 

@@ -166,7 +166,8 @@ class ContentUploadManager(object):
         return True
 
     @staticmethod
-    def import_uploaded_unit(repo_id, unit_type_id, unit_key, unit_metadata, upload_id):
+    def import_uploaded_unit(repo_id, unit_type_id, unit_key, unit_metadata, upload_id,
+                             override_config=None):
         """
         Called to trigger the importer's handling of an uploaded unit. This
         should not be called until the bits have finished uploading. The
@@ -210,7 +211,8 @@ class ContentUploadManager(object):
         conduit = UploadConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_USER,
                                 manager_factory.principal_manager().get_principal()['login'])
 
-        call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], None)
+        call_config = PluginCallConfiguration(plugin_config, repo_importer['config'],
+                                              override_config)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = repo_common_utils.importer_working_dir(
             repo_importer['importer_type_id'], repo_id, mkdir=True)
