@@ -322,8 +322,17 @@ class Content(JSONController):
         :type consumer_id: str
         """
         body = self.params()
+        missing_params = []
         units = body.get('units')
+        if units is None:
+            missing_params.append('units')
         options = body.get('options')
+        if options is None:
+            missing_params.append('options')
+
+        if len(missing_params) > 0:
+            raise MissingValue(missing_params)
+
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.install_content(consumer_id, units, options)
         raise OperationPostponed(TaskResult.from_task_status_dict(task))
@@ -338,8 +347,17 @@ class Content(JSONController):
         @type consumer_id: str
         """
         body = self.params()
+        missing_params = []
         units = body.get('units')
+        if units is None:
+            missing_params.append('units')
         options = body.get('options')
+        if options is None:
+            missing_params.append('options')
+
+        if len(missing_params) > 0:
+            raise MissingValue(missing_params)
+
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.update_content(consumer_id, units, options)
         raise OperationPostponed(TaskResult.from_task_status_dict(task))
@@ -354,8 +372,17 @@ class Content(JSONController):
         @type consumer_id: str
         """
         body = self.params()
+        missing_params = []
         units = body.get('units')
+        if units is None:
+            missing_params.append('units')
         options = body.get('options')
+        if options is None:
+            missing_params.append('options')
+
+        if len(missing_params) > 0:
+            raise MissingValue(missing_params)
+
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.uninstall_content(consumer_id, units, options)
         raise OperationPostponed(TaskResult.from_task_status_dict(task))

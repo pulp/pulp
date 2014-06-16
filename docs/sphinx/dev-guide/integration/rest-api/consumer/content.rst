@@ -15,9 +15,9 @@ must match a type mapped to a content :term:`handler` in the agent.  The second 
 **unit_key** which identifies the unit or units to be installed.  Both the structure and
 content are handler specific.
 
-The caller can pass additional options using an *options* object.  Both the structure and
-content are handler specific.  The options drive how the handler performs the operation.
-
+The caller must also pass an *options* object, which specifies additional install options.
+Both the structure and content are handler specific.  The options drive how the handler
+performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/install/`
@@ -30,7 +30,7 @@ content are handler specific.  The options drive how the handler performs the op
 | :response_list:`_`
 
 * :response_code:`202,The install request has been accepted`
-* :response_code:`400,if one or more of the parameters is invalid`
+* :response_code:`400,if one or more of the parameters is missing or invalid`
 * :response_code:`404,if the consumer does not exist`
 
 | :return:`a` :ref:`call_report`
@@ -67,8 +67,9 @@ must match a type mapped to a content :term:`handler` in the agent.  The second 
 **unit_key** which identifies the unit or units to be updated.  Both the structure and
 content are handler specific.
 
-The caller can pass additional options using an *options* object.  Both the structure and
-content are handler specific.  The options drive how the handler performs the operation.
+The caller must also pass an *options* object, which specifies additional update options.
+Both the structure and content are handler specific.  The options drive how the handler
+performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/update/`
@@ -81,7 +82,7 @@ content are handler specific.  The options drive how the handler performs the op
 | :response_list:`_`
 
 * :response_code:`202,The update request has been accepted`
-* :response_code:`400,if one or more of the parameters is invalid`
+* :response_code:`400,if one or more of the parameters is missing or invalid`
 * :response_code:`404,if the consumer does not exist`
 
 | :return:`a` :ref:`call_report`
@@ -115,8 +116,9 @@ must match a type mapped to a content :term:`handler` in the agent.  The second 
 **unit_key** which identifies the unit or units to be uninstalled.  The value is completely
 defined by the handler mapped to the unit's type_id.
 
-The caller can pass additional options using an *options* object.  Both the structure and
-content are handler specific.  The options drive how the handler performs the operation.
+The caller must also pass an *options* object, which specifies additional uninstall options.
+Both the structure and content are handler specific.  The options drive how the handler
+performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/uninstall/`
@@ -129,7 +131,7 @@ content are handler specific.  The options drive how the handler performs the op
 | :response_list:`_`
 
 * :response_code:`202,The uninstall request has been accepted`
-* :response_code:`400,if one or more of the parameters is invalid`
+* :response_code:`400,if one or more of the parameters is missing or invalid`
 * :response_code:`404,if the consumer does not exist`
 
 | :return:`a` :ref:`call_report`
