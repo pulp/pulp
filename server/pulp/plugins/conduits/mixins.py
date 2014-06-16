@@ -15,6 +15,7 @@ from gettext import gettext as _
 import logging
 import sys
 
+from pymongo.errors import DuplicateKeyError
 
 import pulp.plugins.conduits._common as common_utils
 from pulp.plugins.model import Unit, PublishReport
@@ -465,27 +466,18 @@ class AddUnitMixin(object):
         A reference to the provided unit is returned from this call. This call
         will populate the unit's id field with the UUID for the unit.
 
-        @param unit: unit object returned from the init_unit call
-        @type  unit: L{Unit}
+        :param unit: unit object returned from the init_unit call
+        :type  unit: Unit
 
-        @return: object reference to the provided unit, its state updated from the call
-        @rtype:  L{Unit}
+        :return: object reference to the provided unit, its state updated from the call
+        :rtype:  Unit
         """
         try:
-            content_query_manager = manager_factory.content_query_manager()
-            content_manager = manager_factory.content_manager()
             association_manager = manager_factory.repo_unit_association_manager()
 
             # Save or update the unit
             pulp_unit = common_utils.to_pulp_unit(unit)
-            try:
-                existing_unit = content_query_manager.get_content_unit_by_keys_dict(unit.type_id, unit.unit_key)
-                unit.id = existing_unit['_id']
-                content_manager.update_content_unit(unit.type_id, unit.id, pulp_unit)
-                self._updated_count += 1
-            except MissingResource:
-                unit.id = content_manager.add_content_unit(unit.type_id, None, pulp_unit)
-                self._added_count += 1
+            unit.id = self._update_unit(unit, pulp_unit)
 
             # Associate it with the repo
             association_manager.associate_unit_by_id(self.repo_id, unit.type_id, unit.id, self.association_owner_type, self.association_owner_id)
@@ -494,6 +486,57 @@ class AddUnitMixin(object):
         except Exception, e:
             logger.exception(_('Content unit association failed [%s]' % str(unit)))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+    def _update_unit(self, unit, pulp_unit):
+        """
+        Update a unit. If it is not found, add it instead.
+
+        :param unit:        the unit to be updated
+        :type  unit:        pulp.plugins.model.Unit
+        :param pulp_unit:   the unit to be updated, as a dict
+        :type  pulp_unit:   dict
+
+        :return:    id of the updated unit
+        :rtype:     basestring
+        """
+        content_query_manager = manager_factory.content_query_manager()
+        content_manager = manager_factory.content_manager()
+        try:
+            existing_unit = content_query_manager.get_content_unit_by_keys_dict(unit.type_id, unit.unit_key)
+            unit_id = existing_unit['_id']
+            content_manager.update_content_unit(unit.type_id, unit_id, pulp_unit)
+            self._updated_count += 1
+            return unit_id
+        except MissingResource:
+            logger.debug(_('cannot update unit; does not exist. adding instead.'))
+            return self._add_unit(unit, pulp_unit)
+
+    def _add_unit(self, unit, pulp_unit):
+        """
+        Add a unit. If it already exists, update it instead.
+
+        This deals with a race condition where a unit might try to be updated,
+        but does not exist. Before this method can complete, another workflow
+        might add that same unit, causing the DuplicateKeyError below. This can
+        happen if two syncs are running concurrently of repositories that have
+        overlapping content.
+
+        :param unit:        the unit to be updated
+        :type  unit:        pulp.plugins.model.Unit
+        :param pulp_unit:   the unit to be updated, as a dict
+        :type  pulp_unit:   dict
+
+        :return:    id of the updated unit
+        :rtype:     basestring
+        """
+        content_manager = manager_factory.content_manager()
+        try:
+            unit_id = content_manager.add_content_unit(unit.type_id, None, pulp_unit)
+            self._added_count += 1
+            return unit_id
+        except DuplicateKeyError:
+            logger.debug(_('cannot add unit; already exists. updating instead.'))
+            return self._update_unit(unit, pulp_unit)
 
     def link_unit(self, from_unit, to_unit, bidirectional=False):
         """

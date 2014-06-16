@@ -11,8 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import mock
 import unittest
+
+import mock
+from pymongo.errors import DuplicateKeyError
 
 from pulp.plugins.conduits import mixins
 from pulp.plugins.model import Unit, PublishReport
@@ -437,6 +439,64 @@ class AddUnitMixinTests(unittest.TestCase):
         # Verify
         self.assertEqual(1, mock_get.call_count)
         self.assertEqual(0, mock_update.call_count)
+        self.assertEqual(1, mock_add.call_count)
+        self.assertEqual(1, mock_associate.call_count)
+        self.assertEqual(1, self.mixin._added_count)
+        self.assertEqual(0, self.mixin._updated_count)
+        self.assertEqual(saved.id, 'new-unit-id')
+
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_by_keys_dict')
+    @mock.patch('pulp.server.managers.content.cud.ContentManager.update_content_unit')
+    @mock.patch('pulp.server.managers.content.cud.ContentManager.add_content_unit')
+    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.associate_unit_by_id')
+    def test_save_unit_new_unit_race_condition(self, mock_associate, mock_add, mock_update, mock_get, mock_path):
+        """
+        This simulates a case where the same unit gets added by another workflow
+        before the save completes. In that case, the failover behavior is to
+        update the unit instead of adding it.
+        """
+        # Setup
+        unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
+        mock_add.side_effect = DuplicateKeyError('dups!')
+        # raise an exception the first time around, then simulate the unit
+        # having appeared since the last call.
+        mock_get.side_effect = [MissingResource, {'_id': 'existing'}]
+
+        # Test
+        saved = self.mixin.save_unit(unit)
+
+        # Verify
+        self.assertEqual(2, mock_get.call_count)
+        self.assertEqual(1, mock_update.call_count)
+        self.assertEqual(1, mock_add.call_count)
+        self.assertEqual(1, mock_associate.call_count)
+        self.assertEqual(0, self.mixin._added_count)
+        self.assertEqual(1, self.mixin._updated_count)
+        self.assertEqual(saved.id, 'existing')
+
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_by_keys_dict')
+    @mock.patch('pulp.server.managers.content.cud.ContentManager.update_content_unit')
+    @mock.patch('pulp.server.managers.content.cud.ContentManager.add_content_unit')
+    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.associate_unit_by_id')
+    def test_save_unit_update_race_condition(self, mock_associate, mock_add, mock_update, mock_get, mock_path):
+        """
+        This tests a case where the unit gets removed between the call to get its
+        ID and the call to update it. In that case, the failover behavior is to
+        add it as a new unit.
+        """
+        # Setup
+        unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
+        mock_update.side_effect = MissingResource()
+        mock_add.return_value = 'new-unit-id'
+
+        # Test
+        saved = self.mixin.save_unit(unit)
+
+        # Verify
+        self.assertEqual(1, mock_get.call_count)
+        self.assertEqual(1, mock_update.call_count)
         self.assertEqual(1, mock_add.call_count)
         self.assertEqual(1, mock_associate.call_count)
         self.assertEqual(1, self.mixin._added_count)
