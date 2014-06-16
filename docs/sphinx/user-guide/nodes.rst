@@ -157,17 +157,21 @@ Example:
  secret: eePa7Bi3gohdir1pai2icohvaidai0io
  user_id: admin
 
-4. Restart Apache.
+4. Restart Apache.  For upstart::
 
-::
+     $ sudo service httpd restart
 
- $ sudo service httpd restart
+   For systemd::
 
-5. Restart the Pulp agent.
+     $sudo systemctl restart httpd
 
-::
+5. Restart the Pulp agent.  For upstart::
 
- $ sudo service pulp-agent restart
+     $ sudo service goferd restart
+
+   For systemd::
+
+     $ sudo systemctl restart goferd
 
 
 Admin Client Extensions
@@ -442,27 +446,37 @@ On the Pulp server to be used as the child node:
  [server]
  host = parent.redhat.com
 
-4. Restart services.
+4. Restart Apache.  For upstart::
 
-::
+     $ sudo service httpd restart
 
- $ sudo service httpd restart && service pulp-agent restart
+   For systemd::
+
+     $sudo systemctl restart httpd
+
+5. Restart the Pulp agent.  For upstart::
+
+     $ sudo service goferd restart
+
+   For systemd::
+
+     $ sudo systemctl restart goferd
 
 
-5. Register as a consumer. This command will prompt for a password.
+6. Register as a consumer. This command will prompt for a password.
 
 ::
 
  $ pulp-consumer -u admin register --consumer-id child-1
 
-6. Activate the node.
+7. Activate the node.
 
 ::
 
  $ pulp-consumer node activate
 
 
-7. Bind to the ``pulp-goodness`` repository.
+8. Bind to the ``pulp-goodness`` repository.
 
 ::
 
@@ -483,6 +497,6 @@ Tips & Troubleshooting
 ----------------------
 
 1. Make sure httpd was restarted after installing *Nodes* packages on both the parent and child.
-2. Make sure pulp-agent was restarted after installing *Nodes* packages on the child.
+2. Make sure goferd was restarted after installing *Nodes* packages on the child.
 3. Make sure that *Nodes* enabled repositories have been published.
 4. Make sure that ALL plugins installed on the parent are installed on the child.
