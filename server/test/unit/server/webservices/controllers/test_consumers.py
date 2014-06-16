@@ -29,7 +29,7 @@ from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicabil
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.exceptions import InvalidValue, OperationPostponed
+from pulp.server.exceptions import InvalidValue, OperationPostponed, MissingValue
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
@@ -785,6 +785,16 @@ class BindTest(base.PulpWebserviceTests):
 
 class ContentTest(PulpWebservicesTests):
 
+    def test_bad_request(self):
+        """
+        Test that requesting a non-existent action raises a BadRequest exception
+        """
+        # Setup
+        webservice = consumers.Content()
+
+        # Test
+        self.assertRaises(BadRequest, webservice.POST, 'test-consumer', 'not_an_op')
+
     @mock.patch('pulp.server.webservices.controllers.consumers.managers')
     def test_install(self, mock_factory):
         # Setup
@@ -797,6 +807,42 @@ class ContentTest(PulpWebservicesTests):
         # Test
         self.assertRaises(OperationPostponed, webservice.install, 'consumer-foo')
         mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
+
+    def test_install_no_options(self):
+        """
+        Test that when no options are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit'})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.install, 'test-consumer')
+
+    def test_install_no_units(self):
+        """
+        Test that when no units are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'options': {}})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.install, 'test-consumer')
+
+    def test_install_no_params(self):
+        """
+        Test that when no units are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.install, 'test-consumer')
 
     @mock.patch('pulp.server.webservices.controllers.consumers.managers')
     def test_uninstall(self, mock_factory):
@@ -811,6 +857,42 @@ class ContentTest(PulpWebservicesTests):
         self.assertRaises(OperationPostponed, webservice.uninstall, 'consumer-foo')
         mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
+    def test_uninstall_no_options(self):
+        """
+        Test that when no options are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit'})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.uninstall, 'test-consumer')
+
+    def test_uninstall_no_units(self):
+        """
+        Test that when no units are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'options': {}})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.uninstall, 'test-consumer')
+
+    def test_uninstall_no_params(self):
+        """
+        Test that when no units are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.uninstall, 'test-consumer')
+
     @mock.patch('pulp.server.webservices.controllers.consumers.managers')
     def test_update(self, mock_factory):
         # Setup
@@ -824,6 +906,41 @@ class ContentTest(PulpWebservicesTests):
         self.assertRaises(OperationPostponed, webservice.update, 'consumer-foo')
         mock_task.assert_called_once_with('consumer-foo', 'foo-unit', 'bar')
 
+    def test_update_no_options(self):
+        """
+        Test that when no options are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'units': 'foo-unit'})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.update, 'test-consumer')
+
+    def test_update_no_units(self):
+        """
+        Test that when no units are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={'options': {}})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.update, 'test-consumer')
+
+    def test_update_no_params(self):
+        """
+        Test that when no units are provided in the request, the proper
+        exception is raised
+        """
+        # Setup
+        webservice = consumers.Content()
+        webservice.params = mock.Mock(return_value={})
+
+        # Test
+        self.assertRaises(MissingValue, webservice.update, 'test-consumer')
 
 class TestProfilesNoWSGI(PulpWebservicesTests):
 
