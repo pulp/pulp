@@ -150,6 +150,99 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertEquals(bindings[0]['consumer_actions'], [])
 
+    def test_get_bindings_consumer_repo(self):
+        """
+        Test that it is possible to retrieve all bindings for a specific consumer on
+        to a specific repository
+        """
+        # Setup
+        manager = factory.repo_manager()
+        manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            self.DISTRIBUTOR_TYPE_ID,
+            {},
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+
+        # Test
+        params = {'consumer': self.CONSUMER_ID, 'repo': self.REPO_ID}
+        path = '/v2/consumers/%(consumer)s/bindings/%(repo)s/' % params
+        status, body = self.get(path)
+
+        # Verify
+        self.assertEqual(200, status)
+        self.assertEqual(1, len(body))
+        binding = body[0]
+        self.assertEqual(binding['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(binding['repo_id'], self.REPO_ID)
+        self.assertEqual(binding['distributor_id'], self.DISTRIBUTOR_ID)
+        self.assertEqual(binding['consumer_actions'], [])
+        self.assertEqual(binding['notify_agent'], self.NOTIFY_AGENT)
+        self.assertEqual(binding['binding_config'], self.BINDING_CONFIG)
+
+    def test_get_bindings_consumer_repo_invalid(self):
+        """
+        Test that the proper error code is returned when an invalid repository id is used
+        """
+        # Setup
+        manager = factory.repo_manager()
+        manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            self.DISTRIBUTOR_TYPE_ID,
+            {},
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+
+        # Test
+        path = '/v2/consumers/%s/bindings/invalid_repo/' % self.CONSUMER_ID
+        status, body = self.get(path)
+
+        # Verify
+        self.assertEqual(404, status)
+        self.assertEqual(body['resources'], {'repo_id': 'invalid_repo'})
+
+    def test_get_bindings_consumer_invalid_repo(self):
+        """
+        Test that the proper error code is returned when an invalid consumer id used
+        """
+        # Setup
+        manager = factory.repo_manager()
+        manager.create_repo(self.REPO_ID)
+        manager = factory.repo_distributor_manager()
+        manager.add_distributor(
+            self.REPO_ID,
+            self.DISTRIBUTOR_TYPE_ID,
+            {},
+            True,
+            distributor_id=self.DISTRIBUTOR_ID)
+        manager = factory.consumer_manager()
+        manager.register(self.CONSUMER_ID)
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+
+        # Test
+        path = '/v2/consumers/invalid_consumer/bindings/%s/' % self.REPO_ID
+        status, body = self.get(path)
+
+        # Verify
+        self.assertEqual(404, status)
+        self.assertEqual(body['resources'], {'consumer_id': 'invalid_consumer'})
+
     def test_get_missing_consumer(self):
         """
         Tests that a 404 is returned when getting a consumer that doesn't exist.

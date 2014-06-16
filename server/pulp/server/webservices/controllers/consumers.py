@@ -179,19 +179,32 @@ class Bindings(JSONController):
     @auth_required(READ)
     def GET(self, consumer_id, repo_id=None):
         """
-        Fetch all bind objects referencing the
-        specified I{consumer_id}.
-        @param consumer_id: The specified consumer.
-        @type consumer_id: str
-        @return: A list of bind dict:
-            {consumer_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>,
-             href:<str>,
-             type_id:<str>,
-             details:<dict>}
-        @rtype: dict
+        Fetch all bind objects referencing the specified consumer_id. Optionally,
+        specify a repo_id to fetch all bind objects for the consumer_id to the repo_id
+
+        :param consumer_id: The specified consumer.
+        :type  consumer_id: str
+        :param repo_id:     The repository to retrieve bindings for (optional)
+        :type  repo_id:     str
+
+        :return: A list of dictionaries that represent pulp.server.db.model.consumer.Bind objects
+        :rtype:  list
         """
+        # Check to make sure the resources exist
+        missing_resources = {}
+        if repo_id is not None:
+            repo = managers.repo_query_manager().find_by_id(repo_id)
+            if repo is None:
+                missing_resources['repo_id'] = repo_id
+        # If get_consumer raises MissingResource we might miss reporting a bad repo_id
+        try:
+            managers.consumer_manager().get_consumer(consumer_id)
+        except MissingResource:
+            missing_resources['consumer_id'] = consumer_id
+
+        if len(missing_resources) > 0:
+            raise MissingResource(**missing_resources)
+
         manager = managers.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id, repo_id)
         bindings = [serialization.binding.serialize(b) for b in bindings]
