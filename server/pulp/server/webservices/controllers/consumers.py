@@ -187,16 +187,8 @@ class Bindings(JSONController):
         :param repo_id:     The repository to retrieve bindings for (optional)
         :type  repo_id:     str
 
-        :return: A list of bind dict:
-                    {
-                        consumer_id:<str>,
-                        repo_id:<str>,
-                        distributor_id:<str>,
-                        href:<str>,
-                        type_id:<str>,
-                        details:<dict>
-                    }
-        :rtype:  dict
+        :return: A list of dictionaries that represent pulp.server.db.model.consumer.Bind objects
+        :rtype:  list
         """
         # Check to make sure the resources exist
         missing_resources = {}
