@@ -85,7 +85,6 @@ The details of the added distributor are returned from the call.
 * :response_code:`400,if one or more of the required parameters is missing, the distributor type ID refers
   to a non-existent distributor, or the distributor indicates the supplied configuration is invalid`
 * :response_code:`404,if there is no repository with the given ID`
-* :response_code:`500,if the distributor raises an error during initialization`
 
 | :return:`an object that represents the newly added distributor`
 
@@ -165,8 +164,6 @@ Any distributor configuration value that is not specified remains unchanged.
 
 * :response_code:`200,if the configuration was successfully updated`
 * :response_code:`404,if there is no repository group or distributor with the specified IDs`
-* :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
-  in the future`
 
 | :return:`an object that represents the updated distributor`
 

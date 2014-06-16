@@ -321,8 +321,6 @@ Any importer configuration value that is not specified remains unchanged.
 * :response_code:`202,if the request was accepted by the server to update the importer
   when the repository is available`
 * :response_code:`404,if there is no repository or importer with the specified IDs`
-* :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
-  in the future`
 
 | :return:`a` :ref:`call_report`
 
@@ -402,8 +400,6 @@ See :ref:`bind` for details.
 * :response_code:`202,if the request was accepted by the server to update the distributor
   when the repository is available`
 * :response_code:`404,if there is no repository or distributor with the specified IDs`
-* :response_code:`409,if a conflict was detected and the request is not serviceable now, or any time
-  in the future`
 
 | :return:`a` :ref:`call_report`
 
