@@ -174,18 +174,47 @@ Retrieves information on all bindings between a consumer and a repository.
       in the URL itself. There are no supported query parameters.
 | :response_list:`_`
 
-* :response_code:`200,if the bind exists`
-* :response_code:`404,if no bind exists with the given IDs`
+* :response_code:`200,if both the consumer and repository IDs are valid`
+* :response_code:`404,if one or both of the given ids are not valid`
 
-| :return:`a database representation of the matching bind`
+| :return:`an array of objects, where each object represents a binding`
 
 :sample_response:`200` ::
 
- {
-   "repo_id": "test-repo",
-   "consumer_id": "test-consumer",
-   "_ns": "consumer_bindings",
-   "_id": {"$oid": "5008604be13823703800003e"},
-   "distributor_id": "dist-1",
-   "id": "5008604be13823703800003e"
- }
+ [
+  {
+    "notify_agent": true,
+    "repo_id": "test_repo",
+    "_href": "/pulp/api/v2/consumers/test_consumer/bindings/test_repo/test_distributor/",
+    "type_id": "test_distributor",
+    "consumer_actions": [
+      {
+        "status": "pending",
+        "action": "bind",
+        "id": "3a8713bb-6902-4f11-a725-17c7f1f6586a",
+        "timestamp": 1402688658.785708
+      }
+    ],
+    "_ns": "consumer_bindings",
+    "distributor_id": "test_distributor",
+    "consumer_id": "test_consumer",
+    "deleted": false,
+    "binding_config": {},
+    "details": {
+      "server_name": "pulp.example.com",
+      "ca_cert": null,
+      "relative_path": "/pulp/repos/test_repo",
+      "gpg_keys": [],
+      "client_cert": null,
+      "protocols": [
+        "https"
+      ],
+      "repo_name": "test_repo"
+    },
+    "_id": {
+      "$oid": "539b54927bc8f6388640871d"
+    },
+    "id": "539b54927bc8f6388640871d"
+  }
+ ]
+
