@@ -268,8 +268,8 @@ class RepoContentUnit(Model):
         self.owner_id = owner_id
 
         # store time in UTC
-        created = dateutils.to_utc_datetime(datetime.datetime.utcnow())
-        self.created = dateutils.format_iso8601_datetime(created)
+        utc_timestamp = dateutils.now_utc_timestamp()
+        self.created = dateutils.format_iso8601_utc_timestamp(utc_timestamp)
         self.updated = self.created
 
 
