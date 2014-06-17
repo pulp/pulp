@@ -65,10 +65,10 @@ simply removes the group and its relationship to all repositories.
 | :permission:`delete`
 | :response_list:`_`
 
-* :response_code:`202,if the request was accepted by the server and will execute in the future`
+* :response_code:`200,if the repository group was successfully deleted`
 * :response_code:`404,if the specified group does not exist`
 
-| :return:`a` :ref:`call_report`
+| :return:`null`
 
 Update a Repository Group
 -------------------------
