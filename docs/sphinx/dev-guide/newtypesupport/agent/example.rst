@@ -284,8 +284,4 @@ The descriptor is installed into the */etc/pulp/agent/conf.d/* directory.
 The example handler classes are installed into *site-packages/example/agent/handler/* where
 *site-packages* can be any directory in the python path.
 
-After installation, restart the pulp-agent service.
-
-.. note::
- The pulp-agent service is actually a symlink to the goferd service.  This is because the pulp
- agent is a plugin that runs within the gofer agent daemon.
+After installation, restart the goferd service.

@@ -292,8 +292,8 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 .. _consumer_installation:
 
-Consumer Client
----------------
+Consumer Client And Agent
+-------------------------
 
 The Pulp Consumer Client is present on all systems that wish to act as a consumer
 of a Pulp server. The Pulp Consumer Client provides the means for a system to
@@ -329,17 +329,15 @@ repositories.
 
 ::
 
-4. Set the agent to start at boot:
+4. Set the agent to start at boot.  For upstart::
 
-::
+     $ sudo chkconfig goferd on
+     $ sudo service goferd start
 
-  $ sudo chkconfig pulp-agent on
+   For systemd::
 
-5. Start the agent:
-
-::
-
-  $ sudo service pulp-agent start
+     $sudo systemctl enable goferd
+     $sudo systemctl start goferd
 
 
 SSL Configuration

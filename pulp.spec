@@ -215,7 +215,6 @@ cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
 cp -R agent/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
-ln -s %{_sysconfdir}/rc.d/init.d/goferd %{buildroot}/%{_sysconfdir}/rc.d/init.d/pulp-agent
 
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
@@ -251,8 +250,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.2.0
-Requires: python-gofer-qpid >= 1.2.0
+Requires: python-gofer >= 1.3.0
+Requires: python-gofer-qpid >= 1.3.0
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -527,9 +526,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.2.0
-Requires: python-gofer-qpid >= 1.2.0
-Requires: gofer >= 1.2.0
+Requires: python-gofer >= 1.3.0
+Requires: python-gofer-qpid >= 1.3.0
+Requires: gofer >= 1.3.0
 Requires: m2crypto
 
 %description agent
@@ -542,7 +541,6 @@ on a defined interval.
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %{_libdir}/gofer/plugins/pulpplugin.*
-%{_sysconfdir}/rc.d/init.d/pulp-agent
 %doc README LICENSE COPYRIGHT
 
 # --- Selinux ---------------------------------------------------------------------
