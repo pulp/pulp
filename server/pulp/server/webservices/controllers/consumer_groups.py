@@ -20,7 +20,7 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory as managers_factory
-from pulp.server.tasks import consumer_group
+from pulp.server.managers.consumer.group.cud import bind, unbind
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -156,7 +156,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        task = consumer_group.install_content(consumer_group_id, units, options)
+        task = managers_factory.consumer_group_manager().install_content(consumer_group_id,
+                                                                         units, options)
         raise pulp_exceptions.OperationPostponed(task)
 
     def update(self, consumer_group_id):
@@ -173,7 +174,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        task = consumer_group.update_content(consumer_group_id, units, options)
+        task = managers_factory.consumer_group_manager().update_content(consumer_group_id,
+                                                                        units, options)
         raise pulp_exceptions.OperationPostponed(task)
 
     def uninstall(self, consumer_group_id):
@@ -190,7 +192,8 @@ class ConsumerGroupContentAction(JSONController):
         body = self.params()
         units = body.get('units')
         options = body.get('options')
-        task = consumer_group.uninstall_content(consumer_group_id, units, options)
+        task = managers_factory.consumer_group_manager().uninstall_content(consumer_group_id,
+                                                                           units, options)
         raise pulp_exceptions.OperationPostponed(task)
 
 
@@ -244,8 +247,9 @@ class ConsumerGroupBindings(JSONController):
         binding_config = body.get('binding_config', None)
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
-        async_task = consumer_group.bind.apply_async((group_id, repo_id, distributor_id,
-                                                      notify_agent, binding_config, options))
+        bind_args_tuple = (group_id, repo_id, distributor_id, notify_agent, binding_config,
+                           options)
+        async_task = bind.apply_async(bind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
 
 
@@ -295,7 +299,8 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        async_task = consumer_group.unbind.apply_async((group_id, repo_id, distributor_id, {}))
+        unbind_args_tuple = (group_id, repo_id, distributor_id, {})
+        async_task = unbind.apply_async(unbind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
 
 
