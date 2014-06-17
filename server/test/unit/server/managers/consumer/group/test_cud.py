@@ -273,7 +273,7 @@ class TestBind(PulpCeleryTaskTests):
 
         result = cud.bind('foo_group_id', 'foo_repo_id', 'foo_distributor_id',
                           True, binding_config, agent_options)
-        self.assertTrue(result.error is error_codes.PLP0004)
+        self.assertTrue(result.error.error_code is error_codes.PLP0004)
         self.assertEquals(result.error.child_exceptions[0], side_effect_exception)
 
     @patch('pulp.server.managers.consumer.group.cud.bind_task')
