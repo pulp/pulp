@@ -136,13 +136,13 @@ class BindTestNoWSGI(PulpWebservicesTests):
         self.validate_auth(authorization.CREATE)
 
     @mock.patch('pulp.server.managers.consumer.group.cud.unbind')
-    def test_unbind(self, mock_bind_task):
+    def test_unbind(self, mock_unbind_task):
         binding = consumer_groups.ConsumerGroupBinding()
-        mock_bind_task.apply_async.return_value.id = 'foo'
+        mock_unbind_task.apply_async.return_value.id = 'foo'
 
         self.assertRaises(OperationPostponed, binding.DELETE, 'consumer-group-id', 'repo-id',
                           'dist-id')
-        mock_bind_task.apply_async.assert_called_once()
+        mock_unbind_task.apply_async.assert_called_once()
 
         #validate the permissions
         self.validate_auth(authorization.DELETE)

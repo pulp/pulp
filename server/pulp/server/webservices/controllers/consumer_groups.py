@@ -247,8 +247,9 @@ class ConsumerGroupBindings(JSONController):
         binding_config = body.get('binding_config', None)
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
-        async_task = bind.apply_async((group_id, repo_id, distributor_id,
-                                       notify_agent, binding_config, options))
+        bind_args_tuple = (group_id, repo_id, distributor_id, notify_agent, binding_config,
+                           options)
+        async_task = bind.apply_async(bind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
 
 
@@ -298,7 +299,8 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        async_task = unbind.apply_async((group_id, repo_id, distributor_id, {}))
+        unbind_args_tuple = (group_id, repo_id, distributor_id, {})
+        async_task = unbind.apply_async(unbind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
 
 
