@@ -15,7 +15,7 @@ New Features
 #. Publishing Puppet repositories to flattened directories.
 #. All messaging between the Pulp server and agents is signed and authenticated using asymmetric
    keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
-   must run: ``pulp-consumer update --keys`` and restart the pulp-agent service for messaging between
+   must run: ``pulp-consumer update --keys`` and restart the goferd service for messaging between
    the server and agent to continue working properly.
 #. Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
    releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
@@ -41,6 +41,12 @@ Client Changes
    spinner will continue until the agent begins executing the request. Agent related tasks no
    longer have a timeout, so it's up to the caller to determine how long to wait for completion.
    It is the responsibility of the caller to cancel tasks not progressing as desired.
+
+
+Agent Changes
+#. The pulp-agent service link is no longer installed.  In previous versions, the pulp-agent service
+   was just a simlink to goferd.  Users should interact with the goferd service directly.
+#. goferd 1.3.0+ supports control by systemd.
 
 Noteworthy Bugs Fixed
 ---------------------
@@ -77,11 +83,11 @@ introduced with 2.4.0, but portions of the old config will likely still be usefu
 Once the consumer.conf file is setup to use the new configuration, restart the consumer. On
 Upstart systems the restart is done using::
 
-    $ sudo service pulp-agent restart
+    $ sudo service goferd restart
 
 For systemd systems::
 
-    $ sudo systemctl restart pulp-agent
+    $ sudo systemctl restart goferd
 
 A message broker is required for Pulp 2.4.0. Pulp 2.3.x required Qpid specifically as the message
 broker, but Pulp 2.4 will work with either Qpid or RabbitMQ. If using Qpid, ensure that you are

@@ -1,8 +1,13 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
+# Determine supported
+%if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
+%define systemd 1
+%endif
+
 Name: gofer
-Version: 1.2.1
+Version: 1.3.0
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -17,13 +22,19 @@ BuildRequires: python-setuptools
 BuildRequires: rpm-python
 Requires: python-%{name} = %{version}
 Requires: python-iniparse
+%if 0%{?systemd}
+BuildRequires: systemd
+Requires(post): systemd
+Requires(preun): systemd
+Requires(postun): systemd
+%endif
 %description
 Gofer provides an extensible, light weight, universal python agent.
 The gofer core agent is a python daemon (service) that provides
 infrastructure for exposing a remote API and for running Recurring
 Actions. The APIs contributed by plug-ins are accessible by Remote
-Method Invocation (RMI). The transport for RMI is AMQP using the
-QPID message broker. Actions are also provided by plug-ins and are
+Method Invocation (RMI). The transport for RMI is AMQP using an
+AMQP message broker. Actions are also provided by plug-ins and are
 executed at the specified interval.
 
 %prep
@@ -62,16 +73,22 @@ mkdir -p %{buildroot}/%{_sysconfdir}/%{name}
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/plugins
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/init.d
+mkdir -p %{buildroot}/%{_unitdir}
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/share/%{name}/plugins
 mkdir -p %{buildroot}/%{_mandir}/man1
 
 cp bin/%{name}d %{buildroot}/usr/bin
-cp etc/init.d/%{name}d %{buildroot}/%{_sysconfdir}/init.d
 cp etc/%{name}/*.conf %{buildroot}/%{_sysconfdir}/%{name}
 cp etc/%{name}/plugins/*.conf %{buildroot}/%{_sysconfdir}/%{name}/plugins
 cp src/plugins/*.py %{buildroot}/%{_usr}/share/%{name}/plugins
 cp docs/man/man1/* %{buildroot}/%{_mandir}/man1
+
+%if 0%{?systemd}
+cp usr/lib/systemd/system/* %{buildroot}/%{_unitdir}
+%else
+cp etc/init.d/%{name}d %{buildroot}/%{_sysconfdir}/init.d
+%endif
 
 rm -rf %{buildroot}/%{python_sitelib}/%{name}*.egg-info
 
@@ -86,7 +103,11 @@ rm -rf %{buildroot}
 %dir %{_sysconfdir}/%{name}/conf.d/
 %{python_sitelib}/%{name}/agent/
 %{_bindir}/%{name}d
+%if 0%{?systemd}
+%attr(755,root,root) %{_unitdir}/%{name}d.service
+%else
 %attr(755,root,root) %{_sysconfdir}/init.d/%{name}d
+%endif
 %config(noreplace) %{_sysconfdir}/%{name}/agent.conf
 %config(noreplace) %{_sysconfdir}/%{name}/plugins/builtin.conf
 %{_usr}/share/%{name}/plugins/builtin.*
@@ -94,13 +115,26 @@ rm -rf %{buildroot}
 %doc %{_mandir}/man1/gofer*
 
 %post
+%if 0%{?systemd}
+%systemd_post %{name}d.service
+%else
 chkconfig --add %{name}d
+%endif
 
 %preun
+%if 0%{?systemd}
+%systemd_preun %{name}d.service
+%else
 if [ $1 = 0 ] ; then
    /sbin/service %{name}d stop >/dev/null 2>&1
    /sbin/chkconfig --del %{name}d
 fi
+%endif
+
+%postun
+%if 0%{?systemd}
+%systemd_postun_with_restart %{name}d.service
+%endif
 
 
 # --- python lib -------------------------------------------------------------
@@ -252,6 +286,12 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Jun 16 2014 Jeff Ortel <jortel@redhat.com> 1.3.0-1
+- Update man page to reference github. (jortel@redhat.com)
+- Replace --console option with --foreground and use in systemd unit.
+  (jortel@redhat.com)
+- systemd support. (jortel@redhat.com)
+
 * Mon Jun 09 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
 - 1107244 - python 2.4 compat issues. (jortel@redhat.com)
 * Thu May 29 2014 Jeff Ortel <jortel@redhat.com> 1.2.0-1
