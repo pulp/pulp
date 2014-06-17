@@ -39,7 +39,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.20.beta%{?dist}
+Release: 0.21.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -600,6 +600,24 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
+- 1074426 - Updated the repository group API docs to reflect actual DELETE
+  behaviour (jcline@redhat.com)
+- 1109430 - goferd supporting systemd. (jortel@redhat.com)
+- 1105636 - saving a unit through a conduit now fails over to adding or
+  updating if a unit appears or disappears unexpectedly (mhrivnak@redhat.com)
+- 1094286 - failing to include 'options' or 'units' during content
+  install/update/uninstall calls on consumers now results in a 400 code
+  (jcline@redhat.com)
+- 1100805 - Fixing consumer group bind and unbind and moving tasks from
+  tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
+- 1094264 - Retrieving bindings by consumer and repository now returns 404 if
+  the consumer or repository ids are invalid. (jcline@redhat.com)
+- 1060866 - The Repository Group Distributors API is now documented
+  (jcline@redhat.com)
+- 1097781 - Indicate that consumer bind fails when it does.
+  (rbarlow@redhat.com)
+
 * Tue Jun 10 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.20.beta
 - 1107782 - fixed in gofer 1.2.1. (jortel@redhat.com)
 - 1102393 - Rework how we select the queue for new reservations.
