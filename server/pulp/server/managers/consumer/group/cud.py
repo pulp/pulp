@@ -261,9 +261,9 @@ class ConsumerGroupManager(object):
         consumer_group = manager_factory.consumer_group_query_manager().get_group(consumer_group_id)
         agent_manager = manager_factory.consumer_agent_manager()
 
-        return ConsumerGroupManager._process_group(consumer_group, error_codes.PLP0020,
-                                                   {'group_id': consumer_group_id},
-                                                   agent_manager.install_content, units, options)
+        return ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0020,
+                                                  {'group_id': consumer_group_id},
+                                                  agent_manager.install_content, units, options)
 
     @staticmethod
     def update_content(consumer_group_id, units, options):
@@ -281,9 +281,9 @@ class ConsumerGroupManager(object):
         consumer_group = manager_factory.consumer_group_query_manager().get_group(consumer_group_id)
         agent_manager = manager_factory.consumer_agent_manager()
 
-        return ConsumerGroupManager._process_group(consumer_group, error_codes.PLP0021,
-                                                   {'group_id': consumer_group_id},
-                                                   agent_manager.update_content, units, options)
+        return ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0021,
+                                                  {'group_id': consumer_group_id},
+                                                  agent_manager.update_content, units, options)
 
     @staticmethod
     def uninstall_content(consumer_group_id, units, options):
@@ -301,9 +301,9 @@ class ConsumerGroupManager(object):
         consumer_group = manager_factory.consumer_group_query_manager().get_group(consumer_group_id)
         agent_manager = manager_factory.consumer_agent_manager()
 
-        return ConsumerGroupManager._process_group(consumer_group, error_codes.PLP0022,
-                                                   {'group_id': consumer_group_id},
-                                                   agent_manager.uninstall_content, units, options)
+        return ConsumerGroupManager.process_group(consumer_group, error_codes.PLP0022,
+                                                  {'group_id': consumer_group_id},
+                                                  agent_manager.uninstall_content, units, options)
 
     @staticmethod
     def bind(group_id, repo_id, distributor_id, notify_agent, binding_config, agent_options):
@@ -399,7 +399,7 @@ class ConsumerGroupManager(object):
         return TaskResult(error=bind_error, spawned_tasks=additional_tasks)
 
     @staticmethod
-    def _process_group(consumer_group, error_code, error_kwargs, process_method, *args):
+    def process_group(consumer_group, error_code, error_kwargs, process_method, *args):
         """
         Process an action over a group of consumers
 
