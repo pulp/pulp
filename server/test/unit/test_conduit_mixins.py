@@ -21,6 +21,35 @@ from pulp.plugins.model import Unit, PublishReport
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 
+
+def _create_mock_side_effect(items):
+    """
+    This adds a behavior to older mock versions, that is present in mock 1.0.
+    If you pass an iterable to the side_effect parameter of mock.Mock, each call
+    to that mock will grab the first item in the iterable. If it is an exception,
+    it will be raised. If not, it will be returned. Older versions of mock don't
+    do the exception inspection, so this adds that feature.
+
+    :param items:   list of return values and/or exceptions. Each exception will
+                    be raised. Each other item will be returned.
+    :type  items:   list
+
+    :return:    a function that can be used as the "side_effect" argument to Mock
+    :rtype:     function
+    """
+    def _side_effect(*args, **kwargs):
+        ret = items.pop(0)
+        try:
+            if isinstance(ret, Exception) or issubclass(ret, Exception):
+                raise ret
+        # issubclass will complain if you try to check something that isn't a
+        # class. In our case, we don't care.
+        except TypeError:
+            pass
+        return ret
+    return _side_effect
+
+
 class RepoScratchPadMixinTests(unittest.TestCase):
 
     def setUp(self):
@@ -461,7 +490,7 @@ class AddUnitMixinTests(unittest.TestCase):
         mock_add.side_effect = DuplicateKeyError('dups!')
         # raise an exception the first time around, then simulate the unit
         # having appeared since the last call.
-        mock_get.side_effect = [MissingResource, {'_id': 'existing'}]
+        mock_get.side_effect = _create_mock_side_effect([MissingResource, {'_id': 'existing'}])
 
         # Test
         saved = self.mixin.save_unit(unit)
