@@ -457,7 +457,7 @@ class AddUnitMixinTests(unittest.TestCase):
         update the unit instead of adding it.
         """
         # Setup
-        unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
+        unit = self.mixin.init_unit('t', {'k': 'v'}, {'m': 'm1'}, '/bar')
         mock_add.side_effect = DuplicateKeyError('dups!')
         # raise an exception the first time around, then simulate the unit
         # having appeared since the last call.
@@ -487,7 +487,7 @@ class AddUnitMixinTests(unittest.TestCase):
         add it as a new unit.
         """
         # Setup
-        unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
+        unit = self.mixin.init_unit('t', {'k': 'v'}, {'m': 'm1'}, '/bar')
         mock_update.side_effect = MissingResource()
         mock_add.return_value = 'new-unit-id'
 

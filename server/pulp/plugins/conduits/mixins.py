@@ -489,7 +489,7 @@ class AddUnitMixin(object):
 
     def _update_unit(self, unit, pulp_unit):
         """
-        Update a unit. If it is not found, add it instead.
+        Update a unit. If it is not found, add it.
 
         :param unit:        the unit to be updated
         :type  unit:        pulp.plugins.model.Unit
@@ -513,7 +513,7 @@ class AddUnitMixin(object):
 
     def _add_unit(self, unit, pulp_unit):
         """
-        Add a unit. If it already exists, update it instead.
+        Add a unit. If it already exists, update it.
 
         This deals with a race condition where a unit might try to be updated,
         but does not exist. Before this method can complete, another workflow
