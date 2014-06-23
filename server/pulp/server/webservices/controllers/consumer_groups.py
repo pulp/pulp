@@ -19,6 +19,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.consumer.group.cud import bind, unbind
 from pulp.server.webservices import serialization
@@ -247,6 +248,28 @@ class ConsumerGroupBindings(JSONController):
         binding_config = body.get('binding_config', None)
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
+
+        # Confirm the group, repository, and distributor exist
+        missing_resources = {}
+
+        group_manager = managers_factory.consumer_group_query_manager()
+        repo_manager = managers_factory.repo_query_manager()
+        distributor_manager = managers_factory.repo_distributor_manager()
+        try:
+            group_manager.get_group(group_id)
+        except MissingResource:
+            missing_resources['group_id'] = group_id
+        repo = repo_manager.find_by_id(repo_id)
+        if repo is None:
+            missing_resources['repo_id'] = repo_id
+        try:
+            distributor_manager.get_distributor(repo_id, distributor_id)
+        except MissingResource:
+            missing_resources['distributor_id'] = distributor_id
+
+        if len(missing_resources) > 0:
+            raise MissingResource(**missing_resources)
+
         bind_args_tuple = (group_id, repo_id, distributor_id, notify_agent, binding_config,
                            options)
         async_task = bind.apply_async(bind_args_tuple)
@@ -299,6 +322,27 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
+        # Confirm the group, repository, and distributor exist
+        missing_resources = {}
+
+        group_manager = managers_factory.consumer_group_query_manager()
+        repo_manager = managers_factory.repo_query_manager()
+        distributor_manager = managers_factory.repo_distributor_manager()
+        try:
+            group_manager.get_group(group_id)
+        except MissingResource:
+            missing_resources['group_id'] = group_id
+        repo = repo_manager.find_by_id(repo_id)
+        if repo is None:
+            missing_resources['repo_id'] = repo_id
+        try:
+            distributor_manager.get_distributor(repo_id, distributor_id)
+        except MissingResource:
+            missing_resources['distributor_id'] = distributor_id
+
+        if len(missing_resources) > 0:
+            raise MissingResource(**missing_resources)
+
         unbind_args_tuple = (group_id, repo_id, distributor_id, {})
         async_task = unbind.apply_async(unbind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
