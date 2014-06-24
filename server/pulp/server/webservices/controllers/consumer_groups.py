@@ -19,7 +19,7 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.exceptions import MissingResource
+from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.consumer.group.cud import bind, unbind
 from pulp.server.webservices import serialization
@@ -249,7 +249,12 @@ class ConsumerGroupBindings(JSONController):
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
 
-        verify_group_resources(group_id, repo_id, distributor_id)
+        missing_resources = verify_group_resources(group_id, repo_id, distributor_id)
+        if missing_resources:
+            if 'group_id' in missing_resources:
+                raise MissingResource(**missing_resources)
+            else:
+                raise InvalidValue(list(missing_resources))
 
         bind_args_tuple = (group_id, repo_id, distributor_id, notify_agent, binding_config,
                            options)
@@ -303,7 +308,9 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        verify_group_resources(group_id, repo_id, distributor_id)
+        missing_resources = verify_group_resources(group_id, repo_id, distributor_id)
+        if missing_resources:
+            raise MissingResource(**missing_resources)
 
         unbind_args_tuple = (group_id, repo_id, distributor_id, {})
         async_task = unbind.apply_async(unbind_args_tuple)
@@ -321,7 +328,8 @@ def verify_group_resources(group_id, repo_id, distributor_id):
     :param distributor_id:  The distributor id to confirm the existence of on the repository
     :type  distributor_id:  str
 
-    :raises MissingResource: if one or more of the resources is missing
+    :return: A dictionary of the missing resources
+    :rtype:  dict
     """
     missing_resources = {}
 
@@ -340,8 +348,7 @@ def verify_group_resources(group_id, repo_id, distributor_id):
     except MissingResource:
         missing_resources['distributor_id'] = distributor_id
 
-    if len(missing_resources) > 0:
-        raise MissingResource(**missing_resources)
+    return missing_resources
 
 # web.py application -----------------------------------------------------------
 
