@@ -30,6 +30,15 @@ New Features
    longer automatically populated and users will need to provide these values when they wish to
    configure Pulp installations to use OAuth. OAuth is now disabled by default.
 
+Deprecation
+-----------
+
+Pulp uses the Python oauth2 library to perform OAuth. Unfortunately, that library seems to be
+unmaintained upstream and has at least one known security flaw, and so the Pulp team was faced with
+finding a replacement, writing a replacement, or removing OAuth as an authentication mechanism. The
+Pulp team does not believe there is a strong use case for OAuth in Pulp, and so it has been decided
+that Pulp 2.4.0 would announce the deprecation of OAuth.
+
 Client Changes
 --------------
 #. Converted the orphan remove command to poll until the remove finishes.  Added a background

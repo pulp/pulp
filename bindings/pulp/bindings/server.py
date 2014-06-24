@@ -1,21 +1,12 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import base64
 import locale
 import logging
 import urllib
-import oauth2 as oauth
+try:
+    import oauth2 as oauth
+except ImportError:
+    # python-oauth2 isn't available on RHEL 5.
+    oauth = None
 
 from types import NoneType
 from M2Crypto import SSL, httpslib
@@ -25,8 +16,6 @@ from pulp.bindings.responses import Response, Task
 from pulp.common.compat import json
 from pulp.common.util import ensure_utf_8, encode_unicode
 
-
-# -- server connection --------------------------------------------------------
 
 class PulpConnection(object):
     """
@@ -267,8 +256,9 @@ class HTTPSServerWrapper(object):
             ssl_context.set_session_timeout(self.pulp_connection.timeout)
             ssl_context.load_cert(self.pulp_connection.cert_filename)
 
-        # oauth configuration
-        if self.pulp_connection.oauth_key and self.pulp_connection.oauth_secret:
+        # oauth configuration. This block is only True if oauth is not None, so it won't run on RHEL
+        # 5.
+        if self.pulp_connection.oauth_key and self.pulp_connection.oauth_secret and oauth:
             oauth_consumer = oauth.Consumer(
                 self.pulp_connection.oauth_key,
                 self.pulp_connection.oauth_secret)
