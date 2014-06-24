@@ -15,9 +15,11 @@
 
 %if 0%{?rhel} == 5
 %define pulp_admin 0
+%define pulp_client_oauth 0
 %define pulp_server 0
 %else
 %define pulp_admin 1
+%define pulp_client_oauth 1
 %define pulp_server 1
 %endif
 
@@ -383,7 +385,9 @@ A collection of components that are common between the pulp server and client.
 Summary: Pulp REST bindings for python
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+%if %{pulp_client_oauth}
 Requires: python-oauth2 >= 1.5.170-2.pulp
+%endif
 Requires: m2crypto
 
 %description -n python-pulp-bindings
