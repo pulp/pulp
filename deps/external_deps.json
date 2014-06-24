@@ -1,0 +1,14 @@
+{
+    "python-qpid": {
+        "version": "0.26-1",
+        "platform": ["el6"]
+    },
+    "qpid-cpp": {
+        "version": "0.26-3",
+        "platform": ["el6"]
+    },
+    "qpid-qmf": {
+        "version": "0.24-17",
+        "platform": ["el6"]
+    }
+}
