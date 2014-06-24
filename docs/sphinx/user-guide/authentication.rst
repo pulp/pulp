@@ -138,11 +138,10 @@ For example:
 OAuth
 -----
 
-.. deprecated::
+.. deprecated:: 2.4.0
 
-    Warning! OAuth support has been deprecated in Pulp 2.4.0. It will be removed in a future release
-    of Pulp. Please do not write new code that uses OAuth against Pulp, and please find a suitable
-    replacement if you are already using it.
+    OAuth support will be removed in a future release of Pulp. Please do not write new code that
+    uses OAuth against Pulp, and please find a suitable replacement if you are already using it.
 
 `OAuth <http://oauth.net/>`_ can be enabled by configuring the
 ``[oauth]`` section in ``server.conf``.  In order for a user or
