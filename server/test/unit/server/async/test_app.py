@@ -6,6 +6,7 @@ from pulp.server.async.app import init_app
 
 APP_MODULE_PATH = 'pulp.server.async.app'
 
+
 class TestInitApp(unittest.TestCase):
 
     @patch(APP_MODULE_PATH + '.initialize')

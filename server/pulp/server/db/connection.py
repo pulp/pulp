@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 import logging
 import time
 from gettext import gettext as _
@@ -20,7 +21,7 @@ _DATABASE = None
 
 _LOG = logging.getLogger(__name__)
 _DEFAULT_MAX_POOL_SIZE = 10
-_MONGO_RETRY_TIMEOUT_SECONDS = 3
+_MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
 
 
 # -- connection api ------------------------------------------------------------
@@ -60,13 +61,14 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
             try:
                 _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
             except pymongo.errors.ConnectionFailure:
+                next_delay = _MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next()
                 msg = _(
                     "Could not connect to MongoDB at %(url)s ... Waiting %(retry_timeout)s seconds "
                     "and trying again.")
-                _LOG.error(msg % {'retry_timeout': _MONGO_RETRY_TIMEOUT_SECONDS, 'url': seeds})
+                _LOG.error(msg % {'retry_timeout': next_delay, 'url': seeds})
             else:
                 break
-            time.sleep(_MONGO_RETRY_TIMEOUT_SECONDS)
+            time.sleep(next_delay)
 
         # Decorate the methods that actually send messages to the db over the
         # network. These are the methods that call start_request, and the
