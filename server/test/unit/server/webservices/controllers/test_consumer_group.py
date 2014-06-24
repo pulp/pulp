@@ -121,8 +121,11 @@ class BindTestNoWSGI(PulpWebservicesTests):
     """
     Tests that have been converted to no longer require the full web.py stack
     """
+    @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
+    @mock.patch('pulp.server.managers.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.factory.consumer_group_query_manager')
     @mock.patch('pulp.server.managers.consumer.group.cud.bind')
-    def test_bind(self, mock_bind_task):
+    def test_bind(self, mock_bind_task, mock_group_query, mock_repo_query, mock_dist_query):
         bindings = consumer_groups.ConsumerGroupBindings()
         bindings.params = mock.Mock(return_value={'repo_id': 'foo-repo',
                                                   'distributor_id': 'bar-distributor',
@@ -135,8 +138,11 @@ class BindTestNoWSGI(PulpWebservicesTests):
         #validate the permissions
         self.validate_auth(authorization.CREATE)
 
+    @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
+    @mock.patch('pulp.server.managers.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.factory.consumer_group_query_manager')
     @mock.patch('pulp.server.managers.consumer.group.cud.unbind')
-    def test_unbind(self, mock_unbind_task):
+    def test_unbind(self, mock_unbind_task, mock_group_query, mock_repo_query, mock_dist_query):
         binding = consumer_groups.ConsumerGroupBinding()
         mock_unbind_task.apply_async.return_value.id = 'foo'
 
@@ -207,3 +213,129 @@ class BindTest(base.PulpWebserviceTests):
         path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
         call_status, call_body = self.get(path)
         self.assertEqual(401, call_status)
+
+    def test_bindings_invalid_repo_distributor(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given an invalid distributor id, the binding fails.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
+        params = {
+            'repo_id': REPO_ID,
+            'distributor_id': 'notadistributor'
+        }
+
+        # Test
+        call_status, call_body = self.post(path, params)
+        self.assertEqual(404, call_status)
+
+    def test_bindings_invalid_repo_id(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given an invalid repo id, the binding fails.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
+        params = {
+            'repo_id': 'notarepo',
+            'distributor_id': DISTRIBUTOR_ID
+        }
+
+        # Test
+        call_status, call_body = self.post(path, params)
+        self.assertEqual(404, call_status)
+
+    def test_bindings_invalid_group_id(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given an invalid group id, the binding fails.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/notagroup/bindings/'
+        params = {
+            'repo_id': REPO_ID,
+            'distributor_id': DISTRIBUTOR_ID
+        }
+
+        # Test
+        call_status, call_body = self.post(path, params)
+        self.assertEqual(404, call_status)
+
+    def test_bindings(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given valid arguments, the binding succeeds.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
+        params = {
+            'repo_id': REPO_ID,
+            'distributor_id': DISTRIBUTOR_ID
+        }
+
+        # Test
+        call_status, call_body = self.post(path, params)
+        self.assertEqual(202, call_status)
+
+    def test_unbinding_invalid_repo_distributor(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBinding.DELETE
+        to confirm that when given an invalid distributor id, the binding fails.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, 'notadistributor')
+
+        # Test
+        call_status, call_body = self.delete(path)
+        self.assertEqual(404, call_status)
+
+    def test_unbinding_invalid_repo_id(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBinding.DELETE
+        to confirm that when given an invalid repo id, the binding fails.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, 'notarepo', DISTRIBUTOR_ID)
+
+        # Test
+        call_status, call_body = self.delete(path)
+        self.assertEqual(404, call_status)
+
+    def test_unbinding_invalid_group_id(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.DELETE
+        to confirm that when given an invalid group id, the binding fails.
+        """
+        # Setup
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % ('notagroup', REPO_ID, DISTRIBUTOR_ID)
+
+        # Test
+        call_status, call_body = self.delete(path)
+        self.assertEqual(404, call_status)
+
+    def test_unbinding(self):
+        """
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.DELETE
+        to confirm that when given valid arguments, the binding succeeds.
+        """
+        # Setup a binding to be deleted
+        self.populate()
+        path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
+        params = {
+            'repo_id': REPO_ID,
+            'distributor_id': DISTRIBUTOR_ID
+        }
+        self.post(path, params)
+        path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
+
+        # Test
+        call_status, call_body = self.delete(path)
+        self.assertEqual(202, call_status)
