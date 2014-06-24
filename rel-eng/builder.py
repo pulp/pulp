@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import os
 import sys
 import shutil
@@ -408,6 +409,7 @@ def get_deps_for_dist(dist_key):
     :returns: a list of packages
     :rtype: set of str
     """
+    # Add the deps that are included directly in pulp
     deps_packages = set([name for name in os.listdir(DEPS_DIR)
                          if os.path.isdir(os.path.join(DEPS_DIR, name))])
 
@@ -417,7 +419,26 @@ def get_deps_for_dist(dist_key):
         if dist_key in dist_list:
             dist_deps.append(dep)
 
+    # Add the deps from other locations in koji
+    for (dep, data) in get_external_package_deps().iteritems():
+        if dist_key in data[u'platform']:
+            dist_deps.append(dep)
+
     return set(dist_deps)
+
+
+def get_external_package_deps():
+    """
+    Get the dictionary of all the external package deps
+
+    :return: Data structure of the external package deps
+    :rtype: dict
+    """
+    deps_file = os.path.join(DEPS_DIR, 'external_deps.json')
+    deps_dict = {}
+    with open(deps_file) as file_handle:
+        deps_dict = json.load(file_handle)
+    return deps_dict
 
 
 def add_packages_to_tag(base_tag):
@@ -446,25 +467,42 @@ def add_packages_to_tag(base_tag):
             print "adding %s to %s" % (package, build_tag)
             mysession.packageListAdd(build_tag, package, current_user)
 
-        # verify all of the versions of the packages
+        # Build the list of package NVR to check in koji
+        deps_list_nevra = set()
+
+        # Add the deps built by Pulp
         for package in dist_deps:
-            # Get the current version of the dep and add it to the tag if it exists in koji
-            specfile = os.path.join(DEPS_DIR, package, "%s.spec" % package)
-            command = 'rpm --queryformat "%{RPMTAG_VERSION}-%{RPMTAG_RELEASE} "' \
-                      ' --specfile ' + specfile + ' | cut -f1 -d" "'
-            result = str(subprocess.check_output(command, shell=True))
-            version = result.strip()
-            # remove the distkey from the version string
-            version = version[:version.rfind('.')]
-            package_nvr = "%s-%s.%s" % (package, version, dist_key)
-            # Verify that this version of the package is not already in the tag
-            if package_nvr not in build_tag_existing_builds:
-                # verify that the package_nvr exists in koji at all
-                existing = mysession.search(package_nvr, 'build', 'glob')
-                if existing:
-                    print "Adding %s to %s" % (package_nvr, build_tag)
-                    task_id = mysession.tagBuild(build_tag, package_nvr)
-                    task_list.append(task_id)
+            dep_dir = os.path.join(DEPS_DIR, package)
+            # Only process deps that havea  directory matching the package name in the deps dir
+            if os.path.exists(dep_dir):
+                # Get the current version of the dep and add it to the tag if it exists in koji
+                specfile = os.path.join(DEPS_DIR, package, "%s.spec" % package)
+                command = 'rpm --queryformat "%{RPMTAG_VERSION}-%{RPMTAG_RELEASE} "' \
+                          ' --specfile ' + specfile + ' | cut -f1 -d" "'
+                result = str(subprocess.check_output(command, shell=True))
+                version = result.strip()
+                # remove the distkey from the version string
+                version = version[:version.rfind('.')]
+                package_nvr = "%s-%s.%s" % (package, version, dist_key)
+                deps_list_nevra.add(package_nvr)
+
+        # Add the deps built somewhere else in Koji
+        for (dep, data) in get_external_package_deps().iteritems():
+            if dist_key in data[u'platform']:
+                package_nevra = "%s-%s.%s" % (dep, data[u'version'], dist_key)
+                deps_list_nevra.add(package_nevra)
+
+        # filter out deps we already know about
+        deps_list_nevra = deps_list_nevra.difference(build_tag_existing_builds)
+
+        # Verify & Add the deps to koji
+        for dep_nevra in deps_list_nevra:
+            # verify that the package_nvr exists in koji at all
+            existing = mysession.search(dep_nevra, 'build', 'glob')
+            if existing:
+                print "Adding %s to %s" % (dep_nevra, build_tag)
+                task_id = mysession.tagBuild(build_tag, dep_nevra)
+                task_list.append(task_id)
 
         # add the missing pulp packages
         pulp_packages = set(dist_info.get(PULP_PACKAGES))
