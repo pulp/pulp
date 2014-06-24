@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.21.beta%{?dist}
+Release: 0.22.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,12 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Jun 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.22.beta
+- 1104654 - Don't require python-oauth2 on RHEL 5. (rbarlow@redhat.com)
+- 1020912 - add pulp_manage_puppet selinux boolean (lzap+git@redhat.com)
+- 1110668 - consumer group binding calls now return 404 when invalid group,
+  repo, or distributor ids are given (jcline@redhat.com)
+
 * Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
 - 1074426 - Updated the repository group API docs to reflect actual DELETE
   behaviour (jcline@redhat.com)
