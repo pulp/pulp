@@ -216,8 +216,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_bindings_invalid_repo_distributor(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings#POST
-        to confirm that when given an invalid distributor id, the binding fails
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given an invalid distributor id, the binding fails.
         """
         # Setup
         self.populate()
@@ -233,8 +233,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_bindings_invalid_repo_id(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings#POST
-        to confirm that when given an invalid repo id, the binding fails
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given an invalid repo id, the binding fails.
         """
         # Setup
         self.populate()
@@ -250,8 +250,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_bindings_invalid_group_id(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings#POST
-        to confirm that when given an invalid group id, the binding fails
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given an invalid group id, the binding fails.
         """
         # Setup
         self.populate()
@@ -267,8 +267,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_bindings(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings#POST
-        to confirm that when given valid arguments, the binding succeeds
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
+        to confirm that when given valid arguments, the binding succeeds.
         """
         # Setup
         self.populate()
@@ -284,8 +284,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_unbinding_invalid_repo_distributor(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBinding#DELETE
-        to confirm that when given an invalid distributor id, the binding fails
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBinding.DELETE
+        to confirm that when given an invalid distributor id, the binding fails.
         """
         # Setup
         self.populate()
@@ -297,8 +297,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_unbinding_invalid_repo_id(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBinding#DELETE
-        to confirm that when given an invalid repo id, the binding fails
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBinding.DELETE
+        to confirm that when given an invalid repo id, the binding fails.
         """
         # Setup
         self.populate()
@@ -310,8 +310,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_unbinding_invalid_group_id(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings#DELETE
-        to confirm that when given an invalid group id, the binding fails
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.DELETE
+        to confirm that when given an invalid group id, the binding fails.
         """
         # Setup
         self.populate()
@@ -323,8 +323,8 @@ class BindTest(base.PulpWebserviceTests):
 
     def test_unbinding(self):
         """
-        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings#DELETE
-        to confirm that when given valid arguments, the binding succeeds
+        Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.DELETE
+        to confirm that when given valid arguments, the binding succeeds.
         """
         # Setup a binding to be deleted
         self.populate()

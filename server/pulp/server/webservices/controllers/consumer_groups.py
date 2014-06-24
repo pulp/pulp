@@ -249,26 +249,7 @@ class ConsumerGroupBindings(JSONController):
         options = body.get('options', {})
         notify_agent = body.get('notify_agent', True)
 
-        # Confirm the group, repository, and distributor exist
-        missing_resources = {}
-
-        group_manager = managers_factory.consumer_group_query_manager()
-        repo_manager = managers_factory.repo_query_manager()
-        distributor_manager = managers_factory.repo_distributor_manager()
-        try:
-            group_manager.get_group(group_id)
-        except MissingResource:
-            missing_resources['group_id'] = group_id
-        repo = repo_manager.find_by_id(repo_id)
-        if repo is None:
-            missing_resources['repo_id'] = repo_id
-        try:
-            distributor_manager.get_distributor(repo_id, distributor_id)
-        except MissingResource:
-            missing_resources['distributor_id'] = distributor_id
-
-        if len(missing_resources) > 0:
-            raise MissingResource(**missing_resources)
+        verify_group_resources(group_id, repo_id, distributor_id)
 
         bind_args_tuple = (group_id, repo_id, distributor_id, notify_agent, binding_config,
                            options)
@@ -322,31 +303,45 @@ class ConsumerGroupBinding(JSONController):
             Or, None if bind does not exist.
         @rtype: dict
         """
-        # Confirm the group, repository, and distributor exist
-        missing_resources = {}
-
-        group_manager = managers_factory.consumer_group_query_manager()
-        repo_manager = managers_factory.repo_query_manager()
-        distributor_manager = managers_factory.repo_distributor_manager()
-        try:
-            group_manager.get_group(group_id)
-        except MissingResource:
-            missing_resources['group_id'] = group_id
-        repo = repo_manager.find_by_id(repo_id)
-        if repo is None:
-            missing_resources['repo_id'] = repo_id
-        try:
-            distributor_manager.get_distributor(repo_id, distributor_id)
-        except MissingResource:
-            missing_resources['distributor_id'] = distributor_id
-
-        if len(missing_resources) > 0:
-            raise MissingResource(**missing_resources)
+        verify_group_resources(group_id, repo_id, distributor_id)
 
         unbind_args_tuple = (group_id, repo_id, distributor_id, {})
         async_task = unbind.apply_async(unbind_args_tuple)
         raise pulp_exceptions.OperationPostponed(async_task)
 
+
+def verify_group_resources(group_id, repo_id, distributor_id):
+    """
+    Confirm the group, repository, and distributor exist
+
+    :param group_id:        The consumer group id to verify the existence of
+    :type  group_id:        str
+    :param repo_id:         The repository id to confirm the existence of
+    :type  repo_id:         str
+    :param distributor_id:  The distributor id to confirm the existence of on the repository
+    :type  distributor_id:  str
+
+    :raises MissingResource: if one or more of the resources is missing
+    """
+    missing_resources = {}
+
+    group_manager = managers_factory.consumer_group_query_manager()
+    repo_manager = managers_factory.repo_query_manager()
+    distributor_manager = managers_factory.repo_distributor_manager()
+    try:
+        group_manager.get_group(group_id)
+    except MissingResource:
+        missing_resources['group_id'] = group_id
+    repo = repo_manager.find_by_id(repo_id)
+    if repo is None:
+        missing_resources['repo_id'] = repo_id
+    try:
+        distributor_manager.get_distributor(repo_id, distributor_id)
+    except MissingResource:
+        missing_resources['distributor_id'] = distributor_id
+
+    if len(missing_resources) > 0:
+        raise MissingResource(**missing_resources)
 
 # web.py application -----------------------------------------------------------
 
