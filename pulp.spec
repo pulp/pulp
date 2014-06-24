@@ -15,9 +15,11 @@
 
 %if 0%{?rhel} == 5
 %define pulp_admin 0
+%define pulp_client_oauth 0
 %define pulp_server 0
 %else
 %define pulp_admin 1
+%define pulp_client_oauth 1
 %define pulp_server 1
 %endif
 
@@ -39,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.19.beta%{?dist}
+Release: 0.21.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -383,7 +385,9 @@ A collection of components that are common between the pulp server and client.
 Summary: Pulp REST bindings for python
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+%if %{pulp_client_oauth}
 Requires: python-oauth2 >= 1.5.170-2.pulp
+%endif
 Requires: m2crypto
 
 %description -n python-pulp-bindings
@@ -600,6 +604,31 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
+- 1074426 - Updated the repository group API docs to reflect actual DELETE
+  behaviour (jcline@redhat.com)
+- 1109430 - goferd supporting systemd. (jortel@redhat.com)
+- 1105636 - saving a unit through a conduit now fails over to adding or
+  updating if a unit appears or disappears unexpectedly (mhrivnak@redhat.com)
+- 1094286 - failing to include 'options' or 'units' during content
+  install/update/uninstall calls on consumers now results in a 400 code
+  (jcline@redhat.com)
+- 1100805 - Fixing consumer group bind and unbind and moving tasks from
+  tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
+- 1094264 - Retrieving bindings by consumer and repository now returns 404 if
+  the consumer or repository ids are invalid. (jcline@redhat.com)
+- 1060866 - The Repository Group Distributors API is now documented
+  (jcline@redhat.com)
+- 1097781 - Indicate that consumer bind fails when it does.
+  (rbarlow@redhat.com)
+
+* Tue Jun 10 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.20.beta
+- 1107782 - fixed in gofer 1.2.1. (jortel@redhat.com)
+- 1102393 - Rework how we select the queue for new reservations.
+  (rbarlow@redhat.com)
+- 1100892 - check if filename exists before printing (cduryee@redhat.com)
+- 1100330 - Improve error message and documentation. (rbarlow@redhat.com)
+
 * Thu May 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.19.beta
 - 1102236 - pass the authenticator to the reply consumer. (jortel@redhat.com)
 - 1099272 - bump mongodb version requirement in docs (cduryee@redhat.com)

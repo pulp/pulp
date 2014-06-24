@@ -2,8 +2,6 @@
 This module contains management functions for the models found in the
 pulp.server.db.model.resources module.
 """
-from gettext import gettext as _
-import pymongo
 import random
 
 from pulp.server.db.model import criteria, resources
