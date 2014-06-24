@@ -1,16 +1,6 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import itertools
 import logging
 import time
 from gettext import gettext as _
@@ -31,6 +21,8 @@ _DATABASE = None
 
 _LOG = logging.getLogger(__name__)
 _DEFAULT_MAX_POOL_SIZE = 10
+_MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
+
 
 # -- connection api ------------------------------------------------------------
 
@@ -64,7 +56,20 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
         _LOG.info("Attempting Database connection with seeds = %s" % seeds)
         _LOG.info('Connection Arguments: %s' % connection_kwargs)
 
-        _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
+        # Wait until the Mongo database is available
+        while True:
+            try:
+                _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
+            except pymongo.errors.ConnectionFailure:
+                next_delay = _MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next()
+                msg = _(
+                    "Could not connect to MongoDB at %(url)s ... Waiting %(retry_timeout)s seconds "
+                    "and trying again.")
+                _LOG.error(msg % {'retry_timeout': next_delay, 'url': seeds})
+            else:
+                break
+            time.sleep(next_delay)
+
         # Decorate the methods that actually send messages to the db over the
         # network. These are the methods that call start_request, and the
         # decorator causes them call an corresponding end_request
