@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.22.beta%{?dist}
+Release: 0.23.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Jun 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.23.beta
+- 1110674 - A 400 Bad Request is returned when attempting to bind a consumer
+  group to an invalid repo or distributor id (jcline@redhat.com)
+
 * Tue Jun 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.22.beta
 - 1104654 - Don't require python-oauth2 on RHEL 5. (rbarlow@redhat.com)
 - 1020912 - add pulp_manage_puppet selinux boolean (lzap+git@redhat.com)
