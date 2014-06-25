@@ -46,10 +46,6 @@ class TestInitialize(unittest.TestCase):
         initialize()
         self.assertTrue(not self.mock_db_connection.called)
 
-    def test_initialize_calls_db_connection_initialize(self):
-        initialize()
-        self.mock_db_connection.initialize.assert_called_once_with()
-
     def test_initialize_calls_plugin_api_initialize(self):
         initialize()
         self.mock_plugin_api.initialize.assert_called_once_with()
