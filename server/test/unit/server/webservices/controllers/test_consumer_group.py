@@ -217,7 +217,8 @@ class BindTest(base.PulpWebserviceTests):
     def test_bindings_invalid_repo_distributor(self):
         """
         Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
-        to confirm that when given an invalid distributor id, the binding fails.
+        to confirm that when given an invalid distributor id, the binding fails and a 400
+        code is returned.
         """
         # Setup
         self.populate()
@@ -229,12 +230,13 @@ class BindTest(base.PulpWebserviceTests):
 
         # Test
         call_status, call_body = self.post(path, params)
-        self.assertEqual(404, call_status)
+        self.assertEqual(400, call_status)
 
     def test_bindings_invalid_repo_id(self):
         """
         Test pulp.server.webservices.controllers.consumer_groups.ConsumerGroupBindings.POST
-        to confirm that when given an invalid repo id, the binding fails.
+        to confirm that when given an invalid repo id, the binding fails and a 400 code
+        is returned.
         """
         # Setup
         self.populate()
@@ -246,7 +248,7 @@ class BindTest(base.PulpWebserviceTests):
 
         # Test
         call_status, call_body = self.post(path, params)
-        self.assertEqual(404, call_status)
+        self.assertEqual(400, call_status)
 
     def test_bindings_invalid_group_id(self):
         """
