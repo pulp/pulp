@@ -464,7 +464,7 @@ def add_packages_to_tag(base_tag):
         # add the regular dependencies
         for package in delta:
             # Add the package to the tag
-            print "adding %s to %s" % (package, build_tag)
+            print "adding package %s to %s" % (package, build_tag)
             mysession.packageListAdd(build_tag, package, current_user)
 
         # Build the list of package NVR to check in koji
@@ -508,7 +508,7 @@ def add_packages_to_tag(base_tag):
         pulp_packages = set(dist_info.get(PULP_PACKAGES))
         delta = pulp_packages.difference(packages_in_tag)
         for package in delta:
-            print "adding %s to %s" % (package, build_tag)
+            print "adding build %s to %s" % (package, build_tag)
             mysession.packageListAdd(build_tag, package, current_user)
 
     # Monitor the task list until all are completed
@@ -541,7 +541,8 @@ if not opts.disable_build:
 # Don't build the repos if we are building a dependency
 if not opts.disable_repo_build:
     # Download the rpms and create the yum repos
-    for distkey, distvalue in DISTRIBUTION_INFO.iteritems():
+    for distkey in DIST_LIST:
+        distvalue = DISTRIBUTION_INFO[distkey]
         build_target = "%s-%s" % (build_tag, distvalue.get(DIST_KOJI_NAME))
         output_dir = os.path.join(MASH_DIR, distvalue.get(REPO_NAME))
         ensure_dir(output_dir)
