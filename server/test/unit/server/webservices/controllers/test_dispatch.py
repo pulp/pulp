@@ -2,6 +2,7 @@
 This module contains tests for the pulp.server.webservices.dispatch module.
 """
 from datetime import datetime
+import json
 import uuid
 
 import mock
@@ -9,7 +10,9 @@ import mock
 from .... import base
 from pulp.common import constants
 from pulp.devel.unit.server.base import PulpWebservicesTests
+from pulp.devel.unit.util import compare_dict
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import PulpCodedException, MissingResource
@@ -212,3 +215,97 @@ class TestTaskCollection(base.PulpWebserviceTests):
         self.assertTrue(isinstance(body, dict))
         self.assertTrue('Missing resource' in body['error_message'])
         self.assertTrue(non_existing_task_id in body['error_message'])
+
+
+class SearchTaskCollectionTests(PulpWebservicesTests):
+
+    def get_task(self):
+        return {u'task_id': u'foo',
+                u'spawned_tasks': [u'bar', u'baz']}
+
+    @mock.patch('pulp.server.webservices.controllers.dispatch.SearchTaskCollection.'
+                '_get_query_results_from_get', autospec=True)
+    def test_get(self, mock_get_results):
+        search_controller = dispatch_controller.SearchTaskCollection()
+        mock_get_results.return_value = [self.get_task()]
+        processed_tasks_json = search_controller.GET()
+
+        # Mimic the processing
+        updated_task = dispatch_controller.task_serializer(self.get_task())
+        processed_tasks = json.loads(processed_tasks_json)
+        compare_dict(updated_task, processed_tasks[0])
+
+        #validate the permissions
+        self.validate_auth(authorization.READ)
+
+    @mock.patch('pulp.server.webservices.controllers.dispatch.SearchTaskCollection.'
+                '_get_query_results_from_post', autospec=True)
+    def test_post(self, mock_get_results):
+        search_controller = dispatch_controller.SearchTaskCollection()
+        mock_get_results.return_value = [self.get_task()]
+        processed_tasks_json = search_controller.POST()
+
+        # Mimic the processing
+        updated_task = dispatch_controller.task_serializer(self.get_task())
+        processed_tasks = json.loads(processed_tasks_json)
+        compare_dict(updated_task, processed_tasks[0])
+
+        #validate the permissions
+        self.validate_auth(authorization.READ)
+    #
+    # @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
+    # @mock.patch('pulp.server.tasks.repository.distributor_delete', autospec=True)
+    # def test_delete(self, mock_delete_task, mock_manager_factory):
+    #     repo_distributor = repositories.RepoDistributor()
+    #
+    #     async_task = AsyncResult('foo-id')
+    #     mock_delete_task.apply_async_with_reservation.return_value = async_task
+    #     self.assertRaises(OperationPostponed, repo_distributor.DELETE,
+    #                       "foo-repo", "foo-distributor")
+    #     task_tags = ['pulp:repository:foo-repo',
+    #                  'pulp:repository_distributor:foo-distributor',
+    #                  'pulp:action:remove_distributor']
+    #     mock_delete_task.apply_async_with_reservation.assert_called_once_with(
+    #         tags.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
+    #         ['foo-repo', 'foo-distributor'], tags=task_tags)
+    #
+    #     #validate the permissions
+    #     self.validate_auth(authorization.UPDATE)
+    #
+    #     try:
+    #         repo_distributor.DELETE("foo-repo", "foo-distributor")
+    #     except OperationPostponed, op:
+    #         self.assertEquals(op.call_report, async_task)
+    #
+    # @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
+    # @mock.patch('pulp.server.tasks.repository.distributor_update', autospec=True)
+    # def test_put(self, mock_update_task, mock_manager):
+    #     repo_distributor = repositories.RepoDistributor()
+    #     new_config = {'key': 'updated'}
+    #     repo_distributor.params = mock.Mock(return_value={'distributor_config': new_config,
+    #                                                       'delta': {}})
+    #
+    #     async_task = AsyncResult('foo-id')
+    #     mock_update_task.apply_async_with_reservation.return_value = async_task
+    #     self.assertRaises(OperationPostponed, repo_distributor.PUT, "foo-repo", "foo-distributor")
+    #
+    #     task_tags = ['pulp:repository:foo-repo',
+    #                  'pulp:repository_distributor:foo-distributor',
+    #                  'pulp:action:update_distributor']
+    #     mock_update_task.apply_async_with_reservation.assert_called_once_with(
+    #         tags.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
+    #         ['foo-repo', 'foo-distributor', new_config, {}], tags=task_tags)
+    #
+    #     #validate the permissions
+    #     self.validate_auth(authorization.UPDATE)
+    #
+    #     try:
+    #         repo_distributor.PUT("foo-repo", "foo-distributor")
+    #     except OperationPostponed, op:
+    #         self.assertEquals(op.call_report, async_task)
+    #
+    # @mock.patch('pulp.server.tasks.repository.distributor_update', autospec=True)
+    # def test_put_missing_config_raises_exception(self, mock_update_task):
+    #     repo_distributor = repositories.RepoDistributor()
+    #     repo_distributor.params = mock.Mock(return_value={'distributor_config': None})
+    #     self.assertRaises(MissingResource, repo_distributor.PUT, 'foo', 'bar')
