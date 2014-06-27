@@ -2,6 +2,7 @@
 This module contains tests for the pulp.server.webservices.dispatch module.
 """
 from datetime import datetime
+import json
 import uuid
 
 import mock
@@ -9,7 +10,9 @@ import mock
 from .... import base
 from pulp.common import constants
 from pulp.devel.unit.server.base import PulpWebservicesTests
+from pulp.devel.unit.util import compare_dict
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import PulpCodedException, MissingResource
@@ -212,3 +215,40 @@ class TestTaskCollection(base.PulpWebserviceTests):
         self.assertTrue(isinstance(body, dict))
         self.assertTrue('Missing resource' in body['error_message'])
         self.assertTrue(non_existing_task_id in body['error_message'])
+
+
+class SearchTaskCollectionTests(PulpWebservicesTests):
+
+    def get_task(self):
+        return {u'task_id': u'foo',
+                u'spawned_tasks': [u'bar', u'baz']}
+
+    @mock.patch('pulp.server.webservices.controllers.dispatch.SearchTaskCollection.'
+                '_get_query_results_from_get', autospec=True)
+    def test_get(self, mock_get_results):
+        search_controller = dispatch_controller.SearchTaskCollection()
+        mock_get_results.return_value = [self.get_task()]
+        processed_tasks_json = search_controller.GET()
+
+        # Mimic the processing
+        updated_task = dispatch_controller.task_serializer(self.get_task())
+        processed_tasks = json.loads(processed_tasks_json)
+        compare_dict(updated_task, processed_tasks[0])
+
+        #validate the permissions
+        self.validate_auth(authorization.READ)
+
+    @mock.patch('pulp.server.webservices.controllers.dispatch.SearchTaskCollection.'
+                '_get_query_results_from_post', autospec=True)
+    def test_post(self, mock_get_results):
+        search_controller = dispatch_controller.SearchTaskCollection()
+        mock_get_results.return_value = [self.get_task()]
+        processed_tasks_json = search_controller.POST()
+
+        # Mimic the processing
+        updated_task = dispatch_controller.task_serializer(self.get_task())
+        processed_tasks = json.loads(processed_tasks_json)
+        compare_dict(updated_task, processed_tasks[0])
+
+        #validate the permissions
+        self.validate_auth(authorization.READ)
