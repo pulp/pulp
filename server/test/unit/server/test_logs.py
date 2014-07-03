@@ -379,11 +379,13 @@ class TestCompliantSysLogHandler(unittest.TestCase):
                                               facility=logs.CompliantSysLogHandler.LOG_DAEMON)
         handler.setFormatter(formatter)
         try:
-            raise Exception('This is terrible.')
+            pid = 1234
+            raise Exception('This is terrible. %d killed' % pid)
         except:
             exc_info = sys.exc_info()
-        log_message = 'Uh oh.'
-        log_args = tuple()
+        task_id = 5678
+        log_message = 'Uh oh.  task [%d] failed'
+        log_args = (task_id,)
         record = logging.LogRecord(
             name='pulp.test.module', level=logging.ERROR, pathname='/some/path', lineno=527,
             msg=log_message, args=log_args, exc_info=exc_info, func='some_function')
@@ -410,7 +412,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         # The last element of traceback lines is an empty string that won't be printed, so let's
         # pop it off
         traceback_lines.pop()
-        expected_messages = ['Uh oh.']
+        expected_messages = [log_message % task_id]
         expected_messages.extend(traceback_lines)
         messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
@@ -483,8 +485,20 @@ class TestStartLogging(unittest.TestCase):
     @mock.patch('pulp.server.logs.logging')
     def test_calls__captureWarnings(self, _logging):
         """
-        Ensure that start_logging() calls _blacklist_loggers().
+        Ensure that start_logging() calls captureWarnings().
         """
+        logs.start_logging()
+
+        _logging.captureWarnings.assert_called_once_with(True)
+
+    @mock.patch('pulp.server.logs.logging')
+    def test_calls__captureWarnings_with_attribute_error(self, _logging):
+        """
+        Ensure that start_logging() calls captureWarnings() and handles AttributeError
+        The validation for this is that the AttributeError is swallowed.
+        """
+        _logging.captureWarnings.side_effect = AttributeError
+
         logs.start_logging()
 
         _logging.captureWarnings.assert_called_once_with(True)
