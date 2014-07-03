@@ -117,10 +117,11 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         :type  record: logging.LogRecord
         """
         if record.exc_info:
+            trace = self.formatter.formatException(record.exc_info)
             if not isinstance(record.msg, basestring):
                 record.msg = unicode(record.msg)
             record.msg += u'\n'
-            record.msg += self.formatter.formatException(record.exc_info)
+            record.msg += trace.replace('%', '%%')
             record.exc_info = None
         formatter_buffer = self._calculate_formatter_buffer(record)
         for line in record.getMessage().split('\n'):
