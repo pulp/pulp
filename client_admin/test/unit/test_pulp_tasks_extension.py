@@ -23,31 +23,28 @@ from pulp.client.extensions.exceptions import NotFoundException, PulpServerExcep
 # -- constants ----------------------------------------------------------------
 
 EXAMPLE_CALL_REPORT = {
-    "exception": None,
-    "task_group_id": None,
-    "task_id": "c54742d4-9f8b-11e1-9837-00508d977dff",
-    "tags": [
-        "pulp:repository:f16",
-        "pulp:action:sync"
+    'exception': None,
+    'task_type': 'pulp.server.tasks.repository.delete',
+    '_href': '/pulp/api/v2/tasks/b2308412-5149-424d-9b04-85a8d6e03067/',
+    'task_id': 'c54742d4-9f8b-11e1-9837-00508d977dff',
+    'tags': [
+        'pulp:repository:f16',
+        'pulp:action:sync'
     ],
-    "reasons": [
-            {
-            "operation": "update",
-            "resource_type": "repository",
-            "resource_id": "f16"
-        }
-    ],
-    "start_time": None,
-    "traceback": None,
-    "state": "waiting",
-    "finish_time": None,
-    "schedule_id": None,
-    "result": None,
-    "progress": {},
-    "response": "postponed",
-    "call_request_group_id": 'default-group',
-    "call_request_id": 'default-id',
-    "call_request_tags": []
+    'finish_time': '2014-06-05T15:56:12Z',
+    '_ns': 'task_status',
+    'start_time': None,
+    'traceback': None,
+    'spawned_tasks': [],
+    'progress_report': {},
+    'queue': 'reserved_resource_worker-3@mhrivnak.rdu.redhat.com.dq',
+    'state': 'waiting',
+    'result': None,
+    'error': None,
+    '_id': {
+        '$oid': '5390931b81a97875924cc0d1'
+    },
+    'id': '5390931b3de3a3290f57e32f'
 }
 
 

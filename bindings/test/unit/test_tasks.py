@@ -13,6 +13,7 @@
 """
 This module contains tests for the pulp.bindings.tasks module.
 """
+import copy
 import unittest
 
 import mock
@@ -61,3 +62,103 @@ class TaskSearchAPITests(unittest.TestCase):
         self.assertEqual(task.tags, response_body[0]['tags'])
         self.assertEqual(task.start_time, response_body[0]['start_time'])
         self.assertEqual(task.state, response_body[0]['state'])
+
+
+class TestGetAllTasks(unittest.TestCase):
+    def setUp(self):
+        self.server = mock.MagicMock()
+        self.api = tasks.TasksAPI(self.server)
+
+        self.server.GET.return_value.response_body = copy.deepcopy(TASKS)
+
+    def test_sorting(self):
+        ret = self.api.get_all_tasks().response_body
+
+        self.assertEqual(len(ret), 3)
+        # make sure the order was adjusted correctly, sorting by "id"
+        self.assertEqual(ret[0].task_id, TASKS[0]['task_id'])
+        self.assertEqual(ret[1].task_id, TASKS[2]['task_id'])
+        self.assertEqual(ret[2].task_id, TASKS[1]['task_id'])
+
+    def test_return_type(self):
+        ret = self.api.get_all_tasks().response_body
+
+        self.assertEqual(len(ret), 3)
+        for task in ret:
+            self.assertTrue(isinstance(task, responses.Task))
+
+
+TASKS = [
+    {
+        'exception': None,
+        'task_type': 'pulp.server.tasks.repository.delete',
+        '_href': '/pulp/api/v2/tasks/b2308412-5149-424d-9b04-85a8d6e03067/',
+        'task_id': 'b2308412-5149-424d-9b04-85a8d6e03067',
+        'tags': [
+            'pulp:repository:foo',
+            'pulp:action:delete'
+        ],
+        'finish_time': '2014-06-05T15:56:12Z',
+        '_ns': 'task_status',
+        'start_time': '2014-06-05T15:56:11Z',
+        'traceback': None,
+        'spawned_tasks': [],
+        'progress_report': {},
+        'queue': 'reserved_resource_worker-3@mhrivnak.rdu.redhat.com.dq',
+        'state': 'finished',
+        'result': None,
+        'error': None,
+        '_id': {
+            '$oid': '5390931b81a97875924cc0d1'
+        },
+        'id': '5390931b3de3a3290f57e32f'
+    },
+    {
+        'exception': None,
+        'task_type': 'pulp.server.tasks.repository.delete',
+        '_href': '/pulp/api/v2/tasks/b2308412-5149-424d-9b04-85a8d6e03067/',
+        'task_id': '8f7a94dc-370f-4d4d-a41e-527050ef2b20',
+        'tags': [
+            'pulp:repository:foo',
+            'pulp:action:delete'
+        ],
+        'finish_time': '2014-06-05T15:56:16Z',
+        '_ns': 'task_status',
+        'start_time': '2014-06-05T15:56:15Z',
+        'traceback': None,
+        'spawned_tasks': [],
+        'progress_report': {},
+        'queue': 'reserved_resource_worker-3@mhrivnak.rdu.redhat.com.dq',
+        'state': 'finished',
+        'result': None,
+        'error': None,
+        '_id': {
+            '$oid': '5390932681a97875924cc0d3'
+        },
+        'id': '539093263de3a32911ddf3fc'
+    },
+    {
+        'exception': None,
+        'task_type': 'pulp.server.tasks.repository.delete',
+        '_href': '/pulp/api/v2/tasks/b2308412-5149-424d-9b04-85a8d6e03067/',
+        'task_id': 'cd76d75c-0dad-47ec-8825-130e412543e4',
+        'tags': [
+            'pulp:repository:foo',
+            'pulp:action:delete'
+        ],
+        'finish_time': '2014-06-05T15:56:14Z',
+        '_ns': 'task_status',
+        'start_time': '2014-06-05T15:56:13Z',
+        'traceback': None,
+        'spawned_tasks': [],
+        'progress_report': {},
+        'queue': 'reserved_resource_worker-3@mhrivnak.rdu.redhat.com.dq',
+        'state': 'finished',
+        'result': None,
+        'error': None,
+        '_id': {
+            '$oid': '5390932181a97875924cc0d2'
+        },
+        'id': '539093213de3a32910d49038'
+    },
+]

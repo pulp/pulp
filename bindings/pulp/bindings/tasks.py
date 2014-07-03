@@ -74,7 +74,8 @@ class TasksAPI(PulpAPI):
         response = self.server.GET(path, queries=tags)
 
         tasks = []
-        for doc in response.response_body:
+        # sort based on _id, which is chronological in mongo
+        for doc in sorted(response.response_body, key=lambda x: x[u'_id']['$oid']):
             tasks.append(Task(doc))
 
         response.response_body = tasks
