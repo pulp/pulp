@@ -159,9 +159,9 @@ class ContentSource(object):
             for section in cfg.sections():
                 descriptor = dict(cfg.items(section))
                 source = ContentSource(section, descriptor)
-                if not source.enabled:
-                    continue
                 if not source.is_valid():
+                    continue
+                if not source.enabled:
                     continue
                 sources[source.id] = source
         return sources
@@ -184,13 +184,15 @@ class ContentSource(object):
         :return: True if valid.
         :rtype: bool
         """
+        valid = False
         try:
-            self.get_cataloger()
-            self.get_downloader()
-            return is_valid(self.id, self.descriptor)
+            if is_valid(self.id, self.descriptor):
+                self.get_cataloger()
+                self.get_downloader()
+                valid = True
         except Exception:
             log.exception('source [%s] not valid', self.id)
-            return False
+        return valid
 
     @property
     def enabled(self):
