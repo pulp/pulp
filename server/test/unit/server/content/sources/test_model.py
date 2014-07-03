@@ -243,6 +243,7 @@ class TestContentSource(TestCase):
 
     @patch('pulp.server.content.sources.model.is_valid')
     def test_is_valid_no_plugin(self, mock_descriptor_is_valid):
+        mock_descriptor_is_valid.return_value = True
         source = ContentSource('s-1', {'A': 1})
         source.get_downloader = Mock()
         source.get_cataloger = Mock(side_effect=NotImplementedError())
@@ -255,11 +256,12 @@ class TestContentSource(TestCase):
 
         source.get_cataloger.assert_called_with()
         self.assertFalse(source.get_downloader.called)
-        self.assertFalse(mock_descriptor_is_valid.called)
+        self.assertTrue(mock_descriptor_is_valid.called)
         self.assertFalse(valid)
 
     @patch('pulp.server.content.sources.model.is_valid')
     def test_is_valid_no_downloader(self, mock_descriptor_is_valid):
+        mock_descriptor_is_valid.return_value = True
         source = ContentSource('s-1', {'A': 1})
         source.get_downloader = Mock(side_effect=NotImplementedError())
         source.get_cataloger = Mock()
@@ -272,7 +274,7 @@ class TestContentSource(TestCase):
 
         source.get_cataloger.assert_called_with()
         source.get_downloader.assert_called_with()
-        self.assertFalse(mock_descriptor_is_valid.called)
+        self.assertTrue(mock_descriptor_is_valid.called)
         self.assertFalse(valid)
 
     @patch('pulp.server.content.sources.model.is_valid')
@@ -288,8 +290,6 @@ class TestContentSource(TestCase):
 
         # validation
 
-        source.get_cataloger.assert_called_with()
-        source.get_downloader.assert_called_with()
         self.assertFalse(valid)
 
     def test_enabled(self):
