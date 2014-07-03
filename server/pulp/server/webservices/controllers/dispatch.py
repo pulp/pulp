@@ -1,22 +1,8 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from gettext import gettext as _
-import httplib
-
 import web
 
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.auth.authorization import READ
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import MissingResource
@@ -26,10 +12,18 @@ from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 
 
-class TaskNotFound(MissingResource):
+def task_serializer(task):
+    """
+    Update the task representation in the database to match the model for the API
 
-    def __str__(self):
-        return _('Task Not Found: %(id)s') % {'id': self.args[0]}
+    :param task: The task from the database
+    :type task: dict
+    :return: the same task modified for use by the API
+    :rtype: dict
+    """
+    task.update(serialization.dispatch.spawned_tasks(task))
+    task.update(serialization.dispatch.task_result_href(task))
+    return task
 
 
 class SearchTaskCollection(SearchController):
@@ -38,6 +32,36 @@ class SearchTaskCollection(SearchController):
     """
     def __init__(self):
         super(SearchTaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
+
+    @auth_required(READ)
+    def GET(self):
+        """
+        Searches based on a Criteria object. Pass in each Criteria field as a
+        query parameter.  For the 'fields' parameter, pass multiple fields as
+        separate key-value pairs as is normal with query parameters in URLs. For
+        example, '/v2/sometype/search/?field=id&field=display_name' will
+        return the fields 'id' and 'display_name'.
+
+        :return: json encoded response
+        :rtype: str
+        """
+        raw_tasks = self._get_query_results_from_get()
+        serialized_tasks = [task_serializer(task) for task in raw_tasks]
+        return self.ok(serialized_tasks)
+
+    @auth_required(READ)
+    def POST(self):
+        """
+        Searches based on a Criteria object. Requires a posted parameter
+        'criteria' which has a data structure that can be turned into a
+        Criteria instance.
+
+        :return: response for web browser
+        :rtype: str
+        """
+        raw_tasks = self._get_query_results_from_post()
+        serialized_tasks = [task_serializer(task) for task in raw_tasks]
+        return self.ok(serialized_tasks)
 
 
 class TaskCollection(JSONController):
@@ -74,7 +98,8 @@ class TaskResource(JSONController):
     @auth_required(authorization.DELETE)
     def DELETE(self, task_id):
         """
-        Cancel the task that is represented by the given task_id, unless it is already in a complete state.
+        Cancel the task that is represented by the given task_id, unless it is already in a
+        complete state.
 
         :param task_id: The ID of the task you wish to cancel
         :type  task_id: basestring
