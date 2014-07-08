@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for handling the mappings between
 repositories and content units.
@@ -128,10 +115,14 @@ class RepoUnitAssociationManager(object):
         association = RepoContentUnit(repo_id, unit_id, unit_type_id, owner_type, owner_id)
         RepoContentUnit.get_collection().save(association, safe=True)
 
+        manager = manager_factory.repo_manager()
+
         # update the count of associated units on the repo object
         if update_unit_count and not similar_exists:
-            manager = manager_factory.repo_manager()
             manager.update_unit_count(repo_id, unit_type_id, 1)
+
+        # update the the record for the last removed field
+        manager.update_last_unit_added(repo_id)
 
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
@@ -173,6 +164,8 @@ class RepoUnitAssociationManager(object):
         if unique_count:
             manager_factory.repo_manager().update_unit_count(
                 repo_id, unit_type_id, unique_count)
+            # update the timestamp for when the units were added to the repo
+            manager_factory.repo_manager().update_last_unit_added(repo_id)
 
     @staticmethod
     def associate_from_repo(source_repo_id, dest_repo_id, criteria=None,
@@ -397,6 +390,8 @@ class RepoUnitAssociationManager(object):
                 continue
 
             repo_manager.update_unit_count(repo_id, unit_type_id, -unique_count)
+
+        repo_manager.update_last_unit_removed(repo_id)
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,

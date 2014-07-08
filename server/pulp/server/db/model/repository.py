@@ -1,17 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import datetime
 import traceback as traceback_module
 
 import pulp.common.dateutils as dateutils
@@ -49,6 +35,13 @@ class Repo(Model):
                     the values may change as the contents of the repo change,
                     either set by the user or by an importer or distributor
     @type metadata: dict
+
+    @ivar last_unit_added: UTC timestamp of the last time a unit was added to the repository
+    @type last_unit_added: str
+
+    @ivar last_unit_removed: UTC timestamp of the last time a unit was removed from the repository
+    @type last_unit_removed: str
+
     """
 
     collection_name = 'repos'
@@ -63,6 +56,8 @@ class Repo(Model):
         self.notes = notes or {}
         self.scratchpad = {}  # default to dict in hopes the plugins will just add/remove from it
         self.content_unit_counts = content_unit_counts or {}
+        self.last_unit_added = None
+        self.last_unit_removed = None
 
         # Timeline
         # TODO: figure out how to track repo modified states

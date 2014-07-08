@@ -2,6 +2,7 @@
 
 import os
 import unittest
+import datetime
 
 import mock
 
@@ -614,6 +615,34 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.manager.update_unit_count(REPO_ID, 'rpm', 3)
         repo = Repo.get_collection().find_one({'id' : REPO_ID})
         self.assertEqual(repo['content_unit_counts']['rpm'], 3)
+
+    @mock.patch('pulp.server.managers.repo.cud.Repo.get_collection')
+    @mock.patch('pulp.server.managers.repo.cud.datetime')
+    def test__set_current_date_on_field(self, mock_datetime, mock_repo_collection):
+        mock_datetime.datetime.utcnow.return_value = 2
+        self.manager._set_current_date_on_field('foo_repo', 'field_bar')
+        update_mock = mock_repo_collection.return_value.update
+        self.assertTrue(update_mock.called)
+        update_call = update_mock.call_args[0]
+        self.assertEquals(update_call[0], {'id': 'foo_repo'})
+        set_dict = {'$set': {'field_bar': 2}}
+        self.assertEquals(update_call[1], set_dict)
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager._set_current_date_on_field')
+    def test_update_last_unit_added(self, mock_set_date):
+        self.manager.update_last_unit_added('foo')
+        self.assertTrue(mock_set_date.called)
+        call = mock_set_date.call_args[0]
+        self.assertEquals(call[0], 'foo')
+        self.assertEquals(call[1], 'last_unit_added')
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager._set_current_date_on_field')
+    def test_update_last_unit_removed(self, mock_set_date):
+        self.manager.update_last_unit_removed('foo')
+        self.assertTrue(mock_set_date.called)
+        call = mock_set_date.call_args[0]
+        self.assertEquals(call[0], 'foo')
+        self.assertEquals(call[1], 'last_unit_removed')
 
 
 class UtilityMethodsTests(unittest.TestCase):

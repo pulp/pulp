@@ -17,6 +17,7 @@ removal, and metadata update on a repository. This does not include importer
 or distributor configuration.
 """
 
+import datetime
 from gettext import gettext as _
 import logging
 import os
@@ -367,6 +368,45 @@ class RepoManager(object):
             except pymongo.errors.OperationFailure:
                 message = 'There was a problem updating repository %s' % repo_id
                 raise PulpExecutionException(message), None, sys.exc_info()[2]
+
+    @staticmethod
+    def update_last_unit_removed(repo_id):
+        """
+        Updates the UTC date record on the repository for the time the last unit was removed.
+
+        :param repo_id: identifies the repo
+        :type  repo_id: str
+
+        """
+        RepoManager._set_current_date_on_field(repo_id, 'last_unit_removed')
+
+    @staticmethod
+    def update_last_unit_added(repo_id):
+        """
+        Updates the UTC date record on the repository for the time the last unit was added.
+
+        :param repo_id: identifies the repo
+        :type  repo_id: str
+
+        """
+        RepoManager._set_current_date_on_field(repo_id, 'last_unit_added')
+
+    @staticmethod
+    def _set_current_date_on_field(repo_id, field_name):
+        """
+        Updates the UTC date record the given field to the current UTC time.
+
+        :param repo_id: identifies the repo
+        :type  repo_id: str
+
+        :param field_name: field to update
+        :type  field_name: str
+
+        """
+        spec = {'id': repo_id}
+        operation = {'$set': {field_name: datetime.datetime.utcnow()}}
+        repo_coll = Repo.get_collection()
+        repo_coll.update(spec, operation, safe=True)
 
     @staticmethod
     def update_repo_and_plugins(repo_id, repo_delta, importer_config,

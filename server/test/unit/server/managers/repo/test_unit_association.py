@@ -384,6 +384,13 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         mock_call.assert_called_once_with(self.repo_id, 'type-1', 1)
 
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_last_unit_added')
+    def test_associate_by_id_calls_update_last_unit_added(self, mock_call):
+        self.manager.associate_unit_by_id(
+            self.repo_id, 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+
+        mock_call.assert_called_once_with(self.repo_id)
+
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_unit_count')
     def test_associate_by_id_does_not_call_update_unit_count(self, mock_call):
         """
@@ -415,6 +422,13 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
             self.repo_id, 'type-1', IDS, OWNER_TYPE_USER, 'admin')
 
         mock_call.assert_called_once_with(self.repo_id, 'type-1', len(IDS))
+
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_last_unit_added')
+    def test_associate_all_by_id_calls_update_last_unit_added(self, mock_call):
+        self.manager.associate_unit_by_id(
+            self.repo_id, 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
+
+        mock_call.assert_called_once_with(self.repo_id)
 
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_unit_count')
     def test_associate_all_non_unique(self, mock_call):
@@ -514,7 +528,8 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 #                        'remove_duplicates': True}
 
 
-    def test_unassociate_via_criteria(self):
+    @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_last_unit_removed')
+    def test_unassociate_via_criteria(self, mock_call):
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id, OWNER_TYPE_USER, 'admin')
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id_2, OWNER_TYPE_USER, 'admin')
 
@@ -526,6 +541,7 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         self.assertFalse(self.manager.association_exists(self.repo_id, self.unit_id, self.unit_type_id))
         self.assertTrue(self.manager.association_exists(self.repo_id, self.unit_id_2, self.unit_type_id))
+        mock_call.assert_called_once_with(self.repo_id)
 
     def test_unassociate_via_criteria_no_matches(self):
         self.manager.associate_unit_by_id(self.repo_id, 'type-1', 'unit-1', OWNER_TYPE_USER, 'admin')
