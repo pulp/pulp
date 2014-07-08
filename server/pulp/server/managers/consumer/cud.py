@@ -186,11 +186,9 @@ class ConsumerManager(object):
             else:
                 consumer['notes'] = update_notes(consumer['notes'], delta['notes'])
 
-        if 'display_name' in delta:
-            consumer['display_name'] = delta['display_name']
-
-        if 'description' in delta:
-            consumer['description'] = delta['description']
+        for key in ('display_name', 'description', 'rsa_pub'):
+            if key in delta:
+                consumer[key] = delta[key]
 
         Consumer.get_collection().save(consumer, safe=True)
 
