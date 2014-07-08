@@ -409,7 +409,7 @@ def get_deps_for_dist(dist_key):
     :returns: a list of packages
     :rtype: set of str
     """
-    # Add the deps that are included directly in pulp
+    # Add the deps that are included directly in Pulp
     deps_packages = set([name for name in os.listdir(DEPS_DIR)
                          if os.path.isdir(os.path.join(DEPS_DIR, name))])
 
@@ -467,13 +467,13 @@ def add_packages_to_tag(base_tag):
             print "adding package %s to %s" % (package, build_tag)
             mysession.packageListAdd(build_tag, package, current_user)
 
-        # Build the list of package NVR to check in koji
-        deps_list_nevra = set()
+        # Build the set of package NVR to check in koji
+        deps_set_nevra = set()
 
         # Add the deps built by Pulp
         for package in dist_deps:
             dep_dir = os.path.join(DEPS_DIR, package)
-            # Only process deps that havea  directory matching the package name in the deps dir
+            # Only process deps that have a  directory matching the package name in the deps dir
             if os.path.exists(dep_dir):
                 # Get the current version of the dep and add it to the tag if it exists in koji
                 specfile = os.path.join(DEPS_DIR, package, "%s.spec" % package)
@@ -484,25 +484,27 @@ def add_packages_to_tag(base_tag):
                 # remove the distkey from the version string
                 version = version[:version.rfind('.')]
                 package_nvr = "%s-%s.%s" % (package, version, dist_key)
-                deps_list_nevra.add(package_nvr)
+                deps_set_nevra.add(package_nvr)
 
         # Add the deps built somewhere else in Koji
         for (dep, data) in get_external_package_deps().iteritems():
             if dist_key in data[u'platform']:
                 package_nevra = "%s-%s.%s" % (dep, data[u'version'], dist_key)
-                deps_list_nevra.add(package_nevra)
+                deps_set_nevra.add(package_nevra)
 
         # filter out deps we already know about
-        deps_list_nevra = deps_list_nevra.difference(build_tag_existing_builds)
+        new_deps_set_nevra = deps_set_nevra.difference(build_tag_existing_builds)
 
         # Verify & Add the deps to koji
-        for dep_nevra in deps_list_nevra:
+        for dep_nevra in new_deps_set_nevra:
             # verify that the package_nvr exists in koji at all
             existing = mysession.search(dep_nevra, 'build', 'glob')
             if existing:
                 print "Adding %s to %s" % (dep_nevra, build_tag)
                 task_id = mysession.tagBuild(build_tag, dep_nevra)
                 task_list.append(task_id)
+            else:
+                print "Error: Unable to find %s in koji" % dep_nevra
 
         # add the missing pulp packages
         pulp_packages = set(dist_info.get(PULP_PACKAGES))
