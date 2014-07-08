@@ -25,7 +25,7 @@ CELERYD_NODES="resource_manager"
 
 # Set the concurrency of each worker node to 1, tell the worker to participate in event
 # broadcasting, and subscribe to the resource_manager queue. DO NOT CHANGE THIS SETTING!
-CELERYD_OPTS="-c 1 --events -Q resource_manager"
+CELERYD_OPTS="-c 1 --events -Q resource_manager --umask 18"
 
 CELERYD_USER="apache"
 
