@@ -29,7 +29,7 @@ CELERY_CREATE_DIRS=1
 CELERYD_NODES=""
 
 # Set the concurrency of each worker node to 1. DO NOT CHANGE THE CONCURRENCY!
-CELERYD_OPTS="-c 1 --events"
+CELERYD_OPTS="-c 1 --events --umask 18"
 
 CELERYD_USER="apache"
 
