@@ -343,7 +343,7 @@ repositories.
 ::
 
   cd /etc/pki/tls/certs
-  cp /ca_cert_dir/ca.crt `openssl x509 -noout -hash -in ca.crt`.0
+  cp /ca_cert_dir/ca.crt `openssl x509 -noout -hash -in /ca_cert_dir/ca.crt`.0
 
 4. The agent may be configured so that it will connect to the Qpid broker using SSL by
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
