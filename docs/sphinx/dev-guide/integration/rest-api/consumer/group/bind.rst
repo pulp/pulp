@@ -35,7 +35,7 @@ more information on the format.
 
 * :response_code:`202,if the bind request was accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the consumer group, repository or distributor does not exist`
+* :response_code:`404,if the consumer group does not exist`
 
 | :return:`A` :ref:`call_report`
 
@@ -92,7 +92,7 @@ In either case step 2 results in a separate task created for each unique combina
 
 * :response_code:`202,the unbind request was accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the consumer group does not exist`
+* :response_code:`404,if the consumer group, repository, or distributor does not exist`
 
 | :return:`A` :ref:`call_report`
 
