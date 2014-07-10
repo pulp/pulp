@@ -1,29 +1,13 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import datetime
 
-import base
-from pulp.common import dateutils
+from ..... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import RepositoryGroup, PublishReport
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor, RepoGroupPublishResult
-from pulp.server.exceptions import PulpExecutionException
 from pulp.server.managers import factory as manager_factory
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoGroupPublishManagerTests(base.PulpServerTests):
     def setUp(self):
@@ -155,6 +139,6 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         last_publish = self.publish_manager.last_publish(self.group_id, self.distributor_id)
 
         # Verify
-        now = datetime.datetime.now(dateutils.local_tz())
+        now = datetime.datetime.utcnow()
         difference = now - last_publish
         self.assertTrue(difference.seconds < 2)

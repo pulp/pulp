@@ -144,7 +144,7 @@ class RepoGroupPublishManager(object):
         @type  distributor_id: str
 
         @return: timestamp of the last publish or None
-        @rtype:  datetime
+        @rtype:  datetime.datetime
         """
         distributor = manager_factory.repo_group_distributor_manager().get_distributor(group_id, distributor_id)
 
@@ -161,9 +161,9 @@ publish = task(RepoGroupPublishManager.publish, base=Task, ignore_result=True)
 
 def _now_timestamp():
     """
-    @return: timestamp suitable for indicating when a publish completed
+    @return: UTC timestamp suitable for indicating when a publish completed
     @rtype:  str
     """
-    now = datetime.datetime.now(dateutils.local_tz())
+    now = datetime.datetime.utcnow()
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format

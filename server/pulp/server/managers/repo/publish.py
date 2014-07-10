@@ -358,9 +358,9 @@ publish = task(RepoPublishManager.publish, base=Task)
 
 def _now_timestamp():
     """
-    @return: timestamp suitable for indicating when a publish completed
+    @return: UTC timestamp suitable for indicating when a publish completed
     @rtype:  str
     """
-    now = datetime.datetime.now(dateutils.local_tz())
+    now = datetime.datetime.utcnow()
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format

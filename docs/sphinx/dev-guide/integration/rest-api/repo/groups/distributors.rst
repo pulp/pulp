@@ -23,7 +23,7 @@ Retrieves all distributors associated with a given group
     "scratchpad": null,
     "repo_group_id": "test_group",
     "_ns": "repo_group_distributors",
-    "last_publish": "2014-06-12T14:38:05-04:00",
+    "last_publish": "2014-06-12T14:38:05",
     "distributor_type_id": "group_test_distributor",
     "_id": {
       "$oid": "5399f38b7bc8f60c78d856bf"

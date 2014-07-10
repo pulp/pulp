@@ -658,7 +658,7 @@ class TestDoSync(base.PulpServerTests):
 
 
 def assert_last_sync_time(time_in_iso):
-    now = datetime.datetime.now(dateutils.local_tz())
+    now = datetime.datetime.utcnow()
     finished = dateutils.parse_iso8601_datetime(time_in_iso)
 
     # Compare them within a threshold since they won't be exact
@@ -666,7 +666,7 @@ def assert_last_sync_time(time_in_iso):
     return difference.seconds < 2
 
 def add_result(repo_id, offset):
-    started = datetime.datetime.now(dateutils.local_tz())
+    started = datetime.datetime.utcnow()
     completed = started + datetime.timedelta(days=offset)
     r = RepoSyncResult.expected_result(
         repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),

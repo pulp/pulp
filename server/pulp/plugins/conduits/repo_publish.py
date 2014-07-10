@@ -74,7 +74,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
         the repo was never published, this call returns None.
 
         @return: timestamp instance describing the last publish
-        @rtype:  datetime or None
+        @rtype:  datetime.datetime or None
         """
         try:
             repo_publish_manager = manager_factory.repo_publish_manager()

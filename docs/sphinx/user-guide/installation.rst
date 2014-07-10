@@ -327,8 +327,6 @@ repositories.
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
-::
-
 4. Set the agent to start at boot.  For upstart::
 
      $ sudo chkconfig goferd on
