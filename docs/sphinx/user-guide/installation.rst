@@ -288,6 +288,17 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
   [server]
   host = localhost.localdomain
 
+3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
+   be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
+   ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine, you can simply create
+   a symbolic link to the certificate inside ``/etc/pki/tls/certs``. It is important that the name
+   of the symbolic link or of the copied certificate is the hash of the certificate, followed by a `.`
+   and a sequence number (useful in case of multiple certs with same hash), else
+   openssl will not be able to add it to the SSL context resulting in SSL validation failure.
+
+::
+
+  ln -s /etc/pki/pulp/ca.crt `openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0
 
 
 .. _consumer_installation:
@@ -322,8 +333,19 @@ repositories.
   [server]
   host = localhost.localdomain
 
+3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
+   be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
+   ``/etc/pki/pulp/ca.crt``. It is important that the name of the symbolic link
+   or of the copied certificate is the hash of the certificate, followed by a `.`
+   and a sequence number (useful in case of multiple certs with same hash), else
+   openssl will not be able to add it to the SSL context resulting in SSL validation failure.
 
-3. The agent may be configured so that it will connect to the Qpid broker using SSL by
+::
+
+  cd /etc/pki/tls/certs
+  cp /ca_cert_dir/ca.crt `openssl x509 -noout -hash -in ca.crt`.0
+
+4. The agent may be configured so that it will connect to the Qpid broker using SSL by
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
