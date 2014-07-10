@@ -30,12 +30,10 @@ def update_time_to_utc_on_collection(collection_name, field_name):
     Update the iso8601 string representation of time in a field in a collection
     from time zone specific to UTC native
 
-    :param collection_name:
+    :param collection_name: The name of the collection to update
     :type collection_name: str
-    :param field_name:
+    :param field_name: The name of the field within the collection that contains the timestamp
     :type field_name: str
-    :return:
-    :rtype:
     """
     collection = connection.get_collection(collection_name)
     for distributor in collection.find({field_name: {'$ne': None}}):
