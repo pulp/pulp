@@ -374,7 +374,7 @@ point to the certificate and private key that you want Apache to use for HTTPS.
 If you update these certs, make sure you update the SSL cert as well as it will
 need to be signed by the new CA cert so that SSL validation does not fail.
 Also make sure Apache's config settings for CA and SSL cert
-in ``/etc/httpd/conf.d/pulp.conf`` matches these settings.
+in ``/etc/httpd/conf.d/pulp.conf`` match these settings.
 
 If you want to use SSL with Qpid, see the
 :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
