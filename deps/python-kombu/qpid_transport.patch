@@ -194,10 +194,10 @@ index 85b8f5e..acd1713 100644
      :keyword userid: Default user name if not provided in the URL.
 diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
 new file mode 100644
-index 0000000..2ef44f1
+index 0000000..e929daa
 --- /dev/null
 +++ b/kombu/tests/transport/test_qpid.py
-@@ -0,0 +1,1642 @@
+@@ -0,0 +1,1767 @@
 +from __future__ import absolute_import
 +
 +import datetime
@@ -226,6 +226,9 @@ index 0000000..2ef44f1
 +from kombu.tests.case import Case, Mock, SkipTest
 +from kombu.tests.case import patch, skip_if_not_module
 +from mock import call
++
++
++QPID_MODULE = 'kombu.transport.qpid'
 +
 +
 +class ExtraAssertionsMixin(object):
@@ -509,7 +512,7 @@ index 0000000..2ef44f1
 +        created_conn = self.mock_qpid_connection.establish.return_value
 +        self.assertTrue(self.conn._qpid_conn is created_conn)
 +
-+    @patch('kombu.transport.qpid.sys.exc_info')
++    @patch(QPID_MODULE + '.sys.exc_info')
 +    @patch('qpid.messaging.Connection')
 +    def test_connection__init__mutates_ConnError_by_message(self, qpid_conn,
 +                                                            mock_exc_info):
@@ -528,7 +531,7 @@ index 0000000..2ef44f1
 +        else:
 +            self.fail('ConnectionError type was not mutated correctly')
 +
-+    @patch('kombu.transport.qpid.sys.exc_info')
++    @patch(QPID_MODULE + '.sys.exc_info')
 +    @patch('qpid.messaging.Connection')
 +    def test_connection__init__mutates_ConnError_by_code(self, qpid_conn,
 +                                                         mock_exc_info):
@@ -608,15 +611,48 @@ index 0000000..2ef44f1
 +
 +class ChannelTestBase(Case):
 +
-+    @skip_if_not_module('qpidtoollibs')
-+    @patch('kombu.transport.qpid.qpidtoollibs.BrokerAgent')
-+    def setUp(self, mock_broker_agent):
-+        if QPID_NOT_AVAILABLE:
-+            raise SkipTest('qpid.messaging not installed')
-+        self.mock_broker_agent = mock_broker_agent
++    def setUp(self):
++        self.patch_qpidtoollibs = patch(QPID_MODULE + '.qpidtoollibs.BrokerAgent')
++        self.mock_broker_agent = self.patch_qpidtoollibs.start()
 +        self.conn = Mock()
 +        self.transport = Mock()
 +        self.channel = Channel(self.conn, self.transport)
++
++    def tearDown(self):
++        self.patch_qpidtoollibs.stop()
++
++
++class TestChannelPurge(ChannelTestBase):
++
++    def setUp(self):
++        super(TestChannelPurge, self).setUp()
++        self.mock_queue = Mock()
++
++    def test_channel__purge_gets_queue(self):
++        self.channel._purge(self.mock_queue)
++        getQueue = self.mock_broker_agent.return_value.getQueue
++        getQueue.assert_called_once_with(self.mock_queue)
++
++    def test_channel__purge_does_not_call_purge_if_message_count_is_zero(self):
++        values = {'msgDepth': 0}
++        queue_obj = self.mock_broker_agent.return_value.getQueue.return_value
++        queue_obj.values = values
++        self.channel._purge(self.mock_queue)
++        self.assertTrue(not queue_obj.purge.called)
++
++    def test_channel__purge_purges_all_messages_from_queue(self):
++        values = {'msgDepth': 5}
++        queue_obj = self.mock_broker_agent.return_value.getQueue.return_value
++        queue_obj.values = values
++        self.channel._purge(self.mock_queue)
++        queue_obj.purge.assert_called_with(5)
++
++    def test_channel__purge_returns_message_count(self):
++        values = {'msgDepth': 5}
++        queue_obj = self.mock_broker_agent.return_value.getQueue.return_value
++        queue_obj.values = values
++        result = self.channel._purge(self.mock_queue)
++        self.assertTrue(result is 5)
 +
 +
 +class TestChannelPut(ChannelTestBase):
@@ -673,29 +709,45 @@ index 0000000..2ef44f1
 +
 +class TestChannelClose(ChannelTestBase):
 +
-+    @patch.object(Channel, 'basic_cancel')
-+    def setUp(self, mock_basic_cancel):
++    def setUp(self):
 +        super(TestChannelClose, self).setUp()
-+        self.mock_basic_cancel = mock_basic_cancel
++        self.patch_basic_cancel = patch.object(self.channel, 'basic_cancel')
++        self.mock_basic_cancel = self.patch_basic_cancel.start()
 +        self.mock_receiver1 = Mock()
 +        self.mock_receiver2 = Mock()
 +        self.channel._receivers = {1: self.mock_receiver1,
 +                                   2: self.mock_receiver2}
 +        self.channel.closed = False
-+        self.channel.close()
++
++    def tearDown(self):
++        self.patch_basic_cancel.stop()
++        super(TestChannelClose, self).tearDown()
 +
 +    def test_channel_close_sets_close_attribute(self):
++        self.channel.close()
 +        self.assertTrue(self.channel.closed)
 +
 +    def test_channel_close_calls_basic_cancel_on_all_receivers(self):
-+        self.mock_basic_cancel.assert_any_call(1)
-+        self.mock_basic_cancel.assert_any_call(2)
++        self.channel.close()
++        self.mock_basic_cancel.assert_has_calls([call(1), call(2)])
 +
 +    def test_channel_close_calls_close_channel_on_connection(self):
++        self.channel.close()
 +        self.conn.close_channel.assert_called_once_with(self.channel)
 +
-+    def test_channel_calls_close_on_broker_agent(self):
++    def test_channel_close_calls_close_on_broker_agent(self):
++        self.channel.close()
 +        self.channel._broker.close.assert_called_once_with()
++
++    def test_channel_close_does_nothing_if_already_closed(self):
++        self.channel.closed = True
++        self.channel.close()
++        self.assertTrue(not self.mock_basic_cancel.called)
++
++    def test_channel_close_does_not_call_close_channel_if_conn_is_None(self):
++        self.channel.connection = None
++        self.channel.close()
++        self.assertTrue(not self.conn.close_channel.called)
 +
 +
 +class TestChannelBasicQoS(ChannelTestBase):
@@ -890,6 +942,60 @@ index 0000000..2ef44f1
 +        mock_original_callback.assert_called_once_with(expected_message)
 +
 +
++class TestChannelQueueDelete(ChannelTestBase):
++
++    def setUp(self):
++        super(TestChannelQueueDelete, self).setUp()
++        self.patch__has_queue = patch.object(self.channel, '_has_queue')
++        self.mock__has_queue = self.patch__has_queue.start()
++        self.patch__size = patch.object(self.channel, '_size')
++        self.mock__size = self.patch__size.start()
++        self.patch__delete = patch.object(self.channel, '_delete')
++        self.mock__delete = self.patch__delete.start()
++        self.mock_queue = Mock()
++
++    def tearDown(self):
++        self.mock__has_queue.stop()
++        self.mock__size.stop()
++        self.mock__delete.stop()
++        super(TestChannelQueueDelete, self).tearDown()
++
++    def test_channel_queue_delete_checks_if_queue_exists(self):
++        self.channel.queue_delete(self.mock_queue)
++        self.mock__has_queue.assert_called_once_with(self.mock_queue)
++
++    def test_channel_queue_delete_does_nothing_if_queue_does_not_exist(self):
++        self.mock__has_queue.return_value = False
++        self.channel.queue_delete(self.mock_queue)
++        self.assertTrue(not self.mock__delete.called)
++
++    def test_channel_queue_delete__not_empty_and_if_empty_True_no_delete(self):
++        self.mock__size.return_value = 1
++        self.channel.queue_delete(self.mock_queue, if_empty=True)
++        mock_broker = self.mock_broker_agent.return_value
++        self.assertTrue(not mock_broker.getQueue.called)
++
++    def test_channel_queue_delete_calls_get_queue(self):
++        self.channel.queue_delete(self.mock_queue)
++        getQueue = self.mock_broker_agent.return_value.getQueue
++        getQueue.assert_called_once_with(self.mock_queue)
++
++    def test_channel_queue_delete_gets_queue_attribute(self):
++        self.channel.queue_delete(self.mock_queue)
++        queue_obj = self.mock_broker_agent.return_value.getQueue.return_value
++        queue_obj.getAttributes.assert_called_once_with()
++
++    def test_channel_queue_delete__queue_in_use_and_if_unused_no_delete(self):
++        queue_obj = self.mock_broker_agent.return_value.getQueue.return_value
++        queue_obj.getAttributes.return_value = {'consumerCount': 1}
++        self.channel.queue_delete(self.mock_queue, if_unused=True)
++        self.assertTrue(not self.mock__delete.called)
++
++    def test_channel_queue_delete_calls__delete_with_queue(self):
++        self.channel.queue_delete(self.mock_queue)
++        self.mock__delete.assert_called_once_with(self.mock_queue)
++
++
 +class TestChannel(ExtraAssertionsMixin, Case):
 +
 +    @skip_if_not_module('qpidtoollibs')
@@ -938,20 +1044,6 @@ index 0000000..2ef44f1
 +    def test_delivery_tags(self):
 +        """Test that _delivery_tags is using itertools"""
 +        self.assertTrue(isinstance(Channel._delivery_tags, count))
-+
-+    def test_purge(self):
-+        """Test purging a queue that has messages, and verify the return
-+        value.
-+        """
-+        message_count = 5
-+        mock_queue = Mock()
-+        mock_queue_to_purge = Mock()
-+        mock_queue_to_purge.values = {'msgDepth': message_count}
-+        self.mock_broker.getQueue.return_value = mock_queue_to_purge
-+        result = self.my_channel._purge(mock_queue)
-+        self.mock_broker.getQueue.assert_called_with(mock_queue)
-+        mock_queue_to_purge.purge.assert_called_with(message_count)
-+        self.assertEqual(message_count, result)
 +
 +    def test_size(self):
 +        """Test getting the number of messages in a queue specified by
@@ -1007,8 +1099,7 @@ index 0000000..2ef44f1
 +                   'durable': mock_durable,
 +                   'exclusive': mock_exclusive,
 +                   'auto-delete': mock_auto_delete,
-+                   'arguments': mock_arguments,
-+                   'qpid.auto_delete_timeout': 3}
++                   'arguments': mock_arguments}
 +        mock_consumer_count = Mock()
 +        mock_return_value = Mock()
 +        values_dict = {'msgDepth': mock_msg_count,
@@ -1044,7 +1135,6 @@ index 0000000..2ef44f1
 +                                    'exclusive': False,
 +                                    'auto-delete': True,
 +                                    'arguments': None,
-+                                    'qpid.auto_delete_timeout': 3,
 +                                    'qpid.policy_type': 'ring'}
 +        mock_msg_count = Mock()
 +        mock_consumer_count = Mock()
@@ -1069,7 +1159,6 @@ index 0000000..2ef44f1
 +                                    'exclusive': False,
 +                                    'auto-delete': True,
 +                                    'arguments': None,
-+                                    'qpid.auto_delete_timeout': 3,
 +                                    'qpid.policy_type': 'ring'}
 +        mock_msg_count = Mock()
 +        mock_consumer_count = Mock()
@@ -1093,8 +1182,7 @@ index 0000000..2ef44f1
 +                                    'durable': False,
 +                                    'exclusive': False,
 +                                    'auto-delete': True,
-+                                    'arguments': None,
-+                                    'qpid.auto_delete_timeout': 3}
++                                    'arguments': None}
 +        mock_msg_count = Mock()
 +        mock_consumer_count = Mock()
 +        values_dict = {'msgDepth': mock_msg_count,
@@ -1118,8 +1206,7 @@ index 0000000..2ef44f1
 +                                    'durable': False,
 +                                    'exclusive': False,
 +                                    'auto-delete': True,
-+                                    'arguments': None,
-+                                    'qpid.auto_delete_timeout': 3}
++                                    'arguments': None}
 +        mock_msg_count = Mock()
 +        mock_consumer_count = Mock()
 +        values_dict = {'msgDepth': mock_msg_count,
@@ -1141,42 +1228,6 @@ index 0000000..2ef44f1
 +                          self.my_channel.queue_declare,
 +                          mock_queue)
 +        self.mock_broker.addQueue.assert_called_once()
-+
-+    def test_queue_delete_if_empty_param(self):
-+        """Test the deletion of a queue with if_empty=True"""
-+        mock_queue = Mock()
-+        self.my_channel._has_queue = Mock(return_value=True)
-+        self.my_channel._size = Mock(return_value=5)
-+        result = self.my_channel.queue_delete(mock_queue, if_empty=True)
-+        self.my_channel._has_queue.assert_called_with(mock_queue)
-+        self.my_channel._size.assert_called_with(mock_queue)
-+        self.assertTrue(result is None)
-+
-+    def test_queue_delete_if_unused_param(self):
-+        """Test the deletion of a queue with if_unused=True"""
-+        mock_queue = Mock()
-+        mock_queue_obj = Mock()
-+        mock_queue_attributes = {'consumerCount': 5}
-+        mock_queue_obj.getAttributes.return_value = mock_queue_attributes
-+        self.my_channel._has_queue = Mock(return_value=True)
-+        self.my_channel._size = Mock(return_value=5)
-+        self.mock_broker.getQueue.return_value = mock_queue_obj
-+        result = self.my_channel.queue_delete(mock_queue, if_unused=True)
-+        self.assertTrue(result is None)
-+
-+    def test_queue_delete(self):
-+        """Test the deletion of a queue"""
-+        mock_queue = Mock()
-+        mock_queue_obj = Mock()
-+        mock_queue_attributes = {'consumerCount': 5}
-+        mock_queue_obj.getAttributes.return_value = mock_queue_attributes
-+        self.my_channel._has_queue = Mock(return_value=True)
-+        self.my_channel._size = Mock(return_value=5)
-+        self.my_channel._delete = Mock()
-+        self.mock_broker.getQueue.return_value = mock_queue_obj
-+        result = self.my_channel.queue_delete(mock_queue)
-+        self.my_channel._delete.assert_called_with(mock_queue)
-+        self.assertTrue(result is None)
 +
 +    def test_exchange_declare_raises_exception_and_silenced(self):
 +        """Create exchange where an exception is raised and then silenced"""
@@ -1245,14 +1296,14 @@ index 0000000..2ef44f1
 +        self.my_channel._purge.assert_called_with(mock_queue)
 +        self.assertTrue(purge_result is result)
 +
-+    @patch('kombu.transport.qpid.Channel.qos')
++    @patch(QPID_MODULE + '.Channel.qos')
 +    def test_basic_ack(self, mock_qos):
 +        """Test that basic_ack calls the QoS object properly"""
 +        mock_delivery_tag = Mock()
 +        self.my_channel.basic_ack(mock_delivery_tag)
 +        mock_qos.ack.assert_called_with(mock_delivery_tag)
 +
-+    @patch('kombu.transport.qpid.Channel.qos')
++    @patch(QPID_MODULE + '.Channel.qos')
 +    def test_basic_reject(self, mock_qos):
 +        """Test that basic_reject calls the QoS object properly"""
 +        mock_delivery_tag = Mock()
@@ -1304,9 +1355,9 @@ index 0000000..2ef44f1
 +                        result['properties']['delivery_info']['priority'])
 +
 +    @patch('__builtin__.buffer')
-+    @patch('kombu.transport.qpid.Channel.body_encoding')
-+    @patch('kombu.transport.qpid.Channel.encode_body')
-+    @patch('kombu.transport.qpid.Channel._put')
++    @patch(QPID_MODULE + '.Channel.body_encoding')
++    @patch(QPID_MODULE + '.Channel.encode_body')
++    @patch(QPID_MODULE + '.Channel._put')
 +    def test_basic_publish(self, mock_put,
 +                           mock_encode_body,
 +                           mock_body_encoding,
@@ -1342,7 +1393,7 @@ index 0000000..2ef44f1
 +                                    mock_message,
 +                                    mock_exchange)
 +
-+    @patch('kombu.transport.qpid.Channel.codecs')
++    @patch(QPID_MODULE + '.Channel.codecs')
 +    def test_encode_body_expected_encoding(self, mock_codecs):
 +        """Test if encode_body() works when encoding is set correctly"""
 +        mock_body = Mock()
@@ -1354,7 +1405,7 @@ index 0000000..2ef44f1
 +        expected_result = (mock_encoded_result, 'base64')
 +        self.assertEqual(expected_result, result)
 +
-+    @patch('kombu.transport.qpid.Channel.codecs')
++    @patch(QPID_MODULE + '.Channel.codecs')
 +    def test_encode_body_not_expected_encoding(self, mock_codecs):
 +        """Test if encode_body() works when encoding is not set correctly"""
 +        mock_body = Mock()
@@ -1363,7 +1414,7 @@ index 0000000..2ef44f1
 +        expected_result = (mock_body, None)
 +        self.assertEqual(expected_result, result)
 +
-+    @patch('kombu.transport.qpid.Channel.codecs')
++    @patch(QPID_MODULE + '.Channel.codecs')
 +    def test_decode_body_expected_encoding(self, mock_codecs):
 +        """Test if decode_body() works when encoding is set correctly"""
 +        mock_body = Mock()
@@ -1374,7 +1425,7 @@ index 0000000..2ef44f1
 +        result = self.my_channel.decode_body(mock_body, encoding='base64')
 +        self.assertEqual(mock_decoded_result, result)
 +
-+    @patch('kombu.transport.qpid.Channel.codecs')
++    @patch(QPID_MODULE + '.Channel.codecs')
 +    def test_decode_body_not_expected_encoding(self, mock_codecs):
 +        """Test if decode_body() works when encoding is not set correctly"""
 +        mock_body = Mock()
@@ -1423,7 +1474,7 @@ index 0000000..2ef44f1
 +class TestReceiversMonitorInit(ReceiversMonitorTestBase):
 +
 +    def setUp(self):
-+        thread___init___str = 'kombu.transport.qpid.threading.Thread.__init__'
++        thread___init___str = QPID_MODULE + '.threading.Thread.__init__'
 +        self.patch_parent___init__ = patch(thread___init___str)
 +        self.mock_Thread___init__ = self.patch_parent___init__.start()
 +        super(TestReceiversMonitorInit, self).setUp()
@@ -1444,7 +1495,7 @@ index 0000000..2ef44f1
 +class TestReceiversMonitorRun(ReceiversMonitorTestBase):
 +
 +    @patch.object(ReceiversMonitor, 'monitor_receivers')
-+    @patch('kombu.transport.qpid.time.sleep')
++    @patch(QPID_MODULE + '.time.sleep')
 +    def test_receivers_monitor_run_calls_monitor_receivers(
 +            self, mock_sleep, mock_monitor_receivers):
 +        mock_sleep.side_effect = self.BreakOutException()
@@ -1452,8 +1503,8 @@ index 0000000..2ef44f1
 +        mock_monitor_receivers.assert_called_once_with()
 +
 +    @patch.object(ReceiversMonitor, 'monitor_receivers')
-+    @patch('kombu.transport.qpid.time.sleep')
-+    @patch('kombu.transport.qpid.logger')
++    @patch(QPID_MODULE + '.time.sleep')
++    @patch(QPID_MODULE + '.logger')
 +    def test_receivers_monitors_run_calls_logs_exception_and_sleeps(
 +            self, mock_logger, mock_sleep, mock_monitor_receivers):
 +        exc_to_raise = IOError()
@@ -1464,7 +1515,7 @@ index 0000000..2ef44f1
 +        mock_sleep.assert_called_once_with(10)
 +
 +    @patch.object(ReceiversMonitor, 'monitor_receivers')
-+    @patch('kombu.transport.qpid.time.sleep')
++    @patch(QPID_MODULE + '.time.sleep')
 +    def test_receivers_monitor_run_loops_when_exception_is_raised(
 +            self, mock_sleep, mock_monitor_receivers):
 +        def return_once_raise_on_second_call(*args):
@@ -1473,6 +1524,61 @@ index 0000000..2ef44f1
 +        mock_sleep.side_effect = return_once_raise_on_second_call
 +        self.assertRaises(self.BreakOutException, self.monitor.run)
 +        mock_monitor_receivers.has_calls([call(), call()])
++
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch(QPID_MODULE + '.time.sleep')
++    @patch(QPID_MODULE + '.logger')
++    @patch(QPID_MODULE + '.os.write')
++    @patch(QPID_MODULE + '.sys.exc_info')
++    def test_receivers_monitor_exits_when_recoverable_exception_raised(
++            self, mock_sys_exc_info, mock_os_write, mock_logger, mock_sleep,
++            mock_monitor_receivers):
++        recoverable_error = Transport.connection_errors[0]
++        mock_monitor_receivers.side_effect = recoverable_error()
++        mock_sleep.side_effect = self.BreakOutException()
++        try:
++            self.monitor.run()
++        except Exception:
++            self.fail('ReceiversMonitor.run() should exit normally when '
++                      'recoverable error is caught')
++        self.assertTrue(not mock_logger.error.called)
++
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch(QPID_MODULE + '.time.sleep')
++    @patch(QPID_MODULE + '.logger')
++    @patch(QPID_MODULE + '.os.write')
++    @patch(QPID_MODULE + '.sys.exc_info')
++    def test_receivers_monitor_saves_traceback_when_recoverable_exc_raised(
++            self, mock_sys_exc_info, mock_os_write, mock_logger, mock_sleep,
++            mock_monitor_receivers):
++        recoverable_error = Transport.connection_errors[0]
++        mock_monitor_receivers.side_effect = recoverable_error()
++        mock_sleep.side_effect = self.BreakOutException()
++        try:
++            self.monitor.run()
++        except Exception:
++            self.fail('ReceiversMonitor.run() should exit normally when '
++                      'recoverable error is caught')
++        self.assertTrue(
++            self.mock_session.exc_info is mock_sys_exc_info.return_value)
++
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch(QPID_MODULE + '.time.sleep')
++    @patch(QPID_MODULE + '.logger')
++    @patch(QPID_MODULE + '.os.write')
++    @patch(QPID_MODULE + '.sys.exc_info')
++    def test_receivers_monitor_writes_e_to_pipe_when_recoverable_exc_raised(
++            self, mock_sys_exc_info, mock_os_write, mock_logger, mock_sleep,
++            mock_monitor_receivers):
++        recoverable_error = Transport.connection_errors[0]
++        mock_monitor_receivers.side_effect = recoverable_error()
++        mock_sleep.side_effect = self.BreakOutException()
++        try:
++            self.monitor.run()
++        except Exception:
++            self.fail('ReceiversMonitor.run() should exit normally when '
++                      'recoverable error is caught')
++        mock_os_write.assert_called_once_with(self.mock_w, 'e')
 +
 +
 +class TestReceiversMonitorMonitorReceivers(ReceiversMonitorTestBase):
@@ -1484,7 +1590,7 @@ index 0000000..2ef44f1
 +        self.mock_session.next_receiver.assert_called_once_with()
 +
 +    def test_receivers_monitor_monitor_receivers_writes_to_fd(self):
-+        with patch('kombu.transport.qpid.os.write') as mock_os_write:
++        with patch(QPID_MODULE + '.os.write') as mock_os_write:
 +            mock_os_write.side_effect = self.BreakOutException()
 +            self.assertRaises(self.BreakOutException,
 +                              self.monitor.monitor_receivers)
@@ -1494,16 +1600,16 @@ index 0000000..2ef44f1
 +class TestTransportInit(Case):
 +
 +    def setUp(self):
-+        self.patch_a = patch('kombu.transport.qpid.base.Transport.__init__')
++        self.patch_a = patch(QPID_MODULE + '.base.Transport.__init__')
 +        self.mock_base_Transport__init__ = self.patch_a.start()
 +
-+        self.patch_b = patch('kombu.transport.qpid.os')
++        self.patch_b = patch(QPID_MODULE + '.os')
 +        self.mock_os = self.patch_b.start()
 +        self.mock_r = Mock()
 +        self.mock_w = Mock()
 +        self.mock_os.pipe.return_value = (self.mock_r, self.mock_w)
 +
-+        self.patch_c = patch('kombu.transport.qpid.fcntl')
++        self.patch_c = patch(QPID_MODULE + '.fcntl')
 +        self.mock_fcntl = self.patch_c.start()
 +
 +    def tearDown(self):
@@ -1612,7 +1718,7 @@ index 0000000..2ef44f1
 +        self.transport = Transport(self.client)
 +        self.mock_conn = Mock()
 +        self.transport.Connection = self.mock_conn
-+        path_to_mock = 'kombu.transport.qpid.ReceiversMonitor'
++        path_to_mock = QPID_MODULE + '.ReceiversMonitor'
 +        self.patcher = patch(path_to_mock)
 +        self.mock_ReceiverMonitor = self.patcher.start()
 +
@@ -1738,6 +1844,15 @@ index 0000000..2ef44f1
 +        new_receiver_monitor = self.mock_ReceiverMonitor.return_value
 +        new_receiver_monitor.start.assert_called_once_with()
 +
++    def test_transport_establish_conn_ignores_hostname_if_not_localhost(self):
++        self.client.hostname = 'some_other_hostname'
++        self.transport.establish_connection()
++        self.mock_conn.assert_called_once_with(username='guest',
++                                               sasl_mechanisms='PLAIN',
++                                               host='some_other_hostname',
++                                               timeout=4, password='guest',
++                                               port=5672, transport='tcp')
++
 +
 +class TestTransportClassAttributes(Case):
 +
@@ -1780,7 +1895,7 @@ index 0000000..2ef44f1
 +class TestTransportOnReadable(Case):
 +
 +    def setUp(self):
-+        self.patch_a = patch('kombu.transport.qpid.os.read')
++        self.patch_a = patch(QPID_MODULE + '.os.read')
 +        self.mock_os_read = self.patch_a.start()
 +        self.patch_b = patch.object(Transport, 'drain_events')
 +        self.mock_drain_events = self.patch_b.start()
@@ -1807,6 +1922,16 @@ index 0000000..2ef44f1
 +
 +    def test_transport_on_readable_ignores_non_socket_timeout_exception(self):
 +        self.mock_drain_events.side_effect = IOError()
++        self.assertRaises(IOError, self.transport.on_readable, Mock(), Mock())
++
++    def test_transport_on_readable_reads_e_off_of_pipe_raises_exc_info(self):
++        self.transport.session = Mock()
++        try:
++            raise IOError()
++        except Exception as error:
++            original_exc_info = sys.exc_info()
++            self.transport.session.exc_info = original_exc_info
++        self.mock_os_read.return_value = 'e'
 +        self.assertRaises(IOError, self.transport.on_readable, Mock(), Mock())
 +
 +
@@ -1854,10 +1979,10 @@ index 10d62e9..c1d6868 100644
  _transport_cache = {}
 diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
 new file mode 100644
-index 0000000..2c2998a
+index 0000000..bed0a94
 --- /dev/null
 +++ b/kombu/transport/qpid.py
-@@ -0,0 +1,1741 @@
+@@ -0,0 +1,1759 @@
 +"""
 +kombu.transport.qpid
 +=======================
@@ -2075,9 +2200,6 @@ index 0000000..2c2998a
 +DEFAULT_PORT = 5672
 +
 +OBJECT_ALREADY_EXISTS_STRING = 'object already exists'
-+
-+# number of seconds to keep a queue around before deleting it.
-+AUTO_DELETE_TIMEOUT = 3
 +
 +VERSION = (1, 0, 0)
 +__version__ = '.'.join(map(str, VERSION))
@@ -2576,8 +2698,6 @@ index 0000000..2c2998a
 +        have finished using it. The last consumer can be cancelled either
 +        explicitly or because its channel is closed. If there was no
 +        consumer ever on the queue, it won't be deleted. Default is True.
-+        Each queue has an auto_delete timeout, which is set to 3, meaning
-+        that queues deletion due to auto_delete will be delayed by 3 seconds.
 +
 +        The nowait parameter is unused. It was part of the 0-9-1 protocol,
 +        but this AMQP client implements 0-10 which removed the nowait option.
@@ -2628,7 +2748,6 @@ index 0000000..2c2998a
 +                   'exclusive': exclusive,
 +                   'auto-delete': auto_delete,
 +                   'arguments': arguments}
-+        options['qpid.auto_delete_timeout'] = AUTO_DELETE_TIMEOUT
 +        if queue.startswith('celeryev') or queue.endswith('pidbox'):
 +            options['qpid.policy_type'] = 'ring'
 +        try:
@@ -3304,12 +3423,29 @@ index 0000000..2c2998a
 +        Calls :meth:`monitor_receivers` with a log-and-reenter behavior. This
 +        guards against unexpected exceptions which could cause this thread to
 +        exit unexpectedly.
++
++        If a recoverable error occurs, then the exception needs to be
++        propagated to the Main Thread where an exception handler can properly
++        handle it. An Exception is checked if it is recoverable, and if so,
++        its info is saved as exc_info on the self._session object. The
++        character 'e' is then written to the self.w_fd file descriptor
++        causing Main Thread to raise the saved exception. Once the Exception
++        info is saved and the file descriptor is written, this Thread
++        gracefully exits.
++
++        Typically recoverable errors are connection errors, and can be
++        recovered through a call to Transport.establish_connection which will
++        spawn a new ReceiversMonitor Thread.
 +        """
 +        while True:
 +            try:
 +                self.monitor_receivers()
-+            except Exception as e:
-+                logger.error(e)
++            except Exception as error:
++                if isinstance(error, Transport.connection_errors):
++                    self._session.exc_info = sys.exc_info()
++                    os.write(self._w_fd, 'e')
++                    return
++                logger.error(error)
 +            time.sleep(10)
 +
 +    def monitor_receivers(self):
@@ -3398,16 +3534,21 @@ index 0000000..2c2998a
 +        ensuring that an accidental call to this method when no more messages
 +        will arrive will not cause indefinite blocking.
 +
++        If the self.r file descriptor returns the character 'e', a
++        recoverable error occurred in the background thread, and this thread
++        should raise the saved exception. The exception information is saved
++        as exc_info on the session object.
++
 +        Nothing is expected to be returned from :meth:`drain_events` because
 +        :meth:`drain_events` handles messages by calling callbacks that are
 +        maintained on the :class:`Connection` object. When
 +        :meth:`drain_events` returns, all associated messages have been
 +        handled.
 +
-+        This method reads as many messages that are available for this
-+        Transport, and then returns. It blocks in the sense that reading
-+        and handling a large number of messages may take time, but it does
-+        not block waiting for a new message to arrive. When
++        This method calls drain_events() which reads as many messages as are
++        available for this Transport, and then returns. It blocks in the
++        sense that reading and handling a large number of messages may take
++        time, but it does not block waiting for a new message to arrive. When
 +        :meth:`drain_events` is called a timeout is not specified, which
 +        causes this behavior.
 +
@@ -3432,7 +3573,9 @@ index 0000000..2c2998a
 +            functionality.
 +        :type loop: kombu.async.Hub
 +        """
-+        os.read(self.r, 1)
++        symbol = os.read(self.r, 1)
++        if symbol == 'e':
++            raise self.session.exc_info[1], None, self.session.exc_info[2]
 +        try:
 +            self.drain_events(connection)
 +        except socket.timeout:
