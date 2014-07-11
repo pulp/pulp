@@ -173,6 +173,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Jul 10 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-11.pulp
+- Release 11 of python-kombu includes BZ fixes for 1096539 and 1105195.
+  (bmbouter@gmail.com)
+
 * Fri Jun 06 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-10.pulp
 - Removing PropertyMock from test code. (bmbouter@gmail.com)
 
