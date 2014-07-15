@@ -327,17 +327,15 @@ repositories.
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
-::
-
 4. Set the agent to start at boot.  For upstart::
 
-     $ sudo chkconfig goferd on
-     $ sudo service goferd start
+      $ sudo chkconfig goferd on
+      $ sudo service goferd start
 
    For systemd::
 
-     $sudo systemctl enable goferd
-     $sudo systemctl start goferd
+      $sudo systemctl enable goferd
+      $sudo systemctl start goferd
 
 
 SSL Configuration
@@ -354,6 +352,12 @@ these settings. If you plan to use Pulp's consumer features, set ``ssl_ca_certif
 
 If you want to use SSL with Qpid, see the
 :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
+
+Pulp Broker Settings
+--------------------
+
+To configure Pulp to work with a non-default broker configuration read the
+:ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
 
 MongoDB Authentication
 ----------------------
