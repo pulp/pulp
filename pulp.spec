@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.23.beta%{?dist}
+Release: 0.24.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,22 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Jul 11 2014 Brian Bouterse <bmbouter@gmail.com> 2.4.0-0.24.beta
+- 1110668 - updated consumer group binding documentation to refect the actual
+  behaviour (jcline@redhat.com)
+- 1117060 - added umask setting to celery worker command line, since the
+  default of 0 is unsafe. (mhrivnak@redhat.com)
+- 1116438 - use apache httpd type and not typealias (lzap+git@redhat.com)
+- 1115715 - syslog handler works with string formatting tokens in tracebacks.
+  (jortel@redhat.com)
+- 1115631 - disabled content sources discarded before validity check performed.
+  (jortel@redhat.com)
+- 1115129 - update rsa_pub as part of consumer updates. (jortel@redhat.com)
+- 1093871 - sorting tasks by default according to when they were created.
+  (mhrivnak@redhat.com)
+- 1100638 - Update task search API to match the serialization used for task
+  collection & task get APIs (bcourt@redhat.com)
+
 * Wed Jun 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.23.beta
 - 1110674 - A 400 Bad Request is returned when attempting to bind a consumer
   group to an invalid repo or distributor id (jcline@redhat.com)
