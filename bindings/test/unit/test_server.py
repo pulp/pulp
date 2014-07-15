@@ -3,7 +3,7 @@ import unittest
 import mock
 from M2Crypto import httpslib, SSL
 
-from pulp.bindings.server import PulpConnection, HTTPSServerWrapper
+from pulp.bindings.server import PulpConnection
 
 
 class TestServerBindings(unittest.TestCase):
