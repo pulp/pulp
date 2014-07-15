@@ -1,8 +1,14 @@
 from gettext import gettext as _
+import glob
 import gzip
 import logging
 import os
+import shutil
 import traceback
+
+
+from xml.dom import pulldom
+from xml.sax.saxutils import XMLGenerator
 
 from pulp.common import error_codes
 from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
@@ -226,3 +232,180 @@ class JSONArrayFileContext(MetadataFileContext):
             self.metadata_file_handle.write(',')
         else:
             self.units_added = True
+
+
+class FastForwardGenerator(object):
+    """
+    A generator to allow parsing an xml file, processing the events and writing
+    the xml file back out with modifications along the way.
+    """
+
+    def __init__(self, input_file, output_file):
+        """
+        :param input_file: The file handle for the file to read from
+        :type input_file: file
+        :param output_file: The file handle for the file to write to
+        :type output_file: file
+        """
+        self.current_event = None
+        self.event_generator = pulldom.parse(input_file)
+        self.xml_generator = XMLGenerator(output_file, 'UTF-8')
+        self.attributes = None
+
+    def __iter__(self):
+        """
+        Method so that python will treat this object as an iterator
+        """
+        return self
+
+    def next(self):
+        """
+        Get the next dom event from the input file
+
+        If an event was previously read from the file it will be written to the output file
+        """
+        try:
+            if self.current_event:
+                if self.current_event[0] == pulldom.START_DOCUMENT:
+                    self.xml_generator.startDocument()
+                elif self.current_event[0] == pulldom.START_ELEMENT:
+                    current_element = self.current_event[1]
+                    self.xml_generator.startElement(current_element.nodeName,
+                                                    current_element.attributes)
+                elif self.current_event[0] == pulldom.END_ELEMENT:
+                    current_element = self.current_event[1]
+                    self.xml_generator.endElement(current_element.nodeName)
+                elif self.current_event[0] == pulldom.CHARACTERS:
+                    current_element = self.current_event[1]
+                    self.xml_generator.characters(current_element.wholeText)
+
+            self.current_event = self.event_generator.next()
+        except StopIteration:
+            # Flush the output
+            self.xml_generator.endDocument()
+            raise
+
+        return self.current_event
+
+
+class XmlFileContext(MetadataFileContext):
+    """
+    Context manager for writing out units as xml
+    """
+
+    def __init__(self, metadata_file_path, root_tag, root_attributes=None, *args, **kwargs):
+        """
+
+        :param args: any positional arguments to be passed to the superclass
+        :type  args: list
+        :param kwargs: any keyword arguments to be passed to the superclass
+        :type  kwargs: dict
+        """
+
+        super(XmlFileContext, self).__init__(metadata_file_path, *args, **kwargs)
+        self.root_tag = root_tag
+        if not root_attributes:
+            root_attributes = {}
+        self.root_attributes = root_attributes
+
+    def _open_metadata_file_handle(self):
+        """
+        Open the metadata file handle, creating any missing parent directories.
+
+        If the file already exists, this will overwrite it.
+        """
+        super(XmlFileContext, self)._open_metadata_file_handle()
+        self.xml_generator = XMLGenerator(self.metadata_file_handle, 'UTF-8')
+
+    def _write_file_header(self):
+        """
+        Write out the beginning of the json file
+        """
+        self.xml_generator.startDocument()
+        self.xml_generator.startElement(self.root_tag, self.root_attributes)
+
+    def _write_file_footer(self):
+        """
+        Write out the end of the json file
+        """
+        self.xml_generator.endElement(self.root_tag)
+        self.xml_generator.endDocument()
+
+
+class FastForwardXmlFileContext(XmlFileContext):
+    """
+    Context manager for reopening an existing XML file context to insert more data.
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        :param args: any positional arguments to be passed to the superclass
+        :type  args: list
+        :param kwargs: any keyword arguments to be passed to the superclass
+        :type  kwargs: dict
+        """
+        super(FastForwardXmlFileContext, self).__init__(*args, **kwargs)
+        self.fast_forward = False
+        self.existing_file = None
+        self.xml_generator = None
+
+    def _open_metadata_file_handle(self):
+        """
+        Open the metadata file handle, creating any missing parent directories.
+
+        If the file already exists, this copy it to a new name and open it as an input
+        for filtering/modification.
+        """
+        # Figure out if we are fast forwarding a file
+        # find the primary file
+        working_dir, file_name = os.path.split(self.metadata_file_path)
+        if self.checksum_type:
+            #make sure soemthing matches the checksum pattern
+            expression = '[0-9a-zA-Z]*-%s' % file_name
+            expression = os.path.join(working_dir, expression)
+            file_list = glob.glob(expression)
+            if file_list:
+                self.existing_file = file_list[0]
+                self.fast_forward = True
+        elif not self.checksum_type and os.path.exists(self.metadata_file_path):
+            self.existing_file = file_name
+            self.fast_forward = True
+
+        if self.fast_forward:
+            # move the file so that we can still process it if the name is the same
+            if self.existing_file == file_name:
+                new_file_name = 'original.%s' % self.existing_file
+                shutil.move(os.path.join(working_dir, self.existing_file),
+                            os.path.join(working_dir, new_file_name))
+                self.existing_file = new_file_name
+
+            # Open the file, use gzip if necessary
+            self.original_file_handle = None
+            if self.existing_file.endswith('.gz'):
+                self.original_file_handle = gzip.open(os.path.join(working_dir, self.existing_file),
+                                                      'rb')
+            else:
+                self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')
+
+        super(FastForwardXmlFileContext, self)._open_metadata_file_handle()
+        if self.fast_forward:
+            self.xml_generator = FastForwardGenerator(self.original_file_handle,
+                                                      self.metadata_file_handle)
+
+    def _write_file_header(self):
+        """
+        Write out the beginning of the file only if we are not in fast forward mode
+        """
+        if not self.fast_forward:
+            super(FastForwardXmlFileContext, self)._write_file_header()
+
+    def _write_file_footer(self):
+        """
+        Write out the end of the file
+        """
+        if self.fast_forward:
+            # fast forward through the rest of the file
+            for event in self.xml_generator:
+                pass
+        else:
+            super(FastForwardXmlFileContext, self)._write_file_footer()

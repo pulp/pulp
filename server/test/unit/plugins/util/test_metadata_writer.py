@@ -1,4 +1,5 @@
 
+import glob
 import gzip
 import hashlib
 import unittest
@@ -6,12 +7,19 @@ import os
 import tempfile
 import shutil
 import sys
+from xml.dom import pulldom
 
-from mock import Mock, patch
+from mock import Mock, patch, ANY
 
 from pulp.common.error_codes import PLP1005
 from pulp.devel.unit.server.util import assert_validation_exception
 from pulp.plugins.util.metadata_writer import MetadataFileContext, JSONArrayFileContext
+from pulp.plugins.util.metadata_writer import FastForwardGenerator
+from pulp.plugins.util.metadata_writer import XmlFileContext
+from pulp.plugins.util.metadata_writer import FastForwardXmlFileContext
+from pulp.plugins.util.verification import TYPE_SHA1
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data'))
 
 
 class MetadataWriterTests(unittest.TestCase):
@@ -312,3 +320,193 @@ class TestJSONArrayFileContext(unittest.TestCase):
         self.assertEquals(self.context.metadata_file_handle.write.call_count, 0)
         self.context.add_unit_metadata('bar')
         self.context.metadata_file_handle.write.assert_called_once_with(',')
+
+
+class FastForwardGeneratorTests(unittest.TestCase):
+
+    def setUp(self):
+        self.working_dir = tempfile.mkdtemp()
+        self.outfile = open(os.path.join(self.working_dir, 'output.xml'), 'wb')
+        input_file_name = os.path.join(DATA_DIR, 'metadata', 'test.xml')
+        shutil.copy(input_file_name, os.path.join(self.working_dir, 'test.xml'))
+        self.input_file = open(os.path.join(self.working_dir, 'test.xml'), 'r')
+
+    def tearDown(self):
+        self.outfile.close()
+        shutil.rmtree(self.working_dir)
+        self.input_file.close()
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_start_document(self, mock_generator):
+        generator = FastForwardGenerator(self.input_file, self.outfile)
+        event = generator.next()  # Start Document
+        self.assertEquals(event[0], pulldom.START_DOCUMENT)
+        generator.next()  # Open tag metadata
+        mock_generator.return_value.startDocument.assert_called_once_with()
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_tag(self, mock_generator):
+        generator = FastForwardGenerator(self.input_file, self.outfile)
+        generator.next()  # Start Document
+        event = generator.next()  # Open tag metadata
+        generator.next()  # character data "foo"
+        self.assertEquals(event[0], pulldom.START_ELEMENT)
+        self.assertEquals(event[1].nodeName, 'metadata')
+        mock_generator.return_value.startElement.assert_called_once_with('metadata',
+                                                                         event[1].attributes)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_characters(self, mock_generator):
+        generator = FastForwardGenerator(self.input_file, self.outfile)
+        generator.next()  # Start Document
+        generator.next()  # Open tag metadata
+        event = generator.next()  # character data "foo"
+        generator.next()  # close metadata tag
+        self.assertEquals(event[0], pulldom.CHARACTERS)
+        self.assertEquals(event[1].wholeText, 'foo')
+        mock_generator.return_value.characters.assert_called_once_with('foo')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_close_tag_and_end_document(self, mock_generator):
+        generator = FastForwardGenerator(self.input_file, self.outfile)
+        generator.next()  # Start Document
+        generator.next()  # Open tag metadata
+        generator.next()  # character data "foo"
+        event = generator.next()  # close metadata tag
+        self.assertRaises(StopIteration, generator.next)
+        self.assertEquals(event[0], pulldom.END_ELEMENT)
+        self.assertEquals(event[1].nodeName, 'metadata')
+        mock_generator.return_value.endElement.assert_called_once_with('metadata')
+        mock_generator.return_value.endDocument.assert_called_once_with()
+
+
+class XmlFileContextTests(unittest.TestCase):
+
+    def setUp(self):
+        self.working_dir = tempfile.mkdtemp()
+        self.tag = 'metadata'
+        self.attributes = {'packages': '30'}
+        self.context = XmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                      self.tag, self.attributes)
+
+    def tearDown(self):
+        shutil.rmtree(self.working_dir)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_init_with_arguments(self, mock_generator):
+        self.assertEquals(self.context.root_attributes, self.attributes)
+        self.assertEquals(self.context.root_tag, 'metadata')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_init_with_no_properties(self, mock_generator):
+        self.context = XmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                      self.tag)
+        self.assertEquals(self.context.root_attributes, {})
+        self.assertEquals(self.context.root_tag, 'metadata')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle(self, mock_generator):
+        self.context._open_metadata_file_handle()
+        mock_generator.assert_called_once_with(self.context.metadata_file_handle, 'UTF-8')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_header(self, mock_generator):
+        self.context._open_metadata_file_handle()
+        self.context._write_file_header()
+        mock_generator.return_value.startDocument.assert_called_once()
+        mock_generator.return_value.startElement.assert_called_once_with(self.tag, self.attributes)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_footer(self, mock_generator):
+        self.context._open_metadata_file_handle()
+        self.context._write_file_footer()
+        mock_generator.return_value.endElement.assert_called_once_with(self.tag)
+        mock_generator.return_value.endDocument.assert_called_once()
+
+
+class FastForwardXmlFileContextTests(unittest.TestCase):
+
+    def setUp(self):
+        self.working_dir = tempfile.mkdtemp()
+        expression = os.path.join(DATA_DIR, 'metadata', '*')
+        for file_name in glob.glob(expression):
+            shutil.copy(file_name, self.working_dir)
+        self.tag = 'metadata'
+        self.attributes = {'packages': '30'}
+
+    def tearDown(self):
+        shutil.rmtree(self.working_dir)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_non_existent_file(self, mock_generator):
+        os.remove(os.path.join(self.working_dir, 'test.xml'))
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes)
+        context._open_metadata_file_handle()
+        self.assertFalse(context.fast_forward)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_existing_file(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes)
+        context._open_metadata_file_handle()
+        self.assertTrue(context.fast_forward)
+        # check that the file has been renamed
+        self.assertEquals(context.existing_file, 'original.test.xml')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_existing_gzip_file(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml.gz'),
+                                            self.tag, self.attributes)
+        context._open_metadata_file_handle()
+        self.assertTrue(context.fast_forward)
+        self.assertEquals(context.existing_file, 'original.test.xml.gz')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_existing_checksum_file(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes,
+                                            checksum_type=TYPE_SHA1)
+        context._open_metadata_file_handle()
+        self.assertTrue(context.fast_forward)
+        self.assertEquals(context.existing_file, os.path.join(self.working_dir, 'aa-test.xml'))
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_header_fast_forward(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes)
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+        self.assertFalse(mock_generator.return_value.startDocument.called)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_header_no_fast_forward(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'aa.xml'),
+                                            self.tag, self.attributes)
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+        mock_generator.return_value.startDocument.assert_called_once_with()
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_footer_fast_forward(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes)
+        context._open_metadata_file_handle()
+        mock_generator.reset_mock()
+        context._write_file_footer()
+        mock_generator.return_value.startElement.assert_called_once_with('metadata', ANY)
+        mock_generator.return_value.endElement.assert_called_once_with('metadata')
+        mock_generator.return_value.endDocument.assert_called_once_with()
+
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_footer_no_fast_forward(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'aa.xml'),
+                                            self.tag, self.attributes)
+        context._open_metadata_file_handle()
+        context._write_file_footer()
+        self.assertFalse(mock_generator.return_value.startElement.called)
+        mock_generator.return_value.endElement.assert_called_once_with('metadata')
+        self.assertTrue(mock_generator.return_value.endDocument.called)
