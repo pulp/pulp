@@ -40,7 +40,9 @@ class PulpConnection(object):
                  oauth_secret=None,
                  oauth_user='admin',
                  cert_filename=None,
-                 server_wrapper=None):
+                 server_wrapper=None,
+                 validate_ssl_ca=True,
+                 system_ca_dir='/etc/pki/tls/certs'):
 
         self.host = host
         self.port = port
@@ -69,6 +71,10 @@ class PulpConnection(object):
         self.headers = {'Accept': 'application/json',
                         'Accept-Language': default_locale,
                         'Content-Type': 'application/json'}
+
+        # SSL CA validation
+        self.validate_ssl_ca = validate_ssl_ca
+        self.system_ca_dir = system_ca_dir
 
         # Server Wrapper
         if server_wrapper:
@@ -246,14 +252,19 @@ class HTTPSServerWrapper(object):
 
         # Create a new connection each time since HTTPSConnection has problems
         # reusing a connection for multiple calls (lame).
-        ssl_context = None
+
+        # Create SSL.Context and set it to verify peer SSL certificate against system CA certs.
+        ssl_context = SSL.Context('sslv3')
+        if self.pulp_connection.validate_ssl_ca:
+            ssl_context.set_verify(SSL.verify_peer, 1)
+            ssl_context.load_verify_locations(capath=self.pulp_connection.system_ca_dir)
+        ssl_context.set_session_timeout(self.pulp_connection.timeout)
+
         if self.pulp_connection.username and self.pulp_connection.password:
             raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
             encoded = base64.encodestring(raw)[:-1]
             headers['Authorization'] = 'Basic ' + encoded
         elif self.pulp_connection.cert_filename:
-            ssl_context = SSL.Context('sslv3')
-            ssl_context.set_session_timeout(self.pulp_connection.timeout)
             ssl_context.load_cert(self.pulp_connection.cert_filename)
 
         # oauth configuration. This block is only True if oauth is not None, so it won't run on RHEL
@@ -274,17 +285,12 @@ class HTTPSServerWrapper(object):
             headers.update(oauth_header)
             headers['pulp-user'] = self.pulp_connection.oauth_user
 
-        # Can't pass in None, so need to decide between two signatures (also lame)
-        if ssl_context is not None:
-            connection = httpslib.HTTPSConnection(
-                self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
-        else:
-            connection = httpslib.HTTPSConnection(self.pulp_connection.host, self.pulp_connection.port)
-
-        # Request against the server
-        connection.request(method, url, body=body, headers=headers)
+        connection = httpslib.HTTPSConnection(
+            self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
 
         try:
+            # Request against the server
+            connection.request(method, url, body=body, headers=headers)
             response = connection.getresponse()
         except SSL.SSLError, err:
             # Translate stale login certificate to an auth exception
