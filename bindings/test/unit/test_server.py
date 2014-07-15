@@ -22,7 +22,7 @@ class TestServerBindings(unittest.TestCase):
     @mock.patch.object(SSL.Context, 'load_verify_locations')
     @mock.patch.object(SSL.Context, 'set_verify')
     def test_https_wrapper_with_ssl_validation(self, mock_set_verify, mock_load_verify_locations,
-                                               mock_getresponse, mock_request):
+                                               *mocks):
         pulp_connection = PulpConnection('test_host', username='username', password='password')
         https_server_wrapper = HTTPSServerWrapper(pulp_connection)
         https_server_wrapper.request('DELETE', 'https://some/url', {})
@@ -34,7 +34,7 @@ class TestServerBindings(unittest.TestCase):
     @mock.patch.object(SSL.Context, 'load_verify_locations')
     @mock.patch.object(SSL.Context, 'set_verify')
     def test_https_wrapper_no_ssl_validation(self, mock_set_verify, mock_load_verify_locations,
-                                             mock_getresponse, mock_request):
+                                             *mocks):
         pulp_connection = PulpConnection('test_host', username='username', password='password',
                                          validate_ssl_ca=False)
         https_server_wrapper = HTTPSServerWrapper(pulp_connection)
