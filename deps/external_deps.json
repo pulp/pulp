@@ -4,7 +4,7 @@
         "platform": ["el6"]
     },
     "qpid-cpp": {
-        "version": "0.26-7",
+        "version": "0.26-8",
         "platform": ["el6"]
     },
     "qpid-qmf": {
