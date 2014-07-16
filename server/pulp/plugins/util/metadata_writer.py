@@ -266,9 +266,7 @@ class FastForwardGenerator(object):
         """
         try:
             if self.current_event:
-                if self.current_event[0] == pulldom.START_DOCUMENT:
-                    self.xml_generator.startDocument()
-                elif self.current_event[0] == pulldom.START_ELEMENT:
+                if self.current_event[0] == pulldom.START_ELEMENT:
                     current_element = self.current_event[1]
                     self.xml_generator.startElement(current_element.nodeName,
                                                     current_element.attributes)
@@ -278,6 +276,8 @@ class FastForwardGenerator(object):
                 elif self.current_event[0] == pulldom.CHARACTERS:
                     current_element = self.current_event[1]
                     self.xml_generator.characters(current_element.wholeText)
+                elif self.current_event[0] == pulldom.START_DOCUMENT:
+                    self.xml_generator.startDocument()
 
             self.current_event = self.event_generator.next()
         except StopIteration:
