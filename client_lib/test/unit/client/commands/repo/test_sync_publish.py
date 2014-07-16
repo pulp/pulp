@@ -19,15 +19,17 @@ status module itself will be tested apart from what happens in the commands.
 
 import copy
 import unittest
+from datetime import datetime
 
 import mock
 
 from pulp.bindings import responses
 from pulp.client.commands import options, polling
 from pulp.client.commands.repo import sync_publish as sp
-from pulp.client.extensions.core import TAG_TITLE
+from pulp.client.extensions.core import TAG_TITLE, ClientContext, PulpPrompt
 from pulp.client.extensions.extensions import PulpCliOption
 from pulp.common import tags
+from pulp.common.plugins import progress
 from pulp.devel.unit import base
 
 
@@ -544,3 +546,336 @@ class PublishStatusCommand(base.PulpClientTests):
         mock_search.assert_called_once_with(filters=expected_search_query)
         self.assertEqual(0, mock_poll.call_count)
         self.assertEqual(self.prompt.get_write_tags(), [TAG_TITLE, 'no-tasks'])
+
+
+class TestSyncStatusReport(unittest.TestCase):
+    """
+    Originally from test_extension_admin_iso_status.py in pulp_rpm
+    """
+
+    def setUp(self):
+        self.context = mock.MagicMock(spec=ClientContext)
+        self.context.prompt = mock.MagicMock(spec=PulpPrompt)
+
+    def test___init__(self):
+        """
+        Test the SyncStatusRenderer.__init__() method.
+        """
+        renderer = sp.SyncStatusRenderer(self.context)
+
+        self.assertEqual(renderer._sync_state, progress.SyncProgressReport.STATE_NOT_STARTED)
+        self.context.prompt.create_progress_bar.assert_called_once_with()
+
+    def test__display_sync_report_during_complete_stage(self):
+        """
+        Test the SyncStatusRenderer._display_sync_report method when the
+        SyncProgressReport has entered the COMPLETE state (with three files
+        successfully downloaded). It should display completion progress to the user.
+        """
+        conduit = mock.MagicMock()
+        finished_bytes = 1204
+        total_bytes = 1204
+        state_times = {progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS: datetime.utcnow()}
+        sync_report = progress.SyncProgressReport(
+            conduit, num_files=3, num_files_finished=3, total_bytes=total_bytes,
+            finished_bytes=finished_bytes, state=progress.SyncProgressReport.STATE_COMPLETE,
+            state_times=state_times)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's put the renderer in the manifest retrieval stage, simulating
+        # the SyncProgressReport having just left that stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS
+        renderer.prompt.reset_mock()
+
+        # pretend we are downloading something called "chickens"
+        renderer._display_sync_report(sync_report, "chickens")
+
+        renderer.prompt.write.assert_has_call('Downloading 3 chickens.')
+        # The _sync_state should have been updated to reflect the file
+        # downloading stage being complete
+        self.assertEqual(renderer._sync_state, progress.SyncProgressReport.STATE_COMPLETE)
+        # A progress bar should have been rendered
+        self.assertEqual(renderer._sync_files_bar.render.call_count, 1)
+        args = renderer._sync_files_bar.render.mock_calls[0][1]
+        self.assertEqual(args[0], finished_bytes)
+        self.assertEqual(args[1], total_bytes)
+
+        # There should be one kwarg - message. It is non-deterministic, so
+        # let's just assert that it has some of the right text in it
+        kwargs = renderer._sync_files_bar.render.mock_calls[0][2]
+        self.assertEqual(len(kwargs), 1)
+        self.assertTrue('chickens: 3/3' in kwargs['message'])
+
+        # A completion message should have been printed for the user
+        self.assertEqual(renderer.prompt.render_success_message.mock_calls[0][2]['tag'],
+                         'download_success')
+
+    def test__display_sync_report_during_files_failed_state(self):
+        """
+        Test the SyncStatusRenderer._display_sync_report method when the SyncProgressReport has
+        entered STATE_FILES_FAILED (with two files successfully downloaded). It should display an
+        error message to the user.
+        """
+        conduit = mock.MagicMock()
+        finished_bytes = 1204
+        total_bytes = 908
+        files_error_messages = [
+            {'name': 'bad.files', 'error': 'Sorry, I will not tell you what happened.'}]
+        state_times = {progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS: datetime.utcnow()}
+        sync_report = progress.SyncProgressReport(
+            conduit, num_files=3, num_files_finished=2, total_bytes=total_bytes,
+            finished_bytes=finished_bytes, state=progress.SyncProgressReport.STATE_FILES_FAILED,
+            state_times=state_times, files_error_messages=files_error_messages)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's put the renderer in the manifest retrieval stage, simulating the SyncProgressReport
+        # having just left that stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS
+        renderer.prompt.reset_mock()
+
+        renderer._display_sync_report(sync_report, "Turkeys")
+
+        renderer.prompt.write.assert_has_call('Downloading 3 Turkeys.')
+        # The _sync_state should have been updated to reflect the file downloading stage having
+        # failed
+        self.assertEqual(renderer._sync_state, progress.SyncProgressReport.STATE_FILES_FAILED)
+        # A progress bar should have been rendered
+        self.assertEqual(renderer._sync_files_bar.render.call_count, 1)
+        args = renderer._sync_files_bar.render.mock_calls[0][1]
+        self.assertEqual(args[0], finished_bytes)
+        self.assertEqual(args[1], total_bytes)
+
+        # There should be one kwarg - message. It is non-deterministic, so let's just assert that it
+        # has some of the right text in it
+        kwargs = renderer._sync_files_bar.render.mock_calls[0][2]
+        self.assertEqual(len(kwargs), 1)
+        self.assertTrue('Turkeys: 2/3' in kwargs['message'])
+
+        # A completion message should have been printed for the user
+        self.assertEqual(renderer.prompt.render_failure_message.mock_calls[0][2]['tag'],
+                         'download_failed')
+
+        # The individual file that failed should have had its error message printed to screen
+        self.assertTrue(files_error_messages[0]['error'] in
+                        renderer.prompt.render_failure_message.mock_calls[1][1][0])
+        self.assertEqual(renderer.prompt.render_failure_message.mock_calls[1][2]['tag'],
+                         'file_error_msg')
+
+    def test__display_sync_report_during_file_stage_no_files(self):
+        """
+        Test the SyncStatusRenderer._display_sync_report method when the
+        SyncProgressReport has entered the file retrieval stage (with no files to
+        download) from the manifest retrieval stage. It should just tell the user there
+        is nothing to do.
+        """
+        conduit = mock.MagicMock()
+        sync_report = progress.SyncProgressReport(
+            conduit, num_files=0, state=progress.SyncProgressReport.STATE_FILES_IN_PROGRESS)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's put the renderer in the manifest retrieval stage, simulating
+        # the SyncProgressReport having just left that stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS
+        renderer.prompt.reset_mock()
+
+        renderer._display_sync_report(sync_report, "penguins")
+
+        self.assertEqual(renderer.prompt.render_success_message.call_count, 1)
+        self.assertTrue('no penguins' in renderer.prompt.render_success_message.mock_calls[0][1][0])
+        self.assertEqual(renderer.prompt.render_success_message.mock_calls[0][2]['tag'],
+                         'none_to_download')
+        # The _sync_state should have been updated to reflect the file
+        # downloading stage being complete
+        self.assertEqual(renderer._sync_state, progress.SyncProgressReport.STATE_COMPLETE)
+
+    def test__display_sync_report_during_file_stage_with_files(self):
+        """
+        Test the SyncStatusRenderer._display_sync_report method when the
+        SyncProgressReport has entered the file retrieval stage (with three files to
+        download) from the manifest retrieval stage. It should display progress to the
+        user.
+        """
+        conduit = mock.MagicMock()
+        finished_bytes = 12
+        total_bytes = 1204
+        state_times = {progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS: datetime.utcnow()}
+        sync_report = progress.SyncProgressReport(
+            conduit, num_files=3, total_bytes=total_bytes, finished_bytes=finished_bytes,
+            state=progress.SyncProgressReport.STATE_FILES_IN_PROGRESS, state_times=state_times)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's put the renderer in the manifest retrieval stage, simulating
+        # the SyncProgressReport having just left that stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS
+        renderer.prompt.reset_mock()
+
+        renderer._display_sync_report(sync_report, "emus")
+
+        # The user should be informed that downloading is starting for three files
+        self.assertEqual(renderer.prompt.write.call_count, 1)
+        self.assertEqual(renderer.prompt.write.mock_calls[0][2]['tag'], 'download_starting')
+
+        # The _sync_state should have been updated to reflect the file
+        # downloading stage being in progress
+        self.assertEqual(renderer._sync_state, progress.SyncProgressReport.STATE_FILES_IN_PROGRESS)
+        # A progress bar should have been rendered
+        self.assertEqual(renderer._sync_files_bar.render.call_count, 1)
+        args = renderer._sync_files_bar.render.mock_calls[0][1]
+        self.assertEqual(args[0], finished_bytes)
+        self.assertEqual(args[1], total_bytes)
+
+        # There should be one kwarg - message. It is non-deterministic, so
+        # let's just assert that it has some of the right text in it
+        kwargs = renderer._sync_files_bar.render.mock_calls[0][2]
+        self.assertEqual(len(kwargs), 1)
+        self.assertTrue('emus: 0/3' in kwargs['message'])
+
+    def test__display_sync_report_during_manifest_stage(self):
+        """
+        Test the SyncStatusRenderer._display_sync_report method when the
+        SyncProgressReport is in the manifest retrieval stage. It should not display
+        anything to the user.
+        """
+        conduit = mock.MagicMock()
+        sync_report = progress.SyncProgressReport(conduit,
+                                                  state=progress.SyncProgressReport.
+                                                  STATE_MANIFEST_IN_PROGRESS)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's also put the renderer in the manifest retrieval stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS
+        renderer.prompt.reset_mock()
+
+        renderer._display_sync_report(sync_report, "crows")
+
+        # Because we are in the manifest state, this method should not do anything with the prompt
+        self.assertEqual(renderer.prompt.mock_calls, [])
+
+    def test__display_manifest_sync_report_manifest_complete(self):
+        """
+        Test behavior from _display_manifest_sync_report when the manifest is complete.
+        """
+        sync_report = progress.SyncProgressReport(None,
+                                                  state=progress.SyncProgressReport.
+                                                  STATE_FILES_IN_PROGRESS)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's also put the renderer in the manifest retrieval stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_NOT_STARTED
+        renderer.prompt.reset_mock()
+
+        renderer._display_manifest_sync_report(sync_report, "ostrich manifest")
+
+        # There should be one message printed to the user that tells them the manifest is complete
+        self.assertEqual(len(renderer.prompt.mock_calls), 1)
+        self.assertEqual(renderer.prompt.mock_calls[0][2]['tag'], 'manifest_downloaded')
+        # The renderer state should have been advanced to
+        # STATE_MANIFEST_IN_PROGRESS, but not beyond, as _display_sync_report
+        # will move it into the next state
+        self.assertEqual(renderer._sync_state,
+                         progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS)
+
+    def test__display_manifest_sync_report_manifest_failed(self):
+        """
+        Test behavior from _display_manifest_sync_report when the manifest failed to be retrieved.
+        """
+        conduit = mock.MagicMock()
+        error_message = 'It broke.'
+        sync_report = progress.SyncProgressReport(conduit, error_message=error_message,
+                                                  state=progress.SyncProgressReport.
+                                                  STATE_MANIFEST_FAILED)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's also put the renderer in the manifest retrieval stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_NOT_STARTED
+        renderer.prompt.reset_mock()
+
+        renderer._display_manifest_sync_report(sync_report, "duck manifest")
+
+        # There should be two calls to mock. One to report the manifest
+        # failure, and one to report the reason.
+        self.assertEqual(len(renderer.prompt.mock_calls), 2)
+        self.assertEqual(renderer.prompt.mock_calls[0][2]['tag'], 'manifest_failed')
+
+        # Make sure we told the user the error message
+        self.assertEqual(renderer.prompt.mock_calls[1][2]['tag'], 'manifest_error_message')
+        # The specific error message passed from the sync_report should have been printed
+        self.assertTrue(error_message in renderer.prompt.mock_calls[1][1][0])
+
+    def test__display_manifest_sync_report_manifest_in_progress(self):
+        """
+        Test behavior from _display_manifest_sync_report when the manifest is currently in progress.
+        """
+        sync_report = progress.SyncProgressReport(None,
+                                                  state=progress.SyncProgressReport.
+                                                  STATE_MANIFEST_IN_PROGRESS)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's also put the renderer in the manifest retrieval stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_NOT_STARTED
+        renderer.prompt.reset_mock()
+
+        renderer._display_manifest_sync_report(sync_report, "goose manifest")
+
+        # There should be one message printed to the user that tells them the
+        # manifest is being downloaded
+        self.assertEqual(len(renderer.prompt.mock_calls), 1)
+        self.assertEqual(renderer.prompt.mock_calls[0][2]['tag'], 'downloading_manifest')
+        # The renderer state should have been advanced to
+        # STATE_MANIFEST_IN_PROGRESS
+        self.assertEqual(renderer._sync_state,
+                         progress.SyncProgressReport.STATE_MANIFEST_IN_PROGRESS)
+
+    def test__display_manifest_sync_report_not_started(self):
+        """
+        Before the download starts, the _display_manifest_sync_report() method
+        should not do anything.
+        """
+        conduit = mock.MagicMock()
+        sync_report = progress.SyncProgressReport(conduit,
+                                                  state=progress.SyncProgressReport.
+                                                  STATE_NOT_STARTED)
+        renderer = sp.SyncStatusRenderer(self.context)
+        # Let's also put the renderer in the manifest retrieval stage
+        renderer._sync_state = progress.SyncProgressReport.STATE_NOT_STARTED
+        renderer.prompt.reset_mock()
+
+        renderer._display_manifest_sync_report(sync_report, "swan manifest")
+
+        self.assertEqual(len(renderer.prompt.mock_calls), 0)
+
+
+class TestHumanReadableBytes(unittest.TestCase):
+    """
+    Test the human_readable_bytes() method.
+
+    Originally from test_extension_admin_iso_status.py in pulp_rpm
+    """
+
+    def setUp(self):
+        mock_context = mock.MagicMock()
+        mock_prompt = mock.MagicMock()
+        mock_context.prompt = mock_prompt
+        self.ssr = sp.SyncStatusRenderer(mock_context)
+
+    def test_bytes(self):
+        """
+        Test correct behavior when bytes are passed in.
+        """
+        self.assertEqual(self.ssr.human_readable_bytes(42), '42 B')
+
+    def test_kilobytes(self):
+        """
+        Test correct behavior when kB are passed.
+        """
+        self.assertEqual(self.ssr.human_readable_bytes(4096), '4.0 kB')
+
+    def test_megabytes(self):
+        """
+        Test correct behavior when MB are passed.
+        """
+        self.assertEqual(self.ssr.human_readable_bytes(97464344), '92.9 MB')
+
+    def test_gigabytes(self):
+        """
+        Test correct behavior when GB are passed.
+        """
+        self.assertEqual(self.ssr.human_readable_bytes(17584619520), '16.4 GB')
+
+    def test_terabytes(self):
+        """
+        Test correct behavior when TB are passed.
+        """
+        self.assertEqual(self.ssr.human_readable_bytes(40444624896000), '36.8 TB')
