@@ -159,9 +159,9 @@ class ContentSource(object):
             for section in cfg.sections():
                 descriptor = dict(cfg.items(section))
                 source = ContentSource(section, descriptor)
-                if not source.is_valid():
-                    continue
                 if not source.enabled:
+                    continue
+                if not source.is_valid():
                     continue
                 sources[source.id] = source
         return sources
@@ -201,7 +201,7 @@ class ContentSource(object):
         :return: True if enabled.
         :rtype: bool
         """
-        enabled = self.descriptor.get(constants.ENABLED)
+        enabled = self.descriptor.get(constants.ENABLED, '0')
         return enabled.lower() in ('1', 'true', 'yes')
 
     @property
