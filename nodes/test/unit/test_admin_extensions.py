@@ -451,11 +451,19 @@ class TestRenderers(ClientTests):
         summary_report.setup([{'repo_id': r} for r in repo_ids])
         for r in summary_report.repository.values():
             r.action = RepositoryReport.ADDED
-        summary_report.errors.append(UnitDownloadError('http://abc/x.rpm', repo_ids[0], dict(response_code=401)))
+        summary_report.errors.append(
+            UnitDownloadError('http://abc/x.rpm', repo_ids[0], dict(response_code=401)))
         handler_report.set_failed(details=summary_report.dict())
         renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
         renderer.render()
         self.assertEqual(len(self.recorder.lines), 48)
+
+    def test_update_rendering_with_message(self):
+        handler_report = ContentReport()
+        handler_report.set_failed(details=dict(message='Authorization Failed'))
+        renderer = UpdateRenderer(self.context.prompt, handler_report.dict())
+        renderer.render()
+        self.assertEqual(len(self.recorder.lines), 4)
 
 
 class TestProgressTracking(ClientTests):

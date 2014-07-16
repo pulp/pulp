@@ -212,10 +212,16 @@ class UpdateRenderer(object):
         self.prompt = prompt
         self.succeeded = report['succeeded']
         self.details = report['details']
-        self.errors = self.details['errors']
-        self.repositories = self.details['repositories']
+        self.errors = self.details.get('errors', [])
+        self.message = self.details.get('message')
+        self.repositories = self.details.get('repositories', {})
 
     def render(self):
+        if self.message:
+            self.prompt.render_failure_message(self.message)
+            self.prompt.render_failure_message(FAILED_MSG)
+            return
+
         documents = []
         for repo_report in sorted(self.repositories, key=itemgetter('repo_id')):
             sources = repo_report['sources']
