@@ -510,3 +510,18 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
         self.assertFalse(mock_generator.return_value.startElement.called)
         mock_generator.return_value.endElement.assert_called_once_with('metadata')
         self.assertTrue(mock_generator.return_value.endDocument.called)
+
+    def test_close_metadata_file_handle(self):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes,
+                                            checksum_type=TYPE_SHA1)
+        context._open_metadata_file_handle()
+        context._close_metadata_file_handle()
+        self.assertFalse(os.path.exists(os.path.join(self.working_dir, 'aa-test.xml')))
+
+    def test_close_metadata_file_handle_no_fast_forward(self):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes, checksum_type=TYPE_SHA1)
+        context._open_metadata_file_handle()
+        context._close_metadata_file_handle()
+        self.assertTrue(context._is_closed(context.metadata_file_handle))

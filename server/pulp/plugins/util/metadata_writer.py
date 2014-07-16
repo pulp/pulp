@@ -360,7 +360,7 @@ class FastForwardXmlFileContext(XmlFileContext):
         # find the primary file
         working_dir, file_name = os.path.split(self.metadata_file_path)
         if self.checksum_type:
-            #make sure soemthing matches the checksum pattern
+            # Look for a file matching the checksum-filename pattern
             expression = '[0-9a-zA-Z]*-%s' % file_name
             expression = os.path.join(working_dir, expression)
             file_list = glob.glob(expression)
@@ -378,6 +378,8 @@ class FastForwardXmlFileContext(XmlFileContext):
                 shutil.move(os.path.join(working_dir, self.existing_file),
                             os.path.join(working_dir, new_file_name))
                 self.existing_file = new_file_name
+
+            self.existing_file = os.path.join(working_dir, self.existing_file)
 
             # Open the file, use gzip if necessary
             self.original_file_handle = None
@@ -409,3 +411,16 @@ class FastForwardXmlFileContext(XmlFileContext):
                 pass
         else:
             super(FastForwardXmlFileContext, self)._write_file_footer()
+
+    def _close_metadata_file_handle(self):
+        """
+        Close any open file handles and remove the original file if a new one
+        was generated
+        """
+        super(FastForwardXmlFileContext, self)._close_metadata_file_handle()
+        # Close & remove the existing file that was copied
+        if self.fast_forward:
+            if not self._is_closed(self.original_file_handle):
+                self.original_file_handle.close()
+            # We will always have renamed the original file so remove it
+            os.unlink(self.existing_file)
