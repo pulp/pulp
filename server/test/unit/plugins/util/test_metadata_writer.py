@@ -452,7 +452,7 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
         context._open_metadata_file_handle()
         self.assertTrue(context.fast_forward)
         # check that the file has been renamed
-        self.assertEquals(context.existing_file, 'original.test.xml')
+        self.assertEquals(context.existing_file, os.path.join(self.working_dir, 'original.test.xml'))
 
     @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
     def test_open_metadata_file_handle_existing_gzip_file(self, mock_generator):
@@ -460,7 +460,8 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
                                             self.tag, self.attributes)
         context._open_metadata_file_handle()
         self.assertTrue(context.fast_forward)
-        self.assertEquals(context.existing_file, 'original.test.xml.gz')
+        self.assertEquals(context.existing_file,
+                          os.path.join(self.working_dir, 'original.test.xml.gz'))
 
     @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
     def test_open_metadata_file_handle_existing_checksum_file(self, mock_generator):
