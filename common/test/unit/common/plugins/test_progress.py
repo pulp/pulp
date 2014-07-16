@@ -118,7 +118,7 @@ class TestProgressReport(unittest.TestCase):
         cancelled, we should report it as a success
         """
         report = progress.ProgressReport(self.conduit,
-                                            state=progress.ProgressReport.STATE_CANCELED)
+                                         state=progress.ProgressReport.STATE_CANCELED)
 
         conduit_report = report.build_final_report()
 
@@ -262,6 +262,68 @@ class TestProgressReport(unittest.TestCase):
 
         self.assertEqual(report.state, 'state_1')
 
+
+class TestSyncProgressReport(unittest.TestCase):
+
+    def setUp(self):
+        self.conduit = get_mock_conduit()
+
+    def test_init(self):
+        report = progress.SyncProgressReport(total_bytes=100, num_files=3,
+                                             files_error_messages=["mocked str"])
+        self.assertEquals(report.total_bytes, 100)
+        self.assertEquals(report.finished_bytes, 0)
+        self.assertEquals(report.num_files, 3)
+        self.assertEquals(report.files_error_messages, ["mocked str"])
+
+    def test_init_no_errormsg(self):
+        report = progress.SyncProgressReport()
+        self.assertEquals(report.files_error_messages, [])
+
+    def test_add_failed_file(self):
+        mock_file = mock.Mock()
+        mock_error_report = mock.Mock()
+        mock_file.name = "mock_filename"
+        report = progress.SyncProgressReport()
+        report.add_failed_file(mock_file, mock_error_report)
+        self.assertEquals(report.files_error_messages, [{'name': "mock_filename",
+                                                         'error': mock_error_report}])
+
+    @mock.patch('pulp.common.plugins.progress.ProgressReport')
+    def test_build_progress_report(self, mock_progress):
+        mock_progress.build_progress_report.return_value = mock.Mock()
+        report = progress.SyncProgressReport(total_bytes=100, finished_bytes=3,
+                                             num_files=1, num_files_finished=0)
+        sync_report = report.build_progress_report()
+        self.assertEquals(sync_report['total_bytes'], 100)
+        self.assertEquals(sync_report['finished_bytes'], 3)
+        self.assertEquals(sync_report['num_files'], 1)
+        self.assertEquals(sync_report['num_files_finished'], 0)
+        self.assertEquals(sync_report['files_error_messages'], [])
+
+    def test_set_state_canceled(self):
+        report = progress.SyncProgressReport(conduit=self.conduit)
+        report._set_state(report.STATE_CANCELED)
+        report._set_state(report.STATE_NOT_STARTED)
+        # once canceled, always canceled
+        self.assertEquals(report._get_state(), report.STATE_CANCELED)
+
+    def test_set_state(self):
+        report = progress.SyncProgressReport(conduit=self.conduit)
+        report._set_state(report.STATE_NOT_STARTED)
+        self.assertEquals(report._get_state(), report.STATE_NOT_STARTED)
+
+    def test_set_state_failed(self):
+        mock_file = mock.Mock()
+        mock_error_report = mock.Mock()
+        mock_file.name = "mock_filename"
+        report = progress.SyncProgressReport(conduit=self.conduit)
+        # we could set this on the init, but lets shift through the steps
+        report._set_state(report.STATE_MANIFEST_IN_PROGRESS)
+        report._set_state(report.STATE_FILES_IN_PROGRESS)
+        report.add_failed_file(mock_file, mock_error_report)
+        report._set_state(report.STATE_COMPLETE)
+        self.assertEquals(report._get_state(), report.STATE_FILES_FAILED)
 
 
 def get_mock_conduit(type_id=None, existing_units=None, pkg_dir=None):

@@ -16,10 +16,13 @@ commands.
 """
 from gettext import gettext as _
 
+from datetime import datetime
+
 from pulp.bindings import responses
 from pulp.client.commands import options, polling
 from pulp.client.extensions.extensions import PulpCliOptionGroup
 from pulp.common import tags
+from pulp.common.plugins.progress import SyncProgressReport
 
 
 # Command Descriptions
@@ -38,6 +41,138 @@ class StatusRenderer(object):
 
     def display_report(self, progress_report):
         raise NotImplementedError()
+
+class SyncStatusRenderer(StatusRenderer):
+
+    def __init__(self, context):
+        """
+        Initialize status renderer.
+
+        :param context:     The CLI context from Okaara
+        :type  context:     pulp.client.extensions.core.ClientContext
+        """
+
+        super(self.__class__, self).__init__(context)
+        self._sync_files_bar = self.prompt.create_progress_bar()
+        self._sync_state = SyncProgressReport.STATE_NOT_STARTED
+
+    def _display_sync_report(self, sync_report, unit_noun):
+        """
+        Display the retrieval step.
+
+        :param sync_report: sync report
+        :type  sync_report: pulp.common.plugins.progress.SyncProgressReport
+        :param unit_noun: the word to use for whatever's being synced. Examples are "images",
+                          "files", etc.
+        :type  unit_noun: str
+        """
+        if (self._sync_state == sync_report.STATE_MANIFEST_IN_PROGRESS and
+                sync_report.state != sync_report.STATE_MANIFEST_IN_PROGRESS):
+            if sync_report.num_files:
+                self.prompt.write(_('Downloading %(num)s %(noun)s...') %
+                                  {'num': sync_report.num_files,
+                                   'noun': unit_noun},
+                                  tag='download_starting')
+                self._sync_state = sync_report.STATE_FILES_IN_PROGRESS
+            else:
+                self.prompt.render_success_message(
+                    _('There are no %s that need to be downloaded.') % unit_noun,
+                    tag='none_to_download')
+                self._sync_state = sync_report.STATE_COMPLETE
+
+        if self._sync_state == sync_report.STATE_FILES_IN_PROGRESS:
+            if sync_report.total_bytes:
+                runtime = (datetime.utcnow() -
+                           sync_report.state_times[sync_report.STATE_MANIFEST_IN_PROGRESS])
+                runtime = (runtime.days * 3600 * 24) + runtime.seconds
+                if runtime:
+                    average_speed = self.human_readable_bytes(sync_report.finished_bytes / runtime)
+                else:
+                    average_speed = 0
+                bar_message = _("%(noun)s: %(num_complete)s/%(num_total)s\tData: "
+                                "%(bytes_complete)s/%(bytes_total)s\tAvg: %(speed)s/s")
+                bar_message = bar_message % {
+                    'noun': unit_noun,
+                    'num_complete': sync_report.num_files_finished,
+                    'num_total': sync_report.num_files,
+                    'speed': average_speed,
+                    'bytes_complete': self.human_readable_bytes(sync_report.finished_bytes),
+                    'bytes_total': self.human_readable_bytes(sync_report.total_bytes)}
+                self._sync_files_bar.render(sync_report.finished_bytes, sync_report.total_bytes,
+                                            message=bar_message)
+            if sync_report.state != sync_report.STATE_FILES_IN_PROGRESS:
+                self.prompt.write('\n')
+                if sync_report.state == sync_report.STATE_COMPLETE:
+                    msg = _('Successfully downloaded %(num)s %(noun)s.') % {
+                        'num': sync_report.num_files,
+                        'noun': unit_noun}
+                    self.prompt.render_success_message(msg, tag='download_success')
+                else:
+                    msg = _('Failed to retrieve %(num)s %(noun)s.')
+                    msg = msg % {'num': sync_report.num_files - sync_report.num_files_finished,
+                                 'noun': unit_noun}
+                    self.prompt.render_failure_message(msg, tag='download_failed')
+                    for failed_file in sync_report.files_error_messages:
+                        self.prompt.render_failure_message('\t%(name)s: %(msg)s' %
+                                                           {'name': failed_file['name'],
+                                                            'msg': failed_file['error']},
+                                                           tag='file_error_msg')
+                self._sync_state = sync_report.state
+
+    def human_readable_bytes(self, num):
+        """
+        This handy snippet was retrieved from
+        http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size
+        It takes a size in Bytes, and converts it to a nice human readable form.
+        :param num: number to convert
+        :type  num: int
+        :return: bytes in human-readable format
+        :rtype: string
+        """
+        for x in ['B', 'kB', 'MB', 'GB']:
+            if num < 1024.0:
+                if x == 'B':
+                    return '%s %s' % (num, x)
+                else:
+                    return "%3.1f %s" % (num, x)
+            num /= 1024.0
+        return "%3.1f %s" % (num, 'TB')
+
+    def _display_manifest_sync_report(self, sync_report, manifest_noun):
+        """
+        Display the manifest retrieval step.
+
+        :param sync_report: sync report
+        :type  sync_report: pulp.common.plugins.progress.SyncProgressReport
+        :param manifest_noun: name of the manifest ("image manifest", "yum metadata", etc)
+        :type  manifest_noun: str
+        """
+        # We should skip this step if the sync hasn't begun
+        if sync_report.state == sync_report.STATE_NOT_STARTED:
+            return
+
+        if (sync_report.state == sync_report.STATE_MANIFEST_FAILED and
+                self._sync_state != sync_report.STATE_MANIFEST_FAILED):
+            self.prompt.render_failure_message(_('Downloading the %s failed:') % manifest_noun,
+                                               tag='manifest_failed')
+            self.prompt.render_failure_message('\t%s' % sync_report.error_message,
+                                               tag='manifest_error_message')
+            self._sync_state = sync_report.STATE_MANIFEST_FAILED
+            return
+
+        if self._sync_state == sync_report.STATE_NOT_STARTED:
+            # The sync_report has moved on, so let's respond
+            self._sync_state = sync_report.STATE_MANIFEST_IN_PROGRESS
+
+            if sync_report.state == sync_report.STATE_MANIFEST_IN_PROGRESS:
+                self.prompt.write(_('Downloading the %s...') % manifest_noun,
+                                  tag='downloading_manifest')
+
+        if (self._sync_state == sync_report.STATE_MANIFEST_IN_PROGRESS and
+                sync_report.state != sync_report.STATE_MANIFEST_IN_PROGRESS):
+            self.prompt.render_success_message(_('The %s was downloaded successfully.')
+                                               % manifest_noun,
+                                               tag='manifest_downloaded')
 
 
 class SyncPublishCommand(polling.PollingCommand):
