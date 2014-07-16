@@ -211,7 +211,8 @@ class TestContentSource(TestCase):
         fake_parser.assert_called_with()
         fake_parser().read.assert_called_with(os.path.join(conf_d, files[0]))
 
-        self.assertEqual(len(sources), 2)
+        self.assertEqual(len(sources), 3)
+        self.assertTrue(DESCRIPTOR[0][0] in sources)
         self.assertTrue(DESCRIPTOR[1][0] in sources)
         self.assertTrue(DESCRIPTOR[3][0] in sources)
 
@@ -296,6 +297,8 @@ class TestContentSource(TestCase):
         source = ContentSource('s-1', {constants.ENABLED: 'true'})
         self.assertTrue(source.enabled)
         source.descriptor[constants.ENABLED] = 'false'
+        self.assertFalse(source.enabled)
+        source.descriptor = {}
         self.assertFalse(source.enabled)
 
     def test_priority(self):
