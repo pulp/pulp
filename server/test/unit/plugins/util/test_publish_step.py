@@ -17,7 +17,8 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.model import Repository
 from pulp.plugins.util.publish_step import PublishStep, UnitPublishStep, \
-    AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep
+    AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep, \
+    PluginStep, PluginStepIterativeProcessingMixin
 
 
 class PublisherBase(unittest.TestCase):
@@ -58,8 +59,120 @@ class PostOrderTests(unittest.TestCase):
         value_list = [n.value for n in _post_order(n5)]
         self.assertEquals(value_list, [1, 2, 3, 4, 5])
 
+class PluginStepTests(unittest.TestCase):
+    """
+    Most of the tests in this class are similar to PublishStepTests. I left
+    them in both places to verify that no incompatibilities were introduced when
+    refactoring.
+    """
+
+    def test_init(self):
+        mock_repo = Mock()
+        mock_conduit = Mock()
+        mock_config = Mock()
+        pluginstep = PluginStep("foo", repo=mock_repo, conduit=mock_conduit, plugin_type="foo",
+                                working_dir="/foo/bar", config=mock_config)
+        self.assertEquals(pluginstep.get_repo(), mock_repo)
+        self.assertEquals(pluginstep.get_conduit(), mock_conduit)
+        self.assertEquals(pluginstep.get_config(), mock_config)
+        self.assertEquals(pluginstep.get_working_dir(), "/foo/bar")
+        self.assertEquals(pluginstep.get_plugin_type(), "foo")
+
+    def test_get_working_dir_from_repo(self):
+        step = PluginStep('foo_step')
+        step.get_repo = Mock(return_value=Mock(working_dir='foo'))
+        self.assertEquals('foo', step.get_working_dir())
+
+    def test_get_repo_from_parent(self):
+        step = PluginStep('foo_step')
+        step.conduit = 'foo'
+        step.parent = mock.Mock()
+        step.parent.get_repo.return_value = 'foo'
+        self.assertEquals('foo', step.get_repo())
+
+    def test_get_conduit_from_parent(self):
+        step = PluginStep('foo_step')
+        step.conduit = 'foo'
+        step.parent = mock.Mock()
+        step.parent.get_conduit.return_value = 'foo'
+        self.assertEquals('foo', step.get_conduit())
+
+    def test_get_progress_report_summary(self):
+        parent_step = PluginStep('parent_step')
+        step = PluginStep('foo_step')
+        parent_step.add_child(step)
+        step.state = reporting_constants.STATE_COMPLETE
+        report = parent_step.get_progress_report_summary()
+        target_report = {
+            'foo_step': reporting_constants.STATE_COMPLETE
+        }
+        compare_dict(report, target_report)
+
+    def test_get_progress_report_description(self):
+        step = PluginStep('bar_step')
+        step.description = 'bar'
+        step.error_details = "foo"
+        step.state = reporting_constants.STATE_COMPLETE
+        step.total_units = 2
+        step.progress_successes = 1
+        step.progress_failures = 1
+        report = step.get_progress_report()
+
+        target_report = {
+            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'bar_step',
+            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
+            reporting_constants.PROGRESS_STATE_KEY: step.state,
+            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
+            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
+            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
+            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar',
+            reporting_constants.PROGRESS_STEP_UUID: step.uuid
+        }
+
+        compare_dict(report, target_report)
+
+    def test_build_final_report_success(self):
+
+        mock_conduit = Mock()
+        top_step = PluginStep('top', conduit=mock_conduit)
+        step_one = PluginStep('step_one')
+        step_one.state = reporting_constants.STATE_COMPLETE
+        step_two = PluginStep('step_two')
+        step_two.state = reporting_constants.STATE_COMPLETE
+        top_step.add_child(step_one)
+        top_step.add_child(step_two)
+
+        report = top_step._build_final_report()
+        mock_conduit.build_success_report.assert_called_once()
+
+    def test_build_final_report_failure(self):
+
+        mock_conduit = Mock()
+        top_step = PluginStep('top', conduit=mock_conduit)
+        top_step.state = reporting_constants.STATE_FAILED
+        step_one = PluginStep('step_one')
+        step_one.state = reporting_constants.STATE_COMPLETE
+        step_two = PluginStep('step_two')
+        step_two.state = reporting_constants.STATE_FAILED
+        top_step.add_child(step_one)
+        top_step.add_child(step_two)
+
+        report = top_step._build_final_report()
+        mock_conduit.build_failure_report.assert_called_once()
+
+    def test_clear_children(self):
+        step = PluginStep("foo")
+        step.children = ['bar']
+        step.clear_children()
+        self.assertEquals(0, len(step.children))
+
 
 class PublishStepTests(PublisherBase):
+    """
+    There are some tests in here that touch on PluginStep code. I left them
+    as-is to verify the refactoring was backwards compatible.
+    """
 
     def test_get_working_dir_already_calculated(self):
         step = PublishStep('foo_step')
@@ -78,14 +191,14 @@ class PublishStepTests(PublisherBase):
 
     def test_get_repo_from_parent(self):
         step = PublishStep('foo_step')
-        step.publish_conduit = 'foo'
+        step.conduit = 'foo'
         step.parent = mock.Mock()
         step.parent.get_repo.return_value = 'foo'
         self.assertEquals('foo', step.get_repo())
 
     def test_get_distributor_type(self):
         step = PublishStep('foo_step')
-        step.distributor_type = 'foo'
+        step.plugin_type = 'foo'
         self.assertEquals('foo', step.get_distributor_type())
 
     def test_get_distributor_type_none(self):
@@ -94,19 +207,20 @@ class PublishStepTests(PublisherBase):
 
     def test_get_distributor_type_from_parent(self):
         step = PublishStep('foo_step')
-        step.publish_conduit = 'foo'
+        step.conduit = 'foo'
         step.parent = mock.Mock()
-        step.parent.get_distributor_type.return_value = 'foo'
+        # we convert this to get_plugin_type internally
+        step.parent.get_plugin_type.return_value = 'foo'
         self.assertEquals('foo', step.get_distributor_type())
 
     def test_get_conduit(self):
         step = PublishStep('foo_step')
-        step.publish_conduit = 'foo'
+        step.conduit = 'foo'
         self.assertEquals('foo', step.get_conduit())
 
     def test_get_conduit_from_parent(self):
         step = PublishStep('foo_step')
-        step.publish_conduit = 'foo'
+        step.conduit = 'foo'
         step.parent = mock.Mock()
         step.parent.get_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_conduit())
@@ -418,6 +532,39 @@ class PublishStepTests(PublisherBase):
 
         self.assertFalse(report.success_flag)
 
+class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
+
+    class DummyStep(PluginStepIterativeProcessingMixin):
+        """
+        A dummy class that provides some stuff that the mixin uses
+        """
+        def __init__(self):
+            self.canceled = False
+            self.progress_successes = 0
+            self.process_item = Mock()
+            self.report_progress = Mock()
+
+        def get_generator(self):
+            return (n for n in [1,2])
+
+
+    def test_get_generator(self):
+        mixin = PluginStepIterativeProcessingMixin()
+        try:
+            mixin.get_generator()
+            self.assertTrue(False, "no exception thrown")
+        except NotImplementedError:
+            pass
+        except:
+            self.assertTrue(False, "wrong exception thrown")
+
+    def test_process_block(self):
+        dummystep = self.DummyStep()
+        dummystep._process_block()
+        dummystep.process_item.assert_called()
+        dummystep.report_progress.assert_called()
+        self.assertEquals(dummystep.progress_successes, 2)
+
 
 class UnitPublishStepTests(PublisherBase):
 
@@ -442,7 +589,7 @@ class UnitPublishStepTests(PublisherBase):
         mock_get_units.return_value = []
         step = UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
-        step.process_unit = mock_method
+        step.process_item = mock_method
         step.process()
         self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
         self.assertFalse(mock_method.called)
@@ -455,7 +602,7 @@ class UnitPublishStepTests(PublisherBase):
         mock_get_units.return_value = ['mock_unit']
         step = UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
-        step.process_unit = mock_method
+        step.process_item = mock_method
         step.process()
 
         self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
@@ -472,7 +619,7 @@ class UnitPublishStepTests(PublisherBase):
         mock_get_units.return_value = ['mock_unit']
         step = UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
-        step.process_unit = mock_method
+        step.process_item = mock_method
 
         self.assertRaises(Exception, step.process)
         self.assertEquals(step.state, reporting_constants.STATE_FAILED)
@@ -489,7 +636,7 @@ class UnitPublishStepTests(PublisherBase):
         step = UnitPublishStep('foo_step', 'FOO_TYPE')
         self.publisher.add_child(step)
 
-        step.process_unit = self._step_canceler
+        step.process_item = self._step_canceler
         step.process()
 
         self.assertEquals(step.state, reporting_constants.STATE_CANCELLED)
@@ -545,10 +692,10 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(0, total)
 
 
-    def test_process_unit_with_no_work(self):
+    def test_process_item_with_no_work(self):
         # Run the blank process unit to ensure no exceptions are raised
         step = UnitPublishStep("foo", ['bar', 'baz'])
-        step.process_unit('foo')
+        step.process_item('foo')
 
 
 class TestAtomicDirectoryPublishStep(unittest.TestCase):
