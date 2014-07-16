@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.24.beta%{?dist}
+Release: 0.25.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,19 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Jul 16 2014 Unknown name 2.4.0-0.25.beta
+- 1115631 - discard disabled sources before doing is_valid check.
+  (jortel@redhat.com)
+- 1005899 - support 'message' reported during node sync. (jortel@redhat.com)
+- 1113590 - Adding documentation about adding ca cert to the system trusted
+  certs for pulp-admin and pulp-consumer and adding bindings unit tests
+  (skarmark@redhat.com)
+- 1112906 - adding SSL CA cert validation to the bindings (skarmark@redhat.com)
+- 1112905 - updating pulp-gen-ca-certificate script to create pulp ssl
+  certificates (skarmark@redhat.com)
+- 1112904 - adding configuration for pulp ssl certificates
+  (skarmark@redhat.com)
+
 * Fri Jul 11 2014 Brian Bouterse <bmbouter@gmail.com> 2.4.0-0.24.beta
 - 1110668 - updated consumer group binding documentation to refect the actual
   behaviour (jcline@redhat.com)
