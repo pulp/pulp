@@ -1,6 +1,5 @@
-import datetime
-
 from ..... import base
+from pulp.common import dateutils
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -139,6 +138,6 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         last_publish = self.publish_manager.last_publish(self.group_id, self.distributor_id)
 
         # Verify
-        now = datetime.datetime.utcnow()
+        now = dateutils.now_utc_datetime_with_tzinfo()
         difference = now - last_publish
         self.assertTrue(difference.seconds < 2)

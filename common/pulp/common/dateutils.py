@@ -129,6 +129,16 @@ def to_naive_utc_datetime(dt):
     udt = to_utc_datetime(dt)
     return udt.replace(tzinfo=None)
 
+
+def now_utc_datetime_with_tzinfo():
+    """
+    Generate a datetime for right now in UTC with timezone indicator.
+    @return: Datetime for right now with timezone indicator
+    @rtype: datetime
+    """
+    return datetime.datetime.now(tz=utc_tz())
+
+
 # iso8601 functions ------------------------------------------------------------
 
 def parse_iso8601_date(date_str):

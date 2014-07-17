@@ -340,7 +340,7 @@ The result field of the :ref:`call_report` contains the database representation 
     "scratchpad": null,
     "_ns": "repo_importers",
     "importer_type_id": "demo_importer",
-    "last_sync": "2013-10-03T14:08:35",
+    "last_sync": "2013-10-03T14:08:35Z",
     "scheduled_syncs": [],
     "repo_id": "demo_repo",
     "_id": {

@@ -35,9 +35,9 @@ and failed sync operations and the body will describe the result.
     "exception": null,
     "repo_id": "pulp-f16",
     "removed_count": 0,
-    "started": "2012-07-06T15:49:11",
+    "started": "2012-07-06T15:49:11Z",
     "_ns": "repo_sync_results",
-    "completed": "2012-07-06T15:49:14",
+    "completed": "2012-07-06T15:49:14Z",
     "traceback": null,
     "summary": {
       <data is contingent on the importer and removed for space>
@@ -60,9 +60,9 @@ and failed sync operations and the body will describe the result.
     "exception": null,
     "repo_id": "pulp-f17",
     "removed_count": 0,
-    "started": "2012-07-06T12:06:02",
+    "started": "2012-07-06T12:06:02Z",
     "_ns": "repo_sync_results",
-    "completed": "2012-07-06T12:06:02",
+    "completed": "2012-07-06T12:06:02Z",
     "traceback": null,
     "summary": {
       <data is contingent on the importer and removed for space>
@@ -107,9 +107,9 @@ and failed publish operations and the body will describe the result.
   {
     "exception": null,
     "repo_id": "pulp-f16",
-    "started": "2012-07-06T15:53:41",
+    "started": "2012-07-06T15:53:41Z",
     "_ns": "repo_publish_results",
-    "completed": "2012-07-06T15:53:43",
+    "completed": "2012-07-06T15:53:43Z",
     "traceback": null,
     "distributor_type_id": "yum_distributor",
     "summary": {

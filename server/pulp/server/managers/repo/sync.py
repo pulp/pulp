@@ -322,7 +322,7 @@ def _now_timestamp():
     @return: iso 8601 UTC timestamp suitable for indicating when a sync completed
     @rtype:  str
     """
-    now = datetime.datetime.utcnow()
+    now = dateutils.now_utc_datetime_with_tzinfo()
     now_in_iso_format = dateutils.format_iso8601_datetime(now)
     return now_in_iso_format
 

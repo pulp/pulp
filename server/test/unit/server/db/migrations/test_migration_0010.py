@@ -14,7 +14,7 @@ class TestMigration(unittest.TestCase):
         migration = MigrationModule(MIGRATION)._module
         collection = mock_connection.get_collection.return_value
         unit = {'bar': '2014-07-09T11:09:07-04:00'}
-        utc_value = '2014-07-09T15:09:07'
+        utc_value = '2014-07-09T15:09:07Z'
         collection.find.return_value = [unit]
 
         migration.update_time_to_utc_on_collection('foo', 'bar')
