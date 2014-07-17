@@ -121,7 +121,7 @@ where there are no repositories.
         "scratchpad": 1,
         "_ns": "gc_repo_importers",
         "importer_type_id": "harness_importer",
-        "last_sync": "2012-01-25T15:26:32"Z,
+        "last_sync": "2012-01-25T15:26:32Z",
         "repo_id": "harness_repo_1",
         "sync_in_progress": false,
         "_id": "bbe81308-ef7c-4c0c-b684-385fd627d99e",
