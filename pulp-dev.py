@@ -330,7 +330,7 @@ def install(opts):
             # Generate new CA and SSL certs
             os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
             # Import new CA cert into the system trusted CA certs
-            os.system('rm -rf /etc/pki/tls/certs/`openssl x509 -noout -hash -in '
+            os.system('rm -f /etc/pki/tls/certs/`openssl x509 -noout -hash -in '
                       '/etc/pki/pulp/ca.crt`.0')
             os.system('ln -s /etc/pki/pulp/ca.crt /etc/pki/tls/certs/'
                       '`openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0')
@@ -381,7 +381,7 @@ def uninstall(opts):
     # Remove generated certificates
     print 'removing certificates'
     if os.path.exists('/etc/pki/pulp/ca.crt'):
-        os.system('rm -rf /etc/pki/tls/certs/`openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0')
+        os.system('rm -f /etc/pki/tls/certs/`openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0')
     os.system('rm -rf /etc/pki/pulp/*')
 
     return os.EX_OK
