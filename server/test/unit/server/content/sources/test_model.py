@@ -23,29 +23,25 @@ TYPE = '1234'
 TYPE_ID = 'ABCD'
 
 DESCRIPTOR = [
-    ('s-0', {
-        'valid': True,
+    ('s-0', {  # loaded
         constants.BASE_URL: 'http://repository/s-0',
         constants.ENABLED: True,
         constants.TYPE: TYPE,
         constants.PRIORITY: '4'
     }),
-    ('s-1', {
-        'valid': True,
+    ('s-1', {  # not loaded
         constants.BASE_URL: 'http://repository/s-1',
         constants.ENABLED: False,
         constants.TYPE: TYPE,
         constants.PRIORITY: '3'
     }),
-    ('s-2', {
-        'valid': True,
+    ('s-2', {  # loaded
         constants.BASE_URL: 'http://repository/s-2',
         constants.ENABLED: True,
         constants.TYPE: TYPE,
         constants.PRIORITY: '2'
     }),
-    ('s-3', {
-        'valid': False,
+    ('s-3', {  # not loaded
         constants.BASE_URL: 'http://repository/s-3',
         constants.ENABLED: True,
         constants.TYPE: TYPE,
@@ -192,13 +188,18 @@ class TestContentSource(TestCase):
         files = ['one.conf', 'other']
         fake_listdir.return_value = files
 
-        fake_valid.side_effect = [d[1]['valid'] for d in DESCRIPTOR]
+        fake_valid.side_effect = [
+            True,  # s-0
+                   # s-1 not enabled
+            True,  # s-2
+            False  # s-3
+        ]
 
         fake_enabled.__get__ = Mock(side_effect=[d[1]['enabled'] for d in DESCRIPTOR])
 
         parser = Mock()
         parser.items.side_effect = [d[1].items() for d in DESCRIPTOR]
-        parser.sections.return_value = dict(DESCRIPTOR)
+        parser.sections.return_value = [d[0] for d in DESCRIPTOR]
         fake_parser.return_value = parser
 
         # test
@@ -212,8 +213,8 @@ class TestContentSource(TestCase):
         fake_parser().read.assert_called_with(os.path.join(conf_d, files[0]))
 
         self.assertEqual(len(sources), 2)
-        self.assertTrue(DESCRIPTOR[1][0] in sources)
-        self.assertTrue(DESCRIPTOR[3][0] in sources)
+        self.assertTrue(DESCRIPTOR[0][0] in sources)
+        self.assertTrue(DESCRIPTOR[2][0] in sources)
 
     def test_construction(self):
         # test
@@ -296,6 +297,8 @@ class TestContentSource(TestCase):
         source = ContentSource('s-1', {constants.ENABLED: 'true'})
         self.assertTrue(source.enabled)
         source.descriptor[constants.ENABLED] = 'false'
+        self.assertFalse(source.enabled)
+        source.descriptor = {}
         self.assertFalse(source.enabled)
 
     def test_priority(self):

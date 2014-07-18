@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.15
-Release:        10.pulp%{?dist}
+Release:        11.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -27,6 +27,7 @@ BuildRequires:  python2-devel
 %if 0%{?rhel} == 6
 BuildRequires:  python-ordereddict
 BuildRequires:  python-importlib
+BuildRequires:  qpid-tools
 %endif
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
@@ -52,6 +53,7 @@ BuildRequires: python-amqp >= 1.4.5
 BuildRequires: python-mock
 BuildRequires: python-msgpack
 BuildRequires: python-qpid
+BuildRequires: python-qpid-qmf
 BuildRequires: python-simplejson
 BuildRequires: python-unittest2
 BuildRequires: PyYAML
@@ -171,6 +173,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Jul 10 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-11.pulp
+- Release 11 of python-kombu includes BZ fixes for 1096539 and 1105195.
+  (bmbouter@gmail.com)
+
 * Fri Jun 06 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-10.pulp
 - Removing PropertyMock from test code. (bmbouter@gmail.com)
 
