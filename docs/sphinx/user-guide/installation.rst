@@ -183,12 +183,12 @@ Server
 
    .. _ssl_validation:
 
-#. Pulp server installation will generate a new CA cert and an SSL cert signed by this CA cert
-   with CN as the hostname of your server under the ``/etc/pki/pulp`` directory. If you want to configure
-   a different server name in ``/etc/pulp/server.conf`` or you change the hostname after installing
-   Pulp, you will need to regenerate these certs by running ``pulp-gen-ca-certificate``.
-   Expected filename, location and description of these certificates is explained in detail under
-   [security] section in ``/etc/pulp/server.conf``.
+#. Pulp server installation will generate a new CA certificate and an SSL certificate signed by
+   this CA certificate with CN as the hostname of your server under the ``/etc/pki/pulp`` directory.
+   If you want to configure a different server name in ``/etc/pulp/server.conf`` or you change
+   the hostname after installing Pulp, you will need to regenerate these certificates by running
+   ``pulp-gen-ca-certificate``. Expected filename, location and description of these certificates
+   is explained in detail under [security] section in ``/etc/pulp/server.conf``.
 
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
    but you only need to perform this step on one host that has the server package installed. Run this
@@ -299,15 +299,15 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 .. _admin_trusted_ca_installtion:
 
-3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
-   be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
-   ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine, you can simply create
-   a symbolic link to the certificate inside ``/etc/pki/tls/certs``. It is important that the name
-   of the symbolic link or of the copied certificate is the hash of the certificate, followed by a `.`
-   and a sequence number (useful in case of multiple certs with same hash), else
-   openssl will not be able to add it to the SSL context resulting in SSL validation failure.
-   You may also need to update permissions on the copied ca cert depending on which users should be
-   able to run pulp-admin commands.
+3. Add Pulp server's CA certificate to the system trusted CA certificates. Location of the
+   CA certificate can be found in ``/etc/pulp/server.conf`` under ``[security]`` section.
+   The default location is ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine,
+   you can simply create a symbolic link to the certificate inside ``/etc/pki/tls/certs``.
+   It is important that the name of the symbolic link or of the copied certificate is the hash
+   of the certificate, followed by a `.` and a sequence number (useful in case of multiple certs
+   with same hash), else openssl will not be able to add it to the SSL context resulting in
+   SSL validation failure. You may also need to update permissions on the copied CA certificate
+   depending on which users should be able to run pulp-admin commands.
 
 ::
 
@@ -348,12 +348,14 @@ repositories.
 
 .. _consumer_trusted_ca_installtion:
 
-3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
-   be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
-   ``/etc/pki/pulp/ca.crt``. It is important that the name of the symbolic link
-   or of the copied certificate is the hash of the certificate, followed by a `.`
+3. Add Pulp server's CA certificate to the system trusted CA certificates. Location of the
+   CA certificate can be found in ``/etc/pulp/server.conf`` under ``[security]`` section.
+   The default location is ``/etc/pki/pulp/ca.crt``. It is important that the name of the symbolic
+   link or of the copied certificate is the hash of the certificate, followed by a `.`
    and a sequence number (useful in case of multiple certs with same hash), else
    openssl will not be able to add it to the SSL context resulting in SSL validation failure.
+   You may also need to update permissions on the copied CA certificate depending on which users
+   should be able to run pulp-consumer commands.
 
 ::
 
@@ -386,8 +388,8 @@ when deploying Pulp in production, you should supply your own SSL certificates.
 In ``/etc/pulp/server.conf``, find the ``[security]`` section. There is good
 documentation in-line, but make sure in particular that ``cacert`` and ``cakey``
 point to the certificate and private key that you want Apache to use for HTTPS.
-If you update these certs, make sure you update the SSL cert as well as it will
-need to be signed by the new CA cert so that SSL validation does not fail.
+If you update these certificates, make sure you update the SSL certificate, as it will
+need to be signed by the new CA certificate so that the SSL validation does not fail.
 Also make sure Apache's config settings for CA and SSL cert
 in ``/etc/httpd/conf.d/pulp.conf`` match these settings.
 
