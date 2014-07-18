@@ -190,6 +190,15 @@ Server
    ``pulp-gen-ca-certificate``. Expected filename, location and description of these certificates
    is explained in detail under [security] section in ``/etc/pulp/server.conf``.
 
+   .. note::
+
+   If you have httpd version < 2.4 installed on your server, you will need to comment out the lines
+   for SSLCertificateFile and SSLCertificateKeyFile directives from ``/etc/httpd/conf.d/ssl.conf``.
+   This is because in the older versions of httpd, these values conflict with the respective values
+   from ``/etc/httpd/conf.d/pulp.conf`` which Pulp server uses as opposed to overriding them.
+   If you need to setup multiple CA certs, you can do so by creating multiple VirtualHost entries
+   and adding these directives inside them.
+
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
    but you only need to perform this step on one host that has the server package installed. Run this
    as the same user that Apache runs as. If Apache or the workers are already running, just restart them::
