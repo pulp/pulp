@@ -7,7 +7,7 @@ EnvironmentFile=/etc/default/pulp_resource_manager
 User=apache
 WorkingDirectory=/var/lib/pulp/celery/
 ExecStart=/usr/bin/celery worker -A pulp.server.async.app -n resource_manager@%%h\
-          -Q resource_manager -c 1 --events
+          -Q resource_manager -c 1 --events --umask 18
 
 [Install]
 WantedBy=multi-user.target
