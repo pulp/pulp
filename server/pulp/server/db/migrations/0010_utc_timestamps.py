@@ -40,7 +40,7 @@ def update_time_to_utc_on_collection(collection_name, field_name):
         time_str = distributor[field_name]
         time = dateutils.parse_iso8601_datetime(time_str)
         # only update if we are not UTC to begin with
-        if time.tzinfo:
+        if time.tzinfo != dateutils.utc_tz():
             time_utc = dateutils.to_utc_datetime(time)
             distributor[field_name] = dateutils.format_iso8601_datetime(time_utc)
             collection.save(distributor, safe=True)
