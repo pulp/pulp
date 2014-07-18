@@ -181,6 +181,15 @@ Server
      Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
+   .. _ssl_validation:
+
+#. Pulp server installation will generate a new CA cert and an SSL cert signed by this CA cert
+   with CN as the hostname of your server under ``/etc/pki/pulp`` directory. If you want to configure
+   a different server name in ``/etc/pulp/server.conf`` or you change your hostname after installing
+   Pulp, you will need to regenerate these certs by running ``pulp-gen-ca-certificate``.
+   Expected filename, location and description of these certificates is explained in detail under
+   [security] section in ``/etc/pulp/server.conf``.
+
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
    but you only need to perform this step on one host that has the server package installed. Run this
    as the same user that Apache runs as. If Apache or the workers are already running, just restart them::
@@ -288,6 +297,8 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
   [server]
   host = localhost.localdomain
 
+.. _admin_trusted_ca_installtion:
+
 3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
    be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
    ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine, you can simply create
@@ -332,6 +343,8 @@ repositories.
 
   [server]
   host = localhost.localdomain
+
+.. _consumer_trusted_ca_installtion:
 
 3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
    be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
