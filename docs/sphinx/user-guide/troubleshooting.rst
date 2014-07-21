@@ -111,8 +111,50 @@ Some of Pulp's other processes still log to files. Those file locations are docu
   this file. To enable/disable this, consult the ``[logging]`` section of
   ``/etc/pulp/consumer/consumer.conf``.
 
-Common Issues
--------------
+
+.. _troubleshooting_ssl_issues:
+
+Troubleshooting SSL issues
+--------------------------
+
+
+'ConnectionException: certificate verify failed' when running pulp-admin commands
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can happen if you miss the step of adding Pulp CA certificate to the system trusted certificates
+as described in :ref:`Installation Guide <admin_trusted_ca_installtion>`. Make sure you have copied
+or linked the CA certificate under ``/etc/pki/tls/certs`` directory with proper name and permissions.
+
+
+'ConnectionException: certificate verify failed' when running pulp-consumer commands
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can happen if you miss the step of adding Pulp CA certificate to the system trusted certificates
+as described in :ref:`Installation Guide <consumer_trusted_ca_installtion>` on the consumer.
+Make sure you have copied or linked the CA certificate under ``/etc/pki/tls/certs`` directory
+with proper name and permissions.
+
+
+'server hostname did not match server SSL certificate' error
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can happen when running pulp-admin or pulp-consumer commands when Pulp server's SSL certificate
+does not match 'host' in admin or consumer's config file. You need to make changes to 'host' config
+in your admin.conf or consumer.conf to match server SSL certificate's CN. You can check CN by running
+following command on the server.
+
+::
+
+  sudo openssl x509 -in /etc/pki/pulp/server.crt -noout -text | grep CN
+
+
+If CN of server SSL certificate matches the 'host' in admin and consumer configuration file,
+but you are still seeing this error, check httpd version on your Pulp server. If you have httpd
+version older than 2.4, follow directions mentioned at :ref:`Installation Guide <ssl_validation>`.
+
+
+Other Common Issues
+-------------------
 
 The server hostname configured on the client did not match the name found in the server's SSL certificate
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
