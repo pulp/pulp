@@ -284,7 +284,126 @@ class Step(object):
                 step.cancel()
 
 
-class PublishStep(Step):
+class PluginStep(Step):
+    """
+    Common functionality plugin-based steps. You probably want to inherit this in your own Step.
+    """
+
+    def __init__(self, step_type, repo=None, conduit=None, config=None, plugin_type=None,
+                 working_dir=None):
+        """
+        Set the default parent, step_type and unit_type for the the plugin step
+        the unit_type defaults to none since some steps are not used for processing units.
+
+        :param step_type: The id of the step this processes
+        :type  step_type: str
+        :param repo: The repo to be published
+        :type  repo: pulp.plugins.model.Repository
+        :param conduit: The conduit for the repo
+        :type  conduit: conduit
+        :param config: The configuration
+        :type  config: PluginCallConfiguration
+        :param plugin_type: the plugin type
+        :type  plugin_type: str
+        :param working_dir: working directory path
+        :type  working_dir: str
+        """
+        super(PluginStep, self).__init__(step_type, conduit)
+        self.repo = repo
+        self.conduit = conduit
+        self.config = config
+        self.plugin_type = plugin_type
+        self.working_dir = working_dir
+
+    def get_working_dir(self):
+        """
+        Return the working directory
+
+        :returns: directory path
+        :rtype: str
+        """
+        if not self.working_dir:
+            repo = self.get_repo()
+            self.working_dir = repo.working_dir
+
+        return self.working_dir
+
+
+    def get_repo(self):
+        """
+        :returns: the repository for this step
+        :rtype: pulp.plugins.model.Repository
+        """
+        if self.repo:
+            return self.repo
+        return self.parent.get_repo()
+
+    def get_conduit(self):
+        """
+        :returns: Return the conduit for this step
+        :rtype: conduit
+        """
+        if self.conduit:
+            return self.conduit
+        return self.parent.get_conduit()
+
+    def get_config(self):
+        """
+        :returns: Return the config for this step
+        :rtype: pulp.plugins.config.PluginCallConfiguration
+        """
+        if self.config:
+            return self.config
+        return self.parent.get_config()
+
+    def get_plugin_type(self):
+        """
+        :returns: the type of distributor this action is for
+        :rtype: str or None
+        """
+        if self.plugin_type:
+            return self.plugin_type
+        if self.parent:
+            return self.parent.get_plugin_type()
+        return None
+
+    def get_progress_report_summary(self):
+        """
+        Get the simpler, more human legible progress report
+        """
+        report = {}
+        for step in self.children:
+            report.update({step.step_id: step.state})
+        return report
+
+    def _build_final_report(self):
+        """
+        Build the PublishReport to be returned as the result after task completion.
+
+        Note that PublishReport is also used for other types of reporting, like sync.
+
+        :return: report describing the step run
+        :rtype:  pulp.plugins.model.PublishReport
+        """
+
+        overall_success = True
+        if self.state == reporting_constants.STATE_FAILED:
+            overall_success = False
+
+        progres_report = self.get_progress_report()
+        summary_report = self.get_progress_report_summary()
+
+        if overall_success:
+            final_report = self.get_conduit().build_success_report(summary_report, progres_report)
+        else:
+            final_report = self.get_conduit().build_failure_report(summary_report, progres_report)
+
+        final_report.canceled_flag = self.canceled
+
+        return final_report
+
+
+class PublishStep(PluginStep):
 
     def __init__(self, step_type, repo=None, publish_conduit=None, config=None, working_dir=None,
                  distributor_type=None):
@@ -305,12 +424,9 @@ class PublishStep(Step):
         :param distributor_type: The type of the distributor that is being published
         :type distributor_type: str
         """
-        super(PublishStep, self).__init__(step_type, publish_conduit)
-        self.distributor_type = distributor_type
+        super(PublishStep, self).__init__(step_type, repo=repo, conduit=publish_conduit,
+                                          config=config, plugin_type=distributor_type)
         self.working_dir = working_dir
-        self.repo = repo
-        self.publish_conduit = publish_conduit
-        self.config = config
 
     def publish(self):
         """
@@ -327,56 +443,12 @@ class PublishStep(Step):
 
         return self._build_final_report()
 
-    def get_working_dir(self):
-        """
-        Return the working directory
-
-        :returns: the working directory from the parent
-        :rtype: str
-        """
-        if not self.working_dir:
-            repo = self.get_repo()
-            self.working_dir = repo.working_dir
-
-        return self.working_dir
-
     def get_distributor_type(self):
         """
         :returns: the type of distributor this action is for
         :rtype: str or None
         """
-        if self.distributor_type:
-            return self.distributor_type
-        if self.parent:
-            return self.parent.get_distributor_type()
-        return None
-
-    def get_repo(self):
-        """
-        :returns: the repository for this publish action
-        :rtype: pulp.plugins.model.Repository
-        """
-        if self.repo:
-            return self.repo
-        return self.parent.get_repo()
-
-    def get_conduit(self):
-        """
-        :returns: Return the conduit for this publish action
-        :rtype: pulp.plugins.conduits.repo_publish.RepoPublishConduit
-        """
-        if self.publish_conduit:
-            return self.publish_conduit
-        return self.parent.get_conduit()
-
-    def get_config(self):
-        """
-        :returns: Return the config for this publish action
-        :rtype: pulp.plugins.config.PluginCallConfiguration
-        """
-        if self.config:
-            return self.config
-        return self.parent.get_config()
+        return self.get_plugin_type()
 
     @staticmethod
     def _create_symlink(source_path, link_path):
@@ -452,46 +524,39 @@ class PublishStep(Step):
             elif os.path.isfile(entry_path):
                 os.unlink(entry_path)
 
-    def get_progress_report_summary(self):
+
+class PluginStepIterativeProcessingMixin():
+
+    def _process_block(self):
         """
-        Get the simpler, more human legible progress report
+        This block is called for the main processing loop and handles reporting.
         """
-        report = {}
-        for step in self.children:
-            report.update({step.step_id: step.state})
-        return report
+        generator = self.get_generator()
+        for item in generator:
+            if self.canceled:
+                return
+            self.process_item(item)
+            self.progress_successes += 1
+            self.report_progress()
 
-    def _build_final_report(self):
+    def get_generator(self):
         """
-        Build the PublishReport to be returned as the result after task completion
+        This method returns a generator to loop over items.
+        The items created by this generator will be iterated over by the process_item method.
 
-        :return: report describing the publish run
-        :rtype:  pulp.plugins.model.PublishReport
+        :return: generator of items
+        :rtype:  GeneratorType of items
         """
-
-        overall_success = True
-        if self.state == reporting_constants.STATE_FAILED:
-            overall_success = False
-
-        progres_report = self.get_progress_report()
-        summary_report = self.get_progress_report_summary()
-
-        if overall_success:
-            final_report = self.get_conduit().build_success_report(summary_report, progres_report)
-        else:
-            final_report = self.get_conduit().build_failure_report(summary_report, progres_report)
-
-        final_report.canceled_flag = self.canceled
-
-        return final_report
+        raise NotImplementedError()
 
 
-class UnitPublishStep(PublishStep):
+class UnitPublishStep(PluginStepIterativeProcessingMixin, PluginStep):
 
     def __init__(self, step_type, unit_type=None, association_filters=None,
                  unit_fields=None):
         """
-        Set the default parent, step_type and unit_type for the the publish step
+        Set up the unit publish step.
+
         the unit_type defaults to none since some steps are not used for processing units.
 
         :param step_type: The id of the step this processes
@@ -507,20 +572,6 @@ class UnitPublishStep(PublishStep):
         self.skip_list = set()
         self.association_filters = association_filters
         self.unit_fields = unit_fields
-
-    def get_unit_generator(self):
-        """
-        This method returns a generator for the unit_type specified on the PublishStep.
-        The units created by this generator will be iterated over by the process_unit method.
-
-        :return: generator of units
-        :rtype:  GeneratorTyp of Units
-        """
-        types_to_query = (set(self.unit_type)).difference(self.skip_list)
-        criteria = UnitAssociationCriteria(type_ids=list(types_to_query),
-                                           association_filters=self.association_filters,
-                                           unit_fields=self.unit_fields)
-        return self.get_conduit().get_units(criteria, as_generator=True)
 
     def is_skipped(self):
         """
@@ -542,7 +593,21 @@ class UnitPublishStep(PublishStep):
 
         return set(self.unit_type).issubset(self.skip_list)
 
-    def process_unit(self, unit):
+    def get_generator(self):
+        """
+        This method returns a generator for the unit_type specified on the PublishStep.
+        The units created by this generator will be iterated over by the process_item method.
+
+        :return: generator of units
+        :rtype:  GeneratorType of Units
+        """
+        types_to_query = (set(self.unit_type)).difference(self.skip_list)
+        criteria = UnitAssociationCriteria(type_ids=list(types_to_query),
+                                           association_filters=self.association_filters,
+                                           unit_fields=self.unit_fields)
+        return self.get_conduit().get_units(criteria, as_generator=True)
+
+    def process_item(self, unit):
         """
         Do any work required for publishing a unit in this step
 
@@ -550,18 +615,6 @@ class UnitPublishStep(PublishStep):
         :type unit: Unit
         """
         pass
-
-    def _process_block(self):
-        """
-        This block is called for the main processing loop
-        """
-        package_unit_generator = self.get_unit_generator()
-        for package_unit in package_unit_generator:
-            if self.canceled:
-                return
-            self.process_unit(package_unit)
-            self.progress_successes += 1
-            self.report_progress()
 
     def _get_total(self, id_list=None):
         """
