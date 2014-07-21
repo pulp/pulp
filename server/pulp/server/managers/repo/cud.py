@@ -17,7 +17,6 @@ removal, and metadata update on a repository. This does not include importer
 or distributor configuration.
 """
 
-import datetime
 from gettext import gettext as _
 import logging
 import os
@@ -29,6 +28,7 @@ from celery import task
 import pymongo
 
 from pulp.common import tags
+from pulp.common import dateutils
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
@@ -404,7 +404,7 @@ class RepoManager(object):
 
         """
         spec = {'id': repo_id}
-        operation = {'$set': {field_name: datetime.datetime.utcnow()}}
+        operation = {'$set': {field_name: dateutils.now_utc_datetime_with_tzinfo()}}
         repo_coll = Repo.get_collection()
         repo_coll.update(spec, operation, safe=True)
 
