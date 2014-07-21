@@ -617,9 +617,9 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(repo['content_unit_counts']['rpm'], 3)
 
     @mock.patch('pulp.server.managers.repo.cud.Repo.get_collection')
-    @mock.patch('pulp.server.managers.repo.cud.datetime')
-    def test__set_current_date_on_field(self, mock_datetime, mock_repo_collection):
-        mock_datetime.datetime.utcnow.return_value = 2
+    @mock.patch('pulp.server.managers.repo.cud.dateutils')
+    def test__set_current_date_on_field(self, mock_dateutils, mock_repo_collection):
+        mock_dateutils.now_utc_datetime_with_tzinfo.return_value = 2
         self.manager._set_current_date_on_field('foo_repo', 'field_bar')
         update_mock = mock_repo_collection.return_value.update
         self.assertTrue(update_mock.called)
