@@ -18,9 +18,26 @@ working directory is simply deleted.
 
 import os
 
+from pulp.common import dateutils
 from pulp.server import config as pulp_config
 from pulp.plugins.model import Repository, RelatedRepository, RepositoryGroup, \
     RelatedRepositoryGroup
+
+
+def _ensure_tz_specified(time_stamp):
+    """
+    Check a datetime that came from the database to ensure it has a timezone specified
+    Mongo doesn't include the TZ info so if no TZ is set this assumes UTC.
+
+    :param time_stamp: a
+    :type time_stamp: datetime.datetime
+    :return: The time_stamp with a timezone specified
+    :rtype: datetime.datetime
+    """
+    if time_stamp and not time_stamp.tzinfo:
+        time_stamp = time_stamp.replace(tzinfo=dateutils.utc_tz())
+
+    return time_stamp
 
 
 def to_transfer_repo(repo_data):
@@ -37,8 +54,8 @@ def to_transfer_repo(repo_data):
     """
     r = Repository(repo_data['id'], repo_data['display_name'], repo_data['description'],
                    repo_data['notes'], content_unit_counts=repo_data['content_unit_counts'],
-                   last_unit_added=repo_data.get('last_unit_added'),
-                   last_unit_removed=repo_data.get('last_unit_removed'))
+                   last_unit_added=_ensure_tz_specified(repo_data.get('last_unit_added')),
+                   last_unit_removed=_ensure_tz_specified(repo_data.get('last_unit_removed')))
     return r
 
 
