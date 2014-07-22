@@ -15,6 +15,7 @@ from pulp.server.exceptions import PulpCodedValidationException, PulpCodedExcept
 from verification import CHECKSUM_FUNCTIONS
 
 _LOG = logging.getLogger(__name__)
+BUFFER_SIZE = 1024
 
 
 class MetadataFileContext(object):
@@ -234,60 +235,6 @@ class JSONArrayFileContext(MetadataFileContext):
             self.units_added = True
 
 
-class FastForwardGenerator(object):
-    """
-    A generator to allow parsing an xml file, processing the events and writing
-    the xml file back out with modifications along the way.
-    """
-
-    def __init__(self, input_file, output_file):
-        """
-        :param input_file: The file handle for the file to read from
-        :type input_file: file
-        :param output_file: The file handle for the file to write to
-        :type output_file: file
-        """
-        self.current_event = None
-        self.event_generator = pulldom.parse(input_file)
-        self.xml_generator = XMLGenerator(output_file, 'UTF-8')
-        self.attributes = None
-
-    def __iter__(self):
-        """
-        Method so that python will treat this object as an iterator
-        """
-        return self
-
-    def next(self):
-        """
-        Get the next dom event from the input file
-
-        If an event was previously read from the file it will be written to the output file
-        """
-        try:
-            if self.current_event:
-                if self.current_event[0] == pulldom.START_ELEMENT:
-                    current_element = self.current_event[1]
-                    self.xml_generator.startElement(current_element.nodeName,
-                                                    current_element.attributes)
-                elif self.current_event[0] == pulldom.END_ELEMENT:
-                    current_element = self.current_event[1]
-                    self.xml_generator.endElement(current_element.nodeName)
-                elif self.current_event[0] == pulldom.CHARACTERS:
-                    current_element = self.current_event[1]
-                    self.xml_generator.characters(current_element.wholeText)
-                elif self.current_event[0] == pulldom.START_DOCUMENT:
-                    self.xml_generator.startDocument()
-
-            self.current_event = self.event_generator.next()
-        except StopIteration:
-            # Flush the output
-            self.xml_generator.endDocument()
-            raise
-
-        return self.current_event
-
-
 class XmlFileContext(MetadataFileContext):
     """
     Context manager for writing out units as xml
@@ -295,7 +242,12 @@ class XmlFileContext(MetadataFileContext):
 
     def __init__(self, metadata_file_path, root_tag, root_attributes=None, *args, **kwargs):
         """
-
+        :param metadata_file_path: The file path for the file to write
+        :type metadata_file_path: str
+        :param root_tag: The root tag for the xml tree
+        :type root_tag: str
+        :param root_attributes: Any attributes to populate on the root xml tag
+        :type root_attributes: dict of str
         :param args: any positional arguments to be passed to the superclass
         :type  args: list
         :param kwargs: any keyword arguments to be passed to the superclass
@@ -337,15 +289,25 @@ class FastForwardXmlFileContext(XmlFileContext):
     Context manager for reopening an existing XML file context to insert more data.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, metadata_file_path, root_tag, search_tag, root_attributes=None,
+                 *args, **kwargs):
         """
+        :param metadata_file_path: The file path for the file to write
+        :type metadata_file_path: str
+        :param root_tag: The root tag for the xml tree
+        :type root_tag: str
+        :param search_tag: The tag that denotes the beginning of content to copy
+        :param root_attributes: Any attributes to populate on the root xml tag
+        :type root_attributes: dict of str
         :param args: any positional arguments to be passed to the superclass
         :type  args: list
         :param kwargs: any keyword arguments to be passed to the superclass
         :type  kwargs: dict
         """
-        super(FastForwardXmlFileContext, self).__init__(*args, **kwargs)
+        super(FastForwardXmlFileContext, self).__init__(metadata_file_path, root_tag,
+                                                        root_attributes, *args, **kwargs)
         self.fast_forward = False
+        self.search_tag = search_tag
         self.existing_file = None
         self.xml_generator = None
 
@@ -390,27 +352,35 @@ class FastForwardXmlFileContext(XmlFileContext):
                 self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')
 
         super(FastForwardXmlFileContext, self)._open_metadata_file_handle()
-        if self.fast_forward:
-            self.xml_generator = FastForwardGenerator(self.original_file_handle,
-                                                      self.metadata_file_handle)
 
     def _write_file_header(self):
         """
         Write out the beginning of the file only if we are not in fast forward mode
         """
-        if not self.fast_forward:
-            super(FastForwardXmlFileContext, self)._write_file_header()
-
-    def _write_file_footer(self):
-        """
-        Write out the end of the file
-        """
+        super(FastForwardXmlFileContext, self)._write_file_header()
         if self.fast_forward:
-            # fast forward through the rest of the file
-            for event in self.xml_generator:
-                pass
-        else:
-            super(FastForwardXmlFileContext, self)._write_file_footer()
+            start_tag = '<%s' % self.search_tag
+            end_tag = '</%s' % self.root_tag
+            # stream out the file
+            content = self.original_file_handle.read(BUFFER_SIZE)
+            index = content.find(start_tag)
+            content = content[index:]
+            content2 = self.original_file_handle.read(BUFFER_SIZE)
+            while content:
+                if len(content) == BUFFER_SIZE and len(content2) == BUFFER_SIZE:
+                    self.metadata_file_handle.write(content)
+                    content = content2
+                    content2 = self.original_file_handle.read(BUFFER_SIZE)
+                elif len(content) < BUFFER_SIZE or len(content2) < BUFFER_SIZE:
+                    joined_content = content + content2
+                    index = joined_content.rfind(end_tag)
+                    if index >= 0:
+                        self.metadata_file_handle.write(joined_content[:index])
+                    else:
+                        self.metadata_file_handle.write(content)
+                        self.metadata_file_handle.write(content2)
+                    content = self.original_file_handle.read(BUFFER_SIZE)
+                    content2 = self.original_file_handle.read(BUFFER_SIZE)
 
     def _close_metadata_file_handle(self):
         """
