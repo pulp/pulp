@@ -325,15 +325,18 @@ def install(opts):
 
         # Generate certificates
         print 'generating certificates'
-        if not os.path.exists('/etc/pki/pulp/ca.crt') or \
-                not os.path.exists('/etc/pki/pulp/server.crt'):
-            # Generate new CA and SSL certs
+        if not os.path.exists('/etc/pki/pulp/ca.crt') or not os.path.exists('/etc/pki/pulp/ca.key'):
+            # Generate new CA key and cert
             os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
             # Import new CA cert into the system trusted CA certs
             os.system('rm -f /etc/pki/tls/certs/`openssl x509 -noout -hash -in '
                       '/etc/pki/pulp/ca.crt`.0')
             os.system('ln -s /etc/pki/pulp/ca.crt /etc/pki/tls/certs/'
                       '`openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0')
+        if not os.path.exists('/etc/pki/pulp/server.crt') or \
+                not os.path.exists('/etc/pki/pulp/server.key'):
+            # Generate new SSL key and cert
+            os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ssl-certificate'))
         if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
             os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
