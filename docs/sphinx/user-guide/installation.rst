@@ -313,10 +313,10 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
    The default location is ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine,
    you can simply create a symbolic link to the certificate inside ``/etc/pki/tls/certs``.
    It is important that the name of the symbolic link or of the copied certificate is the hash
-   of the certificate, followed by a `.` and a sequence number (useful in case of multiple certs
-   with same hash), else openssl will not be able to add it to the SSL context resulting in
-   SSL validation failure. You may also need to update permissions on the copied CA certificate
-   depending on which users should be able to run pulp-admin commands.
+   of the certificate, followed by a ``. (period)`` and a sequence number (useful in case of
+   multiple certs with same hash), else openssl will not be able to add it to the SSL context
+   resulting in SSL validation failure. You may also need to update permissions on the copied
+   CA certificate depending on which users should be able to run pulp-admin commands.
 
 ::
 
