@@ -118,6 +118,16 @@ Troubleshooting SSL issues
 --------------------------
 
 
+Error when starting httpd 'Syntax error on line 25 of /etc/httpd/conf.d/pulp.conf'
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This can happen if you are upgrading to Pulp 2.4 from older versions. If you look at httpd
+error logs for error details, you will find something like ``SSLCertificateFile: file
+'/etc/pki/pulp/server.crt' does not exist or is empty``. You can fix this by running
+'pulp-gen-ssl-certificate' script. This will generate SSL certificate and key signed by Pulp
+CA certificate.
+
+
 'ConnectionException: certificate verify failed' when running pulp-admin commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
