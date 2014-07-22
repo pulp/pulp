@@ -41,7 +41,7 @@ openssl req \
   -out $TMP/server.csr \
   -subj "/CN=$SSL_CN/O=$ORG" &> /dev/null
 
-# create SSL cert signed by the above CA cert
+# create SSL cert signed by the Pulp CA cert
 openssl x509 \
   -req \
   -days 7035 \

@@ -130,17 +130,17 @@ optionally edit the new ``log_level`` setting in the ``[server]`` section of
 
 Pulp 2.4.0 has an added functionality to validate the server SSL certificate against
 trusted CA certificates. To take advantage of it, you can run ``pulp-gen-ssl-certificate``
-to generate private key and SSL certificate signed by Pulp CA certificate. If you want to
+to generate a private key and SSL certificate signed by the Pulp CA certificate. If you want to
 regenerate your Pulp CA certificate, you can do so by running ``pulp-gen-ca-certificate``
-before generating SSL certificate. You can also opt to not use these script and generate
+before generating the SSL certificate. You can also opt to not use these script and generate
 your own certificates. You will just need to configure them under the [security] section in
 ``/etc/pulp/server.conf``. You will need to restart httpd after generating new certificates
 or changing the security configuation. More information can be found in the
 :ref:`Installation Guide <ssl_validation>`.
 
-If you end up replacing or generating new CA certificate above, you will need to copy and
+If you end up replacing or generating a new CA certificate above, you will need to copy and
 add the CA certificate to the trusted CA certificates on the consumers and hosts
-running pulp-admin install. For pulp-admin, you can follow instructions located at
+running pulp-admin. For pulp-admin, you can follow instructions located at
 :ref:`Installation Guide <admin_trusted_ca_installtion>`. For consumers, you can
 refer to :ref:`Installation Guide <consumer_trusted_ca_installtion>`.
 
