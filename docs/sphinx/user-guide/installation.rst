@@ -181,6 +181,7 @@ Server
      Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
+
    .. _ssl_validation:
 
 #. Pulp server installation will generate a new CA certificate and an SSL certificate signed by
@@ -192,12 +193,12 @@ Server
 
    .. note::
 
-   If you have httpd version < 2.4 installed on your server, you will need to comment out the lines
-   for SSLCertificateFile and SSLCertificateKeyFile directives from ``/etc/httpd/conf.d/ssl.conf``.
-   This is because in the older versions of httpd, these values conflict with the respective values
-   from ``/etc/httpd/conf.d/pulp.conf`` which Pulp server uses as opposed to overriding them.
-   If you need to setup multiple SSL certs, you can do so by creating multiple VirtualHost entries
-   and adding these directives inside them.
+      If you have httpd version < 2.4 installed on your server, you will need to comment out the lines
+      for SSLCertificateFile and SSLCertificateKeyFile directives from ``/etc/httpd/conf.d/ssl.conf``.
+      This is because in the older versions of httpd, these values conflict with the respective values
+      from ``/etc/httpd/conf.d/pulp.conf`` which Pulp server uses as opposed to overriding them.
+      If you need to setup multiple SSL certs, you can do so by creating multiple VirtualHost entries
+      and adding these directives inside them.
 
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
    but you only need to perform this step on one host that has the server package installed. Run this
@@ -320,6 +321,7 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
 
 ::
 
+  cd /etc/pki/tls/certs
   ln -s /etc/pki/pulp/ca.crt `openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0
 
 
@@ -379,7 +381,7 @@ repositories.
 
 ::
 
-4. Set the agent to start at boot.  For upstart::
+5. Set the agent to start at boot.  For upstart::
 
      $ sudo chkconfig goferd on
      $ sudo service goferd start
