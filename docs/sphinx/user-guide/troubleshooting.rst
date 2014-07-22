@@ -160,7 +160,7 @@ the server SSL certificate's CN by running the following command on the server.
 
 
 If CN of the server SSL certificate matches the 'host' in admin or consumer configuration file,
-but you are still seeing this error, check httpd version on your Pulp server. If you have httpd
+but you are still seeing this error, check the httpd version on your Pulp server. If you have httpd
 version older than 2.4, follow the directions mentioned at :ref:`Installation Guide <ssl_validation>`.
 
 
