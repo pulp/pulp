@@ -121,46 +121,47 @@ Troubleshooting SSL issues
 Error when starting httpd 'Syntax error on line 25 of /etc/httpd/conf.d/pulp.conf'
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can happen if you are upgrading to Pulp 2.4 from older versions. If you look at httpd
+This can happen if you are upgrading to Pulp 2.4 from older versions. If you look at the httpd
 error logs for error details, you will find something like ``SSLCertificateFile: file
 '/etc/pki/pulp/server.crt' does not exist or is empty``. You can fix this by running
-'pulp-gen-ssl-certificate' script. This will generate SSL certificate and key signed by Pulp
-CA certificate.
+'pulp-gen-ssl-certificate' script. This will generate a private key and SSL certificate
+signed by the Pulp CA certificate.
 
 
 'ConnectionException: certificate verify failed' when running pulp-admin commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can happen if you miss the step of adding Pulp CA certificate to the system trusted certificates
-as described in :ref:`Installation Guide <admin_trusted_ca_installtion>`. Make sure you have copied
-or linked the CA certificate under ``/etc/pki/tls/certs`` directory with proper name and permissions.
+This can happen if you miss the step of adding the Pulp CA certificate to the system trusted certificates
+as described in :ref:`Installation Guide <admin_trusted_ca_installation>`. Make sure you have copied
+or linked the server CA certificate under the ``/etc/pki/tls/certs`` directory with proper name
+and permissions.
 
 
 'ConnectionException: certificate verify failed' when running pulp-consumer commands
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can happen if you miss the step of adding Pulp CA certificate to the system trusted certificates
-as described in :ref:`Installation Guide <consumer_trusted_ca_installtion>` on the consumer.
-Make sure you have copied or linked the CA certificate under ``/etc/pki/tls/certs`` directory
-with proper name and permissions.
+This can happen if you miss the step of adding the Pulp CA certificate to the system trusted
+certificates as described in :ref:`Installation Guide <consumer_trusted_ca_installation>`
+on the consumer. Make sure you have copied or linked the CA certificate under the
+``/etc/pki/tls/certs`` directory with proper name and permissions.
 
 
 'server hostname did not match server SSL certificate' error
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This can happen when running pulp-admin or pulp-consumer commands when Pulp server's SSL certificate
-does not match 'host' in admin or consumer's config file. You need to make changes to 'host' config
-in your admin.conf or consumer.conf to match server SSL certificate's CN. You can check CN by running
-following command on the server.
+This can happen while running pulp-admin or pulp-consumer commands when the CN of Pulp server's SSL
+certificate does not match the 'host' in admin or consumer's config file. You need to make changes
+to the 'host' config in your admin.conf or consumer.conf to match the CN. You can check
+the server SSL certificate's CN by running the following command on the server.
 
 ::
 
   sudo openssl x509 -in /etc/pki/pulp/server.crt -noout -text | grep CN
 
 
-If CN of server SSL certificate matches the 'host' in admin and consumer configuration file,
+If CN of the server SSL certificate matches the 'host' in admin or consumer configuration file,
 but you are still seeing this error, check httpd version on your Pulp server. If you have httpd
-version older than 2.4, follow directions mentioned at :ref:`Installation Guide <ssl_validation>`.
+version older than 2.4, follow the directions mentioned at :ref:`Installation Guide <ssl_validation>`.
 
 
 Other Common Issues
