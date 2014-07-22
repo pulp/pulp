@@ -186,9 +186,9 @@ Server
 #. Pulp server installation will generate a new CA certificate and an SSL certificate signed by
    this CA certificate with CN as the hostname of your server under the ``/etc/pki/pulp`` directory.
    If you want to configure a different server name in ``/etc/pulp/server.conf`` or you change
-   the hostname after installing Pulp, you will need to regenerate these certificates by running
-   ``pulp-gen-ca-certificate``. Expected filename, location and description of these certificates
-   is explained in detail under [security] section in ``/etc/pulp/server.conf``.
+   the hostname after installing Pulp, you will need to regenerate SSL certificate by running
+   ``pulp-gen-ssl-certificate``. Expected filename, location and description of CA and SSL
+   certificates is explained in detail under [security] section in ``/etc/pulp/server.conf``.
 
    .. note::
 
@@ -196,7 +196,7 @@ Server
    for SSLCertificateFile and SSLCertificateKeyFile directives from ``/etc/httpd/conf.d/ssl.conf``.
    This is because in the older versions of httpd, these values conflict with the respective values
    from ``/etc/httpd/conf.d/pulp.conf`` which Pulp server uses as opposed to overriding them.
-   If you need to setup multiple CA certs, you can do so by creating multiple VirtualHost entries
+   If you need to setup multiple SSL certs, you can do so by creating multiple VirtualHost entries
    and adding these directives inside them.
 
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
