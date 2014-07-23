@@ -33,7 +33,7 @@ def _post_order(step):
 
 class Step(object):
     """
-    Base class for step processing. The only tie to the platofrm is an assumption of
+    Base class for step processing. The only tie to the platform is an assumption of
     the use of a conduit that extends StatusMixin for reporting status along the way.
     """
 
@@ -305,7 +305,122 @@ class Step(object):
                 step.cancel()
 
 
-class PublishStep(Step):
+class PluginStep(Step):
+    """
+    Base plugin step. It's likely you want to inherit from this and not use it directly.
+    """
+
+    def __init__(self, step_type, repo=None, conduit=None, config=None, working_dir=None,
+                 plugin_type=None):
+        """
+        Set the default parent and step_type or the the plugin step
+
+        :param step_type: The id of the step this processes
+        :type  step_type: str
+        :param repo: The repo being worked on
+        :type  repo: pulp.plugins.model.Repository
+        :param conduit: The conduit for the repo
+        :type  conduit: conduit
+        :param config: The configuration
+        :type  config: PluginCallConfiguration
+        :param working_dir: The temp directory this step should use for processing
+        :type  working_dir: str
+        :param plugin_type: The type of the plugin
+        :type  plugin_type: str
+        """
+        super(PluginStep, self).__init__(step_type, conduit)
+        self.plugin_type = plugin_type
+        self.working_dir = working_dir
+        self.repo = repo
+        self.conduit = conduit
+        self.config = config
+
+    def get_working_dir(self):
+        """
+        Return the working directory
+
+        :returns: the working directory from the parent
+        :rtype: str
+        """
+        if not self.working_dir:
+            repo = self.get_repo()
+            self.working_dir = repo.working_dir
+
+        return self.working_dir
+
+    def get_plugin_type(self):
+        """
+        :returns: the type of plugin this action is for
+        :rtype: str or None
+        """
+        if self.plugin_type:
+            return self.plugin_type
+        if self.parent:
+            return self.parent.get_plugin_type()
+        return None
+
+    def get_repo(self):
+        """
+        :returns: the repository for this action
+        :rtype: pulp.plugins.model.Repository
+        """
+        if self.repo:
+            return self.repo
+        return self.parent.get_repo()
+
+    def get_conduit(self):
+        """
+        :returns: Return the conduit for this action
+        :rtype: conduit
+        """
+        if self.conduit:
+            return self.conduit
+        return self.parent.get_conduit()
+
+    def get_config(self):
+        """
+        :returns: Return the config for this action
+        :rtype: pulp.plugins.config.PluginCallConfiguration
+        """
+        if self.config:
+            return self.config
+        return self.parent.get_config()
+
+    def get_progress_report_summary(self):
+        """
+        Get the simpler, more human legible progress report
+        """
+        report = {}
+        for step in self.children:
+            report.update({step.step_id: step.state})
+        return report
+
+    def _build_final_report(self):
+        """
+        Build the PublishReport to be returned as the result after task completion
+
+        :return: report describing the publish run
+        :rtype:  pulp.plugins.model.PublishReport
+        """
+
+        overall_success = True
+        if self.state == reporting_constants.STATE_FAILED:
+            overall_success = False
+
+        progres_report = self.get_progress_report()
+        summary_report = self.get_progress_report_summary()
+
+        if overall_success:
+            final_report = self.get_conduit().build_success_report(summary_report, progres_report)
+        else:
+            final_report = self.get_conduit().build_failure_report(summary_report, progres_report)
+
+        final_report.canceled_flag = self.canceled
+
+        return final_report
+
+
+class PublishStep(PluginStep):
 
     def __init__(self, step_type, repo=None, publish_conduit=None, config=None, working_dir=None,
                  distributor_type=None):
@@ -326,12 +441,18 @@ class PublishStep(Step):
         :param distributor_type: The type of the distributor that is being published
         :type distributor_type: str
         """
-        super(PublishStep, self).__init__(step_type, publish_conduit)
-        self.distributor_type = distributor_type
-        self.working_dir = working_dir
-        self.repo = repo
-        self.publish_conduit = publish_conduit
-        self.config = config
+        super(PublishStep, self).__init__(step_type, repo=repo, conduit=publish_conduit,
+                                          config=config, working_dir=working_dir,
+                                          plugin_type=distributor_type)
+                                          
+    def get_distributor_type(self):
+        """
+        Compatability method for get_plugin_type()
+
+        :returns: the type of distributor this action is for
+        :rtype: str or None
+        """
+        return self.get_plugin_type()
 
     def publish(self):
         """
@@ -347,57 +468,6 @@ class PublishStep(Step):
             shutil.rmtree(working_dir, ignore_errors=True)
 
         return self._build_final_report()
-
-    def get_working_dir(self):
-        """
-        Return the working directory
-
-        :returns: the working directory from the parent
-        :rtype: str
-        """
-        if not self.working_dir:
-            repo = self.get_repo()
-            self.working_dir = repo.working_dir
-
-        return self.working_dir
-
-    def get_distributor_type(self):
-        """
-        :returns: the type of distributor this action is for
-        :rtype: str or None
-        """
-        if self.distributor_type:
-            return self.distributor_type
-        if self.parent:
-            return self.parent.get_distributor_type()
-        return None
-
-    def get_repo(self):
-        """
-        :returns: the repository for this publish action
-        :rtype: pulp.plugins.model.Repository
-        """
-        if self.repo:
-            return self.repo
-        return self.parent.get_repo()
-
-    def get_conduit(self):
-        """
-        :returns: Return the conduit for this publish action
-        :rtype: pulp.plugins.conduits.repo_publish.RepoPublishConduit
-        """
-        if self.publish_conduit:
-            return self.publish_conduit
-        return self.parent.get_conduit()
-
-    def get_config(self):
-        """
-        :returns: Return the config for this publish action
-        :rtype: pulp.plugins.config.PluginCallConfiguration
-        """
-        if self.config:
-            return self.config
-        return self.parent.get_config()
 
     @staticmethod
     def _create_symlink(source_path, link_path):
@@ -472,39 +542,6 @@ class PublishStep(Step):
 
             elif os.path.isfile(entry_path):
                 os.unlink(entry_path)
-
-    def get_progress_report_summary(self):
-        """
-        Get the simpler, more human legible progress report
-        """
-        report = {}
-        for step in self.children:
-            report.update({step.step_id: step.state})
-        return report
-
-    def _build_final_report(self):
-        """
-        Build the PublishReport to be returned as the result after task completion
-
-        :return: report describing the publish run
-        :rtype:  pulp.plugins.model.PublishReport
-        """
-
-        overall_success = True
-        if self.state == reporting_constants.STATE_FAILED:
-            overall_success = False
-
-        progres_report = self.get_progress_report()
-        summary_report = self.get_progress_report_summary()
-
-        if overall_success:
-            final_report = self.get_conduit().build_success_report(summary_report, progres_report)
-        else:
-            final_report = self.get_conduit().build_failure_report(summary_report, progres_report)
-
-        final_report.canceled_flag = self.canceled
-
-        return final_report
 
 
 class UnitPublishStep(PublishStep):
