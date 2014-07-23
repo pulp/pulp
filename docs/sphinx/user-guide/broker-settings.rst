@@ -5,8 +5,8 @@
 Pulp Broker Settings
 ====================
 
-Pulp requires a message bus to run, and can use either Qpid or RabbitMQ as that message bus. Pulp
-is developed and tested against the Qpid C++ server v0.22+, and is configured to expect Qpid on
+Pulp requires a message bus to run and can use either Qpid or RabbitMQ as that message bus. Pulp
+is developed and tested against the Qpid C++ server v0.22+ and is configured to expect Qpid on
 localhost without SSL or authentication by default. This documentation identifies changes necessary
 for the following configurations:
 
@@ -26,7 +26,7 @@ Pulp uses the message broker in two ways:
     * For Pulp server <--> Pulp workers asynchronous, server-side tasks such as syncing, publishing,
       or deletion of content.
 
-Pulp broker settings are contained in ``/etc/pulp/server.conf``, and are located in two sections
+Pulp broker settings are contained in ``/etc/pulp/server.conf`` and are located in two sections
 corresponding with the two ways Pulp uses the message broker. The Pulp server <--> Pulp consumer
 communication settings are contained in the ``[messaging]`` section. The asynchronous task settings
 are contained in the ``[tasks]`` section.
@@ -38,7 +38,7 @@ explanation of each setting and its default.
 These two areas of Pulp can use the same message bus, or not. There is not a requirement that these
 use the same broker.
 
-After making any adjustment to ``/etc/pulp/server.conf`` to apply your change you should restart
+To apply your changes after making any adjustment to ``/etc/pulp/server.conf``, you should restart
 all Pulp services.
 
 
@@ -54,12 +54,12 @@ url
     non-SSL connection, and ``ssl://`` for SSL connections.
 
 transport
-    The type of message broker being used. The default is ``qpid`` which assumes the broker type is
+    The type of message broker being used. The default is ``qpid``, which assumes the broker type is
     Qpid. For RabbitMQ, ``rabbitmq`` should be used.
 
 auth_enabled
-    Identifies if gofer will use authentication. The default is ``true`` which enables certificate
-    based authentication. To disable authentication use ``false``.
+    Identifies if gofer will use authentication. The default is ``true``, which enables certificate
+    based authentication. To disable authentication, use ``false``.
 
 cacert
     The absolute path to the PEM encoded CA Certificate to be used by gofer. The default is
@@ -158,8 +158,8 @@ usernames and passwords on the Qpid broker, and then configure Pulp. Refer to th
 documentation for how to configure the broker. This section explains how to configure Pulp to use a
 username and password configured in Qpid.
 
-Assuming Qpid has the username is ``foo`` and the password is ``bar`` configured on it, enable Pulp
-to use them by uncommenting the ``broker_url`` setting in ``[tasks]`` and setting it as follows:
+Assuming Qpid has the user ``foo`` and the password ``bar`` configured, enable Pulp to use them by
+uncommenting the ``broker_url`` setting in ``[tasks]`` and setting it as follows:
 
     ``broker_url: qpid://foo:bar@localhost.com/``
 
@@ -225,12 +225,13 @@ The Pulp Server <--> Pulp Worker communication allows the client key and client 
 stored in the same or different files. If the key and certificate are in the same file, set the
 same absolute path for both ``keyfile`` and ``certfile``.
 
+
 Using Pulp with RabbitMQ
 ------------------------
 Pulp Server <--> Pulp Consumer and Pulp Server <--> Pulp Worker communication should both work with
-RabbitMQ although it does not receive the same amount of testing by Pulp developers.
+RabbitMQ, although it does not receive the same amount of testing by Pulp developers.
 
-For either section of Pulp to use Pulp, you'll need to install the ``python-gofer-amqplib``
+For either section of Pulp to use RabbitMQ, you'll need to install the ``python-gofer-amqplib``
 package. This can be done by running:
 
     ``sudo yum install python-gofer-amqplib``
@@ -242,7 +243,7 @@ example:
     ``transport: rabbitmq``
 
 Enable RabbitMQ support for Pulp Server <--> Pulp Worker communication by uncommenting and updating
-the ``broker_url`` broker string to use the protocol handler ``amqp://``. Below is an example.
+the ``broker_url`` broker string to use the protocol handler ``amqp://``. Below is an example:
 
     ``broker_url: amqp://guest:guest@localhost//``
 
