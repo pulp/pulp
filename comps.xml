@@ -2,13 +2,31 @@
   <group>
     <id>pulp-server</id>
     <name>Pulp Server</name>
-    <description>Pulp server including all plugins.</description>
+    <description>
+        Pulp server including all plugins, but without broker specific packages.
+    </description>
     <uservisible>true</uservisible>
     <packagelist>
       <packagereq type="mandatory">pulp-server</packagereq>
       <packagereq type="default">pulp-rpm-plugins</packagereq>
       <packagereq type="default">pulp-puppet-plugins</packagereq>
       <packagereq type="default">pulp-selinux</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>pulp-server-qpid</id>
+    <name>Pulp Server and Qpid Client Packages</name>
+    <description>
+        Pulp server including all plugins and Qpid specific client packages.
+    </description>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">pulp-server</packagereq>
+      <packagereq type="default">pulp-rpm-plugins</packagereq>
+      <packagereq type="default">pulp-puppet-plugins</packagereq>
+      <packagereq type="default">pulp-selinux</packagereq>
+      <packagereq type="default">python-qpid-qmf</packagereq>
+      <packagereq type="default">python-qpid</packagereq>
     </packagelist>
   </group>
   <group>
@@ -26,7 +44,8 @@
     <id>pulp-consumer</id>
     <name>Pulp Consumer</name>
     <description>
-      Pulp consumer client and agent including all extensions and handlers.
+        Pulp consumer client and agent including all extensions and handlers but without broker
+        specific packages.
     </description>
     <uservisible>true</uservisible>
     <packagelist>
@@ -37,6 +56,25 @@
       <packagereq type="default">pulp-rpm-handlers</packagereq>
       <packagereq type="default">pulp-rpm-yumplugins</packagereq>
       <packagereq type="default">pulp-puppet-handlers</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>pulp-consumer-qpid</id>
+    <name>Pulp Consumer and Qpid Client Packages</name>
+    <description>
+        Pulp consumer client and agent including all extensions, handlers, and Qpid specific client
+        packages.
+    </description>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">pulp-consumer-client</packagereq>
+      <packagereq type="default">pulp-rpm-consumer-extensions</packagereq>
+      <packagereq type="default">pulp-puppet-consumer-extensions</packagereq>
+      <packagereq type="default">pulp-agent</packagereq>
+      <packagereq type="default">pulp-rpm-handlers</packagereq>
+      <packagereq type="default">pulp-rpm-yumplugins</packagereq>
+      <packagereq type="default">pulp-puppet-handlers</packagereq>
+      <packagereq type="default">python-gofer-qpid</packagereq>
     </packagelist>
   </group>
   <group>
@@ -62,6 +100,18 @@
       <packagereq type="mandatory">pulp-nodes-child</packagereq>
       <packagereq type="mandatory">pulp-nodes-consumer-extensions</packagereq>
       <packagereq type="mandatory">pulp-agent</packagereq>
+    </packagelist>
+  </group>
+  <group>
+    <id>pulp-qpid-cpp-server</id>
+    <name>Qpid Server for Pulp</name>
+    <description>
+      Qpid message broker daemon including durability packages.
+    </description>
+    <uservisible>true</uservisible>
+    <packagelist>
+      <packagereq type="mandatory">qpid-cpp-server</packagereq>
+      <packagereq type="mandatory">qpid-cpp-server-store</packagereq>
     </packagelist>
   </group>
 </comps>
