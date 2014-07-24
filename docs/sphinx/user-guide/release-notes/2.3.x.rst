@@ -16,8 +16,8 @@ New Features
    recommended that existing installations are updated manually.  If the default locations were used the
    following changes would be be needed.
 
-   -  chmod 640 /etc/pki/pulp/qpid/*.crt
-   -  chgrp apache /etc/pki/pulp/qpid/*.crt
+   -  chmod 640 /etc/pki/pulp/qpid/\*.crt
+   -  chgrp apache /etc/pki/pulp/qpid/\*.crt
    -  chmod 640 /etc/pki/pulp/qpid/nss/*
    -  chgrp qpidd /etc/pki/pulp/qpid/nss/*
 
