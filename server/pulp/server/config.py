@@ -70,9 +70,7 @@ _default_values = {
     'security': {
         'cacert': '/etc/pki/pulp/ca.crt',
         'cakey': '/etc/pki/pulp/ca.key',
-        'ssl_ca_certificate': '/etc/pki/pulp/ca.crt',
-        'ssl_certificate': '/etc/pki/pulp/server.crt',
-        'ssl_certificate_key': '/etc/pki/pulp/server.key',
+        'ssl_ca_certificate': '/etc/pki/pulp/ssl_ca.crt',
         'user_cert_expiration': '7',
         'consumer_cert_expiration': '3650',
         'serial_number_path': '/var/lib/pulp/sn.dat',

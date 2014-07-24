@@ -290,7 +290,6 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
-%{_bindir}/pulp-gen-ssl-certificate
 %{_usr}/lib/%{name}/plugins/types
 %{python_sitelib}/%{name}/server/
 %{python_sitelib}/%{name}/plugins/
@@ -345,7 +344,6 @@ ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
 if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
-  pulp-gen-ssl-certificate
 fi
 
 %if %{pulp_systemd} == 1
