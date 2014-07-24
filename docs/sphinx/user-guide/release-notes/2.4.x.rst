@@ -8,30 +8,30 @@ Pulp 2.4.0
 New Features
 ------------
 
-#. An all-new distributed task system based on `Celery <http://celeryproject.org>`_.
-#. All of ``/var/lib/pulp`` can now be a shared filesystem.
-#. Username/password authentication for MongoDB.  Requirement for python-pymongo was updated to
-   version 2.5.2.
-#. Publishing Puppet repositories to flattened directories.
-#. All messaging between the Pulp server and agents is signed and authenticated using asymmetric
-   keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
-   must run: ``pulp-consumer update --keys`` and restart the goferd service for messaging between
-   the server and agent to continue working properly.
-#. Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
-   releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
-   ``/var/log/pulp/`` as it used to.
-#. Pulp also has eliminated the ``/etc/pulp/logging/`` folder, as well as the entire ``[logs]``
-   section of ``/etc/pulp/server.conf``. All logging configuration has been replaced with a single
-   ``log_level`` setting in the ``[server]`` section of ``/etc/pulp/server.conf``, and it is also
-   optional.
-#. Pulp's server.conf can now be completely empty, and Pulp will choose sane defaults for each
-   setting. The server.conf that comes with a new Pulp server installation has all of the settings
-   commented and set to the default values. Due to this, the OAuth key and secret fields are no
-   longer automatically populated and users will need to provide these values when they wish to
-   configure Pulp installations to use OAuth. OAuth is now disabled by default.
-#. Pulp has tightened the security in version 2.4.0 by adding functionality to validate the server
-   SSL certificate against the trusted CA certificate. More information about these certificates
-   generated at the install time can be found in the :ref:`Installation Guide <ssl_validation>`.
+- An all-new distributed task system based on `Celery <http://celeryproject.org>`_.
+- All of ``/var/lib/pulp`` can now be a shared filesystem.
+- Username/password authentication for MongoDB. Requirement for python-pymongo was updated to
+  version 2.5.2.
+- Publishing Puppet repositories to flattened directories.
+- All messaging between the Pulp server and agents is signed and authenticated using asymmetric
+  keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
+  must run: ``pulp-consumer update --keys`` and restart the goferd service for messaging between
+  the server and agent to continue working properly.
+- Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
+  releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
+  ``/var/log/pulp/`` as it used to.
+- Pulp also has eliminated the ``/etc/pulp/logging/`` folder, as well as the entire ``[logs]``
+  section of ``/etc/pulp/server.conf``. All logging configuration has been replaced with a single
+  ``log_level`` setting in the ``[server]`` section of ``/etc/pulp/server.conf``, and it is also
+  optional.
+- Pulp's server.conf can now be completely empty, and Pulp will choose sane defaults for each
+  setting. The server.conf that comes with a new Pulp server installation has all of the settings
+  commented and set to the default values. Due to this, the OAuth key and secret fields are no
+  longer automatically populated and users will need to provide these values when they wish to
+  configure Pulp installations to use OAuth. OAuth is now disabled by default.
+- Pulp has tightened the security in version 2.4.0 by adding functionality to validate the server
+  SSL certificate against the trusted CA certificate. More information about these certificates
+  generated at the install time can be found in the :ref:`Installation Guide <ssl_validation>`.
 
 Deprecation
 -----------
@@ -39,36 +39,30 @@ Deprecation
 Pulp uses the Python oauth2 library to perform OAuth. Unfortunately, that library seems to be
 unmaintained upstream and has at least one known security flaw, and so the Pulp team was faced with
 finding a replacement, writing a replacement, or removing OAuth as an authentication mechanism. The
-Pulp team does not believe there is a strong use case for OAuth in Pulp, and so it has been decided
-that Pulp 2.4.0 would announce the deprecation of OAuth.
+Pulp team does not believe there is a strong use case for OAuth in Pulp, and so
+Pulp 2.4.0 deprecates OAuth.
 
 Client Changes
 --------------
-#. Converted the orphan remove command to poll until the remove finishes.  Added a background
-   flag to match the pattern the other polling commands.
-#. The behavior of commands requiring agent participation have changed. The *Waiting to begin...*
+
+-  The orphan remove command was converted to poll until the remove finishes. A background
+   flag was added to match the pattern of other polling commands.
+-  The behavior of commands requiring agent participation have changed. The *Waiting to begin...*
    text displayed by the spinner now indicates that a task has been created and that a request
-   has been sent to the agent but that the agent has not yet accepted the request. Once the agent
+   has been sent to the agent, but that the agent has not yet accepted the request. Once the agent
    has accepted the request, the text displayed by the spinner will change to indicate this. The
    spinner will continue until the agent begins executing the request. Agent related tasks no
    longer have a timeout, so it's up to the caller to determine how long to wait for completion.
    It is the responsibility of the caller to cancel tasks not progressing as desired.
 
-
 Agent Changes
 -------------
-#. The pulp-agent service link is no longer installed.  In previous versions, the pulp-agent
-   service was just a symlink to goferd.  Users should interact with the goferd service directly.
-#. goferd 1.3.0+ supports control by systemd.
+-  The pulp-agent service link is no longer installed. In previous versions, the pulp-agent service
+   was just a symlink to goferd. Users should interact with the goferd service directly.
+-  goferd 1.3.0+ supports control by systemd.
 
-Noteworthy Bugs Fixed
----------------------
-
-RFE Bugs
---------
-
-All Bugs
---------
+Bugs
+----
 You can see the complete list of bugs that were
 `fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.0&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
 
@@ -81,7 +75,7 @@ Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. 
 and nodes are not compatible with Pulp 2.4.0 and vice versa. All consumers must be upgraded first,
 but will not be usable until they are re-registered with their new Pulp 2.4.0 server or node.
 
-The 2.3.x --> 2.4.0 server or node upgrade process require all associated consumers to either be
+The 2.3.x --> 2.4.0 server or node upgrade process requires all associated consumers to either be
 upgraded or off. The upgrade process will not continue if there are active 2.3.x consumers still
 connected to the message bus. After the server and node installations are upgraded, the upgraded
 consumers need to be re-registered.
@@ -93,7 +87,7 @@ The upgrade will create a file called ``consumer.conf.rpmnew``, which contains t
 merged into your existing ``consumer.conf`` by hand as new, required configuration properties are
 introduced with 2.4.0, but portions of the old config will likely still be useful.
 
-Once the consumer.conf file is setup to use the new configuration, restart the consumer. On
+Once the ``consumer.conf`` file is setup to use the new configuration, restart the consumer. On
 Upstart systems the restart is done using::
 
     $ sudo service goferd restart
@@ -104,7 +98,7 @@ For systemd systems::
 
 A message broker is required for Pulp 2.4.0. Pulp 2.3.x required Qpid specifically as the message
 broker, but Pulp 2.4 will work with either Qpid or RabbitMQ. If using Qpid, ensure that you are
-using Qpid 0.18 or later. Any Pulp 2.4.0 server or node that is being used with Qpid, also
+using Qpid 0.18 or later. Any Pulp 2.4.0 server or node that is being used with Qpid also
 requires a new client library dependency to be installed on the server or node by running::
 
     $ sudo yum install python-qpid-qmf python-qpid
@@ -207,12 +201,17 @@ has been changed significantly. The
 `2.3 Call Report <https://pulp-dev-guide.readthedocs.org/en/pulp-2.3/conventions/sync-v-async.html#call-report>`_
 had many more fields than the
 `2.4 Call Report <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/conventions/sync-v-async.html#call-report>`_
-does. The spawned_tasks list within the Call Report object does not contain the full list of all
-tasks that will be scheduled for a given call. Each spawned task is responsible for spawning
-whatever additional tasks are needed in order to complete processing. For example, the sync task
-with auto publishing enabled returns a Call Report that only lists the task_id for the sync portion
-of the work. When the sync task finishes it will have the task created for publishing listed in
-the spawned_tasks field.
+does.
+
+* The spawned_tasks list within the Call Report object does not contain the full list of all
+  tasks that will be scheduled for a given call. Each spawned task is responsible for spawning
+  whatever additional tasks are needed in order to complete processing. For example, the sync task
+  with auto publishing enabled returns a Call Report that only lists the task_id for the sync portion
+  of the work. When the sync task finishes it will have the task created for publishing listed in
+  the spawned_tasks field.
+
+* The exception and traceback fields have been deprecated from the Call Report and Task Report
+  objects. In place of those fields a new "error" object has been created and will be returned.
 
 Scheduled Calls
 ^^^^^^^^^^^^^^^
@@ -237,10 +236,37 @@ Other Changes
 
 Here are other APIs that have changed, arranged by path:
 
+``/v2/catalog/<source_id>/``
+
+    This is a new API.
+
+``/v2/consumers/<consumer_id>/actions/content/regenerate_applicability/``
+    The original applicability generation API did not allow a consumer to request regeneration of its
+    own applicability. To allow this, we have introduced this new API which can be used by consumers and
+    is documented on the same page as other applicability APIs.
+
+``/v2/content/actions/delete_orphans/``
+
+    This has been deprecated in version 2.4, in favor of ``/v2/content/orphans/``.
+
 ``/v2/queued_calls/``
 
     This API has been removed in 2.4, as queued and running tasks are accessed through the same
     `Tasks API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_.
+
+``/v2/repositories/``
+    Documentation for POST states that each distributor object should contain a
+    key named ``distributor_type_id``, but the API was actually requiring it to
+    be named ``distributor_type``. The API has been changed to match the
+    documentation, so any code providing distributors to that API will need to
+    be modified.
+
+``/v2/repositories/<repo_id>/actions/unassociate/``
+    Unassociating units is no longer blocked when the user performing the action is different
+    than the user that created the unit. This most notably has the effect of eliminating
+    the restriction that units could not be removed from repositories that are synced via a feed.
+    However, if a unit is removed from a repo populated via a feed, syncing the repo again will
+    recreate the unit.
 
 ``/v2/queued_calls/<call_request_id>/``
 
@@ -268,7 +294,7 @@ Here are other APIs that have changed, arranged by path:
     * The following attributes no longer exist: ``response``, ``reasons``, ``task_group_id``,
       and ``schedule_id``.
     * The ``traceback`` and ``exception`` attributes have been deprecated in 2.4 and will always
-      be null.
+      be null. See the new ``error`` attribute.
     * The ``progress`` attribute has been renamed to ``progress_report``.
     * The following attributes are new in 2.4: ``task_type``, ``queue``, ``error``, and
       ``spawned_tasks``.
@@ -283,54 +309,31 @@ Here are other APIs that have changed, arranged by path:
 
     This is a new API to search tasks by criteria.
 
-``/v2/catalog/<source_id>/``
+Task Behavior Changes
+---------------------
 
-    This is a new API.
-
-``/v2/repositories/``
-    Documentation for POST states that each distributor object should contain a
-    key named ``distributor_type_id``, but the API was actually requiring it to
-    be named ``distributor_type``. The API has been changed to match the
-    documentation, so any code providing distributors to that API will need to
-    be modified.
-
-* Deleting units is no longer blocked when the user performing the delete is different
-  than the user that created the unit. This most notably has the effect of eliminating
-  the restriction that units could not be deleted from repositories that are synced via a feed.
-  However, if a unit is deleted from a repo populated via a feed, syncing the repo again will
-  recreate the unit.
-* The exception and traceback fields have been deprecated from the Call Report and Task Status
-  objects. In place of those fields a new "error" object has been created and will be returned.
-* TaskGroups are no longer supported. All uses of the task_group_id have been removed.
-* When asynchronous tasks are created they will be returned in the waiting state. The
+* When asynchronous tasks are created, they will be returned in the waiting state. The
   postponed or rejected states are no longer supported.
-* Agent related tasks no longer timeout, and it is now at the caller's discretion as to how long
+* Agent-related tasks no longer timeout, and it is now at the caller's discretion as to how long
   to wait for task completion. The task *state* now reflects the progression of the task on the
   agent.
-* The original applicability generation API didn't allow a consumer to request regeneration of its
-  own applicability. To allow this, we have introduced a new API which can be used by consumers and
-  is documented on the same page as other applicability APIs.
-
-``/v2/content/actions/delete_orphans/``
-
-    This has been deprecated in version 2.4, in favor of ``/v2/content/orphans/``.
 
 Binding API Changes
 -------------------
 
-* Our pulp.bindings.responses.Task model has changed substantially to reflect our changes in the Task API in
-  the REST API:
+* The pulp.bindings.responses.Task model has changed substantially to reflect changes in the
+  REST API's task section.
 
-   #. The ``call_request_group_id`` attribute no longer exists.
-   #. The ``call_request_id`` attribute has been renamed to ``task_id``.
-   #. The ``call_request_tags`` attribute has been renamed to ``tags``.
-   #. The ``reasons`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
-   #. The ``progress`` attribute has been renamed to ``progress_report`` to reflect the same name change in
-      the API.
-   #. The ``response`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
-   #. The ``is_rejected()`` and ``is_postponed()`` methods have been removed.
+   - The ``call_request_group_id`` attribute no longer exists.
+   - The ``call_request_id`` attribute has been renamed to ``task_id``.
+   - The ``call_request_tags`` attribute has been renamed to ``tags``.
+   - The ``reasons`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
+   - The ``progress`` attribute has been renamed to ``progress_report`` to reflect the same name change in
+     the API.
+   - The ``response`` attribute no longer exists, as Tasks cannot be postponed or rejected anymore.
+   - The ``is_rejected()`` and ``is_postponed()`` methods have been removed.
 
-* Our ``pulp.bindings.repository.update_repo_and_plugins(...)`` method has been deprecated in favor of
+* The ``pulp.bindings.repository.update_repo_and_plugins(...)`` method has been deprecated in favor of
   ``pulp.bindings.repository.update(...)``.
 
 Plugin API Changes
