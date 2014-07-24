@@ -1,0 +1,71 @@
+# TODO:
+#    0) add comments to this script
+#    1) Implement checking for: "The following options were specified but do not exist on the command:".
+#	So far, tab completion will work if not necessary option is specified
+#    2) It works if a wrong option was specified:
+#       >>pulp-admin rpm repo wrong-section [TAB][TAB]
+#       content  copy     create   delete   export   group    --help   list     publish  remove   search   sync     update   uploads
+#    3) fix logout [TAB][TAB]
+
+
+
+_login_options()
+{
+	COMPREPLY=()
+        result=$(comm -13 <(for word in ${COMP_LINE}; do echo $word; done | sort) <(for word in $options; do echo $word; done | sort))
+
+        if [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]] &&  [[ $COMP_LINE == *\ -p* ]] || [[ $COMP_LINE == *--password* ]]; then
+                result=$(echo $result | sed "s/\( -u\|--username\|-p\|--password\)//g")
+                COMPREPLY=( $( compgen -W "$result" -- "$cur" ) )
+        elif [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]]; then
+                result=$(echo $result | sed "s/\(-u\|--username\)//g")
+                COMPREPLY=( $( compgen -W "$result" -- "$cur" ) )
+        else
+                COMPREPLY=( $( compgen -W "$result" -- "$cur" ) )
+        fi
+
+}
+
+
+_pulp-admin_tab()
+{
+  local cur options sections grep_sections result
+
+  COMPREPLY=()
+  cur=${COMP_WORDS[COMP_CWORD]}
+  options="-u -p --username --password --help -h"
+  sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
+  grep_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
+
+
+  if [[ $COMP_LINE == *login?* ]]; then
+	_login_options $COMP_LINE $options $cur
+
+
+  elif [ $COMP_CWORD -eq 1 ]; then
+	if [[ "$cur" == -* ]]; then
+	        COMPREPLY=( $( compgen -W "$options --map" -- "$cur" ) )
+	else
+		COMPREPLY=( $( compgen -W "$options $sections login logout --map" -- "$cur" ) )
+        fi
+
+  elif [[ $grep_sections != "" ]]; then
+        COMPREPLY=( $( compgen -W "$(pulp-admin $grep_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+' | tr -d ' ' | sort | uniq ) --help" -- "$cur" ) )
+
+  else
+	result=$(comm -13 <(for word in ${COMP_LINE}; do echo $word; done | sort) <(for word in $options; do echo $word; done | sort))
+
+        if [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]] &&  [[ $COMP_LINE == *\ -p* ]] || [[ $COMP_LINE == *--password* ]]; then
+                result=$(echo $result | sed "s/\(-u\|--username\|-p\|--password\)//g")
+                COMPREPLY=( $( compgen -W "$result $sections" -- "$cur" ) )
+        elif [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]]; then
+                result=$(echo $result | sed "s/\(-u\|--username\)//g")
+                COMPREPLY=( $( compgen -W "$result $sections" -- "$cur" ) )
+        else
+                COMPREPLY=( $( compgen -W "$result $sections" -- "$cur" ) )
+        fi
+
+  fi
+} &&
+
+complete -F _pulp-admin_tab pulp-admin
