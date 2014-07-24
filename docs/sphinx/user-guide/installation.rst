@@ -181,23 +181,24 @@ Server
      Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
+
    .. _ssl_validation:
 
 #. Pulp server installation will generate a new CA certificate and an SSL certificate signed by
    this CA certificate with CN as the hostname of your server under the ``/etc/pki/pulp`` directory.
    If you want to configure a different server name in ``/etc/pulp/server.conf`` or you change
-   the hostname after installing Pulp, you will need to regenerate these certificates by running
-   ``pulp-gen-ca-certificate``. Expected filename, location and description of these certificates
-   is explained in detail under [security] section in ``/etc/pulp/server.conf``.
+   the hostname after installing Pulp, you will need to regenerate the SSL certificate by running
+   ``pulp-gen-ssl-certificate``. The expected filename, location and description of CA and SSL
+   certificates is explained in detail under the [security] section in ``/etc/pulp/server.conf``.
 
    .. note::
 
-   If you have httpd version < 2.4 installed on your server, you will need to comment out the lines
-   for SSLCertificateFile and SSLCertificateKeyFile directives from ``/etc/httpd/conf.d/ssl.conf``.
-   This is because in the older versions of httpd, these values conflict with the respective values
-   from ``/etc/httpd/conf.d/pulp.conf`` which Pulp server uses as opposed to overriding them.
-   If you need to setup multiple CA certs, you can do so by creating multiple VirtualHost entries
-   and adding these directives inside them.
+      If you have httpd version < 2.4 installed on your server, you will need to comment out the lines
+      for SSLCertificateFile and SSLCertificateKeyFile directives from ``/etc/httpd/conf.d/ssl.conf``.
+      This is because in the older versions of httpd, these values conflict with the respective values
+      from ``/etc/httpd/conf.d/pulp.conf`` which Pulp server uses as opposed to overriding them.
+      If you need to setup multiple SSL certs, you can do so by creating multiple VirtualHost entries
+      and adding these directives inside them.
 
 #. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
    but you only need to perform this step on one host that has the server package installed. Run this
@@ -306,20 +307,21 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
   [server]
   host = localhost.localdomain
 
-.. _admin_trusted_ca_installtion:
+.. _admin_trusted_ca_installation:
 
 3. Add Pulp server's CA certificate to the system trusted CA certificates. Location of the
    CA certificate can be found in ``/etc/pulp/server.conf`` under ``[security]`` section.
    The default location is ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine,
    you can simply create a symbolic link to the certificate inside ``/etc/pki/tls/certs``.
    It is important that the name of the symbolic link or of the copied certificate is the hash
-   of the certificate, followed by a `.` and a sequence number (useful in case of multiple certs
-   with same hash), else openssl will not be able to add it to the SSL context resulting in
-   SSL validation failure. You may also need to update permissions on the copied CA certificate
-   depending on which users should be able to run pulp-admin commands.
+   of the certificate, followed by a ``. (period)`` and a sequence number (useful in case of
+   multiple certs with same hash), else openssl will not be able to add it to the SSL context
+   resulting in SSL validation failure. You may also need to update permissions on the copied
+   CA certificate depending on which users should be able to run pulp-admin commands.
 
 ::
 
+  cd /etc/pki/tls/certs
   ln -s /etc/pki/pulp/ca.crt `openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0
 
 
@@ -355,35 +357,37 @@ repositories.
   [server]
   host = localhost.localdomain
 
-.. _consumer_trusted_ca_installtion:
+.. _consumer_trusted_ca_installation:
 
-3. Add Pulp server's CA certificate to the system trusted CA certificates. Location of the
-   CA certificate can be found in ``/etc/pulp/server.conf`` under ``[security]`` section.
-   The default location is ``/etc/pki/pulp/ca.crt``. It is important that the name of the symbolic
-   link or of the copied certificate is the hash of the certificate, followed by a `.`
-   and a sequence number (useful in case of multiple certs with same hash), else
-   openssl will not be able to add it to the SSL context resulting in SSL validation failure.
-   You may also need to update permissions on the copied CA certificate depending on which users
-   should be able to run pulp-consumer commands.
+3. Add Pulp server's CA certificate to the consumer's system trusted CA certificates. Location
+   of the CA certificate on the server can be found in ``/etc/pulp/server.conf`` under the
+   ``[security]`` section. The default location is ``/etc/pki/pulp/ca.crt``. You need to scp
+   this certificate to the consumer and then copy it under the ``/etc/pki/tls/certs`` directory.
+   It is important that the name of the copied certificate is the hash of the certificate,
+   followed by a ``. (period)`` and a sequence number (useful in case of multiple certs
+   with same hash), else openssl will not be able to add it to the SSL context resulting in
+   SSL validation failure. You may also need to update permissions on the copied CA certificate
+   depending on which users should be able to run pulp-consumer commands. Assuming that you copied
+   the server CA cert to <ca_cert_dir> on the consumer, you can run following commands on the consumer.
 
 ::
 
   cd /etc/pki/tls/certs
-  cp /ca_cert_dir/ca.crt `openssl x509 -noout -hash -in /ca_cert_dir/ca.crt`.0
+  cp /<ca_cert_dir>/ca.crt `openssl x509 -noout -hash -in /<ca_cert_dir>/ca.crt`.0
 
 4. The agent may be configured so that it will connect to the Qpid broker using SSL by
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
-4. Set the agent to start at boot.  For upstart::
+5. Set the agent to start at boot. For upstart::
 
-     $ sudo chkconfig goferd on
-     $ sudo service goferd start
+      $ sudo chkconfig goferd on
+      $ sudo service goferd start
 
    For systemd::
 
-     $sudo systemctl enable goferd
-     $sudo systemctl start goferd
+      $sudo systemctl enable goferd
+      $sudo systemctl start goferd
 
 
 SSL Configuration
@@ -402,6 +406,12 @@ in ``/etc/httpd/conf.d/pulp.conf`` match these settings.
 
 If you want to use SSL with Qpid, see the
 :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
+
+Pulp Broker Settings
+--------------------
+
+To configure Pulp to work with a non-default broker configuration read the
+:ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
 
 MongoDB Authentication
 ----------------------
