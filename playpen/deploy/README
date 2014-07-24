@@ -1,0 +1,40 @@
+Automated Integration Testing
+=============================
+
+Library Requirements
+--------------------
+The script makes use of several non-standard libraries:
+You'll need to install novaclient, glanceclient, and keystoneclient for Openstack support.
+You'll also need to have Fabric (version 1.8.x or greater)
+
+
+Adding a new image
+------------------
+
+To add a new image, do the following:
+
+1. Upload the image to Glance (or boot an existing image)
+2. Update the image with 'yum update'
+3. Install puppet
+4. Apply the appropriate puppet module to the instance
+5. Confirm everything is as it should be (MongoDB times out on start regularly)
+6. Soft reboot the instance (or manually restart everything necessary after the update)
+7. Take a snapshot of the instance
+8. Add metadata to the snapshot (currently only possible using 'nova image-meta set')
+   Something like 'nova image-meta set user=cloud-user distribution=fc21'
+9. Delete the instance (and maybe the initial image uploaded to Glance, if you want).
+
+
+Running the tests
+-----------------
+
+To run the integration tests in OS1:
+
+1. Make sure you have an account and all the necessary credentials (username, password,
+   tenant_id, tenant_name, auth_url). See the "Access & Security" tab on the OS1 
+   dashboard, select the "API Access" tab, and download the Openstack RC File.
+2. If you haven't already, add a public key to OS1.
+3. Write a configuration file to describe your deployment. The "sample_config.yml" file
+   in this folder should have all the necessary instructions.
+4. Run openstack/deploy-environment.py --integration-tests --config path/to/my/config
+

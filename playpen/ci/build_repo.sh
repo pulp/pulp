@@ -19,11 +19,10 @@ cd ${WORKSPACE}
 
 # Make a scratch build,  dump it on the server, and clean up
 python pulp/rel-eng/builder.py $KOJI_BUILD_VERSION $KOJI_BUILD_STREAM --scratch
-BUILDTIME=$(date +%s)
-mv mash ${BUILDTIME}
+mv mash ${BUILD_ID}
 ssh ${REPO_HOST} mkdir -p ${REPO_LOCATION}
-scp -r ${BUILDTIME} ${REPO_HOST}:${REPO_LOCATION}
-rm -r ${BUILDTIME}
+scp -r ${BUILD_ID} ${REPO_HOST}:${REPO_LOCATION}
+rm -r ${BUILD_ID}
 
 # Run a script to link the new build and remove old builds
 ssh ${REPO_HOST} << ENDSSH
@@ -31,7 +30,7 @@ cd ${REPO_LOCATION}
 
 # Link the latest build
 rm latest
-ln -s ${BUILDTIME} latest
+ln -s ${BUILD_ID} latest
 
 # Remove all but the last BUILD_HISTORY builds
 if [ "$(ls -l | wc -l)" -ge "$BUILD_HISTORY" ] ; then
