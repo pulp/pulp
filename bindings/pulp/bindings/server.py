@@ -17,6 +17,9 @@ from pulp.common.compat import json
 from pulp.common.util import ensure_utf_8, encode_unicode
 
 
+DEFAULT_CA_PATH = '/etc/pki/tls/certs/'
+
+
 class PulpConnection(object):
     """
     Stub for invoking methods against the Pulp server. By default, the
@@ -40,7 +43,9 @@ class PulpConnection(object):
                  oauth_secret=None,
                  oauth_user='admin',
                  cert_filename=None,
-                 server_wrapper=None):
+                 server_wrapper=None,
+                 validate_ssl_ca=True,
+                 ca_path=DEFAULT_CA_PATH):
 
         self.host = host
         self.port = port
@@ -76,7 +81,9 @@ class PulpConnection(object):
         else:
             self.server_wrapper = HTTPSServerWrapper(self)
 
-    # -- public methods -------------------------------------------------------
+        # SSL validation settings
+        self.validate_ssl_ca = validate_ssl_ca
+        self.ca_path = ca_path
 
     def DELETE(self, path, body=None):
         return self._request('DELETE', path, body=body)
@@ -241,19 +248,36 @@ class HTTPSServerWrapper(object):
         self.pulp_connection = pulp_connection
 
     def request(self, method, url, body):
+        """
+        Make the request against the Pulp server, returning a tuple of (status_code, respose_body).
 
+        :param method: The HTTP method to be used for the request (GET, POST, etc.)
+        :type  method: str
+        :param url:    The Pulp URL to make the request against
+        :type  url:    str
+        :param body:   The body to pass with the request
+        :type  body:   str
+        :return:       A 2-tuple of the status_code and response_body. status_code is the HTTP
+                       status code (200, 404, etc.). If the server's response is valid json,
+                       it will be parsed and response_body will be a dictionary. If not, it will be
+                       returned as a string.
+        :rtype:        tuple
+        """
         headers = dict(self.pulp_connection.headers)  # copy so we don't affect the calling method
 
         # Create a new connection each time since HTTPSConnection has problems
         # reusing a connection for multiple calls (lame).
-        ssl_context = None
+        ssl_context = SSL.Context('sslv3')
+        if self.pulp_connection.validate_ssl_ca:
+            ssl_context.set_verify(SSL.verify_peer, 1)
+            ssl_context.load_verify_locations(capath=self.pulp_connection.ca_path)
+        ssl_context.set_session_timeout(self.pulp_connection.timeout)
+
         if self.pulp_connection.username and self.pulp_connection.password:
             raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
             encoded = base64.encodestring(raw)[:-1]
             headers['Authorization'] = 'Basic ' + encoded
         elif self.pulp_connection.cert_filename:
-            ssl_context = SSL.Context('sslv3')
-            ssl_context.set_session_timeout(self.pulp_connection.timeout)
             ssl_context.load_cert(self.pulp_connection.cert_filename)
 
         # oauth configuration. This block is only True if oauth is not None, so it won't run on RHEL
@@ -274,22 +298,20 @@ class HTTPSServerWrapper(object):
             headers.update(oauth_header)
             headers['pulp-user'] = self.pulp_connection.oauth_user
 
-        # Can't pass in None, so need to decide between two signatures (also lame)
-        if ssl_context is not None:
-            connection = httpslib.HTTPSConnection(
-                self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
-        else:
-            connection = httpslib.HTTPSConnection(self.pulp_connection.host, self.pulp_connection.port)
-
-        # Request against the server
-        connection.request(method, url, body=body, headers=headers)
+        connection = httpslib.HTTPSConnection(
+            self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
 
         try:
+            # Request against the server
+            connection.request(method, url, body=body, headers=headers)
             response = connection.getresponse()
         except SSL.SSLError, err:
             # Translate stale login certificate to an auth exception
             if 'sslv3 alert certificate expired' == str(err):
-                raise exceptions.ClientSSLException(self.pulp_connection.cert_filename)
+                raise exceptions.ClientCertificateExpiredException(
+                    self.pulp_connection.cert_filename)
+            elif 'certificate verify failed' in str(err):
+                raise exceptions.CertificateVerificationException()
             else:
                 raise exceptions.ConnectionException(None, str(err), None)
 

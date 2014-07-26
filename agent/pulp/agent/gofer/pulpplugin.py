@@ -219,7 +219,6 @@ class PulpBindings(Bindings):
     """
     Pulp (REST) API.
     """
-    
     def __init__(self):
         host = cfg.server.host
         port = int(cfg.server.port)

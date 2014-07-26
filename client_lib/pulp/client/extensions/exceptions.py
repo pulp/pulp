@@ -36,7 +36,6 @@ from socket import error as socket_error
 from pulp.bindings.exceptions import *
 from pulp.client.arg_utils import InvalidConfig
 
-# -- constants ----------------------------------------------------------------
 
 CODE_BAD_REQUEST = os.EX_DATAERR
 CODE_NOT_FOUND = os.EX_DATAERR
@@ -51,9 +50,9 @@ CODE_WRONG_HOST = os.EX_DATAERR
 CODE_UNKNOWN_HOST = os.EX_CONFIG
 CODE_SOCKET_ERROR = os.EX_CONFIG
 
-LOG = logging.getLogger(__name__)
 
-# -- classes ------------------------------------------------------------------
+_logger = logging.getLogger(__name__)
+
 
 class ExceptionHandler:
     """
@@ -85,18 +84,19 @@ class ExceptionHandler:
 
         # Determine which method to call based on exception type
         mappings = (
-            (BadRequestException,   self.handle_bad_request),
-            (NotFoundException,     self.handle_not_found),
-            (ConflictException,     self.handle_conflict),
-            (ConnectionException,   self.handle_connection_error),
-            (PermissionsException,  self.handle_permission),
-            (InvalidConfig,         self.handle_invalid_config),
-            (WrongHost,             self.handle_wrong_host),
-            (gaierror,              self.handle_unknown_host),
-            (socket_error,          self.handle_socket_error),
-            (PulpServerException,   self.handle_server_error),
-            (ClientSSLException,    self.handle_client_ssl),
-            (ApacheServerException, self.handle_apache_error),
+            (BadRequestException,               self.handle_bad_request),
+            (NotFoundException,                 self.handle_not_found),
+            (ConflictException,                 self.handle_conflict),
+            (ConnectionException,               self.handle_connection_error),
+            (PermissionsException,              self.handle_permission),
+            (InvalidConfig,                     self.handle_invalid_config),
+            (WrongHost,                         self.handle_wrong_host),
+            (gaierror,                          self.handle_unknown_host),
+            (socket_error,                      self.handle_socket_error),
+            (PulpServerException,               self.handle_server_error),
+            (ClientCertificateExpiredException, self.handle_expired_client_cert),
+            (CertificateVerificationException,  self.handle_ssl_validation_error),
+            (ApacheServerException,             self.handle_apache_error),
         )
 
         handle_func = self.handle_unexpected
@@ -331,13 +331,14 @@ class ExceptionHandler:
         self.prompt.render_failure_message(msg)
         return CODE_SOCKET_ERROR
 
-    def handle_client_ssl(self, e):
+    def handle_expired_client_cert(self, e):
         """
-        Handles an exception that originates in the client-side library attempting to establish
-        an SSL connection.
+        Handles the Exception raised when the client certificate has expired.
 
-        :type e: ClientSSLException
-        :return: appropriate error code for this error
+        :param e: The Exception that needs to be handled
+        :type  e: pulp.bindings.exceptions.ClientCertificateExpiredException
+        :return:  appropriate error code for this error
+        :rtype:   int
         """
         msg = _('Session Expired')
         expiration_date = self._certificate_expiration_date(e.cert_filename)
@@ -352,6 +353,28 @@ class ExceptionHandler:
         self.prompt.render_paragraph(desc)
 
         return CODE_PERMISSIONS_EXCEPTION
+
+    def handle_ssl_validation_error(self, e):
+        """
+        Handles the Exception raised when the server's certificate is not signed by a trusted
+        authority.
+
+        :param e: The Exception that was raised
+        :type  e: pulp.bindings.exceptions.CertificateVerificationException
+        :return:  appropriate error code for this error
+        :rtype:   int
+        """
+        msg = _("WARNING: The server's SSL certificate is untrusted!")
+        desc = _("The server's SSL certificate was not signed by a trusted authority. This could "
+                 "be due to a man-in-the-middle attack, or it could be that the Pulp server needs "
+                 "to have its certificate signed by a trusted authority. If you are willing to "
+                 "accept the associated risks, you can set verify_ssl to False in the client "
+                 "config's [server] section to disable this check.")
+
+        self.prompt.render_failure_message(msg)
+        self.prompt.render_paragraph(desc)
+
+        return CODE_APACHE_SERVER_EXCEPTION
 
     def handle_apache_error(self, e):
         """
@@ -413,7 +436,7 @@ class ExceptionHandler:
                 't' : e.traceback,
                 'd' : e.extra_data}
 
-        LOG.error(template % data)
+        _logger.error(template % data)
 
     def _log_client_exception(self, e):
         """
@@ -421,7 +444,7 @@ class ExceptionHandler:
 
         :type e: Exception
         """
-        LOG.exception('Client-side exception occurred')
+        _logger.exception('Client-side exception occurred')
 
     def _log_filename(self):
         """
