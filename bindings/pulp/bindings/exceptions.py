@@ -77,14 +77,28 @@ class ApacheServerException(Exception):
 
 class ClientSSLException(Exception):
     """
-    Raised in the event the client-side libraries refuse to even attempt an SSL connection
-    to the server. The common use case here is an expired client certificate which the
-    client-side libraries will check before even initiating the request.
+    Raised in the event the client-side libraries refuse to communicate with the server.
     """
+    pass
 
+
+class ClientCertificateExpiredException(ClientSSLException):
+    """
+    Raised when the client certificate has expired. The
+    client-side libraries will check for this before initiating the request.
+    """
     def __init__(self, cert_filename):
         Exception.__init__(self)
         self.cert_filename = cert_filename
+
+
+class CertificateVerificationException(ClientSSLException):
+    """
+    Raised when the client does not trust the authority that signed the server's SSL certificate.
+    This could indicate a man-in-the-middle attack, a self-signed certificate, or a certificate
+    signed by an untrusted certificate authority.
+    """
+    pass
 
 
 class ConnectionException(Exception):

@@ -112,7 +112,8 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
-        code = self.exception_handler.handle_exception(exceptions.ClientSSLException(CERT_FILENAME))
+        code = self.exception_handler.handle_exception(exceptions.ClientCertificateExpiredException(
+            CERT_FILENAME))
         self.assertEqual(code, handler.CODE_PERMISSIONS_EXCEPTION)
         self.assertEqual([TAG_FAILURE, TAG_PARAGRAPH], self.prompt.get_write_tags())
         self.prompt.tags = []
@@ -131,7 +132,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         # Test
         e = exceptions.BadRequestException({'property_names' : ['foo']})
         code = self.exception_handler.handle_bad_request(e)
-        
+
         # Verify
         self.assertEqual(code, handler.CODE_BAD_REQUEST)
         self.assertTrue('properties were invalid' in self.recorder.lines[0])
@@ -303,14 +304,14 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
 
-    def test_client_ssl(self):
+    def test_handle_expired_client_cert(self):
         """
         Tests handling client-side SSL verification issues.
         """
 
         # Test
-        e = exceptions.ClientSSLException(CERT_FILENAME)
-        code = self.exception_handler.handle_client_ssl(e)
+        e = exceptions.ClientCertificateExpiredException(CERT_FILENAME)
+        code = self.exception_handler.handle_expired_client_cert(e)
 
         # Verify
         self.assertEqual(code, handler.CODE_PERMISSIONS_EXCEPTION)

@@ -14,9 +14,9 @@ New Features
   version 2.5.2.
 - Publishing Puppet repositories to flattened directories.
 - All messaging between the Pulp server and agents is signed and authenticated using asymmetric
-  keys. Public keys are exchanged during registration. Upgraded installations with existing consumers
-  must run: ``pulp-consumer update --keys`` and restart the goferd service for messaging between
-  the server and agent to continue working properly.
+  keys. Public keys are exchanged during registration. Upgraded installations with existing
+  consumers must run: ``pulp-consumer update --keys`` and restart the goferd service for messaging
+  between the server and agent to continue working properly.
 - Pulp now uses syslog for all log messages, rather than writing its own log files as in previous
   releases. Please see our :ref:`logging` documentation for details, as Pulp does not write to
   ``/var/log/pulp/`` as it used to.
@@ -30,8 +30,8 @@ New Features
   longer automatically populated and users will need to provide these values when they wish to
   configure Pulp installations to use OAuth. OAuth is now disabled by default.
 - Pulp has tightened the security in version 2.4.0 by adding functionality to validate the server
-  SSL certificate against the trusted CA certificate. More information about these certificates
-  generated at the install time can be found in the :ref:`Installation Guide <ssl_validation>`.
+  SSL certificate against trusted CA certificates. More information about these certificates
+  can be found in the :ref:`Installation Guide <ssl_validation>`.
 
 Deprecation
 -----------
@@ -121,24 +121,6 @@ optionally edit the new ``log_level`` setting in the ``[server]`` section of
 
     $ sudo rm -rf /etc/pulp/logging/
     $ sudo $EDITOR /etc/pulp/server.conf
-
-
-Pulp 2.4.0 has an added functionality to validate the server SSL certificate against
-trusted CA certificates. To take advantage of it, you can run ``pulp-gen-ssl-certificate``
-to generate a private key and SSL certificate signed by the Pulp CA certificate. If you want to
-regenerate your Pulp CA certificate, you can do so by running ``pulp-gen-ca-certificate``
-before generating the SSL certificate. You can also opt to not use these script and generate
-your own certificates. You will just need to configure them under the [security] section in
-``/etc/pulp/server.conf``. You will need to restart httpd after generating new certificates
-or changing the security configuation. More information can be found in the
-:ref:`Installation Guide <ssl_validation>`.
-
-If you end up replacing or generating a new CA certificate above, you will need to copy and
-add the CA certificate to the trusted CA certificates on the consumers and hosts
-running pulp-admin. For pulp-admin, you can follow instructions located at
-:ref:`Installation Guide <admin_trusted_ca_installation>`. For consumers, you can
-refer to :ref:`Installation Guide <consumer_trusted_ca_installation>`.
-
 
 Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
 about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need
