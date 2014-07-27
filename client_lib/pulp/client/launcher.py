@@ -189,7 +189,7 @@ def _create_bindings(config, logger, username, password):
         call_log.setLevel(logging.INFO)
 
     # Create the connection and bindings
-    validate_ssl_ca = False if config['server']['verify_ssl'].lower() == 'false' else True
+    validate_ssl_ca = config['server']['verify_ssl'].lower() != 'false'
     ca_path = config['server']['ca_path']
     conn = PulpConnection(
         hostname, port, username=username, password=password, cert_filename=cert_filename,
