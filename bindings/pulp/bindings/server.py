@@ -17,6 +17,9 @@ from pulp.common.compat import json
 from pulp.common.util import ensure_utf_8, encode_unicode
 
 
+DEFAULT_CA_PATH = '/etc/pki/tls/certs/'
+
+
 class PulpConnection(object):
     """
     Stub for invoking methods against the Pulp server. By default, the
@@ -42,7 +45,7 @@ class PulpConnection(object):
                  cert_filename=None,
                  server_wrapper=None,
                  validate_ssl_ca=True,
-                 system_ca_dir='/etc/pki/tls/certs'):
+                 ca_path=DEFAULT_CA_PATH):
 
         self.host = host
         self.port = port
@@ -72,17 +75,15 @@ class PulpConnection(object):
                         'Accept-Language': default_locale,
                         'Content-Type': 'application/json'}
 
-        # SSL CA validation
-        self.validate_ssl_ca = validate_ssl_ca
-        self.system_ca_dir = system_ca_dir
-
         # Server Wrapper
         if server_wrapper:
             self.server_wrapper = server_wrapper
         else:
             self.server_wrapper = HTTPSServerWrapper(self)
 
-    # -- public methods -------------------------------------------------------
+        # SSL validation settings
+        self.validate_ssl_ca = validate_ssl_ca
+        self.ca_path = ca_path
 
     def DELETE(self, path, body=None):
         return self._request('DELETE', path, body=body)
@@ -247,17 +248,29 @@ class HTTPSServerWrapper(object):
         self.pulp_connection = pulp_connection
 
     def request(self, method, url, body):
+        """
+        Make the request against the Pulp server, returning a tuple of (status_code, respose_body).
 
+        :param method: The HTTP method to be used for the request (GET, POST, etc.)
+        :type  method: str
+        :param url:    The Pulp URL to make the request against
+        :type  url:    str
+        :param body:   The body to pass with the request
+        :type  body:   str
+        :return:       A 2-tuple of the status_code and response_body. status_code is the HTTP
+                       status code (200, 404, etc.). If the server's response is valid json,
+                       it will be parsed and response_body will be a dictionary. If not, it will be
+                       returned as a string.
+        :rtype:        tuple
+        """
         headers = dict(self.pulp_connection.headers)  # copy so we don't affect the calling method
 
         # Create a new connection each time since HTTPSConnection has problems
         # reusing a connection for multiple calls (lame).
-
-        # Create SSL.Context and set it to verify peer SSL certificate against system CA certs.
         ssl_context = SSL.Context('sslv3')
         if self.pulp_connection.validate_ssl_ca:
             ssl_context.set_verify(SSL.verify_peer, 1)
-            ssl_context.load_verify_locations(capath=self.pulp_connection.system_ca_dir)
+            ssl_context.load_verify_locations(capath=self.pulp_connection.ca_path)
         ssl_context.set_session_timeout(self.pulp_connection.timeout)
 
         if self.pulp_connection.username and self.pulp_connection.password:
@@ -295,7 +308,10 @@ class HTTPSServerWrapper(object):
         except SSL.SSLError, err:
             # Translate stale login certificate to an auth exception
             if 'sslv3 alert certificate expired' == str(err):
-                raise exceptions.ClientSSLException(self.pulp_connection.cert_filename)
+                raise exceptions.ClientCertificateExpiredException(
+                    self.pulp_connection.cert_filename)
+            elif 'certificate verify failed' in str(err):
+                raise exceptions.CertificateVerificationException()
             else:
                 raise exceptions.ConnectionException(None, str(err), None)
 

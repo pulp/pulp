@@ -26,7 +26,7 @@ PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 TMP=/tmp/$RANDOM
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
-CA_CN='Pulp Server CA'
+CN=`hostname`
 ORG="PULP"
 
 mkdir -p $TMP
@@ -34,12 +34,12 @@ mkdir -p $TMP
 # create CA key
 openssl genrsa -out $TMP/ca.key 2048 &> /dev/null
 
-# create a signing request for CA cert
+# create signing request
 openssl req \
   -new \
   -key $TMP/ca.key \
   -out $TMP/ca.req \
-  -subj "/CN=$CA_CN/O=$ORG" &> /dev/null
+  -subj "/CN=$CN/O=$ORG" &> /dev/null
 
 # create a self-signed CA certificate
 openssl x509 \
