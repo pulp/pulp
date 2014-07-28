@@ -298,6 +298,8 @@ class TestBindings(PluginTest):
             'server': {
                 'host': 'test-host',
                 'port': '443',
+                'verify_ssl': 'True',
+                'ca_path': '/some/path/',
             },
             'filesystem': {
                 'id_cert_dir': TEST_ID_CERT_DIR,
@@ -306,11 +308,10 @@ class TestBindings(PluginTest):
         }
         self.plugin.pulp_conf.update(test_conf)
 
-        # test
         bindings = self.plugin.PulpBindings()
 
-        # validation
-        mock_conn.assert_called_with('test-host', 443, cert_filename=CERT_PATH)
+        mock_conn.assert_called_with('test-host', 443, cert_filename=CERT_PATH,
+                                     validate_ssl_ca=True, ca_path='/some/path/')
         mock_bindings.assert_called_with(bindings, mock_conn())
 
 
