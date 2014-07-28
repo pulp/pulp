@@ -460,7 +460,9 @@ class Profiles(JSONController):
           profile is: {consumer_id:<str>, content_type:<str>, profile:<dict>}
         @return: list
         """
+        # Check that the consumer exists and raise a MissingResource exception, in case it doesn't.
         managers.consumer_manager().get_consumer(consumer_id)
+
         manager = managers.consumer_profile_manager()
         profiles = manager.get_profiles(consumer_id)
         profiles = [serialization.consumer.profile(p) for p in profiles]
