@@ -4,6 +4,9 @@ import time
 from glanceclient import client as glance_client
 from keystoneclient.v2_0 import client as keystone_client
 from novaclient.v1_1 import client as nova_client
+from novaclient.exceptions import NotFound
+
+import config_utils
 
 
 # Constants
@@ -139,8 +142,8 @@ class OS1Manager:
         Wait for the given list of instances to become active. Raise an exception if any fail.
         It is the responsibility of the user to tear down the instances.
 
-        :param instance_list:   List of instances to wait on
-        :type  instance_list:   list of novaclient.v1_1.servers.Server
+        :param instance_list:   List of instances ids to wait on
+        :type  instance_list:   list of str
         :param timeout:         maximum time to wait in minutes
         :type  timeout:         int
 
@@ -151,7 +154,7 @@ class OS1Manager:
             # Check to make sure each instance is out of the build state
             for server in instance_list:
                 # Get the latest information about the instance
-                server = self.nova.servers.get(server.id)
+                server = self.nova.servers.get(server)
 
                 # An instance isn't done building yet
                 if server.status == OPENSTACK_BUILD_KEYWORD:
@@ -160,13 +163,50 @@ class OS1Manager:
             else:
                 # In this case every server was finished building
                 for server in instance_list:
-                    server = self.nova.servers.get(server.id)
+                    server = self.nova.servers.get(server)
                     if server.status != OPENSTACK_ACTIVE_KEYWORD:
-                        raise RuntimeError('Failed to build the following instance: ' + server.name)
+                        raise RuntimeError('Failed to build the following instance: ' + server)
                 break
         else:
             # In this case we never built all the instances
             raise RuntimeError('Build time exceeded timeout, please inspect the instances and clean up')
+
+    def build_instances(self, global_config, metadata=None):
+        """
+        Build a set of instances on Openstack using the given list of configurations.
+        Each configuration is expected to contain the following keywords: DISTRIBUTION,
+        INSTANCE_NAME, SECURITY_GROUP, FLAVOR, OS1_KEY, and CLOUD_CONFIG, al defined in config_utils.
+
+        The configurations will have the 'user', 'host_string' and 'server' keys added, which will contain
+        the user to SSH in as, the host string for Fabric, and the novaclient.v1_1.server.Server created.
+
+        :param global_config:  The structure dictionary produced by the configuration parser
+        :type  global_config:  dict
+        :param metadata:            The metadata to attach to the instances. Limit to 5 keys, 255 character values
+        :type  metadata:            dict
+        """
+        for instance in config_utils.config_generator(global_config):
+            # Build the base instance
+            image = self.get_distribution_image(instance[config_utils.DISTRIBUTION])
+            cloud_config = instance.get(config_utils.CLOUD_CONFIG)
+            instance_name = instance[config_utils.INSTANCE_NAME]
+            security_group = instance[config_utils.SECURITY_GROUP]
+            flavor = instance[config_utils.FLAVOR]
+            os1_key = instance[config_utils.OS1_KEY]
+
+            server = self.create_instance(image.id, instance_name, security_group, flavor, os1_key,
+                                          metadata, cloud_config)
+            instance[config_utils.SYSTEM_USER] = image.metadata[config_utils.SYSTEM_USER].encode('ascii')
+            instance[config_utils.NOVA_SERVER] = server.id
+
+        # Wait until all the instances are active, then set necessary configs
+        flattened_list = config_utils.flatten_structure(global_config)
+        servers = [instance[config_utils.NOVA_SERVER] for instance in flattened_list]
+        self.wait_for_active_instances(servers)
+
+        for instance_config in config_utils.config_generator(global_config):
+            instance_ip = self.get_instance_ip(instance_config[config_utils.NOVA_SERVER])
+            instance_config[config_utils.HOST_STRING] = instance_config[config_utils.SYSTEM_USER] + '@' + instance_ip
 
     def create_image(self, image_location):
         """
@@ -192,15 +232,21 @@ class OS1Manager:
 
         return new_image
 
-    def delete_instance(self, instance):
+    def teardown_instances(self, configuration):
         """
-        Remove the specified instances
+        Delete all instances in the given configuration dictionary
 
-        :param instance: An instance on OS1 to delete
-        :type  instance: novaclient.v1_1.servers.Server
+        :param configuration: A dictionary parsed by config_utils
+        :type  configuration: dict
         """
         self._authenticate()
-        self.nova.servers.delete(instance)
+        for instance in config_utils.config_generator(configuration):
+            if config_utils.NOVA_SERVER in instance:
+                try:
+                    server = self.nova.servers.get(instance[config_utils.NOVA_SERVER])
+                    self.nova.servers.delete(server)
+                except NotFound:
+                    print 'Failed to find server [%s]' % instance[config_utils.NOVA_SERVER]
 
     def take_snapshot(self, server, snapshot_name, metadata=None):
         """
@@ -247,19 +293,19 @@ class OS1Manager:
             # In this case we never built all the instances
             raise RuntimeError('Build time exceeded timeout, please inspect the snapshots and clean up')
 
-    def get_instance_ip(self, instance):
+    def get_instance_ip(self, instance_id):
         """
         Get an OS1 Internal public ip address
 
-        :param instance: a server instance with a public ip address
-        :type  instance: nova.servers.Server
+        :param instance_id: the id of a server instance with a public ip address
+        :type  instance_id: str
 
         :return: the public ip address
         :rtype:  str
         """
         # Authenticate and ensure we have the latest information about the instance
         self._authenticate()
-        instance = self.nova.servers.get(instance.id)
+        instance = self.nova.servers.get(instance_id)
         public_ip = instance.networks['os1-internal-1319'][1]
         return public_ip.encode('ascii')
 

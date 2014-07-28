@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 import json
 import os
 import StringIO
@@ -11,6 +9,8 @@ from fabric.api import env, get, put, run, settings
 from fabric.context_managers import hide
 import yaml
 
+from config_utils import HOSTNAME, HOST_STRING, INSTANCE_NAME, PRIVATE_KEY, ROLE, REPOSITORY_URL
+from config_utils import get_parent_config, get_instance_config, config_generator, flatten_structure
 
 # Fabric configuration
 env.connection_attempts = 4
@@ -20,6 +20,15 @@ env.abort_on_prompts = True
 env.abort_exception = RuntimeError
 
 SERVER_CA_CERT_LOCATION = '/etc/pki/pulp/ca.crt'
+
+# Locations of the puppet manifests
+PULP_CONSUMER_MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'puppet/pulp-consumer.pp')
+PULP_SERVER_MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'puppet/pulp-server.pp')
+
+# List of currently supported roles
+PULP_SERVER_ROLE = 'server'
+PULP_CONSUMER_ROLE = 'consumer'
+PULP_TESTER_ROLE = 'tester'
 
 # Constants for pulp-automation YAML configuration
 CONSUMER_YAML_KEY = 'consumers'
@@ -63,6 +72,21 @@ INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git 
 HOSTS_TEMPLATE = "echo '%(ip)s    %(hostname)s %(hostname)s.novalocal' | sudo tee -a /etc/hosts"
 
 
+def configure_instances(global_config):
+    """
+    Configure the root instance and each decedent. Any configuration results are written to
+    the given dictionary
+
+    :param global_config: The instance structure dictionary from the configuration parser
+    :type  global_config: dict
+    """
+    # This should eventually use multi-threading to configure independent machines concurrently
+    for instance in config_generator(global_config):
+        # Configure the instance
+        config_function = CONFIGURATION_FUNCTIONS[instance[ROLE]]
+        config_function(instance[INSTANCE_NAME], global_config)
+
+
 def apply_puppet(host_string, key_file, local_module, remote_location=TEMPORARY_MANIFEST_LOCATION):
     """
     Apply a puppet manifest to the given host. It is your responsibility to install
@@ -104,7 +128,7 @@ def fabric_confirm_ssh_key(host_string, key_file):
             try:
                 run('whoami', warn_only=True)
                 break
-            except SystemExit:
+            except RuntimeError:
                 time.sleep(10)
         else:
             run('whoami')
@@ -136,55 +160,39 @@ def add_external_fact(host_string, key_file, facts):
         os.remove(path)
 
 
-def configure_pulp_server(host_string=None, private_key=None, **kwargs):
+def configure_pulp_server(instance_name, global_config):
     """
     Set up a Pulp server using Fabric and a puppet module. Fabric will apply the given
     host name, ensure puppet and any modules declared in PUPPET_MODULES are installed,
     and will then apply the puppet manifest.
 
-    :param host_string:     The host string for the server. This should be in the format 'user@ip'
-    :type  host_string:     str
-    :param private_key:     The path to the private key to use when logging into the server.
-    :type  private_key:     str
-    :param hostname:        The hostname to set on the server
-    :type  hostname:        str
-    :param repository:      The path to the repository to install from. This will be placed on
-    the server as a puppet external fact with the name specified in the the constant PULP_REPO_FACT
-    :type  repository:      str
-    :param puppet_manifest: The absolute path to the puppet manifest to apply on the server
-    :type  puppet_manifest: str
-    :param parent_config:   If this is a node, this should be the parent server's config dictionary,
-    containing its name and server CA cert. It is not necessary for a standalone pulp server.
-    :type  parent_config:   dict
-
-    :return: A string containing the Pulp server's CA cert. See Pulp installation docs for information
-    on how to install this
-    :rtype:  str
-
-    :raise SystemExit: if the server could not be successfully configured. This could be
+    :raise RuntimeError: if the server could not be successfully configured. This could be
     for any number of reasons. Currently fabric is set to be quite verbose, so see its output
     """
-    _validate_kwargs(['hostname', 'puppet_manifest', 'repository'], kwargs)
+    config = get_instance_config(instance_name, global_config)
+    parent_config = get_parent_config(instance_name, global_config)
+    host_string = config[HOST_STRING]
+    private_key = config[PRIVATE_KEY]
 
     with settings(host_string=host_string, key_file=private_key):
         # Confirm the server is available
         fabric_confirm_ssh_key(host_string, private_key)
 
         # Set the hostname
-        run('sudo hostname ' + kwargs['hostname'])
+        run('sudo hostname ' + config[HOSTNAME])
 
         # Ensure the puppet modules are installed
         for module in PUPPET_MODULES:
             run(PUPPET_MODULE_INSTALL % module)
 
         # Add external facts to the server
-        puppet_external_facts = {PULP_REPO_FACT: kwargs['repository']}
-        if 'parent_config' in kwargs:
-            puppet_external_facts[PULP_SERVER_CA_FACT] = kwargs['parent_config']['server_ca_cert']
+        puppet_external_facts = {PULP_REPO_FACT: config[REPOSITORY_URL]}
+        if parent_config is not None:
+            puppet_external_facts[PULP_SERVER_CA_FACT] = parent_config['server_ca_cert']
         add_external_fact(host_string, private_key, puppet_external_facts)
 
         # Apply the manifest to the server
-        apply_puppet(host_string, private_key, kwargs['puppet_manifest'])
+        apply_puppet(host_string, private_key, PULP_SERVER_MANIFEST)
 
         # Retrieve this server's CA cert for use with clients
         temporary_file = StringIO.StringIO()
@@ -194,43 +202,30 @@ def configure_pulp_server(host_string=None, private_key=None, **kwargs):
         temporary_file.close()
         fabric_network.disconnect_all()
 
-        return {'server_ca_cert': server_ca_cert}
+        config['server_ca_cert'] = server_ca_cert
 
 
-def configure_consumer(host_string=None, key_file=None, **kwargs):
+def configure_consumer(instance_name, global_config):
     """
     Set up a Pulp consumer using Fabric and a puppet module. Fabric will apply the given consumer
     hostname, ensure root can ssh into the consumer, ensure puppet and all modules in PUPPET_MODULES
     are installed, then apply the puppet manifest. Finally, it will write an /etc/hosts entry for the
-    server.
-
-    :param host_string:     The host string for the server. This should be in the format 'user@ip'
-    :type  host_string:     str
-    :param private_key:     The path to the private key to use when logging into the server.
-    :type  private_key:     str
-    :param hostname:        The hostname to set on this consumer
-    :type  hostname:        str
-    :param repository:      The path to the repository to install from
-    :type  repository:      str
-    :param puppet_manifest: The absolute path to the puppet manifest to apply on the server
-    :type  puppet_manifest: str
-    :param parent_config:   The Pulp server's config dictionary, containing its name and
-    server CA cert
-    :type  parent_config:   dict
+    server
 
     :raise SystemExit: if the consumer could not be successfully configured. This could be
     for any number of reasons. Currently fabric is set to be quite verbose, so see its output
     """
-    _validate_kwargs(['hostname', 'parent_config', 'puppet_manifest', 'repository'], kwargs)
+    config = get_instance_config(instance_name, global_config)
+    parent_config = get_parent_config(instance_name, global_config)
 
-    with settings(host_string=host_string, key_file=key_file):
-        fabric_confirm_ssh_key(host_string, key_file)
+    with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
+        fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
         # The test suite uses root when SSHing
         run(AUTHORIZE_ROOT_SSH)
 
         # Set the hostname
-        run('sudo hostname ' + kwargs['hostname'])
+        run('sudo hostname ' + config[HOSTNAME])
 
         # Ensure puppet modules are installed
         for module in PUPPET_MODULES:
@@ -238,55 +233,37 @@ def configure_consumer(host_string=None, key_file=None, **kwargs):
 
         # Add external facts to the consumer so it can find the server
         puppet_external_facts = {
-            'external_pulp_server': kwargs['parent_config']['hostname'],
-            PULP_REPO_FACT: kwargs['repository'],
-            PULP_SERVER_CA_FACT: kwargs['parent_config']['server_ca_cert'],
+            'external_pulp_server': parent_config[HOSTNAME],
+            PULP_REPO_FACT: config[REPOSITORY_URL],
+            PULP_SERVER_CA_FACT: parent_config['server_ca_cert'],
         }
-        add_external_fact(host_string, key_file, puppet_external_facts)
+        add_external_fact(config[HOST_STRING], config[PRIVATE_KEY], puppet_external_facts)
 
-        apply_puppet(host_string, key_file, kwargs['puppet_manifest'])
+        apply_puppet(config[HOST_STRING], config[PRIVATE_KEY], PULP_CONSUMER_MANIFEST)
 
         # Write /etc/hosts
-        server_ip = kwargs['parent_config']['host_string'].split('@')[1]
-        run(HOSTS_TEMPLATE % {'ip': server_ip, 'hostname':  kwargs['parent_config']['hostname']})
+        server_ip = parent_config[HOST_STRING].split('@')[1]
+        run(HOSTS_TEMPLATE % {'ip': server_ip, 'hostname':  parent_config[HOSTNAME]})
         fabric_network.disconnect_all()
 
 
-def configure_tester(host_string, private_key, **kwargs):
+def configure_tester(instance_name, global_config):
     """
     Set up the server that runs the integration tests. The basic steps performed are to clone
     the pulp-automation repository, run setup.py, ensure there are entries in /etc/hosts,
     place the ssh key on the tester so it can SSH into the consumer, and write the .yml file
     for the tests.
 
-    :param host_string:         The host string for the server. This should be in the format 'user@ip'
-    :type  host_string:         str
-    :param private_key:         The path to the private key to use when logging into the server.
-    :type  private_key:         str
-    :param server_config:       The configuration dictionary from the Pulp server, which is expected
-    to contain the hostname and host_string
-    :type  server_config:       dict
-    :param consumer_config:     he configuration dictionary from the Pulp consumer, which is expected
-    to contain the hostname and host_string
-    :type  consumer_config:     dict
-    :param os_name:             The operating system name to be used in the inventory.yml file.
-    :type  os_name:             str
-    :param os_version:          The version of the operating system.
-    :type  os_version:          str
-
-    :raise SystemExit: if the tester could not be successfully configured. This could be
+    :raise RuntimeError: if the tester could not be successfully configured. This could be
     for any number of reasons. Currently fabric is set to be quite verbose, so see its output.
     """
-    expected_kwargs = ['os_name', 'os_version', 'server_config', 'consumer_config']
-    _validate_kwargs(expected_kwargs, kwargs)
+    config = get_instance_config(instance_name, global_config)
+    flattened_configs = flatten_structure(global_config)
+    server_config = filter(lambda conf: conf[ROLE] == PULP_SERVER_ROLE, flattened_configs)[0]
+    consumer_config = filter(lambda conf: conf[ROLE] == PULP_CONSUMER_ROLE, flattened_configs)[0]
 
-    server_hostname = kwargs['server_config']['hostname']
-    server_ip = kwargs['server_config']['host_string'].split('@')[1]
-    consumer_hostname = kwargs['consumer_config']['hostname']
-    consumer_ip = kwargs['consumer_config']['host_string'].split('@')[1]
-
-    with settings(host_string=host_string, key_file=private_key):
-        fabric_confirm_ssh_key(host_string, private_key)
+    with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
+        fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
         # Install necessary dependencies.
         print 'Installing necessary test dependencies... '
@@ -298,13 +275,15 @@ def configure_tester(host_string, private_key, **kwargs):
         run(INSTALL_TEST_SUITE)
 
         # Write to /etc/hosts
-        run(HOSTS_TEMPLATE % {'ip': server_ip, 'hostname': server_hostname})
-        run(HOSTS_TEMPLATE % {'ip': consumer_ip, 'hostname': consumer_hostname})
+        server_ip = server_config[HOST_STRING].split('@')[1]
+        consumer_ip = consumer_config[HOST_STRING].split('@')[1]
+        run(HOSTS_TEMPLATE % {'ip': server_ip, 'hostname': server_config[HOSTNAME]})
+        run(HOSTS_TEMPLATE % {'ip': consumer_ip, 'hostname': consumer_config[HOSTNAME]})
 
         # Dump the ssh private key on the server
-        key_path = '/home/' + host_string.split('@')[0] + '/.ssh/id_rsa'
+        key_path = '/home/' + config[HOST_STRING].split('@')[0] + '/.ssh/id_rsa'
         key_path = key_path.encode('ascii')
-        put(private_key, key_path)
+        put(config[PRIVATE_KEY], key_path)
         run('chmod 600 ' + key_path)
 
         # Write the YAML configuration file
@@ -314,20 +293,20 @@ def configure_tester(host_string, private_key, **kwargs):
 
             # Write the server configuration
             server = {
-                'url': 'https://' + server_hostname + '/',
-                'hostname': server_hostname
+                'url': 'https://' + server_config[HOSTNAME] + '/',
+                'hostname': server_config[HOSTNAME]
             }
             server_yaml = dict(config_yaml[ROLES_KEY][SERVER_YAML_KEY].items() + server.items())
             config_yaml[ROLES_KEY][SERVER_YAML_KEY] = server_yaml
 
             # Write the qpid configuration
-            config_yaml[ROLES_KEY]['qpid'] = {'url': server_hostname}
+            config_yaml[ROLES_KEY]['qpid'] = {'url': server_config[HOSTNAME]}
 
             # Write the consumer configuration
             consumer = {
-                'hostname': consumer_hostname,
+                'hostname': consumer_config[HOSTNAME],
                 'ssh_key': key_path,
-                'os': {'name': kwargs['os_name'], 'version': kwargs['os_version']},
+                'os': {'name': config['os_name'], 'version': config['os_version']},
                 'pulp': server_yaml
             }
             consumer_yaml = dict(config_yaml[ROLES_KEY][CONSUMER_YAML_KEY][0].items() + consumer.items())
@@ -343,17 +322,9 @@ def configure_tester(host_string, private_key, **kwargs):
         fabric_network.disconnect_all()
 
 
-def _validate_kwargs(expected_kwargs, actual_kwargs):
-    """
-    Validate that expected kwargs exist in received kwargs
-
-    :param expected_kwargs:
-    :param actual_kwargs:
-    :return:
-    """
-    missing_kwargs = []
-    for arg in expected_kwargs:
-        if arg not in actual_kwargs:
-            missing_kwargs.append(arg)
-    if missing_kwargs:
-        raise ValueError('Missing the following arguments: ' + repr(missing_kwargs))
+# This maps roles to setup functions
+CONFIGURATION_FUNCTIONS = {
+    PULP_SERVER_ROLE: configure_pulp_server,
+    PULP_CONSUMER_ROLE: configure_consumer,
+    PULP_TESTER_ROLE: configure_tester,
+}

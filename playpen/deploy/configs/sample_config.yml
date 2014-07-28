@@ -2,72 +2,51 @@
 # specifies the credentials to use when using OS1 to deploy the instances. The 'pulp_tester'
 # dictionary specifies configuration information for the machine that runs the integration
 # tests. Currently, the automation team uses Fedora 20 to run the tests, and RHEL7 hangs
-os1_credentials:
-    username: sample_username
-    password: sample_password
-    tenant_id: sample_tenant_id
-    tenant_name: sample_tenant_name
-    auth_url: http://sample_auth_url
+#os1_credentials:
+#    username: sample_username
+#    password: sample_password
+#    tenant_id: sample_tenant_id
+#    tenant_name: sample_tenant_name
+#    auth_url: http://sample_auth_url
 
 
 # Change these settings to get started. If you want more granularity, edit the
 # structure dictionary below.
 #
 # Specify the repository to add to the instance and install Pulp from.
-repository: &repository
-    http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4
+repository: http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4
 
 # The Openstack key pair to use. This tells Openstack what public key to authorize
 # for the instance default user (usually 'cloud-user' or 'fedora').
-os1_key: &os1_key
-    sample_keypair_name
+keypair_name: sample_keypair_name
 
 # The private key associated with the Openstack key pair.
-private_key: &private_key
-    path/to/private/key
+private_key: path/to/private/key
 
 # The distribution to use for the Pulp server and consumer. 'el6', 'fc20', etc.
-distribution: &distribution
-    el7
+distribution: el7
 
 # The size (cpu, RAM, ephemeral disk space) for each instance. See OS1 for other options.
-flavor: &flavor
-    m1.medium
+flavor: m1.medium
 
 # The Openstack security group to use. This tells Openstack what network traffic
 # is allowed to reach the machine. The default should normally be acceptable.
-security_group: &security_group
-    pulp
+security_group: pulp
 
 # Path the the cloud config to use when building instances. The default should normally be fine.
-cloud_config: &cloud_config
-    cloud-init/cloud-config.txt
-
-test_result_destination: &test_result_destination
-    nosetests.xml
+cloud_config: cloud-init/cloud-config.txt
 
 
 # This is an example of a child instance declaration that is anchored in the structure dictionary.
 pulp_consumer1: &consumer1
-    distribution: *distribution
     
     # The name of the instance in OS1. This does not have to be unique, but should
     # include identifying information in case instances fail to shut down correctly
     # and require manual clean up.
     instance_name: el7-pulp-consumer
-    security_group: *security_group
-    flavor: *flavor
-    os1_key: *os1_key
-    cloud_config: *cloud_config
-    private_key: *private_key
 
     # The role of this instance. Current valid options are 'server', 'consumer', and 'tester'.
     role: consumer
-    repository: *repository
-    
-    # Specify the path to the puppet module to apply. The default is fine for most cases.
-    puppet_manifest: puppet/pulp-consumer.pp
-    
     # The hostname to set on the instance.
     hostname: pulp-consumer1
 
@@ -79,16 +58,8 @@ pulp_consumer1: &consumer1
 # To simplify the declaration, you can use YAML anchors to define child machines first,
 # and specify how these machines relate in the structure.
 structure:
-    distribution: *distribution
     instance_name: el7-pulp-server
-    security_group: *security_group
-    flavor: *flavor
-    os1_key: *os1_key
-    cloud_config: *cloud_config
-    private_key: *private_key
     role: server
-    repository: *repository
-    puppet_manifest: puppet/pulp-server.pp
     hostname: pulp-server
     # A list of instances that are children to this instance. Currently, only consumers are supported
     children:
@@ -103,14 +74,9 @@ pulp_tester:
     distribution: fc20
     instance_name: pulp-tester
     hostname: pulp-tester
-    security_group: *security_group
-    flavor: *flavor
-    os1_key: *os1_key
-    private_key: *private_key
     role: tester
     # The automated tests expect an operating system name and version
     os_name: Fedora
     os_version: 20
-    # The path to place the xml test results
-    tests_destination: *test_result_destination
+    tests_destination: nosetests.xml
 
