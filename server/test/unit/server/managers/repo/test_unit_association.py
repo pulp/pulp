@@ -138,11 +138,13 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Test
         ids = ['foo', 'bar', 'baz']
-        self.manager.associate_all_by_ids(self.repo_id, 'type-1', ids, OWNER_TYPE_USER, 'admin')
+        ret = self.manager.associate_all_by_ids(self.repo_id, 'type-1', ids, OWNER_TYPE_USER, 'admin')
 
         # Verify
         repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : self.repo_id}))
         self.assertEqual(len(ids), len(repo_units))
+        # return value should be the number of units that were associated
+        self.assertEqual(ret, len(repo_units))
         for unit in repo_units:
             self.assertTrue(unit['unit_id'] in ids)
 
