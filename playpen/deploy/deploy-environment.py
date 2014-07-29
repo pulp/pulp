@@ -22,8 +22,6 @@ print 'Done. \n\nAuthenticating with OS1...'
 os1 = os1_utils.OS1Manager(**os1_auth)
 print 'Done.\n'
 
-print repr(config)
-
 try:
     # This metadata is attached to all instances to allow cleanup to find
     # stale instances made by this utility
