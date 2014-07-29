@@ -58,4 +58,4 @@ class TestEnsureTzSpecified(unittest.TestCase):
     def test_tz_specified(self):
         dt = datetime.datetime.now(dateutils.local_tz())
         new_date = _ensure_tz_specified(dt)
-        self.assertEquals(new_date.tzinfo, dateutils.local_tz())
+        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())

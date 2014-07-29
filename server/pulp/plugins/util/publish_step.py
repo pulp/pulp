@@ -598,7 +598,7 @@ class UnitPublishStep(PublishStep):
         if id_list is None:
             id_list = self.unit_type
         total = 0
-        types_to_query = (set(id_list)).difference(self.skip_list)
+        types_to_query = set(id_list).difference(self.skip_list)
         if not ignore_filter and self.association_filters:
             # We are copying using a filter so we have to get everything
             new_filter = copy.deepcopy(self.association_filters)

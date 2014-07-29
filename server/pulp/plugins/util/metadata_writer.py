@@ -7,7 +7,6 @@ import shutil
 import traceback
 
 
-from xml.dom import pulldom
 from xml.sax.saxutils import XMLGenerator
 
 from pulp.common import error_codes
@@ -315,7 +314,7 @@ class FastForwardXmlFileContext(XmlFileContext):
         """
         Open the metadata file handle, creating any missing parent directories.
 
-        If the file already exists, this copy it to a new name and open it as an input
+        If the file already exists, this will copy it to a new name and open it as an input
         for filtering/modification.
         """
         # Figure out if we are fast forwarding a file
@@ -343,13 +342,20 @@ class FastForwardXmlFileContext(XmlFileContext):
 
             self.existing_file = os.path.join(working_dir, self.existing_file)
 
-            # Open the file, use gzip if necessary
+            # Open the file, unzip if necessary so that seek operations can be performed
             self.original_file_handle = None
             if self.existing_file.endswith('.gz'):
-                self.original_file_handle = gzip.open(os.path.join(working_dir, self.existing_file),
-                                                      'rb')
-            else:
-                self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')
+                non_compressed_file = self.existing_file[:self.existing_file.rfind('.gz')]
+                with open(os.path.join(working_dir, non_compressed_file), 'wb') as plain_handle:
+                    with gzip.open(os.path.join(working_dir, self.existing_file), 'rb') \
+                            as gzip_handle:
+                        content = gzip_handle.read(BUFFER_SIZE)
+                        while content:
+                            plain_handle.write(content)
+                            content = gzip_handle.read(BUFFER_SIZE)
+                self.existing_file = non_compressed_file
+
+            self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')
 
         super(FastForwardXmlFileContext, self)._open_metadata_file_handle()
 
@@ -361,26 +367,45 @@ class FastForwardXmlFileContext(XmlFileContext):
         if self.fast_forward:
             start_tag = '<%s' % self.search_tag
             end_tag = '</%s' % self.root_tag
-            # stream out the file
-            content = self.original_file_handle.read(BUFFER_SIZE)
-            index = content.find(start_tag)
-            content = content[index:]
-            content2 = self.original_file_handle.read(BUFFER_SIZE)
-            while content:
-                if len(content) == BUFFER_SIZE and len(content2) == BUFFER_SIZE:
-                    self.metadata_file_handle.write(content)
-                    content = content2
-                    content2 = self.original_file_handle.read(BUFFER_SIZE)
-                elif len(content) < BUFFER_SIZE or len(content2) < BUFFER_SIZE:
-                    joined_content = content + content2
-                    index = joined_content.rfind(end_tag)
-                    if index >= 0:
-                        self.metadata_file_handle.write(joined_content[:index])
-                    else:
-                        self.metadata_file_handle.write(content)
-                        self.metadata_file_handle.write(content2)
-                    content = self.original_file_handle.read(BUFFER_SIZE)
-                    content2 = self.original_file_handle.read(BUFFER_SIZE)
+
+            # Find the start offset
+            content = ''
+            index = -1
+            while index < 0:
+                content_buffer = self.original_file_handle.read(BUFFER_SIZE)
+                if not content_buffer:
+                    raise Exception(_('Error: %s not found in the xml file.') % start_tag)
+                content += content_buffer
+                index = content.find(start_tag)
+            start_offset = index
+
+            # Find the end offset
+            content = ''
+            index = -1
+            self.original_file_handle.seek(0, os.SEEK_END)
+            while index < 0:
+                amount_to_read = min(BUFFER_SIZE, self.original_file_handle.tell())
+                self.original_file_handle.seek(-amount_to_read, os.SEEK_CUR)
+                content_buffer = self.original_file_handle.read(amount_to_read)
+                if not content_buffer:
+                    raise Exception(_('Error: %s not found in the xml file.') % end_tag)
+                bytes_read = len(content_buffer)
+                self.original_file_handle.seek(-bytes_read, os.SEEK_CUR)
+                content = content_buffer + content
+                index = content.rfind(end_tag)
+            end_offset = self.original_file_handle.tell() + index
+
+            # stream out the content
+            self.original_file_handle.seek(start_offset)
+            bytes_to_read = end_offset - start_offset
+            content_buffer = self.original_file_handle.read(BUFFER_SIZE)
+            while bytes_to_read > 0:
+                buffer_size = len(content_buffer)
+                if buffer_size > bytes_to_read:
+                    content_buffer = content_buffer[:bytes_to_read]
+                self.metadata_file_handle.write(content_buffer)
+                bytes_to_read -= buffer_size
+                content_buffer = self.original_file_handle.read(BUFFER_SIZE)
 
     def _close_metadata_file_handle(self):
         """

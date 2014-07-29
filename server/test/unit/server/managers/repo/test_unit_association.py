@@ -123,9 +123,8 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         # Verify
         repo_units = list(RepoContentUnit.get_collection().find({'repo_id' : self.repo_id}))
-        self.assertEqual(2, len(repo_units))
+        self.assertEqual(1, len(repo_units))
         self.assertEqual('unit-1', repo_units[0]['unit_id'])
-        self.assertEqual('unit-1', repo_units[1]['unit_id'])
 
     def test_associate_invalid_owner_type(self):
         # Test

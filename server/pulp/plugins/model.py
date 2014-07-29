@@ -32,11 +32,11 @@ class Repository(object):
                                of that type associated with the repository.
     :type content_unit_counts: dict
 
-    @ivar last_unit_added: UTC timestamp of the last time a unit was added to the repository
-    @type last_unit_added: str
+    :param last_unit_added: UTC datetime of the last time a unit was added to the repository
+    :type last_unit_added: datetime.datetime  with tzinfo
 
-    @ivar last_unit_removed: UTC timestamp of the last time a unit was removed from the repository
-    @type last_unit_removed: str
+    :param last_unit_removed: UTC datetime of the last time a unit was removed from the repository
+    :param last_unit_removed: datetime.datetime with tzinfo
     """
 
     def __init__(self, id, display_name=None, description=None, notes=None,

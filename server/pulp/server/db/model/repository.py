@@ -35,13 +35,6 @@ class Repo(Model):
                     the values may change as the contents of the repo change,
                     either set by the user or by an importer or distributor
     @type metadata: dict
-
-    @ivar last_unit_added: UTC timestamp of the last time a unit was added to the repository
-    @type last_unit_added: str
-
-    @ivar last_unit_removed: UTC timestamp of the last time a unit was removed from the repository
-    @type last_unit_removed: str
-
     """
 
     collection_name = 'repos'

@@ -54,7 +54,7 @@ class RepoUnitAssociationManager(object):
     """
 
     def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type,
-                             owner_id, update_unit_count=True):
+                             owner_id, update_repo_metadata=True):
         """
         Creates an association between the given repository and content unit.
 
@@ -83,12 +83,13 @@ class RepoUnitAssociationManager(object):
                          the importer ID or user login
         @type  owner_id: str
 
-        @param update_unit_count: if True, updates the unit association count
-                                  after the new association is made. Set this
+        @param update_repo_metadata: if True, updates the unit association count
+                                  after the new association is made. The last
+                                  unit added field will also be updated.  Set this
                                   to False when doing bulk associations, and
                                   make one call to update the count at the end.
                                   defaults to True
-        @type  update_unit_count: bool
+        @type  update_repo_metadata: bool
 
         @raise InvalidType: if the given owner type is not of the valid enumeration
         """
@@ -99,15 +100,13 @@ class RepoUnitAssociationManager(object):
         # If the association already exists, no need to do anything else
         spec = {'repo_id': repo_id,
                 'unit_id': unit_id,
-                'unit_type_id': unit_type_id,
-                'owner_type': owner_type,
-                'owner_id': owner_id, }
+                'unit_type_id': unit_type_id}
         existing_association = RepoContentUnit.get_collection().find_one(spec)
         if existing_association is not None:
             return
 
         similar_exists = False
-        if update_unit_count:
+        if update_repo_metadata:
             similar_exists = RepoUnitAssociationManager.association_exists(repo_id, unit_id,
                                                                            unit_type_id)
 
@@ -118,11 +117,11 @@ class RepoUnitAssociationManager(object):
         manager = manager_factory.repo_manager()
 
         # update the count of associated units on the repo object
-        if update_unit_count and not similar_exists:
+        if update_repo_metadata and not similar_exists:
             manager.update_unit_count(repo_id, unit_type_id, 1)
 
-        # update the the record for the last removed field
-        manager.update_last_unit_added(repo_id)
+            # update the record for the last added field
+            manager.update_last_unit_added(repo_id)
 
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
