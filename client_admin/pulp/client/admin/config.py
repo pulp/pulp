@@ -88,7 +88,7 @@ SCHEMA = (
 
 def read_config(paths=None, validate=True):
     """
-    Read and validate the consumer configuration.
+    Read and validate the admin configuration.
     :param validate: Validate the configuration.
     :param validate: bool
     :param paths: A list of paths to configuration files to read.
