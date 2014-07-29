@@ -464,12 +464,14 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
         context._write_file_header()
         context.metadata_file_handle.close()
         created_content = ''
-        with gzip.open(test_file) as test_file_handle:
+        test_file_handle = gzip.open(test_file)
+        content = test_file_handle.read()
+        while content:
+            created_content += content
             content = test_file_handle.read()
-            while content:
-                created_content += content
-                content = test_file_handle.read()
+        test_file_handle.close()
         self.assertEquals(test_content, created_content)
+
 
     @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
     def test_write_file_header_no_fast_forward(self, mock_generator):
