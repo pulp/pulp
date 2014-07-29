@@ -18,7 +18,7 @@ from iniparse import INIConfig
 from mock import patch, Mock
 
 from pulp.common.config import Config
-from pulp.client.admin.config import read_config, SCHEMA
+from pulp.client.admin.config import read_config, SCHEMA, DEFAULT
 
 
 VALID = """
@@ -64,6 +64,12 @@ class TestConfig(TestCase):
         self.assertTrue(isinstance(cfg, Config))
         self.assertEqual(len(cfg), len(SCHEMA))
         self.assertEqual(sorted(cfg.keys()), sorted([s[0] for s in SCHEMA]))
+        self.assertEqual(len(cfg), len(DEFAULT))
+        self.assertEqual(sorted(cfg.keys()), sorted(DEFAULT.keys()))
+        # validate the DEFAULT matches the SCHEMA
+        for s in SCHEMA:
+            for p in [p[0] for p in s[2]]:
+                self.assertTrue(p in DEFAULT[s[0]])
 
     @patch('pulp.common.config.INIConfig')
     def test_defaulted(self, mock_config):
