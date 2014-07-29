@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.0
-Release: 0.25.beta%{?dist}
+Release: 0.26.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,12 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Jul 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.26.beta
+- 1113590 - Nodes requires Pulp's cert to be trusted 1112906 - pulp-admin
+  requires Pulp's cert to be trusted 1112904 - pulp-consumer requires Pulp's
+  cert to be trusted (rbarlow@redhat.com)
+- 1110893 - adding a trailing slash to an API path (mhrivnak@redhat.com)
+
 * Wed Jul 16 2014 Unknown name 2.4.0-0.25.beta
 - 1115631 - discard disabled sources before doing is_valid check.
   (jortel@redhat.com)
