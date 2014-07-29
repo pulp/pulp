@@ -177,7 +177,10 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         Assert that when an invalid content type is passed to generate_orphans_by_type_with_unit_keys
         a MissingResource exception is raised.
         """
-        self.assertRaises(self.orphan_manager.generate_orphans_by_type_with_unit_keys('Not a type'))
+
+        self.assertRaises(pulp_exceptions.MissingResource,
+                          OrphanManager.generate_orphans_by_type_with_unit_keys('Not a type').next
+                          )
 
     def test_generate_orphans_by_type_with_unit_keys(self):
         """
