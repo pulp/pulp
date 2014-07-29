@@ -448,11 +448,13 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
     def test_write_file_header_fast_forward_small_buffer_gzip(self):
         test_file = os.path.join(self.working_dir, 'test.xml.gz')
         test_content = ''
-        with gzip.open(test_file) as test_file_handle:
+
+        test_file_handle = gzip.open(test_file)
+        content = test_file_handle.read()
+        while content:
+            test_content += content
             content = test_file_handle.read()
-            while content:
-                test_content += content
-                content = test_file_handle.read()
+        test_file_handle.close()
         test_content = test_content[:test_content.rfind('</metadata')]
         context = FastForwardXmlFileContext(test_file,
                                             self.tag, 'package', self.attributes)
