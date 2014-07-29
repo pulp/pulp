@@ -98,7 +98,7 @@ is found either in the create response or in the data returned by listing all
 event listeners.
 
 | :method:`delete`
-| :path:`/v2/events/<event_listener_id>`
+| :path:`/v2/events/<event_listener_id>/`
 | :permission:`delete`
 
 | :response_list:`_`

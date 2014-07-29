@@ -100,15 +100,11 @@ LINKS = [
 # We only support Python >= 2.6 for the server code
 if sys.version_info >= (2, 6):
     LINKS.extend([
-        # Admin conf
-        ('client_admin/etc/pulp/admin/admin.conf', '/etc/pulp/admin/admin.conf'),
-
         # Server Web Configuration
         ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
 
         # Pulp Nodes
         ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
-        ('nodes/common/etc/pulp/nodes.conf', '/etc/pulp/nodes.conf'),
         ('nodes/parent/etc/httpd/conf.d/pulp_nodes.conf', '/etc/httpd/conf.d/pulp_nodes.conf'),
         ('nodes/child/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf',
          '/etc/pulp/server/plugins.conf.d/nodes/importer/http.conf'),
@@ -120,7 +116,7 @@ if sys.version_info >= (2, 6):
         # Static Content
         ('/etc/pki/pulp/rsa_pub.key', '/var/lib/pulp/static/rsa_pub.key'),
     ])
-    
+
 
 try:
     LSB_VENDOR = subprocess.Popen(['lsb_release', '-si'],
@@ -206,9 +202,19 @@ def get_paths_to_copy():
          'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
          'mode': '644', 'overwrite': False},
     ]
-    # We don't support server code on EL 5.
+    # We don't support server or pulp-admin code on EL 5.
     if LSB_VERSION >= 6.0:
         paths.extend([
+            {'source': 'client_admin/etc/pulp/admin/admin.conf',
+             'destination': '/etc/pulp/admin/admin.conf',
+             'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': False},
+            # This should really be 640, but the unit tests require the ability to read it. They
+            # should mock instead, but until they do we need to keep this world readable
+            {'source': 'nodes/common/etc/pulp/nodes.conf', 'destination': '/etc/pulp/nodes.conf',
+             'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
+            # This really should be 640 since that's how the RPM installs it, but the unit tests try
+            # to read the settings rather than mocking them. Once we've fixed that, we should fix
+            # this to be the same as the spec file.
             {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
         ])

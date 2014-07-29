@@ -135,8 +135,8 @@ class RepoUnitAssociationManager(object):
         @param unit_type_id: identifies the type of unit being added
         @type  unit_type_id: str
 
-        @param unit_id_list: list of unique identifiers for units within the given type
-        @type  unit_id_list: list of str
+        @param unit_id_list: list or generator of unique identifiers for units within the given type
+        @type  unit_id_list: list or generator of str
 
         @param owner_type: category of the caller making the association;
                            must be one of the OWNER_* variables in this module
@@ -145,6 +145,9 @@ class RepoUnitAssociationManager(object):
         @param owner_id: identifies the caller making the association, either
                          the importer ID or user login
         @type  owner_id: str
+
+        :return:    number of new units added to the repo
+        :rtype:     int
 
         @raise InvalidType: if the given owner type is not of the valid enumeration
         """
@@ -165,6 +168,7 @@ class RepoUnitAssociationManager(object):
                 repo_id, unit_type_id, unique_count)
             # update the timestamp for when the units were added to the repo
             manager_factory.repo_manager().update_last_unit_added(repo_id)
+        return unique_count
 
     @staticmethod
     def associate_from_repo(source_repo_id, dest_repo_id, criteria=None,

@@ -16,8 +16,9 @@ from gettext import gettext as _
 from pprint import pformat
 import errno
 
-from pulp.server import config as pulp_config
 from pulp.plugins.types import database as content_types_db
+from pulp.plugins.util.misc import paginate
+from pulp.server import config as pulp_config
 from pulp.server.exceptions import InvalidValue, MissingResource
 
 
@@ -224,28 +225,27 @@ class ContentQueryManager(object):
         ids = tuple(d.pop('_id') for d in dicts)
         return (ids, dicts)
 
-    def get_content_unit_ids(self, content_type, units_keys):
+    @staticmethod
+    def get_content_unit_ids(content_type, unit_keys):
         """
-        Return the ids that uniquely identify the content units that match the
+        Return a generator of ids that uniquely identify the content units that match the
         given unique keys dictionaries.
-        @param content_type: unique id of content collection
-        @type content_type: str
-        @param unit_keys: list of keys dictionaries that uniquely identify
+
+        :param content_type: unique id of content collection
+        :type  content_type: str
+        :param unit_keys: list of keys dictionaries that uniquely identify
                           content units in the given content type collection
-        @type unit_keys: list of dict's
-        @return: two tuples of the same length, one of ids the second of key dicts
-                 the same index in each tuple corresponds to a single content unit
-        @rtype: tuple of (possibly empty) tuples
+        :type  unit_keys: list of dicts
+
+        :return:    generator of unit IDs as strings
+        :rtype:     generator
         """
-        assert units_keys
         collection = content_types_db.type_units_collection(content_type)
-        spec = _build_multi_keys_spec(content_type, units_keys)
-        fields = ['_id']
-        fields.extend(units_keys[0].keys()) # requires assertion
-        cursor = collection.find(spec, fields=fields)
-        dicts = tuple(dict(d) for d in cursor)
-        ids = tuple(d.pop('_id') for d in dicts)
-        return (ids, dicts)
+        for segment in paginate(unit_keys):
+            spec = _build_multi_keys_spec(content_type, segment)
+            fields = ['_id']
+            for item in collection.find(spec, fields=fields):
+                yield str(item['_id'])
 
     def get_root_content_dir(self, content_type):
         """

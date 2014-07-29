@@ -516,7 +516,7 @@ class UnitPublishStep(PublishStep):
         the unit_type defaults to none since some steps are not used for processing units.
 
         :param step_type: The id of the step this processes
-        :typstep_typeid: str
+        :type step_type: str
         :param unit_type: The type of unit this step processes
         :type unit_type: str or list of str
         """
