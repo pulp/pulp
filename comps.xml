@@ -102,16 +102,4 @@
       <packagereq type="mandatory">pulp-agent</packagereq>
     </packagelist>
   </group>
-  <group>
-    <id>pulp-qpid-cpp-server</id>
-    <name>Qpid Server for Pulp</name>
-    <description>
-      Qpid message broker daemon including durability packages.
-    </description>
-    <uservisible>true</uservisible>
-    <packagelist>
-      <packagereq type="mandatory">qpid-cpp-server</packagereq>
-      <packagereq type="mandatory">qpid-cpp-server-store</packagereq>
-    </packagelist>
-  </group>
 </comps>
