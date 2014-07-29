@@ -19,31 +19,21 @@ DEFAULTS = {
         'host': socket.gethostname(),
         'port': '443',
         'api_prefix': '/pulp/api',
-        'rsa_pub': '/etc/pki/pulp/consumer/server/rsa_pub.key',
         'verify_ssl': 'true',
-    },
-    'authentication': {
-        'rsa_key': '/etc/pki/pulp/consumer/rsa.key',
-        'rsa_pub': '/etc/pki/pulp/consumer/rsa_pub.key'
+        'upload_chunk_size': '1048576',
     },
     'client': {
-        'role': 'consumer'
+        'role': 'admin'
     },
     'filesystem': {
-        'extensions_dir': '/usr/lib/pulp/consumer/extensions',
-        'repo_file': '/etc/yum.repos.d/pulp.repo',
-        'mirror_list_dir': '/etc/yum.repos.d',
-        'gpg_keys_dir': '/etc/pki/pulp-gpg-keys',
-        'cert_dir': '/etc/pki/pulp/client/repo',
-        'id_cert_dir': '/etc/pki/pulp/consumer/',
-        'id_cert_filename': 'consumer-cert.pem',
-    },
-    'reboot': {
-        'permit': 'false',
-        'delay': '3',
+        'extensions_dir': '/usr/lib/pulp/admin/extensions',
+        'id_cert_dir': '~/.pulp',
+        'id_cert_filename': 'user-cert.pem',
+        'upload_working_dir': '~/.pulp/uploads',
     },
     'logging': {
-        'filename': '~/.pulp/consumer.log',
+        'filename': '~/.pulp/admin.log',
+        'call_log_filename': '~/.pulp/server_calls.log',
     },
     'output': {
         'poll_frequency_in_seconds': '1',
@@ -51,17 +41,6 @@ DEFAULTS = {
         'wrap_to_terminal': 'false',
         'wrap_width': '80',
     },
-    'messaging': {
-        'scheme': 'amqp',
-        'host': None,
-        'port': '5672',
-        'transport': 'qpid',
-        'cacert': None,
-        'clientcert': None,
-    },
-    'profile': {
-        'minutes': '240',
-    }
 }
 
 
@@ -71,29 +50,21 @@ SCHEMA = (
             ('host', REQUIRED, ANY),
             ('port', REQUIRED, NUMBER),
             ('api_prefix', REQUIRED, ANY),
-            ('verify_ssl', REQUIRED, BOOL)
+            ('verify_ssl', REQUIRED, BOOL),
+            ('upload_chunk_size', REQUIRED, NUMBER),
         )
     ),
     ('client', REQUIRED,
         (
-            ('role', REQUIRED, r'consumer'),
+            ('role', REQUIRED, r'admin'),
         )
     ),
     ('filesystem', REQUIRED,
         (
             ('extensions_dir', REQUIRED, ANY),
-            ('repo_file', REQUIRED, ANY),
-            ('mirror_list_dir', REQUIRED, ANY),
-            ('gpg_keys_dir', REQUIRED, ANY),
-            ('cert_dir', REQUIRED, ANY),
             ('id_cert_dir', REQUIRED, ANY),
             ('id_cert_filename', REQUIRED, ANY),
-        )
-    ),
-    ('reboot', REQUIRED,
-        (
-            ('permit', REQUIRED, BOOL),
-            ('delay', REQUIRED, NUMBER),
+            ('upload_working_dir', REQUIRED, ANY),
         )
     ),
     ('logging', REQUIRED,
@@ -108,20 +79,6 @@ SCHEMA = (
             ('enable_color', REQUIRED, BOOL),
             ('wrap_to_terminal', REQUIRED, BOOL),
             ('wrap_width', REQUIRED, NUMBER)
-        )
-    ),
-    ('messaging', REQUIRED,
-        (
-            ('scheme', REQUIRED, r'(tcp|ssl|amqp|amqps)'),
-            ('host', OPTIONAL, ANY),
-            ('port', REQUIRED, NUMBER),
-            ('cacert', OPTIONAL, ANY),
-            ('clientcert', OPTIONAL, ANY)
-        )
-    ),
-    ('profile', REQUIRED,
-        (
-            ('minutes', REQUIRED, NUMBER),
         )
     ),
 )
@@ -139,10 +96,10 @@ def read_config(paths=None, validate=True):
     :rtype: Config
     """
     if not paths:
-        paths = ['/etc/pulp/consumer/consumer.conf']
-        conf_d_dir = '/etc/pulp/consumer/conf.d'
+        paths = ['/etc/pulp/admin/admin.conf']
+        conf_d_dir = '/etc/pulp/admin/conf.d'
         paths += [os.path.join(conf_d_dir, i) for i in sorted(os.listdir(conf_d_dir))]
-        overrides = os.path.expanduser('~/.pulp/consumer.conf')
+        overrides = os.path.expanduser('~/.pulp/admin.conf')
         if os.path.exists(overrides):
             paths.append(overrides)
     config = dict(DEFAULTS)

@@ -11,27 +11,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
 import sys
 
 from pulp.client import launcher
 from pulp.client.admin.exception_handler import AdminExceptionHandler
+from pulp.client.admin.config import read_config
 
 
 def main():
-    # Default static config
-    config_files = ['/etc/pulp/admin/admin.conf']
-
-    # Any conf.d entries
-    conf_d_dir = '/etc/pulp/admin/conf.d'
-    config_files += [os.path.join(conf_d_dir, i) for i in sorted(os.listdir(conf_d_dir))]
-
-    # Local user overrides
-    override = os.path.expanduser('~/.pulp/admin.conf')
-    if os.path.exists(override):
-        config_files.append(override)
-
-    exit_code = launcher.main(
-        config_files, exception_handler_class=AdminExceptionHandler
-    )
+    exit_code = launcher.main(read_config(), exception_handler_class=AdminExceptionHandler)
     sys.exit(exit_code)

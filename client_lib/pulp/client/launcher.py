@@ -33,13 +33,13 @@ import pulp.client.extensions.loader as extensions_loader
 from pulp.common.config import Config
 
 
-def main(config_filenames, exception_handler_class=ExceptionHandler):
+def main(config, exception_handler_class=ExceptionHandler):
     """
     Entry point into the launcher. Any extra necessary values will be pulled
     from the given configuration files.
 
-    @param config_filenames: ordered list of files to load configuration from
-    @type  config_filenames: list
+    @param config: The CLI configuration.
+    @type  config: Config
 
     @return: exit code suitable to return to the shell launching the client
     """
@@ -62,8 +62,7 @@ def main(config_filenames, exception_handler_class=ExceptionHandler):
 
     # Configuration and Logging
     if options.config is not None:
-        config_filenames = [options.config]
-    config = _load_configuration(config_filenames)
+        config.update(Config(options.config))
     logger = _initialize_logging(config, debug=options.debug)
 
     # General UI pieces
@@ -111,17 +110,6 @@ def main(config_filenames, exception_handler_class=ExceptionHandler):
 
 # -- configuration and logging ------------------------------------------------
 
-def _load_configuration(filenames):
-    """
-    @param filenames: list of filenames to load
-    @type  filenames: list
-
-    @return: configuration object
-    @rtype:  ConfigParser
-    """
-
-    config = Config(*filenames)
-    return config
 
 def _initialize_logging(config, debug=False):
     """
