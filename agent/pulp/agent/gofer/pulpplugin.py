@@ -222,8 +222,11 @@ class PulpBindings(Bindings):
     def __init__(self):
         host = cfg.server.host
         port = int(cfg.server.port)
+        verify_ssl = cfg.server.verify_ssl.lower() != 'false'
+        ca_path = cfg.server.ca_path
         cert = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-        connection = PulpConnection(host, port, cert_filename=cert)
+        connection = PulpConnection(host, port, cert_filename=cert, validate_ssl_ca=verify_ssl,
+                                    ca_path=ca_path)
         Bindings.__init__(self, connection)
 
 
