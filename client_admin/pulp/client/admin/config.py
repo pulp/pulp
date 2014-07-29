@@ -14,12 +14,13 @@ import socket
 
 from pulp.common.config import Config, REQUIRED, ANY, NUMBER, BOOL, OPTIONAL
 
-DEFAULTS = {
+DEFAULT = {
     'server': {
         'host': socket.gethostname(),
         'port': '443',
         'api_prefix': '/pulp/api',
         'verify_ssl': 'true',
+        'ca_path': '/etc/pki/tls/certs/',
         'upload_chunk_size': '1048576',
     },
     'client': {
@@ -51,6 +52,7 @@ SCHEMA = (
             ('port', REQUIRED, NUMBER),
             ('api_prefix', REQUIRED, ANY),
             ('verify_ssl', REQUIRED, BOOL),
+            ('ca_path', REQUIRED, ANY),
             ('upload_chunk_size', REQUIRED, NUMBER),
         )
     ),
@@ -102,7 +104,7 @@ def read_config(paths=None, validate=True):
         overrides = os.path.expanduser('~/.pulp/admin.conf')
         if os.path.exists(overrides):
             paths.append(overrides)
-    config = dict(DEFAULTS)
+    config = Config(DEFAULT)
     config.update(Config(*paths))
     if validate:
         config.validate(SCHEMA)

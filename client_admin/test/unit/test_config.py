@@ -18,56 +18,36 @@ from iniparse import INIConfig
 from mock import patch, Mock
 
 from pulp.common.config import Config
-from pulp.client.consumer.config import read_config, SCHEMA
+from pulp.client.admin.config import read_config, SCHEMA
 
 
 VALID = """
 [server]
-host = localhost
+host =
 port = 443
 api_prefix = /pulp/api
-verify_ssl = true
-ca_path: /etc/pki/tls/certs/
-
-[authentication]
-rsa_key = '/tmp/key'
-rsa_pub = '/tmp/pub'
+verify_ssl = True
+ca_path = '/etc/pki/tls/certs/'
+upload_chunk_size = 1048576
 
 [client]
-role = consumer
+role = admin
 
 [filesystem]
-extensions_dir = /usr/lib/pulp/consumer/extensions
-repo_file = /etc/yum.repos.d/pulp.repo
-mirror_list_dir = /etc/yum.repos.d
-gpg_keys_dir = /etc/pki/pulp-gpg-keys
-cert_dir = /etc/pki/pulp/client/repo
-id_cert_dir = /etc/pki/pulp/consumer/
-id_cert_filename = consumer-cert.pem
-
-[reboot]
-permit = False
-delay = 3
+extensions_dir = /usr/lib/pulp/admin/extensions
+id_cert_dir = ~/.pulp
+id_cert_filename = user-cert.pem
+upload_working_dir = ~/.pulp/uploads
 
 [logging]
-filename = ~/.pulp/consumer.log
-call_log_filename = ~/.pulp/consumer_server_calls.log
+filename = ~/.pulp/admin.log
+call_log_filename = ~/.pulp/server_calls.log
 
 [output]
 poll_frequency_in_seconds = 1
 enable_color = true
 wrap_to_terminal = false
 wrap_width = 80
-
-[messaging]
-scheme = tcp
-host =
-port = 5672
-cacert =
-clientcert =
-
-[profile]
-minutes = 240
 """
 
 
@@ -125,8 +105,8 @@ class TestConfig(TestCase):
 
         # validation
         paths = [
-            '/etc/pulp/consumer/consumer.conf',
-            os.path.expanduser('~/.pulp/consumer.conf')
+            '/etc/pulp/admin/admin.conf',
+            os.path.expanduser('~/.pulp/admin.conf')
         ]
         mock_open.assert_any(paths[0])
         mock_open.assert_any(paths[1])
