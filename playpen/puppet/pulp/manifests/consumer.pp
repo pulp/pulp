@@ -8,6 +8,8 @@ class pulp::consumer (
     $pulp_port                  = $pulp::consumer::params::pulp_port,
     $pulp_api_prefix            = $pulp::consumer::params::pulp_api_prefix,
     $pulp_rsa_pub               = $pulp::consumer::params::pulp_rsa_pub,
+    $verify_ssl                 = $pulp::consumer::params::verify_ssl,
+    $ca_path                    = $pulp::consumer::params::ca_path,
     $consumer_rsa_key           = $pulp::consumer::params::consumer_rsa_key,
     $consumer_rsa_pub           = $pulp::consumer::params::consumer_rsa_pub,
     $consumer_client_role       = $pulp::consumer::params::consumer_client_role,

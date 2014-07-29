@@ -26,7 +26,7 @@ try:
     # This metadata is attached to all instances to allow cleanup to find
     # stale instances made by this utility
     instance_metadata = {
-       'pulp_instance': 'True',
+        'pulp_instance': 'True',
         'build_time': str(time.time()),
     }
     print 'Deploying instances...'
@@ -37,6 +37,16 @@ try:
 
     # Save the configuration for later cleanup
     config_utils.save_config(config)
+
+    # Print out machine information and configuration
+    print '\nThe following instances have been built:'
+    for instance in config_utils.config_generator(config):
+        print """
+            Instance name: %(instance_name)s
+            Role: %(role)s
+            SSH: %(host_string)s
+        """ % instance
+
 except Exception, e:
     # Print exception message and quit
     print 'Error: %s - %s' % (type(e).__name__, e)

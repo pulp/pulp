@@ -279,13 +279,9 @@ This setting corresponds to the [email] `enabled` field.
 
 Most of the parameters manipulate the /etc/pulp/consumer/consumer.conf file.
 
-For more details about the configuration parameters, take a look at the default
-configuration file, which is documented in-line.
-
-####`pulp_server_ca_cert`
-This should be the Pulp server's CA certificate. It can be passed in here, or
-set as an external fact on the Pulp consumer. For more information, see 
+For more details about the configuration parameters, see the
 [consumer client installation](https://pulp-user-guide.readthedocs.org/en/latest/installation.html#consumer-client-and-agent)
+documentation, and look at the default configuration file, which is documented in-line.
 
 ####`pulp_server`
 This setting corresponds to the [server] `host` field.
@@ -298,6 +294,14 @@ This setting corresponds to the [server] `api_prefix` field.
 
 ####`pulp_rsa_pub`
 This setting corresponds to the [server] `rsa_pub` field.
+
+####`verify_ssl`
+This setting corresponds to the [server] `verify_ssl` field. The default
+is `True`.
+
+####`ca_path`
+This setting corresponds to the [server] `ca_path` field. The default
+is `/etc/pki/tls/certs/`
 
 ####`consumer_rsa_key`
 This setting corresponds to the [authentication] `rsa_key` field.

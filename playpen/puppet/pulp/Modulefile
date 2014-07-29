@@ -1,5 +1,5 @@
 name    'jcline-pulp'
-version '0.1.10'
+version '0.1.14'
 source 'https://github.com/pulp/pulp/tree/master/playpen/puppet'
 author 'Jeremy Cline'
 license 'GPL, Version 2.0'

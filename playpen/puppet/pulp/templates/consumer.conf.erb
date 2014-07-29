@@ -11,12 +11,19 @@
 #   The port providing the RESTful API
 # rsa_pub:
 #   The pulp server public key used for authentication.
+# verify_ssl:
+#   Set this to False to configure pulp-consumer not to verify that 
+#   the server's SSL cert is signed by a trusted authority
+# ca_path:
+#   This is a path to a directory of trusted CA certificates
 
 [server]
 host = <%= @pulp_server %>
 port = <%= @pulp_port %>
 api_prefix = <%= @pulp_api_prefix %>
 rsa_pub = <%= @pulp_rsa_pub %>
+verify_ssl = <%= @verify_ssl %>
+ca_path = <%= @ca_path %>
 
 
 # Authentication

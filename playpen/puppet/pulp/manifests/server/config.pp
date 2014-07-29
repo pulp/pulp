@@ -12,9 +12,9 @@ class pulp::server::config {
     }
 
     # Configure Apache
-    if $wsgi_processes {
+    if $pulp::server::wsgi_processes {
         augeas { "WSGI processes":
-            changes => "set /files/etc/httpd/conf.d/pulp.conf/*[self::directive='WSGIDaemonProcess']/arg[4] processes=$wsgi_processes",
+            changes => "set /files/etc/httpd/conf.d/pulp.conf/*[self::directive='WSGIDaemonProcess']/arg[4] processes=$pulp::server::wsgi_processes",
         }
     }
 }

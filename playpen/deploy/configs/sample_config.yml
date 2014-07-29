@@ -37,19 +37,6 @@ security_group: pulp
 cloud_config: cloud-init/cloud-config.txt
 
 
-# This is an example of a child instance declaration that is anchored in the structure dictionary.
-pulp_consumer1: &consumer1
-    
-    # The name of the instance in OS1. This does not have to be unique, but should
-    # include identifying information in case instances fail to shut down correctly
-    # and require manual clean up.
-    instance_name: el7-pulp-consumer
-
-    # The role of this instance. Current valid options are 'server', 'consumer', and 'tester'.
-    role: consumer
-    # The hostname to set on the instance.
-    hostname: pulp-consumer1
-
 # The 'structure' dictionary defines the instances to set up, and their relationships.
 # A server instance should be at the root of this structure, and it can have a list of
 # child instances. These children can be consumers or, once supported, server nodes.
@@ -58,13 +45,12 @@ pulp_consumer1: &consumer1
 # To simplify the declaration, you can use YAML anchors to define child machines first,
 # and specify how these machines relate in the structure.
 structure:
-    instance_name: el7-pulp-server
+    instance_name: demo-el7-pulp-server
     role: server
-    hostname: pulp-server
     # A list of instances that are children to this instance. Currently, only consumers are supported
     children:
-        # This is an anchor to the consumer instance defined above
-        - *consumer1
+        - instance_name: demo-el7-pulp-server
+          role: consumer
 
 # The 'pulp_tester' dictionary specifies configuration information for the machine 
 # that runs the integration tests. Currently, the automation team uses Fedora 20 to

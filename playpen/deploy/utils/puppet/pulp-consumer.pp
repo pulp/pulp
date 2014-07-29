@@ -6,7 +6,9 @@ class pulp_consumer {
     class {'::pulp::globals':
         repo_descr   => 'Pulp Repository',
         repo_baseurl => $::pulp_repo
-    } -> class {'::pulp::consumer':}
+    } -> class {'::pulp::consumer':
+        verify_ssl => 'False',
+    }
 }
 
 include pulp_consumer

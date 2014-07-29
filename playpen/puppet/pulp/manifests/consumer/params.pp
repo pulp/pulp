@@ -2,10 +2,7 @@
 # the Pulp consumer parameters.
 
 class pulp::consumer::params inherits pulp::globals {
-    # The Pulp server CA cert checks the global scope
-    # for a fact by default
-    $pulp_server_ca_cert = $::pulp_server_ca_cert
-
+ 
     # /etc/pulp/consumer/consumer.conf settings #
     #############################################
 
@@ -14,6 +11,8 @@ class pulp::consumer::params inherits pulp::globals {
     $pulp_port          = 443
     $pulp_api_prefix    = "/pulp/api"
     $pulp_rsa_pub       = "/etc/pki/pulp/consumer/server/rsa_pub.key"
+    $verify_ssl         = "True"
+    $ca_path            = "/etc/pki/tls/certs/"
 
     # Authentication
     $consumer_rsa_key = "/etc/pki/pulp/consumer/rsa.key"

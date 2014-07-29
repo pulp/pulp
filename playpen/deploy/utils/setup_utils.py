@@ -25,6 +25,18 @@ SERVER_CA_CERT_LOCATION = '/etc/pki/pulp/ca.crt'
 PULP_CONSUMER_MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'puppet/pulp-consumer.pp')
 PULP_SERVER_MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'puppet/pulp-server.pp')
 
+# The Puppet module dependencies
+PUPPET_MODULES = [
+    'puppetlabs-stdlib',
+    'puppetlabs-mongodb',
+    'dprince-qpid',
+    'jcline-pulp'
+]
+
+# Puppet fact names
+PULP_SERVER_FACT = 'pulp_server'
+PULP_REPO_FACT = 'pulp_repo'
+
 # List of currently supported roles
 PULP_SERVER_ROLE = 'server'
 PULP_CONSUMER_ROLE = 'consumer'
@@ -35,14 +47,6 @@ CONSUMER_YAML_KEY = 'consumers'
 SERVER_YAML_KEY = 'pulp'
 ROLES_KEY = 'ROLES'
 
-# The Puppet module dependencies
-PUPPET_MODULES = [
-    'puppetlabs-stdlib',
-    'puppetlabs-mongodb',
-    'dprince-qpid',
-    'jcline-pulp'
-]
-
 # The dependencies for pulp-automation
 PULP_AUTO_DEPS = [
     'gcc',
@@ -52,10 +56,6 @@ PULP_AUTO_DEPS = [
     'python-pip',
     'python-qpid'
 ]
-
-# Puppet fact names
-PULP_SERVER_CA_FACT = 'pulp_server_ca_cert'
-PULP_REPO_FACT = 'pulp_repo'
 
 # Configuration commands
 AUTHORIZE_ROOT_SSH = 'sudo cp ~/.ssh/authorized_keys /root/.ssh/authorized_keys'
@@ -170,7 +170,6 @@ def configure_pulp_server(instance_name, global_config):
     for any number of reasons. Currently fabric is set to be quite verbose, so see its output
     """
     config = get_instance_config(instance_name, global_config)
-    parent_config = get_parent_config(instance_name, global_config)
     host_string = config[HOST_STRING]
     private_key = config[PRIVATE_KEY]
 
@@ -187,22 +186,12 @@ def configure_pulp_server(instance_name, global_config):
 
         # Add external facts to the server
         puppet_external_facts = {PULP_REPO_FACT: config[REPOSITORY_URL]}
-        if parent_config is not None:
-            puppet_external_facts[PULP_SERVER_CA_FACT] = parent_config['server_ca_cert']
         add_external_fact(host_string, private_key, puppet_external_facts)
 
         # Apply the manifest to the server
         apply_puppet(host_string, private_key, PULP_SERVER_MANIFEST)
 
-        # Retrieve this server's CA cert for use with clients
-        temporary_file = StringIO.StringIO()
-        run('sudo cp ' + SERVER_CA_CERT_LOCATION + ' ~/ca.crt && sudo chmod 0777 ~/ca.crt')
-        get('~/ca.crt', temporary_file)
-        server_ca_cert = temporary_file.getvalue()
-        temporary_file.close()
         fabric_network.disconnect_all()
-
-        config['server_ca_cert'] = server_ca_cert
 
 
 def configure_consumer(instance_name, global_config):
@@ -233,9 +222,8 @@ def configure_consumer(instance_name, global_config):
 
         # Add external facts to the consumer so it can find the server
         puppet_external_facts = {
-            'external_pulp_server': parent_config[HOSTNAME],
+            PULP_SERVER_FACT: parent_config[HOSTNAME],
             PULP_REPO_FACT: config[REPOSITORY_URL],
-            PULP_SERVER_CA_FACT: parent_config['server_ca_cert'],
         }
         add_external_fact(config[HOST_STRING], config[PRIVATE_KEY], puppet_external_facts)
 

@@ -18,12 +18,6 @@ class pulp_server {
         repo_baseurl => $::pulp_repo
     } -> class {'::pulp::server':
         wsgi_processes => 1,
-    } -> augeas { "ssl.conf":
-        context => "/files/etc/httpd/conf.d/ssl.conf",
-        changes => [
-            "rm VirtualHost/*[self::directive='SSLCertificateFile']",
-            "rm VirtualHost/*[self::directive='SSLCertificateKeyFile']"
-        ],
     } -> exec { "http-restart":
         command => "/sbin/service httpd restart"
     }
