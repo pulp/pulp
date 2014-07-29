@@ -29,12 +29,14 @@ class TestConfig(TestCase):
         # Everything in the schema has a default.
         for section in SCHEMA:
             for key in [p[0] for p in section[2]]:
-                self.assertTrue(key in DEFAULT[section[0]])
+                msg = '[%s].%s has no default' % (key, p[0])
+                self.assertTrue(key in DEFAULT[section[0]], msg=msg)
         # Everything in the default is defined in the schema.
         for section in DEFAULT:
             self.assertTrue(self.schema_has_section(section))
             for key in DEFAULT[section]:
-                self.assertTrue(self.schema_has_property(section, key))
+                msg = '[%s].%s has default but not found in the schema' % (section, key)
+                self.assertTrue(self.schema_has_property(section, key), msg=msg)
 
 
     @patch('os.listdir')

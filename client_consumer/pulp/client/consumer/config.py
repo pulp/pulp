@@ -45,6 +45,7 @@ DEFAULT = {
     },
     'logging': {
         'filename': '~/.pulp/consumer.log',
+        'call_log_filename': '~/.pulp/consumer_server_calls.log',
     },
     'output': {
         'poll_frequency_in_seconds': '1',
@@ -74,6 +75,7 @@ SCHEMA = (
             ('api_prefix', REQUIRED, ANY),
             ('verify_ssl', REQUIRED, BOOL),
             ('ca_path', REQUIRED, ANY),
+            ('rsa_pub', REQUIRED, ANY),
         )
     ),
     ('authentication', REQUIRED,
@@ -123,6 +125,7 @@ SCHEMA = (
             ('scheme', REQUIRED, r'(tcp|ssl|amqp|amqps)'),
             ('host', OPTIONAL, ANY),
             ('port', REQUIRED, NUMBER),
+            ('transport', REQUIRED, ANY),
             ('cacert', OPTIONAL, ANY),
             ('clientcert', OPTIONAL, ANY)
         )
