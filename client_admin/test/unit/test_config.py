@@ -61,6 +61,30 @@ class TestConfig(TestCase):
         fake_config.assert_called_with(*paths)
         fake_config().validate.assert_called_with(SCHEMA)
         self.assertEqual(cfg, fake_config())
+        
+    @patch('pulp.client.admin.config.Config')
+    def test_read_paths(self, fake_config):
+        paths = ['path_A', 'path_B']
+
+        # test
+        cfg = read_config(paths=paths)
+
+        # validation
+        fake_config.assert_called_with(*paths)
+        fake_config().validate.assert_called_with(SCHEMA)
+        self.assertEqual(cfg, fake_config())
+
+    @patch('pulp.client.admin.config.Config')
+    def test_read_no_validation(self, fake_config):
+        paths = ['path_A', 'path_B']
+
+        # test
+        cfg = read_config(paths=paths, validate=False)
+
+        # validation
+        fake_config.assert_called_with(*paths)
+        self.assertFalse(fake_config().validate.called)
+        self.assertEqual(cfg, fake_config())
 
     @patch('os.listdir')
     @patch('os.path.expanduser')
