@@ -347,12 +347,15 @@ class FastForwardXmlFileContext(XmlFileContext):
             if self.existing_file.endswith('.gz'):
                 non_compressed_file = self.existing_file[:self.existing_file.rfind('.gz')]
                 with open(os.path.join(working_dir, non_compressed_file), 'wb') as plain_handle:
-                    with gzip.open(os.path.join(working_dir, self.existing_file), 'rb') \
-                            as gzip_handle:
+                    gzip_handle = gzip.open(os.path.join(working_dir, self.existing_file), 'rb')
+                    try:
                         content = gzip_handle.read(BUFFER_SIZE)
                         while content:
                             plain_handle.write(content)
                             content = gzip_handle.read(BUFFER_SIZE)
+                    finally:
+                        if gzip_handle:
+                            gzip_handle.close()
                 self.existing_file = non_compressed_file
 
             self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')
