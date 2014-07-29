@@ -1,14 +1,20 @@
 from gettext import gettext as _
+import glob
 import gzip
 import logging
 import os
+import shutil
 import traceback
+
+
+from xml.sax.saxutils import XMLGenerator
 
 from pulp.common import error_codes
 from pulp.server.exceptions import PulpCodedValidationException, PulpCodedException
 from verification import CHECKSUM_FUNCTIONS
 
 _LOG = logging.getLogger(__name__)
+BUFFER_SIZE = 1024
 
 
 class MetadataFileContext(object):
@@ -226,3 +232,193 @@ class JSONArrayFileContext(MetadataFileContext):
             self.metadata_file_handle.write(',')
         else:
             self.units_added = True
+
+
+class XmlFileContext(MetadataFileContext):
+    """
+    Context manager for writing out units as xml
+    """
+
+    def __init__(self, metadata_file_path, root_tag, root_attributes=None, *args, **kwargs):
+        """
+        :param metadata_file_path: The file path for the file to write
+        :type metadata_file_path: str
+        :param root_tag: The root tag for the xml tree
+        :type root_tag: str
+        :param root_attributes: Any attributes to populate on the root xml tag
+        :type root_attributes: dict of str
+        :param args: any positional arguments to be passed to the superclass
+        :type  args: list
+        :param kwargs: any keyword arguments to be passed to the superclass
+        :type  kwargs: dict
+        """
+
+        super(XmlFileContext, self).__init__(metadata_file_path, *args, **kwargs)
+        self.root_tag = root_tag
+        if not root_attributes:
+            root_attributes = {}
+        self.root_attributes = root_attributes
+
+    def _open_metadata_file_handle(self):
+        """
+        Open the metadata file handle, creating any missing parent directories.
+
+        If the file already exists, this will overwrite it.
+        """
+        super(XmlFileContext, self)._open_metadata_file_handle()
+        self.xml_generator = XMLGenerator(self.metadata_file_handle, 'UTF-8')
+
+    def _write_file_header(self):
+        """
+        Write out the beginning of the json file
+        """
+        self.xml_generator.startDocument()
+        self.xml_generator.startElement(self.root_tag, self.root_attributes)
+
+    def _write_file_footer(self):
+        """
+        Write out the end of the json file
+        """
+        self.xml_generator.endElement(self.root_tag)
+        self.xml_generator.endDocument()
+
+
+class FastForwardXmlFileContext(XmlFileContext):
+    """
+    Context manager for reopening an existing XML file context to insert more data.
+    """
+
+    def __init__(self, metadata_file_path, root_tag, search_tag, root_attributes=None,
+                 *args, **kwargs):
+        """
+        :param metadata_file_path: The file path for the file to write
+        :type metadata_file_path: str
+        :param root_tag: The root tag for the xml tree
+        :type root_tag: str
+        :param search_tag: The tag that denotes the beginning of content to copy
+        :param root_attributes: Any attributes to populate on the root xml tag
+        :type root_attributes: dict of str
+        :param args: any positional arguments to be passed to the superclass
+        :type  args: list
+        :param kwargs: any keyword arguments to be passed to the superclass
+        :type  kwargs: dict
+        """
+        super(FastForwardXmlFileContext, self).__init__(metadata_file_path, root_tag,
+                                                        root_attributes, *args, **kwargs)
+        self.fast_forward = False
+        self.search_tag = search_tag
+        self.existing_file = None
+        self.xml_generator = None
+
+    def _open_metadata_file_handle(self):
+        """
+        Open the metadata file handle, creating any missing parent directories.
+
+        If the file already exists, this will copy it to a new name and open it as an input
+        for filtering/modification.
+        """
+        # Figure out if we are fast forwarding a file
+        # find the primary file
+        working_dir, file_name = os.path.split(self.metadata_file_path)
+        if self.checksum_type:
+            # Look for a file matching the checksum-filename pattern
+            expression = '[0-9a-zA-Z]*-%s' % file_name
+            expression = os.path.join(working_dir, expression)
+            file_list = glob.glob(expression)
+            if file_list:
+                self.existing_file = file_list[0]
+                self.fast_forward = True
+        elif not self.checksum_type and os.path.exists(self.metadata_file_path):
+            self.existing_file = file_name
+            self.fast_forward = True
+
+        if self.fast_forward:
+            # move the file so that we can still process it if the name is the same
+            if self.existing_file == file_name:
+                new_file_name = 'original.%s' % self.existing_file
+                shutil.move(os.path.join(working_dir, self.existing_file),
+                            os.path.join(working_dir, new_file_name))
+                self.existing_file = new_file_name
+
+            self.existing_file = os.path.join(working_dir, self.existing_file)
+
+            # Open the file, unzip if necessary so that seek operations can be performed
+            self.original_file_handle = None
+            if self.existing_file.endswith('.gz'):
+                non_compressed_file = self.existing_file[:self.existing_file.rfind('.gz')]
+                with open(os.path.join(working_dir, non_compressed_file), 'wb') as plain_handle:
+                    gzip_handle = gzip.open(os.path.join(working_dir, self.existing_file), 'rb')
+                    try:
+                        content = gzip_handle.read(BUFFER_SIZE)
+                        while content:
+                            plain_handle.write(content)
+                            content = gzip_handle.read(BUFFER_SIZE)
+                    finally:
+                        if gzip_handle:
+                            gzip_handle.close()
+                self.existing_file = non_compressed_file
+
+            self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')
+
+        super(FastForwardXmlFileContext, self)._open_metadata_file_handle()
+
+    def _write_file_header(self):
+        """
+        Write out the beginning of the file only if we are not in fast forward mode
+        """
+        super(FastForwardXmlFileContext, self)._write_file_header()
+        if self.fast_forward:
+            start_tag = '<%s' % self.search_tag
+            end_tag = '</%s' % self.root_tag
+
+            # Find the start offset
+            content = ''
+            index = -1
+            while index < 0:
+                content_buffer = self.original_file_handle.read(BUFFER_SIZE)
+                if not content_buffer:
+                    raise Exception(_('Error: %s not found in the xml file.') % start_tag)
+                content += content_buffer
+                index = content.find(start_tag)
+            start_offset = index
+
+            # Find the end offset
+            content = ''
+            index = -1
+            self.original_file_handle.seek(0, os.SEEK_END)
+            while index < 0:
+                amount_to_read = min(BUFFER_SIZE, self.original_file_handle.tell())
+                self.original_file_handle.seek(-amount_to_read, os.SEEK_CUR)
+                content_buffer = self.original_file_handle.read(amount_to_read)
+                if not content_buffer:
+                    raise Exception(_('Error: %s not found in the xml file.') % end_tag)
+                bytes_read = len(content_buffer)
+                self.original_file_handle.seek(-bytes_read, os.SEEK_CUR)
+                content = content_buffer + content
+                index = content.rfind(end_tag)
+            end_offset = self.original_file_handle.tell() + index
+
+            # stream out the content
+            self.original_file_handle.seek(start_offset)
+            bytes_to_read = end_offset - start_offset
+            content_buffer = self.original_file_handle.read(BUFFER_SIZE)
+            while bytes_to_read > 0:
+                buffer_size = len(content_buffer)
+                if buffer_size > bytes_to_read:
+                    content_buffer = content_buffer[:bytes_to_read]
+                self.metadata_file_handle.write(content_buffer)
+                bytes_to_read -= buffer_size
+                content_buffer = self.original_file_handle.read(BUFFER_SIZE)
+
+    def _close_metadata_file_handle(self):
+        """
+        Close any open file handles and remove the original file if a new one
+        was generated
+        """
+        super(FastForwardXmlFileContext, self)._close_metadata_file_handle()
+        # Close & remove the existing file that was copied
+        if self.fast_forward:
+            if not self._is_closed(self.original_file_handle):
+                self.original_file_handle.close()
+            # We will always have renamed the original file so remove it
+            os.unlink(self.existing_file)

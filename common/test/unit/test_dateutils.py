@@ -74,6 +74,11 @@ class TimezoneTester(unittest.TestCase):
         n2 = dateutils.to_local_datetime(u)
         self.assertTrue(n1 == n2)
 
+    def test_utc_no_tz_to_utz_tz_conversion(self):
+        dt = datetime.datetime.utcnow()
+        new_date = dateutils.to_utc_datetime(dt, no_tz_equals_local_tz=False)
+        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
+
     def test_utc_offset(self):
         n1 = datetime.datetime.now(dateutils.local_tz())
         u1 = dateutils.to_utc_datetime(n1)

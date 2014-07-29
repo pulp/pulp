@@ -105,19 +105,28 @@ def to_local_datetime(dt):
     return dt.astimezone(local_tz())
 
 
-def to_utc_datetime(dt):
+def to_utc_datetime(dt, no_tz_equals_local_tz=True):
     """
     Convert the passed in time to the utc timezone.
+
     If the passed in time has no timezone information associated with it, it is
     assumed to be in the local timezone.
-    @type dt: datetime.datetime instance
-    @param dt: datetime instance representing the time to be converted
-    @rtype: datetime.datetime instance
-    @return: datetime instance reprenting the passed in time, converted to the
+
+    :param dt: datetime instance representing the time to be converted
+    :type dt: datetime.datetime instance
+    :param no_tz_equals_local_tz: Whether the lack of tzinfo means the local timezone or UTC.
+                                  Defaults to the True (local time zone)
+    :type no_tz_equals_local_tz: bool
+    :return: datetime instance representing the passed in time, converted to the
              utc timezone
+    :rtype: datetime.datetime instance
     """
     if dt.tzinfo is None:
-        dt = to_local_datetime(dt)
+        if no_tz_equals_local_tz:
+            dt = to_local_datetime(dt)
+        else:
+            dt = dt.replace(tzinfo=utc_tz())
+
     return dt.astimezone(utc_tz())
 
 

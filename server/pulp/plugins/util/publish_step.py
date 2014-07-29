@@ -1,3 +1,4 @@
+import copy
 from gettext import gettext as _
 from itertools import chain, imap
 import logging
@@ -11,6 +12,8 @@ import uuid
 
 from pulp.common.plugins import reporting_constants
 from pulp.server.db.model.criteria import UnitAssociationCriteria
+from pulp.server.db.model.criteria import Criteria
+import pulp.server.managers.factory as manager_factory
 
 _LOG = logging.getLogger(__name__)
 
@@ -58,8 +61,26 @@ class Step(object):
         self.timestamp = str(time.time())
 
     def add_child(self, step):
+        """
+        Add a child step to the end of the child steps list
+
+        :param step: The step to add
+        :type step: Step
+        """
         step.parent = self
         self.children.append(step)
+
+    def insert_child(self, index, step):
+        """
+        Insert a child step at the beginning of the child steps list
+
+        :param index: the location in the child step list where the child should be added
+        :type index: int
+        :param step: The step to insert
+        :type step: Step
+        """
+        step.parent = self
+        self.children.insert(index, step)
 
     def get_status_conduit(self):
         if self.status_conduit:
@@ -563,7 +584,7 @@ class UnitPublishStep(PublishStep):
             self.progress_successes += 1
             self.report_progress()
 
-    def _get_total(self, id_list=None):
+    def _get_total(self, id_list=None, ignore_filter=False):
         """
         Return the total number of units that are processed by this step.
         This is used generally for progress reporting.  The value returned should not change
@@ -571,15 +592,22 @@ class UnitPublishStep(PublishStep):
 
         :param id_list: List of type ids to get the total count of
         :type id_list: list of str
+        :param ignore_filter: Ignore the association filter and get all units of the given types
+        :type ignore_filter: bool
         """
         if id_list is None:
             id_list = self.unit_type
         total = 0
-        if self.association_filters:
-            # We have no good way to get this count without iterating over all units so punt
-            total = 1
+        types_to_query = set(id_list).difference(self.skip_list)
+        if not ignore_filter and self.association_filters:
+            # We are copying using a filter so we have to get everything
+            new_filter = copy.deepcopy(self.association_filters)
+            new_filter['unit_type_id'] = {'$in': list(types_to_query)}
+            criteria = Criteria(filters=new_filter)
+            association_query_manager = manager_factory.repo_unit_association_query_manager()
+            units_cursor = association_query_manager.find_by_criteria(criteria)
+            total = units_cursor.count()
         else:
-            types_to_query = (set(id_list)).difference(self.skip_list)
             for type_id in types_to_query:
                 total += self.parent.repo.content_unit_counts.get(type_id, 0)
         return total
@@ -721,14 +749,20 @@ class CopyDirectoryStep(PublishStep):
     :param delete_before_copy: Whether or not the contents of the target_dir should be cleared
                               before copying from source_dir
     :type delete_before_copy: bool
+    :param preserve_symlinks: Whether or not the symlinks in the original source directory should
+                              be copied as symlinks or as the content of the linked files.
+                              Defaults to False.
+    :type preserve_symlinks: bool
     """
-    def __init__(self, source_dir, target_dir, step_type=None, delete_before_copy=True):
+    def __init__(self, source_dir, target_dir, step_type=None, delete_before_copy=True,
+                 preserve_symlinks=False):
         step_type = step_type if step_type else reporting_constants.PUBLISH_STEP_TAR
         super(CopyDirectoryStep, self).__init__(step_type)
         self.source_dir = source_dir
         self.target_dir = target_dir
         self.delete_before_copy = delete_before_copy
         self.description = _('Copying files')
+        self.preserve_symlinks = preserve_symlinks
 
     def process_main(self):
         """
@@ -736,4 +770,4 @@ class CopyDirectoryStep(PublishStep):
         """
         if self.delete_before_copy:
             shutil.rmtree(self.target_dir, ignore_errors=True)
-        shutil.copytree(self.source_dir, self.target_dir)
+        shutil.copytree(self.source_dir, self.target_dir, symlinks=self.preserve_symlinks)

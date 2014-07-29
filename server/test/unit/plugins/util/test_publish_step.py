@@ -16,7 +16,7 @@ from pulp.devel.unit.util import touch, compare_dict
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.model import Repository
-from pulp.plugins.util.publish_step import PublishStep, UnitPublishStep, \
+from pulp.plugins.util.publish_step import Step, PublishStep, UnitPublishStep, \
     AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep
 
 
@@ -57,6 +57,27 @@ class PostOrderTests(unittest.TestCase):
 
         value_list = [n.value for n in _post_order(n5)]
         self.assertEquals(value_list, [1, 2, 3, 4, 5])
+
+
+class StepTests(PublisherBase):
+
+    def test_add_child(self):
+        step = Step('foo')
+        step2 = Step('step2')
+        step3 = Step('step3')
+        step.add_child(step2)
+        step.add_child(step3)
+        self.assertEquals(step.children, [step2, step3])
+
+    def test_insert_child(self):
+        step = Step('foo')
+        step2 = Step('step2')
+        step3 = Step('step3')
+        step4 = Step('step4')
+        step.add_child(step2)
+        step.add_child(step3)
+        step.insert_child(0, step4)
+        self.assertEquals(step.children, [step4, step2, step3])
 
 
 class PublishStepTests(PublisherBase):
@@ -531,11 +552,27 @@ class UnitPublishStepTests(PublisherBase):
         total = step._get_total()
         self.assertEquals(2, total)
 
-    def test_get_with_association_filter(self):
+    @patch('pulp.plugins.util.publish_step.manager_factory')
+    def test_get_with_association_filter(self, mock_manager_factory):
         step = UnitPublishStep("foo", ['bar', 'baz'])
         step.association_filters = {'foo': 'bar'}
+
+        find_by_criteria = mock_manager_factory.repo_unit_association_query_manager.return_value.\
+            find_by_criteria
+        find_by_criteria.return_value.count.return_value = 5
         total = step._get_total()
-        self.assertEquals(1, total)
+        criteria_object = find_by_criteria.call_args[0][0]
+        compare_dict(criteria_object.filters, {'foo': 'bar',
+                                               'unit_type_id': {'$in': ['bar', 'baz']}})
+        self.assertEquals(5, total)
+
+    def test_get_total_ignore_filter(self):
+        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step.association_filters = {'foo': 'bar'}
+        step.parent = mock.Mock()
+        step.parent.repo.content_unit_counts.get.return_value = 1
+        total = step._get_total(ignore_filter=True)
+        self.assertEquals(2, total)
 
     def test_get_total_for_none(self):
         step = UnitPublishStep("foo", ['bar', 'baz'])
@@ -543,7 +580,6 @@ class UnitPublishStepTests(PublisherBase):
         step.parent.repo.content_unit_counts.get.return_value = 0
         total = step._get_total()
         self.assertEquals(0, total)
-
 
     def test_process_unit_with_no_work(self):
         # Run the blank process unit to ensure no exceptions are raised

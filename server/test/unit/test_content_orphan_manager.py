@@ -172,6 +172,28 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         orphans_2 = list(self.orphan_manager.generate_orphans_by_type(PHONY_TYPE_2.id))
         self.assertEqual(len(orphans_2), 1)
 
+    def test_generate_orphans_by_type_with_unit_keys_invalid_type(self):
+        """
+        Assert that when an invalid content type is passed to generate_orphans_by_type_with_unit_keys
+        a MissingResource exception is raised.
+        """
+
+        self.assertRaises(pulp_exceptions.MissingResource,
+                          OrphanManager.generate_orphans_by_type_with_unit_keys('Not a type').next
+                          )
+
+    def test_generate_orphans_by_type_with_unit_keys(self):
+        """
+        Assert that orphans are retrieved by type with unit keys correctly
+        """
+        # Add two content units of different types
+        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
+
+        results = list(self.orphan_manager.generate_orphans_by_type_with_unit_keys(PHONY_TYPE_1.id))
+        self.assertEqual(1, len(results))
+        self.assertEqual(unit_1['_content_type_id'], results[0]['_content_type_id'])
+
     def test_get_orphan_using_generators(self):
         unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
 
