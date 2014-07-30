@@ -37,8 +37,8 @@ class PublisherBase(unittest.TestCase):
         self.conduit.get_repo_scratchpad = Mock(return_value={})
 
         self.config = PluginCallConfiguration(None, None)
-        self.publisher = PublishStep("base-step", self.repo, self.conduit, self.config,
-                                     'test_distributor_type')
+        self.publisher = PublishStep("base-step", repo=self.repo, publish_conduit=self.conduit,
+                                     config=self.config, distributor_type='test_distributor_type')
 
 class PluginBase(unittest.TestCase):
 
@@ -51,8 +51,8 @@ class PluginBase(unittest.TestCase):
         self.conduit.get_repo_scratchpad = Mock(return_value={})
 
         self.config = PluginCallConfiguration(None, None)
-        self.pluginstep = PluginStep("base-step", self.repo, self.conduit, self.config,
-                                     'test_plugin_type')
+        self.pluginstep = PluginStep("base-step", repo=self.repo, conduit=self.conduit, config=self.config,
+                                     plugin_type='test_plugin_type')
 
 
 class PostOrderTests(unittest.TestCase):
@@ -284,6 +284,68 @@ class PluginStepTests(PluginBase):
         report = self.pluginstep._build_final_report()
 
         self.assertFalse(report.success_flag)
+
+    def test_process_child_on_error_notifies_parent(self):
+        # set working_dir and conduit. This is required by process_lifecycle
+        step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
+        child_step = PluginStep('child', working_dir=self.working_dir, conduit=self.conduit)
+        child_step.initialize = Mock(side_effect=Exception('boo'))
+        child_step.on_error = Mock(side_effect=Exception('flux'))
+        step.on_error = Mock()
+
+        step.add_child(child_step)
+
+        self.assertRaises(Exception, step.process_lifecycle)
+
+        self.assertEquals(reporting_constants.STATE_FAILED, step.state)
+        self.assertEquals(reporting_constants.STATE_FAILED, child_step.state)
+        self.assertTrue(step.on_error.called)
+        self.assertTrue(child_step.on_error.called)
+
+    def test_process_lifecycle(self):
+        # set working_dir and conduit. This is required by process_lifecycle
+        step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
+        step.process = Mock()
+        child_step = PluginStep('child', working_dir=self.working_dir, conduit=self.conduit)
+        child_step.process = Mock()
+        step.add_child(child_step)
+        step.report_progress = Mock()
+
+        step.process_lifecycle()
+
+        step.process.assert_called_once_with()
+        child_step.process.assert_called_once_with()
+        step.report_progress.assert_called_once_with(force=True)
+        #self.assertTrue(False)
+
+    def test_process_lifecycle_reports_on_error(self):
+        # set working_dir and conduit. This is required by process_lifecycle
+        step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
+        step.process = Mock(side_effect=Exception('Foo'))
+        step.report_progress = Mock()
+
+        self.assertRaises(Exception, step.process_lifecycle)
+
+        step.report_progress.assert_called_once_with(force=True)
+
+    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
+    @patch('pulp.plugins.util.publish_step.Step.process_lifecycle', side_effect=Exception('foo'))
+    def test_process_lifecycle_exception_still_removes_working_dir(self, super_pl, mock_rmtree):
+        step = PluginStep("foo", working_dir=self.working_dir, conduit=self.conduit)
+        step._build_final_report = Mock()
+        self.assertRaises(Exception, step.process_lifecycle)
+        super_pl.assert_called_once_with()
+        self.assertFalse(step._build_final_report.called)
+        mock_rmtree.assert_called_once_with(self.working_dir, ignore_errors=True)
+
+    @patch('pulp.plugins.util.publish_step.PluginStep.get_working_dir')
+    def test_process_lifecycle_no_working_dir(self, mock_wd):
+        # we need to mock this to None instead of just setting
+        # self.working_directory to None so that we don't go up the step repo
+        # chain looking for working_dirs
+        mock_wd.return_value = None
+        step = PluginStep("foo")
+        self.assertRaises(RuntimeError, step.process_lifecycle)
 
 
 class PublishStepTests(PublisherBase):
@@ -553,70 +615,12 @@ class PublishStepTests(PublisherBase):
         step.clear_children()
         self.assertEquals(0, len(step.children))
 
-    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
-    def test_publish(self, mock_rmtree):
+    def test_publish(self):
+        # just test that process_lifecycle got called, that is where the functionality lives now
         step = PublishStep("foo")
-        work_dir = os.path.join(self.working_dir, 'foo')
-        step.working_dir = work_dir
         step.process_lifecycle = Mock()
-        step._build_final_report = Mock()
-
         step.publish()
         self.assertTrue(step.process_lifecycle.called)
-        self.assertTrue(step._build_final_report.called)
-        mock_rmtree.assert_called_once_with(work_dir, ignore_errors=True)
-
-    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
-    def test_publish_exception_still_removes_working_dir(self, mock_rmtree):
-        step = PublishStep("foo")
-        work_dir = os.path.join(self.working_dir, 'foo')
-        step.working_dir = work_dir
-        step.process_lifecycle = Mock(side_effect=Exception('foo'))
-        step._build_final_report = Mock()
-
-        self.assertRaises(Exception, step.publish)
-        self.assertTrue(step.process_lifecycle.called)
-        self.assertFalse(step._build_final_report.called)
-        mock_rmtree.assert_called_once_with(work_dir, ignore_errors=True)
-
-    def test_process_lifecycle(self):
-        step = PublishStep('parent')
-        step.process = Mock()
-        child_step = PublishStep('child')
-        child_step.process = Mock()
-        step.add_child(child_step)
-        step.report_progress = Mock()
-
-        step.process_lifecycle()
-
-        step.process.assert_called_once_with()
-        child_step.process.assert_called_once_with()
-        step.report_progress.assert_called_once_with(force=True)
-
-    def test_process_lifecycle_reports_on_error(self):
-        step = PublishStep('parent')
-        step.process = Mock(side_effect=Exception('Foo'))
-        step.report_progress = Mock()
-
-        self.assertRaises(Exception, step.process_lifecycle)
-
-        step.report_progress.assert_called_once_with(force=True)
-
-    def test_process_child_on_error_notifies_parent(self):
-        step = PublishStep('parent')
-        child_step = PublishStep('child')
-        child_step.initialize = Mock(side_effect=Exception('boo'))
-        child_step.on_error = Mock(side_effect=Exception('flux'))
-        step.on_error = Mock()
-
-        step.add_child(child_step)
-
-        self.assertRaises(Exception, step.process_lifecycle)
-
-        self.assertEquals(reporting_constants.STATE_FAILED, step.state)
-        self.assertEquals(reporting_constants.STATE_FAILED, child_step.state)
-        self.assertTrue(step.on_error.called)
-        self.assertTrue(child_step.on_error.called)
 
     def test_build_final_report_success(self):
 

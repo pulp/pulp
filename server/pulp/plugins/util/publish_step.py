@@ -345,9 +345,11 @@ class PluginStep(Step):
 
     def get_working_dir(self):
         """
-        Return the working directory
+        Return the working directory. The working dir is checked first, then
+        the step's repo, then the parent step's repo's working dir. Note that
+        the parent's working dir is not directly checked as part of this process.
 
-        :returns: the working directory from the parent
+        :returns: the working directory
         :rtype: str
         """
         if not self.working_dir:
@@ -438,6 +440,26 @@ class PluginStep(Step):
 
         return final_report
 
+    def process_lifecycle(self):
+        """
+        Perform the action for the step
+
+        :return: report describing the step's run
+        :rtype:  pulp.plugins.model.PublishReport
+        """
+        working_dir = self.get_working_dir()
+        if not working_dir:
+            raise RuntimeError("working_dir for step not found, unable to execute step")
+        if not os.path.exists(working_dir):
+            os.makedirs(working_dir)
+        try:
+            super(PluginStep, self).process_lifecycle()
+        finally:
+            # Always cleanup the working directory
+            shutil.rmtree(working_dir, ignore_errors=True)
+
+        return self._build_final_report()
+
 
 class PublishStep(PluginStep):
 
@@ -463,7 +485,7 @@ class PublishStep(PluginStep):
         super(PublishStep, self).__init__(step_type, repo=repo, conduit=publish_conduit,
                                           config=config, working_dir=working_dir,
                                           plugin_type=distributor_type)
-                                          
+
     def get_distributor_type(self):
         """
         Compatability method for get_plugin_type()
@@ -477,19 +499,12 @@ class PublishStep(PluginStep):
         """
         Perform the publish action for the repo
 
+        A compatability method. process_lifecycle() should be called directly instead.
+
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
         """
-        working_dir = self.get_working_dir()
-        if not os.path.exists(working_dir):
-            os.makedirs(working_dir)
-        try:
-            self.process_lifecycle()
-        finally:
-            # Always cleanup the working directory
-            shutil.rmtree(working_dir, ignore_errors=True)
-
-        return self._build_final_report()
+        return self.process_lifecycle()
 
     @staticmethod
     def _create_symlink(source_path, link_path):
