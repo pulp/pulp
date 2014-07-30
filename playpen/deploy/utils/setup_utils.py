@@ -1,12 +1,12 @@
 import json
 import os
-import StringIO
 import tempfile
 import time
 
 from fabric import network as fabric_network
-from fabric.api import env, get, put, run, settings
+from fabric.api import env, get, put, run, local, settings
 from fabric.context_managers import hide
+from fabric.exceptions import NetworkError
 import yaml
 
 from config_utils import HOSTNAME, HOST_STRING, INSTANCE_NAME, PRIVATE_KEY, ROLE, REPOSITORY_URL
@@ -18,8 +18,6 @@ env.timeout = 30
 env.disable_known_hosts = True
 env.abort_on_prompts = True
 env.abort_exception = RuntimeError
-
-SERVER_CA_CERT_LOCATION = '/etc/pki/pulp/ca.crt'
 
 # Locations of the puppet manifests
 PULP_CONSUMER_MANIFEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'puppet/pulp-consumer.pp')
@@ -58,7 +56,6 @@ PULP_AUTO_DEPS = [
 ]
 
 # Configuration commands
-AUTHORIZE_ROOT_SSH = 'sudo cp ~/.ssh/authorized_keys /root/.ssh/authorized_keys'
 TEMPORARY_MANIFEST_LOCATION = '/tmp/manifest.pp'
 PUPPET_MODULE_INSTALL = 'sudo puppet module install --force %s'
 YUM_INSTALL_TEMPLATE = 'sudo yum -y install %s'
@@ -120,15 +117,15 @@ def fabric_confirm_ssh_key(host_string, key_file):
 
     :raises SystemExit: if it was unable to ssh in after 300 seconds
     """
-    # It can take some time for the init scripts to insert the public key into an instance
-    # Abort on prompt is set, so catch the SystemExit exception and sleep for a while.
+    # It can take some time for sshd to start and for cloud-init to insert the public key into an instance
+    # This waits until ssh works
     print 'Waiting for ' + host_string + ' to become accessible via ssh...'
-    with settings(hide('everything'), host_string=host_string, key_file=key_file, quiet=True):
+    with settings(host_string=host_string, key_file=key_file):
         for x in xrange(0, 30):
             try:
                 run('whoami', warn_only=True)
                 break
-            except RuntimeError:
+            except (RuntimeError, NetworkError):
                 time.sleep(10)
         else:
             run('whoami')
@@ -210,9 +207,6 @@ def configure_consumer(instance_name, global_config):
     with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
         fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
-        # The test suite uses root when SSHing
-        run(AUTHORIZE_ROOT_SSH)
-
         # Set the hostname
         run('sudo hostname ' + config[HOSTNAME])
 
@@ -253,6 +247,9 @@ def configure_tester(instance_name, global_config):
     with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
         fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
+        # This is OS1 specific, but it's common for yum to not work without it
+        run('echo "http_caching=packages" | sudo tee -a /etc/yum.conf')
+
         # Install necessary dependencies.
         print 'Installing necessary test dependencies... '
         with hide('stdout'):
@@ -268,11 +265,18 @@ def configure_tester(instance_name, global_config):
         run(HOSTS_TEMPLATE % {'ip': server_ip, 'hostname': server_config[HOSTNAME]})
         run(HOSTS_TEMPLATE % {'ip': consumer_ip, 'hostname': consumer_config[HOSTNAME]})
 
-        # Dump the ssh private key on the server
+        # Generate a key pair so the test machine can ssh as root to the consumer
+        local('ssh-keygen -f consumer_temp_rsa -N ""')
+        with settings(host_string=consumer_config[HOST_STRING], key_file=consumer_config[PRIVATE_KEY]):
+            # Authorize the generated key for root access
+            put('consumer_temp_rsa.pub', '~/authorized_keys')
+            run('sudo cp ~/authorized_keys /root/.ssh/authorized_keys')
+
+        # Put the private key on the test machine and clean up
         key_path = '/home/' + config[HOST_STRING].split('@')[0] + '/.ssh/id_rsa'
         key_path = key_path.encode('ascii')
-        put(config[PRIVATE_KEY], key_path)
-        run('chmod 600 ' + key_path)
+        put('consumer_temp_rsa', key_path)
+        local('rm consumer_temp_rsa consumer_temp_rsa.pub')
 
         # Write the YAML configuration file
         get('~/pulp-automation/tests/inventory.yml', 'template_inventory.yml')

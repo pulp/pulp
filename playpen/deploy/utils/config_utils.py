@@ -1,4 +1,4 @@
-import pickle
+import json
 
 import yaml
 
@@ -36,7 +36,7 @@ INSTANCE_CONFIG_KEYWORDS = [DISTRIBUTION, INSTANCE_NAME, SECURITY_GROUP, FLAVOR,
                             PRIVATE_KEY, CLOUD_CONFIG, REPOSITORY_URL, ROLE]
 
 # Default location of the pickled configuration document
-DEFAULT_FILE_PATH = 'environment_configuration.pickle'
+DEFAULT_FILE_PATH = 'environment.json'
 
 
 def parse_and_validate_config_files(config_path, override_repo=None):
@@ -188,12 +188,24 @@ def flatten_structure(global_config):
 
 
 def save_config(global_config, file_path=None):
+    """
+    Save the configuration file to the given file path.
+
+    :param global_config:
+    :param file_path:
+    :return:
+    """
     file_path = file_path or DEFAULT_FILE_PATH
-    with open(file_path, 'w') as pickle_destination:
-        pickle.dump(global_config, pickle_destination)
+    with open(file_path, 'w') as config_file:
+        json.dump(global_config, config_file)
 
 
 def load_config(file_path=None):
+    """
+
+    :param file_path:
+    :return:
+    """
     file_path = file_path or DEFAULT_FILE_PATH
-    with open(file_path, 'r') as pickle_file:
-        return pickle.load(pickle_file)
+    with open(file_path, 'r') as config_file:
+        return json.load(config_file)

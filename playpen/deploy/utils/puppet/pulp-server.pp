@@ -5,7 +5,9 @@
 class pulp_server {
     include stdlib
 
-    service { 'iptables':
+    augeas { "yum.conf":
+        changes => "set /files/etc/yum.conf/main/http_caching packages",
+    } -> service { 'iptables':
         enable => false,
         ensure => 'stopped'
     } -> service { 'mongod':

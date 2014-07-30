@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import argparse
 import sys
@@ -13,7 +13,7 @@ NOSETESTS_COMMAND = 'cd pulp-automation && nosetests -vs --with-xunit --nologcap
 # Setup the CLI
 description = 'Run integration tests using a deployed environment by deploy-environment.py'
 parser = argparse.ArgumentParser(description=description)
-parser.add_argument('--config', help='path to the configuration file produced by deploy-environment.py')
+parser.add_argument('--config', help='path to the configuration file produced by deploy-environment.py', required=True)
 parser.add_argument('--tests-destination', help='the location to place the nosetests.xml file on completion')
 args = parser.parse_args()
 

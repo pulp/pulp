@@ -1,7 +1,11 @@
 # There are three expected parts to this configuration: The 'os1_credentials' dictionary
 # specifies the credentials to use when using OS1 to deploy the instances. The 'pulp_tester'
 # dictionary specifies configuration information for the machine that runs the integration
-# tests. Currently, the automation team uses Fedora 20 to run the tests, and RHEL7 hangs
+# tests. The third part is the 'structure' dictionary, which is used to define machines and
+# their relationships
+
+# This is the expected structure of the os1_credentials dictionary. Note: if you have your
+# credentials in the enviroment variables used by Openstack, you do not need this dictionary.
 #os1_credentials:
 #    username: sample_username
 #    password: sample_password
@@ -10,8 +14,11 @@
 #    auth_url: http://sample_auth_url
 
 
-# Change these settings to get started. If you want more granularity, edit the
-# structure dictionary below.
+# Any key-value pair specified that is not one of the expected dictionaries is
+# treated as a default value and applied to the instances if they are missing
+# that value. Here, we define some default parameters for the instances. If
+# you want an instance to have a special value for any of these keys, specify
+# it in the instance declaration.
 #
 # Specify the repository to add to the instance and install Pulp from.
 repository: http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4
@@ -27,7 +34,7 @@ private_key: path/to/private/key
 distribution: el7
 
 # The size (cpu, RAM, ephemeral disk space) for each instance. See OS1 for other options.
-flavor: m1.medium
+flavor: m1.small
 
 # The Openstack security group to use. This tells Openstack what network traffic
 # is allowed to reach the machine. The default should normally be acceptable.
@@ -41,28 +48,30 @@ cloud_config: cloud-init/cloud-config.txt
 # A server instance should be at the root of this structure, and it can have a list of
 # child instances. These children can be consumers or, once supported, server nodes.
 # Each server node could itself have children.
-#
-# To simplify the declaration, you can use YAML anchors to define child machines first,
-# and specify how these machines relate in the structure.
 structure:
     instance_name: demo-el7-pulp-server
     role: server
+    flavor: m1.medium
     # A list of instances that are children to this instance. Currently, only consumers are supported
     children:
-        - instance_name: demo-el7-pulp-server
+        - instance_name: demo-el7-pulp-consumer
           role: consumer
+# An example of a second child
+#       - instance_name: demo-el6-pulp-consumer
+#         role: consumer
+#         distribution: el6
 
 # The 'pulp_tester' dictionary specifies configuration information for the machine 
 # that runs the integration tests. Currently, the automation team uses Fedora 20 to
-# run the tests. The tests require Fedora or RHEL7 or greater, and RHEL7 occasionally
+# run the tests. The tests require Fedora or RHEL7, and RHEL7 occasionally
 # hangs while running the tests.
 pulp_tester:
     distribution: fc20
     instance_name: pulp-tester
-    hostname: pulp-tester
     role: tester
     # The automated tests expect an operating system name and version
     os_name: Fedora
     os_version: 20
+    # The path to put the nosetests results
     tests_destination: nosetests.xml
 
