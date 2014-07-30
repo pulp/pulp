@@ -63,8 +63,7 @@ YUM_INSTALL_TEMPLATE = 'sudo yum -y install %s'
 # The version of gevent provided by Fedora/RHEL is too old, so force it to update here.
 # It seems like setup.py needs to be run twice for now.
 INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git \
-&& sudo pip install -U greenlet gevent requests && cd pulp-automation && sudo python ./setup.py install \
-&& sudo python ./setup.py install'
+&& sudo pip install -U greenlet gevent requests && cd pulp-automation && sudo python ./setup.py install'
 
 HOSTS_TEMPLATE = "echo '%(ip)s    %(hostname)s %(hostname)s.novalocal' | sudo tee -a /etc/hosts"
 
@@ -247,6 +246,8 @@ def configure_tester(instance_name, global_config):
     with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
         fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
+        run('sudo hostname ' + config[INSTANCE_NAME])
+
         # This is OS1 specific, but it's common for yum to not work without it
         run('echo "http_caching=packages" | sudo tee -a /etc/yum.conf')
 
@@ -276,6 +277,7 @@ def configure_tester(instance_name, global_config):
         key_path = '/home/' + config[HOST_STRING].split('@')[0] + '/.ssh/id_rsa'
         key_path = key_path.encode('ascii')
         put('consumer_temp_rsa', key_path)
+        run('chmod 0600 ' + key_path)
         local('rm consumer_temp_rsa consumer_temp_rsa.pub')
 
         # Write the YAML configuration file
