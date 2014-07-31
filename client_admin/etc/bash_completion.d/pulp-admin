@@ -32,7 +32,7 @@ _pulp-admin_tab()
 
   COMPREPLY=()
   cur=${COMP_WORDS[COMP_CWORD]}
-  options="-u -p --username --password --help -h"
+  options="-u -p --username --password --help -h --debug --config"
   sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
   grep_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
 
