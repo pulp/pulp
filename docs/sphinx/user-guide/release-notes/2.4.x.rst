@@ -80,7 +80,14 @@ upgraded or off. The upgrade process will not continue if there are active 2.3.x
 connected to the message bus. After the server and node installations are upgraded, the upgraded
 consumers need to be re-registered.
 
-To upgrade a consumer from 2.3.x --> 2.4.0, run the command ``sudo yum groupupdate pulp-consumer``
+For Qpid environments, to upgrade a consumer from 2.3.x --> 2.4.0, run the command
+``sudo yum groupupdate pulp-consumer-qpid``.
+
+  .. note::
+     For RabbitMQ installations, upgrade the Pulp consumer client and agent packages without any
+     Qpid specific dependencies using ``sudo yum groupinstall pulp-consumer``. You will need to
+     upgrade or install additional RabbitMQ dependencies manually including the
+     ``python-gofer-amqplib`` package.
 
 The upgrade will create a file called ``consumer.conf.rpmnew``, which contains the default
 ``consumer.conf`` for Pulp 2.4.0 consumers. The new ``consumer.conf.rpmnew`` file needs to be
@@ -88,36 +95,59 @@ merged into your existing ``consumer.conf`` by hand as new, required configurati
 introduced with 2.4.0, but portions of the old config will likely still be useful.
 
 Once the ``consumer.conf`` file is setup to use the new configuration, restart the consumer. On
-Upstart systems the restart is done using::
+Upstart systems the restart is done using:
+
+::
 
     $ sudo service goferd restart
 
-For systemd systems::
+For systemd systems:
+
+::
 
     $ sudo systemctl restart goferd
 
 A message broker is required for Pulp 2.4.0. Pulp 2.3.x required Qpid specifically as the message
 broker, but Pulp 2.4 will work with either Qpid or RabbitMQ. If using Qpid, ensure that you are
-using Qpid 0.18 or later. Any Pulp 2.4.0 server or node that is being used with Qpid also
-requires a new client library dependency to be installed on the server or node by running::
+using Qpid 0.18 or later, and that the ``qpid-cpp-server-store`` package is also installed. It is
+recommended to upgrade the Qpid broker to the latest version available on your platform. You can do
+this by running the following commands on the broker machine:
 
-    $ sudo yum install python-qpid-qmf python-qpid
+::
 
-.. note::
-   If using Qpid, you will also need to install either the 'qpid-cpp-server-store' or
-   'qpid-cpp-server-linearstore' package. The 'qpid-cpp-server-linearstore' is better performing,
-   but may not available in all versions. You can install 'qpid-cpp-server-store' using the
-   command: ``sudo yum install qpid-cpp-server-store``
+    $ sudo yum update qpid-cpp-server
+    $ sudo yum install qpid-cpp-server-store
 
-To upgrade to the new Pulp release from version 2.3.x, you should begin by using yum to install the
-latest RPMs from the Pulp repository and run the database migrations::
+   .. note::
+      In environments that use Qpid, the ``qpid-cpp-server-store`` package provides durability, a
+      feature that saves broker state if the broker is restarted. This is a required feature for
+      the correct operation of Pulp. Qpid provides a higher performance durability package named
+      ``qpid-cpp-server-linearstore`` which can be used instead of ``qpid-cpp-server-store``, but
+      may not be available on all versions of Qpid. If ``qpid-cpp-server-linearstore`` is available
+      in your environment, consider uninstalling ``qpid-cpp-server-store`` and installing
+      ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
+      this package, you will need to restart the Qpid broker to enable the durability feature.
+
+To upgrade to the new Pulp release from version 2.3.x use yum to install the latest RPMs from the
+Pulp repository. To do this you can run:
+
+::
 
     $ sudo yum upgrade
+
+After upgrading the packages on the system, you will need to upgrade the database schema by
+applying the database migrations. To apply migrations, your message broker needs to be configured
+and running. Run the database migrations as the ``apache`` user with the command:
+
+::
+
     $ sudo -u apache pulp-manage-db  # run this as the same user apache runs as
 
 You can remove ``/etc/pulp/logging/`` if you like, as it is no longer used. Also, you can
 optionally edit the new ``log_level`` setting in the ``[server]`` section of
-``/etc/pulp/server.conf`` to your preference::
+``/etc/pulp/server.conf`` to your preference:
+
+::
 
     $ sudo rm -rf /etc/pulp/logging/
     $ sudo $EDITOR /etc/pulp/server.conf
@@ -125,12 +155,16 @@ optionally edit the new ``log_level`` setting in the ``[server]`` section of
 Pulp 2.4.0 comes with some new services that perform distributed tasks using Celery. You can read
 about this more in the :ref:`Installation Guide <distributed_workers_installation>`. You will need
 to enable Pulp's workers on at least one machine. Edit ``/etc/default/pulp_workers`` to your liking,
-and then enable and start the ``pulp_workers`` service. For Upstart systems::
+and then enable and start the ``pulp_workers`` service. For Upstart systems:
+
+::
 
     $ sudo chkconfig pulp_workers on
     $ sudo service pulp_workers start
 
-For systemd systems::
+For systemd systems:
+
+::
 
     $ sudo systemctl enable pulp_workers
     $ sudo systemctl start pulp_workers
@@ -152,14 +186,18 @@ of each of these runs across the entire Pulp installation.
 
 On the host(s) that will run these two services (they do not have to run on the same host), edit
 ``/etc/default/pulp_celerybeat`` and ``/etc/default/pulp_resource_manager`` to your liking. Then
-enable and start the services. For Upstart::
+enable and start the services. For Upstart:
+
+::
 
     $ sudo chkconfig pulp_celerybeat on
     $ sudo service pulp_celerybeat start
     $ sudo chkconfig pulp_resource_manager on
     $ sudo service pulp_resource_manager start
 
-For systemd::
+For systemd:
+
+::
 
     $ sudo systemctl enable pulp_celerybeat
     $ sudo systemctl start pulp_celerybeat
@@ -169,6 +207,19 @@ For systemd::
 After all Pulp servers and nodes have been upgraded, all consumers need to be re-registered. On
 each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
 message authentication.
+
+The Pulp 2.4.0 release includes an updated Admin Client which introduces new settings to the
+``/etc/pulp/admin/admin.conf`` file. Install the updated Admin Client RPMs using the following
+command on any machine that already had the Admin Client installed:
+
+::
+
+    $ sudo yum upgrade
+
+The RPM install places the new admin.conf at ``/etc/pulp/admin/admin.conf.rpmnew`` so it won't
+overwrite the old one at install time. The contents of ``/etc/pulp/admin/admin.conf.rpmnew`` need
+to be manually merged into ``/etc/pulp/admin/admin.conf`` before the Admin Client can be used to
+connect to a 2.4.0 Pulp server or node.
 
 
 Rest API Changes
