@@ -33,3 +33,16 @@ class ContentsTest(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(202, status)
         mock_delete_all_orphans.assert_called_once()
+
+    @mock.patch('pulp.server.managers.content.orphan.OrphanManager.delete_orphans_by_type')
+    def test_delete_orphan_by_type(self, mock_delete_orphans_by_type):
+        """
+        Tests deleting orphans by type
+        """
+        # Setup
+        path = '/v2/content/orphans/rpm/'
+        # Test
+        status, body = self.delete(path)
+        # Verify
+        self.assertEqual(202, status)
+        mock_delete_orphans_by_type.assert_called_once()
