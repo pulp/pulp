@@ -208,6 +208,19 @@ After all Pulp servers and nodes have been upgraded, all consumers need to be re
 each registered consumer, run ``pulp-consumer update --keys`` to exchange RSA keys needed for
 message authentication.
 
+The Pulp 2.4.0 release includes an updated Admin Client which introduces new settings to the
+``/etc/pulp/admin/admin.conf`` file. Install the updated Admin Client RPMs using the following
+command on any machine that already had the Admin Client installed:
+
+::
+
+    $ sudo yum upgrade
+
+The RPM install places the new admin.conf at ``/etc/pulp/admin/admin.conf.rpmnew`` so it won't
+overwrite the old one at install time. The contents of ``/etc/pulp/admin/admin.conf.rpmnew`` need
+to be manually merged into ``/etc/pulp/admin/admin.conf`` before the Admin Client can be used to
+connect to a 2.4.0 Pulp server or node.
+
 
 Rest API Changes
 ----------------

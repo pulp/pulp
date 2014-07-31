@@ -140,7 +140,9 @@ Server
    For Pulp to operate with the Qpid broker, either broker authentication needs to be disabled, or
    authentication needs to be configured. To disable authentication add ``auth=no`` to the
    ``qpidd.conf`` file. Qpid 0.24 and higher places the config file is at ``/etc/qpid/qpidd.conf``,
-   and earlier Qpid versions place the config file at ``/etc/qpidd.conf``.
+   and earlier Qpid versions place the config file at ``/etc/qpidd.conf``. Changes made to
+   ``qpidd.conf`` go into effect the next time Qpid starts; if Qpid is already running prior to
+   making a change to ``qpidd.conf`` then restart the Qpid.
 
    To leave broker authentication enabled, you will need to configure SASL with a
    username/password, and then configure Pulp to use that username/password. Refer to the Qpid docs
