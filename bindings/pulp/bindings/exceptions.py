@@ -101,6 +101,14 @@ class CertificateVerificationException(ClientSSLException):
     pass
 
 
+class MissingCAPathException(ClientSSLException):
+    """
+    Raised when the bindings are given a ca_path that either doesn't exist or can't be determined to
+    exist due to permissions.
+    """
+    pass
+
+
 class ConnectionException(Exception):
     """
     Exception to indicate a less than favorable response from the server.
