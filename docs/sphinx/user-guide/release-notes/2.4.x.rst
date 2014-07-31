@@ -128,13 +128,19 @@ this by running the following commands on the broker machine:
       ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
       this package, you will need to restart the Qpid broker to enable the durability feature.
 
-To upgrade to the new Pulp release from version 2.3.x, your message broker needs to be running
-and configured. Perform the upgrade using yum to install the latest RPMs from the Pulp repository
-and run the database migrations as the ``apache`` user:
+To upgrade to the new Pulp release from version 2.3.x use yum to install the latest RPMs from the
+Pulp repository. To do this you can run:
 
 ::
 
-    $ sudo yum groupupdate pulp-server-qpid
+    $ sudo yum upgrade
+
+After upgrading the packages on the system, you will need to upgrade the database schema by
+applying the database migrations. To apply migrations, your message broker needs to be configured
+and running. Run the database migrations as the ``apache`` user with the command:
+
+::
+
     $ sudo -u apache pulp-manage-db  # run this as the same user apache runs as
 
 You can remove ``/etc/pulp/logging/`` if you like, as it is no longer used. Also, you can
