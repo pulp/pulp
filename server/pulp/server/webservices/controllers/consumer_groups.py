@@ -199,48 +199,20 @@ class ConsumerGroupContentAction(JSONController):
 
 
 class ConsumerGroupBindings(JSONController):
-    """
-    Consumer I{bindings} represents the collection of
-    objects used to associate a consumer and a repo-distributor
-    association.  Users wanting to create this association will
-    create an object in this collection.  Both bind and unbind
-    is idempotent.
-    """
-
-    @auth_required(authorization.READ)
-    def GET(self, consumer_group_id, repo_id=None):
-        """
-        Fetch all bind objects referencing the
-        specified I{consumer_group_id}.
-        @param consumer_group_id: The specified consumer.
-        @type consumer_group_id: str
-        @return: A list of bind dict:
-            {consumer_group_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>,
-             href:<str>,
-             type_id:<str>,
-             details:<dict>}
-        @rtype: dict
-        """
-        manager = managers_factory.consumer_bind_manager()
-        bindings = manager.find_by_consumer(consumer_group_id, repo_id)
-        bindings = [serialization.binding.serialize(b) for b in bindings]
-        return self.ok(bindings)
 
     @auth_required(authorization.CREATE)
     def POST(self, group_id):
         """
-        Create a bind association between the specified
-        consumer by id included in the URL path and a repo-distributor
+        Create a bind association between the consumers belonging to the given
+        consumer group by id included in the URL path and a repo-distributor
         specified in the POST body: {repo_id:<str>, distributor_id:<str>}.
         Designed to be idempotent so only MissingResource is expected to
         be raised by manager.
-        @param group_id: The consumer group to bind.
-        @type group_id: str
-        @return: The created bind model object:
-            {consumer_group_id:<str>, repo_id:<str>, distributor_id:<str>}
-        @rtype: dict
+
+        :param group_id: The consumer group to bind.
+        :type group_id: str
+        :return: list of call requests
+        :rtype: list
         """
         body = self.params()
         repo_id = body.get('repo_id')
@@ -264,49 +236,23 @@ class ConsumerGroupBindings(JSONController):
 
 class ConsumerGroupBinding(JSONController):
     """
-    Represents a specific bind resource.
+    Represents a specific consumer group binding.
     """
-
-    @auth_required(authorization.READ)
-    def GET(self, consumer_group_id, repo_id, distributor_id):
-        """
-        Fetch a specific bind object which represents a specific association
-        between a consumer and repo-distributor.
-        @param consumer_group_id: A consumer ID.
-        @type consumer_group_id: str
-        @param repo_id: A repo ID.
-        @type repo_id: str
-        @param distributor_id: A distributor ID.
-        @type distributor_id: str
-        @return: A specific bind object:
-            {consumer_group_id:<str>,
-             repo_id:<str>,
-             distributor_id:<str>,
-             href:<str>,
-             type_id:<str>,
-             details:<dict>}
-        @rtype: dict
-        """
-        manager = managers_factory.consumer_bind_manager()
-        bind = manager.get_bind(consumer_group_id, repo_id, distributor_id)
-        serialized_bind = serialization.binding.serialize(bind)
-        return self.ok(serialized_bind)
 
     @auth_required(authorization.DELETE)
     def DELETE(self, group_id, repo_id, distributor_id):
         """
-        Delete a bind association between the specified
-        consumer and repo-distributor.  Designed to be idempotent.
-        @param group_id: A consumer group ID.
-        @type group_id: str
-        @param repo_id: A repo ID.
-        @type repo_id: str
-        @param distributor_id: A distributor ID.
-        @type distributor_id: str
-        @return: The deleted bind model object:
-            {consumer_group_id:<str>, repo_id:<str>, distributor_id:<str>}
-            Or, None if bind does not exist.
-        @rtype: dict
+        Delete a bind association between the consumers belonging to the specified
+        consumer group and repo-distributor. Designed to be idempotent.
+
+        :param group_id: A consumer group ID.
+        :type group_id: str
+        :param repo_id: A repo ID.
+        :type repo_id: str
+        :param distributor_id: A distributor ID.
+        :type distributor_id: str
+        :return: list of call requests
+        :rtype: list
         """
         missing_resources = verify_group_resources(group_id, repo_id, distributor_id)
         if missing_resources:
@@ -357,7 +303,6 @@ _URLS = ('/$', ConsumerGroupCollection,
          '/([^/]+)/$', ConsumerGroupResource,
 
         '/([^/]+)/bindings/$', ConsumerGroupBindings,
-        '/([^/]+)/bindings/([^/]+)/$', ConsumerGroupBindings,
         '/([^/]+)/bindings/([^/]+)/([^/]+)/$', ConsumerGroupBinding,
 
          '/([^/]+)/actions/associate/$', ConsumerGroupAssociateAction,
