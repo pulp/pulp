@@ -33,6 +33,15 @@ from pulp.server.managers import factory
 logger = logging.getLogger(__name__)
 
 
+# Duration has a bug in __getattr__, which causes an infinite loop on unpickling.
+# The upstream PR to fix this is https://github.com/gweis/isodate/pull/10
+def fixed_getattr(myself, attr_name):
+    if attr_name == 'tdelta':
+        raise AttributeError()
+    return getattr(myself.tdelta, attr_name)
+isodate.Duration.__getattr__ = fixed_getattr
+
+
 class CallResource(Model):
     """
     Information for an individual resource used by a call request.
@@ -339,10 +348,41 @@ class ScheduledCall(Model):
         first_run_dt = dateutils.to_utc_datetime(dateutils.parse_iso8601_datetime(self.first_run))
         first_run_s = calendar.timegm(first_run_dt.utctimetuple())
         since_first_s = now_s - first_run_s
-        run_every_s = timedelta_seconds(self.as_schedule_entry().schedule.run_every)
-        # don't want this to be negative
-        expected_runs = max(int(since_first_s / run_every_s), 0)
-        last_scheduled_run_s = first_run_s + expected_runs * run_every_s
+
+        # An interval could be an isodate.Duration or a datetime.timedelta. If it's a Duration, convert it
+        # to a timedelta
+        interval = self.as_schedule_entry().schedule.run_every
+        if isinstance(interval, isodate.Duration):
+            # Determine how long (in seconds) to wait between the last run and the next one. This changes
+            # depending on the current time because a duration can be a month or a year.
+            if self.last_run_at is not None:
+                last_run_dt = dateutils.to_utc_datetime(dateutils.parse_iso8601_datetime(str(self.last_run_at)))
+                run_every_s = timedelta_seconds(interval.totimedelta(start=last_run_dt))
+            else:
+                run_every_s = timedelta_seconds(interval.totimedelta(start=first_run_dt))
+
+            # This discovers how many runs should have occurred based on the schedule
+            expected_runs = 0
+            current_run = first_run_dt
+            last_scheduled_run_s = first_run_s
+            duration = self.as_schedule_entry().schedule.run_every
+            while True:
+                # The interval is determined by the date of the previous run
+                current_interval = duration.totimedelta(start=current_run)
+                current_run += current_interval
+
+                # If time of this run is less than the current time, keep going
+                current_run_s = calendar.timegm(current_run.utctimetuple())
+                if current_run_s < now_s:
+                    expected_runs += 1
+                    last_scheduled_run_s += timedelta_seconds(current_interval)
+                else:
+                    break
+        else:
+            run_every_s = timedelta_seconds(interval)
+            # don't want this to be negative
+            expected_runs = max(int(since_first_s / run_every_s), 0)
+            last_scheduled_run_s = first_run_s + expected_runs * run_every_s
 
         return now_s, first_run_s, since_first_s, run_every_s, last_scheduled_run_s, expected_runs
 
