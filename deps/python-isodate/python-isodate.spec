@@ -3,7 +3,7 @@
 
 Name:           python-isodate
 Version:        0.5.0
-Release:        1.pulp%{?dist}
+Release:        2.pulp%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
