@@ -17,10 +17,14 @@ from pulp.devel.unit.util import touch, compare_dict
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
-from pulp.plugins.model import Repository
+from pulp.plugins.model import Repository, Unit
 from pulp.plugins.util.publish_step import Step, PublishStep, UnitPublishStep, PluginStep, \
     AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep, \
-    PluginStepIterativeProcessingMixin, DownloadStep
+    PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep
+from pulp.server.managers import factory
+
+
+factory.initialize()
 
 
 class PublisherBase(unittest.TestCase):
@@ -1077,7 +1081,7 @@ class DownloadStepTests(unittest.TestCase):
         self.mock_working_dir = Mock()
         self.dlstep = DownloadStep("fake_download", repo=self.mock_repo, conduit=self.mock_conduit,
                                    config=self.mock_config, working_dir=self.mock_working_dir,
-                                   plugin_type="fake plugin")
+                                   plugin_type="fake plugin", description='foo')
 
     def test_init(self):
         self.assertEquals(self.dlstep.get_repo(), self.mock_repo)
@@ -1085,6 +1089,7 @@ class DownloadStepTests(unittest.TestCase):
         self.assertEquals(self.dlstep.get_config(), self.mock_config)
         self.assertEquals(self.dlstep.get_working_dir(), self.mock_working_dir)
         self.assertEquals(self.dlstep.get_plugin_type(), "fake plugin")
+        self.assertEqual(self.dlstep.description, 'foo')
 
     def test_initalize(self):
         # override mock config with real config dict
@@ -1195,3 +1200,64 @@ class DownloadStepTests(unittest.TestCase):
         self.assertEquals(dlstep.progress_failures, 1)
         # assert report_progress was called with no args
         mock_report_progress.assert_called_once_with()
+
+
+@patch('pulp.server.managers.content.query.ContentQueryManager.get_multiple_units_by_keys_dicts',
+       spec_set=True)
+class TestGetLocalUnitsStep(unittest.TestCase):
+    class DemoGetLocalUnitsStep(GetLocalUnitsStep):
+        def _dict_to_unit(self, unit_dict):
+            return Unit('fake_unit_type', unit_dict, {}, '')
+
+    def setUp(self):
+        super(TestGetLocalUnitsStep, self).setUp()
+        self.parent = MagicMock()
+        self.step = self.DemoGetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
+                                      ['foo'], '/a/b/c')
+        self.step.parent = self.parent
+        self.step.conduit = MagicMock()
+        self.parent.available_units = []
+
+    def test_no_available_units(self, mock_get_multiple):
+        mock_get_multiple.return_value = []
+
+        self.step.process_main()
+
+        self.assertEqual(self.step.conduit.save_unit.call_count, 0)
+        self.assertEqual(self.step.units_to_download, [])
+
+    def test_calls_get_multiple(self, mock_get_multiple):
+        mock_get_multiple.return_value = []
+
+        self.step.process_main()
+
+        mock_get_multiple.assert_called_once_with('fake_unit_type', [], ['foo'])
+
+    def test_saves_unit(self, mock_get_multiple):
+        mock_get_multiple.return_value = [{'foo': 'a'}]
+        self.parent.available_units = [{'foo': 'a'}]
+
+        self.step.process_main()
+
+        self.step.conduit.save_unit.assert_called_once_with(Unit('fake_unit_type',
+            {'foo': 'a'}, {}, ''))
+
+    def test_populates_units_to_download(self, mock_get_multiple):
+        mock_get_multiple.return_value = [{'foo': 'a'}]
+        # this unit should be identified as one that should get downloaded, since
+        # it wasn't returned by the get_multiple query.
+        self.parent.available_units = [{'foo': 'b'}]
+
+        self.step.process_main()
+
+        self.assertEqual(self.step.units_to_download, [{'foo': 'b'}])
+
+    def test_empty_units_to_download(self, mock_get_multiple):
+        mock_get_multiple.return_value = [{'foo': 'a'}]
+        # this unit should not be identified as one that should get downloaded, since
+        # it was returned by the get_multiple query.
+        self.parent.available_units = [{'foo': 'a'}]
+
+        self.step.process_main()
+
+        self.assertEqual(self.step.units_to_download, [])
