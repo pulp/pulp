@@ -14,21 +14,23 @@ import shutil
 
 from uuid import uuid4
 from tempfile import mkdtemp
-from mock import patch, Mock
 from threading import Event
+from unittest import TestCase
+
+from mock import patch, Mock
 
 from nectar.config import DownloaderConfig
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
-from base import PulpServerTests
-
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
+from pulp.server.db import connection
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
 from pulp.server.content.sources.descriptor import nectar_config
-from pulp.server.content.sources.model import PRIMARY_ID, DownloadDetails
+from pulp.server.content.sources.model import PRIMARY_ID
+from pulp.server.managers import factory as managers
 
 
 PRIMARY = 'primary'
@@ -36,7 +38,6 @@ UNIT_WORLD = 'unit-world'
 UNIT_WORLD_SECURE = 'unit-world-secure'
 UNDERGROUND = 'underground-content'
 ORPHANED = 'orphaned'
-UNSUPPORTED_PROTOCOL = 'unsupported-protocol'
 
 TYPE_ID = 'rpm'
 EXPIRES = 600
@@ -68,16 +69,6 @@ paths: fedora/18/x86_64 \
        \\
 """ % UNDERGROUND
 
-ALT_3 = """
-[%s]
-enabled: 1
-type: yum
-name: Unit World
-priority: 1
-max_concurrent: 10
-base_url: ftp:///unit-world/
-""" % UNSUPPORTED_PROTOCOL
-
 DISABLED = """
 [disabled]
 enabled: 0
@@ -85,30 +76,6 @@ type: yum
 name: Test Not Enabled
 priority: 2
 base_url: http:///disabled.com/
-"""
-
-MISSING_ENABLED = """
-[missing-enabled]
-type: yum
-name: Test Invalid
-priority: 2
-base_url: http:///invalid/
-"""
-
-MISSING_TYPE = """
-[missing-type]
-enabled: 1
-name: Test Invalid
-priority: 2
-base_url: http:///invalid/
-"""
-
-MISSING_BASE_URL = """
-[missing-base_url]
-enabled: 1
-type: yum
-name: Test Invalid
-priority: 2
 """
 
 MOST_SECURE = """
@@ -131,10 +98,10 @@ proxy_username: proxy-user
 proxy_password: proxy-password
 """ % UNIT_WORLD_SECURE
 
-OTHER_SOURCES = (DISABLED, MISSING_ENABLED, MISSING_TYPE, MISSING_BASE_URL, MOST_SECURE)
+OTHER_SOURCES = (DISABLED, MOST_SECURE)
 
 
-class MockCataloger(object):
+class FakeCataloger(object):
 
     def __init__(self, exception=None):
         self.exception = exception
@@ -154,25 +121,25 @@ class MockCataloger(object):
             raise self.exception
 
 
-class MockListener(Listener):
+class TestListener(Listener):
 
-    download_started = Mock()
-    download_succeeded = Mock()
-    download_failed = Mock()
+    def __init__(self, canceled, threshold):
+        self.canceled = canceled
+        self.threshold = threshold
+        self.calls = 0
 
-
-class CancelEvent(object):
-
-    def __init__(self, on_call):
-        self.on_call = on_call
-        self.call_count = 0
-
-    def isSet(self):
-        self.call_count += 1
-        return self.call_count >= self.on_call
+    def download_started(self, request):
+        self.calls += 1
+        if self.calls > self.threshold:
+            self.canceled.set()
 
 
-class ContainerTest(PulpServerTests):
+class ContainerTest(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        connection.initialize(name='pulp_unittest')
+        managers.initialize()
 
     def setUp(self):
         super(ContainerTest, self).setUp()
@@ -181,11 +148,8 @@ class ContainerTest(PulpServerTests):
         self.downloaded = os.path.join(self.tmp_dir, 'downloaded')
         os.makedirs(self.downloaded)
         self.add_sources()
-        MockListener.download_started.reset_mock()
-        MockListener.download_succeeded.reset_mock()
-        MockListener.download_failed.reset_mock()
         plugins._create_manager()
-        plugins._MANAGER.catalogers.add_plugin('yum', MockCataloger, {})
+        plugins._MANAGER.catalogers.add_plugin('yum', FakeCataloger, {})
 
     def tearDown(self):
         super(ContainerTest, self).tearDown()
@@ -202,10 +166,6 @@ class ContainerTest(PulpServerTests):
         path = os.path.join(self.tmp_dir, '%s.conf' % UNDERGROUND)
         with open(path, 'w+') as fp:
             fp.write(ALT_2)
-        # unsupported protocol
-        path = os.path.join(self.tmp_dir, '%s.conf' % UNSUPPORTED_PROTOCOL)
-        with open(path, 'w+') as fp:
-            fp.write(ALT_3)
         # other
         path = os.path.join(self.tmp_dir, 'other.conf')
         with open(path, 'w+') as fp:
@@ -287,11 +247,15 @@ class TestDownloading(ContainerTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
-        listener = MockListener()
+        listener = Mock()
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = Event()
+
+        # test
         report = container.download(event, downloader, request_list, listener)
+
+        # validation
         # unit-world
         for i in range(0, 10):
             request = request_list[i]
@@ -308,127 +272,13 @@ class TestDownloading(ContainerTest):
             with open(request.destination) as fp:
                 s = fp.read()
                 self.assertTrue(PRIMARY in s)
-        self.assertEqual(listener.download_started.call_count, len(request_list))
-        self.assertEqual(listener.download_succeeded.call_count, len(request_list))
-        self.assertEqual(listener.download_failed.call_count, 0)
-        self.assertEqual(report.total_passes, 1)
+        self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 2)
         self.assertEqual(len(report.downloads), 2)
         self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 9)
         self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 0)
         self.assertEqual(report.downloads[UNIT_WORLD].total_succeeded, 10)
         self.assertEqual(report.downloads[UNIT_WORLD].total_failed, 0)
-
-    def test_download_cancelled_during_refreshing(self):
-        downloader = LocalFileDownloader(DownloaderConfig())
-        container = ContentContainer(path=self.tmp_dir)
-        container.collated = Mock()
-        event = CancelEvent(1)
-        report = container.download(event, downloader, [])
-        self.assertFalse(container.collated.called)
-        self.assertEqual(report.total_passes, 0)
-        self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 0)
-
-    def test_download_cancelled_in_download(self):
-        container = ContentContainer(path=self.tmp_dir)
-        container.collated = Mock()
-        event = CancelEvent(1)
-        report = container.download(event, None, [])
-        self.assertFalse(container.collated.called)
-        self.assertEqual(report.total_passes, 0)
-        self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 0)
-
-    @patch('nectar.downloaders.base.Downloader.cancel')
-    def test_download_cancelled_in_started(self, mock_cancel):
-        request_list = []
-        _dir = self.populate_content(PRIMARY, 0, 5)
-        for n in range(0, 5):
-            unit_key = {
-                'name': 'unit_%d' % n,
-                'version': '1.0.%d' % n,
-                'release': '1',
-                'checksum': str(uuid4())
-            }
-            request = Request(
-                TYPE_ID,
-                unit_key,
-                'file://%s/unit_%d' % (_dir, n),
-                os.path.join(self.downloaded, 'unit_%d' % n))
-            request_list.append(request)
-        downloader = LocalFileDownloader(DownloaderConfig())
-        container = ContentContainer(path=self.tmp_dir)
-        container.refresh = Mock()
-        event = CancelEvent(2)
-        report = container.download(event, downloader, request_list)
-        self.assertTrue(mock_cancel.called)
-        self.assertEqual(report.total_passes, 1)
-        self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 1)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 5)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 0)
-
-    @patch('nectar.downloaders.base.Downloader.cancel')
-    @patch('pulp.server.content.sources.container.NectarListener.download_started')
-    def test_download_cancelled_in_succeeded(self, mock_started, mock_cancel):
-        request_list = []
-        _dir = self.populate_content(PRIMARY, 0, 5)
-        for n in range(0, 5):
-            unit_key = {
-                'name': 'unit_%d' % n,
-                'version': '1.0.%d' % n,
-                'release': '1',
-                'checksum': str(uuid4())
-            }
-            request = Request(
-                TYPE_ID,
-                unit_key,
-                'file://%s/unit_%d' % (_dir, n),
-                os.path.join(self.downloaded, 'unit_%d' % n))
-            request_list.append(request)
-        downloader = LocalFileDownloader(DownloaderConfig())
-        container = ContentContainer(path=self.tmp_dir)
-        container.refresh = Mock()
-        event = CancelEvent(2)
-        report = container.download(event, downloader, request_list)
-        self.assertTrue(mock_started.called)
-        self.assertTrue(mock_cancel.called)
-        self.assertEqual(report.total_passes, 1)
-        self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 1)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 5)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 0)
-
-    @patch('nectar.downloaders.base.Downloader.cancel')
-    @patch('pulp.server.content.sources.container.NectarListener.download_started')
-    def test_download_cancelled_in_failed(self, mock_started, mock_cancel):
-        request_list = []
-        for n in range(0, 5):
-            unit_key = {
-                'name': 'unit_%d' % n,
-                'version': '1.0.%d' % n,
-                'release': '1',
-                'checksum': str(uuid4())
-            }
-            request = Request(
-                TYPE_ID,
-                unit_key,
-                'http://unit-city/unit_%d' % n,
-                os.path.join(self.downloaded, 'unit_%d' % n))
-            request_list.append(request)
-        downloader = HTTPThreadedDownloader(DownloaderConfig())
-        container = ContentContainer(path=self.tmp_dir)
-        container.refresh = Mock()
-        event = CancelEvent(2)
-        report = container.download(event, downloader, request_list)
-        self.assertTrue(mock_started.called)
-        self.assertTrue(mock_cancel.called)
-        self.assertEqual(report.total_passes, 1)
-        self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 1)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 0)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 5)
 
     def test_download_with_errors(self):
         request_list = []
@@ -460,15 +310,19 @@ class TestDownloading(ContainerTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
-        listener = MockListener()
+        listener = Mock()
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
         event = Event()
+
+        # test
         report = container.download(event, downloader, request_list, listener)
+
+        # validation
         # unit-world
         for i in range(0, 10):
             request = request_list[i]
-            self.assertTrue(request.downloaded)
+            self.assertTrue(request.downloaded, msg='URL: %s' % request.url)
             self.assertEqual(len(request.errors), 1)
             with open(request.destination) as fp:
                 s = fp.read()
@@ -476,15 +330,12 @@ class TestDownloading(ContainerTest):
         # primary
         for i in range(11, len(request_list)):
             request = request_list[i]
-            self.assertTrue(request.downloaded)
+            self.assertTrue(request.downloaded, msg='URL: %s' % request.url)
             self.assertEqual(len(request.errors), 0)
             with open(request.destination) as fp:
                 s = fp.read()
                 self.assertTrue(PRIMARY in s)
-        self.assertEqual(listener.download_started.call_count, len(request_list))
-        self.assertEqual(listener.download_succeeded.call_count, len(request_list))
-        self.assertEqual(listener.download_failed.call_count, 0)
-        self.assertEqual(report.total_passes, 2)
+        self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 2)
         self.assertEqual(len(report.downloads), 3)
         self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 9)
@@ -494,13 +345,24 @@ class TestDownloading(ContainerTest):
         self.assertEqual(report.downloads[UNIT_WORLD].total_succeeded, 0)
         self.assertEqual(report.downloads[UNIT_WORLD].total_failed, 10)
 
-    def test_download_fail_completely(self):
+
+class TestDownloadCancel(ContainerTest):
+
+    def test_download(self):
         request_list = []
-        _dir, cataloged = self.populate_catalog(UNIT_WORLD, 0, 10)
-        shutil.rmtree(_dir)
-        _dir = self.populate_content(PRIMARY, 0, 20)
+        _dir, cataloged = self.populate_catalog(ORPHANED, 0, 1000)
+        _dir, cataloged = self.populate_catalog(UNIT_WORLD, 0, 1000)
+        _dir = self.populate_content(PRIMARY, 0, 2000)
+        # unit-world
+        for n in range(0, 1000):
+            request = Request(
+                cataloged[n].type_id,
+                cataloged[n].unit_key,
+                'file://%s/unit_%d' % (_dir, n),
+                os.path.join(self.downloaded, 'unit_%d' % n))
+            request_list.append(request)
         # primary
-        for n in range(0, 10):
+        for n in range(1001, 2000):
             unit_key = {
                 'name': 'unit_%d' % n,
                 'version': '1.0.%d' % n,
@@ -510,35 +372,34 @@ class TestDownloading(ContainerTest):
             request = Request(
                 TYPE_ID,
                 unit_key,
-                'http://redhat.com/%s/unit_%d' % (_dir, n),
+                'file://%s/unit_%d' % (_dir, n),
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
-        downloader = HTTPThreadedDownloader(DownloaderConfig())
-        listener = MockListener()
+        event = Event()
+        threshold = len(request_list) * 0.80  # cancel after 80% started
+        downloader = LocalFileDownloader(DownloaderConfig())
+        listener = TestListener(event, threshold)
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
-        event = Event()
-        report = container.download(event, downloader, request_list, listener)
-        # primary
-        for i in range(0, len(request_list)):
-            request = request_list[i]
-            self.assertFalse(request.downloaded)
-            self.assertEqual(len(request.errors), 1)
-        self.assertEqual(listener.download_started.call_count, len(request_list))
-        self.assertEqual(listener.download_succeeded.call_count, 0)
-        self.assertEqual(listener.download_failed.call_count, len(request_list))
-        self.assertEqual(report.total_passes, 1)
-        self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 1)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 0)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 10)
 
-    def test_download_with_unsupported_url(self):
+        # test
+        report = container.download(event, downloader, request_list, listener)
+
+        # validation
+        self.assertEqual(report.total_sources, 2)
+        self.assertEqual(len(report.downloads), 2)
+        self.assertTrue(0 < report.downloads[PRIMARY_ID].total_succeeded < 999)
+        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 0)
+        self.assertEqual(report.downloads[UNIT_WORLD].total_succeeded, 1000)
+        self.assertEqual(report.downloads[UNIT_WORLD].total_failed, 0)
+
+    def test_download_uncomplete_dispatch(self):
         request_list = []
-        _dir, cataloged = self.populate_catalog(UNSUPPORTED_PROTOCOL, 0, 10)
-        _dir = self.populate_content(PRIMARY, 0, 20)
+        _dir, cataloged = self.populate_catalog(ORPHANED, 0, 1000)
+        _dir, cataloged = self.populate_catalog(UNIT_WORLD, 0, 1000)
+        _dir = self.populate_content(PRIMARY, 0, 2000)
         # unit-world
-        for n in range(0, 10):
+        for n in range(0, 1000):
             request = Request(
                 cataloged[n].type_id,
                 cataloged[n].unit_key,
@@ -546,7 +407,52 @@ class TestDownloading(ContainerTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         # primary
-        for n in range(11, 20):
+        for n in range(1001, 2000):
+            unit_key = {
+                'name': 'unit_%d' % n,
+                'version': '1.0.%d' % n,
+                'release': '1',
+                'checksum': str(uuid4())
+            }
+            request = Request(
+                TYPE_ID,
+                unit_key,
+                'file://%s/unit_%d' % (_dir, n),
+                os.path.join(self.downloaded, 'unit_%d' % n))
+            request_list.append(request)
+        event = Event()
+        threshold = 0
+        downloader = LocalFileDownloader(DownloaderConfig())
+        listener = TestListener(event, threshold)
+        container = ContentContainer(path=self.tmp_dir)
+        container.refresh = Mock()
+
+        # test
+        report = container.download(event, downloader, request_list, listener)
+
+        # validation
+        self.assertEqual(report.total_sources, 2)
+        self.assertEqual(len(report.downloads), 1)
+        self.assertTrue(0 < report.downloads[UNIT_WORLD].total_succeeded < 10)
+        self.assertEqual(report.downloads[UNIT_WORLD].total_failed, 0)
+
+    def test_download_with_errors(self):
+        request_list = []
+        _dir, cataloged = self.populate_catalog(ORPHANED, 0, 1000)
+        _dir, cataloged = self.populate_catalog(UNDERGROUND, 0, 1000)
+        _dir, cataloged = self.populate_catalog(UNIT_WORLD, 0, 1000)
+        shutil.rmtree(_dir)
+        _dir = self.populate_content(PRIMARY, 0, 2000)
+        # unit-world
+        for n in range(0, 1000):
+            request = Request(
+                cataloged[n].type_id,
+                cataloged[n].unit_key,
+                'file://%s/unit_%d' % (_dir, n),
+                os.path.join(self.downloaded, 'unit_%d' % n))
+            request_list.append(request)
+        # primary
+        for n in range(1001, 2000):
             unit_key = {
                 'name': 'unit_%d' % n,
                 'version': '1.0.%d' % n,
@@ -560,35 +466,35 @@ class TestDownloading(ContainerTest):
                 os.path.join(self.downloaded, 'unit_%d' % n))
             request_list.append(request)
         downloader = LocalFileDownloader(DownloaderConfig())
-        listener = MockListener()
+        event = Event()
+        threshold = len(request_list) * 0.10  # cancel after 10% started
+        listener = TestListener(event, threshold)
         container = ContentContainer(path=self.tmp_dir)
         container.refresh = Mock()
-        event = Event()
+
+        # test
         report = container.download(event, downloader, request_list, listener)
-        for i in range(0, len(request_list)):
-            request = request_list[i]
-            self.assertTrue(request.downloaded)
-            self.assertEqual(len(request.errors), 0)
-            with open(request.destination) as fp:
-                s = fp.read()
-                self.assertTrue(PRIMARY in s)
-        self.assertEqual(listener.download_started.call_count, len(request_list))
-        self.assertEqual(listener.download_succeeded.call_count, len(request_list))
-        self.assertEqual(listener.download_failed.call_count, 0)
-        self.assertEqual(report.total_passes, 1)
+
+        # validation
         self.assertEqual(report.total_sources, 2)
-        self.assertEqual(len(report.downloads), 1)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 19)
-        self.assertEqual(report.downloads[PRIMARY_ID].total_failed, 0)
+        self.assertEqual(len(report.downloads), 2)
+        self.assertTrue(0 < report.downloads[UNDERGROUND].total_succeeded < 500)
+        self.assertEqual(report.downloads[UNDERGROUND].total_failed, 0)
+        self.assertEqual(report.downloads[UNIT_WORLD].total_succeeded, 0)
+        self.assertTrue(0 < report.downloads[UNIT_WORLD].total_failed < 1000)
 
 
 class TestRefreshing(ContainerTest):
 
-    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
+    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(FakeCataloger(), {}))
     def test_refresh(self, mock_plugin):
         container = ContentContainer(path=self.tmp_dir)
         event = Event()
+
+        # test
         report = container.refresh(event, force=True)
+
+        # validation
         plugin = mock_plugin.return_value[0]
         self.assertEqual(plugin.refresh.call_count, 5)
         self.assertEqual(len(report), 5)
@@ -604,29 +510,15 @@ class TestRefreshing(ContainerTest):
                 self.assertEqual(args[1], source.descriptor)
                 self.assertEqual(args[2], url)
 
-    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
-    def test_refresh_cancel_in_sources(self, mock_plugin):
-        container = ContentContainer(path=self.tmp_dir)
-        event = CancelEvent(1)
-        report = container.refresh(event, force=True)
-        plugin = mock_plugin.return_value[0]
-        self.assertEqual(plugin.refresh.call_count, 0)
-        self.assertEqual(len(report), 0)
-
-    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(), {}))
-    def test_refresh_cancel_in_plugin(self, mock_plugin, *unused):
-        container = ContentContainer(path=self.tmp_dir)
-        event = CancelEvent(3)
-        report = container.refresh(event, force=True)
-        plugin = mock_plugin.return_value[0]
-        self.assertEqual(plugin.refresh.call_count, 1)
-        self.assertEqual(len(report), 1)
-
-    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(MockCataloger(ValueError), {}))
+    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(FakeCataloger(ValueError), {}))
     def test_refresh_failure(self, mock_plugin):
         container = ContentContainer(path=self.tmp_dir)
         event = Event()
+
+        # test
         report = container.refresh(event, force=True)
+
+        # validation
         self.assertEqual(len(report), 5)
         for r in report:
             self.assertFalse(r.succeeded)
@@ -642,7 +534,11 @@ class TestRefreshing(ContainerTest):
     def test_refresh_exception(self, mock_refresh):
         container = ContentContainer(path=self.tmp_dir)
         event = Event()
+
+        # test
         report = container.refresh(event, force=True)
+
+        # validation
         self.assertEqual(len(report), 2)
         for r in report:
             self.assertFalse(r.succeeded)
@@ -660,7 +556,11 @@ class TestRefreshing(ContainerTest):
         collection = ContentCatalog.get_collection()
         self.assertEqual(collection.find().count(), 30)
         container = ContentContainer(path=self.tmp_dir)
+
+        # test
         container.purge_orphans()
+
+        # validation
         self.assertEqual(collection.find().count(), 20)
         self.assertEqual(collection.find({'source_id': ORPHANED}).count(), 0)
         self.assertEqual(collection.find({'source_id': UNDERGROUND}).count(), 10)
