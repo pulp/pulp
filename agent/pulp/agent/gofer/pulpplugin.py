@@ -30,6 +30,7 @@ from gofer.agent.rmi import Context
 from gofer.messaging.auth import ValidationFailed
 
 from pulp.common.bundle import Bundle
+from pulp.common.config import parse_bool
 from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
@@ -222,7 +223,7 @@ class PulpBindings(Bindings):
     def __init__(self):
         host = cfg.server.host
         port = int(cfg.server.port)
-        verify_ssl = cfg.server.verify_ssl.lower() != 'false'
+        verify_ssl = parse_bool(cfg.server.verify_ssl)
         ca_path = cfg.server.ca_path
         cert = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
         connection = PulpConnection(host, port, cert_filename=cert, validate_ssl_ca=verify_ssl,
