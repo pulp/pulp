@@ -74,6 +74,11 @@ class TimezoneTester(unittest.TestCase):
         n2 = dateutils.to_local_datetime(u)
         self.assertTrue(n1 == n2)
 
+    def test_utc_no_tz_to_utz_tz_conversion(self):
+        dt = datetime.datetime.utcnow()
+        new_date = dateutils.to_utc_datetime(dt, no_tz_equals_local_tz=False)
+        self.assertEquals(new_date.tzinfo, dateutils.utc_tz())
+
     def test_utc_offset(self):
         n1 = datetime.datetime.now(dateutils.local_tz())
         u1 = dateutils.to_utc_datetime(n1)
@@ -180,3 +185,14 @@ class DatetimeMathTests(unittest.TestCase):
         result = dateutils.add_interval_to_datetime(dr, dt)
         self.assertEqual(result.month, 11)
         self.assertEqual(result.day, 30)
+
+
+class TestNowDateTimeWithTzInfo(unittest.TestCase):
+
+    def test_create_datetime(self):
+
+        comparator = datetime.datetime.now(tz=dateutils.utc_tz())
+        result = dateutils.now_utc_datetime_with_tzinfo()
+        self.assertTrue(hasattr(result, 'tzinfo'))
+        self.assertEquals(result.tzinfo, dateutils.utc_tz())
+        self.assertTrue(result >= comparator)

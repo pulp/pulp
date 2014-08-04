@@ -1069,6 +1069,12 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(body['content_type'], self.TYPE_1)
         self.assertEqual(body['profile'], self.PROFILE_1)
 
+    def test_get_consumer_not_found(self):
+        # Test
+        path = '/v2/consumers/invalid-consumer/profiles/'
+        status, body = self.get(path)
+        self.assertEqual(status, 404)
+
     def test_get_by_type_not_found(self):
         # Test
         path = '/v2/consumers/%s/profiles/unknown/' % self.CONSUMER_ID

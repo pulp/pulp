@@ -10,6 +10,8 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import inspect
+import unittest
 
 import mock
 
@@ -183,3 +185,36 @@ class PulpContentQueryTests(PulpContentTests):
         keys_dicts = TYPE_2_UNITS[1:3]
         units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, keys_dicts)
         self.assertEqual(len(units), 2)
+
+
+@mock.patch('pulp.plugins.types.database.type_units_unit_key', return_value=['a'])
+@mock.patch('pulp.plugins.types.database.type_units_collection')
+class TestGetContentUnitIDs(unittest.TestCase):
+    def setUp(self):
+        super(TestGetContentUnitIDs, self).setUp()
+        self.manager = ContentQueryManager()
+
+    def test_returns_generator(self, mock_type_collection, mock_type_unit_key):
+        mock_type_collection.return_value.find.return_value = []
+
+        ret = self.manager.get_content_unit_ids('fake_type', [])
+
+        self.assertTrue(inspect.isgenerator(ret))
+
+    def test_returns_ids(self, mock_type_collection, mock_type_unit_key):
+        mock_type_collection.return_value.find.return_value = [{'_id': 'abc'}, {'_id': 'def'}]
+
+        ret = self.manager.get_content_unit_ids('fake_type', [{'a': 'foo'}, {'a': 'bar'}])
+
+        self.assertEqual(list(ret), ['abc', 'def'])
+
+    def test_calls_find(self, mock_type_collection, mock_type_unit_key):
+        mock_find = mock_type_collection.return_value.find
+        mock_find.return_value = [{'_id': 'abc'}, {'_id': 'def'}]
+
+        ret = self.manager.get_content_unit_ids('fake_type', [{'a': 'foo'}, {'a': 'bar'}])
+
+        # evaluate the generator so the code actually runs
+        list(ret)
+        expected_spec = {'a': {'$in': ['foo', 'bar']}}
+        mock_find.assert_called_once_with(expected_spec, fields=['_id'])

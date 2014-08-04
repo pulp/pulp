@@ -128,16 +128,19 @@ class OrphanManager(object):
         definition's search indexes.
 
         :param content_type_id: id of the content type
-        :type content_type_id: basestring
+        :type  content_type_id: basestring
         :return: generator of orphaned content units for the given content type
         :rtype: generator
         """
         content_type_definition = content_types_db.type_definition(content_type_id)
+        if content_type_definition is None:
+            raise pulp_exceptions.MissingResource(content_type_id=content_type_id)
+
         fields = ['_id', '_content_type_id']
         fields.extend(content_type_definition['unit_key'])
 
         for content_unit in OrphanManager.generate_orphans_by_type(content_type_id, fields):
-            yield  content_unit
+            yield content_unit
 
     def get_orphan(self, content_type_id, content_unit_id):
         """

@@ -3,7 +3,7 @@
 
 Name:           python-isodate
 Version:        0.5.0
-Release:        1.pulp%{?dist}
+Release:        2.pulp%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
@@ -58,6 +58,13 @@ for instance nanoseconds it will round it to microseconds.
 %{python_sitelib}/*
 
 %changelog
+* 0.5.0 (2014-02-23)
+- ISO8601Error are subclasses of ValueError now
+- improve compatibility across various python variants and versions
+- raise exceptions when using fractional years and months in date
+  maths with durations
+- renamed method todatetime on Duration objects to totimedelta
+
 * Wed Nov 21 2012 Michael Hrivnak <mhrivnak@redhat.com> 0.5.0-1.pulp
 - Adding new isodate source. (mhrivnak@redhat.com)
 

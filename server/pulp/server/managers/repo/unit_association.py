@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for handling the mappings between
 repositories and content units.
@@ -67,7 +54,7 @@ class RepoUnitAssociationManager(object):
     """
 
     def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type,
-                             owner_id, update_unit_count=True):
+                             owner_id, update_repo_metadata=True):
         """
         Creates an association between the given repository and content unit.
 
@@ -96,12 +83,13 @@ class RepoUnitAssociationManager(object):
                          the importer ID or user login
         @type  owner_id: str
 
-        @param update_unit_count: if True, updates the unit association count
-                                  after the new association is made. Set this
+        @param update_repo_metadata: if True, updates the unit association count
+                                  after the new association is made. The last
+                                  unit added field will also be updated.  Set this
                                   to False when doing bulk associations, and
                                   make one call to update the count at the end.
                                   defaults to True
-        @type  update_unit_count: bool
+        @type  update_repo_metadata: bool
 
         @raise InvalidType: if the given owner type is not of the valid enumeration
         """
@@ -112,15 +100,13 @@ class RepoUnitAssociationManager(object):
         # If the association already exists, no need to do anything else
         spec = {'repo_id': repo_id,
                 'unit_id': unit_id,
-                'unit_type_id': unit_type_id,
-                'owner_type': owner_type,
-                'owner_id': owner_id, }
+                'unit_type_id': unit_type_id}
         existing_association = RepoContentUnit.get_collection().find_one(spec)
         if existing_association is not None:
             return
 
         similar_exists = False
-        if update_unit_count:
+        if update_repo_metadata:
             similar_exists = RepoUnitAssociationManager.association_exists(repo_id, unit_id,
                                                                            unit_type_id)
 
@@ -128,10 +114,14 @@ class RepoUnitAssociationManager(object):
         association = RepoContentUnit(repo_id, unit_id, unit_type_id, owner_type, owner_id)
         RepoContentUnit.get_collection().save(association, safe=True)
 
+        manager = manager_factory.repo_manager()
+
         # update the count of associated units on the repo object
-        if update_unit_count and not similar_exists:
-            manager = manager_factory.repo_manager()
+        if update_repo_metadata and not similar_exists:
             manager.update_unit_count(repo_id, unit_type_id, 1)
+
+            # update the record for the last added field
+            manager.update_last_unit_added(repo_id)
 
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
         """
@@ -145,8 +135,8 @@ class RepoUnitAssociationManager(object):
         @param unit_type_id: identifies the type of unit being added
         @type  unit_type_id: str
 
-        @param unit_id_list: list of unique identifiers for units within the given type
-        @type  unit_id_list: list of str
+        @param unit_id_list: list or generator of unique identifiers for units within the given type
+        @type  unit_id_list: list or generator of str
 
         @param owner_type: category of the caller making the association;
                            must be one of the OWNER_* variables in this module
@@ -155,6 +145,9 @@ class RepoUnitAssociationManager(object):
         @param owner_id: identifies the caller making the association, either
                          the importer ID or user login
         @type  owner_id: str
+
+        :return:    number of new units added to the repo
+        :rtype:     int
 
         @raise InvalidType: if the given owner type is not of the valid enumeration
         """
@@ -173,6 +166,9 @@ class RepoUnitAssociationManager(object):
         if unique_count:
             manager_factory.repo_manager().update_unit_count(
                 repo_id, unit_type_id, unique_count)
+            # update the timestamp for when the units were added to the repo
+            manager_factory.repo_manager().update_last_unit_added(repo_id)
+        return unique_count
 
     @staticmethod
     def associate_from_repo(source_repo_id, dest_repo_id, criteria=None,
@@ -397,6 +393,8 @@ class RepoUnitAssociationManager(object):
                 continue
 
             repo_manager.update_unit_count(repo_id, unit_type_id, -unique_count)
+
+        repo_manager.update_last_unit_removed(repo_id)
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,

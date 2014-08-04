@@ -88,8 +88,8 @@ class RepoUnitAssociationQueryManager(object):
                             to perform
         @type  criteria:    pulp.server.db.model.criteria.Criteria
 
-        @return:    list of RepoContentUnits
-        @rtype:     list
+        @return:    cursor of the query results
+        @rtype:     pymongo.cursor.Cursor
         """
         return RepoContentUnit.get_collection().query(criteria)
 

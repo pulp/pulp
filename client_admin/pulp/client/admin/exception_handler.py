@@ -15,12 +15,20 @@ from gettext import gettext as _
 from pulp.client.extensions.exceptions import ExceptionHandler, CODE_PERMISSIONS_EXCEPTION
 from pulp.common import auth_utils
 
-# -- admin client overrides ---------------------------------------------------
 
 class AdminExceptionHandler(ExceptionHandler):
 
-    def handle_client_ssl(self, e):
-        exit_code = ExceptionHandler.handle_client_ssl(self, e)
+    def handle_expired_client_cert(self, e):
+        """
+        Handles the exception raised when the client certificate has expired.
+
+        :param e: The Exception that was raised
+        :type  e: pulp.bindings.exceptions.ClientCertificateExpiredException
+        :return:  The exit code to be used.
+        :rtype:   int
+        """
+        exit_code = ExceptionHandler.handle_expired_client_cert(self, e)
+
         desc = _('Use the login command to authenticate with the server and '
                  'download a new session certificate.')
         self.prompt.render_paragraph(desc)

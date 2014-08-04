@@ -214,7 +214,7 @@ class TestStartWorkers(unittest.TestCase):
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
-                                      shell=True)
+                                      stderr=subprocess.PIPE, shell=True)
         pipe = Popen()
         pipe.communicate.assert_called_once_with()
 
@@ -265,7 +265,7 @@ class TestStartWorkers(unittest.TestCase):
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
-                                      shell=True)
+                                      stderr=subprocess.PIPE, shell=True)
         pipe = Popen()
         pipe.communicate.assert_called_once_with()
 
@@ -324,7 +324,7 @@ class TestStartWorkers(unittest.TestCase):
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
-                                      shell=True)
+                                      stderr=subprocess.PIPE, shell=True)
         pipe = Popen()
         pipe.communicate.assert_called_once_with()
 
@@ -370,7 +370,7 @@ class TestStartWorkers(unittest.TestCase):
 
         # Make sure we started the worker correctly
         Popen.assert_called_once_with('systemctl start %s' % unit_filename, stdout=subprocess.PIPE,
-                                      shell=True)
+                                      stderr=subprocess.PIPE, shell=True)
         pipe = Popen()
         pipe.communicate.assert_called_once_with()
 
@@ -402,7 +402,7 @@ class TestStopWorkers(unittest.TestCase):
         manage_workers._stop_workers()
 
         Popen.assert_called_once_with('systemctl stop %s' % unit_filename, stdout=subprocess.PIPE,
-                                      shell=True)
+                                      stderr=subprocess.PIPE, shell=True)
         pipe = Popen()
         pipe.communicate.assert_called_once_with()
 
@@ -435,7 +435,7 @@ class TestStopWorkers(unittest.TestCase):
         self.assertRaises(SysExit, manage_workers._stop_workers)
 
         Popen.assert_called_once_with('systemctl stop %s' % unit_filename, stdout=subprocess.PIPE,
-                                      shell=True)
+                                      stderr=subprocess.PIPE, shell=True)
         pipe = Popen()
         pipe.communicate.assert_called_once_with()
 

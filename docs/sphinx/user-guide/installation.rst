@@ -125,21 +125,33 @@ Server
    run Pulp on, or it can be elsewhere as you please. To install Qpid on a yum based system, use
    this command::
     
-    $ sudo yum install qpid-cpp-server
+    $ sudo yum install qpid-cpp-server qpid-cpp-server-store
 
    .. note::
-      If using Qpid, you will also need to install either the 'qpid-cpp-server-store' or
-      'qpid-cpp-server-linearstore' package. The 'qpid-cpp-server-linearstore' is better performing,
-      but may not be available in all versions. You can install 'qpid-cpp-server-store' using the
-      command: ``sudo yum install qpid-cpp-server-store``
+      In environments that use Qpid, the ``qpid-cpp-server-store`` package provides durability, a
+      feature that saves broker state if the broker is restarted. This is a required feature for
+      the correct operation of Pulp. Qpid provides a higher performance durability package named
+      ``qpid-cpp-server-linearstore`` which can be used instead of ``qpid-cpp-server-store``, but
+      may not be available on all versions of Qpid. If ``qpid-cpp-server-linearstore`` is available
+      in your environment, consider uninstalling ``qpid-cpp-server-store`` and installing
+      ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
+      this package, you will need to restart the Qpid broker to enable the durability feature.
 
-   Configure the Qpid broker using the Qpid configuration file ``qpidd.conf``. For Qpid 0.24+ the
-   config file is expected at ``/etc/qpid/qpidd.conf``, and earlier Qpid versions expect the
-   config file at ``/etc/qpidd.conf``. If not using authentication for the broker, either add or
-   change the auth setting to be off by having ``auth=no`` on its own line. The server can be
-   *optionally* configured so that it will connect to the broker using SSL by following the steps
-   defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`. By default, the
-   server will connect to the broker using a plain TCP connection to localhost.
+   For Pulp to operate with the Qpid broker, either broker authentication needs to be disabled, or
+   authentication needs to be configured. To disable authentication add ``auth=no`` to the
+   ``qpidd.conf`` file. Qpid 0.24 and higher places the config file is at ``/etc/qpid/qpidd.conf``,
+   and earlier Qpid versions place the config file at ``/etc/qpidd.conf``. Changes made to
+   ``qpidd.conf`` go into effect the next time Qpid starts; if Qpid is already running prior to
+   making a change to ``qpidd.conf`` then restart the Qpid.
+
+   To leave broker authentication enabled, you will need to configure SASL with a
+   username/password, and then configure Pulp to use that username/password. Refer to the Qpid docs
+   on how to configure username/password authentication using SASL. Once the broker is configured,
+   update Pulp according to the :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
+
+   The server can be *optionally* configured so that it will connect to the broker using SSL by following the steps
+   defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`. By default, Pulp
+   does not expect to use SSL and will connect to the broker using a plain TCP connection to localhost.
 
    After installing and configuring Qpid, you should configure it to start at boot and start it. For
    Upstart based systems::
@@ -154,18 +166,18 @@ Server
 
 #. Install the Pulp server, task workers, and their dependencies. This step may be performed on more
    than one host if you wish to scale out either Pulp's task workers, or its HTTP interface with a
-   load balancer::
+   load balancer. For Pulp installation that use Qpid, install Pulp server using::
 
-    $ sudo yum groupinstall pulp-server
+    $ sudo yum groupinstall pulp-server-qpid
 
    .. warning::
       Each host that participates in the distributed Pulp application will need to have access to a
       shared /var/lib/pulp filesystem, including both the web servers and the task workers.
 
-   Any Pulp 2.4.0 server or node that is being used with Qpid also requires a new client library
-   dependency to be installed on the server or node by running::
-
-    $ sudo yum install python-qpid-qmf python-qpid
+   .. note::
+      For RabbitMQ installations, install Pulp server without any Qpid specific libraries using
+      ``sudo yum groupinstall pulp-server``. You may need to install additional RabbitMQ
+      dependencies manually.
 
 #. For each host that you've installed the Pulp server on, edit ``/etc/pulp/server.conf``. Most
    defaults will work, but these are sections you might consider looking at before proceeding. Each
@@ -173,19 +185,26 @@ Server
 
    * **email** if you intend to have the server send email (off by default)
    * **database** if your database resides on a different host or port
-   * **messaging** if your Qpid server for communication between Pulp components is on a different
-     host or if you want to use SSL
-   * **tasks** if your Qpid server for the asynchronous tasks is on a different host or if you want
-     to use SSL
+   * **messaging** if your message broker for communication between Pulp components is on a
+     different host or if you want to use SSL. For more information on this section refer to the
+     :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
+   * **tasks** if your message broker for asynchronous tasks is on a different host or if you want
+     to use SSL. For more information on this section refer to the
+     :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
    * **security** to provide your own SSL CA certificates, which is a good idea if you intend to use
      Pulp in production
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
-#. Initialize Pulp's database. It's important to do this before starting Apache or the task workers,
-   but you only need to perform this step on one host that has the server package installed. Run this
-   as the same user that Apache runs as. If Apache or the workers are already running, just restart them::
+#. Initialize Pulp's database. It is important that the broker is running before initializing
+   Pulp's database. It is also important to do this before starting Apache or any Pulp services,
+   but you only need to perform this step on one host that has the server package installed. The
+   database initialization needs to be run as the ``apache`` user, which can be done by running::
 
    $ sudo -u apache pulp-manage-db
+
+  .. note::
+      If Apache or Pulp services are already running, restart them after running the
+      ``pulp-manage-db`` command.
 
 #. For each Pulp host that you wish to handle HTTP requests, start Apache httpd and set it to start
    on boot. For Upstart based systems::
@@ -244,10 +263,10 @@ Server
       $ sudo systemctl enable pulp_celerybeat
       $ sudo systemctl start pulp_celerybeat
 
-   Lastly, we also need one ``pulp_resource_manager`` process running in the installation. This
-   process acts as a task router, deciding which worker should perform certain types of tasks.
-   Apologies for the repetitive message, but it is important that this process only be enabled on
-   one host. Edit ``/etc/default/pulp_resource_manager`` to your liking. Then, for upstart::
+   Lastly, one ``pulp_resource_manager`` process must be running in the installation. This process
+   acts as a task router, deciding which worker should perform certain types of tasks. Apologies
+   for the repetitive message, but it is important that this process only be enabled on one host.
+   Edit ``/etc/default/pulp_resource_manager`` to your liking. Then, for upstart::
 
       $ sudo chkconfig pulp_resource_manager on
       $ sudo service pulp_resource_manager start
@@ -288,17 +307,6 @@ Pulp admin commands are accessed through the ``pulp-admin`` script.
   [server]
   host = localhost.localdomain
 
-3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
-   be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
-   ``/etc/pki/pulp/ca.crt``. If pulp-admin resides on the same machine, you can simply create
-   a symbolic link to the certificate inside ``/etc/pki/tls/certs``. It is important that the name
-   of the symbolic link or of the copied certificate is the hash of the certificate, followed by a `.`
-   and a sequence number (useful in case of multiple certs with same hash), else
-   openssl will not be able to add it to the SSL context resulting in SSL validation failure.
-
-::
-
-  ln -s /etc/pki/pulp/ca.crt `openssl x509 -noout -hash -in /etc/pki/pulp/ca.crt`.0
 
 
 .. _consumer_installation:
@@ -315,11 +323,19 @@ Pulp consumer commands are accessed through the ``pulp-consumer`` script. This
 script must be run as root to permit access to add references to the Pulp server's
 repositories.
 
-1. Install the Pulp consumer client and agent packages:
+1. For environments that use Qpid, install the Pulp consumer client, agent packages, and Qpid
+specific consumer dependencies with one command by running:
 
 ::
 
-  $ sudo yum groupinstall pulp-consumer
+   $ sudo yum groupinstall pulp-consumer-qpid
+
+  .. note::
+     For RabbitMQ installations, install the Pulp consumer client and agent packages without any
+     Qpid specific dependencies using ``sudo yum groupinstall pulp-consumer``. You may need to
+     install additional RabbitMQ dependencies manually including the ``python-gofer-amqplib``
+     package.
+
 
 2. Update the consumer client configuration to point to the Pulp server. Keep in mind
    that because of the SSL verification, this should be the fully qualified name of the server,
@@ -333,33 +349,21 @@ repositories.
   [server]
   host = localhost.localdomain
 
-3. Add Pulp server's CA cert to the system trusted CA certificates. Location of the CA cert can
-   be found in ``/etc/pulp/server.conf`` under ``[security]`` section. The default location is
-   ``/etc/pki/pulp/ca.crt``. It is important that the name of the symbolic link
-   or of the copied certificate is the hash of the certificate, followed by a `.`
-   and a sequence number (useful in case of multiple certs with same hash), else
-   openssl will not be able to add it to the SSL context resulting in SSL validation failure.
 
-::
-
-  cd /etc/pki/tls/certs
-  cp /ca_cert_dir/ca.crt `openssl x509 -noout -hash -in /ca_cert_dir/ca.crt`.0
-
-4. The agent may be configured so that it will connect to the Qpid broker using SSL by
+3. The agent may be configured so that it will connect to the Qpid broker using SSL by
    following the steps defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
    By default, the agent will connect using a plain TCP connection.
 
-::
 
 4. Set the agent to start at boot.  For upstart::
 
-     $ sudo chkconfig goferd on
-     $ sudo service goferd start
+      $ sudo chkconfig goferd on
+      $ sudo service goferd start
 
    For systemd::
 
-     $sudo systemctl enable goferd
-     $sudo systemctl start goferd
+      $sudo systemctl enable goferd
+      $sudo systemctl start goferd
 
 
 SSL Configuration
@@ -371,13 +375,17 @@ when deploying Pulp in production, you should supply your own SSL certificates.
 In ``/etc/pulp/server.conf``, find the ``[security]`` section. There is good
 documentation in-line, but make sure in particular that ``cacert`` and ``cakey``
 point to the certificate and private key that you want Apache to use for HTTPS.
-If you update these certs, make sure you update the SSL cert as well as it will
-need to be signed by the new CA cert so that SSL validation does not fail.
-Also make sure Apache's config settings for CA and SSL cert
-in ``/etc/httpd/conf.d/pulp.conf`` match these settings.
+Also make sure that Apache's config in ``/etc/httpd/conf.d/pulp.conf`` matches
+these settings. If you plan to use Pulp's consumer features, set ``ssl_ca_certificate``.
 
 If you want to use SSL with Qpid, see the
 :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`.
+
+Pulp Broker Settings
+--------------------
+
+To configure Pulp to work with a non-default broker configuration read the
+:ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
 
 MongoDB Authentication
 ----------------------

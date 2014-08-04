@@ -1,14 +1,3 @@
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import datetime
 import os
 import shutil
@@ -658,15 +647,16 @@ class TestDoSync(base.PulpServerTests):
 
 
 def assert_last_sync_time(time_in_iso):
-    now = datetime.datetime.now(dateutils.local_tz())
+    now = dateutils.now_utc_datetime_with_tzinfo()
     finished = dateutils.parse_iso8601_datetime(time_in_iso)
 
     # Compare them within a threshold since they won't be exact
     difference = now - finished
     return difference.seconds < 2
 
+
 def add_result(repo_id, offset):
-    started = datetime.datetime.now(dateutils.local_tz())
+    started = dateutils.now_utc_datetime_with_tzinfo()
     completed = started + datetime.timedelta(days=offset)
     r = RepoSyncResult.expected_result(
         repo_id, 'foo', 'bar', dateutils.format_iso8601_datetime(started),

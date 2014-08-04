@@ -64,10 +64,10 @@ class AdminExceptionHandlerTests(base.PulpClientTests):
         self.assertTrue('server log' in self.recorder.lines[2]) # skip blank line
         self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
 
-    def test_handle_client_ssl(self):
+    def test_handle_expired_client_cert(self):
         # Test
-        e = exceptions.ClientSSLException('x')
-        code = self.handler.handle_client_ssl(e)
+        e = exceptions.ClientCertificateExpiredException('x')
+        code = self.handler.handle_expired_client_cert(e)
 
         # Verify
         self.assertEqual(code, exceptions.CODE_PERMISSIONS_EXCEPTION)
