@@ -349,8 +349,7 @@ class ScheduledCall(Model):
         first_run_s = calendar.timegm(first_run_dt.utctimetuple())
         since_first_s = now_s - first_run_s
 
-        # An interval could be an isodate.Duration or a datetime.timedelta. If it's a Duration, convert it
-        # to a timedelta
+        # An interval could be an isodate.Duration or a datetime.timedelta
         interval = self.as_schedule_entry().schedule.run_every
         if isinstance(interval, isodate.Duration):
             # Determine how long (in seconds) to wait between the last run and the next one. This changes
