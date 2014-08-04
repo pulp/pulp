@@ -63,7 +63,7 @@ for instance nanoseconds it will round it to microseconds.
 - improve compatibility across various python variants and versions
 - raise exceptions when using fractional years and months in date
   maths with durations
-- renamed method todatetime on Duraction objects to totimedelta
+- renamed method todatetime on Duration objects to totimedelta
 
 * Wed Nov 21 2012 Michael Hrivnak <mhrivnak@redhat.com> 0.5.0-1.pulp
 - Adding new isodate source. (mhrivnak@redhat.com)
