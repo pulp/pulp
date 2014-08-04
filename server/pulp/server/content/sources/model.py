@@ -387,8 +387,6 @@ class DownloadDetails(object):
 class DownloadReport(object):
     """
     Download report.
-    :ivar total_passes: The total number of passes through the download logic.
-    :type total_passes: int
     :ivar total_sources: The total number of loaded sources.
     :type total_sources: int
     :ivar downloads: Dict of: DownloadDetails keyed by source ID.
@@ -396,7 +394,6 @@ class DownloadReport(object):
     """
 
     def __init__(self):
-        self.total_passes = 0
         self.total_sources = 0
         self.downloads = {}
 
@@ -406,10 +403,8 @@ class DownloadReport(object):
         :return: A dictionary representation.
         :rtype: dict
         """
-        return dict(
-            total_passes=self.total_passes,
-            total_sources=self.total_sources,
-            downloads=dict([(k, v.dict()) for k, v in self.downloads.items()]))
+        return dict(total_sources=self.total_sources,
+                    downloads=dict([(k, v.dict()) for k, v in self.downloads.items()]))
 
 
 class RefreshReport(object):

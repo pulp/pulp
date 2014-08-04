@@ -560,7 +560,6 @@ class TestDownloadReport(TestCase):
 
     def test_construction(self):
         report = DownloadReport()
-        self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 0)
         self.assertEqual(report.downloads, {})
 
@@ -569,7 +568,6 @@ class TestDownloadReport(TestCase):
         report.downloads['s1'] = DownloadDetails()
         report.downloads['s2'] = DownloadDetails()
         expected = {
-            'total_passes': 0,
             'total_sources': 0,
             'downloads': {
                 's1': {'total_failed': 0, 'total_succeeded': 0},

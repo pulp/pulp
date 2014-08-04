@@ -45,7 +45,6 @@ class TestSummaryReport(TestCase):
                     'content-world': {'total_failed': 2, 'total_succeeded': 98},
                     'content-galaxy': {'total_failed': 0, 'total_succeeded': 999999}
                 },
-                'total_passes': 1,
                 'total_sources': 10
             },
             'errors': [

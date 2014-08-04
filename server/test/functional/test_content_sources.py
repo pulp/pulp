@@ -272,7 +272,6 @@ class TestDownloading(ContainerTest):
             with open(request.destination) as fp:
                 s = fp.read()
                 self.assertTrue(PRIMARY in s)
-        self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 2)
         self.assertEqual(len(report.downloads), 2)
         self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 9)
@@ -335,7 +334,6 @@ class TestDownloading(ContainerTest):
             with open(request.destination) as fp:
                 s = fp.read()
                 self.assertTrue(PRIMARY in s)
-        self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 2)
         self.assertEqual(len(report.downloads), 3)
         self.assertEqual(report.downloads[PRIMARY_ID].total_succeeded, 9)
