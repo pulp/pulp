@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.4.0
-Release: 0.26.beta%{?dist}
+Release: 0.30.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -247,6 +247,18 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Jul 31 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.30.beta
+- 1125030 - Handle both styles of certificate stores. (rbarlow@redhat.com)
+
+* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.29.beta
+- Pulp rebuild
+
+* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.28.beta
+- Pulp rebuild
+
+* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.27.beta
+- Pulp rebuild
+
 * Mon Jul 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.26.beta
 - 1113590 - Nodes requires Pulp's cert to be trusted 1112906 - pulp-admin
   requires Pulp's cert to be trusted 1112904 - pulp-consumer requires Pulp's

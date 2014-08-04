@@ -96,6 +96,7 @@ class ExceptionHandler:
             (PulpServerException,               self.handle_server_error),
             (ClientCertificateExpiredException, self.handle_expired_client_cert),
             (CertificateVerificationException,  self.handle_ssl_validation_error),
+            (MissingCAPathException,            self.handle_missing_ca_path_exception),
             (ApacheServerException,             self.handle_apache_error),
         )
 
@@ -375,6 +376,23 @@ class ExceptionHandler:
         self.prompt.render_paragraph(desc)
 
         return CODE_APACHE_SERVER_EXCEPTION
+
+    def handle_missing_ca_path_exception(self, e):
+        """
+        This is the handler for the generic MissingCAPathException. It uses str(e) as the ca_path
+        that was missing and returns os.EX_IOERR.
+
+        :param e: The Exception that was raised
+        :type  e: pulp.bindings.exceptions.MissingCAPathException
+        :return:  os.EX_IOERR
+        :rtype:   int
+        """
+        msg = _('The given CA path %(ca_path)s is not an accessible file or '
+                'directory. Please ensure that ca_path exists and that your user has '
+                'permission to read it.')
+        msg = msg % {'ca_path': str(e)}
+        self.prompt.render_failure_message(msg)
+        return os.EX_IOERR
 
     def handle_apache_error(self, e):
         """
