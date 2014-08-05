@@ -225,6 +225,31 @@ class NectarListener(DownloadEventListener):
 class Batch(object):
     """
     Provides batch processing of a collection of content download requests.
+
+    How it works:
+
+      request-1 --> queue-1 (source-1)
+        |              | <fail>
+        |              |--> queue2  (source-2)
+        |                     | <fail>
+        |                     |--> queue-0  (primary)
+        |                             | <succeeded>
+        |                             |--> END
+      request-2 --> queue-3 (source-3)
+        |              | <fail>
+        |              |--> queue4  (source-4)
+        |                     | <fail>
+        |                     |--> queue-0  (primary)
+        |                             | <fail>
+        |                             |--> END
+      request-3 --> queue-0 (primary)
+        |              | <succeeded>
+        |              |--> END
+      request-4 --> queue-3 (source-3)
+        |              | <succeeded>
+        |              |--> END
+        ...
+
     :ivar _mutex: The object mutex.
     :type _mutex: RLock
     :ivar canceled: A cancel event.  Signals cancellation requested.
@@ -508,7 +533,6 @@ class RequestQueue(Thread):
     def halt(self):
         """
         Halt the queue thread.
-        :return:
         """
         self._halted = True
 
