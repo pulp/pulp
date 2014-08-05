@@ -173,6 +173,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Aug 05 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-12.pulp
+- Adds qpid-tools as a build dep for all environments. (bmbouter@gmail.com)
+
 * Thu Jul 10 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-11.pulp
 - Release 11 of python-kombu includes BZ fixes for 1096539 and 1105195.
   (bmbouter@gmail.com)
