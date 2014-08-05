@@ -567,11 +567,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_consumers_with_same_applicability(self, consumer_history_manager,
-                                               repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_consumers_with_same_applicability(self, *unused_mocks):
         """
         Test that we can handle consumers that share applicability correctly.
         """
@@ -607,11 +607,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_disparate_consumers(self, consumer_history_manager,
-                                 repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_disparate_consumers(self, *unused_mocks):
         """
         Test that the function handles two consumers with different
         applicability data correctly.
@@ -670,11 +670,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_empty_type_limiting(self, consumer_history_manager,
-                                 repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_empty_type_limiting(self, *unused_mocks):
         """
         Test with an empty list as the type limiting criteria.
         """
@@ -738,10 +738,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_limit_by_type(self, consumer_history_manager, repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_limit_by_type(self, *unused_mocks):
         """
         Test that we allow the caller to limit applicability data by unit type.
         """
@@ -815,10 +816,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_mixed_case(self, consumer_history_manager, repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_mixed_case(self, *unused_mocks):
         """
         Make sure the function can handle a mixed case of consumers.
         """
@@ -891,11 +893,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_multiple_applicability_data_matches(self, consumer_history_manager,
-                                                 repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_multiple_applicability_data_matches(self, *unused_mocks):
         """
         Test that the function properly handles the case when multiple
         applicability objects map to a consumer. They should get aggregated and not
@@ -953,11 +955,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_non_matching_consumer_ids(self, consumer_history_manager,
-                                       repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_non_matching_consumer_ids(self, *unused_mocks):
         """
         Test the function when the given consumer_ids do not match any
         consumers.
@@ -1010,11 +1012,11 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_single_consumer(self, consumer_history_manager,
-                             repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_single_consumer(self, *unused_mocks):
         """
         Test that the function handles matching a single consumer correctly.
         """
@@ -1212,11 +1214,11 @@ class TestAddRepoIDsToConsumerMap(base.PulpServerTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test__add_repo_ids_to_consumer_map(self, consumer_history_manager,
-                                                 repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test__add_repo_ids_to_consumer_map(self, *unused_mocks):
         """
         Test the _add_repo_ids_to_consumer_map() function.
         """
