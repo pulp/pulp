@@ -162,7 +162,7 @@ overwritten.
     ],
     "id": "4ff73d598a905b777d000014",
     "notifier_config": {
-      "url": "https://localhost/pulp/api/jdob/"
+      "url": "https://localhost/pulp/api"
     },
     "notifier_type_id": "http"
   }
