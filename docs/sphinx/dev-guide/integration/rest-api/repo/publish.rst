@@ -43,7 +43,7 @@ To create a scheduled publish, the interval, publish override config, and other
 schedule options must be set on a repository's :term:`distributor`.
 
 | :method:`post`
-| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/`
 | :permission:`create`
 | :param_list:`post`
 
@@ -97,7 +97,7 @@ Updating a Scheduled Publish
 The same parameters used to create a scheduled publish may be updated at any point.
 
 | :method:`put`
-| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/<schedule_id>/`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/<schedule_id>/`
 | :permission:`create`
 | :param_list:`put`
 
@@ -118,7 +118,7 @@ Deleting a Scheduled Publish
 Delete a scheduled publish to remove it permanently from the distributor.
 
 | :method:`delete`
-| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/<schedule_id>/`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/<schedule_id>/`
 | :permission:`delete`
 
 | :response_list:`_`
@@ -133,7 +133,7 @@ Listing All Scheduled Publishes
 All of the scheduled publishes for a given distributor may be listed.
 
 | :method:`get`
-| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/`
 | :permission:`read`
 | :return:`array of schedule reports for all scheduled publishes defined (see sample response of Scheduling a Publish for details)`
 
@@ -144,7 +144,7 @@ Each scheduled publish may be inspected.
 
 | :method:`get`
 | :permission:`read`
-| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/publish_schedules/<schedule_id>/`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/<schedule_id>/`
 | :return:`a schedule report for the scheduled publish (see sample response of Scheduling a Publish for details)`
 
 
