@@ -414,21 +414,22 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
 
     @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=8)
     def test_write_file_header_fast_forward_small_buffer(self):
-        self._test_fast_forward()
+        self._test_fast_forward('test.xml')
 
     @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=2500)
     def test_write_file_header_fast_forward_large_buffer(self):
-        self._test_fast_forward()
+        self._test_fast_forward('test.xml')
 
-    def _test_fast_forward(self):
-        test_file = os.path.join(self.working_dir, 'test.xml')
-        test_content = ''
-        with open(test_file) as test_file_handle:
-            content = test_file_handle.read()
-            while content:
-                test_content += content
+    def _test_fast_forward(self, test_file, test_content=None):
+        test_file = os.path.join(self.working_dir, test_file)
+        if test_content is None:
+            test_content = ''
+            with open(test_file) as test_file_handle:
                 content = test_file_handle.read()
-        test_content = test_content[:test_content.rfind('</metadata')]
+                while content:
+                    test_content += content
+                    content = test_file_handle.read()
+            test_content = test_content[:test_content.rfind('</metadata')]
         context = FastForwardXmlFileContext(test_file,
                                             self.tag, 'package', self.attributes)
 
@@ -443,6 +444,13 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
                 created_content += content
                 content = test_file_handle.read()
         self.assertEquals(test_content, created_content)
+
+    def test_write_file_header_fast_forward_empty_file(self):
+        test_content = '<?xml version="1.0" encoding="UTF-8"?>\n<metadata packages="30">'
+        self._test_fast_forward('test_empty.xml', test_content)
+
+    def test_write_file_header_fast_forward_missing_search_tag(self):
+        self._test_fast_forward('test_missing_search_tag.xml')
 
     @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=8)
     def test_write_file_header_fast_forward_small_buffer_gzip(self):
