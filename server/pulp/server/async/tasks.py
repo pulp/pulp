@@ -8,10 +8,9 @@ from celery.app import control, defaults
 from celery.result import AsyncResult
 
 from pulp.common import constants, dateutils
-from pulp.common.error_codes import PLP0023
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.exceptions import PulpException, MissingResource, PulpCodedException
+from pulp.server.exceptions import PulpException, MissingResource
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import DoesNotExist, ReservedResource
@@ -388,7 +387,10 @@ def cancel(task_id):
     if task_status is None:
         raise MissingResource(task_id)
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
-        raise PulpCodedException(PLP0023, task_id=task_id)
+        # If the task is already done, just stop
+        msg = _('Task already completed: %(task_id)s.')
+        logger.info(msg % {'task_id': task_id})
+        return
     controller.revoke(task_id, terminate=True)
     TaskStatus.get_collection().find_and_modify(
         {'task_id': task_id, 'state': {'$nin': constants.CALL_COMPLETE_STATES}},
