@@ -449,12 +449,14 @@ class TestBatch(TestCase):
         self.assertFalse(fake_queue.put.called)
         self.assertFalse(fake_find.called)
 
-    @patch('pulp.server.content.sources.container.RLock', Mock())
+    @patch('pulp.server.content.sources.container.RLock')
     @patch('pulp.server.content.sources.container.Batch._add_queue')
-    def test_find_queue(self, fake_add):
+    def test_find_queue(self, fake_add, fake_lock):
         canceled = FakeEvent()
         fake_source = Mock()
         fake_source.id = 'fake-id'
+        fake_lock.__enter__ = Mock()
+        fake_lock.__exit__ = Mock()
 
         # test
         batch = Batch(canceled, None, None, None, None)
@@ -471,6 +473,8 @@ class TestBatch(TestCase):
         canceled = FakeEvent()
         fake_source = Mock()
         fake_source.id = 'fake-id'
+        fake_lock.__enter__ = Mock()
+        fake_lock.__exit__ = Mock()
 
         # test
         batch = Batch(canceled, None, None, None, None)
@@ -478,8 +482,8 @@ class TestBatch(TestCase):
 
         # validation
         fake_add.assert_called_with(fake_source)
-        fake_lock().acquire.assert_called_once_with()
-        fake_lock().release.assert_called_once_with()
+        self.assertEqual(batch._mutex.__enter__.call_count, 1)
+        self.assertEqual(batch._mutex.__exit__.call_count, 1)
         self.assertEqual(queue, fake_add())
 
     @patch('pulp.server.content.sources.container.RLock', Mock())

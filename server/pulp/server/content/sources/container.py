@@ -331,18 +331,15 @@ class Batch(object):
         :return: The request queue.
         :rtype: RequestQueue
         """
-        self._mutex.acquire()
-        try:
+        with self._mutex:
             try:
                 return self.queues[source.id]
             except KeyError:
                 return self._add_queue(source)
-        finally:
-            self._mutex.release()
             
     def _add_queue(self, source):
         """
-        Create a request queue for the specified content sources and add
+        Create a request queue for the specified content source and add
         it to the *sources* dictionary by source_id.
         :param source: A content source.
         :type source: pulp.server.content.sources.model.ContentSource
