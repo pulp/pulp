@@ -11,8 +11,7 @@ License:        BSD
 
 URL:            http://cheeseshop.python.org/pypi/isodate
 Source0:        isodate-%{version}.tar.gz
-Patch0:         isodate-tzinfo.patch
-Patch1:         isodate-duration.patch
+Patch0:         isodate-duration.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  python-setuptools
 BuildArch:      noarch
