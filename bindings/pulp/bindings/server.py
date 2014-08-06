@@ -1,6 +1,7 @@
 import base64
 import locale
 import logging
+import os
 import urllib
 try:
     import oauth2 as oauth
@@ -270,7 +271,16 @@ class HTTPSServerWrapper(object):
         ssl_context = SSL.Context('sslv3')
         if self.pulp_connection.validate_ssl_ca:
             ssl_context.set_verify(SSL.verify_peer, 1)
-            ssl_context.load_verify_locations(capath=self.pulp_connection.ca_path)
+            # We need to stat the ca_path to see if it exists (error if it doesn't), and if so
+            # whether it is a file or a directory. m2crypto has different directives depending on
+            # which type it is.
+            if os.path.isfile(self.pulp_connection.ca_path):
+                ssl_context.load_verify_locations(cafile=self.pulp_connection.ca_path)
+            elif os.path.isdir(self.pulp_connection.ca_path):
+                ssl_context.load_verify_locations(capath=self.pulp_connection.ca_path)
+            else:
+                # If it's not a file and it's not a directory, it's not a valid setting
+                raise exceptions.MissingCAPathException(self.pulp_connection.ca_path)
         ssl_context.set_session_timeout(self.pulp_connection.timeout)
 
         if self.pulp_connection.username and self.pulp_connection.password:

@@ -296,7 +296,7 @@ class OrphanTypeSubCollection(JSONController):
     @auth_required(DELETE)
     def DELETE(self, content_type):
         task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
-        async_task = orphan.delete_orphans_by_type.apply_async((content_type,), tags=tags)
+        async_task = orphan.delete_orphans_by_type.apply_async((content_type,), tags=task_tags)
         raise OperationPostponed(async_task)
 
 
@@ -318,7 +318,7 @@ class OrphanResource(JSONController):
 
 
 class DeleteOrphansAction(JSONController):
-    # deprecated in 2.4, please use the more restful OrphanResoruce delete instead
+    # deprecated in 2.4, please use the more restful OrphanResource delete instead
     @auth_required(DELETE)
     def POST(self):
         orphans = self.params()
