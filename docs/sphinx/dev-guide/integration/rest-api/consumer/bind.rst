@@ -72,6 +72,9 @@ The steps for a forced unbind are as follows:
  2. Send a request to the consumer to remove the binding.  The ID of the request to the consumer
     is returned via the spawned_tasks field of the :ref:`call_report`.
 
+If the notify_agent parameter was set to false when the binding was created, no request is sent
+to the consumer to remove the binding, so the binding is immediately deleted.
+
 | :method:`delete`
 | :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>`
 | :permission:`delete`
@@ -83,6 +86,7 @@ The steps for a forced unbind are as follows:
 
 | :response_list:`_`
 
+* :response_code:`200,if notify_agent was set to false for the binding and it was immediately deleted`
 * :response_code:`202,the unbind request was accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
 * :response_code:`404,if the binding does not exist`
