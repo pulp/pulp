@@ -11,12 +11,12 @@ import traceback
 import uuid
 
 from pulp.common.plugins import reporting_constants, importer_constants
+from pulp.plugins.model import Unit
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.managers.factory as manager_factory
 
-from nectar import listener, request
-from nectar.config import DownloaderConfig
+from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
@@ -878,7 +878,7 @@ class PluginStepIterativeProcessingMixin(object):
 class DownloadStep(PluginStep, listener.DownloadEventListener):
 
     def __init__(self, step_type, downloads=None, repo=None, conduit=None, config=None,
-                 working_dir=None, plugin_type=None):
+                 working_dir=None, plugin_type=None, description=''):
         """
         Set the default parent and step_type for the Download step
 
@@ -896,21 +896,24 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         :type  working_dir: str
         :param plugin_type: The type of the plugin
         :type  plugin_type: str
+        :param description: The text description that will be displayed to users
+        :type  description: basestring
         """
 
         super(DownloadStep, self).__init__(step_type, repo=repo, conduit=conduit,
                                            config=config, working_dir=working_dir,
                                            plugin_type=plugin_type)
-        if downloads:
-            self.downloads = downloads
+        if downloads is not None:
+            self._downloads = downloads
         else:
-            self.downloads = []
+            self._downloads = []
         self.step_type = step_type
         self.repo = repo
         self.conduit = conduit
         self.config = config
         self.working_dir = working_dir
         self.plugin_type = plugin_type
+        self.description = description
 
     def initialize(self):
         """
@@ -934,6 +937,21 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
             self.downloader = LocalFileDownloader(downloader_config, self)
         else:
             self.downloader = HTTPThreadedDownloader(downloader_config, self)
+
+    @property
+    def downloads(self):
+        """
+        This lets the class be instantiated with "downloads" as a generator that
+        gets lazily evaluated. This is helpful, because at the time of
+        instantiation, it is probably not known what downloads will be
+        required.
+
+        :return:    list of download requests (nectar.request.DownloadRequest)
+        :rtype:     list
+        """
+        if not isinstance(self._downloads, list):
+            self._downloads = list(self._downloads)
+        return self._downloads
 
     def _get_total(self):
         """
@@ -974,3 +992,80 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         """
         self.progress_failures += 1
         self.report_progress()
+
+    def cancel(self):
+        """
+        Cancel the current step
+        """
+        super(DownloadStep, self).cancel()
+        self.downloader.cancel()
+
+
+class GetLocalUnitsStep(PluginStep):
+    """
+    Given a list of unit keys, this will determine which ones are already in
+    pulp, and it will use the conduit to save each. This depends on there being
+    a parent step with attribute "available_units", which must be a list of
+    unit keys (which themselves are dictionaries).
+    """
+    def __init__(self, importer_type, unit_type, unit_key_fields, working_dir):
+        """
+        :param importer_type:   unique identifier for the type of importer
+        :type  importer_type:   basestring
+        :param unit_type:       unique identifier for the unit type in use
+        :type  unit_type:       basestring
+        :param unit_key_fields: a list of field names in the unit type's unit key.
+        :type  unit_key_fields: list
+        :param working_dir:     full path to a working directory
+        :type  working_dir:     basestring
+        """
+        super(GetLocalUnitsStep, self).__init__(step_type=reporting_constants.SYNC_STEP_GET_LOCAL,
+                                                plugin_type=importer_type,
+                                                working_dir=working_dir)
+        self.description = _('Copying units already in pulp')
+
+        self.unit_type = unit_type
+        self.unit_key_fields = unit_key_fields
+        self.content_query_manager = manager_factory.content_query_manager()
+        # list of unit keys
+        self.units_to_download = []
+
+    def process_main(self):
+        """
+        given the passed-in unit keys, determine which of them already exist in
+        pulp, and save those with the conduit found on the parent.
+        """
+        # any units that are already in pulp
+        units_we_already_had = set()
+
+        # for any unit that is already in pulp, save it into the repo
+        for unit_dict in self.content_query_manager.get_multiple_units_by_keys_dicts(
+                self.unit_type, self.parent.available_units, self.unit_key_fields):
+            unit = self._dict_to_unit(unit_dict)
+            self.get_conduit().save_unit(unit)
+            units_we_already_had.add(unit)
+
+        for unit_key in self.parent.available_units:
+            # build a temp Unit instance just to use its comparison feature
+            unit = Unit(self.unit_type, unit_key, {}, '')
+            if unit not in units_we_already_had:
+                self.units_to_download.append(unit_key)
+
+    def _dict_to_unit(self, unit_dict):
+        """
+        convert a unit dictionary (a flat dict that has all unit key, metadata,
+        etc. keys at the root level) into a Unit object. This requires knowing
+        not just what fields are part of the unit key, but also how to derive
+        the storage path.
+
+        This should be overridden in a subclass.
+
+        :param unit_dict:   a flat dictionary that has all unit key, metadata,
+                            etc. keys at the root level, representing a unit
+                            in pulp
+        :type  unit_dict:   dict
+
+        :return:    a unit instance
+        :rtype:     pulp.plugins.model.Unit
+        """
+        raise NotImplementedError
