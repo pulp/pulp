@@ -11,6 +11,7 @@ import unittest
 from mock import Mock, patch, MagicMock
 
 from nectar.downloaders.local import LocalFileDownloader
+from nectar.request import DownloadRequest
 
 from pulp.common.plugins import reporting_constants, importer_constants
 from pulp.devel.unit.util import touch, compare_dict
@@ -1201,6 +1202,25 @@ class DownloadStepTests(unittest.TestCase):
         # assert report_progress was called with no args
         mock_report_progress.assert_called_once_with()
 
+    def test_downloads_property(self):
+        generator = (DownloadRequest(url, '/a/b/c') for url in ['http://pulpproject.org'])
+        dlstep = DownloadStep('fake-step', downloads=generator)
+
+        downloads = dlstep.downloads
+
+        self.assertTrue(isinstance(downloads, list))
+        self.assertEqual(len(downloads), 1)
+        self.assertTrue(isinstance(downloads[0], DownloadRequest))
+
+    def test_cancel(self):
+        dlstep = DownloadStep('fake-step')
+        dlstep.parent = MagicMock()
+        dlstep.initialize()
+
+        dlstep.cancel()
+
+        self.assertTrue(dlstep.downloader.is_canceled)
+
 
 @patch('pulp.server.managers.content.query.ContentQueryManager.get_multiple_units_by_keys_dicts',
        spec_set=True)
@@ -1261,3 +1281,8 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         self.step.process_main()
 
         self.assertEqual(self.step.units_to_download, [])
+
+    def test_dict_to_unit_not_implemented(self, mock_get_multiple):
+        step = GetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
+                                 ['foo'], '/a/b/c')
+        self.assertRaises(NotImplementedError, step._dict_to_unit, {'image_id': 'abc123'})

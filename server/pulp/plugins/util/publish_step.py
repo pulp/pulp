@@ -896,6 +896,8 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         :type  working_dir: str
         :param plugin_type: The type of the plugin
         :type  plugin_type: str
+        :param description: The text description that will be displayed to users
+        :type  description: basestring
         """
 
         super(DownloadStep, self).__init__(step_type, repo=repo, conduit=conduit,
@@ -991,6 +993,13 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         self.progress_failures += 1
         self.report_progress()
 
+    def cancel(self):
+        """
+        Cancel the current step
+        """
+        super(DownloadStep, self).cancel()
+        self.downloader.cancel()
+
 
 class GetLocalUnitsStep(PluginStep):
     """
@@ -1059,4 +1068,4 @@ class GetLocalUnitsStep(PluginStep):
         :return:    a unit instance
         :rtype:     pulp.plugins.model.Unit
         """
-        raise NotImplemented
+        raise NotImplementedError
