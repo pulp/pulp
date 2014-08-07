@@ -33,12 +33,12 @@ class TestHTTPSServerWrapper(unittest.TestCase):
     @mock.patch('pulp.bindings.server.httpslib.HTTPSConnection.request')
     @mock.patch('pulp.bindings.server.SSL.Context.load_verify_locations')
     @mock.patch('pulp.bindings.server.SSL.Context.set_verify')
-    def test_request_validate_ssl_ca_false(self, set_verify, load_verify_locations, request,
+    def test_request_verify_ssl_false(self, set_verify, load_verify_locations, request,
                                            getresponse):
         """
-        Test the request() method when the connection's validate_ssl_ca setting is False.
+        Test the request() method when the connection's verify_ssl setting is False.
         """
-        conn = server.PulpConnection('host', validate_ssl_ca=False)
+        conn = server.PulpConnection('host', verify_ssl=False)
         wrapper = server.HTTPSServerWrapper(conn)
 
         class FakeResponse(object):
@@ -90,7 +90,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
         Test the request() method when the connection's ca_path setting points to a directory.
         """
         ca_path = '/path/to/an/existing/dir/'
-        conn = server.PulpConnection('host', validate_ssl_ca=True, ca_path=ca_path)
+        conn = server.PulpConnection('host', verify_ssl=True, ca_path=ca_path)
         wrapper = server.HTTPSServerWrapper(conn)
 
         class FakeResponse(object):
@@ -123,7 +123,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
         Test the request() method when the connection's ca_path setting points to a file.
         """
         ca_path = '/path/to/an/existing.file'
-        conn = server.PulpConnection('host', validate_ssl_ca=True, ca_path=ca_path)
+        conn = server.PulpConnection('host', verify_ssl=True, ca_path=ca_path)
         wrapper = server.HTTPSServerWrapper(conn)
 
         class FakeResponse(object):
@@ -183,7 +183,7 @@ class TestPulpConnection(unittest.TestCase):
         self.assertEqual(connection.headers, expected_headers)
         self.assertTrue(isinstance(connection.server_wrapper, server.HTTPSServerWrapper))
         self.assertEqual(connection.server_wrapper.pulp_connection, connection)
-        self.assertEqual(connection.validate_ssl_ca, True)
+        self.assertEqual(connection.verify_ssl, True)
         self.assertEqual(connection.ca_path, server.DEFAULT_CA_PATH)
 
     def test___init___ca_path_set(self):
@@ -196,18 +196,18 @@ class TestPulpConnection(unittest.TestCase):
 
         self.assertEqual(connection.ca_path, ca_path)
 
-    def test___init___validate_ssl_ca_false(self):
+    def test___init___verify_ssl_false(self):
         """
         Test __init__() with validate_ssl set to False.
         """
-        connection = server.PulpConnection('host', validate_ssl_ca=False)
+        connection = server.PulpConnection('host', verify_ssl=False)
 
-        self.assertEqual(connection.validate_ssl_ca, False)
+        self.assertEqual(connection.verify_ssl, False)
 
-    def test___init___validate_ssl_ca_true(self):
+    def test___init___verify_ssl_true(self):
         """
         Test __init__() with validate_ssl set to True.
         """
-        connection = server.PulpConnection('host', validate_ssl_ca=True)
+        connection = server.PulpConnection('host', verify_ssl=True)
 
-        self.assertEqual(connection.validate_ssl_ca, True)
+        self.assertEqual(connection.verify_ssl, True)

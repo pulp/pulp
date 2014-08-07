@@ -45,7 +45,7 @@ class PulpConnection(object):
                  oauth_user='admin',
                  cert_filename=None,
                  server_wrapper=None,
-                 validate_ssl_ca=True,
+                 verify_ssl=True,
                  ca_path=DEFAULT_CA_PATH):
 
         self.host = host
@@ -83,7 +83,7 @@ class PulpConnection(object):
             self.server_wrapper = HTTPSServerWrapper(self)
 
         # SSL validation settings
-        self.validate_ssl_ca = validate_ssl_ca
+        self.verify_ssl = verify_ssl
         self.ca_path = ca_path
 
     def DELETE(self, path, body=None):
@@ -269,7 +269,7 @@ class HTTPSServerWrapper(object):
         # Create a new connection each time since HTTPSConnection has problems
         # reusing a connection for multiple calls (lame).
         ssl_context = SSL.Context('sslv3')
-        if self.pulp_connection.validate_ssl_ca:
+        if self.pulp_connection.verify_ssl:
             ssl_context.set_verify(SSL.verify_peer, 1)
             # We need to stat the ca_path to see if it exists (error if it doesn't), and if so
             # whether it is a file or a directory. m2crypto has different directives depending on

@@ -136,7 +136,6 @@ def _initialize_logging(config, debug=False):
 
     return pulp_log
 
-# -- server connection --------------------------------------------------------
 
 def _create_bindings(config, logger, username, password):
     """
@@ -176,11 +175,11 @@ def _create_bindings(config, logger, username, password):
         call_log.setLevel(logging.INFO)
 
     # Create the connection and bindings
-    validate_ssl_ca = config['server']['verify_ssl'].lower() != 'false'
+    verify_ssl = config['server']['verify_ssl'].lower() != 'false'
     ca_path = config['server']['ca_path']
     conn = PulpConnection(
         hostname, port, username=username, password=password, cert_filename=cert_filename,
-        logger=logger, api_responses_logger=call_log, validate_ssl_ca=validate_ssl_ca,
+        logger=logger, api_responses_logger=call_log, verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(conn)
 

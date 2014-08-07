@@ -1,16 +1,3 @@
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
-
 """
 Pulp (gofer) plugin.
 Contains recurring actions and remote classes.
@@ -35,6 +22,7 @@ from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
 from pulp.client.consumer.config import read_config
+
 
 log = getLogger(__name__)
 
@@ -225,7 +213,7 @@ class PulpBindings(Bindings):
         verify_ssl = cfg.server.verify_ssl.lower() != 'false'
         ca_path = cfg.server.ca_path
         cert = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-        connection = PulpConnection(host, port, cert_filename=cert, validate_ssl_ca=verify_ssl,
+        connection = PulpConnection(host, port, cert_filename=cert, verify_ssl=verify_ssl,
                                     ca_path=ca_path)
         Bindings.__init__(self, connection)
 
