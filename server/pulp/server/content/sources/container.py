@@ -495,26 +495,15 @@ class RequestQueue(Thread):
             except Empty:
                 # ignored
                 pass
-
-    def next(self):
-        """
-        Get the next item queued for download.
-        :return: A generator yielding the next download DownloadRequest.
-        :rtype: iterable
-        """
-        while self._run:
-            item = self.get()
-            if item is None:
-                # end-of-queue marker
-                return
-            yield DownloadRequest(item.url, item.request.destination, data=item.request)
+        return None  # end-of-queue marker
 
     def run(self):
         """
         The thread main.
         """
         try:
-            self.downloader.download(self.next())
+            requests = NectarFeed(self)
+            self.downloader.download(requests)
         except Exception:
             log.exception(self.getName())
             self.drain()
@@ -523,7 +512,7 @@ class RequestQueue(Thread):
         """
         Read and fail all requests remaining in the queue.
         """
-        for request in self.next():
+        for request in NectarFeed(self):
             report = NectarDownloadReport.from_download_request(request)
             self.downloader.fire_download_failed(report)
 
@@ -533,3 +522,31 @@ class RequestQueue(Thread):
         """
         self._halted = True
 
+
+class NectarFeed(object):
+    """
+    Provides a blocking download request feed to a nectar downloader.
+    :param queue: A queue to drain.
+    :type queue: RequestQueue
+    """
+
+    def __init__(self, queue):
+        """
+        :param queue: A queue to drain.
+        :type queue: RequestQueue
+        """
+        self.queue = queue
+
+    def __iter__(self):
+        """
+        Performs a get() on the queue until reaching the end-of-queue marker.
+        :return: An iterable of: DownloadRequest.
+        :rtype: iterable
+        """
+        while True:
+            item = self.queue.get()
+            if item is None:
+                # end-of-queue marker
+                return
+            request = DownloadRequest(item.url, item.request.destination, data=item.request)
+            yield request

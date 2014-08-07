@@ -19,7 +19,8 @@ from collections import namedtuple
 from mock import patch, Mock
 
 from pulp.server.content.sources.container import (
-    ContentContainer, NectarListener, Item, RequestQueue, Batch, DownloadReport, Listener)
+    ContentContainer, NectarListener, Item, RequestQueue, Batch, DownloadReport, Listener,
+    NectarFeed)
 from pulp.server.content.sources.model import ContentSource
 
 
@@ -830,10 +831,11 @@ class TestRequestQueue(TestCase):
         # test
         queue = RequestQueue(canceled, Mock())
         canceled.set()
-        queue.get()
+        item = queue.get()
 
         # validation
         self.assertFalse(fake_queue().get.called)
+        self.assertEqual(item, None)
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
@@ -843,10 +845,11 @@ class TestRequestQueue(TestCase):
         # test
         queue = RequestQueue(canceled, Mock())
         queue.halt()
-        queue.get()
+        item = queue.get()
 
         # validation
         self.assertFalse(fake_queue().get.called)
+        self.assertEqual(item, None)
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
@@ -865,100 +868,8 @@ class TestRequestQueue(TestCase):
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue', Mock())
-    @patch('pulp.server.content.sources.container.RequestQueue.get')
-    @patch('pulp.server.content.sources.container.DownloadRequest')
-    def test_next(self, fake_request, fake_get):
-        canceled = FakeEvent()
-        req = namedtuple('Request', ['destination'])
-        queued = [
-            Item(req(1), 2),
-            Item(req(3), 4),
-            Item(req(5), 6)
-        ]
-        fake_get.side_effect = queued
-        fake_request.side_effect = [1, 2, 3]
-
-        # test
-        queue = RequestQueue(canceled, Mock())
-        fetched = list(queue.next())
-
-        # validation
-        fake_get.assert_called_with()
-        calls = fake_request.call_args_list
-        self.assertEqual(len(calls), 3)
-        for i, item in enumerate(queued):
-            self.assertEqual(calls[i][0][0], item.url)
-            self.assertEqual(calls[i][0][1], item.request.destination)
-            self.assertEqual(calls[i][1], dict(data=item.request))
-        self.assertEqual(fetched, [1, 2, 3])
-
-    @patch('pulp.server.content.sources.container.Thread', new=Mock())
-    @patch('pulp.server.content.sources.container.Queue', Mock())
-    @patch('pulp.server.content.sources.container.RequestQueue.get')
-    @patch('pulp.server.content.sources.container.DownloadRequest')
-    def test_next_end_of_queue(self, fake_request, fake_get):
-        canceled = FakeEvent()
-        req = namedtuple('Request', ['destination'])
-        queued = [
-            Item(req(1), 2),
-            Item(req(3), 4),
-            None  # end-of-queue
-        ]
-        fake_get.side_effect = queued
-        fake_request.side_effect = [1, 2, 3]
-
-        # test
-        queue = RequestQueue(canceled, Mock())
-        fetched = list(queue.next())
-
-        # validation
-        fake_get.assert_called_with()
-        calls = fake_request.call_args_list
-        self.assertEqual(len(calls), 2)
-        for i, item in enumerate(queued[:-1]):
-            self.assertEqual(calls[i][0][0], item.url)
-            self.assertEqual(calls[i][0][1], item.request.destination)
-            self.assertEqual(calls[i][1], dict(data=item.request))
-        self.assertEqual(fetched, [1, 2])
-
-    @patch('pulp.server.content.sources.container.Thread', new=Mock())
-    @patch('pulp.server.content.sources.container.Queue', Mock())
-    @patch('pulp.server.content.sources.container.RequestQueue.get')
-    @patch('pulp.server.content.sources.container.DownloadRequest')
-    def test_next_canceled(self, fake_request, fake_get):
-        canceled = FakeEvent()
-
-        # test
-        queue = RequestQueue(canceled, Mock())
-        canceled.set()
-        fetched = list(queue.next())
-
-        # validation
-        self.assertFalse(fake_get.called)
-        self.assertFalse(fake_request.called)
-        self.assertEqual(fetched, [])
-
-    @patch('pulp.server.content.sources.container.Thread', new=Mock())
-    @patch('pulp.server.content.sources.container.Queue', Mock())
-    @patch('pulp.server.content.sources.container.RequestQueue.get')
-    @patch('pulp.server.content.sources.container.DownloadRequest')
-    def test_next_halted(self, fake_request, fake_get):
-        canceled = FakeEvent()
-
-        # test
-        queue = RequestQueue(canceled, Mock())
-        queue.halt()
-        fetched = list(queue.next())
-
-        # validation
-        self.assertFalse(fake_get.called)
-        self.assertFalse(fake_request.called)
-        self.assertEqual(fetched, [])
-
-    @patch('pulp.server.content.sources.container.Thread', new=Mock())
-    @patch('pulp.server.content.sources.container.Queue', Mock())
-    @patch('pulp.server.content.sources.container.RequestQueue.next')
-    def test_run(self, fake_next):
+    @patch('pulp.server.content.sources.container.NectarFeed')
+    def test_run(self, fake_feed):
         canceled = FakeEvent()
 
         # test
@@ -966,13 +877,13 @@ class TestRequestQueue(TestCase):
         queue.run()
 
         # validation
-        queue.downloader.download.assert_called_with(fake_next())
+        queue.downloader.download.assert_called_with(fake_feed())
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue', Mock())
     @patch('pulp.server.content.sources.container.RequestQueue.drain')
-    @patch('pulp.server.content.sources.container.RequestQueue.next')
-    def test_run_with_exception(self, fake_next, fake_drain):
+    @patch('pulp.server.content.sources.container.NectarFeed')
+    def test_run_with_exception(self, fake_feed, fake_drain):
         canceled = FakeEvent()
 
         # test
@@ -981,17 +892,17 @@ class TestRequestQueue(TestCase):
         queue.run()
 
         # validation
-        queue.downloader.download.assert_called_with(fake_next())
+        queue.downloader.download.assert_called_with(fake_feed())
         fake_drain.assert_called_with()
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue', Mock())
     @patch('pulp.server.content.sources.container.NectarDownloadReport.from_download_request')
-    @patch('pulp.server.content.sources.container.RequestQueue.next')
-    def test_drain(self, fake_next, fake_from):
+    @patch('pulp.server.content.sources.container.NectarFeed')
+    def test_drain(self, fake_feed, fake_from):
         canceled = FakeEvent()
         queued = [1, 2, 3]
-        fake_next.return_value = queued
+        fake_feed.return_value = queued
         fake_from.side_effect = queued
 
         # test
@@ -1018,6 +929,46 @@ class TestRequestQueue(TestCase):
 
         # validation
         self.assertTrue(queue._halted)
+
+
+class TestNectarFeed(TestCase):
+
+    def test_construction(self):
+        queue = Mock()
+
+        # test
+        feed = NectarFeed(queue)
+
+        # validation
+        self.assertEqual(feed.queue, queue)
+
+
+    @patch('pulp.server.content.sources.container.DownloadRequest')
+    def test_iter(self, fake_request):
+        req = namedtuple('Request', ['destination'])
+        queued = [
+            Item(req(1), 2),
+            Item(req(3), 4),
+            Item(req(5), 6),
+            None
+        ]
+        fake_queue = Mock()
+        fake_queue.get.side_effect = queued
+        fake_request.side_effect = [1, 2, 3]
+
+        # test
+        feed = NectarFeed(fake_queue)
+        fetched = list(feed)
+
+        # validation
+        fake_queue.get.assert_called_with()
+        calls = fake_request.call_args_list
+        self.assertEqual(len(calls), len(queued) - 1)
+        for i, item in enumerate(queued[:-1]):
+            self.assertEqual(calls[i][0][0], item.url)
+            self.assertEqual(calls[i][0][1], item.request.destination)
+            self.assertEqual(calls[i][1], dict(data=item.request))
+        self.assertEqual(fetched, [1, 2, 3])
 
 
 class TestListener(TestCase):
