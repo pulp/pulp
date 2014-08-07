@@ -109,6 +109,7 @@ class PropertyNotFound(PropertyException):
             'Required property "%s", not found',
             self.name)
 
+
 class PropertyNotValid(PropertyException):
 
     def __init__(self, name, value, pattern):
@@ -123,6 +124,7 @@ class PropertyNotValid(PropertyException):
             self.value,
             self.pattern)
 
+
 class Unparsable(Exception):
     """
     Raised if a value cannot be parsed into the requested type. For instance,
@@ -131,7 +133,6 @@ class Unparsable(Exception):
     """
     pass
 
-# -- public -------------------------------------------------------------------
 
 def parse_bool(value):
     """
@@ -149,6 +150,7 @@ def parse_bool(value):
         raise Unparsable()
 
     return value.upper() in ('YES','TRUE','1')
+
 
 class Config(dict):
     """
