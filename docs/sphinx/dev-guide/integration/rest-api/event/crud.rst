@@ -148,7 +148,7 @@ overwritten.
 :sample_request:`_` ::
 
   {
-    "event_types" : ["repo.sync.started"]
+    "event_types" : ["repo.sync.start"]
   }
 
 :sample_response:`200` ::
@@ -162,7 +162,7 @@ overwritten.
     ],
     "id": "4ff73d598a905b777d000014",
     "notifier_config": {
-      "url": "https://localhost/pulp/api/jdob/"
+      "url": "https://localhost/pulp/api"
     },
     "notifier_type_id": "http"
   }
