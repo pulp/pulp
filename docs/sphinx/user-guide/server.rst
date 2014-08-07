@@ -78,8 +78,9 @@ and publish.
 Celery Beat
 ^^^^^^^^^^^
 
-This is a singleton that is responsible for queueing scheduled tasks. It also
-plays a role in monitoring the availability of workers.
+This is a singleton (there must only be one celery beat process per pulp deployment)
+that is responsible for queueing scheduled tasks. It also plays a role in
+monitoring the availability of workers.
 
 ::
 
@@ -89,7 +90,8 @@ plays a role in monitoring the availability of workers.
 Resource Manager
 ^^^^^^^^^^^^^^^^
 
-This is a singleton celery worker that is responsible for assigning tasks to
+This is a singleton (there must only be one of these worker processes per pulp
+deployment) celery worker that is responsible for assigning tasks to
 other workers based on which resource they need to reserve. When you see log
 messages about tasks that reserve and release resources, this is the worker that
 performs those tasks.
