@@ -1,0 +1,8 @@
+# This is the expected structure of the os1_credentials dictionary. Note: if you have your
+# credentials in the enviroment variables used by Openstack, you do not need this dictionary.
+os1_credentials:
+    username: sample_username
+    password: sample_password
+    tenant_id: sample_tenant_id
+    tenant_name: sample_tenant_name
+    auth_url: http://sample_auth_url
