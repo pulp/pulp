@@ -9,7 +9,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from time import sleep
 from Queue import Queue, Empty, Full
 from threading import Thread, RLock
 from collections import namedtuple
@@ -81,7 +80,7 @@ class ContentContainer(object):
         reports = []
         catalog = managers.content_catalog_manager()
         for source_id, source in self.sources.items():
-            if canceled.isSet():
+            if canceled.is_set():
                 break
             if force or not catalog.has_entries(source_id):
                 try:
@@ -191,7 +190,7 @@ class NectarListener(DownloadEventListener):
         request = report.data
         request.downloaded = True
         listener = self.batch.listener
-        self.batch.finished(request)
+        self.batch.in_progress.decrement()
         if not listener:
             # nobody listening
             return
@@ -250,8 +249,6 @@ class Batch(object):
         |              |--> END
         ...
 
-    :ivar _mutex: The object mutex.
-    :type _mutex: RLock
     :ivar canceled: A cancel event.  Signals cancellation requested.
     :type canceled: threading.Event
     :ivar primary: A primary nectar downloader.  Used to download the
@@ -263,8 +260,8 @@ class Batch(object):
     :type requests: iterable
     :ivar listener: An optional download request listener.
     :type listener: Listener
-    :ivar in_progress: A set of request object IDs used to detect when ALL processing has completed.
-    :type in_progress: set
+    :ivar in_progress: Tracker used to detect when ALL processing has completed.
+    :type in_progress: Tracker
     :ivar queues: A dictionary of: RequestQueue keyed by source_id.
     :type queues: dict
     """
@@ -289,7 +286,7 @@ class Batch(object):
         self.sources = sources
         self.requests = requests
         self.listener = listener
-        self.in_progress = set()
+        self.in_progress = Tracker(canceled)
         self.queues = {}
 
     @property
@@ -299,7 +296,7 @@ class Batch(object):
         :return: True if canceled.
         :rtype: bool.
         """
-        return self.canceled.isSet()
+        return self.canceled.is_set()
     
     def dispatch(self, request):
         """
@@ -319,7 +316,7 @@ class Batch(object):
             queue.put(Item(request, url))
             dispatched = True
         except StopIteration:
-            self.finished(request)
+            self.in_progress.decrement()
         return dispatched
 
     def find_queue(self, source):
@@ -363,23 +360,24 @@ class Batch(object):
         :return: The download report.
         :rtype: DownloadReport
         """
+        count = 0
         report = DownloadReport()
         report.total_sources = len(self.sources)
 
         try:
+            
             for request in self.requests:
                 if self.is_canceled:
                     # canceled
                     break
                 request.find_sources(self.primary, self.sources)
-                self.started(request)
                 self.dispatch(request)
+                count += 1
         except Exception:
             self.canceled.set()
             raise
         finally:
-            while self.is_waiting():
-                sleep(0.5)
+            self.in_progress.wait(count)
             for queue in self.queues.values():
                 queue.put(None)
                 queue.halt()
@@ -392,31 +390,6 @@ class Batch(object):
             downloads.total_succeeded += listener.total_succeeded
             downloads.total_failed += listener.total_failed
         return report
-
-    def started(self, request):
-        """
-        The specified request has been started and is in progress.
-        :param request: The request that has been stared.
-        :type request: pulp.server.content.sources.model.Request
-        """
-        self.in_progress.add(request)
-
-    def finished(self, request):
-        """
-        The specified request has been completed and is no long in-progress.
-        A request is *completed* when it has either succeeded or failed with
-        no remaining content sources to try.
-        :param request: The request that has been stared.
-        :type request: pulp.server.content.sources.model.Request
-        """
-        self.in_progress.remove(request)
-
-    def is_waiting(self):
-        """
-        Get whether the batch is waiting for all of the download
-        requests be complete.
-        """
-        return not (self.is_canceled or len(self.in_progress) == 0)
 
 
 #
@@ -464,7 +437,7 @@ class RequestQueue(Thread):
         :return: True if should continue.
         :rtype: bool
         """
-        return not (self.canceled.isSet() or self._halted)
+        return not (self.canceled.is_set() or self._halted)
 
     def put(self, item):
         """
@@ -477,7 +450,7 @@ class RequestQueue(Thread):
         """
         while self._run:
             try:
-                self.queue.put(item, timeout=10)
+                self.queue.put(item, timeout=3)
                 break
             except Full:
                 # ignored
@@ -491,7 +464,7 @@ class RequestQueue(Thread):
         """
         while self._run:
             try:
-                return self.queue.get(timeout=10)
+                return self.queue.get(timeout=3)
             except Empty:
                 # ignored
                 pass
@@ -550,3 +523,43 @@ class NectarFeed(object):
                 return
             request = DownloadRequest(item.url, item.request.destination, data=item.request)
             yield request
+
+
+class Tracker(object):
+    """
+    A *decrement* event tracker.
+    :ivar canceled: A cancel event.  Signals cancellation requested.
+    :type canceled: threading.Event
+    :ivar queue: A queue containing *decrement* token.
+    :type queue: Queue
+    """
+
+    def __init__(self, canceled):
+        """
+        :param canceled: A cancel event.  Signals cancellation requested.
+        :type canceled: threading.Event
+        """
+        self.canceled = canceled
+        self.queue = Queue()
+
+    def decrement(self):
+        """
+        Add a *decrement* token.
+        """
+        self.queue.put(0)
+
+    def wait(self, count):
+        """
+        Wait for the specified number of *decrement* tokens.
+        :param count: The number of expected *decrement* tokens.
+        :type: count: int
+        """
+        if count < 0:
+            raise ValueError('must be >= 0')
+        while count > 0 and (not self.canceled.is_set()):
+            try:
+                self.queue.get(timeout=3)
+                count -= 1
+            except Empty:
+                # ignored
+                pass

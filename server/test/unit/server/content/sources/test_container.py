@@ -13,14 +13,14 @@ import inspect
 
 from unittest import TestCase
 
-from Queue import Full, Empty
+from Queue import Queue, Full, Empty
 from collections import namedtuple
 
 from mock import patch, Mock
 
 from pulp.server.content.sources.container import (
-    ContentContainer, NectarListener, Item, RequestQueue, Batch, DownloadReport, Listener,
-    NectarFeed)
+    ContentContainer, NectarListener, Item, RequestQueue, Batch, DownloadReport,
+    Listener, NectarFeed, Tracker)
 from pulp.server.content.sources.model import ContentSource
 
 
@@ -42,10 +42,11 @@ class TestContainer(TestCase):
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
     def test_download(self, fake_load, fake_refresh, fake_primary, fake_batch):
         path = Mock()
-        canceled = FakeEvent()
         downloader = Mock()
         requests = Mock()
         listener = Mock()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         _batch = Mock()
         _batch.download.return_value = 123
@@ -67,6 +68,8 @@ class TestContainer(TestCase):
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')
     def test_refresh(self, fake_manager, fake_load):
         sources = {}
+        canceled = Mock()
+        canceled.is_set.return_value = False
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock(return_value=[n])
@@ -77,7 +80,6 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
         container = ContentContainer('')
         report = container.refresh(canceled)
 
@@ -91,6 +93,8 @@ class TestContainer(TestCase):
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')
     def test_refresh_raised(self, fake_manager, fake_load):
         sources = {}
+        canceled = Mock()
+        canceled.is_set.return_value = False
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock(side_effect=ValueError('must be int'))
@@ -101,7 +105,6 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
         container = ContentContainer('')
         report = container.refresh(canceled)
 
@@ -116,6 +119,8 @@ class TestContainer(TestCase):
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')
     def test_forced_refresh(self, fake_manager, fake_load):
         sources = {}
+        canceled = Mock()
+        canceled.is_set.return_value = False
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock()
@@ -125,7 +130,6 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
         container = ContentContainer('')
         container.refresh(canceled, force=True)
 
@@ -145,8 +149,8 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
-        canceled.set()
+        canceled = Mock()
+        canceled.is_set.return_value = True
         container = ContentContainer('')
         container.refresh(canceled, force=True)
 
@@ -243,6 +247,7 @@ class TestNectarListener(TestCase):
     def test_download_succeeded(self):
         batch = Mock()
         batch.is_canceled = False
+        batch.in_progress = Mock()
         batch.listener = Mock()
         report = Mock()
         report.data = Mock()
@@ -252,7 +257,7 @@ class TestNectarListener(TestCase):
         listener.download_succeeded(report)
 
         # validation
-        batch.finished.assert_called_with(report.data)
+        batch.in_progress.decrement.assert_called_with()
         batch.listener.download_succeeded.assert_called_with(report.data)
         self.assertEqual(listener.total_succeeded, 1)
 
@@ -269,7 +274,7 @@ class TestNectarListener(TestCase):
         listener.download_succeeded(report)
 
         # validation
-        batch.finished.assert_called_with(report.data)
+        batch.in_progress.decrement.assert_called_with()
         self.assertFalse(batch.listener.download_succeeded.called)
         self.assertEqual(listener.total_succeeded, 1)
 
@@ -294,6 +299,7 @@ class TestNectarListener(TestCase):
         batch.is_canceled = False
         batch.listener = Mock()
         batch.dispatch.return_value = True
+        batch.in_progress = Mock()
         report = Mock()
         report.data = Mock()
         report.data.errors = []
@@ -306,6 +312,7 @@ class TestNectarListener(TestCase):
         # validation
         batch.dispatch.assert_called_with(report.data)
         self.assertFalse(batch.listener.download_failed.called)
+        self.assertFalse(batch.in_progress.decrement.called)
         self.assertEqual(len(report.data.errors), 1)
         self.assertEqual(report.data.errors[0], report.error_msg)
         self.assertEqual(listener.total_failed, 1)
@@ -377,13 +384,14 @@ class TestBatch(TestCase):
 
     @patch('pulp.server.content.sources.container.RLock')
     def test_construction(self, fake_lock):
-        canceled = FakeEvent()
         primary = Mock()
         sources = Mock()
         requests = Mock()
         listener = Mock()
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, primary, sources, requests, listener)
 
         # validation
@@ -393,33 +401,35 @@ class TestBatch(TestCase):
         self.assertEqual(batch.sources, sources)
         self.assertEqual(batch.requests, requests)
         self.assertEqual(batch.listener, listener)
-        self.assertEqual(len(batch.in_progress), 0)
+        self.assertEqual(batch.in_progress.canceled, canceled)
         self.assertEqual(len(batch.queues), 0)
-        self.assertTrue(isinstance(batch.in_progress, set))
+        self.assertTrue(isinstance(batch.in_progress, Tracker))
         self.assertTrue(isinstance(batch.queues, dict))
 
     @patch('pulp.server.content.sources.container.RLock', Mock())
     def test_is_canceled(self):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, None, None, None, None)
 
         # test
         self.assertFalse(batch.is_canceled)
-        canceled.set()
+        canceled.is_set.return_value = True
         self.assertTrue(batch.is_canceled)
 
     @patch('pulp.server.content.sources.container.RLock', Mock())
+    @patch('pulp.server.content.sources.container.Tracker.decrement')
     @patch('pulp.server.content.sources.container.Item')
     @patch('pulp.server.content.sources.container.Batch.find_queue')
-    def test_dispatch(self, fake_find, fake_item):
-        canceled = FakeEvent()
+    def test_dispatch(self, fake_find, fake_item, fake_decrement):
         fake_queue = Mock()
         fake_request = Mock()
         sources = [(Mock(), 'http://')]
         fake_request.sources = iter(sources)
         fake_find.return_value = fake_queue
-
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, None, None, None, None)
         dispatched = batch.dispatch(fake_request)
 
@@ -428,12 +438,12 @@ class TestBatch(TestCase):
         fake_item.assert_called_with(fake_request, sources[0][1])
         fake_queue.put.assert_called_with(fake_item())
         self.assertTrue(dispatched)
+        self.assertFalse(fake_decrement.called)
 
     @patch('pulp.server.content.sources.container.RLock', Mock())
     @patch('pulp.server.content.sources.container.Batch.find_queue')
-    @patch('pulp.server.content.sources.container.Batch.finished')
-    def test_dispatch_no_remaining_sources(self, fake_finished, fake_find):
-        canceled = FakeEvent()
+    @patch('pulp.server.content.sources.container.Tracker.decrement')
+    def test_dispatch_no_remaining_sources(self, fake_decrement, fake_find):
         fake_queue = Mock()
         fake_request = Mock()
         sources = []
@@ -441,11 +451,13 @@ class TestBatch(TestCase):
         fake_find.return_value = fake_queue
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, None, None, None, None)
         dispatched = batch.dispatch(fake_request)
 
         # validation
-        fake_finished.assert_called_with(fake_request)
+        fake_decrement.assert_called_once_with()
         self.assertFalse(dispatched)
         self.assertFalse(fake_queue.put.called)
         self.assertFalse(fake_find.called)
@@ -453,13 +465,14 @@ class TestBatch(TestCase):
     @patch('pulp.server.content.sources.container.RLock')
     @patch('pulp.server.content.sources.container.Batch._add_queue')
     def test_find_queue(self, fake_add, fake_lock):
-        canceled = FakeEvent()
         fake_source = Mock()
         fake_source.id = 'fake-id'
         fake_lock.__enter__ = Mock()
         fake_lock.__exit__ = Mock()
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, None, None, None, None)
         batch.queues[fake_source.id] = Mock()
         queue = batch.find_queue(fake_source)
@@ -471,13 +484,14 @@ class TestBatch(TestCase):
     @patch('pulp.server.content.sources.container.RLock')
     @patch('pulp.server.content.sources.container.Batch._add_queue')
     def test_find_queue_not_found(self, fake_add, fake_lock):
-        canceled = FakeEvent()
         fake_source = Mock()
         fake_source.id = 'fake-id'
         fake_lock.__enter__ = Mock()
         fake_lock.__exit__ = Mock()
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, None, None, None, None)
         queue = batch.find_queue(fake_source)
 
@@ -491,12 +505,13 @@ class TestBatch(TestCase):
     @patch('pulp.server.content.sources.container.NectarListener')
     @patch('pulp.server.content.sources.container.RequestQueue')
     def test_add_queue(self, fake_queue, fake_listener):
-        canceled = FakeEvent()
         fake_source = Mock()
         fake_source.id = 'fake-id'
         fake_queue().downloader = Mock()
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, None, None, None, None)
         queue = batch._add_queue(fake_source)
 
@@ -508,15 +523,10 @@ class TestBatch(TestCase):
         self.assertEqual(batch.queues[fake_source.id], fake_queue())
         self.assertEqual(queue, fake_queue())
 
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    @patch('pulp.server.content.sources.container.sleep')
-    @patch('pulp.server.content.sources.container.Batch.started')
-    @patch('pulp.server.content.sources.container.Batch.is_waiting')
+    @patch('pulp.server.content.sources.container.Tracker.wait')
     @patch('pulp.server.content.sources.container.Batch.dispatch')
-    def test_download(self, fake_dispatch, fake_waiting, fake_started, fake_sleep):
+    def test_download(self, fake_dispatch, fake_wait):
         primary = Mock()
-        canceled = FakeEvent()
-        fake_waiting.side_effect = [True, True, False]
         sources = [Mock(), Mock()]
         requests = [Mock(), Mock(), Mock()]
 
@@ -532,6 +542,8 @@ class TestBatch(TestCase):
         queue_2.downloader.event_listener.total_failed = 10
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, primary, sources, iter(requests), None)
         batch.queues = {'source-1': queue_1, 'source-2': queue_2}  # simulated
         report = batch.download()
@@ -544,14 +556,8 @@ class TestBatch(TestCase):
         self.assertEqual(len(calls), len(requests))
         for i, request in enumerate(requests):
             self.assertEqual(calls[i][0][0], requests[i])
-        # started
-        calls = fake_started.call_args_list
-        self.assertEqual(len(calls), len(requests))
-        for i, request in enumerate(requests):
-            self.assertEqual(calls[i][0][0], requests[i])
-        # waiting for completion
-        self.assertEqual(fake_waiting.call_count, 3)
-        self.assertEqual(fake_sleep.call_count, 2)
+        # wait
+        fake_wait.assert_called_with(len(requests))
         # queue shutdown
         for queue in batch.queues.values():
             queue.put.assert_called_with(None)
@@ -565,37 +571,29 @@ class TestBatch(TestCase):
         self.assertEqual(report.downloads['source-2'].total_succeeded, 200)
         self.assertEqual(report.downloads['source-2'].total_failed, 10)
 
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    @patch('pulp.server.content.sources.container.Batch.started')
-    @patch('pulp.server.content.sources.container.Batch.is_waiting')
+    @patch('pulp.server.content.sources.container.Tracker.wait')
     @patch('pulp.server.content.sources.container.Batch.dispatch')
-    def test_download_nothing(self, fake_dispatch, fake_waiting, fake_started):
+    def test_download_nothing(self, fake_dispatch, fake_wait):
         primary = Mock()
-        canceled = FakeEvent()
-        fake_waiting.return_value = False
         sources = []
         requests = []
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, primary, sources, iter(requests), None)
         report = batch.download()
 
         # validation
         # initial dispatch
         self.assertFalse(fake_dispatch.called)
-        self.assertFalse(fake_started.called)
         self.assertTrue(isinstance(report, DownloadReport))
         self.assertEqual(len(report.downloads), 0)
-        fake_waiting.assert_called_once_with()
+        fake_wait.assert_called_once_with(0)
 
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    @patch('pulp.server.content.sources.container.Batch.started')
-    @patch('pulp.server.content.sources.container.Batch.is_waiting')
+    @patch('pulp.server.content.sources.container.Tracker.wait')
     @patch('pulp.server.content.sources.container.Batch.dispatch')
-    def test_download_canceled(self, fake_dispatch, fake_waiting, fake_started):
-        canceled = FakeEvent()
-        fake_waiting.return_value = False
-
+    def test_download_canceled(self, fake_dispatch, fake_wait):
         queue_1 = Mock()
         queue_1.downloader = Mock()
         queue_1.downloader.event_listener = Mock()
@@ -608,7 +606,8 @@ class TestBatch(TestCase):
         queue_2.downloader.event_listener.total_failed = 10
 
         # test
-        canceled.set()
+        canceled = Mock()
+        canceled.is_set.return_value = True
         batch = Batch(canceled, None, [], [Mock()], None)
         batch.queues = {'source-1': queue_1, 'source-2': queue_2}  # simulated
         report = batch.download()
@@ -616,12 +615,13 @@ class TestBatch(TestCase):
         # validation
         # initial dispatch
         self.assertFalse(fake_dispatch.called)
-        self.assertFalse(fake_started.called)
         # queue shutdown
         for queue in batch.queues.values():
             queue.put.assert_called_with(None)
             queue.halt.assert_called_with()
             queue.join.assert_called_with()
+        # wait
+        fake_wait.assert_called_once_with(0)
         # report
         self.assertTrue(isinstance(report, DownloadReport))
         self.assertEqual(len(report.downloads), 2)
@@ -630,78 +630,27 @@ class TestBatch(TestCase):
         self.assertEqual(report.downloads['source-2'].total_succeeded, 200)
         self.assertEqual(report.downloads['source-2'].total_failed, 10)
 
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    @patch('pulp.server.content.sources.container.Batch.is_waiting')
+    @patch('pulp.server.content.sources.container.Tracker.wait')
     @patch('pulp.server.content.sources.container.Batch.dispatch')
-    def test_download_with_exception(self, fake_dispatch, fake_waiting):
+    def test_download_with_exception(self, fake_dispatch, fake_wait):
         primary = Mock()
-        canceled = FakeEvent()
-        fake_waiting.return_value = False
         fake_dispatch.side_effect = ValueError()
         sources = [Mock(), Mock()]
         requests = [Mock(), Mock(), Mock()]
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         batch = Batch(canceled, primary, sources, iter(requests), None)
         batch.queues = {'source-1': Mock(), 'source-2': Mock()}  # simulated
         self.assertRaises(ValueError, batch.download)
 
         # validation
-        self.assertEqual(fake_waiting.call_count, 1)
+        fake_wait.assert_called_once_with(0)
         for queue in batch.queues.values():
             queue.put.assert_called_with(None)
             queue.halt.assert_called_with()
             queue.join.assert_called_with()
-
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    def test_started(self):
-        request = Mock()
-
-        # test
-        batch = Batch(None, None, None, None, None)
-        batch.started(request)
-
-        # validation
-        self.assertTrue(request in batch.in_progress)
-        self.assertEqual(len(batch.in_progress), 1)
-
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    def test_finished(self):
-        request = Mock()
-
-        # test
-        batch = Batch(None, None, None, None, None)
-        batch.in_progress.add(request)
-        batch.finished(request)
-
-        # validation
-        self.assertFalse(request in batch.in_progress)
-        self.assertEqual(len(batch.in_progress), 0)
-
-    @patch('pulp.server.content.sources.container.RLock', Mock())
-    def test_is_waiting(self):
-        canceled = FakeEvent()
-        request = Mock()
-
-        # test
-        batch = Batch(canceled, None, None, None, None)
-
-        # 1 in-progress
-        canceled._set = False
-        batch.in_progress = {1}
-        self.assertTrue(batch.is_waiting())
-        # 1 in-progress but canceled
-        canceled._set = True
-        batch.in_progress = {1}
-        self.assertFalse(batch.is_waiting())
-        # 0 in-progress
-        canceled._set = False
-        batch.in_progress = set()
-        self.assertFalse(batch.is_waiting())
-        # 0 in-progress and canceled
-        canceled._set = True
-        batch.in_progress = set()
-        self.assertFalse(batch.is_waiting())
 
 
 class TestRequestQueue(TestCase):
@@ -710,12 +659,13 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread.setDaemon')
     @patch('pulp.server.content.sources.container.Queue')
     def test_construction(self, fake_queue, fake_setDaemon):
-        canceled = Mock()
         source = Mock()
         source.id = 'fake_id'
         source.max_concurrent = 10
 
         # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
         queue = RequestQueue(canceled, source)
         queue.setDaemon = Mock()
 
@@ -730,7 +680,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue', Mock())
     def test__run(self):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         queue = RequestQueue(canceled, Mock())
@@ -738,26 +689,27 @@ class TestRequestQueue(TestCase):
         # validation
         # all good
         queue._halted = False
-        canceled._set = False
+        canceled.is_set.return_value = False
         self.assertTrue(queue._run)
         # halted only
         queue._halted = True
-        canceled._set = False
+        canceled.is_set.return_value = False
         self.assertFalse(queue._run)
         # canceled only
         queue._halted = False
-        canceled._set = True
+        canceled.is_set.return_value = True
         self.assertFalse(queue._run)
         # both
         queue._halted = True
-        canceled._set = True
+        canceled.is_set.return_value = True
         self.assertFalse(queue._run)
 
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_put(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         item = Mock()
@@ -765,17 +717,18 @@ class TestRequestQueue(TestCase):
         queue.put(item)
 
         # validation
-        fake_queue().put.assert_called_with(item, timeout=10)
+        fake_queue().put.assert_called_with(item, timeout=3)
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_put_canceled(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         item = Mock()
         queue = RequestQueue(canceled, Mock())
-        canceled.set()
+        canceled.is_set.return_value = True
         queue.put(item)
 
         # validation
@@ -784,7 +737,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_put_halted(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         item = Mock()
@@ -798,7 +752,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_put_full(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
         fake_queue().put.side_effect = [Full(), Full(), None]
 
         # test
@@ -812,7 +767,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_get(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
         fake_queue().get.return_value = 123
 
         # test
@@ -820,17 +776,18 @@ class TestRequestQueue(TestCase):
         item = queue.get()
 
         # validation
-        fake_queue().get.assert_called_with(timeout=10)
+        fake_queue().get.assert_called_with(timeout=3)
         self.assertEqual(item, 123)
 
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_get_canceled(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         queue = RequestQueue(canceled, Mock())
-        canceled.set()
+        canceled.is_set.return_value = True
         item = queue.get()
 
         # validation
@@ -840,7 +797,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_get_halted(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         queue = RequestQueue(canceled, Mock())
@@ -854,7 +812,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_get_empty(self, fake_queue):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
         fake_queue().get.side_effect = [Empty(), Empty(), 123]
 
         # test
@@ -870,7 +829,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Queue', Mock())
     @patch('pulp.server.content.sources.container.NectarFeed')
     def test_run(self, fake_feed):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         queue = RequestQueue(canceled, Mock())
@@ -884,7 +844,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.RequestQueue.drain')
     @patch('pulp.server.content.sources.container.NectarFeed')
     def test_run_with_exception(self, fake_feed, fake_drain):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         queue = RequestQueue(canceled, Mock())
@@ -900,7 +861,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.NectarDownloadReport.from_download_request')
     @patch('pulp.server.content.sources.container.NectarFeed')
     def test_drain(self, fake_feed, fake_from):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
         queued = [1, 2, 3]
         fake_feed.return_value = queued
         fake_from.side_effect = queued
@@ -921,7 +883,8 @@ class TestRequestQueue(TestCase):
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue', Mock())
     def test_halt(self):
-        canceled = FakeEvent()
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
         # test
         queue = RequestQueue(canceled, Mock())
@@ -984,16 +947,68 @@ class TestListener(TestCase):
         self.assertTrue(inspect.ismethod(listener.download_failed))
 
 
-# using this so nobody thinks the tests are using threads.
+class TestTracker(TestCase):
 
+    def test_construction(self):
+        # test
+        canceled = Mock()
+        tracker = Tracker(canceled)
 
-class FakeEvent(object):
+        # validation
+        self.assertEqual(tracker.canceled, canceled)
+        self.assertTrue(isinstance(tracker.queue, Queue))
 
-    def __init__(self):
-        self._set = False
+    @patch('pulp.server.content.sources.container.Queue.put')
+    def test_decrement(self, fake_put):
+        # test
+        tracker = Tracker(None)
+        tracker.decrement()
 
-    def isSet(self):
-        return self._set
+        # validation
+        fake_put.assert_called_once_with(0)
 
-    def set(self):
-        self._set = True
+    @patch('pulp.server.content.sources.container.Queue.get')
+    def test_wait(self, fake_get):
+        events = [0, 0, 0]
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        fake_get.side_effect = events
+
+        # test
+        n = len(events)
+        tracker = Tracker(canceled)
+        tracker.wait(n)
+
+        # validation
+        self.assertEqual(canceled.is_set.call_count, n)
+        self.assertEqual(fake_get.call_count, n)
+
+    def test_wait_value_error(self):
+        # test
+        tracker = Tracker(None)
+        self.assertRaises(ValueError, tracker.wait, -1)
+
+    @patch('pulp.server.content.sources.container.Queue.get')
+    def test_wait_raising_empty(self, fake_get):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        tokens = [Empty(), 0, 0, 0]
+
+        _iter = iter(tokens)
+
+        def _get(*args, **kwargs):
+            token = _iter.next()
+            if isinstance(token, Exception):
+                raise token
+            else:
+                return token
+
+        fake_get.side_effect = _get
+
+        # test
+        tracker = Tracker(canceled)
+        tracker.wait(len(tokens) - 1)
+
+        # validation
+        self.assertEqual(canceled.is_set.call_count, len(tokens))
+        self.assertEqual(fake_get.call_count, len(tokens))
