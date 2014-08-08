@@ -9,79 +9,22 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import inspect
+
 from unittest import TestCase
 
-from mock import patch, Mock
-from nectar.request import DownloadRequest
+from Queue import Queue, Full, Empty
+from collections import namedtuple
 
-from pulp.server.content.sources.container import ContentContainer, NectarListener
-from pulp.server.content.sources.model import PrimarySource, ContentSource, Request
+from mock import patch, Mock
+
+from pulp.server.content.sources.container import (
+    ContentContainer, NectarListener, Item, RequestQueue, Batch, DownloadReport,
+    Listener, NectarFeed, Tracker)
+from pulp.server.content.sources.model import ContentSource
 
 
 class TestContainer(TestCase):
-
-    def test_collated(self):
-        source_id = 1
-        request_list = []
-
-        # simulated requests
-        # 0-8 need to be downloaded and have a next source.
-        # 6-7 have no next source.
-        # 9-10 are already downloaded.
-
-        for n in range(10):
-            r = Mock()
-            r.downloaded = n > 8
-            r.destination = 'path-%d' % n
-            if n < 6:
-                r.next_source.return_value = ('s-%d' % source_id, 'url-%d' % n)
-            else:
-                r.next_source.return_value = None
-            request_list.append(r)
-            if n % 3 == 0:
-                source_id += 1
-
-        # test
-        collated = ContentContainer.collated(request_list)
-
-        # validation
-        self.assertEqual(len(collated), 3)
-
-        for requests in collated.values():
-            for r in requests:
-                self.assertTrue(isinstance(r, DownloadRequest))
-
-        self.assertEqual(
-            [s.__dict__ for s in collated['s-1']],
-            [
-                DownloadRequest('url-0', 'path-0', data=request_list[0]).__dict__
-            ])
-        self.assertEqual(
-            [s.__dict__ for s in collated['s-2']],
-            [
-                DownloadRequest('url-1', 'path-1', data=request_list[1]).__dict__,
-                DownloadRequest('url-2', 'path-2', data=request_list[2]).__dict__,
-                DownloadRequest('url-3', 'path-3', data=request_list[3]).__dict__
-            ])
-        self.assertEqual(
-            [s.__dict__ for s in collated['s-3']],
-            [
-                DownloadRequest('url-4', 'path-4', data=request_list[4]).__dict__,
-                DownloadRequest('url-5', 'path-5', data=request_list[5]).__dict__,
-            ])
-
-    def test_collated_all_downloaded(self):
-        request_list = []
-        for n in range(10):
-            r = Mock()
-            r.downloaded = True
-            request_list.append(r)
-
-        # test
-        collated = ContentContainer.collated(request_list)
-
-        # validation
-        self.assertEqual(len(collated), 0)
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
     def test_construction(self, fake_load):
@@ -93,142 +36,40 @@ class TestContainer(TestCase):
         # validation
         fake_load.assert_called_with(path)
 
+    @patch('pulp.server.content.sources.container.Batch')
+    @patch('pulp.server.content.sources.container.PrimarySource')
+    @patch('pulp.server.content.sources.container.ContentContainer.refresh')
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
-    def test_download(self, fake_load):
-        sources = []
-        for n in range(3):
-            s = ContentSource('s-%d' % n, {})
-            s.get_downloader = Mock()
-            sources.append(s)
-
-        fake_load.return_value = sources
-
-        request_list = []
-        for n in range(6):
-            r = Request('T', {}, 'url-%d' % n, 'path-%d' % n)
-            r.find_sources = Mock(return_value=sources[n % 3:])
-            request_list.append(r)
-
-        collated = [
-            {
-                sources[0]: ['nectar-1'],
-                sources[1]: ['nectar-2', 'nectar-3', 'nectar-4'],
-                sources[2]: ['nectar-5', 'nectar-6']
-            },
-            {}
-        ]
-        fake_collated = Mock(side_effect=collated)
-
-        fake_listener = Mock()
-        canceled = FakeEvent()
-        fake_primary = PrimarySource(Mock())
-
-        # test
-        container = ContentContainer('')
-        container.refresh = Mock()
-        container.collated = fake_collated
-        report = container.download(canceled, fake_primary, request_list, fake_listener)
-
-        # validation
-        container.refresh.assert_called_with(canceled)
-
-        for r in request_list:
-            r.find_sources.assert_called_with(fake_primary, container.sources)
-
-        self.assertEqual(report.total_passes, 1)
-        self.assertEqual(report.total_sources, len(sources))
-        self.assertEqual(len(report.downloads), 3)
-        for source in sources:
-            self.assertEqual(report.downloads[source.id].total_succeeded, 0)
-            self.assertEqual(report.downloads[source.id].total_failed, 0)
-
-        for source in sources:
-            source.get_downloader.assert_called_with()
-            downloader = source.get_downloader()
-            listener = downloader.event_listener
-            self.assertEqual(listener.cancel_event, canceled)
-            self.assertEqual(listener.downloader, downloader)
-            self.assertEqual(listener.listener, fake_listener)
-            downloader.download.assert_called_with(collated[0][source])
-
-    @patch('pulp.server.content.sources.container.ContentSource.load_all')
-    def test_download_canceled_before_collated(self, fake_load):
-        fake_load.return_value = []
-        canceled = FakeEvent()
-        canceled.set()
-
-        # test
-        container = ContentContainer('')
-        container.refresh = Mock()
-        container.collated = Mock()
-        report = container.download(canceled, None, [], None)
-
-        container.refresh.assert_called_with(canceled)
-
-        self.assertFalse(container.collated.called)
-        self.assertEqual(report.total_passes, 0)
-        self.assertEqual(report.total_sources, 0)
-        self.assertEqual(len(report.downloads), 0)
-
-    @patch('pulp.server.content.sources.container.ContentSource.load_all')
-    def test_download_canceled_after_collated(self, fake_load):
-        sources = []
-        for n in range(3):
-            s = ContentSource('s-%d' % n, {})
-            s.get_downloader = Mock()
-            sources.append(s)
-
-        fake_load.return_value = sources
-
-        request_list = []
-        for n in range(6):
-            r = Request('T', {}, 'url-%d' % n, 'path-%d' % n)
-            r.find_sources = Mock(return_value=sources[n % 3:])
-            request_list.append(r)
-
-        collated = [
-            {
-                sources[0]: ['nectar-1'],
-                sources[1]: ['nectar-2', 'nectar-3', 'nectar-4'],
-                sources[2]: ['nectar-5', 'nectar-6']
-            },
-            {}
-        ]
-        fake_collated = Mock(side_effect=collated)
-
-        fake_listener = Mock()
+    def test_download(self, fake_load, fake_refresh, fake_primary, fake_batch):
+        path = Mock()
+        downloader = Mock()
+        requests = Mock()
+        listener = Mock()
         canceled = Mock()
-        canceled.isSet.side_effect = [False, True, True]
-        fake_primary = PrimarySource(Mock())
+        canceled.is_set.return_value = False
+
+        _batch = Mock()
+        _batch.download.return_value = 123
+        fake_batch.return_value = _batch
 
         # test
-        container = ContentContainer('')
-        container.refresh = Mock()
-        container.collated = fake_collated
-        report = container.download(canceled, fake_primary, request_list, fake_listener)
+        container = ContentContainer(path)
+        report = container.download(canceled, downloader, requests, listener)
 
         # validation
-        container.refresh.assert_called_with(canceled)
-
-        for r in request_list:
-            r.find_sources.assert_called_with(fake_primary, container.sources)
-
-        called = 0
-        for s in sources:
-            if s.get_downloader.called:
-                called += 1
-
-        self.assertEqual(called, 1)
-        self.assertEqual(report.total_passes, 1)
-        self.assertEqual(report.total_sources, len(sources))
-        self.assertEqual(len(report.downloads), 1)
-        self.assertEqual(report.downloads[sources[2].id].total_succeeded, 0)
-        self.assertEqual(report.downloads[sources[2].id].total_failed, 0)
+        fake_load.assert_called_with(path)
+        fake_refresh.assert_called_with(canceled)
+        fake_primary.assert_called_with(downloader)
+        fake_batch.assert_called_with(canceled, fake_primary(), fake_load(), requests, listener)
+        fake_batch().download.assert_called_with()
+        self.assertEqual(report, _batch.download.return_value)
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')
     def test_refresh(self, fake_manager, fake_load):
         sources = {}
+        canceled = Mock()
+        canceled.is_set.return_value = False
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock(return_value=[n])
@@ -239,7 +80,6 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
         container = ContentContainer('')
         report = container.refresh(canceled)
 
@@ -253,6 +93,8 @@ class TestContainer(TestCase):
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')
     def test_refresh_raised(self, fake_manager, fake_load):
         sources = {}
+        canceled = Mock()
+        canceled.is_set.return_value = False
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock(side_effect=ValueError('must be int'))
@@ -263,7 +105,6 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
         container = ContentContainer('')
         report = container.refresh(canceled)
 
@@ -278,6 +119,8 @@ class TestContainer(TestCase):
     @patch('pulp.server.content.sources.container.managers.content_catalog_manager')
     def test_forced_refresh(self, fake_manager, fake_load):
         sources = {}
+        canceled = Mock()
+        canceled.is_set.return_value = False
         for n in range(3):
             s = ContentSource('s-%d' % n, {})
             s.refresh = Mock()
@@ -287,7 +130,6 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
         container = ContentContainer('')
         container.refresh(canceled, force=True)
 
@@ -307,8 +149,8 @@ class TestContainer(TestCase):
         fake_load.return_value = sources
 
         # test
-        canceled = FakeEvent()
-        canceled.set()
+        canceled = Mock()
+        canceled.is_set.return_value = True
         container = ContentContainer('')
         container.refresh(canceled, force=True)
 
@@ -333,222 +175,840 @@ class TestContainer(TestCase):
 class TestNectarListener(TestCase):
 
     @patch('pulp.server.content.sources.container.log')
-    def test_notify(self, mock_log):
+    def test_forward(self, mock_log):
         method = Mock()
         report = Mock()
 
         # test
-        NectarListener._notify(method, report)
+        NectarListener._forward(method, report)
 
         # validations
         method.assert_called_with(report)
 
         # test (raised)
         method.side_effect = ValueError()
-        NectarListener._notify(method, report)
+        NectarListener._forward(method, report)
 
         # validation
         mock_log.exception.assert_called_with(str(method))
 
     def test_construction(self):
-        canceled = FakeEvent()
-        downloader = Mock()
-        listener = Mock()
+        batch = Mock()
 
         # test
-        nectar_listener = NectarListener(canceled, downloader, listener=listener)
-        self.assertEqual(nectar_listener.cancel_event, canceled)
-        self.assertEqual(nectar_listener.downloader, downloader)
-        self.assertEqual(nectar_listener.listener, listener)
+        listener = NectarListener(batch)
+
+        # validation
+        self.assertEqual(listener.batch, batch)
 
     def test_download_started(self):
-        canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
-        listener = Mock()
-        report = Mock()
-        report.data = {'A': 1}
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_started(report)
-
-        # validation
-        canceled.isSet.assert_called_with()
-        listener.download_started.assert_called_with(report.data)
-
-    def test_download_started_no_listener(self):
-        canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
-        listener = None
-        report = Mock()
-        report.data = {'A': 1}
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_started(report)
-
-        # validation
-        canceled.isSet.assert_called_with()
-
-    def test_download_started_and_canceled(self):
-        canceled = Mock()
-        canceled.isSet.return_value = True
-        downloader = Mock()
-        listener = Mock()
-        report = Mock()
-        report.data = {'A': 1}
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_started(report)
-
-        # validation
-        canceled.isSet.assert_called_with()
-        self.assertFalse(listener.download_started.called)
-
-    def test_download_succeeded(self):
-        canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
-        listener = Mock()
-        report = Mock()
-        request = Mock()
-        request.downloaded = False
-        report.data = request
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_succeeded(report)
-
-        # validation
-        canceled.isSet.assert_called_with()
-        self.assertTrue(request.downloaded)
-        listener.download_succeeded.assert_called_with(report.data)
-
-    def test_download_succeeded_no_listener(self):
-        canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
-        listener = None
-        report = Mock()
-        request = Mock()
-        request.downloaded = False
-        report.data = request
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_succeeded(report)
-
-        # validation
-        canceled.isSet.assert_called_with()
-        self.assertTrue(request.downloaded)
-
-    def test_download_succeeded_and_canceled(self):
-        canceled = Mock()
-        canceled.isSet.return_value = True
-        downloader = Mock()
-        listener = Mock()
+        batch = Mock()
+        batch.is_canceled = False
+        batch.listener = Mock()
         report = Mock()
         report.data = Mock()
 
         # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_succeeded(report)
+        listener = NectarListener(batch)
+        listener.download_started(report)
 
         # validation
-        canceled.isSet.assert_called_with()
-        self.assertFalse(listener.download_succeeded.called)
+        batch.listener.download_started.assert_called_with(report.data)
 
-    def test_download_failed_no_sources(self):
-        canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
+    def test_download_started_no_listener(self):
+        batch = Mock()
+        batch.is_canceled = False
+        batch.listener = Mock()
+        batch.listener.__nonzero__ = Mock(return_value=False)
+        report = Mock()
+        report.data = Mock()
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_started(report)
+
+        # validation
+        self.assertFalse(batch.listener.download_started.called)
+
+    def test_download_started_canceled(self):
+        batch = Mock()
+        batch.is_canceled = True
+        batch.listener = Mock()
+        report = Mock()
+        report.data = Mock()
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_started(report)
+
+        # validation
+        self.assertFalse(batch.listener.download_started.called)
+
+    def test_download_succeeded(self):
+        batch = Mock()
+        batch.is_canceled = False
+        batch.in_progress = Mock()
+        batch.listener = Mock()
+        report = Mock()
+        report.data = Mock()
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_succeeded(report)
+
+        # validation
+        batch.in_progress.decrement.assert_called_with()
+        batch.listener.download_succeeded.assert_called_with(report.data)
+        self.assertEqual(listener.total_succeeded, 1)
+
+    def test_download_succeeded_no_listener(self):
+        batch = Mock()
+        batch.is_canceled = False
+        batch.listener = Mock()
+        batch.listener.__nonzero__ = Mock(return_value=False)
+        report = Mock()
+        report.data = Mock()
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_succeeded(report)
+
+        # validation
+        batch.in_progress.decrement.assert_called_with()
+        self.assertFalse(batch.listener.download_succeeded.called)
+        self.assertEqual(listener.total_succeeded, 1)
+
+    def test_download_succeeded_canceled(self):
+        batch = Mock()
+        batch.is_canceled = True
+        batch.listener = Mock()
+        report = Mock()
+        report.data = Mock()
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_succeeded(report)
+
+        # validation
+        self.assertFalse(batch.finished.called)
+        self.assertFalse(batch.listener.download_succeeded.called)
+        self.assertEqual(listener.total_succeeded, 1)
+
+    def test_download_failed(self):
+        batch = Mock()
+        batch.is_canceled = False
+        batch.listener = Mock()
+        batch.dispatch.return_value = True
+        batch.in_progress = Mock()
+        report = Mock()
+        report.data = Mock()
+        report.data.errors = []
+        report.error_msg = 'something bad happened'
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_failed(report)
+
+        # validation
+        batch.dispatch.assert_called_with(report.data)
+        self.assertFalse(batch.listener.download_failed.called)
+        self.assertFalse(batch.in_progress.decrement.called)
+        self.assertEqual(len(report.data.errors), 1)
+        self.assertEqual(report.data.errors[0], report.error_msg)
+        self.assertEqual(listener.total_failed, 1)
+
+    def test_download_failed_not_dispatched(self):
+        batch = Mock()
+        batch.is_canceled = False
+        batch.listener = Mock()
+        batch.dispatch.return_value = False
+        report = Mock()
+        report.data = Mock()
+        report.data.errors = []
+        report.error_msg = 'something bad happened'
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_failed(report)
+
+        # validation
+        batch.dispatch.assert_called_with(report.data)
+        batch.listener.download_failed.assert_called_with(report.data)
+        self.assertEqual(len(report.data.errors), 1)
+        self.assertEqual(report.data.errors[0], report.error_msg)
+        self.assertEqual(listener.total_failed, 1)
+
+    def test_download_failed_canceled(self):
+        batch = Mock()
+        batch.is_canceled = True
+        batch.listener = Mock()
+        report = Mock()
+        report.data = Mock()
+        report.data.errors = []
+        report.error_msg = 'something bad happened'
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_failed(report)
+
+        # validation
+        self.assertFalse(batch.dispatch.called)
+        self.assertFalse(batch.listener.download_failed.called)
+        self.assertEqual(len(report.data.errors), 0)
+        self.assertEqual(listener.total_failed, 1)
+
+    def test_download_failed_not_dispatched_no_listener(self):
+        batch = Mock()
+        batch.is_canceled = False
+        batch.listener = Mock()
+        batch.listener.__nonzero__ = Mock(return_value=False)
+        batch.dispatch.return_value = False
+        report = Mock()
+        report.data = Mock()
+        report.data.errors = []
+        report.error_msg = 'something bad happened'
+
+        # test
+        listener = NectarListener(batch)
+        listener.download_failed(report)
+
+        # validation
+        batch.dispatch.assert_called_with(report.data)
+        self.assertFalse(batch.listener.download_failed.called)
+        self.assertEqual(len(report.data.errors), 1)
+        self.assertEqual(report.data.errors[0], report.error_msg)
+        self.assertEqual(listener.total_failed, 1)
+
+
+class TestBatch(TestCase):
+
+    @patch('pulp.server.content.sources.container.RLock')
+    def test_construction(self, fake_lock):
+        primary = Mock()
+        sources = Mock()
+        requests = Mock()
         listener = Mock()
-        report = Mock()
-        report.error_msg = 'just failed'
-        request = Mock()
-        request.errors = []
-        request.has_source.return_value = False
-        report.data = request
 
         # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_failed(report)
-
-        # validation
-        canceled.isSet.assert_called_with()
-        listener.download_failed.assert_called_with(report.data)
-        self.assertEqual(request.errors, [report.error_msg])
-
-    def test_download_failed_with_sources(self):
         canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
-        listener = Mock()
-        report = Mock()
-        report.error_msg = 'just failed'
-        request = Mock()
-        request.errors = []
-        request.has_source.return_value = True
-        report.data = request
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_failed(report)
-        self.assertEqual(request.errors, [report.error_msg])
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, primary, sources, requests, listener)
 
         # validation
-        canceled.isSet.assert_called_with()
-        self.assertFalse(listener.download_failed.called)
+        self.assertEqual(batch._mutex, fake_lock())
+        self.assertEqual(batch.canceled, canceled)
+        self.assertEqual(batch.primary, primary)
+        self.assertEqual(batch.sources, sources)
+        self.assertEqual(batch.requests, requests)
+        self.assertEqual(batch.listener, listener)
+        self.assertEqual(batch.in_progress.canceled, canceled)
+        self.assertEqual(len(batch.queues), 0)
+        self.assertTrue(isinstance(batch.in_progress, Tracker))
+        self.assertTrue(isinstance(batch.queues, dict))
 
-    def test_download_failed_no_listener(self):
+    @patch('pulp.server.content.sources.container.RLock', Mock())
+    def test_is_canceled(self):
         canceled = Mock()
-        canceled.isSet.return_value = False
-        downloader = Mock()
-        listener = None
-        report = Mock()
-        request = Mock()
-        request.errors = []
-        report.data = request
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, None, None, None, None)
 
         # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_failed(report)
-        self.assertEqual(request.errors, [report.error_msg])
+        self.assertFalse(batch.is_canceled)
+        canceled.is_set.return_value = True
+        self.assertTrue(batch.is_canceled)
 
-        # validation
-        canceled.isSet.assert_called_with()
-
-    def test_download_failed_and_canceled(self):
+    @patch('pulp.server.content.sources.container.RLock', Mock())
+    @patch('pulp.server.content.sources.container.Tracker.decrement')
+    @patch('pulp.server.content.sources.container.Item')
+    @patch('pulp.server.content.sources.container.Batch.find_queue')
+    def test_dispatch(self, fake_find, fake_item, fake_decrement):
+        fake_queue = Mock()
+        fake_request = Mock()
+        sources = [(Mock(), 'http://')]
+        fake_request.sources = iter(sources)
+        fake_find.return_value = fake_queue
+        # test
         canceled = Mock()
-        canceled.isSet.return_value = True
-        downloader = Mock()
-        listener = Mock()
-        report = Mock()
-        request = Mock()
-        report.data = request
-
-        # test
-        nectar_listener = NectarListener(canceled, downloader, listener)
-        nectar_listener.download_failed(report)
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, None, None, None, None)
+        dispatched = batch.dispatch(fake_request)
 
         # validation
-        canceled.isSet.assert_called_with()
-        self.assertFalse(listener.failed_succeeded.called)
+        fake_find.assert_called_with(sources[0][0])
+        fake_item.assert_called_with(fake_request, sources[0][1])
+        fake_queue.put.assert_called_with(fake_item())
+        self.assertTrue(dispatched)
+        self.assertFalse(fake_decrement.called)
+
+    @patch('pulp.server.content.sources.container.RLock', Mock())
+    @patch('pulp.server.content.sources.container.Batch.find_queue')
+    @patch('pulp.server.content.sources.container.Tracker.decrement')
+    def test_dispatch_no_remaining_sources(self, fake_decrement, fake_find):
+        fake_queue = Mock()
+        fake_request = Mock()
+        sources = []
+        fake_request.sources = iter(sources)
+        fake_find.return_value = fake_queue
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, None, None, None, None)
+        dispatched = batch.dispatch(fake_request)
+
+        # validation
+        fake_decrement.assert_called_once_with()
+        self.assertFalse(dispatched)
+        self.assertFalse(fake_queue.put.called)
+        self.assertFalse(fake_find.called)
+
+    @patch('pulp.server.content.sources.container.RLock')
+    @patch('pulp.server.content.sources.container.Batch._add_queue')
+    def test_find_queue(self, fake_add, fake_lock):
+        fake_source = Mock()
+        fake_source.id = 'fake-id'
+        fake_lock.__enter__ = Mock()
+        fake_lock.__exit__ = Mock()
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, None, None, None, None)
+        batch.queues[fake_source.id] = Mock()
+        queue = batch.find_queue(fake_source)
+
+        # validation
+        self.assertFalse(fake_add.called)
+        self.assertEqual(queue, batch.queues[fake_source.id])
+
+    @patch('pulp.server.content.sources.container.RLock')
+    @patch('pulp.server.content.sources.container.Batch._add_queue')
+    def test_find_queue_not_found(self, fake_add, fake_lock):
+        fake_source = Mock()
+        fake_source.id = 'fake-id'
+        fake_lock.__enter__ = Mock()
+        fake_lock.__exit__ = Mock()
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, None, None, None, None)
+        queue = batch.find_queue(fake_source)
+
+        # validation
+        fake_add.assert_called_with(fake_source)
+        self.assertEqual(batch._mutex.__enter__.call_count, 1)
+        self.assertEqual(batch._mutex.__exit__.call_count, 1)
+        self.assertEqual(queue, fake_add())
+
+    @patch('pulp.server.content.sources.container.RLock', Mock())
+    @patch('pulp.server.content.sources.container.NectarListener')
+    @patch('pulp.server.content.sources.container.RequestQueue')
+    def test_add_queue(self, fake_queue, fake_listener):
+        fake_source = Mock()
+        fake_source.id = 'fake-id'
+        fake_queue().downloader = Mock()
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, None, None, None, None)
+        queue = batch._add_queue(fake_source)
+
+        # validation
+        fake_queue.assert_called_with(canceled, fake_source)
+        fake_listener.assert_called_with(batch)
+        fake_queue().start.assert_called_with()
+        self.assertEqual(fake_queue().downloader.event_listener, fake_listener())
+        self.assertEqual(batch.queues[fake_source.id], fake_queue())
+        self.assertEqual(queue, fake_queue())
+
+    @patch('pulp.server.content.sources.container.Tracker.wait')
+    @patch('pulp.server.content.sources.container.Batch.dispatch')
+    def test_download(self, fake_dispatch, fake_wait):
+        primary = Mock()
+        sources = [Mock(), Mock()]
+        requests = [Mock(), Mock(), Mock()]
+
+        queue_1 = Mock()
+        queue_1.downloader = Mock()
+        queue_1.downloader.event_listener = Mock()
+        queue_1.downloader.event_listener.total_succeeded = 100
+        queue_1.downloader.event_listener.total_failed = 3
+        queue_2 = Mock()
+        queue_2.downloader = Mock()
+        queue_2.downloader.event_listener = Mock()
+        queue_2.downloader.event_listener.total_succeeded = 200
+        queue_2.downloader.event_listener.total_failed = 10
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, primary, sources, iter(requests), None)
+        batch.queues = {'source-1': queue_1, 'source-2': queue_2}  # simulated
+        report = batch.download()
+
+        # validation
+        # initial dispatch
+        for request in requests:
+            request.find_sources.assert_called_with(primary, sources)
+        calls = fake_dispatch.call_args_list
+        self.assertEqual(len(calls), len(requests))
+        for i, request in enumerate(requests):
+            self.assertEqual(calls[i][0][0], requests[i])
+        # wait
+        fake_wait.assert_called_with(len(requests))
+        # queue shutdown
+        for queue in batch.queues.values():
+            queue.put.assert_called_with(None)
+            queue.halt.assert_called_with()
+            queue.join.assert_called_with()
+        # report
+        self.assertTrue(isinstance(report, DownloadReport))
+        self.assertEqual(len(report.downloads), 2)
+        self.assertEqual(report.downloads['source-1'].total_succeeded, 100)
+        self.assertEqual(report.downloads['source-1'].total_failed, 3)
+        self.assertEqual(report.downloads['source-2'].total_succeeded, 200)
+        self.assertEqual(report.downloads['source-2'].total_failed, 10)
+
+    @patch('pulp.server.content.sources.container.Tracker.wait')
+    @patch('pulp.server.content.sources.container.Batch.dispatch')
+    def test_download_nothing(self, fake_dispatch, fake_wait):
+        primary = Mock()
+        sources = []
+        requests = []
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, primary, sources, iter(requests), None)
+        report = batch.download()
+
+        # validation
+        # initial dispatch
+        self.assertFalse(fake_dispatch.called)
+        self.assertTrue(isinstance(report, DownloadReport))
+        self.assertEqual(len(report.downloads), 0)
+        fake_wait.assert_called_once_with(0)
+
+    @patch('pulp.server.content.sources.container.Tracker.wait')
+    @patch('pulp.server.content.sources.container.Batch.dispatch')
+    def test_download_canceled(self, fake_dispatch, fake_wait):
+        queue_1 = Mock()
+        queue_1.downloader = Mock()
+        queue_1.downloader.event_listener = Mock()
+        queue_1.downloader.event_listener.total_succeeded = 100
+        queue_1.downloader.event_listener.total_failed = 3
+        queue_2 = Mock()
+        queue_2.downloader = Mock()
+        queue_2.downloader.event_listener = Mock()
+        queue_2.downloader.event_listener.total_succeeded = 200
+        queue_2.downloader.event_listener.total_failed = 10
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = True
+        batch = Batch(canceled, None, [], [Mock()], None)
+        batch.queues = {'source-1': queue_1, 'source-2': queue_2}  # simulated
+        report = batch.download()
+
+        # validation
+        # initial dispatch
+        self.assertFalse(fake_dispatch.called)
+        # queue shutdown
+        for queue in batch.queues.values():
+            queue.put.assert_called_with(None)
+            queue.halt.assert_called_with()
+            queue.join.assert_called_with()
+        # wait
+        fake_wait.assert_called_once_with(0)
+        # report
+        self.assertTrue(isinstance(report, DownloadReport))
+        self.assertEqual(len(report.downloads), 2)
+        self.assertEqual(report.downloads['source-1'].total_succeeded, 100)
+        self.assertEqual(report.downloads['source-1'].total_failed, 3)
+        self.assertEqual(report.downloads['source-2'].total_succeeded, 200)
+        self.assertEqual(report.downloads['source-2'].total_failed, 10)
+
+    @patch('pulp.server.content.sources.container.Tracker.wait')
+    @patch('pulp.server.content.sources.container.Batch.dispatch')
+    def test_download_with_exception(self, fake_dispatch, fake_wait):
+        primary = Mock()
+        fake_dispatch.side_effect = ValueError()
+        sources = [Mock(), Mock()]
+        requests = [Mock(), Mock(), Mock()]
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        batch = Batch(canceled, primary, sources, iter(requests), None)
+        batch.queues = {'source-1': Mock(), 'source-2': Mock()}  # simulated
+        self.assertRaises(ValueError, batch.download)
+
+        # validation
+        fake_wait.assert_called_once_with(0)
+        for queue in batch.queues.values():
+            queue.put.assert_called_with(None)
+            queue.halt.assert_called_with()
+            queue.join.assert_called_with()
 
 
-# using this so nobody thinks the tests are using threads.
+class TestRequestQueue(TestCase):
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Thread.setDaemon')
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_construction(self, fake_queue, fake_setDaemon):
+        source = Mock()
+        source.id = 'fake_id'
+        source.max_concurrent = 10
+
+        # test
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        queue = RequestQueue(canceled, source)
+        queue.setDaemon = Mock()
+
+        # validation
+        fake_queue.assert_called_with(source.max_concurrent)
+        fake_setDaemon.assert_called_with(True)
+        self.assertEqual(queue._halted, False)
+        self.assertEqual(queue.canceled, canceled)
+        self.assertEqual(queue.queue, fake_queue())
+        self.assertEqual(queue.downloader, source.get_downloader())
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue', Mock())
+    def test__run(self):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+
+        # validation
+        # all good
+        queue._halted = False
+        canceled.is_set.return_value = False
+        self.assertTrue(queue._run)
+        # halted only
+        queue._halted = True
+        canceled.is_set.return_value = False
+        self.assertFalse(queue._run)
+        # canceled only
+        queue._halted = False
+        canceled.is_set.return_value = True
+        self.assertFalse(queue._run)
+        # both
+        queue._halted = True
+        canceled.is_set.return_value = True
+        self.assertFalse(queue._run)
 
 
-class FakeEvent(object):
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_put(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
 
-    def __init__(self):
-        self._set = False
+        # test
+        item = Mock()
+        queue = RequestQueue(canceled, Mock())
+        queue.put(item)
 
-    def isSet(self):
-        return self._set
+        # validation
+        fake_queue().put.assert_called_with(item, timeout=3)
 
-    def set(self):
-        self._set = True
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_put_canceled(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        item = Mock()
+        queue = RequestQueue(canceled, Mock())
+        canceled.is_set.return_value = True
+        queue.put(item)
+
+        # validation
+        self.assertFalse(fake_queue().put.called)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_put_halted(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        item = Mock()
+        queue = RequestQueue(canceled, Mock())
+        queue.halt()
+        queue.put(item)
+
+        # validation
+        self.assertFalse(fake_queue().put.called)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_put_full(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        fake_queue().put.side_effect = [Full(), Full(), None]
+
+        # test
+        item = Mock()
+        queue = RequestQueue(canceled, Mock())
+        queue.put(item)
+
+        # validation
+        self.assertEqual(fake_queue().put.call_count, 3)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_get(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        fake_queue().get.return_value = 123
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        item = queue.get()
+
+        # validation
+        fake_queue().get.assert_called_with(timeout=3)
+        self.assertEqual(item, 123)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_get_canceled(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        canceled.is_set.return_value = True
+        item = queue.get()
+
+        # validation
+        self.assertFalse(fake_queue().get.called)
+        self.assertEqual(item, None)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_get_halted(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        queue.halt()
+        item = queue.get()
+
+        # validation
+        self.assertFalse(fake_queue().get.called)
+        self.assertEqual(item, None)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue')
+    def test_get_empty(self, fake_queue):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        fake_queue().get.side_effect = [Empty(), Empty(), 123]
+
+        # test
+        item = Mock()
+        queue = RequestQueue(canceled, Mock())
+        item = queue.get()
+
+        # validation
+        self.assertEqual(fake_queue().get.call_count, 3)
+        self.assertEqual(item, 123)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue', Mock())
+    @patch('pulp.server.content.sources.container.NectarFeed')
+    def test_run(self, fake_feed):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        queue.run()
+
+        # validation
+        queue.downloader.download.assert_called_with(fake_feed())
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue', Mock())
+    @patch('pulp.server.content.sources.container.RequestQueue.drain')
+    @patch('pulp.server.content.sources.container.NectarFeed')
+    def test_run_with_exception(self, fake_feed, fake_drain):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        queue.downloader.download.side_effect = ValueError()
+        queue.run()
+
+        # validation
+        queue.downloader.download.assert_called_with(fake_feed())
+        fake_drain.assert_called_with()
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue', Mock())
+    @patch('pulp.server.content.sources.container.NectarDownloadReport.from_download_request')
+    @patch('pulp.server.content.sources.container.NectarFeed')
+    def test_drain(self, fake_feed, fake_from):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        queued = [1, 2, 3]
+        fake_feed.return_value = queued
+        fake_from.side_effect = queued
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        queue.drain()
+
+        # validation
+        calls = fake_from.call_args_list
+        self.assertEqual(len(calls), len(queued))
+        for i, request in enumerate(queued):
+            self.assertEqual(calls[i][0][0], request)
+        calls = queue.downloader.fire_download_failed.call_args_list
+        for i, request in enumerate(queued):
+            self.assertEqual(calls[i][0][0], request)
+
+    @patch('pulp.server.content.sources.container.Thread', new=Mock())
+    @patch('pulp.server.content.sources.container.Queue', Mock())
+    def test_halt(self):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+
+        # test
+        queue = RequestQueue(canceled, Mock())
+        queue.halt()
+
+        # validation
+        self.assertTrue(queue._halted)
+
+
+class TestNectarFeed(TestCase):
+
+    def test_construction(self):
+        queue = Mock()
+
+        # test
+        feed = NectarFeed(queue)
+
+        # validation
+        self.assertEqual(feed.queue, queue)
+
+
+    @patch('pulp.server.content.sources.container.DownloadRequest')
+    def test_iter(self, fake_request):
+        req = namedtuple('Request', ['destination'])
+        queued = [
+            Item(req(1), 2),
+            Item(req(3), 4),
+            Item(req(5), 6),
+            None
+        ]
+        fake_queue = Mock()
+        fake_queue.get.side_effect = queued
+        fake_request.side_effect = [1, 2, 3]
+
+        # test
+        feed = NectarFeed(fake_queue)
+        fetched = list(feed)
+
+        # validation
+        fake_queue.get.assert_called_with()
+        calls = fake_request.call_args_list
+        self.assertEqual(len(calls), len(queued) - 1)
+        for i, item in enumerate(queued[:-1]):
+            self.assertEqual(calls[i][0][0], item.url)
+            self.assertEqual(calls[i][0][1], item.request.destination)
+            self.assertEqual(calls[i][1], dict(data=item.request))
+        self.assertEqual(fetched, [1, 2, 3])
+
+
+class TestListener(TestCase):
+
+    class MyListener(Listener):
+        pass
+
+    def test_declarations(self):
+        listener = TestListener.MyListener()
+        # validation
+        self.assertTrue(inspect.ismethod(listener.download_started))
+        self.assertTrue(inspect.ismethod(listener.download_succeeded))
+        self.assertTrue(inspect.ismethod(listener.download_failed))
+
+
+class TestTracker(TestCase):
+
+    def test_construction(self):
+        # test
+        canceled = Mock()
+        tracker = Tracker(canceled)
+
+        # validation
+        self.assertEqual(tracker.canceled, canceled)
+        self.assertTrue(isinstance(tracker.queue, Queue))
+
+    @patch('pulp.server.content.sources.container.Queue.put')
+    def test_decrement(self, fake_put):
+        # test
+        tracker = Tracker(None)
+        tracker.decrement()
+
+        # validation
+        fake_put.assert_called_once_with(0)
+
+    @patch('pulp.server.content.sources.container.Queue.get')
+    def test_wait(self, fake_get):
+        events = [0, 0, 0]
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        fake_get.side_effect = events
+
+        # test
+        n = len(events)
+        tracker = Tracker(canceled)
+        tracker.wait(n)
+
+        # validation
+        self.assertEqual(canceled.is_set.call_count, n)
+        self.assertEqual(fake_get.call_count, n)
+
+    def test_wait_value_error(self):
+        # test
+        tracker = Tracker(None)
+        self.assertRaises(ValueError, tracker.wait, -1)
+
+    @patch('pulp.server.content.sources.container.Queue.get')
+    def test_wait_raising_empty(self, fake_get):
+        canceled = Mock()
+        canceled.is_set.return_value = False
+        tokens = [Empty(), 0, 0, 0]
+
+        _iter = iter(tokens)
+
+        def _get(*args, **kwargs):
+            token = _iter.next()
+            if isinstance(token, Exception):
+                raise token
+            else:
+                return token
+
+        fake_get.side_effect = _get
+
+        # test
+        tracker = Tracker(canceled)
+        tracker.wait(len(tokens) - 1)
+
+        # validation
+        self.assertEqual(canceled.is_set.call_count, len(tokens))
+        self.assertEqual(fake_get.call_count, len(tokens))

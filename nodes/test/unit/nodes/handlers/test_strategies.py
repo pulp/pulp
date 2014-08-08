@@ -26,7 +26,6 @@ class TestStrategy(TestCase):
                 'content-world': {'total_failed': 2, 'total_succeeded': 100},
                 'content-galaxy': {'total_failed': 0, 'total_succeeded': 200}
             },
-            'total_passes': 1,
             'total_sources': 10
         }
 

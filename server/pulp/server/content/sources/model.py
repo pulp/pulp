@@ -37,6 +37,7 @@ REFRESH_FAILED = 'Refresh [%s] url: %s, failed: %s'
 
 PRIMARY_ID = '___/primary/___'
 
+
 class Request(object):
     """
     A download request object is used to request the downloading of a
@@ -50,8 +51,8 @@ class Request(object):
     :type url: str
     :ivar destination: The absolute path used to store the downloaded file.
     :type destination: str
-    :ivar sources: A list of tuple: (ContentSource, url).
-    :type sources: list
+    :ivar sources: An iterator of tuple: (ContentSource, url).
+    :type sources: iterator
     :ivar index: Used to iterate the list of sources.
     :type index: int
     :ivar errors: The list of download error messages.
@@ -76,7 +77,7 @@ class Request(object):
         self.url = url
         self.destination = destination
         self.downloaded = False
-        self.sources = []
+        self.sources = iter([])
         self.index = 0
         self.errors = []
         self.data = None
@@ -101,26 +102,7 @@ class Request(object):
             url = entry[constants.URL]
             resolved.append((source, url))
         resolved.sort()
-        self.sources = resolved
-
-    def next_source(self):
-        """
-        Used to iterate the list of sources.
-        :return: The next source or None when the list is exhausted.
-        :rtype: ContentSource
-        """
-        if self.has_source():
-            source = self.sources[self.index]
-            self.index += 1
-            return source
-
-    def has_source(self):
-        """
-        Get whether the list of content sources has been exhausted.
-        :return: True if not exhausted.
-        :rtype: bool
-        """
-        return self.index < len(self.sources)
+        self.sources = iter(resolved)
 
 
 class ContentSource(object):
@@ -234,6 +216,15 @@ class ContentSource(object):
         :rtype: str
         """
         return self.descriptor[constants.BASE_URL]
+
+    @property
+    def max_concurrent(self):
+        """
+        Get the download concurrency specified in the source definition.
+        :return: The download concurrency.
+        :rtype: int
+        """
+        return int(self.descriptor.get(constants.MAX_CONCURRENT, 2))
 
     @property
     def urls(self):
@@ -396,8 +387,6 @@ class DownloadDetails(object):
 class DownloadReport(object):
     """
     Download report.
-    :ivar total_passes: The total number of passes through the download logic.
-    :type total_passes: int
     :ivar total_sources: The total number of loaded sources.
     :type total_sources: int
     :ivar downloads: Dict of: DownloadDetails keyed by source ID.
@@ -405,7 +394,6 @@ class DownloadReport(object):
     """
 
     def __init__(self):
-        self.total_passes = 0
         self.total_sources = 0
         self.downloads = {}
 
@@ -415,10 +403,8 @@ class DownloadReport(object):
         :return: A dictionary representation.
         :rtype: dict
         """
-        return dict(
-            total_passes=self.total_passes,
-            total_sources=self.total_sources,
-            downloads=dict([(k, v.dict()) for k, v in self.downloads.items()]))
+        return dict(total_sources=self.total_sources,
+                    downloads=dict([(k, v.dict()) for k, v in self.downloads.items()]))
 
 
 class RefreshReport(object):
