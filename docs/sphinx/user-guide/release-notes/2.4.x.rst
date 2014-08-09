@@ -66,6 +66,17 @@ Bugs
 You can see the complete list of bugs that were
 `fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.0&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
 
+Known Issue
+-----------
+
+There was `one regression<https://bugzilla.redhat.com/show_bug.cgi?id=1128292>`_ discovered during
+the 2.4.0 QE cycle that has not been resolved as of the release. The 2.4.0 distributor publishes
+groups in a slightly different way than Anaconda expects during interactive kickstarting. This
+causes no groups to be chosen by default during the package group selection installation step. The
+Pulp team decided to release 2.4.0 anyway, as the workaround is for users to simply make sure to
+select at least one package group during the installation. Automated kickstarts are not affected by
+this issue.
+
 .. _2.3.x_upgrade_to_2.4.0:
 
 Upgrade Instructions for 2.3.x --> 2.4.0

@@ -175,7 +175,8 @@ Server
       our Quality Engineering team. We encourage feedback if you have tried this, positive or
       negative. If you wish to try this, each host that participates in the distributed Pulp
       application will need to have access to a shared /var/lib/pulp filesystem, including the web
-      servers and the task workers.
+      servers and the task workers. It is important that the httpd and celery processes are run by
+      users with identical UIDs and GIDs for permissions on the shared filesystem.
 
    .. note::
       For RabbitMQ installations, install Pulp server without any Qpid specific libraries using
@@ -246,7 +247,7 @@ Server
 
 #. There are two more services that need to be running, but it is important that these two only run
    once each (i.e., do not enable either of these on any more than one Pulp server, if you are
-   experimenting with our untested distributed installation).)
+   experimenting with our untested distributed installation).
 
    .. warning::
       
