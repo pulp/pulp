@@ -164,24 +164,27 @@ Server
     $ sudo systemctl enable qpidd
     $ sudo systemctl start qpidd
 
-#. Install the Pulp server, task workers, and their dependencies. This step may be performed on more
-   than one host if you wish to scale out either Pulp's task workers, or its HTTP interface with a
-   load balancer. For Pulp installation that use Qpid, install Pulp server using::
+#. Install the Pulp server, task workers, and their dependencies. For Pulp installations that use
+   Qpid, install Pulp server using::
 
     $ sudo yum groupinstall pulp-server-qpid
 
    .. warning::
-      Each host that participates in the distributed Pulp application will need to have access to a
-      shared /var/lib/pulp filesystem, including both the web servers and the task workers.
+      The Pulp team believes that Pulp's webserver and Celery workers can be deployed across several
+      machines (with load balancing for the HTTP requests), but this has not been formally tested by
+      our Quality Engineering team. We encourage feedback if you have tried this, positive or
+      negative. If you wish to try this, each host that participates in the distributed Pulp
+      application will need to have access to a shared /var/lib/pulp filesystem, including the web
+      servers and the task workers. It is important that the httpd and celery processes are run by
+      users with identical UIDs and GIDs for permissions on the shared filesystem.
 
    .. note::
       For RabbitMQ installations, install Pulp server without any Qpid specific libraries using
       ``sudo yum groupinstall pulp-server``. You may need to install additional RabbitMQ
       dependencies manually.
 
-#. For each host that you've installed the Pulp server on, edit ``/etc/pulp/server.conf``. Most
-   defaults will work, but these are sections you might consider looking at before proceeding. Each
-   section is documented in-line.
+#. Edit ``/etc/pulp/server.conf``. Most defaults will work, but these are sections you might
+   consider looking at before proceeding. Each section is documented in-line.
 
    * **email** if you intend to have the server send email (off by default)
    * **database** if your database resides on a different host or port
@@ -196,9 +199,9 @@ Server
    * **server** if you want to change the server's URL components, hostname, or default credentials
 
 #. Initialize Pulp's database. It is important that the broker is running before initializing
-   Pulp's database. It is also important to do this before starting Apache or any Pulp services,
-   but you only need to perform this step on one host that has the server package installed. The
-   database initialization needs to be run as the ``apache`` user, which can be done by running::
+   Pulp's database. It is also important to do this before starting Apache or any Pulp services.
+   The database initialization needs to be run as the ``apache`` user, which can be done by
+   running::
 
    $ sudo -u apache pulp-manage-db
 
@@ -206,8 +209,7 @@ Server
       If Apache or Pulp services are already running, restart them after running the
       ``pulp-manage-db`` command.
 
-#. For each Pulp host that you wish to handle HTTP requests, start Apache httpd and set it to start
-   on boot. For Upstart based systems::
+#. Start Apache httpd and set it to start on boot. For Upstart based systems::
 
     $ sudo service httpd start
     $ sudo chkconfig httpd on
@@ -220,10 +222,10 @@ Server
    .. _distributed_workers_installation:
 
 #. Pulp has a distributed task system that uses `Celery <http://www.celeryproject.org/>`_.
-   Begin by configuring, enabling and starting the Pulp workers on each host that you wish to
-   perform distributed tasks with. To configure the workers, edit ``/etc/default/pulp_workers``.
-   That file has inline comments that explain how to use each setting. After you've configured the
-   workers, it's time to enable and start them. For Upstart systems::
+   Begin by configuring, enabling and starting the Pulp workers. To configure the workers, edit
+   ``/etc/default/pulp_workers``. That file has inline comments that explain how to use each
+   setting. After you've configured the workers, it's time to enable and start them. For Upstart
+   systems::
 
       $ sudo chkconfig pulp_workers on
       $ sudo service pulp_workers start
@@ -244,12 +246,14 @@ Server
       see how the second worker is doing.
 
 #. There are two more services that need to be running, but it is important that these two only run
-   once each (i.e., do not enable either of these on any more than one Pulp server!)
+   once each (i.e., do not enable either of these on any more than one Pulp server, if you are
+   experimenting with our untested distributed installation).
 
    .. warning::
       
       ``pulp_celerybeat`` and ``pulp_resource_manager`` must both be singletons, so be sure that you
-      only enable each of these on one host. They do not have to run on the same host, however.
+      only enable each of these on one host if you are experimenting with Pulp's untested HA
+      deployment. They do not have to run on the same host, however.
 
    One some Pulp system, configure, start and enable the Celerybeat process. This process performs a
    job similar to a cron daemon for Pulp. Edit ``/etc/default/pulp_celerybeat`` to your liking, and
