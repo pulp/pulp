@@ -20,7 +20,7 @@ DEFAULT = {
         'port': '443',
         'api_prefix': '/pulp/api',
         'verify_ssl': 'true',
-        'ca_path': '/etc/pki/tls/certs/',
+        'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
         'upload_chunk_size': '1048576',
     },
     'client': {

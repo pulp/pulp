@@ -21,7 +21,7 @@ DEFAULT = {
         'api_prefix': '/pulp/api',
         'rsa_pub': '/etc/pki/pulp/consumer/server/rsa_pub.key',
         'verify_ssl': 'true',
-        'ca_path': '/etc/pki/tls/certs/',
+        'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
     },
     'authentication': {
         'rsa_key': '/etc/pki/pulp/consumer/rsa.key',
