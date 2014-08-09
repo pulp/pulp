@@ -30,8 +30,17 @@ New Features
   longer automatically populated and users will need to provide these values when they wish to
   configure Pulp installations to use OAuth. OAuth is now disabled by default.
 - Pulp has tightened the security in version 2.4.0 by adding functionality to validate the server
-  SSL certificate against trusted CA certificates. More information about these certificates
-  can be found in the :ref:`Installation Guide <ssl_validation>`.
+  SSL certificate against trusted CA certificates. This introduces two new settings (verify_ssl and
+  ca_path) to three different files (/etc/pulp/admin/admin.conf, /etc/pulp/consumer/consumer.conf
+  and /etc/pulp/nodes.conf). These settings are required as of now, so Pulp will not function
+  properly until you add these settings to those files. It is strongly recommended that verify_ssl
+  be set to 'True' for all production installations of Pulp. This is the default setting, and unless
+  you have deployed Pulp with SSL certificates that have been signed by a trusted certificate
+  authority, you will find that Pulp's clients give you error messages with this upgrade. You will
+  need to install signed SSL certificates for the web server to use in order to operate Pulp's
+  clients in a secure fashion. If you are unconcerned with security and wish to run Pulp for
+  evaluation purposes (and won't be using real passwords with Pulp), you can set verify_ssl to false
+  in these settings files and Pulp will revert to its former behavior.
 
 Deprecation
 -----------
@@ -103,7 +112,8 @@ For Qpid environments, to upgrade a consumer from 2.3.x --> 2.4.0, run the comma
 The upgrade will create a file called ``consumer.conf.rpmnew``, which contains the default
 ``consumer.conf`` for Pulp 2.4.0 consumers. The new ``consumer.conf.rpmnew`` file needs to be
 merged into your existing ``consumer.conf`` by hand as new, required configuration properties are
-introduced with 2.4.0, but portions of the old config will likely still be useful.
+introduced with 2.4.0, but portions of the old config will likely still be useful. For example, the
+newly required validate_ssl and ca_path settings must be included.
 
 Once the ``consumer.conf`` file is setup to use the new configuration, restart the consumer. On
 Upstart systems the restart is done using:
@@ -230,7 +240,12 @@ command on any machine that already had the Admin Client installed:
 The RPM install places the new admin.conf at ``/etc/pulp/admin/admin.conf.rpmnew`` so it won't
 overwrite the old one at install time. The contents of ``/etc/pulp/admin/admin.conf.rpmnew`` need
 to be manually merged into ``/etc/pulp/admin/admin.conf`` before the Admin Client can be used to
-connect to a 2.4.0 Pulp server or node.
+connect to a 2.4.0 Pulp server or node. Be sure to pay attention to all new settings, for example
+the new verify_ssl and ca_path settings.
+
+Repeat this same process with the ``/etc/pulp/nodes.conf.rpmnew`` file, which has also introduced
+new required settings. The Pulp team has plans to fix our configuration loaders to no longer require
+settings to be present to alleviate these issues.
 
 
 Rest API Changes
