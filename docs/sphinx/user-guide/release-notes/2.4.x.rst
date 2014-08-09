@@ -78,7 +78,7 @@ You can see the complete list of bugs that were
 Known Issue
 -----------
 
-There was `one regression<https://bugzilla.redhat.com/show_bug.cgi?id=1128292>`_ discovered during
+There was `one regression <https://bugzilla.redhat.com/show_bug.cgi?id=1128292>`_ discovered during
 the 2.4.0 QE cycle that has not been resolved as of the release. The 2.4.0 distributor publishes
 groups in a slightly different way than Anaconda expects during interactive kickstarting. This
 causes no groups to be chosen by default during the package group selection installation step. The
