@@ -421,6 +421,13 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
         self._test_fast_forward('test.xml')
 
     def _test_fast_forward(self, test_file, test_content=None):
+        """
+        :param test_file: The name of the file in the data/metadata/* directory to use for testing
+        :type test_file: str
+        :param test_content: The string to compare against.  If not specified the content of
+                             test_file is used
+        :type test_content: str
+        """
         test_file = os.path.join(self.working_dir, test_file)
         if test_content is None:
             test_content = ''
@@ -451,6 +458,9 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
 
     def test_write_file_header_fast_forward_missing_search_tag(self):
         self._test_fast_forward('test_missing_search_tag.xml')
+
+    def test_write_file_header_fast_forward_missing_end_tag(self):
+        self.assertRaises(Exception, self._test_fast_forward, 'test_missing_end_tag.xml')
 
     @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=8)
     def test_write_file_header_fast_forward_small_buffer_gzip(self):

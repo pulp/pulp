@@ -378,9 +378,10 @@ class FastForwardXmlFileContext(XmlFileContext):
                 content_buffer = self.original_file_handle.read(BUFFER_SIZE)
                 if not content_buffer:
                     # The search tag was never found, This is an empty file where no FF is necessary
-                    _LOG.debug(_('When attempting to fast forward the file %s, the search tag '
-                                 '%s was not found so the assumption is that no fast forward is to '
-                                 'take place.') % (self.metadata_file_path, start_tag))
+                    msg = _('When attempting to fast forward the file %(file)s, the search tag '
+                            '%(tag)s was not found so the assumption is that no fast forward is to '
+                            'take place.')
+                    _LOG.debug(msg, {'file': self.metadata_file_path, 'tag': start_tag})
                     return
                 content += content_buffer
                 index = content.find(start_tag)
@@ -395,7 +396,8 @@ class FastForwardXmlFileContext(XmlFileContext):
                 self.original_file_handle.seek(-amount_to_read, os.SEEK_CUR)
                 content_buffer = self.original_file_handle.read(amount_to_read)
                 if not content_buffer:
-                    raise Exception(_('Error: %s not found in the xml file.') % end_tag)
+                    raise Exception(_('Error: %(tag)s not found in the xml file.')
+                                    % {'tag': end_tag})
                 bytes_read = len(content_buffer)
                 self.original_file_handle.seek(-bytes_read, os.SEEK_CUR)
                 content = content_buffer + content
