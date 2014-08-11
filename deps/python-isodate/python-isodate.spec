@@ -61,6 +61,7 @@ for instance nanoseconds it will round it to microseconds.
 * Mon Aug 11 2014 Jeremy Cline <jcline@redhat.com> 0.5.0-4.pulp
 - Updated the docs in the spec file to reflect the new README name
   (jcline@redhat.com)
+- Added a patch to stop an infinite loop unpickling Duration objects
 
 * Mon Aug 11 2014 Jeremy Cline <jcline@redhat.com> 0.5.0-3.pulp
 - ISO8601Error are subclasses of ValueError now
