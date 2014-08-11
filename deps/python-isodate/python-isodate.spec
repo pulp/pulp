@@ -58,6 +58,10 @@ for instance nanoseconds it will round it to microseconds.
 %{python_sitelib}/*
 
 %changelog
+* Mon Aug 11 2014 Jeremy Cline <jcline@redhat.com> 0.5.0-4.pulp
+- Updated the docs in the spec file to reflect the new README name
+  (jcline@redhat.com)
+
 * Mon Aug 11 2014 Jeremy Cline <jcline@redhat.com> 0.5.0-3.pulp
 - ISO8601Error are subclasses of ValueError now
 - improve compatibility across various python variants and versions
