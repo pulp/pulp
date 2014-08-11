@@ -64,7 +64,7 @@ def parent_bindings(host, port=443):
         oauth_key=oauth.key,
         oauth_secret=oauth.secret,
         oauth_user=oauth.user_id,
-        validate_ssl_ca=verify_ssl,
+        verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(connection)
     return bindings
@@ -91,7 +91,7 @@ def pulp_bindings():
         oauth_key=key,
         oauth_secret=secret,
         oauth_user=oauth.user_id,
-        validate_ssl_ca=verify_ssl,
+        verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(connection)
     return bindings

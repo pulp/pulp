@@ -26,7 +26,7 @@ class TestCreateBindings(unittest.TestCase):
 
         bindings = launcher._create_bindings(self.config, None, 'username', 'password')
 
-        self.assertEqual(bindings.bindings.server.validate_ssl_ca, False)
+        self.assertEqual(bindings.bindings.server.verify_ssl, False)
         self.assertEqual(bindings.bindings.server.ca_path, self.ca_path)
 
     def test_verify_ssl_true(self):
@@ -40,5 +40,5 @@ class TestCreateBindings(unittest.TestCase):
 
         bindings = launcher._create_bindings(self.config, None, 'username', 'password')
 
-        self.assertEqual(bindings.bindings.server.validate_ssl_ca, True)
+        self.assertEqual(bindings.bindings.server.verify_ssl, True)
         self.assertEqual(bindings.bindings.server.ca_path, different_path)

@@ -27,7 +27,7 @@ class TestParentBindings(unittest.TestCase):
         bindings = resources.parent_bindings('host')
 
         self.assertEqual(bindings.bindings.server.ca_path, ca_path)
-        self.assertEqual(bindings.bindings.server.validate_ssl_ca, False)
+        self.assertEqual(bindings.bindings.server.verify_ssl, False)
 
     @mock.patch('pulp_node.resources.node_configuration')
     def test_verify_ssl_true(self, node_configuration):
@@ -43,7 +43,7 @@ class TestParentBindings(unittest.TestCase):
         bindings = resources.parent_bindings('host')
 
         self.assertEqual(bindings.bindings.server.ca_path, ca_path)
-        self.assertEqual(bindings.bindings.server.validate_ssl_ca, True)
+        self.assertEqual(bindings.bindings.server.verify_ssl, True)
 
 
 class TestPulpBindings(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestPulpBindings(unittest.TestCase):
         bindings = resources.pulp_bindings()
 
         self.assertEqual(bindings.bindings.server.ca_path, ca_path)
-        self.assertEqual(bindings.bindings.server.validate_ssl_ca, False)
+        self.assertEqual(bindings.bindings.server.verify_ssl, False)
 
     @mock.patch('pulp_node.resources.node_configuration')
     def test_verify_ssl_true(self, node_configuration):
@@ -80,4 +80,4 @@ class TestPulpBindings(unittest.TestCase):
         bindings = resources.pulp_bindings()
 
         self.assertEqual(bindings.bindings.server.ca_path, ca_path)
-        self.assertEqual(bindings.bindings.server.validate_ssl_ca, True)
+        self.assertEqual(bindings.bindings.server.verify_ssl, True)
