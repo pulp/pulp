@@ -24,6 +24,22 @@ from pulp.server.content.sources.container import (
 from pulp.server.content.sources.model import ContentSource
 
 
+class SideEffect(object):
+    """
+    Supports collection of side effects containing exceptions.
+    """
+
+    def __init__(self, values):
+        self.values = iter(values)
+
+    def __call__(self, *args, **kwargs):
+        value = next(self.values)
+        if isinstance(value, Exception):
+            raise value
+        else:
+            return value
+
+
 class TestContainer(TestCase):
 
     @patch('pulp.server.content.sources.container.ContentSource.load_all')
@@ -754,7 +770,7 @@ class TestRequestQueue(TestCase):
     def test_put_full(self, fake_queue):
         canceled = Mock()
         canceled.is_set.return_value = False
-        fake_queue().put.side_effect = [Full(), Full(), None]
+        fake_queue().put.side_effect = SideEffect([Full(), Full(), None])
 
         # test
         item = Mock()
@@ -814,10 +830,9 @@ class TestRequestQueue(TestCase):
     def test_get_empty(self, fake_queue):
         canceled = Mock()
         canceled.is_set.return_value = False
-        fake_queue().get.side_effect = [Empty(), Empty(), 123]
+        fake_queue().get.side_effect = SideEffect([Empty(), Empty(), 123])
 
         # test
-        item = Mock()
         queue = RequestQueue(canceled, Mock())
         item = queue.get()
 
@@ -994,16 +1009,7 @@ class TestTracker(TestCase):
         canceled.is_set.return_value = False
         tokens = [Empty(), 0, 0, 0]
 
-        _iter = iter(tokens)
-
-        def _get(*args, **kwargs):
-            token = _iter.next()
-            if isinstance(token, Exception):
-                raise token
-            else:
-                return token
-
-        fake_get.side_effect = _get
+        fake_get.side_effect = SideEffect(tokens)
 
         # test
         tracker = Tracker(canceled)
