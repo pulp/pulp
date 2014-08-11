@@ -5,7 +5,7 @@ Publish a Repository Group
 --------------------------
 
 Publish content from a repository group using a repository group's :term:`distributor`. This
-call always executes asynchronously and will return a :term:`call report`.
+call always executes asynchronously and returns a :term:`call report`.
 
 | :method:`post`
 | :path:`/v2/repo_groups/<repo_group_id>/actions/publish/`
@@ -61,4 +61,5 @@ call always executes asynchronously and will return a :term:`call report`.
 
 **Tags:**
 The task created will have the following tags:
-``"pulp:action:publish","pulp:repository_group:<repo_group_id>","pulp:repository_group_distributor:<group_distributor_id>"``
+``pulp:action:publish``, ``pulp:repository_group:<repo_group_id>``,
+``pulp:repository_group_distributor:<group_distributor_id``
