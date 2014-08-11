@@ -14,7 +14,7 @@
 import functools
 import unittest
 
-from pulp.plugins.model import Unit
+from pulp.plugins.model import Unit, Repository
 
 
 unit_key_factory = functools.partial(dict, a='foo', b='bar', c=3)
@@ -85,3 +85,40 @@ class TestUnitHash(unittest.TestCase):
         # swapped compared to unit1
         unit2.unit_key = unit_key_factory(a=unit1.unit_key['b'], b=unit1.unit_key['a'])
         self.assertNotEqual(hash(unit1), hash(unit2))
+
+
+class TestRepository(unittest.TestCase):
+
+    def test_init_no_values(self):
+        repo = Repository('foo')
+        self.assertEquals('foo', repo.id)
+        self.assertEquals(None, repo.display_name)
+        self.assertEquals(None, repo.description)
+        self.assertEquals(None, repo.notes)
+        self.assertEquals(None, repo.working_dir)
+        self.assertEquals({}, repo.content_unit_counts)
+        self.assertEquals(None, repo.last_unit_added)
+        self.assertEquals(None, repo.last_unit_removed)
+
+    def test_init_with_values(self):
+        repo = Repository('foo',
+                          display_name='bar',
+                          description='baz',
+                          notes={'apple': 'core'},
+                          working_dir='wdir',
+                          content_unit_counts={'unit': 3},
+                          last_unit_added=1,
+                          last_unit_removed=2
+                          )
+        self.assertEquals('foo', repo.id)
+        self.assertEquals('bar', repo.display_name)
+        self.assertEquals('baz', repo.description)
+        self.assertEquals({'apple': 'core'}, repo.notes)
+        self.assertEquals('wdir', repo.working_dir)
+        self.assertEquals({'unit': 3}, repo.content_unit_counts)
+        self.assertEquals(1, repo.last_unit_added)
+        self.assertEquals(2, repo.last_unit_removed)
+
+    def test_str(self):
+        repo = Repository('foo')
+        self.assertEquals('Repository [foo]', str(repo))

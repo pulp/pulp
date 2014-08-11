@@ -153,3 +153,14 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
         # Test
         self.assertRaises(ImporterConduitException, self.conduit.remove_unit, None)
+
+    def test_associate_existing(self):
+        mock_am = mock.Mock()
+        self.conduit._association_manager = mock_am
+        self.conduit._content_query_manager = mock.Mock()
+        mock_unit_key = {'some_key': 123}
+        mock_id = mock.Mock()
+        self.conduit._content_query_manager.get_content_unit_ids.return_value = [mock_id]
+        self.conduit.associate_existing('fake-type', [mock_unit_key])
+        mock_am.associate_all_by_ids.assert_called_once_with('repo-1', 'fake-type', [mock_id],
+                                                             'importer', 'importer-id')

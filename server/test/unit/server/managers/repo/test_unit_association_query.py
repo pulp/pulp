@@ -149,8 +149,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
             self.timestamps.append(dateutils.format_iso8601_datetime(ts))
 
         #   Assertions based on the test data
-        self.repo_1_count = reduce(lambda x, y: x + len(self.units[y]), ['alpha', 'beta', 'gamma', 'gamma'], 0)
-        self.repo_1_count_no_dupes = reduce(lambda x, y: x + len(self.units[y]), ['alpha', 'beta', 'gamma'], 0)
+        self.repo_1_count = reduce(lambda x, y: x + len(self.units[y]), ['alpha', 'beta', 'gamma'], 0)
         self.repo_2_count = reduce(lambda x, y: x + len(self.units[y]), ['beta', 'delta'], 0)
 
         # -- add units --------
@@ -398,7 +397,7 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         # Verify
 
         # The gamma units are associated twice, so they should only be returned once.
-        self.assertEqual(self.repo_1_count - len(self.units['gamma']), len(units))
+        self.assertEqual(self.repo_1_count, len(units))
 
         # there should be 2 gamma units returned
         gamma_units = [u for u in units if u['unit_type_id'] == 'gamma']

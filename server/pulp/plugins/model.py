@@ -1,21 +1,9 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 This module contains transfer objects for encapsulating data passed into a
 plugin method call. Objects defined in this module will have extra information
 bundled in that is relevant to the plugin's state for the given entity.
 """
+
 
 class Repository(object):
     """
@@ -43,16 +31,25 @@ class Repository(object):
     :ivar content_unit_counts: dictionary of unit types and the count of units
                                of that type associated with the repository.
     :type content_unit_counts: dict
+
+    :param last_unit_added: UTC datetime of the last time a unit was added to the repository
+    :type last_unit_added: datetime.datetime  with tzinfo
+
+    :param last_unit_removed: UTC datetime of the last time a unit was removed from the repository
+    :param last_unit_removed: datetime.datetime with tzinfo
     """
 
     def __init__(self, id, display_name=None, description=None, notes=None,
-                 working_dir=None, content_unit_counts=None):
+                 working_dir=None, content_unit_counts=None, last_unit_added=None,
+                 last_unit_removed=None):
         self.id = id
         self.display_name = display_name
         self.description = description
         self.notes = notes
         self.working_dir = working_dir
         self.content_unit_counts = content_unit_counts or {}
+        self.last_unit_added = last_unit_added
+        self.last_unit_removed = last_unit_removed
 
     def __str__(self):
         return 'Repository [%s]' % self.id

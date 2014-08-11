@@ -651,6 +651,52 @@ class TestScheduledCallCalculateNextRun(unittest.TestCase):
         self.assertEqual(dateutils.parse_iso8601_datetime('2014-01-10T22:00Z'),
                          dateutils.parse_iso8601_datetime(next_run))
 
+    @mock.patch('time.time')
+    def test_with_months_duration(self, mock_time):
+        """
+        Test calculating the next run when the interval is a Duration object and uses months
+        """
+        last_runs = ('2015-01-01T10:00Z', '2015-02-01T10:00Z', '2015-03-01T10:00Z', '2015-04-01T10:00Z')
+        expected_next_runs = ('2015-02-01T10:00Z', '2015-03-01T10:00Z', '2015-04-01T10:00Z', '2015-05-01T10:00Z')
+        times = (
+            1422784799.0,  # Just before 2015-02-01T10:00Z UTC
+            1425203999.0,  # Just before 2015-03-01T10:00Z UTC
+            1427882399.0,  # Just before 2015-04-01T10:00Z UTC
+            1430474399.0,  # Just before 2015-05-01T10:00Z UTC
+        )
+
+        for last_run, current_time, expected_next_run in zip(last_runs, times, expected_next_runs):
+            mock_time.return_value = current_time
+            call = ScheduledCall('2014-12-01T10:00Z/P1M', 'pulp.tasks.dosomething',
+                                 total_run_count=2, last_run_at=last_run)
+            next_run = call.calculate_next_run()
+
+            self.assertEqual(dateutils.parse_iso8601_datetime(expected_next_run),
+                             dateutils.parse_iso8601_datetime(next_run))
+
+    @mock.patch('time.time')
+    def test_with_years_duration(self, mock_time):
+        """
+        Test calculating the next run when the interval is a Duration object and uses years
+        """
+        last_runs = ('2015-01-01T10:00Z', '2016-01-01T10:00Z', '2017-01-01T10:00Z', '2018-01-01T10:00Z')
+        expected_next_runs = ('2016-01-01T10:00Z', '2017-01-01T10:00Z', '2018-01-01T10:00Z', '2019-01-01T10:00Z')
+        times = (
+            1451642000.0,  # Just before 2016-01-01T10:00Z UTC
+            1483264000.0,  # Just before 2017-01-01T10:00Z UTC
+            1514800000.0,  # Just before 2018-01-01T10:00Z UTC
+            1546336000.0,  # Just before 2019-01-01T10:00Z UTC
+        )
+
+        for last_run, current_time, expected_next_run in zip(last_runs, times, expected_next_runs):
+            mock_time.return_value = current_time
+            call = ScheduledCall('2014-01-01T10:00Z/P1M', 'pulp.tasks.dosomething',
+                                 total_run_count=2, last_run_at=last_run)
+            next_run = call.calculate_next_run()
+
+            self.assertEqual(dateutils.parse_iso8601_datetime(expected_next_run),
+                             dateutils.parse_iso8601_datetime(next_run))
+
 
 class TestScheduleEntryInit(unittest.TestCase):
     def test_captures_scheduled_call(self):

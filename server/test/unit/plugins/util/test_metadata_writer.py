@@ -1,4 +1,5 @@
 
+import glob
 import gzip
 import hashlib
 import unittest
@@ -7,11 +8,16 @@ import tempfile
 import shutil
 import sys
 
-from mock import Mock, patch
+from mock import Mock, patch, ANY
 
 from pulp.common.error_codes import PLP1005
 from pulp.devel.unit.server.util import assert_validation_exception
 from pulp.plugins.util.metadata_writer import MetadataFileContext, JSONArrayFileContext
+from pulp.plugins.util.metadata_writer import XmlFileContext
+from pulp.plugins.util.metadata_writer import FastForwardXmlFileContext
+from pulp.plugins.util.verification import TYPE_SHA1
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data'))
 
 
 class MetadataWriterTests(unittest.TestCase):
@@ -312,3 +318,199 @@ class TestJSONArrayFileContext(unittest.TestCase):
         self.assertEquals(self.context.metadata_file_handle.write.call_count, 0)
         self.context.add_unit_metadata('bar')
         self.context.metadata_file_handle.write.assert_called_once_with(',')
+
+
+class XmlFileContextTests(unittest.TestCase):
+
+    def setUp(self):
+        self.working_dir = tempfile.mkdtemp()
+        self.tag = 'metadata'
+        self.attributes = {'packages': '30'}
+        self.context = XmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                      self.tag, self.attributes)
+
+    def tearDown(self):
+        shutil.rmtree(self.working_dir)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_init_with_arguments(self, mock_generator):
+        self.assertEquals(self.context.root_attributes, self.attributes)
+        self.assertEquals(self.context.root_tag, 'metadata')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_init_with_no_properties(self, mock_generator):
+        self.context = XmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                      self.tag)
+        self.assertEquals(self.context.root_attributes, {})
+        self.assertEquals(self.context.root_tag, 'metadata')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle(self, mock_generator):
+        self.context._open_metadata_file_handle()
+        mock_generator.assert_called_once_with(self.context.metadata_file_handle, 'UTF-8')
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_header(self, mock_generator):
+        self.context._open_metadata_file_handle()
+        self.context._write_file_header()
+        mock_generator.return_value.startDocument.assert_called_once()
+        mock_generator.return_value.startElement.assert_called_once_with(self.tag, self.attributes)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_footer(self, mock_generator):
+        self.context._open_metadata_file_handle()
+        self.context._write_file_footer()
+        mock_generator.return_value.endElement.assert_called_once_with(self.tag)
+        mock_generator.return_value.endDocument.assert_called_once()
+
+
+class FastForwardXmlFileContextTests(unittest.TestCase):
+
+    def setUp(self):
+        self.working_dir = tempfile.mkdtemp()
+        expression = os.path.join(DATA_DIR, 'metadata', '*')
+        for file_name in glob.glob(expression):
+            shutil.copy(file_name, self.working_dir)
+        self.tag = 'metadata'
+        self.attributes = {'packages': '30'}
+
+    def tearDown(self):
+        shutil.rmtree(self.working_dir)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_non_existent_file(self, mock_generator):
+        os.remove(os.path.join(self.working_dir, 'test.xml'))
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, 'packages', self.attributes)
+        context._open_metadata_file_handle()
+        self.assertFalse(context.fast_forward)
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_existing_file(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, 'package', self.attributes)
+        context._open_metadata_file_handle()
+        self.assertTrue(context.fast_forward)
+        # check that the file has been renamed
+        self.assertEquals(context.existing_file, os.path.join(self.working_dir, 'original.test.xml'))
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_existing_gzip_file(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml.gz'),
+                                            self.tag, 'package', self.attributes)
+        context._open_metadata_file_handle()
+        self.assertTrue(context.fast_forward)
+        self.assertEquals(context.existing_file,
+                          os.path.join(self.working_dir, 'original.test.xml'))
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_open_metadata_file_handle_existing_checksum_file(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, 'package', self.attributes,
+                                            checksum_type=TYPE_SHA1)
+        context._open_metadata_file_handle()
+        self.assertTrue(context.fast_forward)
+        self.assertEquals(context.existing_file, os.path.join(self.working_dir, 'aa-test.xml'))
+
+    @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=8)
+    def test_write_file_header_fast_forward_small_buffer(self):
+        self._test_fast_forward('test.xml')
+
+    @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=2500)
+    def test_write_file_header_fast_forward_large_buffer(self):
+        self._test_fast_forward('test.xml')
+
+    def _test_fast_forward(self, test_file, test_content=None):
+        """
+        :param test_file: The name of the file in the data/metadata/* directory to use for testing
+        :type test_file: str
+        :param test_content: The string to compare against.  If not specified the content of
+                             test_file is used
+        :type test_content: str
+        """
+        test_file = os.path.join(self.working_dir, test_file)
+        if test_content is None:
+            test_content = ''
+            with open(test_file) as test_file_handle:
+                content = test_file_handle.read()
+                while content:
+                    test_content += content
+                    content = test_file_handle.read()
+            test_content = test_content[:test_content.rfind('</metadata')]
+        context = FastForwardXmlFileContext(test_file,
+                                            self.tag, 'package', self.attributes)
+
+        context._open_metadata_file_handle()
+        # Ensure the context doesn't find the opening tag during the initial search
+        context._write_file_header()
+        context.metadata_file_handle.close()
+        created_content = ''
+        with open(test_file) as test_file_handle:
+            content = test_file_handle.read()
+            while content:
+                created_content += content
+                content = test_file_handle.read()
+        self.assertEquals(test_content, created_content)
+
+    def test_write_file_header_fast_forward_empty_file(self):
+        test_content = '<?xml version="1.0" encoding="UTF-8"?>\n<metadata packages="30">'
+        self._test_fast_forward('test_empty.xml', test_content)
+
+    def test_write_file_header_fast_forward_missing_search_tag(self):
+        self._test_fast_forward('test_missing_search_tag.xml')
+
+    def test_write_file_header_fast_forward_missing_end_tag(self):
+        self.assertRaises(Exception, self._test_fast_forward, 'test_missing_end_tag.xml')
+
+    @patch('pulp.plugins.util.metadata_writer.BUFFER_SIZE', new=8)
+    def test_write_file_header_fast_forward_small_buffer_gzip(self):
+        test_file = os.path.join(self.working_dir, 'test.xml.gz')
+        test_content = ''
+
+        test_file_handle = gzip.open(test_file)
+        content = test_file_handle.read()
+        while content:
+            test_content += content
+            content = test_file_handle.read()
+        test_file_handle.close()
+        test_content = test_content[:test_content.rfind('</metadata')]
+        context = FastForwardXmlFileContext(test_file,
+                                            self.tag, 'package', self.attributes)
+
+        context._open_metadata_file_handle()
+        # Ensure the context doesn't find the opening tag during the initial search
+        context._write_file_header()
+        context.metadata_file_handle.close()
+        created_content = ''
+        test_file_handle = gzip.open(test_file)
+        content = test_file_handle.read()
+        while content:
+            created_content += content
+            content = test_file_handle.read()
+        test_file_handle.close()
+        self.assertEquals(test_content, created_content)
+
+
+    @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
+    def test_write_file_header_no_fast_forward(self, mock_generator):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'aa.xml'),
+                                            self.tag, self.attributes)
+
+        context._open_metadata_file_handle()
+        context._write_file_header()
+        mock_generator.return_value.startDocument.assert_called_once_with()
+
+    def test_close_metadata_file_handle_cleans_up_file(self):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes,
+                                            checksum_type=TYPE_SHA1)
+        context._open_metadata_file_handle()
+        context._close_metadata_file_handle()
+        self.assertFalse(os.path.exists(os.path.join(self.working_dir, 'aa-test.xml')))
+
+    def test_close_metadata_file_handle_no_fast_forward(self):
+        context = FastForwardXmlFileContext(os.path.join(self.working_dir, 'test.xml'),
+                                            self.tag, self.attributes, checksum_type=TYPE_SHA1)
+        context._open_metadata_file_handle()
+        context._close_metadata_file_handle()
+        self.assertTrue(context._is_closed(context.metadata_file_handle))

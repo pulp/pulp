@@ -311,7 +311,7 @@ class TestBindings(PluginTest):
         bindings = self.plugin.PulpBindings()
 
         mock_conn.assert_called_with('test-host', 443, cert_filename=CERT_PATH,
-                                     validate_ssl_ca=True, ca_path='/some/path/')
+                                     verify_ssl=True, ca_path='/some/path/')
         mock_bindings.assert_called_with(bindings, mock_conn())
 
 

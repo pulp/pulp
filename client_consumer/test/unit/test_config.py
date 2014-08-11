@@ -1,144 +1,111 @@
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import os
 
 from unittest import TestCase
-from cStringIO import StringIO
-from iniparse import INIConfig
 
 from mock import patch, Mock
 
-from pulp.common.config import Config, SectionNotFound
-from pulp.client.consumer.config import read_config, SCHEMA
-
-
-VALID = """
-[server]
-host = localhost
-port = 443
-api_prefix = /pulp/api
-
-[client]
-role = consumer
-
-[filesystem]
-extensions_dir = /usr/lib/pulp/consumer/extensions
-repo_file = /etc/yum.repos.d/pulp.repo
-mirror_list_dir = /etc/yum.repos.d
-gpg_keys_dir = /etc/pki/pulp-gpg-keys
-cert_dir = /etc/pki/pulp/client/repo
-id_cert_dir = /etc/pki/pulp/consumer/
-id_cert_filename = consumer-cert.pem
-
-[reboot]
-permit = False
-delay = 3
-
-[logging]
-filename = ~/.pulp/consumer.log
-call_log_filename = ~/.pulp/consumer_server_calls.log
-
-[output]
-poll_frequency_in_seconds = 1
-enable_color = true
-wrap_to_terminal = false
-wrap_width = 80
-
-[messaging]
-scheme = tcp
-host =
-port = 5672
-cacert =
-clientcert =
-
-[profile]
-minutes = 240
-"""
+from pulp.client.consumer.config import read_config, SCHEMA, DEFAULT
 
 
 class TestConfig(TestCase):
 
-    @patch('pulp.common.config.INIConfig')
-    def test_valid(self, mock_config):
-        mock_config.return_value = INIConfig(fp=StringIO(VALID))
+    @staticmethod
+    def schema_has_section(section):
+        for _section in [s[0] for s in SCHEMA]:
+            if _section == section:
+                return True
+        return False
+
+    @staticmethod
+    def schema_has_property(section, key):
+        for _section in SCHEMA:
+            if _section[0] != section:
+                continue
+            for _key in [p[0] for p in _section[2]]:
+                if _key == key:
+                    return True
+        return False
+
+    def test_default(self):
+        # Everything in the schema has a default.
+        for section in SCHEMA:
+            for key in [p[0] for p in section[2]]:
+                msg = '[%s].%s has no default' % (key, p[0])
+                self.assertTrue(key in DEFAULT[section[0]], msg=msg)
+        # Everything in the default is defined in the schema.
+        for section in DEFAULT:
+            self.assertTrue(self.schema_has_section(section))
+            for key in DEFAULT[section]:
+                msg = '[%s].%s has default but not found in the schema' % (section, key)
+                self.assertTrue(self.schema_has_property(section, key), msg=msg)
+
+
+    @patch('os.listdir')
+    @patch('os.path.expanduser')
+    @patch('os.path.exists', Mock(return_value=False))
+    @patch('pulp.client.consumer.config.Config')
+    def test_read(self, fake_config, fake_expanduser, fake_listdir):
+        fake_listdir.return_value = ['A', 'B', 'C']
+        fake_expanduser.return_value = '/home/pulp/.pulp/consumer.conf'
 
         # test
         cfg = read_config()
 
         # validation
-        self.assertTrue(isinstance(cfg, Config))
-        self.assertEqual(len(cfg), len(SCHEMA))
-        self.assertEqual(sorted(cfg.keys()), sorted([s[0] for s in SCHEMA]))
+        paths = [
+            '/etc/pulp/consumer/consumer.conf',
+            '/etc/pulp/consumer/conf.d/A',
+            '/etc/pulp/consumer/conf.d/B',
+            '/etc/pulp/consumer/conf.d/C',
+        ]
 
-    @patch('pulp.common.config.INIConfig')
-    def test_invalid(self, mock_config):
-        mock_config.return_value = INIConfig(fp=StringIO(''))
+        fake_config.assert_called_with(*paths)
+        fake_config().validate.assert_called_with(SCHEMA)
+        self.assertEqual(cfg, fake_config())
 
-        # test and validate an exception is raised.
-        self.assertRaises(SectionNotFound, read_config)
-
-    @patch('pulp.common.config.Config.validate')
-    @patch('pulp.common.config.INIConfig')
-    def test_validation_option(self, mock_config, mock_validate):
-        mock_config.return_value = INIConfig()
+    @patch('pulp.client.consumer.config.Config')
+    def test_read_paths(self, fake_config):
+        paths = ['path_A', 'path_B']
 
         # test
-        read_config(validate=False)
+        cfg = read_config(paths=paths)
 
         # validation
-        self.assertFalse(mock_validate.called)
+        fake_config.assert_called_with(*paths)
+        fake_config().validate.assert_called_with(SCHEMA)
+        self.assertEqual(cfg, fake_config())
 
-    @patch('os.path.exists', return_value=True)
-    @patch('__builtin__.open')
-    @patch('pulp.common.config.Config.validate')
-    @patch('pulp.common.config.INIConfig')
-    def test_default_paths(self, mock_config, mock_validate, mock_open, *unused):
-        mock_config.return_value = INIConfig()
-
-        mock_fp = Mock()
-        mock_fp.__enter__ = Mock(return_value=mock_fp)
-        mock_fp.__exit__ = Mock()
-        mock_open.return_value = mock_fp
+    @patch('pulp.client.consumer.config.Config')
+    def test_read_no_validation(self, fake_config):
+        paths = ['path_A', 'path_B']
 
         # test
-        read_config(validate=False)
+        cfg = read_config(paths=paths, validate=False)
+
+        # validation
+        fake_config.assert_called_with(*paths)
+        self.assertFalse(fake_config().validate.called)
+        self.assertEqual(cfg, fake_config())
+
+    @patch('os.listdir')
+    @patch('os.path.expanduser')
+    @patch('os.path.exists', Mock(return_value=True))
+    @patch('pulp.client.consumer.config.Config')
+    def test_read_with_override(self, fake_config, fake_expanduser, fake_listdir):
+        fake_listdir.return_value = ['A', 'B', 'C']
+        fake_expanduser.return_value = '/home/pulp/.pulp/consumer.conf'
+
+        # test
+        cfg = read_config()
 
         # validation
         paths = [
             '/etc/pulp/consumer/consumer.conf',
-            os.path.expanduser('~/.pulp/consumer.conf')
+            '/etc/pulp/consumer/conf.d/A',
+            '/etc/pulp/consumer/conf.d/B',
+            '/etc/pulp/consumer/conf.d/C',
+            '/home/pulp/.pulp/consumer.conf'
         ]
-        mock_open.assert_any(paths[0])
-        mock_open.assert_any(paths[1])
-        self.assertFalse(mock_validate.called)
 
-    @patch('__builtin__.open')
-    @patch('pulp.common.config.Config.validate')
-    @patch('pulp.common.config.INIConfig')
-    def test_explicit_paths(self, mock_config, mock_validate, mock_open):
-        mock_config.return_value = INIConfig()
-
-        mock_fp = Mock()
-        mock_fp.__enter__ = Mock(return_value=mock_fp)
-        mock_fp.__exit__ = Mock()
-        mock_open.return_value = mock_fp
-
-        paths = ['/tmp/a.conf', '/tmp/b.conf']
-
-        # test
-        read_config(paths, validate=False)
-
-        # validation
-
-        mock_open.assert_any(paths[0])
-        mock_open.assert_any(paths[1])
-        self.assertFalse(mock_validate.called)
+        fake_config.assert_called_with(*paths)
+        fake_config().validate.assert_called_with(SCHEMA)
+        self.assertEqual(cfg, fake_config())

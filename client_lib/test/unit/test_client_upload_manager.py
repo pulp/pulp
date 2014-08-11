@@ -170,6 +170,45 @@ class UploadManagerTests(unittest.TestCase):
         self.assertEqual(tracker.unit_type_id, 'type-1')
         self.assertEqual(tracker.unit_key, {'k1' : 'v1'})
         self.assertEqual(tracker.unit_metadata, {})
+        self.assertEqual(tracker.override_config, None)
+
+    def test_initialize_upload_with_override_config(self):
+        # Setup
+        self.upload_manager.initialize()
+        test_override_config = {'test-key': 'test-value'}
+
+        # Test
+        upload_id = self.upload_manager.initialize_upload('fn-1', 'repo-1', 'type-1', {'k1' : 'v1'}, {},
+                                                          test_override_config)
+
+        # Verify
+
+        # make sure it created the working directory
+        self.assertTrue(os.path.exists(self.upload_working_dir))
+
+        # Call to the server was correct
+        self.assertEqual(upload_id, MOCK_UPLOAD_ID)
+
+        # Tracker added to in memory cache
+        in_memory = self.upload_manager._get_tracker_file_by_id(upload_id)
+        self.assertTrue(in_memory is not None)
+        self.assertEqual(in_memory.upload_id, upload_id)
+
+        # Tracker file created on disk and has all of the specified values
+        tf_filename = self.upload_manager._tracker_filename(upload_id)
+        self.assertTrue(os.path.exists(tf_filename))
+
+        tracker = upload_util.UploadTracker.load(tf_filename)
+        self.assertEqual(tracker.filename, tf_filename)
+        self.assertEqual(tracker.upload_id, MOCK_UPLOAD_ID)
+        self.assertEqual(tracker.location, MOCK_LOCATION)
+        self.assertEqual(tracker.offset, 0)
+        self.assertEqual(tracker.source_filename, 'fn-1')
+        self.assertEqual(tracker.repo_id, 'repo-1')
+        self.assertEqual(tracker.unit_type_id, 'type-1')
+        self.assertEqual(tracker.unit_key, {'k1' : 'v1'})
+        self.assertEqual(tracker.unit_metadata, {})
+        self.assertEqual(tracker.override_config, test_override_config)
 
     def test_upload_single_pass(self):
         # Setup

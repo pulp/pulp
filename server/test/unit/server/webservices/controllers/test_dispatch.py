@@ -15,7 +15,7 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
-from pulp.server.exceptions import PulpCodedException, MissingResource
+from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers import dispatch as dispatch_controller
 
@@ -50,14 +50,16 @@ class TestTaskResource(PulpWebservicesTests):
 
     def test_DELETE_completed_celery_task(self):
         """
-        Test the DELETE() method raises a TaskComplete exception if the task is already complete.
+        Test the DELETE() method does not change the state of a task that is already complete
         """
         task_id = '1234abcd'
         now = datetime.utcnow()
         test_worker = Worker('test_worker', now)
         TaskStatusManager.create_task_status(task_id, test_worker.name,
                                              state=constants.CALL_FINISHED_STATE)
-        self.assertRaises(PulpCodedException, self.task_resource.DELETE, task_id)
+        self.task_resource.DELETE(task_id)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], constants.CALL_FINISHED_STATE)
 
     def test_DELETE_non_existing_celery_task(self):
         """

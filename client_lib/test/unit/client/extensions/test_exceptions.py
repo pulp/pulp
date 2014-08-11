@@ -1,16 +1,6 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+"""
+This module contains tests for the pulp.client.extensions.exceptions module.
+"""
 from _socket import gaierror
 import os
 from socket import error as socket_error
@@ -25,7 +15,7 @@ from pulp.devel.unit import base
 
 
 CERT_FILENAME = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                             '../data', 'test_client_exception_handler', 'cert.pem')
+                             '..', '..', '..', 'data', 'test_client_exception_handler', 'cert.pem')
 
 
 class ExceptionsLoaderTest(base.PulpClientTests):
@@ -318,6 +308,18 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual([TAG_FAILURE, TAG_PARAGRAPH], self.prompt.get_write_tags())
         self.assertTrue('May  9 12:39:37 2013 GMT' in self.recorder.lines[2])
 
+    def atest_handle_ssl_validation_error(self):
+        """
+        Tests handling untrusted SSL certificate issues.
+        """
+        e = exceptions.CertificateVerificationException(CERT_FILENAME)
+
+        code = self.exception_handler.handle_expired_client_cert(e)
+
+        self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
+        self.assertEqual([TAG_FAILURE, TAG_PARAGRAPH], self.prompt.get_write_tags())
+        self.assertTrue("The server's SSL certificate is untrusted" in self.recorder.lines[0])
+
     def test_unknown_host(self):
         """
         Tests the case where the client is configured with a host that cannot
@@ -372,4 +374,3 @@ class ExceptionsLoaderTest(base.PulpClientTests):
 
         # Verify
         self.assertEqual(date, 'May  9 12:39:37 2013 GMT')
-

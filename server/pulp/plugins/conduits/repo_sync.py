@@ -78,6 +78,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         SearchUnitsMixin.__init__(self, ImporterConduitException)
 
         self._association_manager = manager_factory.repo_unit_association_manager()
+        self._content_query_manager = manager_factory.content_query_manager()
 
         self._removed_count = 0
 
@@ -113,6 +114,21 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         except Exception, e:
             logger.exception(_('Content unit unassociation failed'))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
+
+    def associate_existing(self, unit_type_id, search_dicts):
+        """
+        Associates existing units with a repo
+
+        :param unit_type_id: unit type id
+        :type  unit_type_id: str
+        :param search_dicts: search dicts for units to associate with repo
+                             (example: list of unit key dicts)
+        :type  search_dicts: list of dicts
+        """
+        unit_ids = self._content_query_manager.get_content_unit_ids(unit_type_id, search_dicts)
+        self._association_manager.associate_all_by_ids(self.repo_id, unit_type_id, unit_ids,
+                                                       self.association_owner_type,
+                                                       self.association_owner_id)
 
     def build_success_report(self, summary, details):
         """

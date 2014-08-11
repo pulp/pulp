@@ -195,24 +195,17 @@ class BindTest(base.PulpWebserviceTests):
             distributor_id=DISTRIBUTOR_ID)
 
     @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
-    def test_bindings_get_auth(self, mock_headers):
+    def test_bindings_get_returns_405(self, mock_headers):
         """
-        Test that when the proper authentication information is missing, the server returns a 401 error
-        when ConsumerGroupBindings.GET is called
+        Test that the GET (all or one) calls for consumer group bindings return 405 (Method not
+        allowed) as expected since we don't store bindings for a consumer group.
         """
         path = '/v2/consumer_groups/%s/bindings/' % GROUP_ID
         call_status, call_body = self.get(path)
-        self.assertEqual(401, call_status)
-
-    @mock.patch.object(base.PulpWebserviceTests, 'HEADERS', spec=dict)
-    def test_binding_get_auth(self, mock_headers):
-        """
-        Test that when the proper authentication information is missing, the server returns a 401 error
-        when ConsumerGroupBinding.GET is called
-        """
+        self.assertEqual(405, call_status)
         path = '/v2/consumer_groups/%s/bindings/%s/%s/' % (GROUP_ID, REPO_ID, DISTRIBUTOR_ID)
         call_status, call_body = self.get(path)
-        self.assertEqual(401, call_status)
+        self.assertEqual(405, call_status)
 
     def test_bindings_invalid_repo_distributor(self):
         """

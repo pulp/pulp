@@ -1,4 +1,4 @@
-from pulp.common.config import ANY, BOOL, Config, REQUIRED
+from pulp.common.config import ANY, BOOL, Config, REQUIRED, parse_bool
 from pulp.server.config import config as pulp_conf
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
@@ -56,7 +56,7 @@ def parent_bindings(host, port=443):
     """
     node_conf = node_configuration()
     oauth = node_conf.parent_oauth
-    verify_ssl = False if node_conf.main.verify_ssl.lower() == 'false' else True
+    verify_ssl = parse_bool(node_conf.main.verify_ssl)
     ca_path = node_conf.main.ca_path
     connection = PulpConnection(
         host=host,
@@ -64,7 +64,7 @@ def parent_bindings(host, port=443):
         oauth_key=oauth.key,
         oauth_secret=oauth.secret,
         oauth_user=oauth.user_id,
-        validate_ssl_ca=verify_ssl,
+        verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(connection)
     return bindings
@@ -91,7 +91,7 @@ def pulp_bindings():
         oauth_key=key,
         oauth_secret=secret,
         oauth_user=oauth.user_id,
-        validate_ssl_ca=verify_ssl,
+        verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(connection)
     return bindings

@@ -3,7 +3,7 @@
 
 Name:           python-isodate
 Version:        0.5.0
-Release:        1.pulp%{?dist}
+Release:        4.pulp%{?dist}
 Summary:        An ISO 8601 date/time/duration parser and formater
 Group:          Development/Libraries
 
@@ -11,7 +11,7 @@ License:        BSD
 
 URL:            http://cheeseshop.python.org/pypi/isodate
 Source0:        isodate-%{version}.tar.gz
-Patch0:         isodate-tzinfo.patch
+Patch0:         isodate-duration.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  python-setuptools
 BuildArch:      noarch
@@ -54,10 +54,22 @@ for instance nanoseconds it will round it to microseconds.
 
 %files
 %defattr(-,root,root,-)
-%doc CHANGES.txt README.txt TODO.txt
+%doc CHANGES.txt README.rst TODO.txt
 %{python_sitelib}/*
 
 %changelog
+* Mon Aug 11 2014 Jeremy Cline <jcline@redhat.com> 0.5.0-4.pulp
+- Updated the docs in the spec file to reflect the new README name
+  (jcline@redhat.com)
+- Added a patch to stop an infinite loop unpickling Duration objects
+
+* Mon Aug 11 2014 Jeremy Cline <jcline@redhat.com> 0.5.0-3.pulp
+- ISO8601Error are subclasses of ValueError now
+- improve compatibility across various python variants and versions
+- raise exceptions when using fractional years and months in date
+  maths with durations
+- renamed method todatetime on Duration objects to totimedelta
+
 * Wed Nov 21 2012 Michael Hrivnak <mhrivnak@redhat.com> 0.5.0-1.pulp
 - Adding new isodate source. (mhrivnak@redhat.com)
 

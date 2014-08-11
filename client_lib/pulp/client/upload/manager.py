@@ -134,7 +134,8 @@ class UploadManager(object):
         """
         pass
 
-    def initialize_upload(self, filename, repo_id, unit_type_id, unit_key, unit_metadata):
+    def initialize_upload(self, filename, repo_id, unit_type_id, unit_key, unit_metadata,
+                          override_config=None):
         """
         Called at the outset of a new upload request. This call requests the
         server create a new upload request to be able to upload bits to it.
@@ -181,6 +182,7 @@ class UploadManager(object):
         tracker_file.unit_type_id = unit_type_id
         tracker_file.unit_key = unit_key
         tracker_file.unit_metadata = unit_metadata
+        tracker_file.override_config = override_config
         tracker_file.source_filename = filename
 
         # Save the tracker file to disk
@@ -294,7 +296,8 @@ class UploadManager(object):
             raise IncompleteUploadException()
 
         response = self.bindings.uploads.import_upload(upload_id, tracker.repo_id,
-                   tracker.unit_type_id, tracker.unit_key, tracker.unit_metadata)
+                   tracker.unit_type_id, tracker.unit_key, tracker.unit_metadata,
+                   tracker.override_config)
 
         return response
 

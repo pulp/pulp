@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains functionality common across all repository-related managers.
 
@@ -31,10 +18,27 @@ working directory is simply deleted.
 
 import os
 
+from pulp.common import dateutils
 from pulp.server import config as pulp_config
-from pulp.plugins.model import Repository, RelatedRepository, RepositoryGroup, RelatedRepositoryGroup
+from pulp.plugins.model import Repository, RelatedRepository, RepositoryGroup, \
+    RelatedRepositoryGroup
 
-# -- single repo calls --------------------------------------------------------
+
+def _ensure_tz_specified(time_stamp):
+    """
+    Check a datetime that came from the database to ensure it has a timezone specified in UTC
+    Mongo doesn't include the TZ info so if no TZ is set this assumes UTC.
+
+    :param time_stamp: a datetime object to ensure has UTC tzinfo specified
+    :type time_stamp: datetime.datetime
+    :return: The time_stamp with a timezone specified
+    :rtype: datetime.datetime
+    """
+    if time_stamp:
+        time_stamp = dateutils.to_utc_datetime(time_stamp, no_tz_equals_local_tz=False)
+
+    return time_stamp
+
 
 def to_transfer_repo(repo_data):
     """
@@ -49,7 +53,9 @@ def to_transfer_repo(repo_data):
     @rtype:  pulp.plugins.model.Repository}
     """
     r = Repository(repo_data['id'], repo_data['display_name'], repo_data['description'],
-                   repo_data['notes'], content_unit_counts=repo_data['content_unit_counts'])
+                   repo_data['notes'], content_unit_counts=repo_data['content_unit_counts'],
+                   last_unit_added=_ensure_tz_specified(repo_data.get('last_unit_added')),
+                   last_unit_removed=_ensure_tz_specified(repo_data.get('last_unit_removed')))
     return r
 
 
@@ -68,8 +74,10 @@ def to_related_repo(repo_data, configs):
     @return: transfer object used in many plugin API calls
     @rtype:  pulp.plugins.model.RelatedRepository
     """
-    r = RelatedRepository(repo_data['id'], configs, repo_data['display_name'], repo_data['description'], repo_data['notes'])
+    r = RelatedRepository(repo_data['id'], configs, repo_data['display_name'],
+                          repo_data['description'], repo_data['notes'])
     return r
+
 
 def repository_working_dir(repo_id, mkdir=True):
     """
@@ -93,6 +101,7 @@ def repository_working_dir(repo_id, mkdir=True):
         os.makedirs(working_dir)
 
     return working_dir
+
 
 def importer_working_dir(importer_type_id, repo_id, mkdir=True):
     """
@@ -119,6 +128,7 @@ def importer_working_dir(importer_type_id, repo_id, mkdir=True):
 
     return working_dir
 
+
 def distributor_working_dir(distributor_type_id, repo_id, mkdir=True):
     """
     Determines the working directory for a distributor to use for a repository.
@@ -144,7 +154,6 @@ def distributor_working_dir(distributor_type_id, repo_id, mkdir=True):
 
     return working_dir
 
-# -- repository group calls ---------------------------------------------------
 
 def to_transfer_repo_group(group_data):
     """
@@ -161,6 +170,7 @@ def to_transfer_repo_group(group_data):
                         group_data['description'], group_data['notes'],
                         group_data['repo_ids'])
     return g
+
 
 def to_related_repo_group(group_data, configs):
     """
@@ -180,6 +190,7 @@ def to_related_repo_group(group_data, configs):
     g = RelatedRepositoryGroup(group_data['id'], configs, group_data['display_name'],
                                group_data['description'], group_data['notes'])
     return g
+
 
 def repo_group_working_dir(group_id, mkdir=True):
     """
@@ -204,6 +215,7 @@ def repo_group_working_dir(group_id, mkdir=True):
 
     return working_dir
 
+
 def group_importer_working_dir(importer_type_id, group_id, mkdir=True):
     """
     Determines the working directory for an importer to use for a repository
@@ -224,6 +236,7 @@ def group_importer_working_dir(importer_type_id, group_id, mkdir=True):
         os.makedirs(working_dir)
 
     return working_dir
+
 
 def group_distributor_working_dir(distributor_type_id, group_id, mkdir=True):
     """
@@ -252,9 +265,11 @@ def _working_dir_root():
     dir_root = os.path.join(storage_dir, 'working')
     return dir_root
 
+
 def _repo_working_dir():
     dir = os.path.join(_working_dir_root(), 'repos')
     return dir
+
 
 def _repo_group_working_dir():
     dir = os.path.join(_working_dir_root(), 'repo_groups')

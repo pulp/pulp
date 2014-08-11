@@ -95,7 +95,6 @@ task must be in the *waiting* or *running* states in order to be cancelled.
 
 * :response_code:`200, if the task cancellation request was successfully received`
 * :response_code:`404, if the task is not found`
-* :response_code:`500, if the task is already in a complete state`
 
 | :return:`null`
 
@@ -133,7 +132,7 @@ API callers may also search for tasks. This uses a :ref:`search criteria documen
 * :response_code:`200,containing the list of tasks`
 
 | :return:`the same format as retrieving a single task, except the base of the
-return value is a list. If no results are found, an empty list is returned.`
+ return value is a list. If no results are found, an empty list is returned.`
 
 
 | :method:`get`

@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Entry point for both the admin and consumer clients. The config file location
 is passed in and its contents are used to drive the rest of the client execution.
@@ -33,13 +20,13 @@ import pulp.client.extensions.loader as extensions_loader
 from pulp.common.config import Config
 
 
-def main(config_filenames, exception_handler_class=ExceptionHandler):
+def main(config, exception_handler_class=ExceptionHandler):
     """
     Entry point into the launcher. Any extra necessary values will be pulled
     from the given configuration files.
 
-    @param config_filenames: ordered list of files to load configuration from
-    @type  config_filenames: list
+    @param config: The CLI configuration.
+    @type  config: Config
 
     @return: exit code suitable to return to the shell launching the client
     """
@@ -62,8 +49,7 @@ def main(config_filenames, exception_handler_class=ExceptionHandler):
 
     # Configuration and Logging
     if options.config is not None:
-        config_filenames = [options.config]
-    config = _load_configuration(config_filenames)
+        config.update(Config(options.config))
     logger = _initialize_logging(config, debug=options.debug)
 
     # General UI pieces
@@ -111,17 +97,6 @@ def main(config_filenames, exception_handler_class=ExceptionHandler):
 
 # -- configuration and logging ------------------------------------------------
 
-def _load_configuration(filenames):
-    """
-    @param filenames: list of filenames to load
-    @type  filenames: list
-
-    @return: configuration object
-    @rtype:  ConfigParser
-    """
-
-    config = Config(*filenames)
-    return config
 
 def _initialize_logging(config, debug=False):
     """
@@ -149,7 +124,6 @@ def _initialize_logging(config, debug=False):
 
     return pulp_log
 
-# -- server connection --------------------------------------------------------
 
 def _create_bindings(config, logger, username, password):
     """
@@ -189,17 +163,16 @@ def _create_bindings(config, logger, username, password):
         call_log.setLevel(logging.INFO)
 
     # Create the connection and bindings
-    validate_ssl_ca = config['server']['verify_ssl'].lower() != 'false'
+    verify_ssl = config.parse_bool(config['server']['verify_ssl'])
     ca_path = config['server']['ca_path']
     conn = PulpConnection(
         hostname, port, username=username, password=password, cert_filename=cert_filename,
-        logger=logger, api_responses_logger=call_log, validate_ssl_ca=validate_ssl_ca,
+        logger=logger, api_responses_logger=call_log, verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(conn)
 
     return bindings
 
-# -- ui components initialization ---------------------------------------------
 
 def _create_prompt(config):
     """

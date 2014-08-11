@@ -115,7 +115,7 @@ class TestRequest(TestCase):
         self.assertEqual(request.url, url)
         self.assertEqual(request.destination, destination)
         self.assertFalse(request.downloaded)
-        self.assertEqual(request.sources, [])
+        self.assertTrue(isinstance(request.sources, type(iter([]))))
         self.assertEqual(request.index, 0)
         self.assertEqual(request.errors, [])
         self.assertEqual(request.data, None)
@@ -141,6 +141,7 @@ class TestRequest(TestCase):
         # validate sources sorted by priority with the primary last.
         # should only have matched on s-1 and s-3.
 
+        request.sources = list(request.sources)
         self.assertEqual(len(request.sources), 5)
         self.assertEqual(request.sources[0][0].id, 's-3')
         self.assertEqual(request.sources[0][1], CATALOG[2][constants.URL])
@@ -154,27 +155,14 @@ class TestRequest(TestCase):
         self.assertEqual(request.sources[4][1], url)
 
     def test_next_source(self):
+        sources = [1, 2, 3]
         request = Request('', {}, '', '')
-        request.sources = [1, 2, 3]
+        request.sources = sources
 
         # test and validation
 
-        for n in request.sources:
-            source = request.next_source()
-            self.assertEqual(source, n)
-
-        self.assertTrue(request.next_source() is None)
-
-    def test_has_source(self):
-        request = Request('', {}, '', '')
-        request.sources = [1]
-
-        # test and validation
-
-        self.assertTrue(request.has_source())
-
-        request.index = 1
-        self.assertFalse(request.has_source())
+        for i, source in enumerate(request.sources):
+            self.assertEqual(source, sources[i])
 
 
 class TestContentSource(TestCase):
@@ -312,6 +300,10 @@ class TestContentSource(TestCase):
     def test_base_url(self):
         source = ContentSource('s-1', {constants.BASE_URL: 'http://xyz.com'})
         self.assertEqual(source.base_url, 'http://xyz.com')
+
+    def test_max_concurrent(self):
+        source = ContentSource('s-1', {constants.MAX_CONCURRENT: 123})
+        self.assertEqual(source.max_concurrent, 123)
 
     def test_urls(self):
         base_url = 'http://xyz.com'
@@ -568,7 +560,6 @@ class TestDownloadReport(TestCase):
 
     def test_construction(self):
         report = DownloadReport()
-        self.assertEqual(report.total_passes, 0)
         self.assertEqual(report.total_sources, 0)
         self.assertEqual(report.downloads, {})
 
@@ -577,7 +568,6 @@ class TestDownloadReport(TestCase):
         report.downloads['s1'] = DownloadDetails()
         report.downloads['s2'] = DownloadDetails()
         expected = {
-            'total_passes': 0,
             'total_sources': 0,
             'downloads': {
                 's1': {'total_failed': 0, 'total_succeeded': 0},
