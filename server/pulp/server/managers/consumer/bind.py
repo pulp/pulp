@@ -52,29 +52,33 @@ class BindManager(object):
         """
         Bind consumer to a specific distributor associated with
         a repository.  This call is idempotent.
-        @param consumer_id: uniquely identifies the consumer.
-        @type consumer_id: str
-        @param repo_id: uniquely identifies the repository.
-        @type repo_id: str
-        @param distributor_id: uniquely identifies a distributor.
-        @type distributor_id: str
-        @return: The Bind object
-        @rtype: SON
-        @raise MissingResource: when given consumer does not exist.
+        :param consumer_id: uniquely identifies the consumer.
+        :type  consumer_id: str
+        :param repo_id: uniquely identifies the repository.
+        :type  repo_id: str
+        :param distributor_id: uniquely identifies a distributor.
+        :type  distributor_id: str
+
+        :return: The Bind object
+        :rtype:  SON
+
+        :raise MissingResource: when given consumer does not exist.
+        :raise InvalidValid:    when the repository or distributor id is invalid, or
+        if the notify_agent value is invalid
         """
         # Validation
+        missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
+        if missing_values:
+            if 'consumer_id' in missing_values:
+                # This is passed in via the URL so a 404 should be raised
+                raise MissingResource(consumer_id=missing_values['consumer_id'])
+            else:
+                # Everything else is a parameter so raise a 400
+                raise InvalidValue(missing_values.keys())
 
         # ensure notify_agent is a boolean
         if not isinstance(notify_agent, bool):
             raise InvalidValue(['notify_agent'])
-
-        # ensure the consumer is valid
-        manager = factory.consumer_manager()
-        manager.get_consumer(consumer_id)
-
-        # ensure the repository & distributor are valid
-        manager = factory.repo_distributor_manager()
-        manager.get_distributor(repo_id, distributor_id)
 
         # perform the bind
         collection = Bind.get_collection()
@@ -134,15 +138,23 @@ class BindManager(object):
         """
         Unbind a consumer from a specific distributor associated with
         a repository.  This call is idempotent.
-        @param consumer_id: uniquely identifies the consumer.
-        @type consumer_id: str
-        @param repo_id: uniquely identifies the repository.
-        @type repo_id: str
-        @param distributor_id: uniquely identifies a distributor.
-        @type distributor_id: str
-        @return: The Bind object
-        @rtype: SON
+
+        :param consumer_id:     uniquely identifies the consumer.
+        :type  consumer_id:     str
+        :param repo_id:         uniquely identifies the repository.
+        :type  repo_id:         str
+        :param distributor_id:  uniquely identifies a distributor.
+        :type  distributor_id:  str
+
+        :return: The Bind object
+        :rtype:  SON
+
+        :raise MissingResource: if the consumer, repository, distributor, or binding do not exist
         """
+        # Validate that the binding exists at all before continuing.
+        # This will raise an exception if it it does not.
+        BindManager.get_bind(consumer_id, repo_id, distributor_id)
+
         collection = Bind.get_collection()
         query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         query['deleted'] = False
@@ -174,16 +186,24 @@ class BindManager(object):
         """
         Get a specific bind.
         This method ignores the deleted flag.
-        @param consumer_id: uniquely identifies the consumer.
-        @type consumer_id: str
-        @param repo_id: uniquely identifies the repository.
-        @type repo_id: str
-        @param distributor_id: uniquely identifies a distributor.
-        @type distributor_id: str
-        @return: A specific bind.
-        @rtype: SON
-        @raise MissingResource: When not found
+
+        :param consumer_id:     uniquely identifies the consumer.
+        :type  consumer_id:     str
+        :param repo_id:         uniquely identifies the repository.
+        :type  repo_id:         str
+        :param distributor_id:  uniquely identifies a distributor.
+        :type  distributor_id:  str
+
+        :return: A specific bind.
+        :rtype:  SON
+
+        :raise MissingResource: if the consumer, repository, or distributor don't exist,
+        or if the binding doesn't exist
         """
+        missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
+        if missing_values:
+            raise MissingResource(**missing_values)
+
         collection = Bind.get_collection()
         bind_id = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         bind = collection.find_one(bind_id)
@@ -398,6 +418,40 @@ class BindManager(object):
         for action in binding['consumer_actions']:
             if action['id'] == action_id:
                 return action
+
+    @staticmethod
+    def _validate_consumer_repo(consumer_id, repo_id, distributor_id):
+        """
+        Validate that the given consumer, repository, and distributor are present.
+        Rather than raising an exception, this method returns a dictionary of missing
+        values and allows the caller to decide what exception to raise.
+
+        :param consumer_id:     The consumer id to validate
+        :type  consumer_id:     str
+        :param repo_id:         The repository id to validate
+        :type  repo_id:         str
+        :param distributor_id:  The distributor_id to validate
+        :type  distributor_id:  str
+
+        :return: A dictionary containing the missing values, or an empty dict if everything is valid
+        :rtype:  dict
+        """
+        missing_values = {}
+
+        try:
+            factory.consumer_manager().get_consumer(consumer_id)
+        except MissingResource:
+            missing_values['consumer_id'] = consumer_id
+        try:
+            factory.repo_query_manager().get_repository(repo_id)
+        except MissingResource:
+            missing_values['repo_id'] = repo_id
+        try:
+            factory.repo_distributor_manager().get_distributor(repo_id, distributor_id)
+        except MissingResource:
+            missing_values['distributor_id'] = distributor_id
+
+        return missing_values
 
 
 bind = task(BindManager.bind, base=Task)

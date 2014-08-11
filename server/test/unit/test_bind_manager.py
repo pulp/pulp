@@ -506,14 +506,8 @@ class BindManagerTests(base.PulpServerTests):
         collection.remove({})
         # Test
         manager = factory.consumer_bind_manager()
-        try:
-            manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
-                         self.NOTIFY_AGENT, self.BINDING_CONFIG)
-            self.fail(msg='MissingResource <RepoDistributor>, expected')
-        except MissingResource:
-            # expected
-            pass
-            # Verify
+        self.assertRaises(InvalidValue, manager.bind, self.CONSUMER_ID, self.REPO_ID,
+                          self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)
         collection = Bind.get_collection()
         binds = collection.find({})
         binds = [b for b in binds]

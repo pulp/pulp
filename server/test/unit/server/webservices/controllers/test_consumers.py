@@ -1108,11 +1108,11 @@ class TestContentApplicability(base.PulpWebserviceTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_POST_empty_type_limiting(self, consumer_history_manager,
-                                      repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_POST_empty_type_limiting(self, *unused_mocks):
         """
         Test the POST() method with an empty list as the type limiting criteria.
         """
@@ -1207,10 +1207,11 @@ class TestContentApplicability(base.PulpWebserviceTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_POST_limit_by_type(self, consumer_history_manager, repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_POST_limit_by_type(self, *unused_mocks):
         """
         Test the POST() method, making sure we allow the caller to limit applicability
         data by unit type.
@@ -1308,11 +1309,11 @@ class TestContentApplicability(base.PulpWebserviceTests,
     # We mock this because we don't care about consumer history in this test suite, and it
     # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking this, we can avoid having to create repos and distributors for this test
+    # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    def test_POST_no_type_limiting(self, consumer_history_manager,
-                                         repo_distributor_manager):
+    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    def test_POST_no_type_limiting(self, *unused_mocks):
         """
         Test that the POST() method returns all content types by default, and that we
         can correctly match a particular consumer.
