@@ -54,7 +54,7 @@ for instance nanoseconds it will round it to microseconds.
 
 %files
 %defattr(-,root,root,-)
-%doc CHANGES.txt README.txt TODO.txt
+%doc CHANGES.txt README.rst TODO.txt
 %{python_sitelib}/*
 
 %changelog
