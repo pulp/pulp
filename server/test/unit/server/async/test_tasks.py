@@ -17,7 +17,7 @@ from pulp.common import dateutils
 from pulp.common.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
                                    CALL_RUNNING_STATE, CALL_WAITING_STATE)
 from pulp.devel.unit.util import compare_dict
-from pulp.server.exceptions import PulpException, PulpCodedException
+from pulp.server.exceptions import PulpException
 from pulp.server.async import tasks, worker_watcher
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
@@ -616,14 +616,34 @@ class TestCancel(PulpServerTests):
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
     def test_cancel_after_task_finished(self, logger, revoke):
+        """
+        Test that canceling a task that is already finished results in no change
+        to the task state.
+        """
         task_id = '1234abcd'
         now = datetime.utcnow()
         test_worker = Worker('test_worker', now)
         TaskStatusManager.create_task_status(task_id, test_worker.name, state=CALL_FINISHED_STATE)
-        self.assertRaises(PulpCodedException, tasks.cancel, task_id)
 
+        tasks.cancel(task_id)
         task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
+
+    @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
+    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
+    def test_cancel_after_task_canceled(self, *unused_mocks):
+        """
+        Test that canceling a task that was already canceled results in no change
+        to the task state.
+        """
+        task_id = '1234abcd'
+        now = datetime.utcnow()
+        test_worker = Worker('test_worker', now)
+        TaskStatusManager.create_task_status(task_id, test_worker.name, state=CALL_CANCELED_STATE)
+
+        tasks.cancel(task_id)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
 
 class TestRegisterSigtermHandler(unittest.TestCase):
