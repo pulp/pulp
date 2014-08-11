@@ -33,15 +33,6 @@ from pulp.server.managers import factory
 logger = logging.getLogger(__name__)
 
 
-# Duration has a bug in __getattr__, which causes an infinite loop on unpickling.
-# The upstream PR to fix this is https://github.com/gweis/isodate/pull/10
-def fixed_getattr(myself, attr_name):
-    if attr_name == 'tdelta':
-        raise AttributeError()
-    return getattr(myself.tdelta, attr_name)
-isodate.Duration.__getattr__ = fixed_getattr
-
-
 class CallResource(Model):
     """
     Information for an individual resource used by a call request.
