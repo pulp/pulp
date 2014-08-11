@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.2.1
+Version:        1.3.0
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -42,12 +42,15 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %{python_sitelib}/nectar/
 %{python_sitelib}/nectar*.egg-info
-%doc LICENSE.txt README.rst
+%doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
-* Fri Mar 28 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
-- Latest version required by Pulp. (jortel@redhat.com)
+* Thu Aug 07 2014 Jeff Ortel <jortel@redhat.com> 1.3.0-1
+- Updated API to support synchronous downloading of a single file.
 
+* Thu Aug 07 2014 Jeff Ortel <jortel@redhat.com> 1.2.2-1
+- 1126083 - no longer logging a failed download at ERROR level
+  (mhrivnak@redhat.com)
 * Fri Mar 28 2014 Jeff Ortel <jortel@redhat.com> 1.2.1-1
 - 1078945 - Canceling a repo sync task does not seem to halt the
   rpm sync (bcourt@redhat.com)
