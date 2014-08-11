@@ -322,7 +322,7 @@ Any importer configuration value that is not specified remains unchanged.
   when the repository is available`
 * :response_code:`404,if there is no repository or importer with the specified IDs`
 
-| :return:`a` :ref:`call_report`
+| :return:`a` :ref:`call_report` which includes a spawned task that should be polled for a :ref:`task_report`
 
 :sample_request:`_` ::
 
@@ -332,8 +332,9 @@ Any importer configuration value that is not specified remains unchanged.
   }
  }
 
-**Sample result value:**
-The result field of the :ref:`call_report` contains the database representation of the importer (not the full repository details, just the importer)
+**Sample result value for the Task Report:**
+The result field of the :ref:`task_report` contains the database representation of the importer.
+This does not include the full repository details.
 ::
 
   {
