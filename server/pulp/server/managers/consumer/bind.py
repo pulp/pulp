@@ -69,10 +69,11 @@ class BindManager(object):
         # Validation
         missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
         if missing_values:
-            # This is passed in via the URL so a 404 should be raised
             if 'consumer_id' in missing_values:
+                # This is passed in via the URL so a 404 should be raised
                 raise MissingResource(consumer_id=missing_values['consumer_id'])
             else:
+                # Everything else is a parameter so raise a 400
                 raise InvalidValue(missing_values.keys())
 
         # ensure notify_agent is a boolean
@@ -137,14 +138,18 @@ class BindManager(object):
         """
         Unbind a consumer from a specific distributor associated with
         a repository.  This call is idempotent.
-        @param consumer_id: uniquely identifies the consumer.
-        @type consumer_id: str
-        @param repo_id: uniquely identifies the repository.
-        @type repo_id: str
-        @param distributor_id: uniquely identifies a distributor.
-        @type distributor_id: str
-        @return: The Bind object
-        @rtype: SON
+
+        :param consumer_id:     uniquely identifies the consumer.
+        :type  consumer_id:     str
+        :param repo_id:         uniquely identifies the repository.
+        :type  repo_id:         str
+        :param distributor_id:  uniquely identifies a distributor.
+        :type  distributor_id:  str
+
+        :return: The Bind object
+        :rtype:  SON
+
+        :raise MissingResource: if the consumer, repository, distributor, or binding do not exist
         """
         # Validate that the binding exists at all before continuing.
         # This will raise an exception if it it does not.
@@ -418,8 +423,8 @@ class BindManager(object):
     def _validate_consumer_repo(consumer_id, repo_id, distributor_id):
         """
         Validate that the given consumer, repository, and distributor are present.
-        Rather than raising an exception, this method simply returns a dictionary
-        missing values and allows the caller to decide what exception to raise.
+        Rather than raising an exception, this method returns a dictionary of missing
+        values and allows the caller to decide what exception to raise.
 
         :param consumer_id:     The consumer id to validate
         :type  consumer_id:     str
@@ -428,7 +433,7 @@ class BindManager(object):
         :param distributor_id:  The distributor_id to validate
         :type  distributor_id:  str
 
-        :return: A dictionary containing the missing values
+        :return: A dictionary containing the missing values, or an empty dict if everything is valid
         :rtype:  dict
         """
         missing_values = {}
