@@ -333,8 +333,8 @@ Any importer configuration value that is not specified remains unchanged.
  }
 
 **Sample result value for the Task Report:**
-The result field of the :ref:`task_report` will contain the database representation of the importer
-(not the full repository details, just the importer)
+The result field of the :ref:`task_report` contains the database representation of the importer.
+This does not include the full repository details.
 ::
 
   {
