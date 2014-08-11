@@ -388,8 +388,8 @@ def cancel(task_id):
         raise MissingResource(task_id)
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
         # If the task is already done, just stop
-        msg = _('Task already completed: %(task_id)s.')
-        logger.info(msg % {'task_id': task_id})
+        msg = _('Task [%(task_id)s] already in a completed state: %(state)s')
+        logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
     controller.revoke(task_id, terminate=True)
     TaskStatus.get_collection().find_and_modify(
