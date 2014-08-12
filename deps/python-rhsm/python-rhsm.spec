@@ -6,7 +6,7 @@
 
 Name: python-rhsm
 Version: 1.8.0
-Release: 1.pulp%{?dist}
+Release: 2.pulp%{?dist}
 
 Summary: A Python library to communicate with a Red Hat Unified Entitlement Platform
 Group: Development/Libraries
