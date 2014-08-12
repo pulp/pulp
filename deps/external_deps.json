@@ -3,6 +3,10 @@
         "version": "0.26-2",
         "platform": ["el6"]
     },
+    "python-rhsm": {
+        "version": "1.8.0-1",
+        "platform": ["el6", "el7"]
+    },
     "qpid-cpp": {
         "version": "0.26-8",
         "platform": ["el6"]
