@@ -65,6 +65,9 @@ rm -rf %{buildroot}
 %attr(640,root,root) %{_sysconfdir}/rhsm/ca/*.pem
 
 %changelog
+* Tue Aug 12 2014 Randy Barlow <rbarlow@redhat.com> 1.8.0-2.pulp
+- new package built with tito
+
 * Mon Aug 11 2014 Randy Barlow <rbarlow@redhat.com>
 - new package built with tito
 
