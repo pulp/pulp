@@ -40,8 +40,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.4.0
-Release: 0.21.beta%{?dist}
+Version: 2.4.1
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,82 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Aug 13 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.1.alpha
+- 1128831 - Restore python-rhsm-1.8.0. (rbarlow@redhat.com)
+- 1094470 - Canceling a task that was already in a completed state now results
+  in a 200 code instead of a 500 (jcline@redhat.com)
+- 1110418 - Added documentation on publishing repository groups
+  (jcline@redhat.com)
+- 1111228 - Removed jdob from the event listener sample return
+  (jcline@redhat.com)
+- 1111197 - Fixed a typo in the sample request in event listeners docs
+  (jcline@redhat.com)
+- 1110449 - Fixed typos in context applicability documentation
+  (jcline@redhat.com)
+- 1094256 - Updated the consumer binding docs to make it clear a 200 can be
+  returned (jcline@redhat.com)
+- 1083522 - Updated the repo publish documentation to correct the schedule path
+  (jcline@redhat.com)
+- 1079445 - Updated the repo sync documentation to correct the schedule path
+  (jcline@redhat.com)
+- 1078348 - Updated the docs for updating an importer to make it clear that the
+  task report contains the results (jcline@redhat.com)
+- 1022553 - pulp-admin unbind commands will now return a user-friendly error
+  message if the consumer or repository given don't exist. (jcline@redhat.com)
+- 1112663 - Allows schedules with monthly or yearly intervals
+  (jcline@redhat.com)
+- 1125030 - Handle both styles of certificate stores. (rbarlow@redhat.com)
+- 1109870 - fixed typo in passing tags when creating a task for deleting orphan
+  by type (skarmark@redhat.com)
+- 1092450 - Retrieving orphans by content type now returns a 404 if the content
+  type does not exist (jcline@redhat.com)
+- 1113590 - Nodes requires Pulp's cert to be trusted 1112906 - pulp-admin
+  requires Pulp's cert to be trusted 1112904 - pulp-consumer requires Pulp's
+  cert to be trusted (rbarlow@redhat.com)
+- 1110893 - adding a trailing slash to an API path (mhrivnak@redhat.com)
+- 1115414 - updated get consumer profiles api to return 404 in case of non-
+  existing consumer (skarmark@redhat.com)
+- 1115391 - removing duplicate unit test and updating one to detect 405 return
+  code for consumer group bindings GET calls (skarmark@redhat.com)
+- 1115385 - Removing GET methods on consumer group bindings since consumer
+  group bind and unbind are merely used as group operations and are not stored
+  on the consumer group permanently (skarmark@redhat.com)
+- 1115631 - discard disabled sources before doing is_valid check.
+  (jortel@redhat.com)
+- 1005899 - support 'message' reported during node sync. (jortel@redhat.com)
+- 1117512 - Convert timestamps saved for tracking distributor publishes &
+  importer syncs to UTC instead of timezone offset (bcourt@redhat.com)
+- 1110668 - updated consumer group binding documentation to refect the actual
+  behaviour (jcline@redhat.com)
+- 1113590 - Adding documentation about adding ca cert to the system trusted
+  certs for pulp-admin and pulp-consumer and adding bindings unit tests
+  (skarmark@redhat.com)
+- 1112906 - adding SSL CA cert validation to the bindings (skarmark@redhat.com)
+- 1112905 - updating pulp-gen-ca-certificate script to create pulp ssl
+  certificates (skarmark@redhat.com)
+- 1112904 - adding configuration for pulp ssl certificates
+  (skarmark@redhat.com)
+- 1117060 - added umask setting to celery worker command line, since the
+  default of 0 is unsafe. (mhrivnak@redhat.com)
+- 1116438 - use apache httpd type and not typealias (lzap+git@redhat.com)
+- 1115715 - syslog handler works with string formatting tokens in tracebacks.
+  (jortel@redhat.com)
+- 1115631 - disabled content sources discarded before validity check performed.
+  (jortel@redhat.com)
+- 1115129 - update rsa_pub as part of consumer updates. (jortel@redhat.com)
+- 1093871 - sorting tasks by default according to when they were created.
+  (mhrivnak@redhat.com)
+- 1100638 - Update task search API to match the serialization used for task
+  collection & task get APIs (bcourt@redhat.com)
+- 1110674 - A 400 Bad Request is returned when attempting to bind a consumer
+  group to an invalid repo or distributor id (jcline@redhat.com)
+- 1104654 - Don't require python-oauth2 on RHEL 5. (rbarlow@redhat.com)
+- 1020912 - add pulp_manage_puppet selinux boolean (lzap+git@redhat.com)
+- 1110668 - consumer group binding calls now return 404 when invalid group,
+  repo, or distributor ids are given (jcline@redhat.com)
+- 1100805 - Fixing consumer group bind and unbind and moving tasks from
+  tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
+
 * Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
 - 1074426 - Updated the repository group API docs to reflect actual DELETE
   behaviour (jcline@redhat.com)
