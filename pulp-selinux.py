@@ -1,48 +1,29 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import optparse
 import os
 import sys
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-PLATFORM_DIR = os.path.join(BASE_DIR, "platform")
-SELINUX_DIR = os.path.join(PLATFORM_DIR, "selinux", "server")
-RPM_BASE_DIR = os.path.join(BASE_DIR, '..', '..', 'pulp_rpm')
-RPM_SUPPORT_DIR = os.path.join(RPM_BASE_DIR, "pulp_rpm")
+PULP_SERVER_DIR = os.path.join(BASE_DIR, "server")
+SELINUX_DIR = os.path.join(PULP_SERVER_DIR, "selinux", "server")
+RPM_PLUGIN_DIR = os.path.join(BASE_DIR, "..", "pulp_rpm", "plugins")
 
 LABELS = {
         "httpd_config_t": [
-                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "etc/httpd")),
+                ("%s(/.*)?", os.path.join(RPM_PLUGIN_DIR, "etc", "httpd")),
         ],
         "pulp_cert_t": [
-                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/pki/pulp")),
+                ("%s(/.*)?", os.sep + os.path.join("etc", "pki", "pulp")),
         ],
         "httpd_sys_content_t": [
-                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/pulp")),
-                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/httpd")),
-                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "srv/pulp")),
-                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "srv/pulp")),
-                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "etc/pulp")),
+                ("%s(/.*)?", os.path.join(PULP_SERVER_DIR, "etc", "pulp")),
+                ("%s(/.*)?", os.path.join(PULP_SERVER_DIR, "etc", "httpd")),
+                ("%s(/.*)?", os.path.join(PULP_SERVER_DIR, "srv", "pulp")),
+                ("%s(/.*)?", os.path.join(RPM_PLUGIN_DIR, "srv", "pulp")),
+                ("%s(/.*)?", os.path.join(RPM_PLUGIN_DIR, "etc", "pulp")),
         ],
         "lib_t": [
-                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "src")),
-                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "src")),
-                ("%s(/.*)?", os.path.join(RPM_SUPPORT_DIR, "plugins")),
-        ],
-        "etc_t": [
-                ("%s(/.*)?", os.path.join(PLATFORM_DIR, "etc/gofer")),
+                ("%s(/.*)?", os.path.join(PULP_SERVER_DIR, "pulp")),
+                ("%s(/.*)?", os.path.join(RPM_PLUGIN_DIR)),
         ],
 }
 
