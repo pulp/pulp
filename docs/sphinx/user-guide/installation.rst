@@ -115,10 +115,9 @@ Server
     $ sudo systemctl start mongod
 
    .. warning::
-      On new MongoDB installations, the start call may exit before the database is
-      accepting connections. MongoDB takes some time to preallocate large files and will not accept
-      connections until it finishes. When this happens, it is possible for Pulp to fail to start.
-      If this occurs, give MongoDB a few minutes to finish initializing and start Pulp again.
+      On new MongoDB installations, MongoDB takes some time to preallocate large files and will not
+      accept connections until it finishes. When this happens, Pulp will delay wait for MongoDB to
+      become available before starting.
 
 #. You must also provide a message bus for Pulp to use. Pulp will work with Qpid or RabbitMQ, but
    is tested with Qpid, and uses Qpid by default. This can also be on the same host that you will
