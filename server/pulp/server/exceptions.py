@@ -3,7 +3,7 @@ from datetime import timedelta
 from gettext import gettext as _
 from pprint import pformat
 
-from pulp.common import error_codes
+from pulp.common import error_codes, auth_utils
 
 
 class PulpException(Exception):
@@ -112,6 +112,25 @@ class PulpCodedValidationException(PulpCodedException):
         super(PulpCodedValidationException, self).__init__(error_code=error_code, **kwargs)
         if validation_exceptions:
             self.child_exceptions = validation_exceptions
+
+
+class PulpCodedAuthenticationException(PulpCodedException):
+    """
+    Class for coded authentication exceptions. Raising this exception results in a
+    401 Unauthorized code being returned.
+
+    :param error_code: The particular error code that should be used for this authentication exception
+    :type  error_code: pulp.common.error_codes.Error
+    """
+
+    http_status_code = httplib.UNAUTHORIZED
+
+    def __init__(self, error_code=error_codes.PLP0025, **kwargs):
+        super(PulpCodedAuthenticationException, self).__init__(error_code=error_code, **kwargs)
+
+        # For backwards compatibility, include the old
+        old_error_code = auth_utils.generate_failure_response(error_code)
+        self.error_data.update(old_error_code)
 
 
 class MissingResource(PulpExecutionException):

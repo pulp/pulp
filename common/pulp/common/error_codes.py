@@ -71,6 +71,13 @@ PLP0024 = Error("PLP0024",
                   "Please ensure that there is at least one Celery worker running, and that the "
                   "celerybeat service is also running."),
                 [])
+PLP0025 = Error("PLP0025", _("Authentication failed."), [])
+PLP0026 = Error("PLP0026", _("Permission denied: user %(user)s cannot perform %(operation)s."), ['user', 'operation'])
+PLP0027 = Error("PLP0027", _("Authentication with username %(user)s failed: invalid SSL certificate."), ['user'])
+PLP0028 = Error("PLP0028", _("Authentication with username %(user)s failed: invalid oauth credentials."), ['user'])
+PLP0029 = Error("PLP0029",
+                _("Authentication with username %(user)s failed: preauthenticated remote user is missing."), ['user'])
+PLP0030 = Error("PLP0030", _("Authentication with username %(user)s failed: invalid username or password"), ['user'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
