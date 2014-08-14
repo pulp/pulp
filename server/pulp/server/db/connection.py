@@ -116,7 +116,7 @@ class PulpCollectionFailure(PulpException):
     """
 
 
-def _retry_decorator(full_name=None):
+def retry_decorator(full_name=None):
     """
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
@@ -178,7 +178,7 @@ class PulpCollection(Collection):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
 
         for m in self._decorated_methods:
-            setattr(self, m, _retry_decorator(self.full_name)(getattr(self, m)))
+            setattr(self, m, retry_decorator(self.full_name)(getattr(self, m)))
 
     def __getstate__(self):
         return {'name': self.name}
