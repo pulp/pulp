@@ -128,10 +128,11 @@ class PulpCodedAuthenticationException(PulpCodedException):
     def __init__(self, error_code=error_codes.PLP0025, **kwargs):
         super(PulpCodedAuthenticationException, self).__init__(error_code=error_code, **kwargs)
 
-        # For backwards compatibility, include the old
-        old_error_code = auth_utils.generate_failure_response(error_code)
-        self.error_data.update(old_error_code)
+        # For backwards compatibility, get the old error code
+        self.old_error_code = auth_utils.generate_failure_response(error_code)
 
+    def data_dict(self):
+        return self.old_error_code
 
 class MissingResource(PulpExecutionException):
     """"
