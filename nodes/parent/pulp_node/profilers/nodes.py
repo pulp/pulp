@@ -15,7 +15,7 @@ from pulp.plugins.profiler import Profiler
 from pulp.server.config import config as pulp_conf
 
 from pulp_node import constants
-from pulp_node import resources
+from pulp_node.config import read_config
 
 
 # --- plugin loading ---------------------------------------------------------
@@ -55,7 +55,7 @@ class NodeProfiler(Profiler):
         """
         port = 443
         host = pulp_conf.get('server', 'server_name')
-        node_conf = resources.node_configuration()
+        node_conf = read_config()
         path = node_conf.main.node_certificate
         with open(path) as fp:
             node_certificate = fp.read()
