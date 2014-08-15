@@ -86,8 +86,8 @@ Known Issues
   select at least one package group during the installation. Automated kickstarts are not affected by
   this issue.
 
-* /etc/pulp/admin/admin.conf is owned by a different RPM than it was in 2.3.x. This means that when
-  you upgrade Pulp, you will not get an admin.conf.rpmnew file. Instead, admin.conf will be
+* ``/etc/pulp/admin/admin.conf`` is owned by a different RPM than it was in 2.3.x. This means that
+  when you upgrade Pulp, you will not get an admin.conf.rpmnew file. Instead, admin.conf will be
   overwritten with the new stock version.
 
 .. _2.3.x_upgrade_to_2.4.0:
@@ -97,10 +97,10 @@ Upgrade Instructions for 2.3.x --> 2.4.0
 
   .. warning::
 
-     Due to /etc/pulp/admin/admin.conf being owned by a different package in 2.4.0 than it was in
-     2.3.x releases, you will need to make a backup of admin.conf before performing the upgrade if
-     you wish to keep any of your settings. No admin.conf.rpmnew file will be generated during the
-     upgrade!
+     Due to ``/etc/pulp/admin/admin.conf`` being owned by a different package in 2.4.0 than it was
+     in 2.3.x releases, you will need to make a backup of admin.conf before performing the upgrade
+     if you wish to keep any of your settings. No admin.conf.rpmnew file will be generated during
+     the upgrade!
 
 Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. Pulp 2.3.x servers
 and nodes are not compatible with Pulp 2.4.0 and vice versa. All consumers must be upgraded first,
@@ -250,8 +250,8 @@ command on any machine that already had the Admin Client installed:
 
 If you made a backup of your admin.conf prior to this upgrade, you now need to manually merge your
 settings into ``/etc/pulp/admin/admin.conf``. Do not overwrite this file, as there are some
-important new settings that must be present in admin.conf, for example the new verify_ssl and
-ca_path settings.
+important new settings that must be present in ``admin.conf``, for example the new ``verify_ssl``
+and ``ca_path`` settings.
 
 Lastly, merge the ``/etc/pulp/nodes.conf.rpmnew`` file which has also introduced
 new required settings. The Pulp team has plans to fix our configuration loaders to no longer require
