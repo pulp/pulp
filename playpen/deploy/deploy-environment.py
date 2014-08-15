@@ -3,6 +3,7 @@
 import argparse
 import sys
 import time
+import traceback
 
 from utils import os1_utils, setup_utils, config_utils
 
@@ -10,7 +11,7 @@ from utils import os1_utils, setup_utils, config_utils
 # Setup the CLI
 description = 'Deploy a Pulp environment; this can be used in conjunction with the run-integrations-tests.py script'
 parser = argparse.ArgumentParser(description=description)
-parser.add_argument('--config', help='path to the configuration file to use to deploy the environment', nargs='+')
+parser.add_argument('--config', help='path to the configuration file to use to deploy the environment', nargs='+', required=True)
 parser.add_argument('--deployed-config', help='path to save the deployed instance configuration to; defaults to the'
                                               ' given config file with a json file extension.')
 parser.add_argument('--repo', help='path the the repository; will override repositories set in the configuration')
@@ -51,9 +52,11 @@ try:
             SSH: %(host_string)s
         """ % instance
     print 'The configuration file has been written to ' + args.deployed_config
-except BaseException, e:
+except (Exception, KeyboardInterrupt), e:
     # Print exception message and quit
-    print 'Error: %s - %s' % (type(e).__name__, e)
+    exception_type, exception_value, exception_tb = sys.exc_info()
+    print 'Error: %s - %s' % (exception_type, exception_value)
+    traceback.print_tb(exception_tb)
 
     if not args.no_teardown:
         os1.teardown_instances(config)
