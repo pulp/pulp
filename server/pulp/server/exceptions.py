@@ -134,6 +134,7 @@ class PulpCodedAuthenticationException(PulpCodedException):
     def data_dict(self):
         return self.old_error_code
 
+
 class MissingResource(PulpExecutionException):
     """"
     Base class for exceptions raised due to requesting a resource that does not
