@@ -149,7 +149,7 @@ class BindManager(object):
         :return: The Bind object
         :rtype:  SON
 
-        :raise MissingResource: if the consumer, repository, distributor, or binding do not exist
+        :raise MissingResource: if the binding does not exist
         """
         # Validate that the binding exists at all before continuing.
         # This will raise an exception if it it does not.
@@ -197,18 +197,19 @@ class BindManager(object):
         :return: A specific bind.
         :rtype:  SON
 
-        :raise MissingResource: if the consumer, repository, or distributor don't exist,
-        or if the binding doesn't exist
+        :raise MissingResource: if the binding doesn't exist
         """
-        missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
-        if missing_values:
-            raise MissingResource(**missing_values)
-
         collection = Bind.get_collection()
         bind_id = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         bind = collection.find_one(bind_id)
         if bind is None:
-            raise MissingResource(bind_id=bind_id)
+            # If the binding doesn't exist, report which values are not present
+            missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
+            if missing_values:
+                raise MissingResource(**missing_values)
+            else:
+                # In this case, every resource is present, but the consumer isn't bound to that repo/distributor
+                raise MissingResource(bind_id=bind_id)
         return bind
 
     def find_all(self):

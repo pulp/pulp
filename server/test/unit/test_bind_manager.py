@@ -148,6 +148,23 @@ class BindManagerTests(base.PulpServerTests):
         # Test
         self.assertRaises(MissingResource, manager.get_bind, 'A', 'B', 'C')
 
+    def test_get_bind_repo_gone(self):
+        """
+        Test that retrieving a consumer binding when the repo is gone is possible
+        """
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        Repo.get_collection().remove({})
+
+        # Test
+        bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
+        self.assertEquals(bind['repo_id'], self.REPO_ID)
+        self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
+
     def test_find_all(self):
         # Setup
         self.populate()
