@@ -27,7 +27,7 @@ structure:
 # =========================
 pulp_tester:
     distribution: fc20
-    instance_name: pulp-tester
+    instance_name: jenkins-el7-pulp-tester
     role: tester
     os_name: Fedora
     os_version: 20

@@ -7,7 +7,7 @@ else
     REPO=${NEW_REPO}
 fi
 
-BUILDTIME=date +%s
+BUILDTIME=$(date +%s)
 cd ${WORKSPACE}/pulp/playpen/deploy/
 
 EXIT=0
