@@ -334,7 +334,9 @@ specific consumer dependencies with one command by running:
 
    $ sudo yum groupinstall pulp-consumer-qpid
 
-  .. note::
+
+.. note::
+
      For RabbitMQ installations, install the Pulp consumer client and agent packages without any
      Qpid specific dependencies using ``sudo yum groupinstall pulp-consumer``. You may need to
      install additional RabbitMQ dependencies manually including the ``python-gofer-amqplib``
