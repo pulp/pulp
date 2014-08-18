@@ -327,10 +327,10 @@ class TestProfiler(PluginTestBase):
         plugin = _class()
         self.assertTrue(isinstance(plugin, NodeProfiler))
 
-    @patch('pulp_node.resources.node_configuration')
-    def test_update_units(self, mock_get_node_conf):
+    @patch('pulp_node.profilers.nodes.read_config')
+    def test_update_units(self, mock_read_config):
         # Setup
-        mock_get_node_conf.return_value = self.node_configuration()
+        mock_read_config.return_value = self.node_configuration()
         # Test
         host = 'abc'
         port = 443

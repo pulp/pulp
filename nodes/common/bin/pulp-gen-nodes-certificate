@@ -23,8 +23,8 @@ END
 
 READ_NODE_CONF=\
 $(cat << END
-from pulp_node import resources
-node_conf = resources.node_configuration()
+from pulp_node.config import read_config
+node_conf = read_config()
 print node_conf.main.node_certificate
 END
 )
