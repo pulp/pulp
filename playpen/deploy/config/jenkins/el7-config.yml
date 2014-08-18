@@ -1,0 +1,35 @@
+# ==============
+# Default Values 
+# ==============
+repository: http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4
+keypair_name: pulp-jenkins
+private_key: ~/.ssh/id_rsa
+distribution: el7
+flavor: m1.small
+security_group: pulp
+cloud_config: cloud-init/cloud-config.txt
+
+
+# ==================
+# Instance Structure
+# ==================
+structure:
+    instance_name: jenkins-el7-pulp-server
+    role: server
+    flavor: m1.medium
+    children:
+        - instance_name: jenkins-el7-pulp-consumer
+          role: consumer
+
+
+# =========================
+# Integration Test Instance
+# =========================
+pulp_tester:
+    distribution: fc20
+    instance_name: jenkins-el7-pulp-tester
+    role: tester
+    os_name: Fedora
+    os_version: 20
+    tests_destination: test/el7.xml
+

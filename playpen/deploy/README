@@ -1,0 +1,96 @@
+Automated Integration Testing
+=============================
+
+Library Requirements
+--------------------
+
+* python-novaclient v2.16.0+
+ * python-glanceclient v0.12.0+
+ * python-keystoneclient v0.7.1+
+ * fabric v1.8.0+
+ * PyYAML
+
+
+Prerequisites
+-------------
+
+You will need an account with OS1 Internal. Once you have an account and have
+accessed the Dashboard, visit 'Access & Security' -> 'API Access' and download
+the OpenStack RC File. You can use this to set the expected environment
+variables, or you can enter them into a yaml file using the format found in
+config/sample_os1_config.yml
+
+You'll also need to set up a key pair for Openstack. For unknown reasons, the
+key generated using the Openstack dashboard causes fabric to prompt for a key
+password, despite there not being one. You must generate your own using
+'ssh-keygen', and then import the public key into Openstack. This can be done
+via the dashboard in 'Access & Security' -> 'Keypairs', or by using the CLI:
+'nova keypair-add --pub-key <pub-key> <name>'.
+
+
+Configuring the Deployment
+--------------------------
+
+The machines the script set up depend on a configuration file. A sample
+configuration file can be found at config/sample_config.yml. This can be
+used with only a few modifications. You'll need to add the name of your
+Openstack key pair, as well as the path to your private key for that keypair.
+
+All options are documented inline, but other options you may want to change are:
+
+ * 'distribution' - this is what distribution the instance is. This can be set
+ globally, or on a per-instance basis.
+ * 'repository' - this can be used to change which build of Pulp gets deployed.
+
+Note: if you don't want to run the integration test suite, you can remove the
+'pulp_tester' dictionary entirely so an instance is not created for it. 
+
+
+Deploying the Environment
+-------------------------
+
+To deploy the enviroment using the configuration file you prepared, use the
+deploy-environment.py script in this directory. This will provision the
+necessary instances, configure each instance based on its role, and output
+a list of instances built and how to log in to each one. It also writes out
+a JSON file containing the configuration information for the other scripts. 
+By default, this is placed in the same directory as the configuration file,
+and uses the same name of the configuration file with an appended '.json'.
+
+
+Running the Tests
+-----------------
+
+If you configured the deployment to build a 'pulp_tester', you can run the
+integration tests using run-integration-tests.py. This will use the
+JSON file produced by deploy-environment.py to ssh into the pulp tester and
+runs the tests. After it is done, it will copy the results as an xml file to
+the location specified in the original configuration file.
+
+
+Cleanup
+-------
+
+Once you are done with the deployed environment, you will need to clean up
+the instances you created. This can be done with the cleanup-environment.py
+script. This will also need the JSON file created by the deploy-environment.py
+script. Once it's done terminating the instances, it will remove the JSON file.
+
+If something goes wrong, it may be necessary to clean up manually. To do this,
+go to the OS1 dashboard, navigate to the 'Instances' tab, look for the
+instances you created, and terminate them.
+
+
+Adding a New Image
+------------------
+
+When new distributions are released, it will be necessary to add new images to
+Glance.
+
+To add a new image, do the following:
+
+1. Upload the base cloud image to Glance (or boot an existing image). This can
+be done from the CLI with 'glance image-create --name <NAME> --image-format <FORMAT> 
+--file <FILE> --checksum <CHECKSUM> --property pulp_distribution=<DISTRIBUTON> --property user=<DEFAULT_USER>'.
+2. Run update-images.py
+
