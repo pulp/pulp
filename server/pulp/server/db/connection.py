@@ -116,43 +116,28 @@ class PulpCollectionFailure(PulpException):
     """
 
 
-def _retry_decorator(full_name=None, retries=0):
+def retry_decorator(full_name=None):
     """
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
     :param full_name: the full name of the database collection
     :type  full_name: str
-    :param retries: the number of times to retry the operation before allowing 
-                    the exception to blow the stack
-    :type  retries: int
     """
 
     def _decorator(method):
 
         @wraps(method)
         def retry(*args, **kwargs):
-
-            tries = 0
-
-            while tries <= retries:
-
+            while True:
                 try:
                     return method(*args, **kwargs)
 
                 except AutoReconnect:
-                    tries += 1
+                    msg = _('%(method)s operation failed on %(name)s') % {'method': method.__name__,
+                                                                          'name': full_name}
+                    _LOG.error(msg)
 
-                    _LOG.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
-                              {'method': method.__name__, 'name': full_name,
-                               'tries': retries - tries + 1})
-
-                    if tries <= retries:
-                        time.sleep(0.3)
-
-            raise PulpCollectionFailure(
-                _('%(method)s operation failed on %(name)s: database connection '
-                  'still down after %(tries)d tries') %
-                {'method': method.__name__, 'name': full_name, 'tries': (retries + 1)})
+                    time.sleep(0.3)
 
         return retry
 
@@ -177,7 +162,7 @@ def _end_request_decorator(method):
 
 class PulpCollection(Collection):
     """
-    pymongo.collection.Collection wrapper that provides support for retries when
+    pymongo.collection.Collection wrapper that provides auto-retry support when
     pymongo.errors.AutoReconnect exception is raised
     and automatically manages connection sockets for long-running and threaded
     applications
@@ -189,13 +174,11 @@ class PulpCollection(Collection):
                           'index_information', 'options', 'group', 'rename', 'distinct', 'map_reduce',
                           'inline_map_reduce', 'find_and_modify')
 
-    def __init__(self, database, name, create=False, retries=0, **kwargs):
+    def __init__(self, database, name, create=False, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)
 
-        self.retries = retries
-
         for m in self._decorated_methods:
-            setattr(self, m, _retry_decorator(self.full_name, self.retries)(getattr(self, m)))
+            setattr(self, m, retry_decorator(self.full_name)(getattr(self, m)))
 
     def __getstate__(self):
         return {'name': self.name}
@@ -237,8 +220,7 @@ def get_collection(name, create=False):
     if _DATABASE is None:
         raise PulpCollectionFailure(_('Cannot get collection from uninitialized database'))
 
-    retries = config.config.getint('database', 'operation_retries')
-    return PulpCollection(_DATABASE, name, retries=retries, create=create)
+    return PulpCollection(_DATABASE, name, create=create)
 
 
 def get_database():

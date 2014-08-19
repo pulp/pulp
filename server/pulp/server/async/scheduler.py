@@ -15,6 +15,7 @@ from pulp.server.async import worker_watcher
 from pulp.server.db import connection as db_connection
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
+from pulp.server.db.connection import retry_decorator
 from pulp.server.managers import resources
 from pulp.server.managers.schedule import utils
 
@@ -352,6 +353,7 @@ class Scheduler(beat.Scheduler):
         self._most_recent_timestamp = max(update_timestamps)
 
     @property
+    @retry_decorator()
     def schedule_changed(self):
         """
         Looks at the update timestamps in the database to determine if there
