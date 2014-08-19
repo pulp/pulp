@@ -90,14 +90,12 @@ def migrate_database(options):
                 print message
                 logger.info(message)
         except Exception, e:
-            # If an Exception is raised while applying the migrations, we should log and print it,
-            # and then continue with the other packages.
-            error_message = _('Applying migration %(m)s failed.')
+            # Log and print the error and what migration failed before allowing main() to handle the exception
+            error_message = _('Applying migration %(m)s failed.\n\nHalting migrations due to a migration failure.')
             error_message = error_message % {'m': migration.name}
             print >> sys.stderr, str(error_message), _(' See log for details.')
             logger.critical(error_message)
-            logger.critical(str(e))
-            logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
+            raise
 
 
 def main():
@@ -118,7 +116,6 @@ def main():
         return os.EX_DATAERR
     except Exception, e:
         print >> sys.stderr, str(e)
-        print >> sys.stderr, ''.join(traceback.format_exception(*sys.exc_info()))
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_SOFTWARE
