@@ -233,7 +233,8 @@ class TestManageDB(MigrationTest):
         # There should have been a print to stderr about the Exception
         expected_stderr_calls = [
             ('Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
-             'failed.'), ' ', ' See log for details.', '\n']
+             'failed.\n\nHalting migrations due to a migration failure.'), ' ', ' See log for details.', '\n',
+            'Bet you didn\'t see this coming.', '\n']
         stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
 
@@ -247,18 +248,18 @@ class TestManageDB(MigrationTest):
         expected_migration_modules_called = [
             'unit.server.db.migration_packages.platform.0001_stuff_and_junk',
             'unit.server.db.migration_packages.raise_exception.0001_works_fine',
-            'unit.server.db.migration_packages.raise_exception.0002_oh_no',
-            'unit.server.db.migration_packages.z.0001_test',
-            'unit.server.db.migration_packages.z.0002_test',
-            'unit.server.db.migration_packages.z.0003_test']
+            'unit.server.db.migration_packages.raise_exception.0002_oh_no']
         self.assertEquals(migration_modules_called, expected_migration_modules_called)
         # Assert that our precious versions have been updated correctly
         for package in models.get_migration_packages():
-            if package.name != 'unit.server.db.migration_packages.raise_exception':
+            if package.name == 'unit.server.db.migration_packages.platform':
                 self.assertEqual(package.current_version, package.latest_available_version)
-            else:
+            elif package.name == 'unit.server.db.migration_packages.raise_exception':
                 # The raised Exception should have prevented us from getting past version 1
-                self.assertEqual(package.current_version, 1)
+                self.assertEquals(package.current_version, 1)
+            else:
+                # raise_exception should cause the migrations to stop
+                self.assertEqual(package.current_version, 0)
 
     @patch('sys.stderr')
     @patch('sys.stdout')
@@ -285,6 +286,8 @@ class TestManageDB(MigrationTest):
             if 'raise_exception' in str(package):
                 # The Exception raising package should get to version 1, because version 2 raises
                 self.assertEqual(package.current_version, 1)
+            elif 'z' in str(package):
+                self.assertEquals(package.current_version, 0)
             else:
                 # All other packages should reach their top versions
                 self.assertEqual(package.current_version, package.latest_available_version)
@@ -358,7 +361,8 @@ class TestManageDB(MigrationTest):
         # There should have been a print to stderr about the Exception
         expected_stderr_calls = [
             ('Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
-             'failed.'), ' ', ' See log for details.', '\n']
+             'failed.\n\nHalting migrations due to a migration failure.'), ' ', ' See log for details.', '\n',
+            'Bet you didn\'t see this coming.', '\n']
         stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
         self.assertEquals(stderr_calls, expected_stderr_calls)
         migration_modules_called = [
@@ -371,10 +375,7 @@ class TestManageDB(MigrationTest):
         expected_migration_modules_called = [
             'unit.server.db.migration_packages.platform.0001_stuff_and_junk',
             'unit.server.db.migration_packages.raise_exception.0001_works_fine',
-            'unit.server.db.migration_packages.raise_exception.0002_oh_no',
-            'unit.server.db.migration_packages.z.0001_test',
-            'unit.server.db.migration_packages.z.0002_test',
-            'unit.server.db.migration_packages.z.0003_test']
+            'unit.server.db.migration_packages.raise_exception.0002_oh_no']
         self.assertEquals(migration_modules_called, expected_migration_modules_called)
         # Assert that our precious versions have not been updated, since we have the --test flag
         for package in models.get_migration_packages():
