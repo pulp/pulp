@@ -40,8 +40,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.4.0
-Release: 1%{?dist}
+Version: 2.4.1
+Release: 0.2.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Aug 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.2.alpha
+- 1093760 - pulp-manage-db now halts if a migration fails (jcline@redhat.com)
+
 * Sat Aug 09 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-1
 - Pulp rebuild
 
