@@ -7,6 +7,7 @@ from ctypes.util import find_library
 from ctypes import c_char_p
 
 
+# OpenSSL lib
 openssl = CDLL(find_library('crypto'))
 
 
@@ -29,7 +30,9 @@ class Store(object):
         openssl.X509_STORE_add_cert(self.ptr, certificate.ptr)
 
     def __del__(self):
-        openssl.X509_STORE_free(self.ptr)
+        if self.ptr:
+            openssl.X509_STORE_free(self.ptr)
+            self.ptr = 0
 
 
 class StoreContext(object):
@@ -50,7 +53,9 @@ class StoreContext(object):
         openssl.X509_STORE_CTX_init(self.ptr, store.ptr, certificate.ptr, None)
 
     def __del__(self):
-        openssl.X509_STORE_CTX_free(self.ptr)
+        if self.ptr:
+            openssl.X509_STORE_CTX_free(self.ptr)
+            self.ptr = 0
 
 
 class Certificate(object):
@@ -66,8 +71,11 @@ class Certificate(object):
         :type pem: str
         """
         bio = openssl.BIO_new_mem_buf(c_char_p(pem), len(pem))
-        self.ptr = openssl.PEM_read_bio_X509(bio, None, 0, None)
-        openssl.BIO_free(bio)
+        try:
+            self.ptr = openssl.PEM_read_bio_X509(bio, None, 0, None)
+        finally:
+            if bio:
+                openssl.BIO_free(bio)
 
     def verify(self, ca_chain):
         """
@@ -85,4 +93,6 @@ class Certificate(object):
         return retval == 1
 
     def __del__(self):
-        openssl.X509_free(self.ptr)
+        if self.ptr:
+            openssl.X509_free(self.ptr)
+            self.ptr = 0
