@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.3.0
+Version:        1.3.1
 Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
@@ -45,6 +45,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Thu Aug 21 2014 Barnaby Court <bcourt@redhat.com> 1.3.1-1
+- 1127298 - Canceling a download causes hang in ThreadedDownloader (bcourt@redhat.com)
+
 * Thu Aug 07 2014 Jeff Ortel <jortel@redhat.com> 1.3.0-1
 - Updated API to support synchronous downloading of a single file.
 
