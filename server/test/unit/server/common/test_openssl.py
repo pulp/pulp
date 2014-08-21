@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mock import patch, Mock
 
-from pulp.server.common.openssl import Store, StoreContext, Certificate
+from pulp.server.common.openssl import BIO, Store, StoreContext, Certificate
 
 
 #
@@ -11,6 +11,38 @@ from pulp.server.common.openssl import Store, StoreContext, Certificate
 #       lib calls returning pointers, return 0 (NULL).  This prevents
 #       __del__() calling free() when post run objects are garbage collected.
 #
+
+
+class TestBIO(TestCase):
+
+    @patch('pulp.server.common.openssl.c_char_p')
+    @patch('pulp.server.common.openssl.openssl')
+    def test_construction(self, fake_lib, fake_char_p):
+        ptr = 0
+        c_ptr = 123
+        fake_lib.BIO_new_mem_buf.return_value = ptr
+        fake_char_p.return_value = c_ptr
+        content = 'hello'
+
+        # test
+        bio = BIO(content)
+
+        # validation
+        fake_char_p.assert_called_with(content)
+        fake_lib.BIO_new_mem_buf.assert_called_with(c_ptr, len(content))
+        self.assertEqual(bio.ptr, ptr)
+
+    @patch('pulp.server.common.openssl.openssl')
+    def test_del(self, fake_lib):
+        ptr = 1
+        fake_lib.BIO_new_mem_buf.return_value = ptr
+
+        # test
+        bio = BIO('')
+        bio.__del__()
+
+        # validation
+        fake_lib.BIO_free.assert_called_with(ptr)
 
 
 class TestStore(TestCase):
@@ -91,12 +123,10 @@ class TestStoreContext(TestCase):
 
 class TestCertificate(TestCase):
 
-    @patch('pulp.server.common.openssl.c_char_p')
+    @patch('pulp.server.common.openssl.BIO')
     @patch('pulp.server.common.openssl.openssl')
-    def test_construction(self, fake_lib, fake_char):
+    def test_construction(self, fake_lib, fake_bio):
         ptr = 0
-        bio_ptr = 1
-        fake_lib.BIO_new_mem_buf.return_value = bio_ptr
         fake_lib.PEM_read_bio_X509.return_value = ptr
         pem = 'PEM-ENCODED'
 
@@ -104,10 +134,8 @@ class TestCertificate(TestCase):
         certificate = Certificate(pem)
 
         # validation
-        fake_char.assert_called_with(pem)
-        fake_lib.BIO_new_mem_buf.assert_called_with(fake_char(pem), len(pem))
-        fake_lib.BIO_free.assert_called_with(bio_ptr)
-        fake_lib.PEM_read_bio_X509.assert_called_with(bio_ptr, None, 0, None)
+        fake_bio.assert_called_with(pem)
+        fake_lib.PEM_read_bio_X509.assert_called_with(fake_bio().ptr, None, 0, None)
         self.assertEqual(certificate.ptr, ptr)
 
     @patch('pulp.server.common.openssl.openssl')
@@ -122,6 +150,7 @@ class TestCertificate(TestCase):
         # validation
         fake_lib.X509_free.assert_called_with(ptr)
 
+    @patch('pulp.server.common.openssl.BIO', Mock())
     @patch('pulp.server.common.openssl.Store')
     @patch('pulp.server.common.openssl.StoreContext')
     @patch('pulp.server.common.openssl.openssl')

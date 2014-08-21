@@ -11,6 +11,26 @@ from ctypes import c_char_p
 openssl = CDLL(find_library('crypto'))
 
 
+class BIO(object):
+    """
+    OpenSSL BIO object.
+    :ivar ptr: A pointer to the C structure.
+    :type ptr: BIO
+    """
+
+    def __init__(self, content):
+        """
+        :param content: The BIO content.
+        :type content: str
+        """
+        self.ptr = openssl.BIO_new_mem_buf(c_char_p(content), len(content))
+
+    def __del__(self):
+        if self.ptr:
+            openssl.BIO_free(self.ptr)
+            self.ptr = 0
+
+
 class Store(object):
     """
     OpenSSL certificate store.
@@ -70,12 +90,8 @@ class Certificate(object):
         :param pem: A PEM encoded certificate.
         :type pem: str
         """
-        bio = openssl.BIO_new_mem_buf(c_char_p(pem), len(pem))
-        try:
-            self.ptr = openssl.PEM_read_bio_X509(bio, None, 0, None)
-        finally:
-            if bio:
-                openssl.BIO_free(bio)
+        bio = BIO(pem)
+        self.ptr = openssl.PEM_read_bio_X509(bio.ptr, None, 0, None)
 
     def verify(self, ca_chain):
         """
