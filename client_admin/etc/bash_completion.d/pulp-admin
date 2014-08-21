@@ -1,72 +1,71 @@
+#!/bin/bash
 # TODO:
 #    0) add comments to this script
 #    1) Implement checking for: "The following options were specified but do not exist on the command:".
-#	So far, tab completion will work if not necessary option is specified
+#       So far, tab completion will work if not necessary option is specified
+#       It can be done by smth like
+#
+#       if [[ $($COMP_LINE | egrep -o "^The following options were specified") != "" ]]; then
+#               :
+#
+#       but it works very slow then
+#
 #    2) It works if a wrong option was specified:
 #       >>pulp-admin rpm repo wrong-section [TAB][TAB]
 #       content  copy     create   delete   export   group    --help   list     publish  remove   search   sync     update   uploads
+#       Easily fixed after bug 1132539 fix
 
 
-
-_login_options()
+_elogin_pa_options()
 {
-	COMPREPLY=()
-        result=$(comm -13 <(for word in ${COMP_LINE}; do echo $word; done | sort) <(for word in $options; do echo $word; done | sort))
+        #returns tab completion for the options of the first level if needed
 
-        if [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]] &&  [[ $COMP_LINE == *\ -p* ]] || [[ $COMP_LINE == *--password* ]]; then
-                result=$(echo $result | sed "s/\( -u\|--username\|-p\|--password\)//g")
-                COMPREPLY=( $( compgen -W "$result" -- "$cur" ) )
-        elif [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]]; then
-                result=$(echo $result | sed "s/\(-u\|--username\)//g")
-                COMPREPLY=( $( compgen -W "$result" -- "$cur" ) )
-        else
-                COMPREPLY=( $( compgen -W "$result" -- "$cur" ) )
+        pa_log_opt=$(comm -13 <(for word in ${1}; do echo $word; done | sort) <(for word in $2; do echo $word; done | sort))
+
+        if [[ $1 == *\ -u* ]] || [[ $1 == *--username* ]]; then
+                pa_log_opt=$(echo $pa_log_opt | sed "s/\(-u\|--username\)//g")
         fi
 
+        if [[ $1 == *\ -p* ]] || [[ $1 == *--password* ]]; then
+                pa_log_opt=$(echo $pa_log_opt | sed "s/\(-p\|--password\)//g")
+        fi
+        echo $pa_log_opt
 }
 
 
-_pulp-admin_tab()
+_epulp-admin_tab()
 {
-  local cur options sections grep_sections result
+  local pa_cur pa_options pa_sections grep_pa_sections
 
   COMPREPLY=()
-  cur=${COMP_WORDS[COMP_CWORD]}
-  options="-u -p --username --password --help -h --debug --config"
-  sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
-  grep_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
-
+  pa_cur=${COMP_WORDS[COMP_CWORD]}
+  pa_options="-u -p --username --password --help -h --debug --config"
+  pa_sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
+  grep_pa_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
 
   if [[ $COMP_LINE == *logout?* ]] || [[ $COMP_LINE == *--map?* ]] || [[ $COMP_LINE == *\ -h?* ]] || [[ $COMP_LINE == *--help?* ]]; then
         :
 
   elif [[ $COMP_LINE == *login?* ]]; then
-	_login_options $COMP_LINE $options $cur
+
+        login_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
+        COMPREPLY=( $( compgen -W "$login_pa_options" -- "$pa_cur" ) )
 
   elif [ $COMP_CWORD -eq 1 ]; then
-	if [[ "$cur" == -* ]]; then
-	        COMPREPLY=( $( compgen -W "$options --map" -- "$cur" ) )
-	else
-		COMPREPLY=( $( compgen -W "$options $sections login logout --map" -- "$cur" ) )
+        if [[ "$pa_cur" == -* ]]; then
+                COMPREPLY=( $( compgen -W "$pa_options --map" -- "$pa_cur" ) )
+        else
+                COMPREPLY=( $( compgen -W "$pa_options $pa_sections login logout --map" -- "$pa_cur" ) )
         fi
 
-  elif [[ $grep_sections != "" ]]; then
-        COMPREPLY=( $( compgen -W "$(pulp-admin $grep_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+' | tr -d ' ' | sort | uniq ) --help" -- "$cur" ) )
+  elif [[ $grep_pa_sections != "" ]]; then
+        COMPREPLY=( $( compgen -W "$(pulp-admin $grep_pa_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+' | tr -d ' ' | sort | uniq ) --help" -- "$pa_cur" ) )
 
   else
-	result=$(comm -13 <(for word in ${COMP_LINE}; do echo $word; done | sort) <(for word in $options; do echo $word; done | sort))
-
-        if [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]] &&  [[ $COMP_LINE == *\ -p* ]] || [[ $COMP_LINE == *--password* ]]; then
-                result=$(echo $result | sed "s/\(-u\|--username\|-p\|--password\)//g")
-                COMPREPLY=( $( compgen -W "$result $sections" -- "$cur" ) )
-        elif [[ $COMP_LINE == *\ -u* ]] || [[ $COMP_LINE == *--username* ]]; then
-                result=$(echo $result | sed "s/\(-u\|--username\)//g")
-                COMPREPLY=( $( compgen -W "$result $sections" -- "$cur" ) )
-        else
-                COMPREPLY=( $( compgen -W "$result $sections" -- "$cur" ) )
-        fi
+        nologin_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
+        COMPREPLY=( $( compgen -W "$nologin_pa_options $pa_sections" -- "$pa_cur" ) )
 
   fi
 } &&
 
-complete -F _pulp-admin_tab pulp-admin
+complete -F _epulp-admin_tab pulp-admin
