@@ -257,7 +257,7 @@ Requires: python-gofer-qpid >= 1.3.0
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
-Requires: m2crypto >= 0.21.1-8.pulp
+Requires: m2crypto >= 0.21.1
 Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
