@@ -9,7 +9,8 @@ from pulp.server.common.openssl import BIO, Store, StoreContext, Certificate
 #
 # Note: Tests not explicitly validating __del__() must ensure that mocked
 #       lib calls returning pointers, return 0 (NULL).  This prevents
-#       __del__() calling free() when post run objects are garbage collected.
+#       __del__() calling free() with random or bogus pointers when post
+#       run objects are garbage collected.
 #
 
 

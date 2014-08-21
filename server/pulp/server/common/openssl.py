@@ -92,6 +92,7 @@ class Certificate(object):
         """
         bio = BIO(pem)
         self.ptr = openssl.PEM_read_bio_X509(bio.ptr, None, 0, None)
+        del bio
 
     def verify(self, ca_chain):
         """
@@ -106,6 +107,8 @@ class Certificate(object):
             store.add(ca)
         ctx = StoreContext(store, self)
         retval = openssl.X509_verify_cert(ctx.ptr)
+        del ctx
+        del store
         return retval == 1
 
     def __del__(self):
