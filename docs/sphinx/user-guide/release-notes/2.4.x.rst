@@ -2,6 +2,46 @@
 Pulp 2.4 Release Notes
 ======================
 
+Pulp 2.4.1
+==========
+
+Bugs
+----
+You can see the complete list of bugs that were
+`fixed in Pulp 2.4.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.4.1>`_.
+
+Rest API Changes
+----------------
+
+* The timestamps returned for the following objects and fields have been converted from an
+  ISO 8601 timestamp with a timezone offset to native ISO 8601 timestamps in UTC:
+
+  #. Repository Distributor (last_published)
+  #. Repository Group Distributor (last_published)
+  #. Repository Publish Results (started, completed)
+  #. Repository Group Publish Results (started, completed)
+  #. Repository Importer (last_sync)
+  #. Repository Importer Sync Results (started, completed)
+
+Deprecation
+-----------
+
+- The 2.4.1 release deprecates the ``operation_retries`` setting from ``/etc/pulp/server.conf``.
+  All Pulp services now attempt to re-connect to the MongoDB indefinitely.
+
+Upgrade Instructions for 2.4.0 --> 2.4.1
+----------------------------------------
+
+Upgrading from Pulp 2.4.0 to 2.4.1 is straightforward. Begin with a yum update::
+
+    $ sudo yum update
+
+After you've performed the package updates, please remove the ``operation_retries`` setting from
+``/etc/pulp/server.conf``, as it's been deprecated. Once you have your configuration files in place,
+restart all Pulp services (``httpd``, ``pulp_celerybeat``, ``pulp_resource_manager``,
+``pulp_workers``, and ``goferd``).
+
+
 Pulp 2.4.0
 ==========
 
