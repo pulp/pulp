@@ -740,3 +740,12 @@ class TestGetCurrentTaskId(unittest.TestCase):
 
     def test_get_task_id_not_in_task(self):
         self.assertEquals(None, tasks.get_current_task_id())
+
+
+class TestCleanupOldWorker (unittest.TestCase):
+
+    @mock.patch('pulp.server.async.tasks._delete_worker')
+    def test_assert_calls__delete_worker_synchronously(self, mock__delete_worker):
+        sender = mock.Mock()
+        tasks.cleanup_old_worker(sender=sender)
+        mock__delete_worker.assert_called_once_with(sender.hostname, normal_shutdown=True)
