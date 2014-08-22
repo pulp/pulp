@@ -8,8 +8,7 @@ Pulp 2.4.1
 Bugs
 ----
 You can see the complete list of bugs that were
-`fixed in Pulp 2.4.1 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.1&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&product=Pulp>`_.
-
+`fixed in Pulp 2.4.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.4.1>`_.
 
 Rest API Changes
 ----------------
