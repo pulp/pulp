@@ -198,6 +198,9 @@ def get_paths_to_copy():
     :rtype:  list
     """
     paths = [
+        {'source': 'client_admin/etc/bash_completion.d/pulp-admin',
+         'destination': '/etc/bash_completion.d/pulp-admin', 'owner': 'root', 'group': 'root',
+         'mode': '644', 'overwrite': True},
         {'source': 'client_consumer/etc/pulp/consumer/consumer.conf',
          'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
          'mode': '644', 'overwrite': False},
