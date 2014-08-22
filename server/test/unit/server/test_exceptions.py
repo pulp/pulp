@@ -128,8 +128,8 @@ class TestPulpCodedAuthenticationException(unittest.TestCase):
         """
         e = exceptions.PulpCodedAuthenticationException(error_code=error_codes.PLP0027, user='test')
         self.assertEquals(e.error_code, error_codes.PLP0027)
-        self.assertTrue(auth_utils.CODE_KEY in e.error_data)
-        self.assertEquals(auth_utils.CODE_INVALID_SSL_CERT, e.error_data[auth_utils.CODE_KEY])
+        self.assertTrue(auth_utils.CODE_KEY in e.data_dict())
+        self.assertEquals(auth_utils.CODE_INVALID_SSL_CERT, e.data_dict()[auth_utils.CODE_KEY])
 
 
 class TestNoWorkers(unittest.TestCase):
