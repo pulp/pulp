@@ -123,10 +123,12 @@ popd
 
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/admin/conf.d
+mkdir -p %{buildroot}/%{_sysconfdir}/bash_completion.d
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
 
 cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
+cp client_admin/etc/bash_completion.d/pulp-admin %{buildroot}/%{_sysconfdir}/bash_completion.d/
 %endif # End pulp_admin installation block
 
 # Server installation
@@ -471,6 +473,7 @@ synching, and to kick off remote actions on consumers.
 %{python_sitelib}/pulp_client_admin*.egg-info
 %dir %{_sysconfdir}/%{name}/admin
 %dir %{_sysconfdir}/%{name}/admin/conf.d
+%{_sysconfdir}/bash_completion.d/pulp-admin
 %dir %{_usr}/lib/%{name}/admin/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin

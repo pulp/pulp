@@ -1,0 +1,65 @@
+#!/bin/bash
+# bash completion support for pulp-admin.
+#
+# The contained completion routines provide support for completing
+# pulp-admin subsections, commands and options.
+
+# _elogin_pa_options() function generates completion of the first
+# level options, avoiding duplicates between short and long options.
+# Takes two arguments:
+# 1: COMP_LINE
+# 2: pa_options
+_elogin_pa_options() {
+
+  pa_log_opt=$(comm -13 <(for word in ${1}; do echo $word; done | sort) <(for word in $2; do echo $word; done | sort))
+
+  if [[ $1 == *\ -u* ]] || [[ $1 == *--username* ]]; then
+    pa_log_opt=$(echo $pa_log_opt | sed "s/\(-u\|--username\)//g")
+  fi
+
+  if [[ $1 == *\ -p* ]] || [[ $1 == *--password* ]]; then
+    pa_log_opt=$(echo $pa_log_opt | sed "s/\(-p\|--password\)//g")
+  fi
+    echo $pa_log_opt
+}
+
+_epulp-admin_tab() {
+
+  local pa_cur pa_options pa_sections grep_pa_sections
+
+  COMPREPLY=()
+  pa_cur=${COMP_WORDS[COMP_CWORD]}
+  pa_options="-u -p --username --password --help -h --debug --config"
+  pa_sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
+  grep_pa_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
+
+  if [[ $COMP_LINE == *logout?* ]] \
+    || [[ $COMP_LINE == *--map?* ]] \
+    || [[ $COMP_LINE == *\ -h?* ]] \
+    || [[ $COMP_LINE == *--help?* ]]; then
+      return
+  fi
+
+  if [[ $COMP_LINE == *login?* ]]; then
+    login_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
+    COMPREPLY=( $( compgen -W "$login_pa_options" -- "$pa_cur" ) )
+
+  elif [ $COMP_CWORD -eq 1 ]; then
+    if [[ "$pa_cur" == -* ]]; then
+      COMPREPLY=( $( compgen -W "$pa_options --map" -- "$pa_cur" ) )
+    else
+      COMPREPLY=( $( compgen -W "$pa_options $pa_sections login logout --map" -- "$pa_cur" ) )
+    fi
+
+  elif [[ -n "${grep_pa_sections}" ]]; then
+    COMPREPLY=( $( compgen -W "$(pulp-admin $grep_pa_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+' | tr -d ' ' | sort | uniq ) --help" -- "$pa_cur" ) )
+
+  else
+    nologin_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
+    COMPREPLY=( $( compgen -W "$nologin_pa_options $pa_sections" -- "$pa_cur" ) )
+
+  fi
+
+}
+
+complete -F _epulp-admin_tab pulp-admin
