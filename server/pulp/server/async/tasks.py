@@ -6,6 +6,7 @@ import signal
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
+from celery.signals import worker_init
 
 from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
@@ -40,8 +41,7 @@ def _delete_worker(name, normal_shutdown=False):
     """
     worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
     if len(worker_list) == 0:
-        # Potentially _delete_worker() may be called with the database not containing any entries.
-        # https://bugzilla.redhat.com/show_bug.cgi?id=1091922
+        # If no workers are found then there is nothing to do.
         return
     worker = worker_list[0]
 
@@ -462,3 +462,25 @@ def register_sigterm_handler(f, handler):
             signal.signal(signal.SIGTERM, old_signal)
 
     return wrap_f
+
+
+@worker_init.connect
+def cleanup_old_worker(*args, **kwargs):
+    """
+    Cleans up old state if this worker was previously running, but died unexpectedly.
+
+    In those cases, any Pulp tasks that were running or waiting on this worker will show incorrect
+    state. Any reserved_resource reservations associated with the previous worker will also be
+    removed along with the worker entry in the database itself. This is called early in the worker
+    start process, and later when its fully online pulp_celerybeat will discover the worker as
+    usual to allow new work to arrive at this worker.
+
+    If there is no previous work to cleanup this method still runs, but has not effect on the
+    database.
+
+    :param args: For positional arguments; and not used otherwise
+    :param kwargs: For keyword arguments, and expected to have one named 'sender'
+    :return: None
+    """
+    name = kwargs['sender'].hostname
+    _delete_worker(name, normal_shutdown=True)
