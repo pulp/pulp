@@ -10,6 +10,7 @@ import uuid
 import argparse
 
 import koji
+from rpmUtils.miscutils import splitFilename
 
 
 home_directory = os.path.expanduser('~')
@@ -325,6 +326,16 @@ def download_rpms_from_scratch_tasks(output_directory, dist):
             taskinfo = mysession.getTaskInfo(int(task_id))
             arch = taskinfo.get('arch')
             target_arch_dir = os.path.join(output_directory, arch)
+
+            # Remove any rpm in the output directory that matches an RPM built by the scratch tasks
+            scratch_rpm_files = [f for f in mysession.listTaskOutput(int(task_id)) if f.endswith('.rpm')]
+            old_rpm_files = [f for f in os.listdir(target_arch_dir) if f.endswith('.rpm')]
+            for old_rpm in old_rpm_files:
+                for scratch_rpm in scratch_rpm_files:
+                    if splitFilename(scratch_rpm)[0] == splitFilename(old_rpm)[0]:
+                        os.remove(os.path.join(target_arch_dir, old_rpm))
+                        print 'The scratch build is replacing %s with %s' % (old_rpm, scratch_rpm)
+
             print 'Downloading %s to %s' % (task_id, target_arch_dir)
             download_rpms_from_task_to_dir(task_id, target_arch_dir)
 

@@ -1,0 +1,4 @@
+builder.py requires the following:
+  * Koji (the certificates must be in ~/ and called .katello.cert and .katello-ca.cert)
+  * rpmUtils, a Python module provided by yum
+
