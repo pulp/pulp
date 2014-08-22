@@ -43,32 +43,28 @@ class ExceptionHandlerMiddleware(object):
         try:
             return self.app(environ, start_response)
         except Exception, e:
-            logger.exception(str(e))
-            t, e, tb = sys.exc_info()
-            status = None
-            error_obj = None
-            record_exception_and_traceback = self.debug
             if isinstance(e, PulpException):
                 status = e.http_status_code
-                if type(e) == PulpException:
-                    # un-derived exceptions earn you a traceback
-                    record_exception_and_traceback = True
-                error_obj = serialization.error.http_error_obj(status, str(e))
-                error_obj.update(e.data_dict())
-                if record_exception_and_traceback:
-                    error_obj['exception'] = traceback.format_exception_only(t, e)
-                    error_obj['traceback'] = traceback.format_tb(tb)
-                # Always dump the error using the standard format if it is a pulp exception
-                # This is the future format that we are migrating to
-                error_obj['error'] = e.to_dict()
-
+                response = serialization.error.http_error_obj(status, str(e))
+                response.update(e.data_dict())
+                response['error'] = e.to_dict()
             else:
+                # If it's not a Pulp exception, return a 500
                 msg = _('Unhandled Exception')
-                logger.exception(msg)
+                logger.error(msg)
                 status = httplib.INTERNAL_SERVER_ERROR
-                error_obj = serialization.error.exception_obj(e, tb, msg)
-            serialized_error = json.dumps(error_obj)
-            self.headers['Content-Length'] = str(len(serialized_error))
+                response = serialization.error.http_error_obj(status, str(e))
+
+            if status == httplib.INTERNAL_SERVER_ERROR or self.debug:
+                logger.exception(str(e))
+                e_type, e_value, trace = sys.exc_info()
+                response['exception'] = traceback.format_exception_only(e_type, e_value)
+                response['traceback'] = traceback.format_tb(trace)
+            else:
+                logger.info(str(e))
+
+            serialized_response = json.dumps(response)
+            self.headers['Content-Length'] = str(len(serialized_response))
             status_str = '%d %s' % (status, http_responses[status])
             start_response(status_str, [(k, v) for k, v in self.headers.items()])
-            return [serialized_error]
+            return [serialized_response]

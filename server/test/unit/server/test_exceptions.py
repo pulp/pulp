@@ -15,7 +15,7 @@ import unittest
 
 import mock
 
-from pulp.common import error_codes
+from pulp.common import error_codes, auth_utils
 from pulp.devel.unit.util import compare_dict
 from pulp.server import exceptions
 
@@ -111,6 +111,25 @@ class TestPulpCodedValidationException(unittest.TestCase):
                                                      exceptions.PulpCodedException()])
         self.assertEquals(e.error_code, error_codes.PLP1000)
         self.assertEquals(len(e.child_exceptions), 2)
+
+
+class TestPulpCodedAuthenticationException(unittest.TestCase):
+    def test_init(self):
+        """
+        Test basic init with no values
+        """
+        e = exceptions.PulpCodedAuthenticationException()
+        self.assertEquals(e.error_code, error_codes.PLP0025)
+
+    def test_init_custom_code(self):
+        """
+        Test init with a custom authentication failure error code. This also tests that the
+        old error code is placed in the error data for backward compatibility.
+        """
+        e = exceptions.PulpCodedAuthenticationException(error_code=error_codes.PLP0027, user='test')
+        self.assertEquals(e.error_code, error_codes.PLP0027)
+        self.assertTrue(auth_utils.CODE_KEY in e.error_data)
+        self.assertEquals(auth_utils.CODE_INVALID_SSL_CERT, e.error_data[auth_utils.CODE_KEY])
 
 
 class TestNoWorkers(unittest.TestCase):

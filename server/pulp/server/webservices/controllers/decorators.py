@@ -17,14 +17,13 @@ pulp.server.webservices.controllers.base.JSONController classes, it is assumed
 that certain other methods will exist.
 """
 
-import httplib
 import logging
 
-from pulp.common import auth_utils
+from pulp.common import error_codes
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
 from pulp.server.config import config
 from pulp.server.compat import wraps
-from pulp.server.exceptions import PulpException
+from pulp.server.exceptions import PulpCodedAuthenticationException
 from pulp.server.managers import factory
 from pulp.server.webservices import http
 
@@ -33,22 +32,6 @@ from pulp.server.webservices import http
 _LOG = logging.getLogger(__name__)
 
 DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/' : [READ]}
-
-# -- exceptions ---------------------------------------------------------------
-
-class AuthenticationFailed(PulpException):
-
-    http_status_code = httplib.UNAUTHORIZED
-
-    def __init__(self, error_code):
-        """
-        :param error_code: one of the error codes in pulp.common.auth_utils
-        """
-        super(AuthenticationFailed, self).__init__()
-        self.error_doc = auth_utils.generate_failure_response(error_code)
-
-    def data_dict(self):
-        return self.error_doc
 
 
 # -- supported authentication methods -----------------------------------------
@@ -64,23 +47,23 @@ def check_preauthenticated():
         userid = factory.authentication_manager().check_username_password(username)
         if userid is None:
             # User is not in the local database, nor in LDAP
-            raise AuthenticationFailed(auth_utils.CODE_PREAUTH)
+            raise PulpCodedAuthenticationException(error_code=error_codes.PLP0029, user=username)
         else:
             _LOG.debug("User preauthenticated: %s" % username)
             return userid
-    return None
+
 
 def password_authentication():
     username, password = http.username_password()
     if username is not None:
         userid = factory.authentication_manager().check_username_password(username, password)
         if userid is None:
-            raise AuthenticationFailed(auth_utils.CODE_USER_PASS)
+            raise PulpCodedAuthenticationException(error_code=error_codes.PLP0030, user=username)
         else:
             _LOG.debug("User [%s] authenticated with password" % username)
             return userid
-    return None
-    
+
+
 def user_cert_authentication():
     cert_pem = http.ssl_client_cert()
     if cert_pem is not None:
@@ -90,6 +73,7 @@ def user_cert_authentication():
             return userid
     return None
 
+
 def consumer_cert_authentication():
     cert_pem = http.ssl_client_cert()
     if cert_pem is not None:
@@ -97,7 +81,7 @@ def consumer_cert_authentication():
         if consumerid is not None:
             _LOG.debug("Consumer authenticated with ssl cert: %s" % consumerid)
             return consumerid
-    return None
+
 
 def oauth_authentication():
     if not config.getboolean('oauth', 'enabled'):
@@ -108,14 +92,14 @@ def oauth_authentication():
     cert_pem = http.ssl_client_cert()
     if username is None or auth is None:
         if cert_pem is not None:
-            raise AuthenticationFailed(auth_utils.CODE_INVALID_SSL_CERT)
+            raise PulpCodedAuthenticationException(error_code=error_codes.PLP0027, user=username)
         return None, False
     meth = http.request_info('REQUEST_METHOD')
     url = http.request_url()
     query = http.request_info('QUERY_STRING')
     userid, is_consumer = factory.authentication_manager().check_oauth(username, meth, url, auth, query)
     if userid is None:
-        raise AuthenticationFailed(auth_utils.CODE_OAUTH)
+        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0028, user=username)
     _LOG.debug("User authenticated with Oauth: %s" % userid)
     return userid, is_consumer
 
@@ -200,7 +184,7 @@ def auth_required(operation=None, super_user_only=False):
                     break
 
             if not user_authenticated:
-                raise AuthenticationFailed(auth_utils.CODE_FAILED)
+                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0025)
 
             # Check Authorization
             
@@ -208,7 +192,7 @@ def auth_required(operation=None, super_user_only=False):
             user_query_manager = factory.user_query_manager()
 
             if super_user_only and not user_query_manager.is_superuser(userid):
-                raise AuthenticationFailed(auth_utils.CODE_PERMISSION)
+                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0029, user=userid)
             # if the operation is None, don't check authorization
             elif operation is not None:
                 if is_consumer: 
@@ -216,12 +200,14 @@ def auth_required(operation=None, super_user_only=False):
                         # set default principal = SYSTEM
                         principal_manager.set_principal()
                     else:
-                        raise AuthenticationFailed(auth_utils.CODE_PERMISSION)
+                        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
+                                                               operation=operation)
                 elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
                     user = user_query_manager.find_by_login(userid)
                     principal_manager.set_principal(user)
                 else:
-                    raise AuthenticationFailed(auth_utils.CODE_PERMISSION)
+                    raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
+                                                           operation=operation)
 
             # Authentication and authorization succeeded. Call method and then clear principal.
             value = method(self, *args, **kwargs)

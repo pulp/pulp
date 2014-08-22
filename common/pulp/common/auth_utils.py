@@ -10,9 +10,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-# The following error codes will be returned when a user fails an authentication check
-# to better describe why. See
+from pulp.common import error_codes
 
+
+# These codes are deprecated. Please use a pulp.common.error_codes.Error instead.
 # Key in the JSON response that contains the error code
 CODE_KEY = 'auth_error_code'
 
@@ -23,6 +24,16 @@ CODE_OAUTH = 'invalid_oauth_credentials'
 CODE_PREAUTH = 'pre_auth_remote_user_missing'
 CODE_USER_PASS = 'invalid_username_or_password'
 
+# For the sake of backwards compatibility, map the above error codes to standard error codes
+auth_error_codes = {
+    'PLP0025': CODE_FAILED,
+    'PLP0026': CODE_PERMISSION,
+    'PLP0027': CODE_INVALID_SSL_CERT,
+    'PLP0028': CODE_OAUTH,
+    'PLP0029': CODE_PREAUTH,
+    'PLP0030': CODE_USER_PASS,
+}
+
 
 def generate_failure_response(code):
     """
@@ -30,12 +41,16 @@ def generate_failure_response(code):
     codes.
 
     :param code: error code to describe the reason for the failure
-    :type  code: str
+    :type  code: pulp.common.error_codes.Error
 
     :return: JSON document suitable for returning through the REST API layer
     :rtype:  dict
     """
-    return {CODE_KEY : code}
+    # Check for a standard error code first
+    if isinstance(code, error_codes.Error) and code[0] in auth_error_codes:
+        return {CODE_KEY: auth_error_codes[code[0]]}
+
+    return {CODE_KEY: code}
 
 
 def get_error_code(response_doc):
