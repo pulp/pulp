@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.1
-Release: 0.2.alpha%{?dist}
+Release: 0.3.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,12 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Aug 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.3.beta
+- 1130312 - Fix bug query for 2.4.1. (rbarlow@redhat.com)
+- 1130312 - Add upgrade instructions for 2.4.1. (rbarlow@redhat.com)
+- 1108306 - Update nectar to fix hang on canceling downloads of large numbers
+  of files. (bcourt@redhat.com)
+
 * Wed Aug 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.2.alpha
 - 1093760 - pulp-manage-db now halts if a migration fails (jcline@redhat.com)
 
