@@ -80,4 +80,6 @@ pulp_tester:
     os_version: 20
     # The path to put the nosetests results
     tests_destination: nosetests.xml
+    # The git branch to use when running the tests
+    test_suite_branch: master
 

@@ -9,7 +9,7 @@ from fabric.context_managers import hide
 from fabric.exceptions import NetworkError
 import yaml
 
-from config_utils import HOSTNAME, HOST_STRING, INSTANCE_NAME, PRIVATE_KEY, ROLE, REPOSITORY_URL
+from config_utils import HOSTNAME, HOST_STRING, INSTANCE_NAME, PRIVATE_KEY, ROLE, REPOSITORY_URL, TEST_SUITE_BRANCH
 from config_utils import get_parent_config, get_instance_config, config_generator, flatten_structure
 
 # Fabric configuration
@@ -62,8 +62,9 @@ YUM_INSTALL_TEMPLATE = 'sudo yum -y install %s'
 
 # The version of gevent provided by Fedora/RHEL is too old, so force it to update here.
 # It seems like setup.py needs to be run twice for now.
-INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git \
-&& sudo pip install -U greenlet gevent requests && cd pulp-automation && sudo python ./setup.py install'
+INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git && \
+git checkout %s && sudo pip install -U greenlet gevent requests && cd pulp-automation && \
+sudo python ./setup.py install'
 
 HOSTS_TEMPLATE = "echo '%(ip)s    %(hostname)s %(hostname)s.novalocal' | sudo tee -a /etc/hosts"
 
@@ -258,7 +259,8 @@ def configure_tester(instance_name, global_config):
                 run(YUM_INSTALL_TEMPLATE % dependency)
 
         # Install the test suite
-        run(INSTALL_TEST_SUITE)
+        branch = config.get(TEST_SUITE_BRANCH, 'master')
+        run(INSTALL_TEST_SUITE % branch)
 
         # Write to /etc/hosts
         server_ip = server_config[HOST_STRING].split('@')[1]
