@@ -45,7 +45,7 @@ class TestBind(unittest.TestCase):
         binding_config = {'binding': 'foo'}
         agent_options = {'bar': 'baz'}
         mock_bind_manager.consumer_agent_manager.return_value.bind.return_value = \
-            {'task_id': 'foo-request-id'}
+            {'task_id': 'foo-request-id', 'other_task_detail': 'abc123'}
         result = consumer.bind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                True, binding_config, agent_options)
         mock_bind_manager.consumer_agent_manager.return_value.bind.assert_called_once_with(
@@ -84,7 +84,7 @@ class TestUnbind(unittest.TestCase):
         agent_options = {'bar': 'baz'}
         mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
         mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = \
-            {'task_id': 'foo-request-id'}
+            {'task_id': 'foo-request-id', 'other_task_detail': 'abc123'}
         result = consumer.unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                  agent_options)
         mock_bind_manager.consumer_bind_manager.return_value.unbind.assert_called_once_with(
@@ -120,7 +120,7 @@ class TestForceUnbind(unittest.TestCase):
         agent_options = {'bar': 'baz'}
         mock_bind_manager.consumer_bind_manager.return_value.get_bind.return_value = binding_config
         mock_bind_manager.consumer_agent_manager.return_value.unbind.return_value = \
-            {'task_id': 'foo-request-id'}
+            {'task_id': 'foo-request-id', 'other_task_detail': 'abc123'}
         result = consumer.force_unbind('foo_consumer_id', 'foo_repo_id', 'foo_distributor_id',
                                        agent_options)
         mock_bind_manager.consumer_agent_manager.return_value.unbind.assert_called_once_with(

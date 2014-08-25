@@ -50,7 +50,8 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
     if notify_agent:
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.bind(consumer_id, repo_id, distributor_id, agent_options)
-        response.spawned_tasks.append(task)
+        # we only want the task's ID, not the full task
+        response.spawned_tasks.append({'task_id': task.get('task_id')})
 
     return response
 
@@ -88,7 +89,8 @@ def unbind(consumer_id, repo_id, distributor_id, options):
         # The agent notification handler will delete the binding from the server
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        response.spawned_tasks.append(task)
+        # we only want the task's ID, not the full task
+        response.spawned_tasks.append({'task_id': task.get('task_id')})
     else:
         # Since there was no agent notification, perform the delete immediately
         bind_manager.delete(consumer_id, repo_id, distributor_id, True)
@@ -128,7 +130,8 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
     if binding['notify_agent']:
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
-        response.spawned_tasks.append(task)
+        # we only want the task's ID, not the full task
+        response.spawned_tasks.append({'task_id': task.get('task_id')})
 
     return response
 
