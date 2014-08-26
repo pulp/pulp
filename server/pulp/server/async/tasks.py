@@ -233,10 +233,11 @@ class ReservedTaskMixin(object):
         queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
 
         kwargs['queue'] = queue
+        kwargs['exchange'] = 'C.dq'
         try:
             async_result = self.apply_async(*args, **kwargs)
         finally:
-            _queue_release_resource.apply_async((resource_id,), queue=queue)
+            _queue_release_resource.apply_async((resource_id,), queue=queue, exchange='C.dq')
 
         return async_result
 
@@ -264,13 +265,20 @@ class Task(CeleryTask, ReservedTaskMixin):
         """
         queue = kwargs.get('queue', defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
         tags = kwargs.pop('tags', [])
+
+        ### This is a temporary workaround for https://github.com/celery/celery/issues/2216 ###
+        queue_name_to_save = queue
+        if kwargs.get('exchange', None) == 'C.dq':
+            kwargs['queue'] = queue.rstrip('.dq')
+        #######################################################################################
+
         async_result = super(Task, self).apply_async(*args, **kwargs)
         async_result.tags = tags
 
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(
             task_id=async_result.id, task_type=self.name,
-            state=constants.CALL_WAITING_STATE, queue=queue, tags=tags)
+            state=constants.CALL_WAITING_STATE, queue=queue_name_to_save, tags=tags)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.

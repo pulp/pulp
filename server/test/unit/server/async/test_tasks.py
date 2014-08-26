@@ -328,7 +328,8 @@ class TestTask(ResourceReservationTests):
         mock_async_result = MockAsyncResult()
         apply_async.return_value = mock_async_result
         some_args = [1, 'b', 'iii']
-        some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': WORKER_1_QUEUE}
+        some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': WORKER_1_QUEUE,
+                       'exchange': 'C.dq'}
         resource_id = 'three_to_get_ready'
         resource_type = 'reserve_me'
         task = tasks.Task()
@@ -342,7 +343,8 @@ class TestTask(ResourceReservationTests):
                                                   queue=tasks.RESOURCE_MANAGER_QUEUE)
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
         _queue_release_resource.apply_async.assert_called_once_with((expected_resource_id,),
-                                                                    queue=WORKER_1_QUEUE)
+                                                                    queue=WORKER_1_QUEUE,
+                                                                    exchange='C.dq')
 
     @mock.patch('pulp.server.async.tasks.Task.request')
     def test_on_success_handler(self, mock_request):
@@ -560,6 +562,31 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
         self.assertEqual(new_task_status['queue'],
                          defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
+        self.assertEqual(new_task_status['tags'], kwargs['tags'])
+        self.assertEqual(new_task_status['state'], 'waiting')
+
+    @mock.patch('celery.Task.apply_async')
+    def test_apply_async_queue_name_modified_if_exchange_eq_C_dq(self, apply_async):
+        """
+        Assert that apply_async() removes the .dq from the queue name in cases where the keyword
+        'exchange' equals 'C.dq'. This queue name modification is asserted by the call to
+        apply_async() on the parent. Also asserts that the actual queue name (with the .dq) is
+        saved on the created TaskStatus object.
+        """
+        args = [1, 'b', 'iii']
+        kwargs = {'queue': 'worker.dq', 'tags': ['test_tags'], 'exchange': 'C.dq'}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        apply_async.assert_called_once_with(*args, queue='worker', exchange='C.dq')
+
+        task_statuses = list(TaskStatusManager.find_all())
+        self.assertEqual(len(task_statuses), 1)
+        new_task_status = task_statuses[0]
+        self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertEqual(new_task_status['queue'], 'worker.dq')
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
