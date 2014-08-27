@@ -6,16 +6,18 @@ the platform, and then each supported content family (like "rpm" and "puppet")
 has its own repository.
 
 Pulp uses a version scheme x.y.z. Pulp's branching strategy is designed for
-development of bugfixes for older "x.y" release streams without interfering with
-development or contribution of new features for "x" and "x.y" releases.
+bugfix development for older "x.y" release streams without interfering with
+development or contribution of new features to a future, unreleased "x" or
+"x.y" release. This strategy encourages a clear separation of bugfixes and
+features as encouraged by `Semantic Versioning` <http://semver.org/>`_.
 
 
 master
 ------
 
 This is the latest bleeding-edge code. All new feature work should be done out
-of this branch. Typically this is the development branch for "x" and "x.y"
-releases.
+of this branch. Typically this is the development branch for future, unreleased
+"x" or "x.y" release.
 
 
 Release Branches
@@ -27,8 +29,8 @@ occur within the same release branch and are identified by tags.
 
 The HEAD of each release branch points to a tagged release version. When a new
 "z" increment version of Pulp is released, the development branch is merged
-into the release branch and the new HEAD is tagged. Development occurs on a
-separate development branch as described below.
+into the release branch and the new HEAD of the release branch is tagged.
+Development occurs on a separate development branch.
 
 
 Development Branches
@@ -37,7 +39,7 @@ Development Branches
 Development for future "z" releases are done in a corresponding branch named
 "x.y-dev". For example, assuming Pulp 2.4.0 is released on the branch
 "pulp-2.4", development of 2.4.1 will occur on a branch named "2.4-dev". When
-2.4.1 is ready to be released, it will be merged with the pulp-2.4 branch at
+2.4.1 is ready to be released, it will be merged with the "pulp-2.4" branch at
 which point "2.4-dev" will be used for 2.4.2 development.
 
 
@@ -74,20 +76,10 @@ When creating a bug fix or feature branch, it is very important to choose the
 right upstream branch. The general rule is to always choose the oldest upstream
 branch that will need to contain your work.
 
-
-Merging Forward
----------------
-
 After choosing your upstream branch to merge your changes into and performing
 that merge, you additionally need to merge forward your commit to all "newer"
-branches.
-
-For example, if your work needs to go in versions 2.0, 2.1 and 2.2 alpha, you
-would create your branch from the 2.0 branch. After making some commits, merge
-your branch into each of the release branches. Merging forward includes merging
-all the way to master. Master is used for the largest feature changes which
-later get merged as a "x" or "y" release, so by merging forward now, merge
-conflicts can be avoided later.
+branches. See :ref:`Merging to Multiple Releases <merging-to-multiple-releases>`
+for more information on merging forward from an older branch.
 
 
 Cherry-picking and Rebasing
