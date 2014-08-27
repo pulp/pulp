@@ -137,6 +137,10 @@ Known Issues
   select at least one package group during the installation. Automated kickstarts are not affected by
   this issue.
 
+* There is a `configuration bug <https://bugzilla.redhat.com/show_bug.cgi?id=1132609>`_ related to
+  using MongoDB with authenticated database users. The error presents itself during syncs and other
+  task-related operations. A workaround is documented in comment #1 of the bug.
+
 * ``/etc/pulp/admin/admin.conf`` is owned by a different RPM than it was in 2.3.x. This means that
   when you upgrade Pulp, you will not get an admin.conf.rpmnew file. Instead, admin.conf will be
   overwritten with the new stock version.
@@ -152,6 +156,13 @@ Upgrade Instructions for 2.3.x --> 2.4.0
      in 2.3.x releases, you will need to make a backup of admin.conf before performing the upgrade
      if you wish to keep any of your settings. No admin.conf.rpmnew file will be generated during
      the upgrade!
+
+Begin by ensuring that you are using MongoDB version 2.4.0 or greater.
+
+  .. warning::
+    
+    Pulp 2.4.0 now requires MongoDB version 2.4.0 or greater. You must upgrade your MongoDB
+    installation before performing any further steps.
 
 Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. Pulp 2.3.x servers
 and nodes are not compatible with Pulp 2.4.0 and vice versa. All consumers must be upgraded first,
