@@ -161,7 +161,7 @@ Begin by ensuring that you are using MongoDB version 2.4.0 or greater.
 
   .. warning::
     
-    Pulp 2.4.0 now requires MongoDB version 2.4.0 or greater. You must upgrade your MongoDB
+    Pulp 2.4.0 requires MongoDB version 2.4.0 or greater. You must upgrade your MongoDB
     installation before performing any further steps.
 
 Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. Pulp 2.3.x servers
