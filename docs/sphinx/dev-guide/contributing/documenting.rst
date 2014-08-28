@@ -56,12 +56,11 @@ RTD Versions
 ------------
 
 When viewing docs on Read the Docs, there are multiple versions linked in the
-bottom-left corner of the page. The "latest" version corresponds to the version
-of Pulp currently under development, and is built from the most recent commit of
-the Pulp master branch. Past releases each have a link named "pulp-x.y", and are
-built from the most recent commit on the corresponding "pulp-x.y" branch. Docs
-shown on Read the Docs must be merged onto the appropriate branch for it to be
-displayed.
+bottom-left corner of the page. Past releases each have a link named "pulp-x.y"
+and are built from the most recent commit on the corresponding "pulp-x.y"
+release branch. Documentation shown on Read the Docs must be merged onto the
+appropriate branch for it to be displayed. The "latest" version corresponds
+to the most recently released version of Pulp.
 
 Docs automatically get built when a commit happens to a corresponding branch.
 However, it seems that builds may not happen automatically when only a merge
