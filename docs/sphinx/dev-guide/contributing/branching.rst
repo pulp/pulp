@@ -32,6 +32,12 @@ The HEAD of each release branch points to a tagged release version. When a new
 into the release branch and the new HEAD of the release branch is tagged.
 Development occurs on a separate development branch.
 
+Release branches are where read the docs builds from, so in some situations
+documentation commits may be merged into a release branch after a release has
+occurred. For example if a known issue is discovered in a release after it is
+released, it may be added to the release notes. In those situations the
+release tag will stay the same and diverge from HEAD.
+
 
 Development Branches
 --------------------
@@ -49,7 +55,7 @@ Bug Fix Branches
 When creating a pull request that fixes a specific bug in bugzilla, a naming
 convention is used for the pull request branch that is merged with the
 development branch. A bugzilla bug fix branch name should contain the
-developer's username and a Bugzilla bug number, separated by a hyphen. For
+developer's username and a bugzilla bug number, separated by a hyphen. For
 example, "mhrivnak-876543". Optionally, a short description may follow the BZ
 number.
 
