@@ -17,8 +17,8 @@
 # ---- Pulp Nodes -------------------------------------------------------------
 
 Name: pulp-nodes
-Version: 2.4.0
-Release: 0.21.beta%{?dist}
+Version: 2.4.1
+Release: 0.5.rc1%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -247,6 +247,47 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Tue Aug 26 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.5.rc1
+- Pulp rebuild
+
+* Mon Aug 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.4.beta
+- Pulp rebuild
+
+* Fri Aug 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.3.beta
+- Pulp rebuild
+
+* Wed Aug 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.2.alpha
+- Pulp rebuild
+
+* Thu Jul 31 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.30.beta
+- 1125030 - Handle both styles of certificate stores. (rbarlow@redhat.com)
+
+* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.29.beta
+- Pulp rebuild
+
+* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.28.beta
+- Pulp rebuild
+
+* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.27.beta
+- Pulp rebuild
+
+* Mon Jul 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.26.beta
+- 1113590 - Nodes requires Pulp's cert to be trusted 1112906 - pulp-admin
+  requires Pulp's cert to be trusted 1112904 - pulp-consumer requires Pulp's
+  cert to be trusted (rbarlow@redhat.com)
+
+* Wed Jul 16 2014 Unknown name 2.4.0-0.25.beta
+- 1005899 - support 'message' reported during node sync. (jortel@redhat.com)
+
+* Fri Jul 11 2014 Brian Bouterse <bmbouter@gmail.com> 2.4.0-0.24.beta
+- Pulp rebuild
+
+* Wed Jun 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.23.beta
+- Pulp rebuild
+
+* Tue Jun 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.22.beta
+- Pulp rebuild
+
 * Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
 - Pulp rebuild
 

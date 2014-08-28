@@ -2,6 +2,57 @@
 Pulp 2.4 Release Notes
 ======================
 
+Pulp 2.4.2
+==========
+
+Rest API Changes
+----------------
+
+* Certain API calls under ``/consumers/`` related to repo binding would
+  `erroneously return full task information <https://bugzilla.redhat.com/show_bug.cgi?id=1130119>`_.
+  This has been corrected; these calls now only return the task's ID.
+
+
+Pulp 2.4.1
+==========
+
+Bugs
+----
+You can see the complete list of bugs that were
+`fixed in Pulp 2.4.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.4.1>`_.
+
+Rest API Changes
+----------------
+
+* The timestamps returned for the following objects and fields have been converted from an
+  ISO 8601 timestamp with a timezone offset to native ISO 8601 timestamps in UTC:
+
+  #. Repository Distributor (last_published)
+  #. Repository Group Distributor (last_published)
+  #. Repository Publish Results (started, completed)
+  #. Repository Group Publish Results (started, completed)
+  #. Repository Importer (last_sync)
+  #. Repository Importer Sync Results (started, completed)
+
+Deprecation
+-----------
+
+- The 2.4.1 release deprecates the ``operation_retries`` setting from ``/etc/pulp/server.conf``.
+  All Pulp services now attempt to re-connect to the MongoDB indefinitely.
+
+Upgrade Instructions for 2.4.0 --> 2.4.1
+----------------------------------------
+
+Upgrading from Pulp 2.4.0 to 2.4.1 is straightforward. Begin with a yum update::
+
+    $ sudo yum update
+
+After you've performed the package updates, please remove the ``operation_retries`` setting from
+``/etc/pulp/server.conf``, as it's been deprecated. Once you have your configuration files in place,
+restart all Pulp services (``httpd``, ``pulp_celerybeat``, ``pulp_resource_manager``,
+``pulp_workers``, and ``goferd``).
+
+
 Pulp 2.4.0
 ==========
 
@@ -86,6 +137,10 @@ Known Issues
   select at least one package group during the installation. Automated kickstarts are not affected by
   this issue.
 
+* There is a `configuration bug <https://bugzilla.redhat.com/show_bug.cgi?id=1132609>`_ related to
+  using MongoDB with authenticated database users. The error presents itself during syncs and other
+  task-related operations. A workaround is documented in comment #1 of the bug.
+
 * ``/etc/pulp/admin/admin.conf`` is owned by a different RPM than it was in 2.3.x. This means that
   when you upgrade Pulp, you will not get an admin.conf.rpmnew file. Instead, admin.conf will be
   overwritten with the new stock version.
@@ -101,6 +156,13 @@ Upgrade Instructions for 2.3.x --> 2.4.0
      in 2.3.x releases, you will need to make a backup of admin.conf before performing the upgrade
      if you wish to keep any of your settings. No admin.conf.rpmnew file will be generated during
      the upgrade!
+
+Begin by ensuring that you are using MongoDB version 2.4.0 or greater.
+
+  .. warning::
+    
+    Pulp 2.4.0 requires MongoDB version 2.4.0 or greater. You must upgrade your MongoDB
+    installation before performing any further steps.
 
 Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. Pulp 2.3.x servers
 and nodes are not compatible with Pulp 2.4.0 and vice versa. All consumers must be upgraded first,
