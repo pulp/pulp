@@ -73,8 +73,10 @@ squashing. Do you have a dozen commits? Consider some squashing.
    your branch to origin? Delete it and re-push after the rebase.
 
 
-Merge to Multiple Releases
---------------------------
+.. _merging-to-multiple-releases:
+
+Merging to Multiple Releases
+----------------------------
 
 The most important aspect of merging a change into multiple release branches is
 :ref:`choosing the right branch to start from <choosing-upstream-branch>`.
@@ -86,7 +88,7 @@ your branch from the pull request web page. Do not delete the branch yet.
 For cases where there are few merge conflicts, merge your working branch manually
 into each successively newer release branch, and finally into master. Generally,
 unless you are resolving conflicts or otherwise modifying your initial fix to
-accommodate the newer branches, additional pull requests just add noise and bureaucracy.
+accommodate the newer branches, no additional pull requests or review are needed.
 
 For cases where there are substantial merge conflicts whose resolution merits
 review, create a new branch from your working branch and merge the release branch
@@ -103,8 +105,8 @@ At this point you can resolve conflicts, then create a pull request from
 username-foo-merge-2.1 into pulp-2.1.
 
 
-Merge to Old Releases Only
---------------------------
+Merging to Old Releases Only
+----------------------------
 
 Infrequently, there may be a need to apply a change to an old release but not
 newer releases. This should only be a last resort.
