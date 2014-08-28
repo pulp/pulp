@@ -591,6 +591,30 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['state'], 'waiting')
 
     @mock.patch('celery.Task.apply_async')
+    def test_apply_async_queue_name_modified_if_exchange_present_but_neq_C_dq(self, apply_async):
+        """
+        Assert that apply_async() does not adjust the queue name or exchange name in cases where
+        the keyword 'exchange' is present, but not equal to 'C.dq'. Also asserts that the
+        unmodified queue name is saved on the created TaskStatus object.
+        """
+        args = [1, 'b', 'iii']
+        kwargs = {'queue': 'worker.dq', 'tags': ['test_tags'], 'exchange': 'foobar'}
+        apply_async.return_value = celery.result.AsyncResult('test_task_id')
+        task = tasks.Task()
+
+        task.apply_async(*args, **kwargs)
+
+        apply_async.assert_called_once_with(*args, queue='worker.dq', exchange='foobar')
+
+        task_statuses = list(TaskStatusManager.find_all())
+        self.assertEqual(len(task_statuses), 1)
+        new_task_status = task_statuses[0]
+        self.assertEqual(new_task_status['task_id'], 'test_task_id')
+        self.assertEqual(new_task_status['queue'], 'worker.dq')
+        self.assertEqual(new_task_status['tags'], kwargs['tags'])
+        self.assertEqual(new_task_status['state'], 'waiting')
+
+    @mock.patch('celery.Task.apply_async')
     def test_apply_async_task_canceled(self, apply_async):
         """
         Assert that apply_async() honors 'canceled' task status.
