@@ -9,7 +9,8 @@ from celery.result import AsyncResult
 from celery.signals import worker_init
 
 from pulp.common import constants, dateutils
-from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE
+from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
+    DEDICATED_QUEUE_EXCHANGE
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource
 from pulp.server.db.model.criteria import Criteria
@@ -233,11 +234,12 @@ class ReservedTaskMixin(object):
         queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
 
         kwargs['queue'] = queue
-        kwargs['exchange'] = 'C.dq'
+        kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
         try:
             async_result = self.apply_async(*args, **kwargs)
         finally:
-            _queue_release_resource.apply_async((resource_id,), queue=queue, exchange='C.dq')
+            _queue_release_resource.apply_async((resource_id,), queue=queue,
+                                                exchange=DEDICATED_QUEUE_EXCHANGE)
 
         return async_result
 
@@ -268,7 +270,7 @@ class Task(CeleryTask, ReservedTaskMixin):
 
         ### This is a temporary workaround for https://github.com/celery/celery/issues/2216 ###
         queue_name_to_save = queue
-        if kwargs.get('exchange', None) == 'C.dq':
+        if kwargs.get('exchange', None) == DEDICATED_QUEUE_EXCHANGE:
             kwargs['queue'] = queue.rstrip('.dq')
         #######################################################################################
 

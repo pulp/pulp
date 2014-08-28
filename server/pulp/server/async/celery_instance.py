@@ -17,6 +17,7 @@ broker_url = config.get('tasks', 'broker_url')
 celery = Celery('tasks', broker=broker_url)
 
 
+DEDICATED_QUEUE_EXCHANGE = 'C.dq'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 CELERYBEAT_SCHEDULE = {
     'reap_expired_documents': {
