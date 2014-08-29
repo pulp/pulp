@@ -52,8 +52,8 @@ def create_mongo_config():
     mongo_config = {'host': host, 'database': db_name}
     if port:
         mongo_config['port'] = port
-    if config.has_option('database', 'user') and config.has_option('database', 'password'):
-        mongo_config['user'] = config.get('database', 'user')
+    if config.has_option('database', 'username') and config.has_option('database', 'password'):
+        mongo_config['user'] = config.get('database', 'username')
         mongo_config['password'] = config.get('database', 'password')
     return mongo_config
 
