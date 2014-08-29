@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.4.1
-Release: 0.5.rc1%{?dist}
+Release: 0.6.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -247,6 +247,9 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Thu Aug 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.6.beta
+- Pulp rebuild
+
 * Tue Aug 26 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.5.rc1
 - Pulp rebuild
 
