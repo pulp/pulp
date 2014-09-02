@@ -1,14 +1,17 @@
 #!/bin/sh
 
-NAME="pulp-server"
+PACKAGE_NAMES=( "pulp-server" "pulp-celery" )
 SELINUX_VARIANTS="targeted"
 MODULE_TYPE="apps"
 INSTALL_DIR="/usr/share"
 
-for selinuxvariant in ${SELINUX_VARIANTS}
+for NAME in ${PACKAGE_NAMES[@]}
 do
-    /usr/sbin/semodule -s ${selinuxvariant} -r ${NAME} &> /dev/null || :
-    rm -f ${INSTALL_DIR}/${selinuxvariant}/${NAME}.pp
-done
+    for selinuxvariant in ${SELINUX_VARIANTS}
+    do
+        /usr/sbin/semodule -s ${selinuxvariant} -r ${NAME} &> /dev/null || :
+        rm -f ${INSTALL_DIR}/${selinuxvariant}/${NAME}.pp
+    done
 
-rm -f ${INSTALL_DIR}/selinux/devel/include/${MODULE_TYPE}/${NAME}.if
+    rm -f ${INSTALL_DIR}/selinux/devel/include/${MODULE_TYPE}/${NAME}.if
+done

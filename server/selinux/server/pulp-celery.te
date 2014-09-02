@@ -1,0 +1,52 @@
+# When built from RPM, the below version of "0.0.0" will be
+# replaced with the version in the spec file
+policy_module(pulp-celery, 0.0.0)
+type celery_t;
+type celery_exec_t;
+init_daemon_domain(celery_t, celery_exec_t)
+
+require {
+        type var_run_t;
+        type celery_t;
+        type pulp_cert_t;
+        class process { signal signull };
+        class tcp_socket { getopt create connect setopt getattr };
+        class file { write getattr read create unlink open };
+        class netlink_route_socket { bind create getattr nlmsg_read };
+        class unix_dgram_socket { create connect };
+        class udp_socket { ioctl create getattr connect };
+        class dir { getattr search };
+}
+
+#============= celery_t ==============
+allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read };
+allow celery_t self:process { signal signull };
+allow celery_t self:tcp_socket { getopt create connect setopt getattr };
+allow celery_t self:udp_socket { ioctl getattr create connect };
+allow celery_t self:unix_dgram_socket { create connect };
+
+allow celery_t pulp_cert_t:dir { getattr search };
+allow celery_t pulp_cert_t:file { read write getattr open };
+#!!!! The source type 'celery_t' can write to a 'file' of the following types:
+# var_run_t, httpd_sys_rw_content_t, cluster_var_lib_t, cluster_var_run_t, root_t, cluster_conf_t
+
+allow celery_t var_run_t:file { write getattr read create unlink open };
+apache_delete_sys_content_rw(celery_t)
+apache_list_sys_content(celery_t)
+apache_manage_sys_content_rw(celery_t)
+apache_read_sys_content(celery_t)
+corecmd_exec_bin(celery_t)
+corecmd_exec_shell(celery_t)
+corecmd_read_bin_symlinks(celery_t)
+corenet_tcp_connect_amqp_port(celery_t)
+corenet_tcp_connect_mongod_port(celery_t)
+corenet_tcp_connect_http_port(celery_t)
+dev_read_urand(celery_t)
+files_list_tmp(celery_t)
+files_rw_pid_dirs(celery_t)
+kernel_read_system_state(celery_t)
+libs_exec_ldconfig(celery_t)
+logging_send_syslog_msg(celery_t)
+miscfiles_read_localization(celery_t)
+miscfiles_manage_generic_cert_dirs(celery_t)
+sysnet_read_config(celery_t)
