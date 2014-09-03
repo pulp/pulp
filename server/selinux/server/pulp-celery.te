@@ -10,18 +10,18 @@ require {
         type celery_t;
         type pulp_cert_t;
         class process { signal signull };
-        class tcp_socket { getopt create connect setopt getattr write };
+        class tcp_socket { getopt create connect setopt getattr write read };
         class file { write getattr read create unlink open };
-        class netlink_route_socket { bind create getattr nlmsg_read write };
+        class netlink_route_socket { bind create getattr nlmsg_read write read };
         class unix_dgram_socket { create connect };
         class udp_socket { ioctl create getattr connect };
         class dir { getattr search };
 }
 
 #============= celery_t ==============
-allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write };
+allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
 allow celery_t self:process { signal signull };
-allow celery_t self:tcp_socket { getopt create connect setopt getattr write };
+allow celery_t self:tcp_socket { getopt create connect setopt getattr write read };
 allow celery_t self:udp_socket { ioctl getattr create connect };
 allow celery_t self:unix_dgram_socket { create connect };
 
@@ -50,5 +50,3 @@ logging_send_syslog_msg(celery_t)
 miscfiles_read_localization(celery_t)
 miscfiles_manage_cert_dirs(celery_t)
 sysnet_read_config(celery_t)
-
-#allow celery_t mongod_port_t:tcp_socket name_connect;
