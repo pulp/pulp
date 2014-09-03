@@ -270,7 +270,7 @@ class HTTPSServerWrapper(object):
         # reusing a connection for multiple calls (lame).
         ssl_context = SSL.Context('sslv3')
         if self.pulp_connection.validate_ssl_ca:
-            ssl_context.set_verify(SSL.verify_peer, 1)
+            ssl_context.set_verify(SSL.verify_peer, depth=100)
             # We need to stat the ca_path to see if it exists (error if it doesn't), and if so
             # whether it is a file or a directory. m2crypto has different directives depending on
             # which type it is.
