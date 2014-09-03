@@ -1,6 +1,6 @@
 #!/bin/sh
 
-PACKAGE_NAMES=( "pulp-server" "pulp-celery" )
+PACKAGE_NAMES=( "pulp-celery" "pulp-server" )
 SELINUX_VARIANTS="targeted"
 MODULE_TYPE="apps"
 INSTALL_DIR="/usr/share"
