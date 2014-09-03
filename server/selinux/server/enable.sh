@@ -15,7 +15,7 @@ if /usr/sbin/selinuxenabled ; then
     do
         for selinuxvariant in ${SELINUX_VARIANTS}
         do
-            /usr/sbin/semodule -a ${INSTALL_DIR}/selinux/${selinuxvariant}/${NAME}.pp
+            /usr/sbin/semodule -i ${INSTALL_DIR}/selinux/${selinuxvariant}/${NAME}.pp
         done
     done
 
