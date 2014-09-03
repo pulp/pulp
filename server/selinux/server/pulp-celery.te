@@ -14,7 +14,7 @@ require {
         class file { write getattr read create unlink open };
         class netlink_route_socket { bind create getattr nlmsg_read write read };
         class unix_dgram_socket { create connect };
-        class udp_socket { ioctl create getattr connect write };
+        class udp_socket { ioctl create getattr connect write read };
         class dir { getattr search };
 }
 
@@ -22,7 +22,7 @@ require {
 allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
 allow celery_t self:process { signal signull };
 allow celery_t self:tcp_socket { getopt create connect setopt getattr write read };
-allow celery_t self:udp_socket { ioctl getattr create connect write };
+allow celery_t self:udp_socket { ioctl getattr create connect write read };
 allow celery_t self:unix_dgram_socket { create connect };
 
 allow celery_t pulp_cert_t:dir { getattr search };
