@@ -75,7 +75,7 @@ def fake_get(new_config, section, key):
 CONFIG = {
     'name': 'database_name',
     'seeds': 'host1:27017,host2:27017',
-    'user': 'someguy',
+    'username': 'someguy',
     'password': 'letmein',
 }
 
@@ -187,7 +187,7 @@ class TestMongoBackendConfig(unittest.TestCase):
             self.assertTrue('password' not in result)
 
     @mock.patch('pulp.server.config.config.has_option',
-                new=lambda x, y: False if y == 'user' else True)
+                new=lambda x, y: False if y == 'username' else True)
     def test_no_user(self):
         custom_fake_get = partial(fake_get, CONFIG)
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
