@@ -9,5 +9,3 @@
 # write/unlink and httpd_log_t only allows httpd_t to append
 /var/log/pulp(/.*)? gen_context(system_u:object_r:httpd_sys_rw_content_t,s0)
 
-# Pulp uses Celery, and this applies the celery_exec_t context to the celery binary
-/usr/bin/celery -- gen_context(system_u:object_r:celery_exec_t,s0)
