@@ -1,0 +1,4 @@
+# The pulp.spec file adds these to the pulp-celery.te file if rhel7 is being built
+# Below are added for denials that exist on RHEL7 systems only
+auth_read_passwd(celery_t)
+rpm_exec(celery_t)
