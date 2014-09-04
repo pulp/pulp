@@ -52,6 +52,20 @@ After you've performed the package updates, please remove the ``operation_retrie
 restart all Pulp services (``httpd``, ``pulp_celerybeat``, ``pulp_resource_manager``,
 ``pulp_workers``, and ``goferd``).
 
+Pulp has stopped maintaining its own m2crypto package, and now relies on the package provided by the
+operating system. If you are using the Pulp provided package, you should remove it and use the one
+provided by your operating system instead. The Pulp provided m2crypto package had "pulp" in the
+package release, so you can use this command to detect if you have it or not::
+
+    $ rpm -q m2crypto | grep pulp
+    m2crypto-0.21.1.pulp-8.el6.x86_64
+
+You can remove it by using yum. If a newer version is available for your operating system, you can
+use ``yum update`` to get it. If not, you will need to perform a downgrade to get to your operating
+system's supported m2crypto::
+
+    $ sudo yum downgrade m2crypto
+
 
 Pulp 2.4.0
 ==========
