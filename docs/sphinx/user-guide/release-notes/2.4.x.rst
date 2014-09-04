@@ -26,9 +26,7 @@ For all systems that have Pulp software installed, perform a system update::
     $ sudo yum update
 
 For all EL 5 systems, please consider re-enabling SELinux's enforcing mode as Pulp is now capable of
-running this way::
-
-    $ sudo setenforce Enforcing
+running this way.
 
 
 Pulp 2.4.1
