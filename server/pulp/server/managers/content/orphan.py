@@ -167,36 +167,24 @@ class OrphanManager(object):
                                               content_unit=content_unit_id)
 
     @staticmethod
-    def delete_all_orphans(flush=True):
+    def delete_all_orphans():
         """
         Delete all orphaned content units.
-
-        NOTE: `flush` should not be set to False unless you know what you're doing
-
-        :param flush: flush the database updates to disk on completion
-        :type flush: bool
         """
 
         for content_type_id in content_types_db.all_type_ids():
-            OrphanManager.delete_orphans_by_type(content_type_id, flush=False)
-
-        if flush:
-            db_connection.flush_database()
+            OrphanManager.delete_orphans_by_type(content_type_id)
 
     @staticmethod
-    def delete_orphans_by_id(content_unit_list, flush=True):
+    def delete_orphans_by_id(content_unit_list):
         """
         Delete the given orphaned content units.
 
         Each content unit in the content unit list must be a mapping object with
         the fields `content_type_id` and `unit_id` present.
 
-        NOTE: `flush` should not be set to False unless you know what you're doing
-
         :param content_unit_list: list of orphaned content units to delete
         :type content_unit_list: iterable of mapping objects
-        :param flush: flush the database updates to disk on completion
-        :type flush: bool
         """
 
         content_units_by_content_type = {}
@@ -210,13 +198,11 @@ class OrphanManager(object):
             content_unit_id_list.append(content_unit['unit_id'])
 
         for content_type_id, content_unit_id_list in content_units_by_content_type.items():
-            OrphanManager.delete_orphans_by_type(content_type_id, content_unit_id_list, flush=False)
+            OrphanManager.delete_orphans_by_type(content_type_id, content_unit_id_list)
 
-        if flush:
-            db_connection.flush_database()
 
     @staticmethod
-    def delete_orphans_by_type(content_type_id, content_unit_ids=None, flush=True):
+    def delete_orphans_by_type(content_type_id, content_unit_ids=None):
         """
         Delete the orphaned content units for the given content type.
 
@@ -224,14 +210,11 @@ class OrphanManager(object):
         the specific orphaned content units that may be deleted.
 
         NOTE: this method deletes the content unit's bits from disk, if applicable.
-        NOTE: `flush` should not be set to False unless you know what you're doing
 
         :param content_type_id: id of the content type
         :type content_type_id: basestring
         :param content_unit_ids: list of content unit ids to delete; None means delete them all
         :type content_unit_ids: iterable or None
-        :param flush: flush the database updates to disk on completion
-        :type flush: bool
         """
 
         content_units_collection = content_types_db.type_units_collection(content_type_id)
@@ -247,11 +230,6 @@ class OrphanManager(object):
             storage_path = content_unit.get('_storage_path', None)
             if storage_path is not None:
                 OrphanManager.delete_orphaned_file(storage_path)
-
-        # this forces the database to flush any cached changes to the disk
-        # in the background; for example: the unsafe deletes in the loop above
-        if flush:
-            db_connection.flush_database()
 
     @staticmethod
     def delete_orphaned_file(path):
