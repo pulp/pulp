@@ -109,7 +109,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body, {})
         # Make sure the SSL settings are correct
-        set_verify.assert_called_once_with(SSL.verify_peer, 1)
+        set_verify.assert_called_once_with(SSL.verify_peer, depth=100)
         load_verify_locations.assert_called_once_with(capath=ca_path)
 
     @mock.patch('os.path.isfile', return_value=True)
@@ -142,7 +142,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body, {'it': 'worked!'})
         # Make sure the SSL settings are correct
-        set_verify.assert_called_once_with(SSL.verify_peer, 1)
+        set_verify.assert_called_once_with(SSL.verify_peer, depth=100)
         load_verify_locations.assert_called_once_with(cafile=ca_path)
 
 
