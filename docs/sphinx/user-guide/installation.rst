@@ -44,8 +44,6 @@ Admin Client
 Prerequisites
 -------------
 
-* On RHEL 5, Pulp does not currently work with SELinux. SELinux must be
-  set to Permissive or Disabled.
 * The following ports must be open into the server:
 
  * 80 for consumers to access repositories served over HTTP

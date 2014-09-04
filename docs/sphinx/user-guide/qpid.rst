@@ -365,8 +365,7 @@ General
 #. Make sure the firewall on the Pulp server is configured to permit TCP on port 5671
    or that it's disabled.
 
-#. Make sure that SELinux is disabled or that the pulp-selinux RPM is installed on the
-   Pulp server.
+#. Make sure that the pulp-selinux RPM is installed on the Pulp server.
 
 
 Log Messages Explained
