@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.1
-Release: 0.6.beta%{?dist}
+Release: 0.7.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.7.beta
+- 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
+
 * Thu Aug 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.6.beta
 - Pulp rebuild
 
