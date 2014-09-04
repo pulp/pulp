@@ -8,8 +8,6 @@ Pulp master
 New Features
 ------------
 
-- pulp-admin now has a bash tab completion script.
-
 Deprecation
 -----------
 
@@ -25,9 +23,9 @@ Bugs
 Known Issues
 ------------
 
-.. _2.4.x_upgrade_to_master:
+.. _2.5.x_upgrade_to_master:
 
-Upgrade Instructions for 2.4.x --> master
+Upgrade Instructions for 2.5.x --> master
 -----------------------------------------
 
 Rest API Changes
