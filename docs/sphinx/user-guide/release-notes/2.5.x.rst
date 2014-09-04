@@ -1,14 +1,15 @@
 =========================
-Pulp master Release Notes
+Pulp 2.5 Release Notes
 =========================
 
-Pulp master
+Pulp 2.5.0
 ===========
 
 New Features
 ------------
 
 - pulp-admin now has a bash tab completion script.
+- A new selinux policy that confines the pulp_workers, pulp_celerybeat, and pulp_resource_manager
 
 Deprecation
 -----------
@@ -25,9 +26,9 @@ Bugs
 Known Issues
 ------------
 
-.. _2.4.x_upgrade_to_master:
+.. _2.4.x_upgrade_to_2.5.0:
 
-Upgrade Instructions for 2.4.x --> master
+Upgrade Instructions for 2.4.x --> 2.5.0
 -----------------------------------------
 
 Rest API Changes
