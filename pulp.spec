@@ -1,15 +1,3 @@
-# Copyright (c) 2010-2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0
-
-
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
@@ -81,8 +69,15 @@ popd
 
 # SELinux Configuration
 cd server/selinux/server
-sed -i "s/policy_module(pulp-server,[0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server,%{version})/" pulp-server.te
-./build.sh
+%if 0%{?rhel} >= 6
+    distver=rhel%{rhel}
+%endif
+%if 0%{?fedora} >= 18
+    distver=fedora%{fedora}
+%endif
+sed -i "s/policy_module(pulp-server, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server, %{version})/" pulp-server.te
+sed -i "s/policy_module(pulp-celery, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-celery, %{version})/" pulp-celery.te
+./build.sh ${distver}
 cd -
 %endif
 
@@ -599,10 +594,12 @@ exit 0
 
 %files selinux
 %defattr(-,root,root,-)
-%doc server/selinux/server/pulp-server.fc server/selinux/server/pulp-server.if server/selinux/server/pulp-server.te README LICENSE COPYRIGHT
+%doc README LICENSE COPYRIGHT
 %{_datadir}/pulp/selinux/server/*
 %{_datadir}/selinux/*/pulp-server.pp
+%{_datadir}/selinux/*/pulp-celery.pp
 %{_datadir}/selinux/devel/include/%{moduletype}/pulp-server.if
+%{_datadir}/selinux/devel/include/%{moduletype}/pulp-celery.if
 
 %endif # End selinux if block
 

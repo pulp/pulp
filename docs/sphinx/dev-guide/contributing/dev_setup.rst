@@ -100,22 +100,10 @@ commands would grant Apache the required access:
 SELinux
 ^^^^^^^
 
-When running with SELinux enabled, the Pulp policies must be installed. The Pulp platform repository
-is the only repository that includes SELinux policies. The syntax is similar to running the
-``pulp-dev.py`` command as described above.
-
-Install:
-
-::
-
- $ sudo python <pulp root>/pulp-selinux.py -I
-
-
-Uninstall:
-
-::
-
- $ sudo python <pulp root>/pulp-selinux.py -U
+Unfortunately, when developing Pulp SELinux needs to be disabled or run in Permissive mode. Most
+development environments will be created with ``pulp-dev.py``, which deploys Pulp onto the system
+differently than a rpm based install. The SELinux policy of Pulp expects an RPM layout, and if
+SELinux is run in Enforcing mode your development to not function correctly.
 
 
 mod_python
