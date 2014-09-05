@@ -9,9 +9,5 @@
 /sbin/restorecon -i -R /var/lib/pulp
 /sbin/restorecon -i -R /var/log/pulp
 
-
-
-
-
-
-
+# Relabel the celery binary
+/sbin/restorecon -i -R /usr/bin/celery

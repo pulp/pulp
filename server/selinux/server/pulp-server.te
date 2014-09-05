@@ -1,6 +1,6 @@
 # When built from RPM, the below version of "0.0.0" will be 
 # replaced with the version in the spec file
-policy_module(pulp-server,0.0.0)
+policy_module(pulp-server, 0.0.0)
 
 ## <desc>
 ## <p>
