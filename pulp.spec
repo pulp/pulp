@@ -69,12 +69,15 @@ popd
 
 # SELinux Configuration
 cd server/selinux/server
-%if 0%{?rhel} >= 7
-cat pulp-celery-el7-extra-policy.txt >> pulp-celery.te
+%if 0%{?rhel} >= 6
+    distver=rhel%{rhel}
+%endif
+%if 0%{?fedora} >= 18
+    distver=fedora%{fedora}
 %endif
 sed -i "s/policy_module(pulp-server, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-server, %{version})/" pulp-server.te
 sed -i "s/policy_module(pulp-celery, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-celery, %{version})/" pulp-celery.te
-./build.sh
+./build.sh ${distver}
 cd -
 %endif
 

@@ -50,3 +50,8 @@ logging_send_syslog_msg(celery_t)
 miscfiles_read_localization(celery_t)
 miscfiles_manage_cert_dirs(celery_t)
 sysnet_read_config(celery_t)
+
+ifdef(`distro_rhel7', `
+    auth_read_passwd(celery_t)
+    rpm_exec(celery_t)
+')
