@@ -588,9 +588,9 @@ class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
         self.assertTrue(datetime.utcnow() - timestamp <
                         timedelta(scheduler.WorkerTimeoutMonitor.WORKER_TIMEOUT_SECONDS + 1))
 
-    @mock.patch('pulp.server.async.tasks._delete_worker.apply_async', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
     @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
-    def test_deletes_workers(self, mock_filter, mock_delete):
+    def test_deletes_workers(self, mock_filter, mock_delete_worker):
         mock_filter.return_value = [
             resources.Worker('name1', datetime.utcnow()),
             resources.Worker('name2', datetime.utcnow()),
@@ -598,10 +598,8 @@ class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
 
         scheduler.WorkerTimeoutMonitor().check_workers()
 
-        # make sure only these two queues were deleted
-        mock_delete.assert_any_call(args=('name1',), queue=RESOURCE_MANAGER_QUEUE)
-        mock_delete.assert_any_call(args=('name2',), queue=RESOURCE_MANAGER_QUEUE)
-        self.assertEqual(mock_delete.call_count, 2)
+        # make sure _delete_worker is only called for the two expected calls
+        mock_delete_worker.assert_has_calls([mock.call('name1'), mock.call('name2')])
 
 
 SCHEDULES = [

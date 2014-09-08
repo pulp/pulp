@@ -2,6 +2,8 @@ from datetime import datetime
 from gettext import gettext as _
 import logging
 import signal
+import time
+import uuid
 
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
@@ -13,9 +15,10 @@ from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource
+from pulp.server.db.model.base import DoesNotExist
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import DoesNotExist, ReservedResource
+from pulp.server.db.model.resources import ReservedResource, Worker
 from pulp.server.managers import resources
 
 
@@ -23,15 +26,64 @@ controller = control.Control(app=celery)
 logger = logging.getLogger(__name__)
 
 
-@task
+@task(acks_late=True)
+def deferred_reservation(name, task_id, resource_id, inner_args, inner_kwargs):
+    """
+    A task that encapsulates another task to be dispatched later. This task being encapsulated is
+    called the "inner" task, and a task name, UUID, and accepts a list of future positional args
+    and keyword args. When the inner task is called the inner_args list and inner_kwargs
+    dictionary are passed as positional and keyword arguments using the * and ** operators.
+
+    The future task is dispatched into a dedicated queue for a worker that is decided at dispatch
+    time. The logic deciding which queue receives a task is controlled through the
+    find_worker function.
+
+    :param name: The name of the task to be called in the future
+    :type name: basestring
+    :param inner_task_id: The UUID to be set on the task being called in the future. By providing
+                          the UUID, the caller can have an asynchronous reference to the inner task
+                          that will be dispatched into the future.
+    :type inner_task_id: uuid
+    :param resource_id: The name of the resource you wish to reserve for your task. The system
+                        will ensure that no other tasks that want that same reservation will run
+                        concurrently with yours.
+    :type  resource_id: basestring
+
+    :return: None
+    """
+    while True:
+        worker = resources.get_worker_for_reservation(resource_id)
+        if worker:
+            break
+        worker = resources.get_unreserved_worker()
+        if worker:
+            break
+        # No worker is ready for this work, so all we can do is wait
+        time.sleep(0.25)
+
+    ReservedResource(task_id, worker['name'], resource_id).save()
+
+    inner_kwargs['queue'] = worker.queue_name
+    inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
+    inner_kwargs['task_id'] = task_id
+
+    try:
+        celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
+    finally:
+        _release_resource.apply_async((task_id, ), queue=worker.name,
+                                      exchange=DEDICATED_QUEUE_EXCHANGE)
+
+
 def _delete_worker(name, normal_shutdown=False):
     """
-    Delete the Worker with _id name from the database. This Task can only safely be
-    performed by the resource manager at this time, so be sure to queue it in the
-    RESOURCE_MANAGER_QUEUE.
+    Delete the Worker with _id name from the database, cancel any associated tasks and reservations
 
     If the worker shutdown normally, no message is logged, otherwise an error level message is
-    logged. Default is to assume the work did not shut down normally.
+    logged. Default is to assume the worker did not shut down normally.
+
+    Any resource reservations associated with this worker are cleaned up by this function.
+
+    Any tasks associated with this worker are explicitly cancelled.
 
     :param name:            The name of the worker you wish to delete. In the database, the _id
                             field is the name.
@@ -40,97 +92,42 @@ def _delete_worker(name, normal_shutdown=False):
                             False.
     :type normal_shutdown:  bool
     """
-    worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
-    if len(worker_list) == 0:
-        # If no workers are found then there is nothing to do.
-        return
-    worker = worker_list[0]
-
     if normal_shutdown is False:
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
-        msg = msg % {'name': worker.name}
+        msg = msg % {'name': name}
         logger.error(msg)
 
+    # Delete all reserved_resource documents for the worker
+    ReservedResource.get_collection().remove({'worker_name': name})
+
+    # Delete the worker document
+    worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
+    if len(worker_list) > 0:
+        worker_document = worker_list[0]
+        worker_document.delete()
+
     # Cancel all of the tasks that were assigned to this worker's queue
+    worker = Worker.from_bson({'_id': name})
     for task in TaskStatusManager.find_by_criteria(
             Criteria(
                 filters={'queue': worker.queue_name,
                          'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
         cancel(task['task_id'])
 
-    # Finally, delete the worker
-    worker.delete()
-
 
 @task
-def _queue_release_resource(resource_id):
+def _release_resource(task_id):
     """
-    This function will queue the _release_resource() task in the resource manager's queue for the
-    given resource_id. It is necessary to have this function in addition to the _release_resource()
-    function because we typically do not want to queue the _release_resource() task until the task
-    that is using the resource is finished. Therefore, when queuing a function that reserves a
-    resource, you should always queue a call to this function after it, and it is important that you
-    queue this task in the same queue that the resource reserving task is being performed in so that
-    it happens afterwards. You should not queue the _release_resource() task yourself.
+    Do not queue this task yourself. It will be used automatically when your task is dispatched by
+    the deferred_reservation task.
 
-    :param resource_id: The resource_id that you wish to release
-    :type  resource_id: basestring
+    When a resource-reserving task is complete, this method releases the resource by removing the
+    ReservedResource object by UUID.
+
+    :param task_id: The UUID of the task that requested the reservation
+    :type  task_id: basestring
     """
-    _release_resource.apply_async(args=(resource_id,), queue=RESOURCE_MANAGER_QUEUE)
-
-
-@task
-def _release_resource(resource_id):
-    """
-    Do not queue this task yourself, but always use the _queue_release_resource() task instead.
-    Please see the docblock on that function for an explanation.
-
-    When a resource-reserving task is complete, this method must be called with the
-    resource_id so that the we know when it is safe to unmap a resource_id from
-    its given queue name.
-
-    :param resource_id: The resource that is no longer in use
-    :type  resource_id: basestring
-    """
-    try:
-        reserved_resource = ReservedResource(resource_id)
-        reserved_resource.decrement_num_reservations()
-    except DoesNotExist:
-        # If we are trying to decrement the count on one of these objects, and they don't exist,
-        # that's OK
-        pass
-
-
-@task
-def _reserve_resource(resource_id):
-    """
-    When you wish you queue a task that needs to reserve a resource, you should make a call to this
-    function() first, queueing it in the RESOURCE_MANAGER_QUEUE. This Task will return the
-    name of the queue you should put your task in.
-
-    Please be sure to also add a task to run _queue_release_resource() in the same queue name that
-    this function returns to you. It is important that _release_resource() is called after your task
-    is completed, regardless of whether your task completes successfully or not.
-
-    :param resource_id: The name of the resource you wish to reserve for your task. The system
-                        will ensure that no other tasks that want that same reservation will run
-                        concurrently with yours.
-    :type  resource_id: basestring
-    :return:            The name of a queue that you should put your task in
-    :rtype:             basestring
-    """
-    reserved_resource = resources.get_or_create_reserved_resource(resource_id)
-    if reserved_resource.assigned_queue is None:
-        # The assigned_queue will be None if the reserved_resource was just created, so we'll
-        # need to assign a queue to it
-        reserved_resource.assigned_queue = resources.get_least_busy_worker().queue_name
-        reserved_resource.save()
-    else:
-        # The assigned_queue is set, so we just need to increment the num_reservations on the
-        # reserved resource
-        reserved_resource.increment_num_reservations()
-
-    return reserved_resource.assigned_queue
+    ReservedResource.get_collection().remove({'_id': task_id})
 
 
 class TaskResult(object):
@@ -214,6 +211,14 @@ class ReservedTaskMixin(object):
         same resource reservation can execute concurrently. It accepts type and id of a resource
         and combines them to form a resource id.
 
+        This does not dispatch the task directly, but instead promises to dispatch it later by
+        encapsulating the desired task through a call to a deferred_reservation task. See the
+        docblock on deferred_reservation for more information on this.
+
+        This method creates a TaskStatus as a placeholder for later updates. Pulp expects to poll
+        on a task just after calling this method, so a TaskStatus entry needs to exist for it
+        before it returns.
+
         For a list of parameters accepted by the *args and **kwargs parameters, please see the
         docblock for the apply_async() method.
 
@@ -231,17 +236,20 @@ class ReservedTaskMixin(object):
         # Form a resource_id for reservation by combining given resource type and id. This way,
         # two different resources having the same id will not block each other.
         resource_id = ":".join((resource_type, resource_id))
-        queue = _reserve_resource.apply_async((resource_id,), queue=RESOURCE_MANAGER_QUEUE).get()
+        inner_task_id = str(uuid.uuid4())
+        task_name = self.name
+        tags = kwargs.pop('tags', [])
 
-        kwargs['queue'] = queue
-        kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
-        try:
-            async_result = self.apply_async(*args, **kwargs)
-        finally:
-            _queue_release_resource.apply_async((resource_id,), queue=queue,
-                                                exchange=DEDICATED_QUEUE_EXCHANGE)
+        # Create a new task status with the task id and tags.
+        task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=tags)
+        # To avoid the race condition where __call__ method below is called before
+        # this change is propagated to all db nodes, using an 'upsert' here and setting
+        # the task state to 'waiting' only on an insert.
+        task_status.save(fields_to_set_on_insert=['state', 'start_time', 'tags'])
 
-        return async_result
+        deferred_reservation.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs], queue=RESOURCE_MANAGER_QUEUE, tags=tags)
+        return AsyncResult(inner_task_id)
 
 
 class Task(CeleryTask, ReservedTaskMixin):
@@ -284,7 +292,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
+        task_status.save(fields_to_set_on_insert=['state', 'start_time', 'tags'])
         return async_result
 
     def __call__(self, *args, **kwargs):

@@ -15,9 +15,7 @@ from pulp.server.managers import resources
 
 
 class TestFilterWorkers(ResourceReservationTests):
-    """
-    Test the filter_workers() function.
-    """
+
     @mock.patch('pulp.server.db.model.resources.Worker.get_collection')
     def test_criteria_passed_to_mongo(self, get_collection):
         """
@@ -55,146 +53,106 @@ class TestFilterWorkers(ResourceReservationTests):
         self.assertEqual(workers[1].name, 'worker_3')
 
 
-class TestGetLeastBusyWorker(ResourceReservationTests):
-    """
-    Test the get_least_busy_available_worker() function.
-    """
-    def test_ignores_queues_that_arent_workers(self):
-        """
-        It is possible for the assigned_queue in a ReservedResource to reference a queue that is not
-        in the workers collection. This test ensures that this queue is properly ignored, even if it
-        is the most "enticing" choice.
-        """
-        # Set up three Workers, with the least busy one in the middle so that we can
-        # demonstrate that it did pick the least busy and not the last or first.
-        now = datetime.utcnow()
-        worker_1 = Worker('busy_worker', now)
-        worker_2 = Worker('less_busy_worker', now)
-        worker_3 = Worker('most_busy_worker', now)
-        for worker in (worker_1, worker_2, worker_3):
-            worker.save()
-        # Now we need to make some reservations against these Workers' queues. We'll give worker_1
-        # 8 reservations, putting it in the middle of busyness.
-        rr_1 = ReservedResource(name='resource_1', assigned_queue=worker_1.queue_name,
-                                num_reservations=8)
-        # These next two will give worker_2 a total of 7 reservations, so it should get picked.
-        rr_2 = ReservedResource(name='resource_2', assigned_queue=worker_2.queue_name,
-                                num_reservations=3)
-        rr_3 = ReservedResource(name='resource_3', assigned_queue=worker_2.queue_name,
-                                num_reservations=4)
-        # These next three will give worker_3 a total of 9 reservations, so it should be the most
-        # busy.
-        rr_4 = ReservedResource(name='resource_4', assigned_queue=worker_3.queue_name,
-                                num_reservations=2)
-        rr_5 = ReservedResource(name='resource_5', assigned_queue=worker_3.queue_name,
-                                num_reservations=3)
-        rr_6 = ReservedResource(name='resource_6', assigned_queue=worker_3.queue_name,
-                                num_reservations=4)
-        # Now we will make a ReservedResource that references a queue that does not correspond to a
-        # Worker and has the lowest reservation count. This RR should be ignored.
-        rr_7 = ReservedResource(name='resource_7', assigned_queue='doesnt_exist',
-                                num_reservations=1)
-        for rr in (rr_1, rr_2, rr_3, rr_4, rr_5, rr_6, rr_7):
-            rr.save()
+class TestGetWorkerForReservation(ResourceReservationTests):
 
-        worker = resources.get_least_busy_worker()
+    def setUp(self):
+        self.patch_a = mock.patch('pulp.server.managers.resources.resources', autospec=True)
+        self.mock_resources = self.patch_a.start()
 
-        self.assertEqual(type(worker), Worker)
-        self.assertEqual(worker.name, 'less_busy_worker')
+        self.patch_b = mock.patch('pulp.server.managers.resources.criteria', autospec=True)
+        self.mock_criteria = self.patch_b.start()
 
-    def test_no_workers_available(self):
-        """
-        Test for the case when there are no Workers at all.
-        It should raise a NoWorkers Exception.
-        """
-        # When no workers are available, a NoWorkers Exception should be raised
-        self.assertRaises(exceptions.NoWorkers, resources.get_least_busy_worker)
+        super(TestGetWorkerForReservation, self).setUp()
 
-    def test_picks_least_busy_worker(self):
-        """
-        Test that the function picks the least busy worker.
-        """
-        # Set up three Workers, with the least busy one in the middle so that we can
-        # demonstrate that it did pick the least busy and not the last or first.
-        now = datetime.utcnow()
-        worker_1 = Worker('busy_worker', now)
-        worker_2 = Worker('less_busy_worker', now)
-        worker_3 = Worker('most_busy_worker', now)
-        for worker in (worker_1, worker_2, worker_3):
-            worker.save()
-        # Now we need to make some reservations against these Workers' queues. We'll give worker_1
-        # 8 reservations, putting it in the middle of busyness.
-        rr_1 = ReservedResource(name='resource_1', assigned_queue=worker_1.queue_name,
-                                num_reservations=8)
-        # These next two will give worker_2 a total of 7 reservations, so it should get picked.
-        rr_2 = ReservedResource(name='resource_2', assigned_queue=worker_2.queue_name,
-                                num_reservations=3)
-        rr_3 = ReservedResource(name='resource_3', assigned_queue=worker_2.queue_name,
-                                num_reservations=4)
-        # These next three will give worker_3 a total of 9 reservations, so it should be the most
-        # busy.
-        rr_4 = ReservedResource(name='resource_4', assigned_queue=worker_3.queue_name,
-                                num_reservations=2)
-        rr_5 = ReservedResource(name='resource_5', assigned_queue=worker_3.queue_name,
-                                num_reservations=3)
-        rr_6 = ReservedResource(name='resource_6', assigned_queue=worker_3.queue_name,
-                                num_reservations=4)
-        for rr in (rr_1, rr_2, rr_3, rr_4, rr_5, rr_6):
-            rr.save()
+    def tearDown(self):
+        self.patch_a.stop()
+        self.patch_b.stop()
+        super(TestGetWorkerForReservation, self).tearDown()
 
-        worker = resources.get_least_busy_worker()
+    def test_get_worker_for_reservation_finds_existing_reservation_correctly(self):
+        resources.get_worker_for_reservation('resource1')
+        get_collection = self.mock_resources.ReservedResource.get_collection
+        get_collection.assert_called_once_with()
+        get_collection.return_value.find_one_assert_called_once_with({'resource_id': 'resource1'})
 
-        self.assertEqual(type(worker), Worker)
-        self.assertEqual(worker.name, 'less_busy_worker')
+    def test_get_worker_for_reservation_builds_criteria_by_name_for_a_found_reservation(self):
+        find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
+        find_one.return_value = {'worker_name': 'worker1'}
+        resources.get_worker_for_reservation('resource1')
+        self.mock_criteria.Criteria.assert_called_once_with({'_id': 'worker1'})
+
+    def test_get_worker_for_reservation_gets_correct_worker_bson(self):
+        find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
+        find_one.return_value = {'worker_name': 'worker1'}
+        resources.get_worker_for_reservation('resource1')
+        get_collection = self.mock_resources.Worker.get_collection
+        get_collection.assert_called_once_with()
+        query = get_collection.return_value.query
+        query.assert_called_once_with(self.mock_criteria.Criteria.return_value)
+
+    def test_get_worker_for_reservation_returns_correct_Worker(self):
+        find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
+        find_one.return_value = {'worker_name': 'worker1'}
+        result = resources.get_worker_for_reservation('resource1')
+        self.assertTrue(result is self.mock_resources.Worker.from_bson.return_value)
+
+    def test_get_worker_for_reservation_returns_None_if_no_reservations(self):
+        find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
+        find_one.return_value = False
+        result = resources.get_worker_for_reservation('resource1')
+        self.assertTrue(result is None)
 
 
-class TestGetOrCreateReservedResource(ResourceReservationTests):
-    """
-    Test the get_or_create_reserved_resource() function.
-    """
-    def test_create(self):
-        """
-        Test for the case when the requested resource does not exist.
-        """
-        # Let's add an ReservedResource just to make sure that it doesn't return any existing
-        # resource.
-        rr_1 = ReservedResource('resource_1')
-        rr_1.save()
+class TestGetUnreservedWorker(ResourceReservationTests):
 
-        rr_2 = resources.get_or_create_reserved_resource('resource_2')
+    def setUp(self):
+        self.patch_a = mock.patch('pulp.server.managers.resources.filter_workers')
+        self.mock_filter_workers = self.patch_a.start()
 
-        # Assert that the returned instance is correct
-        self.assertEqual(type(rr_2), ReservedResource)
-        self.assertEqual(rr_2.name, 'resource_2')
-        # By default, the assigned_queue should be set to None
-        self.assertEqual(rr_2.assigned_queue, None)
-        # A new resource should default to 1 reservations
-        self.assertEqual(rr_2.num_reservations, 1)
-        # Now we need to assert that it made it to the database as well
-        rrc = rr_2.get_collection()
-        self.assertEqual(rrc.find_one({'_id': 'resource_2'})['num_reservations'], 1)
-        self.assertEqual(rrc.find_one({'_id': 'resource_2'})['assigned_queue'], None)
+        self.patch_b = mock.patch('pulp.server.managers.resources.criteria')
+        self.mock_criteria = self.patch_b.start()
 
-    def test_get(self):
-        """
-        Test for the case when the requested resource does exist.
-        """
-        # Let's add two ReservedResources just to make sure that it doesn't return the wrong
-        # resource.
-        rr_1 = ReservedResource('resource_1')
-        rr_1.save()
-        rr_2 = ReservedResource('resource_2', 'some_queue', 7)
-        rr_2.save()
+        self.patch_c = mock.patch('pulp.server.managers.resources.resources', autospec=True)
+        self.mock_resources = self.patch_c.start()
 
-        rr_2 = resources.get_or_create_reserved_resource('resource_2')
+        super(TestGetUnreservedWorker, self).setUp()
 
-        # Assert that the returned instance is correct
-        self.assertEqual(type(rr_2), ReservedResource)
-        self.assertEqual(rr_2.name, 'resource_2')
-        self.assertEqual(rr_2.assigned_queue, 'some_queue')
-        # The resource should have 7 reservations
-        self.assertEqual(rr_2.num_reservations, 7)
-        # Now we need to assert that the DB is still correct
-        rrc = rr_2.get_collection()
-        self.assertEqual(rrc.find_one({'_id': 'resource_2'})['num_reservations'], 7)
-        self.assertEqual(rrc.find_one({'_id': 'resource_2'})['assigned_queue'], 'some_queue')
+    def tearDown(self):
+        self.patch_a.stop()
+        self.patch_b.stop()
+        self.patch_c.stop()
+        super(TestGetUnreservedWorker, self).tearDown()
+
+    def test_get_unreserved_worker_queries_workers_correctly(self):
+        self.mock_filter_workers.return_value = [{'name': 'a'}, {'name': 'b'}]
+        resources.get_unreserved_worker()
+        self.mock_criteria.Criteria.assert_called_once_with()
+        self.mock_filter_workers.assert_called_once_with(self.mock_criteria.Criteria.return_value)
+
+    def test_get_unreserved_worker_queries_reserved_resources_correctly(self):
+        find = self.mock_resources.ReservedResource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
+        resources.get_unreserved_worker()
+        self.mock_resources.ReservedResource.get_collection.assert_called_once_with()
+        find.assert_called_once_with()
+
+    def test_get_unreserved_worker_returns_Worker_when_one_worker_is_not_reserved(self):
+        self.mock_filter_workers.return_value = [{'name': 'a'}, {'name': 'b'}]
+        find = self.mock_resources.ReservedResource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}]
+        result = resources.get_unreserved_worker()
+        self.assertEqual(result, {'name': 'b'})
+
+    def test_get_unreserved_worker_returns_None_when_all_workers_reserved(self):
+        self.mock_filter_workers.return_value = [{'name': 'a'}, {'name': 'b'}]
+        find = self.mock_resources.ReservedResource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
+        result = resources.get_unreserved_worker()
+        self.assertTrue(result is None)
+
+    def test_get_unreserved_worker_returns_None_when_there_are_no_workers_at_all(self):
+        self.mock_filter_workers.return_value = []
+        find = self.mock_resources.ReservedResource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
+        result = resources.get_unreserved_worker()
+        self.assertTrue(result is None)

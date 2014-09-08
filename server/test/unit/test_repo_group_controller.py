@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import datetime
+
 import mock
 
 import base
@@ -21,6 +23,7 @@ from pulp.server.db.model import criteria
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
+from pulp.server.db.model.resources import Worker
 from pulp.server.managers import factory as manager_factory
 
 
@@ -565,12 +568,14 @@ class PublishActionTests(base.PulpWebserviceTests):
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 
-    def test_post(self):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_post(self, mock_get_worker_for_reservation):
         # Setup
         group_id = 'group-1'
         distributor_id = 'dist-1'
         self.manager.create_repo_group(group_id)
         self.distributor_manager.add_distributor(group_id, 'dummy-group-distributor', {}, distributor_id=distributor_id)
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
 
         # Test
         data = {'id' : distributor_id}
