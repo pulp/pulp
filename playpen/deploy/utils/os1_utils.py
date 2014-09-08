@@ -2,6 +2,7 @@ import os
 import time
 
 from glanceclient import client as glance_client
+from glanceclient.v1.images import CREATE_PARAMS
 from keystoneclient.v2_0 import client as keystone_client
 from novaclient.v1_1 import client as nova_client
 from novaclient.exceptions import NotFound
@@ -18,6 +19,9 @@ META_USER_KEYWORD = 'user'
 META_DISTRIBUTION_KEYWORD = 'pulp_distribution'
 META_OS_NAME_KEYWORD = 'os_name'
 META_OS_VERSION_KEYWOR = 'os_version'
+META_IMAGE_STATUS_KEYWORD = 'image_status'
+META_IMAGE_STATUS_VANILLA = 'vanilla'
+META_IMAGE_STATUS_PREPPED = 'pulpy'
 
 
 class OS1Manager:
@@ -75,10 +79,14 @@ class OS1Manager:
         glance_url = self.keystone.service_catalog.get_endpoints()['image'][0]['adminURL']
         self.glance = glance_client.Client('1', endpoint=glance_url, token=self.keystone.auth_token)
 
-    def get_pulp_images(self):
+    def get_pulp_images(self, image_status=META_IMAGE_STATUS_PREPPED):
         """
-        Return all images containing the META_DISTRIBUTION_KEYWORD
+        Return all images containing the META_DISTRIBUTION_KEYWORD and that
+        have the META_IMAGE_STATUS_KEYWORD set to the given value. By default
+        this returns all images that have pulp's dependencies installed.
 
+        :param image_status: The type of image to retrieve (options are vanilla and pulpy)
+        :type  image_status: str
         :return: a list of of novaclient.images.Image
         :rtype:  list
         """
@@ -87,7 +95,7 @@ class OS1Manager:
         pulp_images = []
         for image in image_list:
             meta = image.metadata
-            if META_DISTRIBUTION_KEYWORD in meta:
+            if META_DISTRIBUTION_KEYWORD in meta and meta[META_IMAGE_STATUS_KEYWORD] == image_status:
                 pulp_images.append(image)
 
         return pulp_images
@@ -165,7 +173,7 @@ class OS1Manager:
                 for server in instance_list:
                     server = self.nova.servers.get(server)
                     if server.status != OPENSTACK_ACTIVE_KEYWORD:
-                        raise RuntimeError('Failed to build the following instance: ' + server)
+                        raise RuntimeError('Failed to build the following instance: ' + server.name)
                 break
         else:
             # In this case we never built all the instances
@@ -205,30 +213,36 @@ class OS1Manager:
         self.wait_for_active_instances(servers)
 
         for instance_config in config_utils.config_generator(global_config):
-            instance_ip = self.get_instance_ip(instance_config[config_utils.NOVA_SERVER])
+            instance_ip = self.get_instance_floating_ip(instance_config[config_utils.NOVA_SERVER])
             instance_config[config_utils.HOST_STRING] = instance_config[config_utils.SYSTEM_USER] + '@' + instance_ip
 
-    def create_image(self, image_location):
+    def create_image(self, image_location, image_metadata=None):
         """
         Upload an image from image_location into glance
 
         :param image_location:  The path to image. This can be absolute or relative.
         :type  image_location:  str
+        :param image_metadata:  A dictionary containing metadata to add to the image
+        :type  image_metadata:  dict
 
         :return: A representation of the uploaded image
         :rtype:
         """
         self._authenticate()
-        image_name = os.path.basename(image_location)
-        image_attributes = {
-            'name': 'automated-pulp-' + image_name,
-            'container_format': 'bare',
-            'disk_format': 'qcow2'
-        }
+
+        if image_metadata is None:
+            image_metadata = {}
+
+        if 'name' not in image_metadata:
+            image_metadata['name'] = os.path.basename(image_location)
 
         with open(image_location) as image_data:
-            new_image = self.glance.images.create(**image_attributes)
-            new_image.update(data=image_data)
+            glance_metadata = image_metadata.copy()
+            for key in image_metadata:
+                if key not in CREATE_PARAMS:
+                    glance_metadata.pop(key)
+            new_image = self.glance.images.create(data=image_data, **glance_metadata)
+            self.nova.images.set_meta(new_image, image_metadata)
 
         return new_image
 
@@ -248,17 +262,14 @@ class OS1Manager:
                 except NotFound:
                     print 'Failed to find server [%s]' % instance[config_utils.NOVA_SERVER]
 
-    def take_snapshot(self, server, snapshot_name, metadata=None):
+    def take_snapshot(self, server, snapshot_name):
         """
-        Take a snapshot of given server. This call will block until Openstack
-        reports that the snapshot is active.
+        Take a snapshot of given server.
 
         :param server:          The active instance to take a snapshot of
         :type  server:          novaclient.v1_1.servers.Server
         :param snapshot_name:   The human-readable name to assign to the snapshot.
         :type  snapshot_name:   str
-        :param metadata:        A dictionary to use as metadata for the image snapshot.
-        :type  metadata:        dict
 
         :return: An Image instance representing the snapshot taken
         :rtype:  novaclient.v1_1.images.Image
@@ -267,9 +278,19 @@ class OS1Manager:
         snapshot_id = server.create_image(snapshot_name)
         snapshot = self.nova.images.get(snapshot_id)
 
-        self.nova.images.set_meta(snapshot_id, metadata)
-
         return snapshot
+
+    def set_image_meta(self, image, metadata):
+        """
+        Set image metadata
+
+        :param image: the image to set the metadata for
+        :type  image: novaclient.v1_1.images.Image
+        :param metadata: A dictionary of arbitrary key-value pairs
+        :type  metadata: dict
+        """
+        self._authenticate()
+        self.nova.images.set_meta(image.id, metadata)
 
     def wait_for_snapshots(self, snapshots, timeout=15):
         if not isinstance(snapshots, list):
@@ -293,9 +314,11 @@ class OS1Manager:
             # In this case we never built all the instances
             raise RuntimeError('Build time exceeded timeout, please inspect the snapshots and clean up')
 
-    def get_instance_ip(self, instance_id):
+    def get_instance_floating_ip(self, instance_id, allocate=True):
         """
-        Get an OS1 Internal public ip address
+        Get an floating IP for the given instance ID. If one doesn't exist,
+        one will be allocated by default. Nova doesn't raise an exception
+        if the floating IP address is already assigned,
 
         :param instance_id: the id of a server instance with a public ip address
         :type  instance_id: str
@@ -306,7 +329,21 @@ class OS1Manager:
         # Authenticate and ensure we have the latest information about the instance
         self._authenticate()
         instance = self.nova.servers.get(instance_id)
-        public_ip = instance.networks['os1-internal-1319'][1]
+        ip_list = instance.networks.popitem()[1]
+        if len(ip_list) == 1:
+            # There is no floating IP address associated
+            floating_ips = [ip for ip in self.nova.floating_ips.list() if ip.instance_id is None]
+            if not floating_ips:
+                # There are no floating IPs available, so allocate one
+                public_ip = self.nova.floating_ips.create()
+                instance.add_floating_ip(public_ip)
+            else:
+                public_ip = floating_ips[0]
+                instance.add_floating_ip(public_ip)
+            public_ip = public_ip.ip
+        else:
+            public_ip = ip_list[1]
+
         return public_ip.encode('ascii')
 
     def get_instance_user(self, instance):
@@ -372,3 +409,12 @@ class OS1Manager:
             raise ValueError('Distribution [%s] does not exist' % distribution)
 
         return pulp_image
+
+    def get_free_floating_ips(self):
+        self._authenticate()
+        return [ip for ip in self.nova.floating_ips.list() if ip.instance_id is None]
+
+    def release_free_floating_ips(self):
+        free_ips = self.get_free_floating_ips()
+        for ip in free_ips:
+            ip.delete()
