@@ -28,8 +28,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.4.1
-Release: 0.7.beta%{?dist}
+Version: 2.5.0
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,59 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Sep 09 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.1.alpha
+- 1134972 - remove calls to mongo flush (cduryee@redhat.com)
+- 1132609 - celery result backend gets mongo username correctly
+  (mhrivnak@redhat.com)
+- 1131632 - Remove notes to disable SELinux in EL 5. (rbarlow@redhat.com)
+- 1130119 - do not add full task info to spawned_tasks (cduryee@redhat.com)
+- 1131509 - remove quotes from ca_path (cduryee@redhat.com)
+- 1130153 - Fixed regression with consumer binding retrieval.
+  (jcline@redhat.com)
+- 1103914 - Pulp exceptions no longer log a traceback by default
+  (jcline@redhat.com)
+- 1128329 - Add warnings about admin.conf to docs. (rbarlow@redhat.com)
+- 1128222 - Fixed a formatting issue in the installation docs
+  (jcline@redhat.com)
+- 1128831 - Restore python-rhsm-1.8.0. (rbarlow@redhat.com)
+- 1094470 - Canceling a task that was already in a completed state now results
+  in a 200 code instead of a 500 (jcline@redhat.com)
+- 1110418 - Added documentation on publishing repository groups
+  (jcline@redhat.com)
+- 1111228 - Removed jdob from the event listener sample return
+  (jcline@redhat.com)
+- 1111197 - Fixed a typo in the sample request in event listeners docs
+  (jcline@redhat.com)
+- 1110449 - Fixed typos in context applicability documentation
+  (jcline@redhat.com)
+- 1094256 - Updated the consumer binding docs to make it clear a 200 can be
+  returned (jcline@redhat.com)
+- 1083522 - Updated the repo publish documentation to correct the schedule path
+  (jcline@redhat.com)
+- 1079445 - Updated the repo sync documentation to correct the schedule path
+  (jcline@redhat.com)
+- 1078348 - Updated the docs for updating an importer to make it clear that the
+  task report contains the results (jcline@redhat.com)
+- 1022553 - pulp-admin unbind commands will now return a user-friendly error
+  message if the consumer or repository given don't exist. (jcline@redhat.com)
+- 1112663 - Allows schedules with monthly or yearly intervals
+  (jcline@redhat.com)
+- 1109870 - fixed typo in passing tags when creating a task for deleting orphan
+  by type (skarmark@redhat.com)
+- 1092450 - Retrieving orphans by content type now returns a 404 if the content
+  type does not exist (jcline@redhat.com)
+- 1115414 - updated get consumer profiles api to return 404 in case of non-
+  existing consumer (skarmark@redhat.com)
+- 1115391 - removing duplicate unit test and updating one to detect 405 return
+  code for consumer group bindings GET calls (skarmark@redhat.com)
+- 1115385 - Removing GET methods on consumer group bindings since consumer
+  group bind and unbind are merely used as group operations and are not stored
+  on the consumer group permanently (skarmark@redhat.com)
+- 1117512 - Convert timestamps saved for tracking distributor publishes &
+  importer syncs to UTC instead of timezone offset (bcourt@redhat.com)
+- 1100805 - Fixing consumer group bind and unbind and moving tasks from
+  tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
+
 * Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.7.beta
 - 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
 
