@@ -86,7 +86,7 @@ DEPS_DIR = os.path.join(WORKSPACE, 'pulp', 'deps')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("version", help="The version of pulp to run the build for (2.4, 2.5, etc.)")
-parser.add_argument("stream", choices=['stable', 'testing', 'beta'],
+parser.add_argument("stream", choices=['stable', 'testing', 'beta', 'nightly'],
                     help="The target release stream to build.")
 parser.add_argument("--update-tag-package-list", action="store_true", default=False,
                     help="Update the packages associated with the tag. This will verify that the "
@@ -116,6 +116,8 @@ build_stream = opts.stream
 
 if build_stream == 'stable':
     build_tag = "pulp-%s" % pulp_version
+elif build_stream == 'nightly':
+    build_tag = 'pulp-nightly'
 else:
     build_tag = "pulp-%s-%s" % (pulp_version, build_stream)
 
