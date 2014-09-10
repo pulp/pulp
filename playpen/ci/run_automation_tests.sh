@@ -12,7 +12,7 @@ cd ${WORKSPACE}/pulp/playpen/deploy/
 
 EXIT=0
 python deploy-environment.py --config config/jenkins/${target_platform}-config.yml \
-    --deployed-config ${BUILDTIME}.json --repo ${REPO} || EXIT=$?
+    --deployed-config ${BUILDTIME}.json --repo ${REPO} --test-branch ${TEST_BRANCH} || EXIT=$?
 
 python run-integration-tests.py --config ${BUILDTIME}.json || EXIT=$?
 
