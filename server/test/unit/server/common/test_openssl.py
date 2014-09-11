@@ -1,176 +1,241 @@
+"""
+This module contains tests for the pulp.server.common.openssl module.
+"""
+import subprocess
+import unittest
 
-from unittest import TestCase
+import mock
 
-from mock import patch, Mock
-
-from pulp.server.common.openssl import BIO, Store, StoreContext, Certificate
-
-
-#
-# Note: Tests not explicitly validating __del__() must ensure that mocked
-#       lib calls returning pointers, return 0 (NULL).  This prevents
-#       __del__() calling free() with random or bogus pointers when post
-#       run objects are garbage collected.
-#
+from pulp.server.common import openssl
 
 
-class TestBIO(TestCase):
+class TestCertificate(unittest.TestCase):
+    """
+    This class contains tests for the Certificate class.
+    """
 
-    @patch('pulp.server.common.openssl.c_char_p')
-    @patch('pulp.server.common.openssl.openssl')
-    def test_construction(self, fake_lib, fake_char_p):
-        ptr = 0
-        c_ptr = 123
-        fake_lib.BIO_new_mem_buf.return_value = ptr
-        fake_char_p.return_value = c_ptr
-        content = 'hello'
+    def test___init__(self):
+        """
+        This tests the __init__() method.
+        """
+        cert_data = 'you can trust me'
 
-        # test
-        bio = BIO(content)
+        cert = openssl.Certificate(cert_data)
 
-        # validation
-        fake_char_p.assert_called_with(content)
-        fake_lib.BIO_new_mem_buf.assert_called_with(c_ptr, len(content))
-        self.assertEqual(bio.ptr, ptr)
+        self.assertEqual(cert._cert, cert_data)
+        self.assertEqual(cert._tempdir, None)
 
-    @patch('pulp.server.common.openssl.openssl')
-    def test_del(self, fake_lib):
-        ptr = 1
-        fake_lib.BIO_new_mem_buf.return_value = ptr
+    @mock.patch('pulp.server.common.openssl.Certificate.__del__')
+    @mock.patch('pulp.server.common.openssl.subprocess.check_call')
+    @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
+    @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
+    def test_verify_cert_expired(self, NamedTemporaryFile, mkdtemp, check_call, __del__):
+        """
+        Ensure that verify() returns False when the certificate is expired.
+        """
+        a_tempdir = '/some/dir/'
+        cert_filename = '%s%s' % (a_tempdir, 'a.file')
 
-        # test
-        bio = BIO('')
-        bio.__del__()
+        NamedTemporaryFile.return_value = mock.MagicMock()
+        NamedTemporaryFile.return_value.name = cert_filename
 
-        # validation
-        fake_lib.BIO_free.assert_called_with(ptr)
+        mkdtemp.return_value = a_tempdir
 
+        # This will allow us to simulate the expiration check failing
+        check_call.side_effect = subprocess.CalledProcessError(mock.MagicMock(), mock.MagicMock())
 
-class TestStore(TestCase):
+        cert_data = "I'm trying to trick you with an expired certificate!"
+        ca_chain = ['A CA', 'Another CA']
+        cert = openssl.Certificate(cert_data)
 
-    @patch('pulp.server.common.openssl.openssl')
-    def test_construction(self, fake_lib):
-        ptr = 0
-        fake_lib.X509_STORE_new.return_value = ptr
+        valid = cert.verify(ca_chain)
 
-        # test
-        store = Store()
+        # The Certificate should show as invalid
+        self.assertEqual(valid, False)
+        # mkdtemp should have one call
+        mkdtemp.assert_called_once_with()
+        # A NamedTemporaryFile should have been created for the Certificate
+        NamedTemporaryFile.assert_called_once_with(mode='w', dir=a_tempdir, delete=False)
+        # The cert should have been written to the NamedTemporaryFile, and then it should have been
+        # closed.
+        NamedTemporaryFile.return_value.write.assert_called_once_with(cert_data)
+        NamedTemporaryFile.return_value.close.assert_called_once_with()
+        # Make sure openssl was called with all the correct args to check expiration
+        expected_args = ['openssl', 'x509', '-in', cert_filename, '-noout', '-checkend', '0']
+        check_call.assert_called_once_with(expected_args, stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE)
+        # Cleanup should have happened
+        __del__.assert_called_once_with()
 
-        # validation
-        fake_lib.X509_STORE_new.assert_called_with()
-        self.assertEqual(store.ptr, ptr)
+    @mock.patch('pulp.server.common.openssl.Certificate.__del__')
+    @mock.patch('pulp.server.common.openssl.subprocess.check_call')
+    @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
+    @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
+    def test_verify_signature_invalid(self, NamedTemporaryFile, mkdtemp, check_call, __del__):
+        """
+        Ensure that verify() returns False when the signature is invalid.
+        """
+        a_tempdir = '/some/dir/'
+        cert_filename = '%s%s' % (a_tempdir, 'a.crt')
+        ca_filename = '%s%s' % (a_tempdir, 'ca.pack')
 
-    @patch('pulp.server.common.openssl.openssl')
-    def test_add(self, fake_lib):
-        ptr = 0
-        fake_lib.X509_STORE_new.return_value = ptr
-        certificate = Mock()
+        fake_filenames = [cert_filename, ca_filename]
+        fake_files = []
+        def fake_NamedTemporaryFile(mode, dir, delete):
+            fake_file = mock.MagicMock()
+            fake_file.name = fake_filenames.pop(0)
+            fake_files.append(fake_file)
+            return fake_file
+        NamedTemporaryFile.side_effect = fake_NamedTemporaryFile
 
-        # test
-        store = Store()
-        store.add(certificate)
+        mkdtemp.return_value = a_tempdir
 
-        # validation
-        fake_lib.X509_STORE_add_cert.assert_called_with(store.ptr, certificate.ptr)
+        # The first time should succeed, the second time should error (simulating openssl failing
+        # the signature check).
+        check_call_side_effects = [None, subprocess.CalledProcessError(mock.MagicMock(),
+                                                                       mock.MagicMock())]
+        def fake_check_call(*args, **kwargs):
+            """
+            Does nothing the first time it is called, and then raises CalledProcessError the second
+            time to simulate the certificate check failing.
+            """
+            what_to_do = check_call_side_effects.pop(0)
+            if what_to_do:
+                raise what_to_do
+        # This will allow us to simulate the expiration check failing
+        check_call.side_effect = fake_check_call
 
-    @patch('pulp.server.common.openssl.openssl')
-    def test_del(self, fake_lib):
-        ptr = 1
-        fake_lib.X509_STORE_new.return_value = ptr
+        cert_data = "I'm trying to trick you with an expired certificate!"
+        ca_chain = [openssl.Certificate(c) for c in ['A CA', 'Another CA']]
+        cert = openssl.Certificate(cert_data)
 
-        # test
-        store = Store()
-        store.__del__()
+        valid = cert.verify(ca_chain)
 
-        # validation
-        fake_lib.X509_STORE_free.assert_called_with(ptr)
+        # The Certificate should show as invalid
+        self.assertEqual(valid, False)
+        # mkdtemp should have one call
+        mkdtemp.assert_called_once_with()
+        # Two NamedTemporaryFiles should have been created. One for the Certificate, and one for the
+        # CA pack.
+        self.assertEqual(NamedTemporaryFile.call_count, 2)
+        self.assertEqual(NamedTemporaryFile.mock_calls[0][2],
+                         {'mode': 'w', 'dir': a_tempdir, 'delete': False})
+        self.assertEqual(NamedTemporaryFile.mock_calls[1][2],
+                         {'mode': 'w', 'dir': a_tempdir, 'delete': False})
+        # The cert should have been written to the first NamedTemporaryFile, and then it should
+        # have been closed.
+        fake_files[0].write.assert_called_once_with(cert_data)
+        fake_files[0].close.assert_called_once_with()
+        # The CA pack should have been written to the second NamedTemporaryFile, and then it should
+        # have been closed.
+        fake_files[1].write.assert_called_once_with('A CA\nAnother CA')
+        fake_files[1].close.assert_called_once_with()
+        # check_call should have been called twice this time, once to check expiration and once to
+        # check signature.
+        self.assertEqual(check_call.call_count, 2)
+        # Make sure openssl was called with all the correct args to check expiration
+        expected_args = ['openssl', 'x509', '-in', cert_filename, '-noout', '-checkend', '0']
+        self.assertEqual(check_call.mock_calls[0][1], (expected_args,))
+        self.assertEqual(check_call.mock_calls[0][2],
+                         {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE})
+        # Make sure openssl was called with all the correct args to check signature
+        expected_args = ['openssl', 'verify', '-CAfile', ca_filename, '-purpose', 'sslclient',
+                         cert_filename]
+        self.assertEqual(check_call.mock_calls[1][1], (expected_args,))
+        self.assertEqual(check_call.mock_calls[1][2],
+                         {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE})
+        # Cleanup should have happened
+        __del__.assert_called_once_with()
 
+    @mock.patch('pulp.server.common.openssl.Certificate.__del__')
+    @mock.patch('pulp.server.common.openssl.subprocess.check_call')
+    @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
+    @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
+    def test_verify_valid(self, NamedTemporaryFile, mkdtemp, check_call, __del__):
+        """
+        Ensure that verify() returns True when the client certificate is legitimate.
+        """
+        a_tempdir = '/some/dir/'
+        cert_filename = '%s%s' % (a_tempdir, 'a.crt')
+        ca_filename = '%s%s' % (a_tempdir, 'ca.pack')
 
-class TestStoreContext(TestCase):
+        fake_filenames = [cert_filename, ca_filename]
+        fake_files = []
+        def fake_NamedTemporaryFile(mode, dir, delete):
+            fake_file = mock.MagicMock()
+            fake_file.name = fake_filenames.pop(0)
+            fake_files.append(fake_file)
+            return fake_file
+        NamedTemporaryFile.side_effect = fake_NamedTemporaryFile
 
-    @patch('pulp.server.common.openssl.openssl')
-    def test_construction(self, fake_lib):
-        ptr = 0
-        store = Mock()
-        store.ptr = 2
-        certificate = Mock()
-        certificate.ptr = 3
-        fake_lib.X509_STORE_CTX_new.return_value = ptr
+        mkdtemp.return_value = a_tempdir
 
-        # test
-        ctx = StoreContext(store, certificate)
+        cert_data = "I am a real cert!"
+        ca_chain = [openssl.Certificate('A CA')]
+        cert = openssl.Certificate(cert_data)
 
-        # validation
-        fake_lib.X509_STORE_CTX_new.assert_called_with()
-        fake_lib.X509_STORE_CTX_init.assert_called_with(ptr, store.ptr, certificate.ptr, None)
-        self.assertEqual(ctx.ptr, ptr)
+        valid = cert.verify(ca_chain)
 
-    @patch('pulp.server.common.openssl.openssl')
-    def test_del(self, fake_lib):
-        ptr = 1
-        store = Mock()
-        store.ptr = 2
-        certificate = Mock()
-        certificate.ptr = 3
-        fake_lib.X509_STORE_CTX_new.return_value = ptr
+        # The Certificate should show as valid
+        self.assertEqual(valid, True)
+        # mkdtemp should have one call
+        mkdtemp.assert_called_once_with()
+        # Two NamedTemporaryFiles should have been created. One for the Certificate, and one for the
+        # CA pack.
+        self.assertEqual(NamedTemporaryFile.call_count, 2)
+        self.assertEqual(NamedTemporaryFile.mock_calls[0][2],
+                         {'mode': 'w', 'dir': a_tempdir, 'delete': False})
+        self.assertEqual(NamedTemporaryFile.mock_calls[1][2],
+                         {'mode': 'w', 'dir': a_tempdir, 'delete': False})
+        # The cert should have been written to the first NamedTemporaryFile, and then it should
+        # have been closed.
+        fake_files[0].write.assert_called_once_with(cert_data)
+        fake_files[0].close.assert_called_once_with()
+        # The CA pack should have been written to the second NamedTemporaryFile, and then it should
+        # have been closed.
+        fake_files[1].write.assert_called_once_with('A CA')
+        fake_files[1].close.assert_called_once_with()
+        # check_call should have been called twice this time, once to check expiration and once to
+        # check signature.
+        self.assertEqual(check_call.call_count, 2)
+        # Make sure openssl was called with all the correct args to check expiration
+        expected_args = ['openssl', 'x509', '-in', cert_filename, '-noout', '-checkend', '0']
+        self.assertEqual(check_call.mock_calls[0][1], (expected_args,))
+        self.assertEqual(check_call.mock_calls[0][2],
+                         {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE})
+        # Make sure openssl was called with all the correct args to check signature
+        expected_args = ['openssl', 'verify', '-CAfile', ca_filename, '-purpose', 'sslclient',
+                         cert_filename]
+        self.assertEqual(check_call.mock_calls[1][1], (expected_args,))
+        self.assertEqual(check_call.mock_calls[1][2],
+                         {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE})
+        # Cleanup should have happened
+        __del__.assert_called_once_with()
 
-        # test
-        ctx = StoreContext(store, certificate)
-        ctx.__del__()
+    @mock.patch('pulp.server.common.openssl.shutil.rmtree')
+    def test___del___tempdir_none(self, rmtree):
+        """
+        Test __del__() when the Certificate's _tempdir attribute is None.
+        """
+        cert = openssl.Certificate('some cert')
 
-        # validation
-        fake_lib.X509_STORE_CTX_free.assert_called_with(ptr)
+        del cert
 
+        # rmtree should not be called since there's nothing to clean up
+        self.assertEqual(rmtree.call_count, 0)
 
-class TestCertificate(TestCase):
+    @mock.patch('pulp.server.common.openssl.shutil.rmtree')
+    def test___del___tempdir_set(self, rmtree):
+        """
+        Test __del__() when the Certificate's _tempdir attribute is None.
+        """
+        a_dir = '/tmp/some/dir/'
+        cert = openssl.Certificate('some cert')
+        cert._tempdir = a_dir
 
-    @patch('pulp.server.common.openssl.BIO')
-    @patch('pulp.server.common.openssl.openssl')
-    def test_construction(self, fake_lib, fake_bio):
-        ptr = 0
-        fake_lib.PEM_read_bio_X509.return_value = ptr
-        pem = 'PEM-ENCODED'
+        # We will call __del__() explicitly so that cert doesn't get unbound. This way we can also
+        # assert that cert._tempdir gets set back to None.
+        cert.__del__()
 
-        # test
-        certificate = Certificate(pem)
-
-        # validation
-        fake_bio.assert_called_with(pem)
-        fake_lib.PEM_read_bio_X509.assert_called_with(fake_bio().ptr, None, 0, None)
-        self.assertEqual(certificate.ptr, ptr)
-
-    @patch('pulp.server.common.openssl.openssl')
-    def test_del(self, fake_lib):
-        ptr = 1
-        fake_lib.PEM_read_bio_X509.return_value = ptr
-
-        # test
-        certificate = Certificate('')
-        certificate.__del__()
-
-        # validation
-        fake_lib.X509_free.assert_called_with(ptr)
-
-    @patch('pulp.server.common.openssl.BIO', Mock())
-    @patch('pulp.server.common.openssl.Store')
-    @patch('pulp.server.common.openssl.StoreContext')
-    @patch('pulp.server.common.openssl.openssl')
-    def test_verify(self, fake_lib, fake_ctx, fake_store):
-        ptr = 0
-        fake_lib.PEM_read_bio_X509.return_value = ptr
-        fake_lib.X509_verify_cert.return_value = 1
-
-        ca_chain = [Mock(), Mock(), Mock()]
-
-        # test
-        certificate = Certificate('')
-        valid = certificate.verify(ca_chain)
-
-        # validation
-        calls = fake_store().add.call_args_list
-        self.assertEqual(len(calls), len(ca_chain))
-        for i, ca in enumerate(ca_chain):
-            self.assertEqual(calls[i][0][0], ca)
-        fake_ctx.assert_called_with(fake_store(), certificate)
-        fake_lib.X509_verify_cert.assert_called_with(fake_ctx().ptr)
-        self.assertEqual(valid, 1)
+        rmtree.assert_called_once_with(a_dir)
+        self.assertEqual(cert._tempdir, None)
