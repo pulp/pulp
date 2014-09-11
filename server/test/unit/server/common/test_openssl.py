@@ -106,7 +106,7 @@ class TestCertificate(unittest.TestCase):
         check_call.side_effect = fake_check_call
 
         cert_data = "I'm trying to trick you with an expired certificate!"
-        ca_chain = ['A CA', 'Another CA']
+        ca_chain = [openssl.Certificate(c) for c in ['A CA', 'Another CA']]
         cert = openssl.Certificate(cert_data)
 
         valid = cert.verify(ca_chain)
@@ -171,7 +171,7 @@ class TestCertificate(unittest.TestCase):
         mkdtemp.return_value = a_tempdir
 
         cert_data = "I am a real cert!"
-        ca_chain = ['A CA']
+        ca_chain = [openssl.Certificate('A CA')]
         cert = openssl.Certificate(cert_data)
 
         valid = cert.verify(ca_chain)

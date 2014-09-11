@@ -26,7 +26,7 @@ class Certificate(object):
         that it is signed by at least one of the CAs in the ca_chain. It will return True if it is
         valid, and False otherwise.
 
-        :param ca_chain: A list of CA certificates.
+        :param ca_chain: A list of CA certificates. Each should be a Certificate object.
         :type  ca_chain: iterable
         :return:         True if verified.
         :rtype:          bool
@@ -50,6 +50,7 @@ class Certificate(object):
 
             # Write the CAs to a tempfile
             ca = tempfile.NamedTemporaryFile(mode='w', dir=self._tempdir, delete=False)
+            ca_chain = [c._cert for c in ca_chain]
             ca.write('\n'.join(ca_chain))
             ca.close()
 
