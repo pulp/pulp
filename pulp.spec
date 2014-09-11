@@ -657,6 +657,9 @@ exit 0
 - 1100805 - Fixing consumer group bind and unbind and moving tasks from
   tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
 
+* Thu Sep 11 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.8.beta
+- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
+
 * Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.7.beta
 - 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
 
