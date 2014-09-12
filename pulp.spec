@@ -30,11 +30,12 @@
 Name: pulp
 Version: 2.5.0
 Release: 0.1.alpha%{?dist}
+%define nondist_release %(echo %{release} | sed 's/%{?dist}//')
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
+Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}-%{nondist_release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
@@ -604,6 +605,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Sep 11 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.8.beta
+- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
+
 * Tue Sep 09 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.1.alpha
 - 1134972 - remove calls to mongo flush (cduryee@redhat.com)
 - 1132609 - celery result backend gets mongo username correctly
@@ -656,9 +660,6 @@ exit 0
   importer syncs to UTC instead of timezone offset (bcourt@redhat.com)
 - 1100805 - Fixing consumer group bind and unbind and moving tasks from
   tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
-
-* Thu Sep 11 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.8.beta
-- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
 
 * Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.7.beta
 - 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
