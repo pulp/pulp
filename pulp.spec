@@ -42,11 +42,12 @@
 Name: pulp
 Version: 2.4.1
 Release: 0.8.beta%{?dist}
+%define nondist_release %(echo %{release} | sed 's/%{?dist}//')
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://github.com/%{name}/%{name}/archive/%{name}-2.4.0-1.tar.gz
+Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}-%{nondist_release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
