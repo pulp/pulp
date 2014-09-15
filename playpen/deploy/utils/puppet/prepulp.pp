@@ -2,12 +2,13 @@
 
 class prepulp {
     include stdlib
-    
+
     package { 'redhat-lsb':
         ensure => 'installed'
     }
 
-    if $::operatingsystem == 'RedHat' and $::lsbmajdistrelease == 5 {
+    if ($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS')
+        and $::lsbmajdistrelease == 5 {
         # Get the latest puppet verson from puppetlabs. This should pull in
         # the json ruby gem for facter to use.
         $el5_packages = [
@@ -17,12 +18,13 @@ class prepulp {
             'python-qpid',
         ]
 
-        exec { "install puppet repo":
+        exec { 'install puppet repo':
             command => '/bin/rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-5.noarch.rpm'
         } -> package { $el5_packages:
             ensure => 'installed'
         }
-    } elsif $::operatingsystem == 'RedHat' and $::lsbmajdistrelease == 6 {
+    } elsif ($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS')
+        and $::lsbmajdistrelease == 6 {
         # Qpid is provided by Pulp, so don't install it right now. Also update
         # to the latest Puppet version from puppetlabs
         $el6_packages = [
@@ -35,11 +37,11 @@ class prepulp {
             'python-pip',
         ]
 
-        exec { "install puppet repo":
+        exec { 'install puppet repo':
             command => '/bin/rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm'
         } -> package { $el6_packages:
             ensure => 'installed'
-        } -> exec { "gem install json":
+        } -> exec { 'gem install json':
             command => '/usr/bin/gem install json'
         }
 
@@ -63,7 +65,7 @@ class prepulp {
 
         class {'::qpid::server':
             config_file => '/etc/qpid/qpidd.conf',
-            auth => 'no'
+            auth        => 'no'
         }
     }
 }

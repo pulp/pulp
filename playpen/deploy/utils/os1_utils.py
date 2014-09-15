@@ -314,11 +314,13 @@ class OS1Manager:
             # In this case we never built all the instances
             raise RuntimeError('Build time exceeded timeout, please inspect the snapshots and clean up')
 
-    def get_instance_floating_ip(self, instance_id, allocate=True):
+    def get_instance_floating_ip(self, instance_id):
         """
         Get an floating IP for the given instance ID. If one doesn't exist,
-        one will be allocated by default. Nova doesn't raise an exception
-        if the floating IP address is already assigned,
+        one will be allocated. Nova doesn't raise an exception if the floating
+        IP address is already assigned, so there is a small chance a free floating
+        IP is assigned to an instance by someone else between the time this function
+        queries the free IPs and assigns one
 
         :param instance_id: the id of a server instance with a public ip address
         :type  instance_id: str
@@ -411,10 +413,19 @@ class OS1Manager:
         return pulp_image
 
     def get_free_floating_ips(self):
+        """
+        Get a list of unassigned floating IPs.
+
+        :return: A list of floating IPs with no instance associated with them
+        :rtype:  list
+        """
         self._authenticate()
         return [ip for ip in self.nova.floating_ips.list() if ip.instance_id is None]
 
     def release_free_floating_ips(self):
+        """
+        Release all free floating IPs from the project's pool of reserved IPs.
+        """
         free_ips = self.get_free_floating_ips()
         for ip in free_ips:
             ip.delete()

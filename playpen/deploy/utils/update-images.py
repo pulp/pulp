@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import argparse
 
 from fabric.api import settings, run
@@ -37,8 +37,6 @@ parser.add_argument('--os1-tenant-id', help=os1_tenant_id_help)
 parser.add_argument('--os1-tenant-name', help=os1_tenant_name_help)
 parser.add_argument('--os1-auth-url', help=os1_auth_url_help)
 args = parser.parse_args()
-# Boot, update, apply puppet module, reboot, snapshot, delete instances, apply metadata, remove old image
-# TODO remove logs
 
 os1 = os1_utils.OS1Manager(args.os1_username, args.os1_password, args.os1_tenant_id,
                            args.os1_tenant_name, args.os1_auth_url)
