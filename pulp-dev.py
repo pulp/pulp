@@ -124,11 +124,11 @@ try:
 except OSError:
     print ('pulp-dev requires lsb_release to detect which operating system you are using. Please '
            'install it and try again. For Red Hat based distributions, the package is called '
-           'redhat-lsb.')
+           'redhat-lsb-core.')
     sys.exit(1)
 # RedHatEnterpriseEverything is what the EL Beta seems to use, or at least the installation rbarlow
 # performed. Perhaps we need a better matching algorithm than just a list of strings.
-if LSB_VENDOR not in ('RedHatEnterpriseEverything', 'RedHatEnterpriseServer', 'Fedora'):
+if LSB_VENDOR not in ('CentOS', 'Fedora', 'RedHatEnterpriseEverything', 'RedHatEnterpriseServer'):
     print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
     sys.exit(1)
 LSB_VERSION = float(subprocess.Popen(['lsb_release', '-sr'],
