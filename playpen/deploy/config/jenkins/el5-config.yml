@@ -18,7 +18,8 @@ structure:
     role: server
     flavor: m1.medium
     children:
-        - instance_name: jenkins-el6-pulp-consumer
+        - instance_name: jenkins-el5-pulp-consumer
+          distribution: el5
           role: consumer
 
 

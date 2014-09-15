@@ -2,8 +2,8 @@
 # Default Values 
 # ==============
 repository: http://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4
-keypair_name: pulp-jenkins
-private_key: ~/.ssh/id_rsa
+keypair_name: pulp-ci-key
+private_key: id_rsa
 distribution: fc20
 flavor: m1.small
 security_group: pulp
