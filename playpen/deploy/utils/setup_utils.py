@@ -63,8 +63,8 @@ YUM_INSTALL_TEMPLATE = 'sudo yum -y install %s'
 # The version of gevent provided by Fedora/RHEL is too old, so force it to update here.
 # It seems like setup.py needs to be run twice for now.
 INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git && \
-git checkout %s && sudo pip install -U greenlet gevent requests stitches && \
-cd pulp-automation && sudo python ./setup.py develop'
+sudo pip install -U greenlet gevent requests stitches && \
+cd pulp-automation && git checkout %s && sudo python ./setup.py install'
 
 HOSTS_TEMPLATE = "echo '%(ip)s    %(hostname)s %(hostname)s.novalocal' | sudo tee -a /etc/hosts"
 
@@ -291,7 +291,7 @@ def configure_tester(instance_name, global_config):
             server = {
                 'url': 'https://' + server_config[HOSTNAME] + '/',
                 'hostname': server_config[HOSTNAME],
-                'verify_api_ssl': 'False',
+                'verify_api_ssl': False,
             }
             server_yaml = dict(config_yaml[ROLES_KEY][SERVER_YAML_KEY].items() + server.items())
             config_yaml[ROLES_KEY][SERVER_YAML_KEY] = server_yaml
@@ -305,7 +305,7 @@ def configure_tester(instance_name, global_config):
                 'ssh_key': key_path,
                 'os': {'name': config['os_name'], 'version': config['os_version']},
                 'pulp': server_yaml,
-                'verify': 'False'
+                'verify': False
             }
             consumer_yaml = dict(config_yaml[ROLES_KEY][CONSUMER_YAML_KEY][0].items() + consumer.items())
             config_yaml[ROLES_KEY][CONSUMER_YAML_KEY][0] = consumer_yaml

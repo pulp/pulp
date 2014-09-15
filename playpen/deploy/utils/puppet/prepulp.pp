@@ -14,6 +14,7 @@ class prepulp {
             'ruby-devel',
             'rubygems',
             'puppet',
+            'python-qpid',
         ]
 
         exec { "install puppet repo":

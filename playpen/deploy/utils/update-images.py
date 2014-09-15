@@ -1,6 +1,5 @@
 #!/usr/bin/python
 import argparse
-from multiprocessing import Pool
 
 from fabric.api import settings, run
 
@@ -87,22 +86,25 @@ def update_images():
     instance_list = create_instances()
     snapshot_list = []
 
-    #pool = Pool(len(instance_list))
-    #snapshots = pool.map(update, instance_list)
-    for instance in instance_list:
-        update(instance)
-        snapshot = os1.take_snapshot(instance, instance.name + '-SNAP')
-        snapshot_list.append(snapshot)
+    try:
+        for instance in instance_list:
+            update(instance)
+            snapshot = os1.take_snapshot(instance, instance.name + '-SNAP')
+            snapshot_list.append(snapshot)
 
-    print 'Waiting for snapshots to finish... '
-    os1.wait_for_snapshots(snapshot_list)
-    meta = {os1_utils.META_IMAGE_STATUS_KEYWORD: os1_utils.META_IMAGE_STATUS_PREPPED}
-    for snap in snapshot_list:
-        os1.set_image_meta(snap, meta)
-
-    for instance in instance_list:
-        os1.nova.servers.delete(instance)
-    os1.release_free_floating_ips()
+        print 'Waiting for snapshots to finish... '
+        os1.wait_for_snapshots(snapshot_list)
+        meta = {os1_utils.META_IMAGE_STATUS_KEYWORD: os1_utils.META_IMAGE_STATUS_PREPPED}
+        for snap in snapshot_list:
+            os1.set_image_meta(snap, meta)
+    except Exception:
+        for snap in snapshot_list:
+            snap.delete()
+        raise
+    finally:
+        for instance in instance_list:
+            os1.nova.servers.delete(instance)
+        os1.release_free_floating_ips()
 
     return snapshot_list
 
