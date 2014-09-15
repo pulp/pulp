@@ -127,31 +127,31 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         msg = u'Please do not cut ☃ in half.'
 
         # This one cuts exactly before the snowman starts, so it's OK.
-        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 18):
-            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 26):
+            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-TID-"))
 
-            expected_messages = ['Please do not cut ', '\xe2\x98\x83 in half.']
+            expected_messages = ['PID-TID-Please do not cut ', 'PID-TID-\xe2\x98\x83 in half.']
             self.assertEqual(messages, expected_messages)
 
-        # 19 bytes would allow \xe2 in the first string, but we don't want to kill the snowman
-        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 19):
-            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+        # 27 bytes would allow \xe2 in the first string, but we don't want to kill the snowman
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 27):
+            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-TID-"))
 
-            expected_messages = ['Please do not cut ', '\xe2\x98\x83 in half.']
+            expected_messages = ['PID-TID-Please do not cut ', 'PID-TID-\xe2\x98\x83 in half.']
             self.assertEqual(messages, expected_messages)
 
-        # 20 bytes would allow \xe2\x98 in the first string, but we don't want to kill the snowman
-        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 20):
-            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+        # 28 bytes would allow \xe2\x98 in the first string, but we don't want to kill the snowman
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 28):
+            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-TID-"))
 
-            expected_messages = ['Please do not cut ', '\xe2\x98\x83 in half.']
+            expected_messages = ['PID-TID-Please do not cut ', 'PID-TID-\xe2\x98\x83 in half.']
             self.assertEqual(messages, expected_messages)
 
         # This one is exactly long enough to include the snowman in the first cut
-        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 21):
-            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 29):
+            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-TID-"))
 
-            expected_messages = ['Please do not cut \xe2\x98\x83', ' in half.']
+            expected_messages = ['PID-TID-Please do not cut \xe2\x98\x83', 'PID-TID- in half.']
             self.assertEqual(messages, expected_messages)
 
     def test__cut_message_handles_multibyte_characters_at_end(self):
@@ -164,7 +164,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
 
         # This one cuts exactly after the snowman, so it's OK.
         with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 22):
-            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+            messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-TID-"))
 
             expected_messages = ['Please do not kill \xe2\x98\x83']
             self.assertEqual(messages, expected_messages)
@@ -177,9 +177,9 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         long_string = 'This string is too long with the formatter.'
 
         # Let's suppose that we have a 6 character formatter of "pulp: %(message)s"
-        messages = list(logs.CompliantSysLogHandler._cut_message(long_string, 6))
+        messages = list(logs.CompliantSysLogHandler._cut_message(long_string, 6, "", "PID-TID-"))
 
-        expected_messages = ['This string is too long with the formatter', '.']
+        expected_messages = ['PID-TID-This string is too long with the f', 'PID-TID-ormatter.']
         self.assertEqual(messages, expected_messages)
         # With 6 characters added by the formatter, we can only have 42 characters in the string
         # now. Obviously this check is redundant given the one above, but it's easier for a human
@@ -190,21 +190,22 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         Make sure the case where the message is an empty string is handled well.
         """
-        messages = list(logs.CompliantSysLogHandler._cut_message('', 0))
+        messages = list(logs.CompliantSysLogHandler._cut_message('', 0, '', "PID"))
 
         self.assertEqual(messages, [''])
 
-    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 5)
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 9)
     def test__cut_message_with_long_message(self):
         """
         Make sure the case where a message needs cutting is handled well.
         """
         msg = "This message needs cutting, because it's longer than 5 characters."
 
-        messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+        messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-"))
 
-        expected_messages = ['This ', 'messa', 'ge ne', 'eds c', 'uttin', 'g, be', 'cause',
-                             " it's", ' long', 'er th', 'an 5 ', 'chara', 'cters', '.']
+        expected_messages = ['PID-This ', 'PID-messa', 'PID-ge ne', 'PID-eds c', 'PID-uttin',
+                             'PID-g, be', 'PID-cause', "PID- it's", 'PID- long', 'PID-er th',
+                             'PID-an 5 ', 'PID-chara', 'PID-cters', 'PID-.']
         self.assertEqual(messages, expected_messages)
 
     def test__cut_message_with_short_message(self):
@@ -213,10 +214,39 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         msg = "No cutting necessary."
 
-        messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0))
+        messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-"))
 
         expected_messages = ['No cutting necessary.']
         self.assertEqual(messages, expected_messages)
+
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 43)
+    def test__cut_message_overflows_when_prepended(self):
+        """
+        Make sure that when the last line length is close to the limit and a PID
+        is prepended that the resultant line does not go over the limit.
+        """
+        msg = "The first line ends right on the limit and second line only overflows if prepended"
+
+        messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-"))
+
+        expected_messages = ["PID-The first line ends right on the limit ",
+                             "PID-and second line only overflows if prepe", "PID-nded"]
+        self.assertEqual(messages, expected_messages)
+
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 43)
+    def test__cut_message_overflows_when_prepended(self):
+        """
+        Make sure that when the last line length is close to the limit and a PID
+        is prepended that the resultant line does not go over the limit.
+        """
+        msg = "The first line ends right on the limit and second line only overflows if prepended"
+
+        messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, "", "PID-"))
+
+        expected_messages = ["PID-The first line ends right on the limit ",
+                             "PID-and second line only overflows if prepe", "PID-nded"]
+        self.assertEqual(messages, expected_messages)
+
 
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
     def test_emit_with_compliant_message(self, super_emit):
@@ -249,6 +279,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         self.assertEqual(new_record.exc_info, None)
         self.assertEqual(new_record.funcName, 'some_function')
 
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-")
     @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 54)
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
     def test_emit_with_long_lines(self, super_emit):
@@ -287,11 +318,90 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             self.assertEqual(new_record.funcName, 'some_function')
         # Now let's make sure the messages were split correctly. They will not be formatted yet,
         # but they should have left exactly enough room for formatting.
-        expected_messages = ['This message is very long', '.']
+        expected_messages = ['PID-This message is very ', 'PID-long.']
         messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
-    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 54)
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-TID-")
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 60)
+    @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
+    def test_emit_prepends_pid_if_newlines(self, super_emit):
+        """Test emit() with a message that contains newlines."""
+        format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
+        formatter = logging.Formatter(format_string)
+        handler = logs.CompliantSysLogHandler('/dev/log',
+                                              facility=logs.CompliantSysLogHandler.LOG_DAEMON)
+        handler.setFormatter(formatter)
+        log_message = 'This %(message)s has a \nnewline.'
+        log_args = ({'message': 'message'},)
+        record = logging.LogRecord(
+            name='pulp.test.module', level=logging.INFO, pathname='/some/path', lineno=527,
+            msg=log_message, args=log_args, exc_info=None, func='some_function')
+        handler.emit(record)
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
+        expected_messages = ['PID-TID-This message has a ', 'PID-TID-newline.']
+        self.assertEqual(expected_messages, messages)
+
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-TID-")
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 62)
+    @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
+    def test_emit_prepends_pid_if_too_long(self, super_emit):
+        """Test emit() with a message that is longer than the maximum allowable length."""
+        format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
+        formatter = logging.Formatter(format_string)
+        handler = logs.CompliantSysLogHandler('/dev/log',
+                                              facility=logs.CompliantSysLogHandler.LOG_DAEMON)
+        handler.setFormatter(formatter)
+        log_message = 'This %(message)s is too long for a single line.'
+        log_args = ({'message': 'message'},)
+        record = logging.LogRecord(
+            name='pulp.test.module', level=logging.INFO, pathname='/some/path', lineno=527,
+            msg=log_message, args=log_args, exc_info=None, func='some_function')
+        handler.emit(record)
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
+        expected_messages = ['PID-TID-This message is too long ', 'PID-TID-for a single line.']
+        self.assertEqual(expected_messages, messages)
+
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 74)
+    @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
+    def test_emit_does_not_prepend_pid_if_short_line_without_newlines(self, super_emit):
+        """Test that message id is not prepended if the message is already within guidlines."""
+        format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
+        formatter = logging.Formatter(format_string)
+        handler = logs.CompliantSysLogHandler('/dev/log',
+                                              facility=logs.CompliantSysLogHandler.LOG_DAEMON)
+        handler.setFormatter(formatter)
+        log_message = 'This %(message)s is short and has no newline.'
+        log_args = ({'message': 'message'},)
+        record = logging.LogRecord(
+            name='pulp.test.module', level=logging.INFO, pathname='/some/path', lineno=527,
+            msg=log_message, args=log_args, exc_info=None, func='some_function')
+        handler.emit(record)
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
+        expected_messages = ['This message is short and has no newline.']
+        self.assertEqual(expected_messages, messages)
+
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 53)
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-")
+    @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
+    def test_emit_does_not_prepend_pid_twice(self, super_emit):
+        format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
+        formatter = logging.Formatter(format_string)
+        handler = logs.CompliantSysLogHandler('/dev/log',
+                                              facility=logs.CompliantSysLogHandler.LOG_DAEMON)
+        handler.setFormatter(formatter)
+        log_message = 'This %(message)s has a \nnewline and is too long.'
+        log_args = ({'message': 'message'},)
+        record = logging.LogRecord(
+            name='pulp.test.module', level=logging.INFO, pathname='/some/path', lineno=527,
+            msg=log_message, args=log_args, exc_info=None, func='some_function')
+        handler.emit(record)
+        messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
+        expected_messages = ['PID-This message has a ', 'PID-newline and is too l', 'PID-ong.']
+        self.assertEqual(expected_messages, messages)
+
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-")
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 58)
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
     def test_emit_with_long_lines_and_newlines(self, super_emit):
         """
@@ -329,10 +439,11 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         # Now let's make sure the messages were split correctly. They will not be formatted yet,
         # but the first should have left exactly enough room for formatting, and the newline should
         # have caused a third message.
-        expected_messages = ['This message is very long', '.', 'And it has a newline.']
+        expected_messages = ['PID-This message is very long', 'PID-.', 'PID-And it has a newline.']
         messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-")
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
     def test_emit_with_newlines(self, super_emit):
         """
@@ -364,10 +475,11 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             self.assertEqual(new_record.exc_info, None)
             self.assertEqual(new_record.funcName, 'some_function')
         # Let's make sure the split around the newline happened correctly.
-        expected_messages = ['This ', ' should be OK.']
+        expected_messages = ['PID-This ', 'PID- should be OK.']
         messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', 'PID-')
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
     def test_emit_with_traceback(self, super_emit):
         """
@@ -414,9 +526,12 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         traceback_lines.pop()
         expected_messages = [log_message % task_id]
         expected_messages.extend(traceback_lines)
+        expected_messages = ["PID-" + msg for msg in expected_messages]
+
         messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
+    @mock.patch('pulp.server.logs.CompliantSysLogHandler.log_id', "PID-")
     @mock.patch('pulp.server.logs.logging.handlers.SysLogHandler.emit')
     def test_emit_with_traceback_and_non_string_message(self, super_emit):
         """
@@ -463,6 +578,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         traceback_lines.pop()
         expected_messages = ['42']
         expected_messages.extend(traceback_lines)
+        expected_messages = ["PID-" + msg for msg in expected_messages]
         messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
         self.assertEqual(messages, expected_messages)
 
