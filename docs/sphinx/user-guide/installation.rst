@@ -101,8 +101,13 @@ Server
 
     $ sudo yum install mongodb-server
 
-   You need mongodb-server with version >= 2.4 installed for Pulp server. After installing MongoDB,
-   you should configure it to start at boot and start it. For Upstart based systems::
+   You need mongodb-server with version >= 2.4 installed for Pulp server. If you are using Mongo's
+   authorization feature, you will need to grant the ``readWrite`` and ``dbAdmin`` roles to the user
+   you provision for Pulp to use. The ``dbAdmin`` role allows Pulp to create collections and install
+   indices on them.
+
+   After installing MongoDB, you should configure it to start at boot and start it. For Upstart
+   based systems::
 
     $ sudo service mongod start
     $ sudo chkconfig mongod on
@@ -117,6 +122,7 @@ Server
       accepting connections. MongoDB takes some time to preallocate large files and will not accept
       connections until it finishes. When this happens, it is possible for Pulp to fail to start.
       If this occurs, give MongoDB a few minutes to finish initializing and start Pulp again.
+
 
 #. You must also provide a message bus for Pulp to use. Pulp will work with Qpid or RabbitMQ, but
    is tested with Qpid, and uses Qpid by default. This can also be on the same host that you will
