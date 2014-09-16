@@ -27,27 +27,28 @@ logger = logging.getLogger(__name__)
 
 
 @task(acks_late=True)
-def deferred_reservation(name, task_id, resource_id, inner_args, inner_kwargs):
+def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
-    called the "inner" task, and a task name, UUID, and accepts a list of future positional args
-    and keyword args. When the inner task is called the inner_args list and inner_kwargs
-    dictionary are passed as positional and keyword arguments using the * and ** operators.
+    called the "inner" task, and a task name, UUID, and accepts a list of positional args
+    and keyword args for the inner task. These arguments are named inner_args and inner_kwargs.
+    inner_args is a list, and inner_kwargs is a dictionary passed to the inner task as positional
+    and keyword arguments using the * and ** operators.
 
-    The future task is dispatched into a dedicated queue for a worker that is decided at dispatch
+    The inner task is dispatched into a dedicated queue for a worker that is decided at dispatch
     time. The logic deciding which queue receives a task is controlled through the
     find_worker function.
 
-    :param name: The name of the task to be called in the future
-    :type name: basestring
-    :param inner_task_id: The UUID to be set on the task being called in the future. By providing
+    :param name:          The name of the task to be called
+    :type name:           basestring
+    :param inner_task_id: The UUID to be set on the task being called. By providing
                           the UUID, the caller can have an asynchronous reference to the inner task
-                          that will be dispatched into the future.
-    :type inner_task_id: uuid
-    :param resource_id: The name of the resource you wish to reserve for your task. The system
-                        will ensure that no other tasks that want that same reservation will run
-                        concurrently with yours.
-    :type  resource_id: basestring
+                          that will be dispatched.
+    :type inner_task_id:  basestring
+    :param resource_id:   The name of the resource you wish to reserve for your task. The system
+                          will ensure that no other tasks that want that same reservation will run
+                          concurrently with yours.
+    :type  resource_id:   basestring
 
     :return: None
     """
@@ -83,7 +84,7 @@ def _delete_worker(name, normal_shutdown=False):
 
     Any resource reservations associated with this worker are cleaned up by this function.
 
-    Any tasks associated with this worker are explicitly cancelled.
+    Any tasks associated with this worker are explicitly canceled.
 
     :param name:            The name of the worker you wish to delete. In the database, the _id
                             field is the name.
@@ -97,14 +98,14 @@ def _delete_worker(name, normal_shutdown=False):
         msg = msg % {'name': name}
         logger.error(msg)
 
-    # Delete all reserved_resource documents for the worker
-    ReservedResource.get_collection().remove({'worker_name': name})
-
     # Delete the worker document
     worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
     if len(worker_list) > 0:
         worker_document = worker_list[0]
         worker_document.delete()
+
+    # Delete all reserved_resource documents for the worker
+    ReservedResource.get_collection().remove({'worker_name': name})
 
     # Cancel all of the tasks that were assigned to this worker's queue
     worker = Worker.from_bson({'_id': name})
@@ -119,7 +120,7 @@ def _delete_worker(name, normal_shutdown=False):
 def _release_resource(task_id):
     """
     Do not queue this task yourself. It will be used automatically when your task is dispatched by
-    the deferred_reservation task.
+    the _queue_reserved_task task.
 
     When a resource-reserving task is complete, this method releases the resource by removing the
     ReservedResource object by UUID.
@@ -212,8 +213,8 @@ class ReservedTaskMixin(object):
         and combines them to form a resource id.
 
         This does not dispatch the task directly, but instead promises to dispatch it later by
-        encapsulating the desired task through a call to a deferred_reservation task. See the
-        docblock on deferred_reservation for more information on this.
+        encapsulating the desired task through a call to a _queue_reserved_task task. See the
+        docblock on _queue_reserved_task for more information on this.
 
         This method creates a TaskStatus as a placeholder for later updates. Pulp expects to poll
         on a task just after calling this method, so a TaskStatus entry needs to exist for it
@@ -248,7 +249,8 @@ class ReservedTaskMixin(object):
         # the task state to 'waiting' only on an insert.
         task_status.save(fields_to_set_on_insert=['state', 'start_time', 'tags'])
 
-        deferred_reservation.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs], queue=RESOURCE_MANAGER_QUEUE, tags=tags)
+        _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
+                                         queue=RESOURCE_MANAGER_QUEUE, tags=tags)
         return AsyncResult(inner_task_id)
 
 

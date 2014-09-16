@@ -34,7 +34,7 @@ WORKER_2_QUEUE = '%s.dq' % WORKER_2
 WORKER_3_QUEUE = '%s.dq' % WORKER_3
 
 
-class TestDeferredReservation(ResourceReservationTests):
+class TestQueueReservedTask(ResourceReservationTests):
 
     def setUp(self):
         self.patch_a = mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation',
@@ -58,7 +58,7 @@ class TestDeferredReservation(ResourceReservationTests):
         self.patch_f = mock.patch('pulp.server.async.tasks._release_resource', autospec=True)
         self.mock__release_resource = self.patch_f.start()
 
-        super(TestDeferredReservation, self).setUp()
+        super(TestQueueReservedTask, self).setUp()
 
     def tearDown(self):
         self.patch_a.stop()
@@ -67,45 +67,45 @@ class TestDeferredReservation(ResourceReservationTests):
         self.patch_d.stop()
         self.patch_e.stop()
         self.patch_f.stop()
-        super(TestDeferredReservation, self).tearDown()
+        super(TestQueueReservedTask, self).tearDown()
 
-    def test_deferred_reservation_creates_and_saves_ReservedResource(self):
+    def test__queue_reserved_task_creates_and_saves_ReservedResource(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
         self.mock_get_unreserved_worker.return_value = None
-        tasks.deferred_reservation('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.mock_reserved_resource.assert_called_once_with('my_task_id', 'worker1',
                                                             'my_resource_id')
         self.mock_reserved_resource.return_value.save.assert_called_once_with()
 
-    def test_deferred_reservation_dispatches_inner_task(self):
+    def test__queue_reserved_task_dispatches_inner_task(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
         self.mock_get_unreserved_worker.return_value = None
-        tasks.deferred_reservation('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         apply_async = self.mock_celery.tasks['task_name'].apply_async
         apply_async.assert_called_once_with(1, 2, a=2, queue='worker1.dq', task_id='my_task_id',
                                             exchange='C.dq')
 
-    def test_deferred_reservation_dispatches__release_resource(self):
+    def test__queue_reserved_task_dispatches__release_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
         self.mock_get_unreserved_worker.return_value = None
-        tasks.deferred_reservation('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
                                                                         queue='worker1',
                                                                         exchange='C.dq')
 
-    def test_deferred_reservation_get_worker_for_reservation_breaks_out_of_loop(self):
+    def test__queue_reserved_task_get_worker_for_reservation_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
         self.mock_get_unreserved_worker.return_value = None
-        tasks.deferred_reservation('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.assertTrue(not self.mock_time.sleep.called)
 
-    def test_deferred_reservation_get_unreserved_worker_breaks_out_of_loop(self):
+    def test__queue_reserved_task_get_unreserved_worker_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.return_value = None
         self.mock_get_unreserved_worker.return_value = Worker('worker1', datetime.utcnow())
-        tasks.deferred_reservation('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.assertTrue(not self.mock_time.sleep.called)
 
-    def test_deferred_reservation_loops_and_sleeps_waiting_for_available_worker(self):
+    def test__queue_reserved_task_loops_and_sleeps_waiting_for_available_worker(self):
         class BreakOutException(Exception):
             pass
         self.mock_time.sleep.side_effect = [None, BreakOutException()]
@@ -113,12 +113,12 @@ class TestDeferredReservation(ResourceReservationTests):
         self.mock_get_unreserved_worker.return_value = None
 
         try:
-            tasks.deferred_reservation('task_name', 'my_task_id', 'my_resource_id', [1, 2],
+            tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2],
                                        {'a': 2})
         except BreakOutException:
             pass
         else:
-            self.fail('deferred_reservation should have raised a BreakOutException')
+            self.fail('_queue_reserved_task should have raised a BreakOutException')
 
         self.mock_time.sleep.assert_has_calls([mock.call(0.25), mock.call(0.25)])
 
@@ -337,8 +337,8 @@ class TestReservedTaskMixin(ResourceReservationTests):
         self.some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': WORKER_1_QUEUE,
                             'exchange': 'C.dq', 'tags': ['tag1','tag2']}
 
-        self.task_patch = mock.patch('pulp.server.async.tasks.deferred_reservation', autospec=True)
-        self.mock_deferred_reservation = self.task_patch.start()
+        self.task_patch = mock.patch('pulp.server.async.tasks._queue_reserved_task', autospec=True)
+        self.mock__queue_reserved_task = self.task_patch.start()
 
         self.uuid_patch = mock.patch('pulp.server.async.tasks.uuid', autospec=True)
         self.mock_uuid = self.uuid_patch.start()
@@ -360,12 +360,12 @@ class TestReservedTaskMixin(ResourceReservationTests):
         self.constants_patch.stop()
         super(TestReservedTaskMixin, self).tearDown()
 
-    def test_apply_async_with_reservation_calls_apply_async_on_deferred_reservation(self):
+    def test_apply_async_with_reservation_calls_apply_async_on__queue_reserved_task(self):
         tags = self.some_kwargs.pop('tags')
         expected_arguments = ['dummy_task_name', str(self.mock_uuid.uuid4.return_value),
                               'reserve_me:three_to_get_ready', tuple(self.some_args),
                               self.some_kwargs]
-        self.mock_deferred_reservation.apply_async.assert_called_once_with(
+        self.mock__queue_reserved_task.apply_async.assert_called_once_with(
             queue=tasks.RESOURCE_MANAGER_QUEUE,
             args=expected_arguments,
             tags=tags)

@@ -87,18 +87,26 @@ class ReservedResource(Model):
     """
     Instances of this class represent resources that have been reserved.
 
-    :param task_id:       The uuid of the task associated with this reservation
-    :type task_id:        uuid
-    :param worker_name:   The name of the reserved resource.
-    :type worker_name:    basestring
-    :param resource_id:   The name of the resource you wish to reserve for your task.
-    :type resource_id:    basestring
+    :ivar task_id:       The uuid of the task associated with this reservation
+    :type task_id:       basestring
+    :ivar worker_name:   The name of the worker associated with this reservation.
+    :type worker_name:   basestring
+    :ivar resource_id:   The name of the resource reserved for the task.
+    :type resource_id:   basestring
     """
     collection_name = 'reserved_resources'
     unique_indices = tuple()
     search_indices = ('worker_name', 'resource_id')
 
     def __init__(self, task_id, worker_name, resource_id):
+        """
+        :param task_id:       The uuid of the task associated with this reservation
+        :type task_id:        basestring
+        :param worker_name:   The name of the worker associated with this reservation.
+        :type worker_name:    basestring
+        :param resource_id:   The name of the resource reserved for the task.
+        :type resource_id:    basestring
+        """
         super(ReservedResource, self).__init__()
 
         self.task_id = task_id
@@ -113,7 +121,7 @@ class ReservedResource(Model):
         """
         Delete self from the DB
         """
-        self.get_collection().remove({'worker_name': self.worker_name})
+        self.get_collection().remove({'_id': self.task_id})
 
     def save(self):
         """
