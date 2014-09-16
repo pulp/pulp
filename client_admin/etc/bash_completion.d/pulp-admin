@@ -40,6 +40,8 @@ _epulp-admin_tab() {
       return
   fi
 
+  pulp-admin $grep_pa_sections --help | egrep -q "^The following options were specified but" && return
+
   if [[ $COMP_LINE == *login?* ]]; then
     login_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
     COMPREPLY=( $( compgen -W "$login_pa_options" -- "$pa_cur" ) )
