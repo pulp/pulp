@@ -27,7 +27,6 @@ from pulp.server.managers.auth.role.cud import RoleManager
 from pulp.server.managers.auth.user.cud import UserManager
 
 
-connection.initialize()
 logger = None
 
 
@@ -108,6 +107,7 @@ def main():
     try:
         options = parse_args()
         _start_logging()
+        connection.initialize()
         _auto_manage_db(options)
     except DataError, e:
         print >> sys.stderr, str(e)

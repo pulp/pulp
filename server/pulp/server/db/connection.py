@@ -66,6 +66,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
                     "Could not connect to MongoDB at %(url)s ... Waiting %(retry_timeout)s seconds "
                     "and trying again.")
                 _LOG.error(msg % {'retry_timeout': next_delay, 'url': seeds})
+                print(msg % {'retry_timeout': next_delay, 'url': seeds})
             else:
                 break
             time.sleep(next_delay)
