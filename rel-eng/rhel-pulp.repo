@@ -1,0 +1,49 @@
+# Place this file in your /etc/yum.repos.d/ directory
+
+# Version 2.x Production Releases
+[pulp-2-stable]
+name=Pulp 2 Production Releases
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/stable/2/$releasever/$basearch/
+enabled=1
+skip_if_unavailable=1
+gpgcheck=0
+
+# Latest Stable Release (disabled by default to prevent automatic major version upgrades)
+[pulp-stable]
+name=Pulp Production Releases
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/stable/latest/$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
+
+# Version 2.4 Beta Builds
+[pulp-2.4-beta]
+name=Pulp 2.4 Beta Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4/$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
+
+# Weekly Testing Builds
+[pulp-2.4-testing]
+name=Pulp 2.4 Testing Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.4/$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
+
+# Version 2.5 Beta Builds
+[pulp-2.5-beta]
+name=Pulp 2.5 Beta Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/beta/2.5/$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
+
+# Weekly Testing Builds
+[pulp-2.5-testing]
+name=Pulp 2.5 Testing Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.5/$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
