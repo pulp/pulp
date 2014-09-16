@@ -22,6 +22,7 @@ import shutil
 
 from paste.fixture import TestApp
 import okaara
+import pymongo
 import web
 
 from pulp.bindings.bindings import Bindings
@@ -79,7 +80,11 @@ class ServerTests(TestCase):
     @classmethod
     def tearDownClass(cls):
         name = pulp_conf.get('database', 'name')
-        connection._CONNECTION.drop_database(name)
+        db = pymongo.database.Database(connection._CONNECTION, name)
+        for name in db.collection_names():
+            if name[:7] == 'system.':
+                continue
+            db.drop_collection(name)
         cls.reserve_resources_patch.stop()
 
     def setUp(self):
