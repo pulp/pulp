@@ -375,7 +375,7 @@ class TestReservedTaskMixin(ResourceReservationTests):
                                                       task_type=self.task.name, task_id=str(
                 self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
         save = self.mock_task_status.return_value.save
-        save.assert_called_once_with(fields_to_set_on_insert=['state', 'start_time', 'tags'])
+        save.assert_called_once_with(fields_to_set_on_insert=['state', 'start_time'])
 
     def test_apply_async_with_reservation_returns_inner_task_id(self):
         self.assertEqual(self.result, str(self.mock_uuid.uuid4.return_value))
