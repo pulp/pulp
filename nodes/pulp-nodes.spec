@@ -19,11 +19,12 @@
 Name: pulp-nodes
 Version: 2.5.0
 Release: 0.1.alpha%{?dist}
+%define nondist_release %(echo %{release} | sed 's/%{?dist}//')
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
+Source0: https://github.com/pulp/pulp/archive/pulp-%{version}-%{nondist_release}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:noarch
 BuildRequires: python2-devel
