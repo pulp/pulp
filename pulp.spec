@@ -497,6 +497,8 @@ A tool used to administer a pulp consumer.
 %{python_sitelib}/pulp_client_consumer*.egg-info
 %dir %{_sysconfdir}/%{name}/consumer
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
+cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdir}/bash_completion.d/
+%{_sysconfdir}/bash_completion.d/pulp-consumer
 %dir %{_sysconfdir}/pki/%{name}/consumer/
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
