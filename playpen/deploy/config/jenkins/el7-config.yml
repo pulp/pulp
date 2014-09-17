@@ -2,8 +2,8 @@
 # Default Values 
 # ==============
 repository: https://repos.fedorapeople.org/repos/pulp/pulp/stable/2/
-keypair_name: jcline-testkey
-private_key: ~/devel/pulp/playpen/deploy/id_rsa
+keypair_name: pulp-ci-key
+private_key: id_rsa
 distribution: el7
 flavor: m1.small
 security_group: pulp
