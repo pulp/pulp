@@ -16,9 +16,10 @@ PRIVATE_KEY = 'private_key'
 CLOUD_CONFIG = 'cloud_config'
 REPOSITORY_URL = 'repository'
 TESTS_DESTINATION = 'test_result_destination'
+TEST_SUITE_BRANCH = 'test_suite_branch'
 
 GLOBAL_CONFIG_KEYWORDS = [DISTRIBUTION, SECURITY_GROUP, FLAVOR, OS1_KEY, PRIVATE_KEY, CLOUD_CONFIG,
-                          REPOSITORY_URL, TESTS_DESTINATION]
+                          REPOSITORY_URL, TESTS_DESTINATION, TEST_SUITE_BRANCH]
 
 # Keywords that might be specified in each instance declaration
 CHILDREN = 'children'
@@ -39,7 +40,7 @@ INSTANCE_CONFIG_KEYWORDS = [DISTRIBUTION, INSTANCE_NAME, SECURITY_GROUP, FLAVOR,
 DEFAULT_FILE_PATH = 'environment.json'
 
 
-def parse_and_validate_config_files(config_path, override_repo=None):
+def parse_and_validate_config_files(config_path, override_repo=None, override_test_branch=None):
     """
     Parse the given configuration file into a python dictionary
 
@@ -66,6 +67,8 @@ def parse_and_validate_config_files(config_path, override_repo=None):
 
     if override_repo:
         defaults[REPOSITORY_URL] = override_repo
+    if override_test_branch:
+        defaults[TEST_SUITE_BRANCH] = override_test_branch
 
     if CONFIG_PULP_TESTER in config:
         config[CONFIG_STRUCTURE] = [config[CONFIG_STRUCTURE], config[CONFIG_PULP_TESTER]]
