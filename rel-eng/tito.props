@@ -2,19 +2,3 @@
 lib_dir = rel-eng/lib
 default_builder = tito.builder.Builder
 default_tagger = tito.tagger.VersionTagger
-
-[pulp-nightly-rhel5]
-disttag = .el5pulp
-blacklist= pulp-server
-
-[pulp-nightly-rhel6]
-disttag = .el6pulp
-blacklist=
-
-[pulp-nightly-fedora18]
-disttag = .fc18pulp
-blacklist=
-
-[pulp-nightly-fedora19]
-disttag = .fc19pulp
-blacklist=
