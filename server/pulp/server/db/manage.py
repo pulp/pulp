@@ -70,14 +70,12 @@ def migrate_database(options):
             message = message % {'p': migration_package.name,
                                  'v': migration_package.latest_available_version}
             logger.info(message)
-            print message
             continue
 
         try:
             for migration in migration_package.unapplied_migrations:
                 message = _('Applying %(p)s version %(v)s')
                 message = message % {'p': migration_package.name, 'v': migration.version}
-                print message
                 logger.info(message)
                 # We pass in !options.test to stop the apply_migration method from updating the
                 # package's current version when the --test flag is set
@@ -86,13 +84,11 @@ def migrate_database(options):
                 message = _('Migration to %(p)s version %(v)s complete.')
                 message = message % {'p': migration_package.name,
                                      'v': migration_package.current_version}
-                print message
                 logger.info(message)
         except Exception, e:
-            # Log and print the error and what migration failed before allowing main() to handle the exception
+            # Log the error and what migration failed before allowing main() to handle the exception
             error_message = _('Applying migration %(m)s failed.\n\nHalting migrations due to a migration failure.')
             error_message = error_message % {'m': migration.name}
-            print >> sys.stderr, str(error_message), _(' See log for details.')
             logger.critical(error_message)
             raise
 
@@ -110,12 +106,10 @@ def main():
         connection.initialize()
         _auto_manage_db(options)
     except DataError, e:
-        print >> sys.stderr, str(e)
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_DATAERR
     except Exception, e:
-        print >> sys.stderr, str(e)
         logger.critical(str(e))
         logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_SOFTWARE
@@ -130,15 +124,12 @@ def _auto_manage_db(options):
     :param options: The command line parameters from the user.
     """
     message = _('Loading content types.')
-    print message
     logger.info(message)
     load_content_types()
     message = _('Content types loaded.')
-    print message
     logger.info(message)
 
     message = _('Ensuring the admin role and user are in place.')
-    print message
     logger.info(message)
     # Due to the silliness of the factory, we have to initialize it because the UserManager and
     # RoleManager are going to try to use it.
@@ -148,15 +139,12 @@ def _auto_manage_db(options):
     user_manager = UserManager()
     user_manager.ensure_admin()
     message = _('Admin role and user are in place.')
-    print message
     logger.info(message)
 
     message = _('Beginning database migrations.')
-    print message
     logger.info(message)
     migrate_database(options)
     message = _('Database migrations complete.')
-    print message
     logger.info(message)
 
     return os.EX_OK
@@ -169,3 +157,6 @@ def _start_logging():
     global logger
     logs.start_logging()
     logger = logging.getLogger(__name__)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    logger.root.addHandler(console_handler)
