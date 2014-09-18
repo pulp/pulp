@@ -17,7 +17,7 @@ import ConfigParser
 import logging
 import os
 import thread
-
+import threading
 from celery.signals import setup_logging
 
 from pulp.server import config
@@ -87,6 +87,13 @@ def stop_logging():
     # remove all the existing handlers and loggers from the logging module
     logging.shutdown()
 
+def _log_id():
+    """
+    Return a id for a log. Not guaranteed to be unique because threads can be
+    recycled, but it can be used to track a single multi line message.
+    """
+    return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(thread.get_ident())[-5:])
+
 
 class CompliantSysLogHandler(logging.handlers.SysLogHandler):
     """
@@ -106,7 +113,6 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
     [2] https://tools.ietf.org/html/rfc5424#section-6.4
     """
     MAX_MSG_LENGTH = 2041
-    log_id = "({pid}-{tid})".format(pid=str(os.getpid()), tid=thread.get_ident())
 
     def emit(self, record):
         """
@@ -118,6 +124,7 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         :param record: The record to be logged via syslog
         :type  record: logging.LogRecord
         """
+
         if record.exc_info:
             trace = self.formatter.formatException(record.exc_info)
             if not isinstance(record.msg, basestring):
@@ -128,13 +135,12 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         formatter_buffer = self._calculate_formatter_buffer(record)
 
         if len(record.getMessage().split('\n')) > 1:
-            msg_id = self.log_id
-
+            msg_id = _log_id()
         else:
             msg_id = ""
 
         for line in record.getMessage().split('\n'):
-            for message_chunk in CompliantSysLogHandler._cut_message(line, formatter_buffer, msg_id, self.log_id):
+            for message_chunk in CompliantSysLogHandler._cut_message(line, formatter_buffer, msg_id):
                 # We need to use the attributes from record to generate a new record that has
                 # mostly the same attributes, but the shorter message. We need to set the args to
                 # the empty tuple so that breaking the message up doesn't mess up formatting. This
@@ -142,7 +148,7 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
                 # set to None, as we have already turned any Exceptions into the message
                 # that we are now splitting, and we don't want tracebacks to make it past our
                 # splitter here because the superclass will transmit newline characters.
-                if not message_chunk.startswith(msg_id):
+                if msg_id and not message_chunk.startswith(msg_id):
                     message_chunk = msg_id + message_chunk
 
                 new_record = logging.LogRecord(
@@ -173,7 +179,7 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         return len(formatted_record) - len(raw_record)
 
     @staticmethod
-    def _cut_message(message, formatter_buffer, msg_id, log_id):
+    def _cut_message(message, formatter_buffer, msg_id):
         """
         Return a generator of strings made from message cut at every
         MAX_MSG_LENGTH - formatter_buffer octets, with the exception that it will not cut
@@ -195,13 +201,16 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
 
         i = 0
         while i < len(message):
+            # The msg either needs to be the max length or the remainder of the
+            # message, whichever is shorter
             relative_ending_index = min(max_length, len(message[i:]))
 
             # Message is longer than allowed length
             if len(message) > i + relative_ending_index:
-                msg_id = log_id
+                msg_id = _log_id()
 
-                # Do not allow prepending msg_id to extend max_length
+                # Since the remaining message is too long, the correct length of
+                # the line is the maximum length - whatever we are prepending.
                 relative_ending_index = max_length - len(msg_id)
 
                 # Let's peek one character ahead and see if we are in the middle of a multi-byte
@@ -212,7 +221,8 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
                     # any multi-byte characters in half.
                     relative_ending_index -= 1
 
-            # Message will be too long after appending msg_id;
+            # The remaining message was not too long by itself, but it is still
+            # possible that py prepending msg_id, we will cause overflow.
             elif len(message) > i + relative_ending_index - len(msg_id):
                 relative_ending_index = max_length - len(msg_id)
 
