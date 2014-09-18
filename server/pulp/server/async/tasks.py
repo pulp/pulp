@@ -239,7 +239,7 @@ class ReservedTaskMixin(object):
         resource_id = ":".join((resource_type, resource_id))
         inner_task_id = str(uuid.uuid4())
         task_name = self.name
-        tags = kwargs.pop('tags', [])
+        tags = kwargs.get('tags', [])
 
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
@@ -250,7 +250,7 @@ class ReservedTaskMixin(object):
         task_status.save(fields_to_set_on_insert=['state', 'start_time'])
 
         _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
-                                         queue=RESOURCE_MANAGER_QUEUE, tags=tags)
+                                         queue=RESOURCE_MANAGER_QUEUE)
         return AsyncResult(inner_task_id)
 
 

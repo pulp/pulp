@@ -106,11 +106,19 @@ class TestQueueReservedTask(ResourceReservationTests):
         self.assertTrue(not self.mock_time.sleep.called)
 
     def test__queue_reserved_task_loops_and_sleeps_waiting_for_available_worker(self):
-        class BreakOutException(Exception):
-            pass
-        self.mock_time.sleep.side_effect = [None, BreakOutException()]
         self.mock_get_worker_for_reservation.return_value = None
         self.mock_get_unreserved_worker.return_value = None
+
+        class BreakOutException(Exception):
+            pass
+
+        def side_effect(*args):
+            def second_call(*args):
+                raise BreakOutException()
+            self.mock_time.sleep.side_effect = second_call
+            return None
+
+        self.mock_time.sleep.side_effect = side_effect
 
         try:
             tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2],
@@ -361,14 +369,12 @@ class TestReservedTaskMixin(ResourceReservationTests):
         super(TestReservedTaskMixin, self).tearDown()
 
     def test_apply_async_with_reservation_calls_apply_async_on__queue_reserved_task(self):
-        tags = self.some_kwargs.pop('tags')
         expected_arguments = ['dummy_task_name', str(self.mock_uuid.uuid4.return_value),
                               'reserve_me:three_to_get_ready', tuple(self.some_args),
                               self.some_kwargs]
         self.mock__queue_reserved_task.apply_async.assert_called_once_with(
             queue=tasks.RESOURCE_MANAGER_QUEUE,
-            args=expected_arguments,
-            tags=tags)
+            args=expected_arguments)
 
     def test_apply_async_with_reservation_creates_and_saves_TaskStatus(self):
         self.mock_task_status.assert_called_once_with(state=self.mock_constants.CALL_WAITING_STATE,
