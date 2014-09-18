@@ -23,6 +23,9 @@ _LOG = logging.getLogger(__name__)
 _DEFAULT_MAX_POOL_SIZE = 10
 _MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
 
+# please keep this in X.Y.Z format, with only integers.
+# see version.cpp in mongo source code for version format info.
+MONGO_MINIMUM_VERSION = "2.4.0"
 
 # -- connection api ------------------------------------------------------------
 
@@ -99,6 +102,15 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
         # Query the collection names to ensure that we are authenticated properly
         _LOG.debug("Querying the database to validate the connection.")
         _DATABASE.collection_names()
+
+        db_version = _CONNECTION.server_info()['version']
+        _LOG.info(_("Mongo database for connection is version %s") % db_version)
+
+        db_version_tuple = tuple(db_version.split("."))
+        db_min_version_tuple = tuple(MONGO_MINIMUM_VERSION.split("."))
+        if db_version_tuple < db_min_version_tuple:
+            raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting version %s") %
+                               (MONGO_MINIMUM_VERSION, db_version))
 
         _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
