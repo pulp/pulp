@@ -227,12 +227,12 @@ class WorkerTimeoutMonitor(threading.Thread):
         _logger.debug(msg)
         oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
         worker_criteria = Criteria(filters={'last_heartbeat': {'$lt': oldest_heartbeat_time}},
-                                   fields=('_id', 'last_heartbeat', 'num_reservations'))
+                                   fields=('_id', 'last_heartbeat'))
         worker_list = list(resources.filter_workers(worker_criteria))
         for worker in worker_list:
             msg = _("Workers '%s' has gone missing, removing from list of workers") % worker.name
             _logger.error(msg)
-            _delete_worker.apply_async(args=(worker.name,), queue=RESOURCE_MANAGER_QUEUE)
+            _delete_worker(worker.name)
 
 
 class Scheduler(beat.Scheduler):

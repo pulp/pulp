@@ -99,7 +99,7 @@ def handle_worker_heartbeat(event):
         return
 
     find_worker_criteria = Criteria(filters={'_id': event_info['worker_name']},
-                                    fields=('_id', 'last_heartbeat', 'num_reservations'))
+                                    fields=('_id', 'last_heartbeat'))
     find_worker_list = list(resources.filter_workers(find_worker_criteria))
 
     if find_worker_list:
@@ -138,6 +138,4 @@ def handle_worker_offline(event):
 
     msg = _("Worker '%(worker_name)s' shutdown") % event_info
     _logger.info(msg)
-    _delete_worker.apply_async(args=(event_info['worker_name'],),
-                              kwargs={'normal_shutdown': True},
-                              queue=RESOURCE_MANAGER_QUEUE)
+    _delete_worker(event_info['worker_name'], normal_shutdown=True)
