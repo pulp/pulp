@@ -15,10 +15,10 @@ from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource
-from pulp.server.db.model.base import DoesNotExist
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import ReservedResource, Worker
+from pulp.server.exceptions import NoWorkers
 from pulp.server.managers import resources
 
 
@@ -53,25 +53,33 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
     :return: None
     """
     while True:
-        worker = resources.get_worker_for_reservation(resource_id)
-        if worker:
+        try:
+            worker = resources.get_worker_for_reservation(resource_id)
+        except NoWorkers:
+            pass
+        else:
             break
-        worker = resources.get_unreserved_worker()
-        if worker:
+
+        try:
+            worker = resources.get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
             break
-        # No worker is ready for this work, so all we can do is wait
+
+        # No worker is ready for this work, so we need to wait
         time.sleep(0.25)
 
     ReservedResource(task_id, worker['name'], resource_id).save()
 
-    inner_kwargs['queue'] = worker.queue_name
+    inner_kwargs['routing_key'] = worker.name
     inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
     inner_kwargs['task_id'] = task_id
 
     try:
         celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
     finally:
-        _release_resource.apply_async((task_id, ), queue=worker.name,
+        _release_resource.apply_async((task_id, ), routing_key=worker.name,
                                       exchange=DEDICATED_QUEUE_EXCHANGE)
 
 

@@ -4,6 +4,7 @@ pulp.server.db.model.resources module.
 """
 
 from pulp.server.db.model import criteria, resources
+from pulp.server.exceptions import NoWorkers
 
 
 def filter_workers(criteria):
@@ -12,6 +13,7 @@ def filter_workers(criteria):
 
     :param criteria: A Criteria containing a query to be used to find Worker objects
     :type  criteria: pulp.server.db.model.criteria.Criteria
+
     :return:         A generator that iterates over the result set
     :rtype:          generator
     """
@@ -23,12 +25,16 @@ def filter_workers(criteria):
 def get_worker_for_reservation(resource_id):
     """
     Return the Worker instance that is associated with a reservation of type resource_id. If
-    there are no workers with that reservation_id type return None.
+    there are no workers with that reservation_id type a pulp.server.exceptions.NoWorkers exception
+    is raised.
 
     :param resource_id:    The name of the resource you wish to reserve for your task.
+
+    :raises NoWorkers:     If all workers have reserved_resource entries associated with them.
+
     :type resource_id:     basestring
     :returns:              The Worker instance that has a reserved_resource entry of type
-                           `resource_id` associated with it or None.
+                           `resource_id` associated with it.
     :rtype:                pulp.server.db.model.resources.Worker
     """
     reservation = resources.ReservedResource.get_collection().find_one({'resource_id': resource_id})
@@ -37,16 +43,18 @@ def get_worker_for_reservation(resource_id):
         worker_bson = resources.Worker.get_collection().query(find_worker_by_name)[0]
         return resources.Worker.from_bson(worker_bson)
     else:
-        return None
+        raise NoWorkers()
 
 
 def get_unreserved_worker():
     """
     Return the Worker instance that has no reserved_resource entries associated with it. If there
-    are no unreserved workers return None.
+    are no unreserved workers a pulp.server.exceptions.NoWorkers exception is raised.
 
-    :returns: The Worker instance that has no reserved_resource entries associated with it or None.
-    :rtype:   pulp.server.db.model.resources.Worker
+    :raises NoWorkers: If all workers have reserved_resource entries associated with them.
+
+    :returns:          The Worker instance that has no reserved_resource entries associated with it.
+    :rtype:            pulp.server.db.model.resources.Worker
     """
     # Build a mapping of queue names to Worker objects
     workers_dict = dict((worker['name'], worker) for worker in filter_workers(criteria.Criteria()))
@@ -59,4 +67,4 @@ def get_unreserved_worker():
         return workers_dict[unreserved_workers.pop()]
     except KeyError:
         # All workers are reserved
-        return
+        raise NoWorkers()

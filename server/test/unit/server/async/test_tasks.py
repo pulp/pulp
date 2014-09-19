@@ -3,7 +3,6 @@ This module contains tests for the pulp.server.async.tasks module.
 """
 from datetime import datetime
 import signal
-import time
 import unittest
 import uuid
 
@@ -14,14 +13,14 @@ import mock
 
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
-from pulp.common.constants import (CALL_CANCELED_STATE, CALL_FINISHED_STATE,
-                                   CALL_RUNNING_STATE, CALL_WAITING_STATE)
+from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException
-from pulp.server.async import tasks, worker_watcher
+from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker, ReservedResource
+from pulp.server.exceptions import NoWorkers
 
 
 # Worker names
@@ -69,45 +68,42 @@ class TestQueueReservedTask(ResourceReservationTests):
         self.patch_f.stop()
         super(TestQueueReservedTask, self).tearDown()
 
-    def test__queue_reserved_task_creates_and_saves_ReservedResource(self):
+    def test_creates_and_saves_reserved_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        self.mock_get_unreserved_worker.return_value = None
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.mock_reserved_resource.assert_called_once_with('my_task_id', 'worker1',
                                                             'my_resource_id')
         self.mock_reserved_resource.return_value.save.assert_called_once_with()
 
-    def test__queue_reserved_task_dispatches_inner_task(self):
+    def test_dispatches_inner_task(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        self.mock_get_unreserved_worker.return_value = None
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         apply_async = self.mock_celery.tasks['task_name'].apply_async
-        apply_async.assert_called_once_with(1, 2, a=2, queue='worker1.dq', task_id='my_task_id',
+        apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1', task_id='my_task_id',
                                             exchange='C.dq')
 
-    def test__queue_reserved_task_dispatches__release_resource(self):
+    def test_dispatches__release_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        self.mock_get_unreserved_worker.return_value = None
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
-                                                                        queue='worker1',
+                                                                        routing_key='worker1',
                                                                         exchange='C.dq')
 
-    def test__queue_reserved_task_get_worker_for_reservation_breaks_out_of_loop(self):
+    def test_get_worker_for_reservation_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        self.mock_get_unreserved_worker.return_value = None
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        self.assertTrue(not self.mock_get_unreserved_worker.called)
         self.assertTrue(not self.mock_time.sleep.called)
 
-    def test__queue_reserved_task_get_unreserved_worker_breaks_out_of_loop(self):
-        self.mock_get_worker_for_reservation.return_value = None
+    def test_get_unreserved_worker_breaks_out_of_loop(self):
+        self.mock_get_worker_for_reservation.side_effect = NoWorkers()
         self.mock_get_unreserved_worker.return_value = Worker('worker1', datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
         self.assertTrue(not self.mock_time.sleep.called)
 
-    def test__queue_reserved_task_loops_and_sleeps_waiting_for_available_worker(self):
-        self.mock_get_worker_for_reservation.return_value = None
-        self.mock_get_unreserved_worker.return_value = None
+    def test_loops_and_sleeps_waiting_for_available_worker(self):
+        self.mock_get_worker_for_reservation.side_effect = NoWorkers()
+        self.mock_get_unreserved_worker.side_effect = NoWorkers()
 
         class BreakOutException(Exception):
             pass
@@ -175,41 +171,39 @@ class TestDeleteWorker(ResourceReservationTests):
         self.patch_i.stop()
         super(TestDeleteWorker, self).tearDown()
 
-    def test__delete_worker_normal_shutdown_true_logs_correctly(self):
+    def test_normal_shutdown_true_logs_correctly(self):
         tasks._delete_worker('worker1', normal_shutdown=True)
         self.assertTrue(not self.mock_gettext.called)
         self.assertTrue(not self.mock_logger.error.called)
 
-    def test__delete_worker_normal_shutdown_not_specified_logs(self):
+    def test_normal_shutdown_not_specified_logs(self):
         self.mock_gettext.return_value = 'asdf %(name)s asdf'
         tasks._delete_worker('worker1')
         self.mock_gettext.assert_called_once_with(
             'The worker named %(name)s is missing. Canceling the tasks in its queue.')
         self.mock_logger.error.assert_called_once_with('asdf worker1 asdf')
 
-    def test__delete_worker_removes_all_associated_reserved_resource_entries(self):
+    def test_removes_all_associated_reserved_resource_entries(self):
         tasks._delete_worker('worker1')
         self.assertTrue(self.mock_reserved_resource.get_collection.called)
         remove = self.mock_reserved_resource.get_collection.return_value.remove
         remove.assert_called_once_with({'worker_name': 'worker1'})
 
-    def test__delete_worker_Criteria_to_find_all_worker_is_correct(self):
+    def test_criteria_to_find_all_worker_is_correct(self):
         tasks._delete_worker('worker1')
         self.assertEqual(self.mock_criteria.mock_calls[0], mock.call(filters={'_id': 'worker1'}))
 
-    def test__delete_worker_Criteria_is_used_in_filter_workers(self):
+    def test_criteria_is_used_in_filter_workers(self):
         tasks._delete_worker('worker1')
         self.mock_resources.filter_workers.assert_called_once_with(self.mock_criteria.return_value)
 
-    def test__delete_worker_removes_the_first_worker_found(self):
-        mock_worker_a = mock.Mock()
-        mock_worker_b = mock.Mock()
-        self.mock_resources.filter_workers.return_value = tuple([mock_worker_a, mock_worker_b])
+    def test_removes_the_worker(self):
+        mock_worker = mock.Mock()
+        self.mock_resources.filter_workers.return_value = tuple([mock_worker])
         tasks._delete_worker('worker1')
-        mock_worker_a.delete.assert_called_once_with()
-        self.assertTrue(not mock_worker_b.delete.called)
+        mock_worker.delete.assert_called_once_with()
 
-    def test__delete_worker_no_entry_for_worker_does_not_raise_exception(self):
+    def test_no_entry_for_worker_does_not_raise_exception(self):
         self.mock_resources.filter_workers.return_value = []
         try:
             tasks._delete_worker('worker1')
@@ -217,18 +211,18 @@ class TestDeleteWorker(ResourceReservationTests):
             self.fail('_delete_worker() on a Worker that is not in the database caused an '
                       'Exception')
 
-    def test__delete_worker_makes_Worker_object_from_bson(self):
+    def test_makes_worker_object_from_bson(self):
         tasks._delete_worker('worker1')
         self.mock_worker.from_bson.assert_called_once_with({'_id': 'worker1'})
 
-    def test__delete_worker_Criteria_to_find_TaskStatus_is_correct(self):
+    def test_criteria_to_find_task_status_is_correct(self):
         tasks._delete_worker('worker1')
         expected_call = mock.call(
             filters={'queue': self.mock_worker.from_bson.return_value.queue_name,
                      'state': {'$in': self.mock_constants.CALL_INCOMPLETE_STATES}})
         self.assertEqual(self.mock_criteria.mock_calls[1], expected_call)
 
-    def test__delete_worker_cancels_all_found_TaskStatus_objects(self):
+    def test_cancels_all_found_task_status_objects(self):
         mock_task_id_a = mock.Mock()
         mock_task_id_b = mock.Mock()
         self.mock_task_status_manager.find_by_criteria.return_value = [{'task_id': mock_task_id_a},
@@ -245,7 +239,7 @@ class TestReleaseResource(ResourceReservationTests):
     """
     Test the _release_resource() Task.
     """
-    def test__release_resource_not_in__resource_map(self):
+    def test_resource_not_in_resource_map(self):
         """
         Test _release_resource() with a resource that is not in the database. This should be
         gracefully handled, and result in no changes to the database.
@@ -282,7 +276,7 @@ class TestReleaseResource(ResourceReservationTests):
         self.assertEqual(rr_2['worker_name'], reserved_resource_2.worker_name)
         self.assertEqual(rr_2['resource_id'], 'resource_2')
 
-    def test__release_resource(self):
+    def test_resource_in_resource_map(self):
         """
         Test _release_resource() with a valid resource. This should remove the resource from the
         database.
@@ -332,10 +326,10 @@ class TestTaskResult(unittest.TestCase):
                                                             {'task_id': 'qux'}])
 
 
-class TestReservedTaskMixin(ResourceReservationTests):
+class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
 
     def setUp(self):
-        super(TestReservedTaskMixin, self).setUp()
+        super(TestReservedTaskMixinApplyAsyncWithReservation, self).setUp()
         self.task = tasks.ReservedTaskMixin()
         self.task.name = 'dummy_task_name'
         self.resource_id = 'three_to_get_ready'
@@ -366,9 +360,9 @@ class TestReservedTaskMixin(ResourceReservationTests):
         self.uuid_patch.stop()
         self.task_status_patch.stop()
         self.constants_patch.stop()
-        super(TestReservedTaskMixin, self).tearDown()
+        super(TestReservedTaskMixinApplyAsyncWithReservation, self).tearDown()
 
-    def test_apply_async_with_reservation_calls_apply_async_on__queue_reserved_task(self):
+    def test_apply_async_on__queue_reserved_task_called(self):
         expected_arguments = ['dummy_task_name', str(self.mock_uuid.uuid4.return_value),
                               'reserve_me:three_to_get_ready', tuple(self.some_args),
                               self.some_kwargs]
@@ -376,14 +370,14 @@ class TestReservedTaskMixin(ResourceReservationTests):
             queue=tasks.RESOURCE_MANAGER_QUEUE,
             args=expected_arguments)
 
-    def test_apply_async_with_reservation_creates_and_saves_TaskStatus(self):
-        self.mock_task_status.assert_called_once_with(state=self.mock_constants.CALL_WAITING_STATE,
-                                                      task_type=self.task.name, task_id=str(
-                self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
+    def test_task_status_created_and_saved(self):
+        self.mock_task_status.assert_called_once_with(
+            state=self.mock_constants.CALL_WAITING_STATE, task_type=self.task.name,
+            task_id=str( self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
         save = self.mock_task_status.return_value.save
         save.assert_called_once_with(fields_to_set_on_insert=['state', 'start_time'])
 
-    def test_apply_async_with_reservation_returns_inner_task_id(self):
+    def test_inner_task_id_returned(self):
         self.assertEqual(self.result, str(self.mock_uuid.uuid4.return_value))
 
 
@@ -612,7 +606,7 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['state'], 'waiting')
 
     @mock.patch('celery.Task.apply_async')
-    def test_apply_async_queue_name_modified_if_exchange_eq_C_dq(self, apply_async):
+    def test_apply_async_queue_name_modified_if_exchange_eq_c_dq(self, apply_async):
         """
         Assert that apply_async() removes the .dq from the queue name in cases where the keyword
         'exchange' equals 'C.dq'. This queue name modification is asserted by the call to
@@ -637,7 +631,7 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['state'], 'waiting')
 
     @mock.patch('celery.Task.apply_async')
-    def test_apply_async_queue_name_modified_if_exchange_present_but_neq_C_dq(self, apply_async):
+    def test_apply_async_queue_name_modified_if_exchange_present_but_neq_c_dq(self, apply_async):
         """
         Assert that apply_async() does not adjust the queue name or exchange name in cases where
         the keyword 'exchange' is present, but not equal to 'C.dq'. Also asserts that the

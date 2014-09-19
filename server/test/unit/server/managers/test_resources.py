@@ -8,7 +8,7 @@ import mock
 import pymongo
 
 from ...base import ResourceReservationTests
-from pulp.server import exceptions
+from pulp.server.exceptions import NoWorkers
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.resources import Worker, ReservedResource
 from pulp.server.managers import resources
@@ -69,19 +69,19 @@ class TestGetWorkerForReservation(ResourceReservationTests):
         self.patch_b.stop()
         super(TestGetWorkerForReservation, self).tearDown()
 
-    def test_get_worker_for_reservation_finds_existing_reservation_correctly(self):
+    def test_existing_reservation_correctly_found(self):
         resources.get_worker_for_reservation('resource1')
         get_collection = self.mock_resources.ReservedResource.get_collection
         get_collection.assert_called_once_with()
-        get_collection.return_value.find_one_assert_called_once_with({'resource_id': 'resource1'})
+        get_collection.return_value.find_one.assert_called_once_with({'resource_id': 'resource1'})
 
-    def test_get_worker_for_reservation_builds_criteria_by_name_for_a_found_reservation(self):
+    def test_criteria_by_name_for_a_found_reservation_built_correctly(self):
         find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
         find_one.return_value = {'worker_name': 'worker1'}
         resources.get_worker_for_reservation('resource1')
         self.mock_criteria.Criteria.assert_called_once_with({'_id': 'worker1'})
 
-    def test_get_worker_for_reservation_gets_correct_worker_bson(self):
+    def test_correct_worker_bson_found(self):
         find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
         find_one.return_value = {'worker_name': 'worker1'}
         resources.get_worker_for_reservation('resource1')
@@ -90,17 +90,21 @@ class TestGetWorkerForReservation(ResourceReservationTests):
         query = get_collection.return_value.query
         query.assert_called_once_with(self.mock_criteria.Criteria.return_value)
 
-    def test_get_worker_for_reservation_returns_correct_Worker(self):
+    def test_correct_worker_returned(self):
         find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
         find_one.return_value = {'worker_name': 'worker1'}
         result = resources.get_worker_for_reservation('resource1')
         self.assertTrue(result is self.mock_resources.Worker.from_bson.return_value)
 
-    def test_get_worker_for_reservation_returns_None_if_no_reservations(self):
+    def test_no_workers_raised_if_no_reservations(self):
         find_one = self.mock_resources.ReservedResource.get_collection.return_value.find_one
         find_one.return_value = False
-        result = resources.get_worker_for_reservation('resource1')
-        self.assertTrue(result is None)
+        try:
+            resources.get_worker_for_reservation('resource1')
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
 
 
 class TestGetUnreservedWorker(ResourceReservationTests):
@@ -123,36 +127,49 @@ class TestGetUnreservedWorker(ResourceReservationTests):
         self.patch_c.stop()
         super(TestGetUnreservedWorker, self).tearDown()
 
-    def test_get_unreserved_worker_queries_workers_correctly(self):
+    def test_workers_correctly_queried(self):
         self.mock_filter_workers.return_value = [{'name': 'a'}, {'name': 'b'}]
         resources.get_unreserved_worker()
         self.mock_criteria.Criteria.assert_called_once_with()
         self.mock_filter_workers.assert_called_once_with(self.mock_criteria.Criteria.return_value)
 
-    def test_get_unreserved_worker_queries_reserved_resources_correctly(self):
+    def test_reserved_resources_queried_correctly(self):
         find = self.mock_resources.ReservedResource.get_collection.return_value.find
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
-        resources.get_unreserved_worker()
+        try:
+            resources.get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
         self.mock_resources.ReservedResource.get_collection.assert_called_once_with()
         find.assert_called_once_with()
 
-    def test_get_unreserved_worker_returns_Worker_when_one_worker_is_not_reserved(self):
+    def test_worker_returned_when_one_worker_is_not_reserved(self):
         self.mock_filter_workers.return_value = [{'name': 'a'}, {'name': 'b'}]
         find = self.mock_resources.ReservedResource.get_collection.return_value.find
         find.return_value = [{'worker_name': 'a'}]
         result = resources.get_unreserved_worker()
         self.assertEqual(result, {'name': 'b'})
 
-    def test_get_unreserved_worker_returns_None_when_all_workers_reserved(self):
+    def test_no_workers_raised_when_all_workers_reserved(self):
         self.mock_filter_workers.return_value = [{'name': 'a'}, {'name': 'b'}]
         find = self.mock_resources.ReservedResource.get_collection.return_value.find
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
-        result = resources.get_unreserved_worker()
-        self.assertTrue(result is None)
+        try:
+            resources.get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
 
-    def test_get_unreserved_worker_returns_None_when_there_are_no_workers_at_all(self):
+    def test_no_workers_raised_when_there_are_no_workers(self):
         self.mock_filter_workers.return_value = []
         find = self.mock_resources.ReservedResource.get_collection.return_value.find
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
-        result = resources.get_unreserved_worker()
-        self.assertTrue(result is None)
+        try:
+            resources.get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")

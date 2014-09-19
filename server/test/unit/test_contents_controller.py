@@ -347,7 +347,6 @@ class ImportUnitTests(BaseUploadTest):
         mock_uuid.uuid4.side_effect = copy.deepcopy(uuid_list)
         expected_async_result = AsyncResult(str(uuid_list[0]))
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
-        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         upload_id = self.upload_manager.initialize_upload()
         self.upload_manager.save_data(upload_id, 0, 'string data')
 
