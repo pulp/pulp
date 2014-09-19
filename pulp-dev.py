@@ -224,16 +224,35 @@ def get_paths_to_copy():
             {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
         ])
-        if LSB_VERSION >= 7.0:
-            paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
-                          'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
-                          'group': 'root', 'mode': '644', 'overwrite': True})
-            paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
-                          'destination': '/etc/systemd/system/pulp_resource_manager.service',
-                          'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
-            paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
-                          'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
-                          'group': 'root', 'mode': '644', 'overwrite': True})
+    if LSB_VERSION >= 6.0 and LSB_VERSION < 7.0:
+        paths.append({'source': 'server/etc/default/upstart_pulp_celerybeat',
+                      'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/upstart_pulp_workers',
+                      'destination': '/etc/default/pulp_workers', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/upstart_pulp_resource_manager',
+                      'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+    elif LSB_VERSION >= 7.0:
+        paths.append({'source': 'server/etc/default/systemd_pulp_celerybeat',
+                      'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/systemd_pulp_workers',
+                      'destination': '/etc/default/pulp_workers', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/systemd_pulp_resource_manager',
+                      'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
+                      'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
+                      'destination': '/etc/systemd/system/pulp_resource_manager.service',
+                      'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
+                      'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
 
     return paths
 
@@ -289,15 +308,6 @@ def getlinks():
                       '/etc/rc.d/init.d/pulp_workers'))
         links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
                       '/etc/rc.d/init.d/pulp_resource_manager'))
-        links.append(('server/etc/default/upstart_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
-        links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))
-        links.append(('server/etc/default/upstart_pulp_resource_manager',
-                      '/etc/default/pulp_resource_manager'))
-    elif LSB_VERSION >= 7.0:
-        links.append(('server/etc/default/systemd_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
-        links.append(('server/etc/default/systemd_pulp_workers', '/etc/default/pulp_workers'))
-        links.append(('server/etc/default/systemd_pulp_resource_manager',
-                      '/etc/default/pulp_resource_manager'))
 
     return links
 
