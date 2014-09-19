@@ -135,17 +135,12 @@ Server
       ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
       this package, you will need to restart the Qpid broker to enable the durability feature.
 
-   For Pulp to operate with the Qpid broker, either broker authentication needs to be disabled, or
-   authentication needs to be configured. To disable authentication add ``auth=no`` to the
-   ``qpidd.conf`` file. Qpid 0.24 and higher places the config file is at ``/etc/qpid/qpidd.conf``,
-   and earlier Qpid versions place the config file at ``/etc/qpidd.conf``. Changes made to
-   ``qpidd.conf`` go into effect the next time Qpid starts; if Qpid is already running prior to
-   making a change to ``qpidd.conf`` then restart the Qpid.
-
-   To leave broker authentication enabled, you will need to configure SASL with a
-   username/password, and then configure Pulp to use that username/password. Refer to the Qpid docs
-   on how to configure username/password authentication using SASL. Once the broker is configured,
-   update Pulp according to the :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
+   Pulp uses the ``ANONYMOUS`` Qpid authentication mechanism by default. To
+   enable username/password-based ``PLAIN`` broker authentication, you will need
+   to configure SASL with a username/password, and then configure Pulp to use that
+   username/password. Refer to the Qpid docs on how to configure username/password
+   authentication using SASL. Once the broker is configured, update Pulp according
+   to the :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
 
    The server can be *optionally* configured so that it will connect to the broker using SSL by following the steps
    defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`. By default, Pulp
