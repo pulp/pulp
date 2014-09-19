@@ -122,35 +122,25 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
-    @patch('sys.stdout')
     @patch.object(models.MigrationPackage, 'apply_migration')
-    def test_admin_is_ensured(self, apply_migration, stdout, ensure_admin, ensure_super_user_role,
+    def test_admin_is_ensured(self, apply_migration, ensure_admin, ensure_super_user_role,
                               getLogger, factory, fileConfig):
         """
         pulp-manage-db is responsible for making sure the admin user and role are in place. This
         test makes sure the manager methods that do that are called.
         """
         logger = MagicMock()
-
-        def get_logger(*args):
-            """
-            This is used to side effect getLogger so that we can mock the logger.
-            """
-            return logger
-
-        getLogger.side_effect = get_logger
+        getLogger.return_value = logger
 
         code = manage.main()
 
         self.assertEqual(code, os.EX_OK)
 
-        # Make sure all the right logging and printing happens
+        # Make sure all the right logging happens
         expected_messages = ('Ensuring the admin role and user are in place.',
                              'Admin role and user are in place.')
-        stdout_messages = ''.join([mock_call[1][0] for mock_call in stdout.mock_calls])
         info_messages = ''.join([mock_call[1][0] for mock_call in logger.info.mock_calls])
         for msg in expected_messages:
-            self.assertTrue(msg in stdout_messages)
             self.assertTrue(msg in info_messages)
 
         # Make sure the admin user and role creation methods were called. We'll leave it up to other
@@ -173,20 +163,20 @@ class TestManageDB(MigrationTest):
         self.assertTrue('root' in mock_stderr.write.call_args_list[0][0][0])
         self.assertTrue('apache' in mock_stderr.write.call_args_list[0][0][0])
 
-    @patch('sys.stderr')
-    @patch('sys.stdout')
+    @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
-    @patch('pulp.server.db.manage.logger')
     @patch('logging.config.fileConfig')
-    def test_current_version_too_high(self, mocked_file_config, mocked_logger, mocked_stdout,
-                                      mocked_stderr):
+    def test_current_version_too_high(self, mocked_file_config, getLogger):
         """
         Set the current package version higher than latest available version, then sit back and eat
         popcorn.
         """
+        logger = MagicMock()
+        getLogger.return_value = logger
+
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
         # Make sure that our mock works. There are four valid packages.
@@ -197,29 +187,31 @@ class TestManageDB(MigrationTest):
             package._migration_tracker.save()
         error_code = manage.main()
         self.assertEqual(error_code, os.EX_DATAERR)
-        # There should have been a print to stderr about the Exception
-        expected_stderr_calls = [
-            ('The database for migration package unit.server.db.migration_packages.platform is at '
-             'version 9999999, which is larger than the latest version available, 1.'), '\n']
-        stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
-        self.assertEquals(stderr_calls, expected_stderr_calls)
 
-    @patch('sys.stderr')
-    @patch('sys.stdout')
+        # There should have been a critical log about the Exception
+        expected_messages = ('The database for migration package unit.server.db.migration_packages.platform is at ',
+                             'version 9999999, which is larger than the latest version available, 1.')
+        critical_messages = ''.join([mock_call[1][0] for mock_call in logger.critical.mock_calls])
+        for msg in expected_messages:
+            self.assertTrue(msg in critical_messages)
+
+    @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
-    @patch('pulp.server.db.manage.logger')
     @patch('logging.config.fileConfig')
-    def test_migrate(self, file_config_mock, logger_mock, mocked_apply_migration, mocked_stdout,
-                     mocked_stderr):
+    def test_migrate(self, mock_file_config, mocked_apply_migration, getLogger):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get
         called in the correct order.
         """
+
+        logger = MagicMock()
+        getLogger.return_value = logger
+
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
         # Make sure that our mock works. There are three valid packages.
@@ -230,13 +222,15 @@ class TestManageDB(MigrationTest):
             package._migration_tracker.save()
         manage.main()
 
-        # There should have been a print to stderr about the Exception
-        expected_stderr_calls = [
-            ('Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
-             'failed.\n\nHalting migrations due to a migration failure.'), ' ', ' See log for details.', '\n',
-            'Bet you didn\'t see this coming.', '\n']
-        stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
-        self.assertEquals(stderr_calls, expected_stderr_calls)
+        # There should have been a critical log about the Exception
+        expected_messages = (
+            'Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
+            'failed.\n\nHalting migrations due to a migration failure.',
+            "Bet you didn\'t see this coming."
+        )
+        critical_messages = ''.join([mock_call[1][0] for mock_call in logger.critical.mock_calls])
+        for msg in expected_messages:
+            self.assertTrue(msg in critical_messages)
 
         migration_modules_called = [
             mock_call[1][1].name for mock_call in mocked_apply_migration.mock_calls]
@@ -333,22 +327,24 @@ class TestManageDB(MigrationTest):
         self.assertEqual(indexes.keys(), [u'_id_', u'attribute_1_1_attribute_2_1_attribute_3_1',
                                           u'attribute_1_1', u'attribute_3_1'])
 
-    @patch('sys.stderr')
-    @patch('sys.stdout')
+    @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--test"])
-    @patch('pulp.server.db.manage.logging')
-    def test_migrate_with_test_flag(self, start_logging_mock, mocked_apply_migration, mocked_stdout,
-                                    mocked_stderr):
+    @patch('logging.config.fileConfig')
+    def test_migrate_with_test_flag(self, mock_file_config, mocked_apply_migration, getLogger):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
         in the correct order. We will also set the --test flag and ensure that the migration
         versions do not get updated.
         """
+
+        logger = MagicMock()
+        getLogger.return_value = logger
+
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
         # Make sure that our mock works. There are three valid packages.
@@ -358,13 +354,17 @@ class TestManageDB(MigrationTest):
             package._migration_tracker.version = 0
             package._migration_tracker.save()
         manage.main()
-        # There should have been a print to stderr about the Exception
-        expected_stderr_calls = [
-            ('Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
-             'failed.\n\nHalting migrations due to a migration failure.'), ' ', ' See log for details.', '\n',
-            'Bet you didn\'t see this coming.', '\n']
-        stderr_calls = [mock_call[1][0] for mock_call in mocked_stderr.mock_calls]
-        self.assertEquals(stderr_calls, expected_stderr_calls)
+
+        # There should have been a critical log about the Exception
+        expected_messages = (
+            'Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
+            'failed.\n\nHalting migrations due to a migration failure.',
+            'Bet you didn\'t see this coming.'
+        )
+        critical_messages = [mock_call[1][0] for mock_call in logger.critical.mock_calls]
+        for msg in expected_messages:
+            self.assertTrue(msg in critical_messages)
+
         migration_modules_called = [
             mock_call[1][1].name for mock_call in mocked_apply_migration.mock_calls]
         # Note that none of the migrations that don't meet our criteria show up in this list. Also,
