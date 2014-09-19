@@ -47,7 +47,7 @@ class TestTaskStatus(unittest.TestCase):
         Test the __init__() method.
         """
         task_id = 'a_task_id'
-        queue = 'some_queue'
+        worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
@@ -59,12 +59,12 @@ class TestTaskStatus(unittest.TestCase):
         result = None
 
         ts = TaskStatus(
-            task_id, queue, tags, state, spawned_tasks=spawned_tasks, error=error,
+            task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
             progress_report=progress_report, task_type=task_type, start_time=start_time,
             finish_time=finish_time, result=result)
 
         self.assertEqual(ts.task_id, task_id)
-        self.assertEqual(ts.queue, queue)
+        self.assertEqual(ts.worker_name, worker_name)
         self.assertEqual(ts.tags, tags)
         self.assertEqual(ts.state, state)
         self.assertEqual(ts.error, error)
@@ -82,12 +82,12 @@ class TestTaskStatus(unittest.TestCase):
         Test the __init__() method with default values
         """
         task_id = 'a_task_id'
-        queue = 'some_queue'
+        worker_name = 'some_worker'
 
-        ts = TaskStatus(task_id, queue)
+        ts = TaskStatus(task_id, worker_name)
 
         self.assertEqual(ts.task_id, task_id)
-        self.assertEqual(ts.queue, queue)
+        self.assertEqual(ts.worker_name, worker_name)
         self.assertEqual(ts.tags, [])
         self.assertEqual(ts.state, None)
         self.assertEqual(ts.result, None)
@@ -105,7 +105,7 @@ class TestTaskStatus(unittest.TestCase):
         Test the save method with default arguments when the object is not already in the database.
         """
         task_id = 'a_task_id'
-        queue = 'some_queue'
+        worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
@@ -116,7 +116,7 @@ class TestTaskStatus(unittest.TestCase):
         finish_time = start_time + timedelta(minutes=5)
         result = None
         ts = TaskStatus(
-            task_id, queue, tags, state, spawned_tasks=spawned_tasks, error=error,
+            task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
             progress_report=progress_report, task_type=task_type, start_time=start_time,
             finish_time=finish_time, result=result)
 
@@ -129,7 +129,7 @@ class TestTaskStatus(unittest.TestCase):
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
-        self.assertEqual(ts['queue'], queue)
+        self.assertEqual(ts['worker_name'], worker_name)
         self.assertEqual(ts['tags'], tags)
         self.assertEqual(ts['state'], state)
         self.assertEqual(ts['error'], error)
@@ -149,7 +149,7 @@ class TestTaskStatus(unittest.TestCase):
         database.
         """
         task_id = 'a_task_id'
-        queue = 'some_queue'
+        worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
@@ -160,7 +160,7 @@ class TestTaskStatus(unittest.TestCase):
         finish_time = start_time + timedelta(minutes=5)
         result = None
         ts = TaskStatus(
-            task_id, queue, tags, state, spawned_tasks=spawned_tasks, error=error,
+            task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
             progress_report=progress_report, task_type=task_type, start_time=start_time,
             finish_time=finish_time, result=result)
 
@@ -173,7 +173,7 @@ class TestTaskStatus(unittest.TestCase):
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
-        self.assertEqual(ts['queue'], queue)
+        self.assertEqual(ts['worker_name'], worker_name)
         self.assertEqual(ts['tags'], tags)
         self.assertEqual(ts['state'], state)
         self.assertEqual(ts['error'], error)
@@ -192,7 +192,7 @@ class TestTaskStatus(unittest.TestCase):
         Test the save method with default arguments when the object is already in the database.
         """
         task_id = 'a_task_id'
-        queue = 'some_queue'
+        worker_name = 'worker_name'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
@@ -203,7 +203,7 @@ class TestTaskStatus(unittest.TestCase):
         finish_time = start_time + timedelta(minutes=5)
         result = None
         ts = TaskStatus(
-            task_id, queue, tags, state, spawned_tasks=spawned_tasks, error=error,
+            task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
             progress_report=progress_report, task_type=task_type, start_time=start_time,
             finish_time=finish_time, result=result)
         # Let's go ahead and insert the object
@@ -221,7 +221,7 @@ class TestTaskStatus(unittest.TestCase):
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
-        self.assertEqual(ts['queue'], queue)
+        self.assertEqual(ts['worker_name'], worker_name)
         self.assertEqual(ts['tags'], tags)
         # The state should have been updated
         self.assertEqual(ts['state'], new_state)
@@ -242,7 +242,7 @@ class TestTaskStatus(unittest.TestCase):
         database.
         """
         task_id = 'a_task_id'
-        queue = 'some_queue'
+        worker_name = 'worker_name'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
@@ -253,20 +253,20 @@ class TestTaskStatus(unittest.TestCase):
         finish_time = start_time + timedelta(minutes=5)
         result = None
         ts = TaskStatus(
-            task_id, queue, tags, state, spawned_tasks=spawned_tasks, error=error,
+            task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
             progress_report=progress_report, task_type=task_type, start_time=start_time,
             finish_time=finish_time, result=result)
         # Put the object in the database, and then change some of it settings.
         ts.save()
-        new_queue = 'a_different_queue'
+        new_worker_name = 'a different_worker'
         new_state = 'some_other_state'
         new_start_time = start_time + timedelta(minutes=10)
-        ts.queue = new_queue
+        ts.worker_name = new_worker_name
         ts.state = new_state
         ts.start_time = new_start_time
 
-        # This should update the queue on ts in the database, but should not update the state or
-        # start_time
+        # This should update the worker_name on ts in the database, but should not update the state
+        # or start_time
         ts.save(fields_to_set_on_insert=['state', 'start_time'])
 
         ts = TaskStatus.get_collection().find()
@@ -276,7 +276,7 @@ class TestTaskStatus(unittest.TestCase):
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
         # Queue should have been updated
-        self.assertEqual(ts['queue'], new_queue)
+        self.assertEqual(ts['worker_name'], worker_name)
         self.assertEqual(ts['tags'], tags)
         # state should not have been updated
         self.assertEqual(ts['state'], state)

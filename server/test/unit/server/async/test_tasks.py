@@ -27,10 +27,6 @@ from pulp.server.exceptions import NoWorkers
 WORKER_1 = 'worker-1'
 WORKER_2 = 'worker-2'
 WORKER_3 = 'worker-3'
-# Worker queue names
-WORKER_1_QUEUE = '%s.dq' % WORKER_1
-WORKER_2_QUEUE = '%s.dq' % WORKER_2
-WORKER_3_QUEUE = '%s.dq' % WORKER_3
 
 
 class TestQueueReservedTask(ResourceReservationTests):
@@ -218,7 +214,7 @@ class TestDeleteWorker(ResourceReservationTests):
     def test_criteria_to_find_task_status_is_correct(self):
         tasks._delete_worker('worker1')
         expected_call = mock.call(
-            filters={'queue': self.mock_worker.from_bson.return_value.queue_name,
+            filters={'worker_name': self.mock_worker.from_bson.return_value.name,
                      'state': {'$in': self.mock_constants.CALL_INCOMPLETE_STATES}})
         self.assertEqual(self.mock_criteria.mock_calls[1], expected_call)
 
@@ -304,13 +300,6 @@ class TestReleaseResource(ResourceReservationTests):
         self.assertEqual(rr_1['resource_id'], 'resource_1')
 
 
-def _reserve_resource_apply_async():
-    class MockAsyncResult(object):
-        def get(self):
-            return WORKER_1_QUEUE
-    return MockAsyncResult()
-
-
 class TestTaskResult(unittest.TestCase):
 
     def test_serialize(self):
@@ -336,7 +325,7 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
         self.resource_type = 'reserve_me'
 
         self.some_args = [1, 'b', 'iii']
-        self.some_kwargs = {'1': 'for the money', '2': 'for the show', 'queue': WORKER_1_QUEUE,
+        self.some_kwargs = {'1': 'for the money', '2': 'for the show', 'worker_name': WORKER_1,
                             'exchange': 'C.dq', 'tags': ['tag1','tag2']}
 
         self.task_patch = mock.patch('pulp.server.async.tasks._queue_reserved_task', autospec=True)
@@ -394,10 +383,10 @@ class TestTask(ResourceReservationTests):
         retval = 'random_return_value'
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_worker')
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -424,10 +413,10 @@ class TestTask(ResourceReservationTests):
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_worker')
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -452,10 +441,10 @@ class TestTask(ResourceReservationTests):
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_worker')
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -477,10 +466,10 @@ class TestTask(ResourceReservationTests):
 
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_worker')
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -503,9 +492,9 @@ class TestTask(ResourceReservationTests):
         retval = 'random_return_value'
         task_id = str(uuid.uuid4())
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_2_QUEUE}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue',
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_worker',
                                                            state=CALL_CANCELED_STATE)
         task = tasks.Task()
 
@@ -541,7 +530,7 @@ class TestTask(ResourceReservationTests):
         einfo = EInfo()
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id, 'some_queue')
+        task_status = TaskStatusManager.create_task_status(task_id, 'some_worker')
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
@@ -562,7 +551,7 @@ class TestTask(ResourceReservationTests):
         Assert that apply_async() creates new task status.
         """
         args = [1, 'b', 'iii']
-        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'queue': WORKER_1_QUEUE}
+        kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_1}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
         task = tasks.Task()
 
@@ -572,7 +561,7 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'], WORKER_1_QUEUE)
+        self.assertEqual(new_task_status['worker_name'], WORKER_1)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
         self.assertEqual(new_task_status['error'], None)
@@ -584,10 +573,10 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(new_task_status['result'], None)
 
     @mock.patch('celery.Task.apply_async')
-    def test_apply_async_task_status_default_queue(self, apply_async):
+    def test_apply_async_task_status_default_routing_key(self, apply_async):
         """
-        Assert that apply_async() creates new task status when we do not pass the queue kwarg. It
-        default to the default Celery queue.
+        Assert that apply_async() creates new task status when we do not pass the routing_key kwarg.
+        It defaults to the default Celery routing_key.
         """
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags']}
@@ -600,57 +589,8 @@ class TestTask(ResourceReservationTests):
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'],
-                         defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
-        self.assertEqual(new_task_status['tags'], kwargs['tags'])
-        self.assertEqual(new_task_status['state'], 'waiting')
-
-    @mock.patch('celery.Task.apply_async')
-    def test_apply_async_queue_name_modified_if_exchange_eq_c_dq(self, apply_async):
-        """
-        Assert that apply_async() removes the .dq from the queue name in cases where the keyword
-        'exchange' equals 'C.dq'. This queue name modification is asserted by the call to
-        apply_async() on the parent. Also asserts that the actual queue name (with the .dq) is
-        saved on the created TaskStatus object.
-        """
-        args = [1, 'b', 'iii']
-        kwargs = {'queue': 'worker.dq', 'tags': ['test_tags'], 'exchange': 'C.dq'}
-        apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
-
-        task.apply_async(*args, **kwargs)
-
-        apply_async.assert_called_once_with(*args, queue='worker', exchange='C.dq')
-
-        task_statuses = list(TaskStatusManager.find_all())
-        self.assertEqual(len(task_statuses), 1)
-        new_task_status = task_statuses[0]
-        self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'], 'worker.dq')
-        self.assertEqual(new_task_status['tags'], kwargs['tags'])
-        self.assertEqual(new_task_status['state'], 'waiting')
-
-    @mock.patch('celery.Task.apply_async')
-    def test_apply_async_queue_name_modified_if_exchange_present_but_neq_c_dq(self, apply_async):
-        """
-        Assert that apply_async() does not adjust the queue name or exchange name in cases where
-        the keyword 'exchange' is present, but not equal to 'C.dq'. Also asserts that the
-        unmodified queue name is saved on the created TaskStatus object.
-        """
-        args = [1, 'b', 'iii']
-        kwargs = {'queue': 'worker.dq', 'tags': ['test_tags'], 'exchange': 'foobar'}
-        apply_async.return_value = celery.result.AsyncResult('test_task_id')
-        task = tasks.Task()
-
-        task.apply_async(*args, **kwargs)
-
-        apply_async.assert_called_once_with(*args, queue='worker.dq', exchange='foobar')
-
-        task_statuses = list(TaskStatusManager.find_all())
-        self.assertEqual(len(task_statuses), 1)
-        new_task_status = task_statuses[0]
-        self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'], 'worker.dq')
+        self.assertEqual(new_task_status['worker_name'],
+                         defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
@@ -663,7 +603,7 @@ class TestTask(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
         now = datetime.utcnow()
-        TaskStatusManager.create_task_status(task_id, Worker('test-worker', now),
+        TaskStatusManager.create_task_status(task_id, Worker('test-worker', now).name,
                                              state=CALL_CANCELED_STATE)
         apply_async.return_value = celery.result.AsyncResult(task_id)
 

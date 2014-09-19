@@ -79,9 +79,9 @@ class TestTaskResource(PulpWebservicesTests):
         spawned_by_spawned_task_id = 'spawned_by_spawned_task'
         now = datetime.utcnow()
         test_worker = Worker('test_worker', now)
-        TaskStatusManager.create_task_status(task_id, test_worker.queue_name)
-        TaskStatusManager.create_task_status(spawned_task_id, test_worker.queue_name)
-        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_worker.queue_name)
+        TaskStatusManager.create_task_status(task_id, test_worker.name)
+        TaskStatusManager.create_task_status(spawned_task_id, test_worker.name)
+        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_worker.name)
         TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
         TaskStatusManager.update_task_status(spawned_task_id,
                                              delta={'spawned_tasks': [spawned_by_spawned_task_id]})
@@ -101,16 +101,16 @@ class TestTaskCollection(base.PulpWebserviceTests):
         """
         # Populate a couple of task statuses
         task_id1 = str(uuid.uuid4())
-        queue_1 = 'queue_1'
+        worker_1 = 'worker_1'
         state1 = 'waiting'
 
         task_id2 = str(uuid.uuid4())
-        queue_2 = 'queue_2'
+        worker_2 = 'worker_2'
         state2 = 'running'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, queue_2, tags, state2)
+        TaskStatusManager.create_task_status(task_id1, worker_1, tags, state1)
+        TaskStatusManager.create_task_status(task_id2, worker_2, tags, state2)
         status, body = self.get('/v2/tasks/')
 
         # Validate
@@ -121,12 +121,12 @@ class TestTaskCollection(base.PulpWebserviceTests):
                 self.assertEqual(task['_href'],
                                  serialization.dispatch.task_result_href(task)['_href'])
                 self.assertEquals(task['state'], state1)
-                self.assertEqual(task['queue'], queue_1)
+                self.assertEqual(task['worker_name'], worker_1)
             else:
                 self.assertEqual(task['_href'],
                                  serialization.dispatch.task_result_href(task)['_href'])
                 self.assertEquals(task['state'], state2)
-                self.assertEqual(task['queue'], queue_2)
+                self.assertEqual(task['worker_name'], worker_2)
         self.assertEquals(task['tags'], tags)
 
     def test_GET_celery_tasks_by_tags(self):
@@ -135,23 +135,23 @@ class TestTaskCollection(base.PulpWebserviceTests):
         """
         # Populate a few of task statuses
         task_id1 = str(uuid.uuid4())
-        queue_1 = 'queue_1'
+        worker_1 = 'worker_1'
         state1 = 'waiting'
         tags1 = ['random', 'tags']
 
         task_id2 = str(uuid.uuid4())
-        queue_2 = 'queue_2'
+        worker_2 = 'worker_2'
         state2 = 'running'
         tags2 = ['random', 'tags']
 
         task_id3 = str(uuid.uuid4())
-        queue_3 = 'queue_3'
+        worker_3 = 'worker_3'
         state3 = 'running'
         tags3 = ['random']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags1, state1)
-        TaskStatusManager.create_task_status(task_id2, queue_2, tags2, state2)
-        TaskStatusManager.create_task_status(task_id3, queue_3, tags3, state3)
+        TaskStatusManager.create_task_status(task_id1, worker_1, tags1, state1)
+        TaskStatusManager.create_task_status(task_id2, worker_2, tags2, state2)
+        TaskStatusManager.create_task_status(task_id3, worker_3, tags3, state3)
 
         # Validate for tags
         status, body = self.get('/v2/tasks/?tag=random&tag=tags')
@@ -160,12 +160,12 @@ class TestTaskCollection(base.PulpWebserviceTests):
         for task in body:
             if task['task_id'] == task_id1:
                 self.assertEquals(task['state'], state1)
-                self.assertEqual(task['queue'], queue_1)
+                self.assertEqual(task['worker_name'], worker_1)
                 self.assertEqual(task['tags'], tags1)
             else:
                 self.assertEqual(task['task_id'], task_id2)
                 self.assertEquals(task['state'], state2)
-                self.assertEqual(task['queue'], queue_2)
+                self.assertEqual(task['worker_name'], worker_2)
                 self.assertEquals(task['tags'], tags2)
 
         # Negative test
@@ -179,23 +179,23 @@ class TestTaskCollection(base.PulpWebserviceTests):
         """
         # Populate a couple of task statuses
         task_id1 = str(uuid.uuid4())
-        queue_1 = 'queue_1'
+        worker_1 = 'worker_1'
         state1 = 'waiting'
 
         task_id2 = str(uuid.uuid4())
-        queue_2 = 'queue_2'
+        worker_2 = 'worker_2'
         state2 = 'running'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, queue_2, tags, state2)
+        TaskStatusManager.create_task_status(task_id1, worker_1, tags, state1)
+        TaskStatusManager.create_task_status(task_id2, worker_2, tags, state2)
         status, body = self.get('/v2/tasks/%s/' % task_id2)
 
         # Validate
         self.assertEqual(200, status)
         self.assertTrue(isinstance(body, dict))
         self.assertEquals(body['state'], state2)
-        self.assertEqual(body['queue'], queue_2)
+        self.assertEqual(body['worker_name'], worker_2)
         self.assertEquals(body['tags'], tags)
 
     def test_GET_celery_task_by_missing_id(self):
@@ -204,11 +204,11 @@ class TestTaskCollection(base.PulpWebserviceTests):
         """
         # Populate a couple of task statuses
         task_id1 = str(uuid.uuid4())
-        queue_1 = 'queue_1'
+        worker_1 = 'worker_1'
         state1 = 'waiting'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, queue_1, tags, state1)
+        TaskStatusManager.create_task_status(task_id1, worker_1, tags, state1)
         non_existing_task_id = str(uuid.uuid4())
         status, body = self.get('/v2/tasks/%s/' % non_existing_task_id)
 

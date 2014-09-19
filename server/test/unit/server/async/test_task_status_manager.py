@@ -44,18 +44,18 @@ class TaskStatusManagerTests(base.PulpServerTests):
         Tests that create_task_status() with valid data is successful.
         """
         task_id = self.get_random_uuid()
-        queue = 'a_queue'
+        worker_name = 'a_worker_name'
         tags = ['test-tag1', 'test-tag2']
         state = 'waiting'
 
-        created = TaskStatusManager.create_task_status(task_id, queue, tags, state)
+        created = TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
 
         task_statuses = list(TaskStatus.get_collection().find())
         self.assertEqual(1, len(task_statuses))
 
         task_status = task_statuses[0]
         self.assertEqual(task_id, task_status['task_id'])
-        self.assertEqual(queue, task_status['queue'])
+        self.assertEqual(worker_name, task_status['worker_name'])
         self.assertEqual(tags, task_status['tags'])
         self.assertEqual(state, task_status['state'])
 
@@ -69,14 +69,14 @@ class TaskStatusManagerTests(base.PulpServerTests):
         properly.
         """
         task_id = self.get_random_uuid()
-        queue = 'a_queue'
+        worker_name = 'a_worker_name'
 
-        TaskStatusManager.create_task_status(task_id, queue)
+        TaskStatusManager.create_task_status(task_id, worker_name)
 
         task_statuses = list(TaskStatus.get_collection().find())
         self.assertEqual(1, len(task_statuses))
         self.assertEqual(task_id, task_statuses[0]['task_id'])
-        self.assertEqual(queue, task_statuses[0]['queue'])
+        self.assertEqual(worker_name, task_statuses[0]['worker_name'])
         self.assertEqual([], task_statuses[0]['tags'])
         self.assertEqual('waiting', task_statuses[0]['state'])
 
@@ -85,7 +85,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         Test that calling create_task_status() with an invalid task id raises the correct error.
         """
         try:
-            TaskStatusManager.create_task_status(None, 'some_queue')
+            TaskStatusManager.create_task_status(None, 'some_worker')
             self.fail('Invalid ID did not raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue(e.property_names[0], 'task_id')
@@ -95,11 +95,11 @@ class TaskStatusManagerTests(base.PulpServerTests):
         Tests create_task_status() with a duplicate task id.
         """
         task_id = self.get_random_uuid()
-        queue = 'a_queue'
+        worker_name = 'a_worker_name'
 
-        TaskStatusManager.create_task_status(task_id, queue)
+        TaskStatusManager.create_task_status(task_id, worker_name)
         try:
-            TaskStatusManager.create_task_status(task_id, queue)
+            TaskStatusManager.create_task_status(task_id, worker_name)
             self.fail('Task status with a duplicate task id did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(task_id in e)
@@ -110,24 +110,23 @@ class TaskStatusManagerTests(base.PulpServerTests):
         results in an error
         """
         task_id = self.get_random_uuid()
-        # queue is not allowed to be None
-        queue = None
+        worker_name = ['not a string']
         tags = 'not a list'
         state = 1
         try:
-            TaskStatusManager.create_task_status(task_id, queue, tags, state)
+            TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
             self.fail('Invalid attributes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue('tags' in e.data_dict()['property_names'])
             self.assertTrue('state' in e.data_dict()['property_names'])
-            self.assertTrue('queue' in e.data_dict()['property_names'])
+            self.assertTrue('worker_name' in e.data_dict()['property_names'])
 
     def test_delete_task_status(self):
         """
         Test delete_task_status() under normal circumstances.
         """
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id, 'a_queue')
+        TaskStatusManager.create_task_status(task_id, 'a_worker_name')
 
         TaskStatusManager.delete_task_status(task_id)
 
@@ -150,10 +149,10 @@ class TaskStatusManagerTests(base.PulpServerTests):
         Tests the successful operation of update_task_status().
         """
         task_id = self.get_random_uuid()
-        queue = 'special_queue'
+        worker_name = 'special_worker_name'
         tags = ['test-tag1', 'test-tag2']
         state = 'waiting'
-        TaskStatusManager.create_task_status(task_id, queue, tags, state)
+        TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
         now = datetime.now(dateutils.utc_tz())
         start_time = dateutils.format_iso8601_datetime(now)
         delta = {'start_time': start_time,
@@ -169,7 +168,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         dateutils.parse_iso8601_datetime(task_status['start_time'])
         self.assertEqual(task_status['state'], delta['state'])
         self.assertEqual(task_status['progress_report'], delta['progress_report'])
-        self.assertEqual(task_status['queue'], queue)
+        self.assertEqual(task_status['worker_name'], worker_name)
         self.assertEqual(updated['start_time'], delta['start_time'])
         self.assertEqual(updated['state'], delta['state'])
         self.assertEqual(updated['progress_report'], delta['progress_report'])
