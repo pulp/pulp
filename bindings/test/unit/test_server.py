@@ -185,6 +185,8 @@ class TestPulpConnection(unittest.TestCase):
         self.assertEqual(connection.server_wrapper.pulp_connection, connection)
         self.assertEqual(connection.verify_ssl, True)
         self.assertEqual(connection.ca_path, server.DEFAULT_CA_PATH)
+        # 1142376 - verify default path points to a known valid file
+        self.assertEqual(server.DEFAULT_CA_PATH, '/etc/pki/tls/certs/ca-bundle.crt')
 
     def test___init___ca_path_set(self):
         """
