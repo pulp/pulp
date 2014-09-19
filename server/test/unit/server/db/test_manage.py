@@ -130,14 +130,7 @@ class TestManageDB(MigrationTest):
         test makes sure the manager methods that do that are called.
         """
         logger = MagicMock()
-
-        def get_logger(*args):
-            """
-            This is used to side effect getLogger so that we can mock the logger.
-            """
-            return logger
-
-        getLogger.side_effect = get_logger
+        getLogger.return_value = logger
 
         code = manage.main()
 
@@ -182,14 +175,7 @@ class TestManageDB(MigrationTest):
         popcorn.
         """
         logger = MagicMock()
-
-        def get_logger(*args):
-            """
-            This is used to side effect getLogger so that we can mock the logger.
-            """
-            return logger
-
-        getLogger.side_effect = get_logger
+        getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
@@ -224,14 +210,7 @@ class TestManageDB(MigrationTest):
         """
 
         logger = MagicMock()
-
-        def get_logger(*args):
-            """
-            This is used to side effect getLogger so that we can mock the logger.
-            """
-            return logger
-
-        getLogger.side_effect = get_logger
+        getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
@@ -364,11 +343,7 @@ class TestManageDB(MigrationTest):
         """
 
         logger = MagicMock()
-
-        def get_logger(*args):
-            return logger
-
-        getLogger.side_effect = get_logger
+        getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
         self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)

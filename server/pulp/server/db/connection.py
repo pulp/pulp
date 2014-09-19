@@ -85,7 +85,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
             username = config.config.get('database', 'username')
             password = config.config.get('database', 'password')
             _log.debug('Database authentication enabled, attempting username/password'
-                      'authentication.')
+                       ' authentication.')
             _DATABASE.authenticate(username, password)
         elif ((config.config.has_option('database', 'username') and
                not config.config.has_option('database', 'password')) or
