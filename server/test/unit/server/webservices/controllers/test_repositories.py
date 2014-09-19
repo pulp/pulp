@@ -8,6 +8,7 @@
 # NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import copy
 import datetime
 import httplib
 from pprint import pformat
@@ -33,6 +34,7 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
                                              RepoSyncResult)
+from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource, OperationPostponed, PulpException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
@@ -68,9 +70,11 @@ class RepoImportUploadTests(RepoControllersTests):
     URL = '/v2/repositories/%s/actions/import_upload/'
 
     @mock.patch('celery.Task.apply_async')
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     @mock.patch('pulp.server.managers.content.upload.ContentUploadManager.import_uploaded_unit')
-    def test_POST_returns_report(self, import_uploaded_unit, _reserve_resource, mock_apply_async):
+    def test_POST_returns_report(self, import_uploaded_unit, mock_get_worker_for_reservation,
+                                 mock_uuid, mock_apply_async):
         """
         Assert that the POST() method returns the appropriate report dictionary, based on the return
         value of the import_uploaded_unit() method.
@@ -80,14 +84,15 @@ class RepoImportUploadTests(RepoControllersTests):
         details = 'Some details'
         upload_report = {'success_flag': success_flag, 'summary': summary, 'details': details}
         import_uploaded_unit.return_value = upload_report
-        task_id = str(uuid.uuid4())
-        mock_apply_async.return_value = AsyncResult(task_id)
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        uuid_list = [uuid.uuid4() for i in range(10)]
+        mock_uuid.uuid4.side_effect = copy.deepcopy(uuid_list)
+        expected_async_result = AsyncResult(str(uuid_list[0]))
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         params = {'upload_id': 'upload_id', 'unit_type_id': 'unit_type_id', 'unit_key': 'unit_key'}
 
         status, body = self.post(self.URL % 'repo_id', params)
         self.assertEqual(202, status)
-        assert_body_matches_async_task(body, mock_apply_async.return_value)
+        assert_body_matches_async_task(body, expected_async_result)
         expected_args = mock_apply_async.call_args[0][0]
         self.assertTrue('repo_id' in expected_args)
         self.assertTrue('unit_type_id' in expected_args)
@@ -592,16 +597,18 @@ class RepoImportersTests(RepoPluginsTests):
         self.assertEqual(404, status)
 
     @mock.patch('celery.Task.apply_async')
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_post(self, _reserve_resource, mock_apply_async):
+    @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_post(self, mock_get_worker_for_reservation, mock_uuid, mock_apply_async):
         """
         Tests adding an importer to a repo.
         """
         # Setup
         self.repo_manager.create_repo('gravy')
-        task_id = str(uuid.uuid4())
-        mock_apply_async.return_value = AsyncResult(task_id)
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        uuid_list = [uuid.uuid4() for i in range(10)]
+        mock_uuid.uuid4.side_effect = copy.deepcopy(uuid_list)
+        expected_async_result = AsyncResult(str(uuid_list[0]))
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
 
         # Test
         req_body = {
@@ -612,17 +619,17 @@ class RepoImportersTests(RepoPluginsTests):
 
         # Verify
         self.assertEqual(202, status)
-        assert_body_matches_async_task(body, mock_apply_async.return_value)
+        assert_body_matches_async_task(body, expected_async_result)
         call_args, call_kwargs = mock_apply_async.call_args[0]
         self.assertEqual(call_args, ['gravy', 'dummy-importer'])
         self.assertEqual(call_kwargs, {'repo_plugin_config': {'foo': 'bar'}})
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_post_missing_repo(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_post_missing_repo(self, mock_get_worker_for_reservation):
         """
         Tests adding an importer to a repo that doesn't exist.
         """
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         req_body = {
             'importer_type_id': 'dummy-importer',
@@ -643,8 +650,8 @@ class RepoImportersTests(RepoPluginsTests):
         # Verify
         self.assertEqual(400, status)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_post_bad_request_invalid_data(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_post_bad_request_invalid_data(self, mock_get_worker_for_reservation):
         """
         Tests adding an importer but specifying incorrect metadata.
         """
@@ -653,7 +660,7 @@ class RepoImportersTests(RepoPluginsTests):
         req_body = {
             'importer_type_id': 'not-a-real-importer'
         }
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         status, body = self.post('/v2/repositories/walnuts/importers/', params=req_body)
         # Verify
@@ -695,8 +702,9 @@ class RepoImporterTests(RepoPluginsTests):
         self.assertEqual(404, status)
 
     @mock.patch('celery.Task.apply_async')
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_delete(self, _reserve_resource, mock_apply_async):
+    @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_delete(self, mock_get_worker_for_reservation, mock_uuid, mock_apply_async):
         """
         Tests removing an importer from a repo.
         """
@@ -704,46 +712,48 @@ class RepoImporterTests(RepoPluginsTests):
         repo_id = 'blueberry_pie'
         self.repo_manager.create_repo(repo_id)
         self.importer_manager.set_importer(repo_id, 'dummy-importer', {})
-        task_id = str(uuid.uuid4())
-        mock_apply_async.return_value = AsyncResult(task_id)
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        uuid_list = [uuid.uuid4() for i in range(10)]
+        mock_uuid.uuid4.side_effect = copy.deepcopy(uuid_list)
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
 
         # Test
         status, body = self.delete('/v2/repositories/blueberry_pie/importers/dummy-importer/')
 
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(body['spawned_tasks'][0]['task_id'], task_id)
+        self.assertEqual(body['spawned_tasks'][0]['task_id'], str(uuid_list[0]))
         call_args = mock_apply_async.call_args[0]
         self.assertTrue([repo_id] in call_args)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_delete_missing_repo(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_delete_missing_repo(self, mock_get_worker_for_reservation):
         """
         Tests deleting the importer from a repo that doesn't exist.
         """
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         status, body = self.delete('/v2/repositories/bad_pie/importers/dummy-importer/')
         # Verify
         self.assertEqual(202, status)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_delete_missing_importer(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_delete_missing_importer(self, mock_get_worker_for_reservation):
         """
         Tests deleting an importer from a repo that doesn't have one.
         """
         # Setup
         self.repo_manager.create_repo('apple_pie')
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         status, body = self.delete('/v2/repositories/apple_pie/importers/dummy-importer/')
         # Verify
         self.assertEqual(202, status)
 
     @mock.patch('celery.Task.apply_async')
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_update_importer_config(self, _reserve_resource, mock_apply_async):
+    @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_update_importer_config(self, mock_get_worker_for_reservation, mock_uuid,
+                                    mock_apply_async):
         """
         Tests successfully updating an importer's config.
         """
@@ -751,40 +761,40 @@ class RepoImporterTests(RepoPluginsTests):
         repo_id = 'pumpkin_pie'
         self.repo_manager.create_repo(repo_id)
         self.importer_manager.set_importer(repo_id, 'dummy-importer', {})
-        task_id = str(uuid.uuid4())
-        mock_apply_async.return_value = AsyncResult(task_id)
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        uuid_list = [uuid.uuid4() for i in range(10)]
+        mock_uuid.uuid4.side_effect = copy.deepcopy(uuid_list)
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         new_config = {'importer_config': {'ice_cream': True}}
         status, body = self.put('/v2/repositories/pumpkin_pie/importers/dummy-importer/',
                                 params=new_config)
         # Verify
         self.assertEqual(202, status)
-        self.assertEqual(body['spawned_tasks'][0]['task_id'], task_id)
+        self.assertEqual(body['spawned_tasks'][0]['task_id'], str(uuid_list[0]))
         call_args, call_kwargs = mock_apply_async.call_args[0]
         self.assertTrue(repo_id in call_args)
         self.assertEqual(call_kwargs['importer_config'], {'ice_cream': True})
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_update_missing_repo(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_update_missing_repo(self, mock_get_worker_for_reservation):
         """
         Tests updating an importer config on a repo that doesn't exist.
         """
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         status, body = self.put('/v2/repositories/foo/importers/dummy-importer/',
                                 params={'importer_config': {}})
         # Verify
         self.assertEqual(202, status)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_update_missing_importer(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_update_missing_importer(self, mock_get_worker_for_reservation):
         """
         Tests updating a repo that doesn't have an importer.
         """
         # Setup
         self.repo_manager.create_repo('pie')
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         status, body = self.put('/v2/repositories/pie/importers/dummy-importer/',
                                 params={'importer_config': {}})
@@ -1629,10 +1639,10 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_regenerate_applicability(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_regenerate_applicability(self, mock_get_worker_for_reservation):
         # Setup
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
         self.populate_bindings()
         # Test
@@ -1642,20 +1652,20 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body['spawned_tasks'][0])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_regenerate_applicability_no_consumer(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_regenerate_applicability_no_consumer(self, mock_get_worker_for_reservation):
         # Test
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         request_body = dict(repo_criteria={'filters': self.REPO_FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body['spawned_tasks'][0])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_regenerate_applicability_no_bindings(self, _reserve_resource):
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_regenerate_applicability_no_bindings(self, mock_get_worker_for_reservation):
         # Setup
-        _reserve_resource.return_value = ReservedResourceApplyAsync()
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
         # Test
         request_body = dict(repo_criteria={'filters': self.REPO_FILTER})

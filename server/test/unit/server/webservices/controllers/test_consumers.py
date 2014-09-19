@@ -11,6 +11,7 @@
 """
 Test the pulp.server.webservices.controllers.consumer module.
 """
+import datetime
 import logging
 
 import mock
@@ -29,6 +30,7 @@ from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicabil
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import InvalidValue, OperationPostponed, MissingValue
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
@@ -1521,17 +1523,9 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    class ReservedResourceApplyAsync(object):
-        """
-        This object allows us to mock the return value of _reserve_resource.apply_async.get().
-        """
-        def get(self):
-            return 'some_queue'
-
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_regenerate_applicability(self, _reserve_resource):
-        # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_regenerate_applicability(self, mock_get_worker_for_reservation):
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
         self.populate_bindings()
         request_body = dict(consumer_criteria={'filters': self.FILTER})
@@ -1541,10 +1535,9 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_regenerate_applicability_no_consumers(self, _reserve_resource):
-        # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_regenerate_applicability_no_consumers(self, mock_get_worker_for_reservation):
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
         request_body = dict(consumer_criteria={'filters':self.FILTER})
         status, body = self.post(self.PATH, request_body)
@@ -1552,10 +1545,9 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_regenerate_applicability_no_bindings(self, _reserve_resource):
-        # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_regenerate_applicability_no_bindings(self, mock_get_worker_for_reservation):
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Setup
         self.populate()
         # Test
@@ -1588,10 +1580,9 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('property_names' in body)
         self.assertTrue(body['property_names'] == ['consumer_criteria'])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_consumer_regenerate_applicability(self, _reserve_resource):
-        # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_consumer_regenerate_applicability(self, mock_get_worker_for_reservation):
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
         self.populate_bindings()
 
@@ -1601,10 +1592,9 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
-    def test_consumer_regenerate_applicability_no_bindings(self, _reserve_resource):
-        # We need to fake the _resource_manager returning a queue to us
-        _reserve_resource.return_value = self.ReservedResourceApplyAsync()
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_consumer_regenerate_applicability_no_bindings(self, mock_get_worker_for_reservation):
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
 
         consumer_path = '/v2/consumers/%s/actions/content/regenerate_applicability/'

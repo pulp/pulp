@@ -541,7 +541,7 @@ class TaskStatus(Model, ReaperMixin):
     search_indices = ('task_id', 'tags', 'state')
 
     def __init__(
-            self, task_id, queue, tags=None, state=None, error=None, spawned_tasks=None,
+            self, task_id, queue=None, tags=None, state=None, error=None, spawned_tasks=None,
             progress_report=None, task_type=None, start_time=None, finish_time=None, result=None):
         """
         Initialize the TaskStatus based on the provided attributes. All parameters besides task_id

@@ -14,6 +14,7 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model import dispatch
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
+from pulp.server.db.model.resources import Worker
 from pulp.server.tasks import repository
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
@@ -441,26 +442,14 @@ class RepoManagerTests(base.ResourceReservationTests):
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' == e.resources['resource_id'])
 
-    @mock.patch('pulp.server.async.tasks._reserve_resource.apply_async')
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     @mock.patch('pulp.server.tasks.repository.distributor_update.apply_async_with_reservation',
                 side_effect=repository.distributor_update.apply_async_with_reservation)
-    def test_update_repo_and_plugins(self, distributor_update, _reserve_resource):
+    def test_update_repo_and_plugins(self, distributor_update, mock_get_worker_for_reservation):
         """
         Tests the aggregate call to update a repo and its plugins.
         """
-        class _AsyncTask(object):
-            """
-            Fake the return value of _reserve_resource().
-            """
-            def get(self):
-                """
-                Fake the available queue.
-                """
-                return 'some_queue'
-
-        _reserve_resource.return_value = _AsyncTask()
-
-        # Setup
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.manager.create_repo('repo-1', 'Original', 'Original Description')
 
         importer_manager = manager_factory.repo_importer_manager()
@@ -485,6 +474,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertTrue(isinstance(result, TaskResult))
         self.assertEquals(None, result.error)
         repo = result.return_value
+
         # Verify
         self.assertEqual(repo['id'], 'repo-1')
         self.assertEqual(repo['display_name'], 'Updated')

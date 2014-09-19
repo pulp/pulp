@@ -54,10 +54,6 @@ class ServerTests(TestCase):
     def setUpClass(cls):
         # This will make Celery tasks run synchronously
         celery_instance.celery.conf.CELERY_ALWAYS_EAGER = True
-        cls.reserve_resources_patch = mock.patch('pulp.server.async.tasks._reserve_resource.'
-                                                 'apply_async')
-        mock_patch = cls.reserve_resources_patch.start()
-        mock_patch.return_value.get.return_value = 'some_queue'
 
         if not os.path.exists(cls.TMP_ROOT):
             os.makedirs(cls.TMP_ROOT)
@@ -80,7 +76,6 @@ class ServerTests(TestCase):
     def tearDownClass(cls):
         name = pulp_conf.get('database', 'name')
         connection._CONNECTION.drop_database(name)
-        cls.reserve_resources_patch.stop()
 
     def setUp(self):
         QueuedCall.get_collection().remove()

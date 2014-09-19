@@ -2,7 +2,7 @@
 This module contains models that are used by the resource manager to persist its state so that it
 can survive being restarted.
 """
-from pulp.server.db.model.base import DoesNotExist, Model
+from pulp.server.db.model.base import Model
 
 
 class Worker(Model):
@@ -45,9 +45,6 @@ class Worker(Model):
         Delete this Worker from the database. Take no prisoners.
         """
         self.get_collection().remove({'_id': self.name})
-        # Also delete ReservedResources referencing this Worker's queue. This will prevent new
-        # tasks from using existing reservations to enter this deleted Worker's queue.
-        ReservedResource.get_collection().remove({'assigned_queue': self.queue_name})
 
     @classmethod
     def from_bson(cls, bson_worker):
@@ -88,94 +85,43 @@ class Worker(Model):
 
 class ReservedResource(Model):
     """
-    Instances of this class represent resources that have been reserved through the resource
-    manager.
+    Instances of this class represent resources that have been reserved.
 
-    :ivar name:             The name of the reserved resource.
-    :type name:             unicode
-    :ivar assigned_queue:   The queue that this resource is assigned to
-    :type assigned_queue:   unicode
-    :ivar num_reservations: The number of outstanding reservations on this resource
-    :type num_reservations: int
+    :ivar task_id:       The uuid of the task associated with this reservation
+    :type task_id:       basestring
+    :ivar worker_name:   The name of the worker associated with this reservation.
+    :type worker_name:   basestring
+    :ivar resource_id:   The name of the resource reserved for the task.
+    :type resource_id:   basestring
     """
     collection_name = 'reserved_resources'
     unique_indices = tuple()
+    search_indices = ('worker_name', 'resource_id')
 
-    def __init__(self, name, assigned_queue=None, num_reservations=1):
+    def __init__(self, task_id, worker_name, resource_id):
         """
-        Initialize the ReservedResource, storing the given state variables on it.
-
-        :param name:             The name of the resource that has been reserved
-        :type  name:             basestring
-        :param assigned_queue:   The queue that the resource has been assigned to. Defaults to None.
-        :type  assigned_queue:   basestring
-        :param num_reservations: The number of outstanding reservations against this resource.
-                                 Defaults to 1.
-        :type  num_reservations: int
+        :param task_id:       The uuid of the task associated with this reservation
+        :type task_id:        basestring
+        :param worker_name:   The name of the worker associated with this reservation.
+        :type worker_name:    basestring
+        :param resource_id:   The name of the resource reserved for the task.
+        :type resource_id:    basestring
         """
         super(ReservedResource, self).__init__()
 
-        self.name = name
-        self.assigned_queue = assigned_queue
-        self.num_reservations = num_reservations
+        self.task_id = task_id
+        self.worker_name = worker_name
+        self.resource_id = resource_id
 
         # We don't need these
         del self['_id']
         del self['id']
 
-    def decrement_num_reservations(self):
-        """
-        Reduce self.num_reservations by one in the database, and update self with the current
-        num_reservations (which could be different by more than one if another process also
-        decremented it in between us) and the assigned_queue. If num_reservations is now 0, remove
-        self from the database.
-        """
-        # Perform the update in the database, but only if the value there is greater than 0.
-        new_resource = self.get_collection().find_and_modify(
-            query={'_id': self.name, 'num_reservations': {'$gt': 0}},
-            update={'$inc': {'num_reservations': -1}}, new=True)
-
-        if new_resource is None:
-            # new_resource will be None if we asked Mongo to modify an object that didn't exist, or
-            # if it did exist but its num_reservations was not greater than 0. Let's determine which
-            # of these is the case.
-            new_resource = self.get_collection().find_one({'_id': self.name})
-            if new_resource is None:
-                # Now we can be sure that no queue exists with this name
-                raise DoesNotExist('ReservedResource with name %s does not exist.' % self.name)
-
-        # Update the instance attributes to reflect the value in the database
-        self.assigned_queue = new_resource['assigned_queue']
-        self.num_reservations = new_resource['num_reservations']
-        if not self.num_reservations:
-            self.delete()
-
     def delete(self):
         """
-        Delete self from the DB, but only if the DB record that self represents has a
-        num_reservations equal to 0. We can't rely on self.num_reservations, because someone else
-        may have altered the DB record in the meantime.
+        Delete self from the DB
         """
-        self.get_collection().remove({'_id': self.name, 'num_reservations': 0})
-
-    def increment_num_reservations(self):
-        """
-        Increase self.num_reservations by one in the database, and update self with the current
-        num_reservations (which could be different by more than one if another process also
-        incremented it in between us) and the assigned_queue.
-        """
-        # Perform the update in the database, but only if the value there is greater than 0.
-        new_resource = self.get_collection().find_and_modify(
-            query={'_id': self.name},
-            update={'$inc': {'num_reservations': 1}}, new=True)
-
-        if new_resource is None:
-            # We were asked to increment a ReservedResource that does not exist.
-            raise DoesNotExist('ReservedResource with name %s does not exist.' % self.name)
-
-        # Update the instance attributes to reflect the value in the database
-        self.assigned_queue = new_resource['assigned_queue']
-        self.num_reservations = new_resource['num_reservations']
+        self.get_collection().remove({'_id': self.task_id})
 
     def save(self):
         """
@@ -183,5 +129,5 @@ class ReservedResource(Model):
         a new record to represent it.
         """
         self.get_collection().save(
-            {'_id': self.name, 'assigned_queue': self.assigned_queue,
-             'num_reservations': self.num_reservations}, safe=True)
+            {'_id': self.task_id, 'resource_id': self.resource_id, 'worker_name': self.worker_name},
+            safe=True)
