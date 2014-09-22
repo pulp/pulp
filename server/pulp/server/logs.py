@@ -17,7 +17,7 @@ import ConfigParser
 import logging
 import os
 import thread
-import threading
+
 from celery.signals import setup_logging
 
 from pulp.server import config
@@ -39,6 +39,14 @@ def _blacklist_loggers():
         logger = logging.getLogger(logger_name)
         logger.disabled = True
         logger.propagate = False
+
+
+def _log_id():
+    """
+    Return a id for a log. Not guaranteed to be unique because threads can be
+    recycled, but it can be used to track a single multi line message.
+    """
+    return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(thread.get_ident())[-5:])
 
 
 @setup_logging.connect
@@ -87,13 +95,6 @@ def stop_logging():
     # remove all the existing handlers and loggers from the logging module
     logging.shutdown()
 
-def _log_id():
-    """
-    Return a id for a log. Not guaranteed to be unique because threads can be
-    recycled, but it can be used to track a single multi line message.
-    """
-    return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(thread.get_ident())[-5:])
-
 
 class CompliantSysLogHandler(logging.handlers.SysLogHandler):
     """
@@ -124,7 +125,6 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         :param record: The record to be logged via syslog
         :type  record: logging.LogRecord
         """
-
         if record.exc_info:
             trace = self.formatter.formatException(record.exc_info)
             if not isinstance(record.msg, basestring):
@@ -232,4 +232,3 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         if i == 0:
             # If i is still 0, we must have been passed the empty string
             yield ''
-
