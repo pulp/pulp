@@ -23,20 +23,31 @@ of this branch. Typically this is the development branch for future, unreleased
 Release Branches
 ----------------
 
-A branch will be made for each x.y release stream named "pulp-x.y". For example,
-the 2.0 release lives in a branch named "pulp-2.0". Increments of "z" releases
+A branch will be made for each x.y release stream named "x.y-release". For example,
+the 2.0 release lives in a branch named "2.0-release". Increments of "z" releases
 occur within the same release branch and are identified by tags.
 
 The HEAD of each release branch points to a tagged release version. When a new
-"z" increment version of Pulp is released, the development branch is merged
+"z" increment version of Pulp is released, the testing branch is merged
 into the release branch and the new HEAD of the release branch is tagged.
 Development occurs on a separate development branch.
 
-Release branches are where read the docs builds from, so in some situations
+Release branches are where Read The Docs builds from, so in some situations
 documentation commits may be merged into a release branch after a release has
 occurred. For example if a known issue is discovered in a release after it is
 released, it may be added to the release notes. In those situations the
 release tag will stay the same and diverge from HEAD.
+
+
+Testing Branches
+----------------
+
+Each x.y release will also have a branch for testing builds named "x.y-testing". For example, the
+2.4 stream has a "2.4-testing" branch. This branch is made when we are ready to begin regression
+testing 2.4.1 after 2.4.0 has been released, the 2.4-dev branch will be merged into 2.4-testing, and
+this branch will be used to make beta builds. Release candidates will also be built out of this
+branch. Once we believe the 2.4-testing branch has code that is ready to be release, it will be
+merged into 2.4-release.
 
 
 Development Branches
@@ -44,9 +55,9 @@ Development Branches
 
 Development for future "z" releases are done in a corresponding branch named
 "x.y-dev". For example, assuming Pulp 2.4.0 is released on the branch
-"pulp-2.4", development of 2.4.1 will occur on a branch named "2.4-dev". When
-2.4.1 is ready to be released, it will be merged with the "pulp-2.4" branch at
-which point "2.4-dev" will be used for 2.4.2 development.
+"2.4-release" and 2.4.1 is being tested in "2.4-testing", 2.4.2 work will be developed in 2.4-dev.
+When 2.4.2 is ready to be beta tested, 2.4-dev will be merged into the "2.4-testing" branch at
+which point "2.4-dev" will be used for 2.4.3 development.
 
 
 Bug Fix Branches
