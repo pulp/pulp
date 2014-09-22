@@ -8,3 +8,4 @@ Repository Group APIs
    retrieval
    members
    distributors
+   publish

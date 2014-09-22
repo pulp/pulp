@@ -19,7 +19,7 @@ task is running, any new applicability generation tasks requested are queued
 and postponed until the current task is completed.
 
 | :method:`post`
-| :path:`/pulp/api/v2/consumers/actions/content/regenerate_applicability/`
+| :path:`/v2/consumers/actions/content/regenerate_applicability/`
 | :permission:`create`
 | :param_list:`post`
 
@@ -36,12 +36,12 @@ and postponed until the current task is completed.
 
  { 
   "consumer_criteria": {
-   "filters": {"id": {"$in": ["sunflower", "voyager"]}},
+   "filters": {"id": {"$in": ["sunflower", "voyager"]}}
   }
  }
 
 **Tags:**
-The task created will have the following tag: ``"pulp:action:applicability_regeneration"``
+The task created will have the following tag: ``"pulp:action:content_applicability_regeneration"``
 
 Generate Content Applicability for Updated Repositories
 -------------------------------------------------------
@@ -66,7 +66,7 @@ task is running, any new applicability generation tasks requested are queued
 and postponed until the current task is completed.
 
 | :method:`post`
-| :path:`/pulp/api/v2/repositories/actions/content/regenerate_applicability/`
+| :path:`/v2/repositories/actions/content/regenerate_applicability/`
 | :permission:`create`
 | :param_list:`post`
 
@@ -83,12 +83,12 @@ and postponed until the current task is completed.
 
  { 
   "repo_criteria": {
-   "filters": {"id": {"$in": ["test-repo", "test-errata"]}},
+   "filters": {"id": {"$in": ["test-repo", "test-errata"]}}
   }
  }
 
 **Tags:**
-The task created will have the following tag: ``"pulp:action:applicability_regeneration"``
+The task created will have the following tag: ``"pulp:action:content_applicability_regeneration"``
 
 Generate Content Applicability for a single Consumer
 ----------------------------------------------------
@@ -105,7 +105,7 @@ task is running for a given consumer, any new applicability generation tasks req
 are queued and postponed until the current task is completed.
 
 | :method:`post`
-| :path:`/pulp/api/v2/consumers/<consumer_id>/actions/content/regenerate_applicability/`
+| :path:`/v2/consumers/<consumer_id>/actions/content/regenerate_applicability/`
 | :permission:`create`
 | :param_list:`post`
 
@@ -117,7 +117,7 @@ are queued and postponed until the current task is completed.
 | :return:a :ref:`call_report` representing the current state of the applicability regeneration
 
 **Tags:**
-The task created will have the following tag: ``"pulp:action:consumer_applicability_regeneration"``
+The task created will have the following tag: ``"pulp:action:consumer_content_applicability_regeneration"``
 
 Query Content Applicability
 ---------------------------
@@ -166,7 +166,7 @@ Each *applicability report* is an object:
 
  { 
   "criteria": {
-   "filters": {"id": {"$in": ["sunflower", "voyager"]}},
+   "filters": {"id": {"$in": ["sunflower", "voyager"]}}
   },
   "content_types": ["type_1", "type_2"]
  }

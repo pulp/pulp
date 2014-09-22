@@ -34,7 +34,7 @@ more information on the format.
 * :response_code:`200,if the bind request was fully processed on the server`
 * :response_code:`202,if an additional task was created to update consumer agents`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the consumer, repository or distributor does not exist`
+* :response_code:`404,if the consumer does not exist`
 
 | :return:`A` :ref:`call_report` if any tasks were spawned.  In the event of a 200 response the body will be be the binding that was created.
 
@@ -72,6 +72,9 @@ The steps for a forced unbind are as follows:
  2. Send a request to the consumer to remove the binding.  The ID of the request to the consumer
     is returned via the spawned_tasks field of the :ref:`call_report`.
 
+If the notify_agent parameter was set to false when the binding was created, no request is sent
+to the consumer to remove the binding, so the binding is immediately deleted.
+
 | :method:`delete`
 | :path:`/v2/consumers/<consumer_id>/bindings/<repo_id>/<distributor_id>`
 | :permission:`delete`
@@ -83,9 +86,10 @@ The steps for a forced unbind are as follows:
 
 | :response_list:`_`
 
+* :response_code:`200,if notify_agent was set to false for the binding and it was immediately deleted`
 * :response_code:`202,the unbind request was accepted`
 * :response_code:`400,if one or more of the parameters is invalid`
-* :response_code:`404,if the binding does not exist`
+* :response_code:`404,if the consumer, repo, or distributor IDs don't exist, or if the binding does not exist`
 
 | :return:`A` :ref:`call_report` if any tasks were spawned.
 
@@ -109,7 +113,7 @@ Retrieves information on a single binding between a consumer and a repository.
 | :response_list:`_`
 
 * :response_code:`200,if the bind exists`
-* :response_code:`404,if no bind exists with the given IDs`
+* :response_code:`404,if the given IDs don't exist, or if no bind exists with the given IDs`
 
 | :return:`database representation of the matching bind`
 

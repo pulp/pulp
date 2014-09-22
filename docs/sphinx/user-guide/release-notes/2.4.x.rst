@@ -129,21 +129,43 @@ Bugs
 You can see the complete list of bugs that were
 `fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?list_id=1242840&resolution=---&resolution=CURRENTRELEASE&classification=Community&target_release=2.4.0&query_format=advanced&bug_status=VERIFIED&bug_status=CLOSED&component=admin-client&component=bindings&component=consumer-client%2Fagent&component=consumers&component=coordinator&component=documentation&component=events&component=nodes&component=okaara&component=rel-eng&component=repositories&component=rest-api&component=selinux&component=upgrade&component=users&component=z_other&product=Pulp>`_.
 
-Known Issue
------------
+Known Issues
+------------
 
-There was `one regression <https://bugzilla.redhat.com/show_bug.cgi?id=1128292>`_ discovered during
-the 2.4.0 QE cycle that has not been resolved as of the release. The 2.4.0 distributor publishes
-groups in a slightly different way than Anaconda expects during interactive kickstarting. This
-causes no groups to be chosen by default during the package group selection installation step. The
-Pulp team decided to release 2.4.0 anyway, as the workaround is for users to simply make sure to
-select at least one package group during the installation. Automated kickstarts are not affected by
-this issue.
+* There was `one regression <https://bugzilla.redhat.com/show_bug.cgi?id=1128292>`_ discovered during
+  the 2.4.0 QE cycle that has not been resolved as of the release. The 2.4.0 distributor publishes
+  groups in a slightly different way than Anaconda expects during interactive kickstarting. This
+  causes no groups to be chosen by default during the package group selection installation step. The
+  Pulp team decided to release 2.4.0 anyway, as the workaround is for users to simply make sure to
+  select at least one package group during the installation. Automated kickstarts are not affected by
+  this issue.
+
+* There is a `configuration bug <https://bugzilla.redhat.com/show_bug.cgi?id=1132609>`_ related to
+  using MongoDB with authenticated database users. The error presents itself during syncs and other
+  task-related operations. A workaround is documented in comment #1 of the bug.
+
+* ``/etc/pulp/admin/admin.conf`` is owned by a different RPM than it was in 2.3.x. This means that
+  when you upgrade Pulp, you will not get an admin.conf.rpmnew file. Instead, admin.conf will be
+  overwritten with the new stock version.
 
 .. _2.3.x_upgrade_to_2.4.0:
 
 Upgrade Instructions for 2.3.x --> 2.4.0
 ----------------------------------------
+
+  .. warning::
+
+     Due to ``/etc/pulp/admin/admin.conf`` being owned by a different package in 2.4.0 than it was
+     in 2.3.x releases, you will need to make a backup of admin.conf before performing the upgrade
+     if you wish to keep any of your settings. No admin.conf.rpmnew file will be generated during
+     the upgrade!
+
+Begin by ensuring that you are using MongoDB version 2.4.0 or greater.
+
+  .. warning::
+    
+    Pulp 2.4.0 requires MongoDB version 2.4.0 or greater. You must upgrade your MongoDB
+    installation before performing any further steps.
 
 Upgrading from 2.3.x --> 2.4.0 requires all components to be upgraded together. Pulp 2.3.x servers
 and nodes are not compatible with Pulp 2.4.0 and vice versa. All consumers must be upgraded first,
@@ -291,13 +313,12 @@ command on any machine that already had the Admin Client installed:
 
     $ sudo yum upgrade
 
-The RPM install places the new admin.conf at ``/etc/pulp/admin/admin.conf.rpmnew`` so it won't
-overwrite the old one at install time. The contents of ``/etc/pulp/admin/admin.conf.rpmnew`` need
-to be manually merged into ``/etc/pulp/admin/admin.conf`` before the Admin Client can be used to
-connect to a 2.4.0 Pulp server or node. Be sure to pay attention to all new settings, for example
-the new verify_ssl and ca_path settings.
+If you made a backup of your admin.conf prior to this upgrade, you now need to manually merge your
+settings into ``/etc/pulp/admin/admin.conf``. Do not overwrite this file, as there are some
+important new settings that must be present in ``admin.conf``, for example the new ``verify_ssl``
+and ``ca_path`` settings.
 
-Repeat this same process with the ``/etc/pulp/nodes.conf.rpmnew`` file, which has also introduced
+Lastly, merge the ``/etc/pulp/nodes.conf.rpmnew`` file which has also introduced
 new required settings. The Pulp team has plans to fix our configuration loaders to no longer require
 settings to be present to alleviate these issues.
 
@@ -459,3 +480,20 @@ If you are a plugin author, these changes are relevant to you:
   we no longer had a need for those extra arguments, so each call now receives only the Importer or
   Distributor instance (self). If you have written an Importer or a Distributor, you will need to
   adjust your method signatures accordingly in order to work with this release of Pulp.
+
+
+Pulp 2.4.1
+==========
+
+Rest API Changes
+----------------
+
+* The timestamps returned for the following objects and fields have been converted from an
+  ISO 8601 timestamp with a timezone offset to native ISO 8601 timestamps in UTC
+
+  #. Repository Distributor (last_published)
+  #. Repository Group Distributor (last_published)
+  #. Repository Publish Results (started, completed)
+  #. Repository Group Publish Results (started, completed)
+  #. Repository Importer (last_sync)
+  #. Repository Importer Sync Results (started, completed)
