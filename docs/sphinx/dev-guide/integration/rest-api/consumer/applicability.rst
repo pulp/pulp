@@ -41,7 +41,7 @@ and postponed until the current task is completed.
  }
 
 **Tags:**
-The task created will have the following tag: ``"pulp:action:applicability_regeneration"``
+The task created will have the following tag: ``"pulp:action:content_applicability_regeneration"``
 
 Generate Content Applicability for Updated Repositories
 -------------------------------------------------------
@@ -88,7 +88,7 @@ and postponed until the current task is completed.
  }
 
 **Tags:**
-The task created will have the following tag: ``"pulp:action:applicability_regeneration"``
+The task created will have the following tag: ``"pulp:action:content_applicability_regeneration"``
 
 Generate Content Applicability for a single Consumer
 ----------------------------------------------------
@@ -117,7 +117,7 @@ are queued and postponed until the current task is completed.
 | :return:a :ref:`call_report` representing the current state of the applicability regeneration
 
 **Tags:**
-The task created will have the following tag: ``"pulp:action:consumer_applicability_regeneration"``
+The task created will have the following tag: ``"pulp:action:consumer_content_applicability_regeneration"``
 
 Query Content Applicability
 ---------------------------

@@ -22,7 +22,7 @@ your project's plugin space. For example, the Pulp RPM project has its migration
 name.
 
 Second, you will need to use the
-`Python entry points system <http://packages.python.org/distribute/pkg_resources.html#entry-points>`_
+`Python entry points system <https://pythonhosted.org/setuptools/pkg_resources.html#entry-points>`_
 to advertise your migration package to Pulp. To do that, add an entry_points argument to in your
 `setup()` function in your setup.py file, like this::
 
