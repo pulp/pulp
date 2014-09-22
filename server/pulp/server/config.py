@@ -41,6 +41,8 @@ _default_values = {
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
         'operation_retries': '2',
+        'username': '',
+        'password': '',
     },
     'email': {
         'host': 'localhost',
