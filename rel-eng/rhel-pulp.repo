@@ -24,7 +24,7 @@ enabled=0
 skip_if_unavailable=1
 gpgcheck=0
 
-# Weekly Testing Builds
+# Version 2.4 Testing Builds
 [pulp-2.4-testing]
 name=Pulp 2.4 Testing Builds
 baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.4/$releasever/$basearch/
@@ -40,7 +40,7 @@ enabled=0
 skip_if_unavailable=1
 gpgcheck=0
 
-# Weekly Testing Builds
+# Version 2.5 Testing Builds
 [pulp-2.5-testing]
 name=Pulp 2.5 Testing Builds
 baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.5/$releasever/$basearch/
