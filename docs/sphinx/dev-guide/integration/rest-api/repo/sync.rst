@@ -40,7 +40,7 @@ To create a scheduled sync, the interval, sync override config, and other
 schedule options must be set on the repository's :term:`importer`.
 
 | :method:`post`
-| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/`
 | :permission:`create`
 | :param_list:`post`
 
@@ -95,7 +95,7 @@ Updating a Scheduled Sync
 The same parameters used to create a scheduled sync may be updated at any point.
 
 | :method:`put`
-| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/<schedule_id>/`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/<schedule_id>/`
 | :permission:`create`
 | :param_list:`put`
 
@@ -116,7 +116,7 @@ Deleting a Scheduled Sync
 Delete a scheduled sync to remove it permanently from the importer.
 
 | :method:`delete`
-| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/<schedule_id>/`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/<schedule_id>/`
 | :permission:`delete`
 
 | :response_list:`_`
@@ -131,7 +131,7 @@ Listing All Scheduled Syncs
 All of the scheduled syncs for a given importer may be listed.
 
 | :method:`get`
-| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/`
 | :permission:`read`
 | :return:`array of schedule reports for all scheduled syncs defined (see sample response of Scheduling a Sync for details)`
 
@@ -142,7 +142,7 @@ Each scheduled sync may be inspected.
 
 | :method:`get`
 | :permission:`read`
-| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/sync_schedules/<schedule_id>/`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/<schedule_id>/`
 | :return:`a schedule report for the scheduled sync (see sample response of Scheduling a Sync for details)`
 
 

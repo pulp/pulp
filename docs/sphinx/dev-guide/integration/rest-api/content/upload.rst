@@ -79,6 +79,7 @@ the repository itself and the URL reflects this accordingly.
 * :param:`unit_type_id,str,identifies the type of unit the upload represents`
 * :param:`unit_key,object,unique identifier for the new unit; the contents are contingent on the type of unit being uploaded`
 * :param:`?unit_metadata,object,extra metadata describing the unit; the contents will vary based on the importer handling the import`
+* :param:`?override_config,object,importer configuration values that override the importer's default configuration`
 
 | :response_list:`_`
 
