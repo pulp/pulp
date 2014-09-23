@@ -37,7 +37,7 @@ EXAMPLE_CALL_REPORT = {
     'traceback': None,
     'spawned_tasks': [],
     'progress_report': {},
-    'queue': 'reserved_resource_worker-3@mhrivnak.rdu.redhat.com.dq',
+    'worker_name': 'reserved_resource_worker-3@mhrivnak.rdu.redhat.com',
     'state': 'waiting',
     'result': None,
     'error': None,
