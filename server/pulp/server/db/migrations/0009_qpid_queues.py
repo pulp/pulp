@@ -19,7 +19,7 @@ from pulp.server.agent.direct.services import Services
 from pulp.server.db.model.consumer import Consumer
 
 
-TROUBLESHOOTING_URL = 'http://pulp-user-guide.readthedocs.org/en/pulp-2.4/troubleshooting.html%s'
+TROUBLESHOOTING_URL = 'http://pulp-user-guide.readthedocs.org/en/2.4-release/troubleshooting.html%s'
 QPID_MESSAGING_URL = TROUBLESHOOTING_URL % '#qpid-messaging-is-not-installed'
 QPIDTOOLLIBS_URL = TROUBLESHOOTING_URL % '#qpidtoollibs-is-not-installed'
 CANNOT_DELETE_QUEUE_URL = TROUBLESHOOTING_URL % '#pulp-manage-db-gives-an-error-cannot-delete-queue'
