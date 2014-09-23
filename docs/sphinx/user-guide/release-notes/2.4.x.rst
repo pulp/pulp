@@ -361,7 +361,7 @@ sake of brevity, we will not list every API that returns 202 here. The structure
 has been changed significantly. The
 `2.3 Call Report <https://pulp-dev-guide.readthedocs.org/en/pulp-2.3/conventions/sync-v-async.html#call-report>`_
 had many more fields than the
-`2.4 Call Report <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/conventions/sync-v-async.html#call-report>`_
+`2.4 Call Report <https://pulp-dev-guide.readthedocs.org/en/2.4-release/conventions/sync-v-async.html#call-report>`_
 does.
 
 * The spawned_tasks list within the Call Report object does not contain the full list of all
@@ -413,7 +413,7 @@ Here are other APIs that have changed, arranged by path:
 ``/v2/queued_calls/``
 
     This API has been removed in 2.4, as queued and running tasks are accessed through the same
-    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_.
+    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/2.4-release/integration/rest-api/dispatch/task.html#task-report>`_.
 
 ``/v2/repositories/``
     Documentation for POST states that each distributor object should contain a
@@ -432,7 +432,7 @@ Here are other APIs that have changed, arranged by path:
 ``/v2/queued_calls/<call_request_id>/``
 
     This API has been removed in 2.4, as queued and running tasks are accessed through the same
-    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_.
+    `Tasks API <https://pulp-dev-guide.readthedocs.org/en/2.4-release/integration/rest-api/dispatch/task.html#task-report>`_.
 
 ``/v2/task_groups/``
 
@@ -463,7 +463,7 @@ Here are other APIs that have changed, arranged by path:
     Feel free to compare the
     `2.3 Call Report API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.3/integration/rest-api/dispatch/task.html#polling-task-progress>`_
     and the
-    `2.4 Task Report API <https://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/dispatch/task.html#task-report>`_
+    `2.4 Task Report API <https://pulp-dev-guide.readthedocs.org/en/2.4-release/integration/rest-api/dispatch/task.html#task-report>`_
     on your own.
 
 ``/v2/tasks/search/``
