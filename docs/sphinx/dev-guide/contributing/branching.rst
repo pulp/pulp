@@ -24,7 +24,7 @@ Release Branches
 ----------------
 
 A branch will be made for each x.y release stream named "x.y-release". For example,
-the 2.0 release lives in a branch named "2.0-release". Increments of "z" releases
+the 2.4 release lives in a branch named "2.4-release". Increments of "z" releases
 occur within the same release branch and are identified by tags.
 
 The HEAD of each release branch points to a tagged release version. When a new
@@ -44,8 +44,8 @@ Testing Branches
 
 Each x.y release will also have a branch for testing builds named "x.y-testing". For example, the
 2.4 stream has a "2.4-testing" branch. This branch is made when we are ready to begin regression
-testing 2.4.1 after 2.4.0 has been released, the 2.4-dev branch will be merged into 2.4-testing, and
-this branch will be used to make beta builds. Release candidates will also be built out of this
+testing 2.4.1. After 2.4.0 has been released, the 2.4-dev branch will be merged into 2.4-testing,
+and this branch will be used to make beta builds. Release candidates will also be built out of this
 branch. Once we believe the 2.4-testing branch has code that is ready to be release, it will be
 merged into 2.4-release.
 
