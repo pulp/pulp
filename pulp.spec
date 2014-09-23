@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.1
-Release: 0.9.rc%{?dist}
+Release: 1%{?dist}
 %define nondist_release %(echo %{release} | sed 's/%{?dist}//')
 Summary: An application for managing software content
 Group: Development/Languages
@@ -605,6 +605,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Sep 23 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
+- 1136883 - Fixed incorrect tags for applicability in the docs
+  (jcline@redhat.com)
+
 * Tue Sep 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.9.rc
 - Pulp rebuild
 
