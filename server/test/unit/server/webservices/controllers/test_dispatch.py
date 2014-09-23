@@ -40,9 +40,7 @@ class TestTaskResource(PulpWebservicesTests):
         coordinator is aware of. This should cause a revoke call to Celery's Controller.
         """
         task_id = '1234abcd'
-        now = datetime.utcnow()
-        test_worker = Worker('test_worker', now)
-        TaskStatusManager.create_task_status(task_id, test_worker.name)
+        TaskStatusManager.create_task_status(task_id)
 
         self.task_resource.DELETE(task_id)
 
@@ -53,10 +51,7 @@ class TestTaskResource(PulpWebservicesTests):
         Test the DELETE() method does not change the state of a task that is already complete
         """
         task_id = '1234abcd'
-        now = datetime.utcnow()
-        test_worker = Worker('test_worker', now)
-        TaskStatusManager.create_task_status(task_id, test_worker.name,
-                                             state=constants.CALL_FINISHED_STATE)
+        TaskStatusManager.create_task_status(task_id, state=constants.CALL_FINISHED_STATE)
         self.task_resource.DELETE(task_id)
         task_status = TaskStatusManager.find_by_task_id(task_id)
         self.assertEqual(task_status['state'], constants.CALL_FINISHED_STATE)
@@ -77,11 +72,9 @@ class TestTaskResource(PulpWebservicesTests):
         task_id = '1234abcd'
         spawned_task_id = 'spawned_task'
         spawned_by_spawned_task_id = 'spawned_by_spawned_task'
-        now = datetime.utcnow()
-        test_worker = Worker('test_worker', now)
-        TaskStatusManager.create_task_status(task_id, test_worker.name)
-        TaskStatusManager.create_task_status(spawned_task_id, test_worker.name)
-        TaskStatusManager.create_task_status(spawned_by_spawned_task_id, test_worker.name)
+        TaskStatusManager.create_task_status(task_id)
+        TaskStatusManager.create_task_status(spawned_task_id)
+        TaskStatusManager.create_task_status(spawned_by_spawned_task_id)
         TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
         TaskStatusManager.update_task_status(spawned_task_id,
                                              delta={'spawned_tasks': [spawned_by_spawned_task_id]})

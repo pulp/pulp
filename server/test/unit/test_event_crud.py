@@ -182,7 +182,7 @@ class EventTests(base.PulpServerTests):
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')
     def test_event_instantiation(self, mock_find, mock_current_task):
         mock_current_task.request.id = 'fake_id'
-        fake_task_status = TaskStatus('fake_id', 'fake_queue')
+        fake_task_status = TaskStatus('fake_id')
         mock_find.return_value = dict(fake_task_status)
 
         event_type = 'test_type'
@@ -200,7 +200,7 @@ class EventTests(base.PulpServerTests):
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')
     def test_data_call(self, mock_find, mock_current_task):
         mock_current_task.request.id = 'fake_id'
-        fake_task_status = TaskStatus('fake_id', 'fake_queue')
+        fake_task_status = TaskStatus('fake_id')
         mock_find.return_value = dict(fake_task_status)
         data = {'event_type': 'test_type',
                 'payload': 'test_payload',

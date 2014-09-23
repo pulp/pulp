@@ -82,12 +82,11 @@ class TestTaskStatus(unittest.TestCase):
         Test the __init__() method with default values
         """
         task_id = 'a_task_id'
-        worker_name = 'some_worker'
 
-        ts = TaskStatus(task_id, worker_name)
+        ts = TaskStatus(task_id)
 
         self.assertEqual(ts.task_id, task_id)
-        self.assertEqual(ts.worker_name, worker_name)
+        self.assertEqual(ts.worker_name, None)
         self.assertEqual(ts.tags, [])
         self.assertEqual(ts.state, None)
         self.assertEqual(ts.result, None)

@@ -69,14 +69,13 @@ class TaskStatusManagerTests(base.PulpServerTests):
         properly.
         """
         task_id = self.get_random_uuid()
-        worker_name = 'a_worker_name'
 
-        TaskStatusManager.create_task_status(task_id, worker_name)
+        TaskStatusManager.create_task_status(task_id)
 
         task_statuses = list(TaskStatus.get_collection().find())
         self.assertEqual(1, len(task_statuses))
         self.assertEqual(task_id, task_statuses[0]['task_id'])
-        self.assertEqual(worker_name, task_statuses[0]['worker_name'])
+        self.assertEqual(None, task_statuses[0]['worker_name'])
         self.assertEqual([], task_statuses[0]['tags'])
         self.assertEqual('waiting', task_statuses[0]['state'])
 
@@ -85,24 +84,25 @@ class TaskStatusManagerTests(base.PulpServerTests):
         Test that calling create_task_status() with an invalid task id raises the correct error.
         """
         try:
-            TaskStatusManager.create_task_status(None, 'some_worker')
-            self.fail('Invalid ID did not raise an exception')
+            TaskStatusManager.create_task_status(None)
         except exceptions.InvalidValue, e:
             self.assertTrue(e.property_names[0], 'task_id')
+        else:
+            self.fail('Invalid ID did not raise an exception')
 
     def test_create_task_status_duplicate_task_id(self):
         """
         Tests create_task_status() with a duplicate task id.
         """
         task_id = self.get_random_uuid()
-        worker_name = 'a_worker_name'
 
-        TaskStatusManager.create_task_status(task_id, worker_name)
+        TaskStatusManager.create_task_status(task_id)
         try:
-            TaskStatusManager.create_task_status(task_id, worker_name)
-            self.fail('Task status with a duplicate task id did not raise an exception')
+            TaskStatusManager.create_task_status(task_id)
         except exceptions.DuplicateResource, e:
             self.assertTrue(task_id in e)
+        else:
+            self.fail('Task status with a duplicate task id did not raise an exception')
 
     def test_create_task_status_invalid_attributes(self):
         """
@@ -115,18 +115,19 @@ class TaskStatusManagerTests(base.PulpServerTests):
         state = 1
         try:
             TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
-            self.fail('Invalid attributes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue('tags' in e.data_dict()['property_names'])
             self.assertTrue('state' in e.data_dict()['property_names'])
             self.assertTrue('worker_name' in e.data_dict()['property_names'])
+        else:
+            self.fail('Invalid attributes did not cause create to raise an exception')
 
     def test_delete_task_status(self):
         """
         Test delete_task_status() under normal circumstances.
         """
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id, 'a_worker_name')
+        TaskStatusManager.create_task_status(task_id)
 
         TaskStatusManager.delete_task_status(task_id)
 
@@ -140,9 +141,10 @@ class TaskStatusManagerTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         try:
             TaskStatusManager.delete_task_status(task_id)
-            self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue(task_id == e.resources['resource_id'])
+        else:
+            self.fail('Exception expected')
 
     def test_update_task_status(self):
         """
@@ -182,9 +184,10 @@ class TaskStatusManagerTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         try:
             TaskStatusManager.update_task_status(task_id, {})
-            self.fail('Exception expected')
         except exceptions.MissingResource, e:
             self.assertTrue(task_id == e.resources['resource_id'])
+        else:
+            self.fail('Exception expected')
 
     @mock.patch('pulp.server.db.connection.PulpCollection.query')
     def test_find_by_criteria(self, mock_query):
