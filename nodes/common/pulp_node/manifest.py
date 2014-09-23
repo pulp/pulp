@@ -368,10 +368,6 @@ class UnitWriter(object):
         self.close()
         return False
 
-    def __del__(self):
-        # just in case the writer is not properly closed.
-        self.close()
-
 
 class UnitIterator:
     """
