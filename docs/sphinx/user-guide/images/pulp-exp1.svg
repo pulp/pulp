@@ -1,0 +1,991 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1048.5249"
+   height="967.04681"
+   id="svg6655"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   sodipodi:docname="pulp-exp1.svg"
+   inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
+  <defs
+     id="defs6657">
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14080-0">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14082-4" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14084-3" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14086-4" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14080-3-4">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14082-6-7" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14084-1-1" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14086-5-7" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14080-3-0-3">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14082-6-1-5" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14084-1-8-5" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14086-5-2-1" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14080">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14082" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14084" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14086" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14072">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14074" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14076" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14078" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14104">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14106" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14108" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14110" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14080-3">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14082-6" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14084-1" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14086-5" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14080-3-0">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14082-6-1" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14084-1-8" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14086-5-2" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14088">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14090" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14092" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14094" />
+    </filter>
+    <filter
+       inkscape:label="Darken edges"
+       inkscape:menu="Shadows and Glows"
+       inkscape:menu-tooltip="Darken the edges with an inner blur"
+       color-interpolation-filters="sRGB"
+       id="filter14112">
+      <feGaussianBlur
+         result="result6"
+         stdDeviation="1.5"
+         id="feGaussianBlur14114" />
+      <feComposite
+         in2="result6"
+         operator="atop"
+         in="SourceGraphic"
+         result="result8"
+         id="feComposite14116" />
+      <feComposite
+         in="result8"
+         in2="SourceAlpha"
+         operator="atop"
+         result="result9"
+         id="feComposite14118" />
+    </filter>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="476.4053"
+     inkscape:cy="766.38055"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:window-width="1920"
+     inkscape:window-height="1015"
+     inkscape:window-x="0"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata6660">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(101.4053,-331.69592)">
+    <rect
+       style="fill:#ffffff;fill-opacity:1"
+       id="rect13899"
+       width="988.30524"
+       height="964.96454"
+       x="-83.00663"
+       y="333.7782"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 415.20994,818.71704 0,-240.74873 -1.8238,1.82385"
+       id="path3751"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 88.740141,707.46194 C 539.11564,586.78418 541.05584,588.91143 541.05584,588.91143"
+       id="path3743"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path3745"
+       d="M 743.05584,707.46194 C 292.68034,586.78418 290.74014,588.91143 290.74014,588.91143"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       y="376.96509"
+       x="-48.658604"
+       height="244.34824"
+       width="928.59827"
+       id="rect11447"
+       style="color:#000000;fill:#d7e9f0;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 720.13954,1026.4293 0,107.0418"
+       id="path3763"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 101.10294,1125.5469 c 183.5095,-105.9493 184.4213,-105.7521 184.4213,-105.7521"
+       id="path3765"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path3767"
+       d="M 417.52424,1125.5469 C 234.01474,1019.5976 233.10294,1019.7948 233.10294,1019.7948"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path11531"
+       d="m 396.04914,991.11276 0,210.34504"
+       style="fill:none;stroke:#000000;stroke-width:0.00078525;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;display:inline"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 94.211641,835.54641 c 164.216399,44.00165 165.970699,43.7725 165.970699,43.7725"
+       id="path3737"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path3739"
+       d="m 418.18234,835.54641 c -164.2164,44.00165 -165.9707,43.7725 -165.9707,43.7725"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <g
+       id="g3195"
+       transform="matrix(1.25,0,0,1.25,2252.4757,23.688395)"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <rect
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         y="514.46265"
+         x="-1869.8169"
+         height="92"
+         width="214"
+         id="rect4502"
+         style="color:#000000;fill:#bfdce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14104);enable-background:accumulate"
+         transform="matrix(1,0,0,1.1428217,288,-41.476427)" />
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         xml:space="preserve"
+         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter14112);font-family:Overpass;-inkscape-font-specification:Overpass"
+         x="-1480.8833"
+         y="589.46265"
+         id="text11419"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           id="tspan11421"
+           x="-1480.8833"
+           y="589.46265"
+           style="font-size:24px;text-align:center;text-anchor:middle">DATABASE</tspan></text>
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         sodipodi:linespacing="125%"
+         id="text11423"
+         y="613.46265"
+         x="-1480.4637"
+         style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter14112);font-family:Overpass;-inkscape-font-specification:Overpass"
+         xml:space="preserve"><tspan
+           style="font-size:18px;text-align:center;text-anchor:middle;fill:#58595b"
+           y="613.46265"
+           x="-1480.4637"
+           id="tspan11425"
+           sodipodi:role="line">Mongo DB</tspan></text>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 536.70364,951.50609 c 58.3633,0 60.1871,0 60.1871,0"
+       id="path3741"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       y="848.50323"
+       x="-1771.0048"
+       height="92"
+       width="605.93921"
+       id="rect7242"
+       style="color:#000000;fill:#bfdce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14088);enable-background:accumulate"
+       transform="matrix(0.97079321,0,0,1.6905534,1674.9802,-555.63863)" />
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       x="267.50558"
+       y="914.68768"
+       id="text11441"
+       sodipodi:linespacing="125%"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"><tspan
+         sodipodi:role="line"
+         id="tspan11443"
+         x="267.50558"
+         y="914.68768"
+         style="font-size:24px;text-align:center;text-anchor:middle">REST API,</tspan><tspan
+         sodipodi:role="line"
+         x="267.50558"
+         y="944.68768"
+         style="font-size:24px;text-align:center;text-anchor:middle"
+         id="tspan3681">CERT VERIFICATION,</tspan><tspan
+         sodipodi:role="line"
+         x="267.50558"
+         y="974.68768"
+         style="font-size:24px;text-align:center;text-anchor:middle"
+         id="tspan3683">CONTENT SERVING</tspan><tspan
+         id="tspan11445"
+         sodipodi:role="line"
+         x="267.50558"
+         y="1004.6877"
+         style="font-size:24px;text-align:center;text-anchor:middle" /></text>
+    <text
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       sodipodi:linespacing="125%"
+       id="text7346"
+       y="1005.3323"
+       x="261.93271"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       xml:space="preserve"><tspan
+         style="font-size:18px;text-align:center;text-anchor:middle;fill:#58595b"
+         y="1005.3323"
+         x="261.93271"
+         id="tspan7348"
+         sodipodi:role="line">Apache + mod_wsgi</tspan></text>
+    <rect
+       style="color:#000000;fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14072);enable-background:accumulate"
+       id="rect12528"
+       width="214"
+       height="92"
+       x="-1849.3883"
+       y="1102.8912"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2279.4559,-254.38143)" />
+    <text
+       xml:space="preserve"
+       style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       x="96.090538"
+       y="1171.6968"
+       id="text11473"
+       sodipodi:linespacing="125%"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"><tspan
+         id="tspan11475"
+         sodipodi:role="line"
+         x="96.090538"
+         y="1171.6968"
+         style="font-size:30px;text-align:center;text-anchor:middle">ADMIN TOOLS</tspan></text>
+    <text
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       sodipodi:linespacing="125%"
+       id="text12542"
+       y="1204.5896"
+       x="102.80477"
+       style="font-size:50px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       xml:space="preserve"><tspan
+         style="font-size:22.5px;text-align:center;text-anchor:middle;fill:#58595b"
+         y="1204.5896"
+         x="102.80477"
+         id="tspan12544"
+         sodipodi:role="line">pulp-admin</tspan></text>
+    <rect
+       style="color:#000000;fill:#ececec;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-3-0);enable-background:accumulate"
+       id="rect12588-96-6"
+       width="214"
+       height="92"
+       x="-1550.2411"
+       y="1117.7582"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2230.2558,-254.79754)" />
+    <rect
+       style="color:#000000;fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-3);enable-background:accumulate"
+       id="rect12588-96"
+       width="214"
+       height="92"
+       x="-1557.4355"
+       y="1110.1198"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2230.2558,-254.79754)" />
+    <rect
+       style="color:#000000;fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080);enable-background:accumulate"
+       id="rect12588"
+       width="214"
+       height="92"
+       x="-1564.3649"
+       y="1103.2241"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2230.2558,-254.79754)" />
+    <g
+       transform="translate(1883.4124,300.74409)"
+       id="g3791"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <text
+         sodipodi:linespacing="125%"
+         id="text12590"
+         y="869.73853"
+         x="-1469.7069"
+         style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         xml:space="preserve"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         inkscape:export-xdpi="90"
+         inkscape:export-ydpi="90"><tspan
+           id="tspan12618"
+           style="font-size:30px;text-align:center;text-anchor:middle"
+           y="869.73853"
+           x="-1469.7069"
+           sodipodi:role="line">CONSUMER</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:50px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         x="-1467.1176"
+         y="903.8291"
+         id="text7346-0"
+         sodipodi:linespacing="125%"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         inkscape:export-xdpi="90"
+         inkscape:export-ydpi="90"><tspan
+           sodipodi:role="line"
+           id="tspan7348-3"
+           x="-1467.1176"
+           y="903.8291"
+           style="font-size:22.5px;text-align:center;text-anchor:middle;fill:#58595b">yum only</tspan></text>
+    </g>
+    <rect
+       style="color:#000000;fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-3-0-3);enable-background:accumulate"
+       id="rect12588-96-6-0"
+       width="214"
+       height="92"
+       x="-1219.6094"
+       y="1327.5928"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2124.0451,-517.09078)" />
+    <rect
+       style="color:#000000;fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-3-4);enable-background:accumulate"
+       id="rect12588-96-4"
+       width="214"
+       height="92"
+       x="-1226.8038"
+       y="1319.9543"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2124.0451,-517.09078)" />
+    <rect
+       style="color:#000000;fill:#e6e6e6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-0);enable-background:accumulate"
+       id="rect12588-7"
+       width="214"
+       height="92"
+       x="-1233.7332"
+       y="1313.0587"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"
+       transform="matrix(1.25,0,0,1.25,2124.0451,-517.09078)" />
+    <text
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       xml:space="preserve"
+       style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       x="720.78448"
+       y="1170.4825"
+       id="text12590-1"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="720.78448"
+         y="1170.4825"
+         style="font-size:30px;text-align:center;text-anchor:middle"
+         id="tspan12618-8">CONSUMER</tspan></text>
+    <text
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       sodipodi:linespacing="125%"
+       id="text7346-0-1"
+       y="1204.5731"
+       x="723.37384"
+       style="font-size:50px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       xml:space="preserve"><tspan
+         style="font-size:22.5px;text-align:center;text-anchor:middle;fill:#58595b"
+         y="1204.5731"
+         x="723.37384"
+         id="tspan7348-3-4"
+         sodipodi:role="line">pulp_consumer</tspan></text>
+    <g
+       id="g3272"
+       transform="matrix(1.25,0,0,1.25,2293.78,21.688395)"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <rect
+         transform="matrix(1,0,0,1.1428217,0,-41.476427)"
+         style="color:#000000;fill:#bfdce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14104);enable-background:accumulate"
+         id="rect7350"
+         width="214"
+         height="92"
+         x="-1869.8169"
+         y="514.46265"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         inkscape:export-xdpi="90"
+         inkscape:export-ydpi="90" />
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         xml:space="preserve"
+         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter14104);font-family:Overpass;-inkscape-font-specification:Overpass"
+         x="-1762.8833"
+         y="581.46265"
+         id="text7352"
+         sodipodi:linespacing="125%"><tspan
+           id="tspan7416"
+           sodipodi:role="line"
+           x="-1762.8833"
+           y="581.46265"
+           style="font-size:24px;text-align:center;text-anchor:middle">CONTENT</tspan><tspan
+           id="tspan7422"
+           sodipodi:role="line"
+           x="-1762.8833"
+           y="611.46265"
+           style="font-size:24px;text-align:center;text-anchor:middle">STORAGE</tspan></text>
+      <text
+         xml:space="preserve"
+         style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         x="-1763.649"
+         y="637.23108"
+         id="text4426"
+         sodipodi:linespacing="125%"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         inkscape:export-xdpi="90"
+         inkscape:export-ydpi="90"><tspan
+           sodipodi:role="line"
+           id="tspan4428"
+           x="-1763.649"
+           y="637.23108"
+           style="font-size:18px;text-align:center;text-anchor:middle;fill:#58595b">RPM, Puppet, etc</tspan></text>
+    </g>
+    <rect
+       transform="matrix(1.25,0,0,3.5890189,2929.1713,-1139.9649)"
+       style="color:#000000;fill:#bfdce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14104);enable-background:accumulate"
+       id="rect4460"
+       width="214"
+       height="92"
+       x="-1869.8169"
+       y="514.46265"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <g
+       id="g3280"
+       transform="matrix(1.25,0,0,1.25,2189.1714,35.376045)"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <text
+         sodipodi:linespacing="125%"
+         id="text4462"
+         y="583.46265"
+         x="-1170.8833"
+         style="font-size:40px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;filter:url(#filter14104);font-family:Overpass;-inkscape-font-specification:Overpass"
+         xml:space="preserve"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         inkscape:export-xdpi="90"
+         inkscape:export-ydpi="90"><tspan
+           style="font-size:24px;text-align:center;text-anchor:middle"
+           y="583.46265"
+           x="-1170.8833"
+           sodipodi:role="line"
+           id="tspan4466">MESSAGE</tspan><tspan
+           id="tspan4495"
+           style="font-size:24px;text-align:center;text-anchor:middle"
+           y="613.46265"
+           x="-1170.8833"
+           sodipodi:role="line">BROKER</tspan></text>
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         sodipodi:linespacing="125%"
+         id="text4468"
+         y="639.23108"
+         x="-1171.649"
+         style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         xml:space="preserve"><tspan
+           style="font-size:18px;text-align:center;text-anchor:middle;fill:#58595b"
+           y="639.23108"
+           x="-1171.649"
+           id="tspan4470"
+           sodipodi:role="line">Qpid or RabbitMQ</tspan></text>
+    </g>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 718.84984,1122.2572 c -460.4084,-87.6968 -460.4084,-87.6968 -460.4084,-87.6968"
+       id="path3769"
+       inkscape:connector-curvature="0"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="opacity:0;fill:#e6e6e6;fill-opacity:1;stroke-width:1.85000002;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect3806"
+       width="999.48615"
+       height="938.87213"
+       x="-88.215004"
+       y="342.14423"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="opacity:0;fill:#f2f2f2;fill-opacity:1;stroke-width:1.85000002;stroke-miterlimit:4;stroke-dasharray:none"
+       id="rect4858"
+       width="1036.8862"
+       height="958.21704"
+       x="-89.76664"
+       y="331.69592"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <g
+       transform="translate(1883.4124,300.74409)"
+       id="g6414"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <rect
+         style="color:#000000;fill:#c0dce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14072);enable-background:accumulate"
+         id="rect6332"
+         width="214"
+         height="92"
+         x="-1849.3883"
+         y="1102.8912"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         inkscape:export-xdpi="90"
+         inkscape:export-ydpi="90"
+         transform="matrix(1.2883521,0,0,1.25,466.97134,-1223.1255)" />
+      <g
+         transform="translate(0,2.0049321)"
+         id="g6372">
+        <text
+           inkscape:export-ydpi="90"
+           inkscape:export-xdpi="90"
+           inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+           sodipodi:linespacing="125%"
+           id="text6334"
+           y="202.9527"
+           x="-1779.3219"
+           style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+           xml:space="preserve"><tspan
+             style="font-size:30px;text-align:center;text-anchor:middle"
+             y="202.9527"
+             x="-1779.3219"
+             sodipodi:role="line"
+             id="tspan6336">TASK ASSIGNMENT</tspan></text>
+        <text
+           xml:space="preserve"
+           style="font-size:50px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+           x="-1779.3878"
+           y="235.84558"
+           id="text6338"
+           sodipodi:linespacing="125%"
+           inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+           inkscape:export-xdpi="90"
+           inkscape:export-ydpi="90"><tspan
+             sodipodi:role="line"
+             id="tspan6340"
+             x="-1779.3878"
+             y="235.84558"
+             style="font-size:22.5px;text-align:center;text-anchor:middle;fill:#58595b">pulp_resource_manager</tspan></text>
+      </g>
+    </g>
+    <rect
+       transform="matrix(1.25,0,0,1.25,2230.2558,-922.79749)"
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       y="1103.2241"
+       x="-1564.3649"
+       height="92"
+       width="214"
+       id="rect6346"
+       style="color:#000000;fill:#c0dce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080);enable-background:accumulate" />
+    <g
+       id="g6433"
+       transform="translate(1883.4124,303.36435)"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         xml:space="preserve"
+         style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         x="-1469.7069"
+         y="201.73853"
+         id="text6350"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           x="-1469.7069"
+           y="201.73853"
+           style="font-size:30px;text-align:center;text-anchor:middle"
+           id="tspan6352">WORKER MGMT</tspan></text>
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         sodipodi:linespacing="125%"
+         id="text6354"
+         y="235.8291"
+         x="-1467.1176"
+         style="font-size:50px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         xml:space="preserve"><tspan
+           style="font-size:22.5px;text-align:center;text-anchor:middle;fill:#58595b"
+           y="235.8291"
+           x="-1467.1176"
+           id="tspan6356"
+           sodipodi:role="line">pulp_celerybeat</tspan></text>
+    </g>
+    <rect
+       transform="matrix(1.25,0,0,1.25,2124.0451,-1185.0908)"
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       y="1327.5928"
+       x="-1219.6094"
+       height="92"
+       width="214"
+       id="rect6358"
+       style="color:#000000;fill:#c0dce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-3-0-3);enable-background:accumulate" />
+    <rect
+       transform="matrix(1.25,0,0,1.25,2124.0451,-1185.0908)"
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       y="1319.9543"
+       x="-1226.8038"
+       height="92"
+       width="214"
+       id="rect6360"
+       style="color:#000000;fill:#c0dce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-3-4);enable-background:accumulate" />
+    <rect
+       transform="matrix(1.25,0,0,1.25,2124.0451,-1185.0908)"
+       inkscape:export-ydpi="90"
+       inkscape:export-xdpi="90"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       y="1313.0587"
+       x="-1233.7332"
+       height="92"
+       width="214"
+       id="rect6362"
+       style="color:#000000;fill:#c0dce8;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:20;marker:none;visibility:visible;display:inline;overflow:visible;filter:url(#filter14080-0);enable-background:accumulate" />
+    <g
+       id="g6422"
+       transform="translate(1878.5203,301.3643)"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         xml:space="preserve"
+         style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         x="-1162.6279"
+         y="201.73853"
+         id="text6364"
+         sodipodi:linespacing="125%"><tspan
+           sodipodi:role="line"
+           x="-1162.6279"
+           y="201.73853"
+           style="font-size:30px;text-align:center;text-anchor:middle"
+           id="tspan6366">ASYNC WORKERS</tspan></text>
+      <text
+         inkscape:export-ydpi="90"
+         inkscape:export-xdpi="90"
+         inkscape:export-filename="/home/beav/Documents/inkscape/path12007.png"
+         sodipodi:linespacing="125%"
+         id="text6368"
+         y="235.8291"
+         x="-1160.0386"
+         style="font-size:50px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+         xml:space="preserve"><tspan
+           style="font-size:22.5px;text-align:center;text-anchor:middle;fill:#58595b"
+           y="235.8291"
+           x="-1160.0386"
+           id="tspan6370"
+           sodipodi:role="line">pulp_workers</tspan></text>
+    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text6350-6"
+       y="417.02164"
+       x="415.94077"
+       style="font-size:50px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;display:inline;font-family:Overpass;-inkscape-font-specification:Overpass"
+       xml:space="preserve"
+       inkscape:export-filename="/home/beav/Documents/inkscape/pulp-exp1.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90"><tspan
+         id="tspan6352-2"
+         style="font-size:30px;text-align:center;text-anchor:middle"
+         y="417.02164"
+         x="415.94077"
+         sodipodi:role="line">TASK PROCESSING TIER</tspan></text>
+  </g>
+</svg>
