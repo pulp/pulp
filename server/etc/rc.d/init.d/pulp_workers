@@ -249,12 +249,12 @@ dryrun () {
 
 
 stop_workers () {
-    _chuid stopwait $CELERYD_NODES --pidfile="$CELERYD_PID_FILE"
+    _chuid stopwait $CELERYD_NODES -QUIT --pidfile="$CELERYD_PID_FILE"
 }
 
 
 restart_workers () {
-    _chuid restart $CELERYD_NODES $DAEMON_OPTS      \
+    _chuid restart $CELERYD_NODES -QUIT $DAEMON_OPTS      \
                    --pidfile="$CELERYD_PID_FILE"    \
                    --logfile="$CELERYD_LOG_FILE"    \
                    --loglevel="$CELERYD_LOG_LEVEL"  \
