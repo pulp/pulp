@@ -18,7 +18,7 @@
 
 Name: pulp-nodes
 Version: 2.5.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.beta%{?dist}
 %define nondist_release %(echo %{release} | sed 's/%{?dist}//')
 Summary: Support for pulp nodes
 Group: Development/Languages
@@ -248,6 +248,9 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.2.beta
+- Pulp rebuild
+
 * Tue Sep 09 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.1.alpha
 - Pulp rebuild
 
