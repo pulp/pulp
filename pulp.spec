@@ -605,6 +605,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.4.beta
+- Pulp rebuild
+
 * Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.3.beta
 - Pulp rebuild
 
