@@ -29,13 +29,12 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.2.beta%{?dist}
-%define nondist_release %(echo %{release} | sed 's/%{?dist}//')
+Release: 0.4.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}-%{nondist_release}.tar.gz
+Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}-1.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
@@ -607,6 +606,12 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.4.beta
+- Pulp rebuild
+
+* Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.3.beta
+- Pulp rebuild
+
 * Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.2.beta
 - 1146680 - Stop pulp_workers services with SIGQUIT. (rbarlow@redhat.com)
 - 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
