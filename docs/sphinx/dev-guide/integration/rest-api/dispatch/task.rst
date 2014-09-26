@@ -27,7 +27,7 @@ task.
 * **finish_time** *(null or string)* - the time the call stopped executing
 * **tags** *(array)* - arbitrary tags useful for looking up the call report
 * **spawned_tasks** *(array)* - List of objects containing the uri and task id for any tasks that were spawned by this task.
-* **queue** *(string)* - The queue that the task is placed in
+* **worker_name** *(string)* - The worker associated with the task
 * **error** *(null or object)* - Any, errors that occurred that did not cause the overall call to fail.  See :ref:`error_details`.
 
 .. note::
@@ -39,7 +39,7 @@ Example Task Report::
  {
   "_href": "/pulp/api/v2/tasks/0fe4fcab-a040-11e1-a71c-00508d977dff/",
   "state": "running",
-  "queue": "reserved_resource_worker-0@your.domain.com",
+  "worker_name": "reserved_resource_worker-0@your.domain.com",
   "task_id": "0fe4fcab-a040-11e1-a71c-00508d977dff",
   "task_type": "pulp.server.tasks.repository.sync_with_auto_publish",
   "progress_report": {}, # contents depend on the operation

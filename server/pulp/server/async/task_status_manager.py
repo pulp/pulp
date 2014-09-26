@@ -26,14 +26,14 @@ class TaskStatusManager(object):
     """
 
     @staticmethod
-    def create_task_status(task_id, queue, tags=None, state=None):
+    def create_task_status(task_id, worker_name=None, tags=None, state=None):
         """
         Creates a new task status for given task_id.
 
         :param task_id:           identity of the task this status corresponds to
         :type  task_id:           basestring
-        :param queue:             The name of the queue that the Task is in
-        :type  queue:             basestring
+        :param worker_name:       The name of the worker that the Task is in
+        :type  worker_name:       basestring
         :param tags:              custom tags on the task
         :type  tags:              list of basestrings or None
         :param state:             state of callable in its lifecycle
@@ -46,8 +46,8 @@ class TaskStatusManager(object):
         invalid_values = []
         if task_id is None:
             invalid_values.append('task_id')
-        if queue is None:
-            invalid_values.append('queue')
+        if worker_name is not None and not isinstance(worker_name, basestring):
+            invalid_values.append('worker_name')
         if tags is not None and not isinstance(tags, list):
             invalid_values.append('tags')
         if state is not None and not isinstance(state, basestring):
@@ -58,7 +58,7 @@ class TaskStatusManager(object):
         if not state:
             state = constants.CALL_WAITING_STATE
 
-        task_status = TaskStatus(task_id=task_id, queue=queue, tags=tags, state=state)
+        task_status = TaskStatus(task_id=task_id, worker_name=worker_name, tags=tags, state=state)
         try:
             TaskStatus.get_collection().save(task_status, safe=True)
         except DuplicateKeyError:
