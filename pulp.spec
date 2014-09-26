@@ -605,6 +605,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.3.beta
+- Pulp rebuild
+
 * Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.2.beta
 - 1146680 - Stop pulp_workers services with SIGQUIT. (rbarlow@redhat.com)
 - 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
