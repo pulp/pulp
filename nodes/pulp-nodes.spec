@@ -23,7 +23,7 @@ Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://github.com/pulp/pulp/archive/pulp-%{version}-1.tar.gz
+Source0: https://github.com/pulp/pulp/archive/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:noarch
 BuildRequires: python2-devel
