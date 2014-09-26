@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.15
-Release:        12.pulp%{?dist}
+Release:        13.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -173,6 +173,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Sep 19 2014 Chris Duryee <cduryee@redhat.com> 3.0.15-13.pulp
+- 1124589 - python-kombu does not work with Qpid unless the user adjusts
+  qpidd.conf (cduryee@redhat.com)
+
 * Tue Aug 05 2014 Brian Bouterse <bmbouter@gmail.com> 3.0.15-12.pulp
 - Adds qpid-tools as a build dep for all environments. (bmbouter@gmail.com)
 

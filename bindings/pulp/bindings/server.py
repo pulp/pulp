@@ -18,7 +18,7 @@ from pulp.common.compat import json
 from pulp.common.util import ensure_utf_8, encode_unicode
 
 
-DEFAULT_CA_PATH = '/etc/pki/tls/certs/'
+DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
 
 
 class PulpConnection(object):

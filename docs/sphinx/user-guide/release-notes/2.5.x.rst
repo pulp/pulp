@@ -5,6 +5,15 @@ Pulp 2.5 Release Notes
 Pulp 2.5.1
 ===========
 
+New Features
+------------
+
+- Pulp no longer requires additional configuration of Qpid after installation.
+  It now works with the ANONYMOUS authentication mechanism. Users can still use a
+  username/password however if they set up a SASL database as described in the
+  installation document.
+
+
 Rest API Changes
 ----------------
 
