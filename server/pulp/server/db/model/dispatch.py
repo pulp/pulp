@@ -526,8 +526,8 @@ class TaskStatus(Model, ReaperMixin):
     :type start_time:  datetime.datetime
     :ivar finish_time: time the task completed
     :type finish_time: datetime.datetime
-    :ivar queue:       The queue that the Task was queued in
-    :type queue:       basestring
+    :ivar worker_name: The name of the worker that the Task is in
+    :type worker_name: basestring
     :ivar error: Any errors or collections of errors that occurred while this task was running
     :type error: dict (created from a PulpException)
     :ivar spawned_tasks: List of tasks that were spawned during the running of this task
@@ -541,16 +541,16 @@ class TaskStatus(Model, ReaperMixin):
     search_indices = ('task_id', 'tags', 'state')
 
     def __init__(
-            self, task_id, queue=None, tags=None, state=None, error=None, spawned_tasks=None,
+            self, task_id, worker_name=None, tags=None, state=None, error=None, spawned_tasks=None,
             progress_report=None, task_type=None, start_time=None, finish_time=None, result=None):
         """
         Initialize the TaskStatus based on the provided attributes. All parameters besides task_id
-        and queue are optional.
+        are optional.
 
         :param task_id:         identity of the task this status corresponds to
         :type  task_id:         basestring
-        :param queue:           The queue that the Task was queued in
-        :type  queue:           basestring
+        :param worker_name:     The name of the worker that the Task is in
+        :type  worker_name:     basestring
         :param tags:            custom tags on the task
         :type  tags:            list
         :param state:           state of callable in its lifecycle
@@ -576,7 +576,7 @@ class TaskStatus(Model, ReaperMixin):
         self.task_id = task_id
         self.task_type = task_type
         self.state = state
-        self.queue = queue
+        self.worker_name = worker_name
         self.tags = tags or []
         self.start_time = start_time
         self.finish_time = finish_time
