@@ -93,6 +93,8 @@ class TaskResource(JSONController):
             link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
             task.update(link)
             task.update(serialization.dispatch.spawned_tasks(task))
+            if 'worker_name' in task:
+                task.update({'queue': task['worker_name']})
             return self.ok(task)
 
     @auth_required(authorization.DELETE)

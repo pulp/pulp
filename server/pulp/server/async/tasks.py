@@ -119,7 +119,7 @@ def _delete_worker(name, normal_shutdown=False):
     worker = Worker.from_bson({'_id': name})
     for task in TaskStatusManager.find_by_criteria(
             Criteria(
-                filters={'queue': worker.queue_name,
+                filters={'worker_name': worker.name,
                          'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
         cancel(task['task_id'])
 
@@ -283,14 +283,9 @@ class Task(CeleryTask, ReservedTaskMixin):
         :return:            An AsyncResult instance as returned by Celery's apply_async
         :rtype:             celery.result.AsyncResult
         """
-        queue = kwargs.get('queue', defaults.NAMESPACES['CELERY']['DEFAULT_QUEUE'].default)
+        routing_key = kwargs.get('routing_key',
+                                 defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
         tags = kwargs.pop('tags', [])
-
-        ### This is a temporary workaround for https://github.com/celery/celery/issues/2216 ###
-        queue_name_to_save = queue
-        if kwargs.get('exchange', None) == DEDICATED_QUEUE_EXCHANGE:
-            kwargs['queue'] = queue.rstrip('.dq')
-        #######################################################################################
 
         async_result = super(Task, self).apply_async(*args, **kwargs)
         async_result.tags = tags
@@ -298,7 +293,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         # Create a new task status with the task id and tags.
         task_status = TaskStatus(
             task_id=async_result.id, task_type=self.name,
-            state=constants.CALL_WAITING_STATE, queue=queue_name_to_save, tags=tags)
+            state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tags)
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
