@@ -29,12 +29,12 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.4.beta%{?dist}
+Release: 0.5.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}-1.tar.gz
+Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
@@ -606,6 +606,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.5.beta
+- Pulp rebuild
+
 * Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.4.beta
 - Pulp rebuild
 
