@@ -8,8 +8,9 @@ Pulp 2.5.1
 Rest API Changes
 ----------------
 
-* The `Task Report` attribute `queue` is duplicated as the attribute `worker_name`. The `queue`
-  attribute will be removed from the `Task Report` in Pulp 3.0.0.
+* The `Task Report` attribute `queue` is duplicated as the attribute `worker_name`. This is a
+  backwards compatible change. The `queue` attribute will be removed from the `Task Report` in
+  Pulp 3.0.0.
 
 .. _2.5.0_upgrade_to_2.5.1:
 
