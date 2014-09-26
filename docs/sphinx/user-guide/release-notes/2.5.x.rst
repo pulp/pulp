@@ -2,6 +2,44 @@
 Pulp 2.5 Release Notes
 =========================
 
+Pulp 2.5.1
+===========
+
+Rest API Changes
+----------------
+
+* The `Task Report` attribute `queue` is duplicated as the attribute `worker_name`. The `queue`
+  attribute will be removed from the `Task Report` in Pulp 3.0.0.
+
+.. _2.5.0_upgrade_to_2.5.1:
+
+Upgrade Instructions for 2.5.0 --> 2.5.1
+-----------------------------------------
+
+Prior to upgrading, all tasks must be stopped. One way to accomplish this is to stop all
+`pulp_workers`, `pulp_celerybeat`, and `pulp_resource_manager` processes and then list the current
+tasks using:
+
+::
+
+    pulp-admin tasks list
+
+Any task that is in the "Running" or "Waiting" state should be canceled by its <uuid> using:
+
+::
+
+    pulp-admin tasks cancel --task-id <uuid>
+
+After all tasks have been canceled upgrade the packages using:
+
+::
+
+    sudo yum update
+
+After yum completes you should restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
+`pulp_resource_manager`.
+
+
 Pulp 2.5.0
 ===========
 
