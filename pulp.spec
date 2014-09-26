@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.beta%{?dist}
 %define nondist_release %(echo %{release} | sed 's/%{?dist}//')
 Summary: An application for managing software content
 Group: Development/Languages
@@ -607,6 +607,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.2.beta
+- 1146680 - Stop pulp_workers services with SIGQUIT. (rbarlow@redhat.com)
+- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
+
 * Tue Sep 23 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
 - 1136883 - Fixed incorrect tags for applicability in the docs
   (jcline@redhat.com)
