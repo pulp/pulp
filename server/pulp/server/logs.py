@@ -41,14 +41,6 @@ def _blacklist_loggers():
         logger.propagate = False
 
 
-def _log_id():
-    """
-    Return a id for a log. Not guaranteed to be unique because threads can be
-    recycled, but it can be used to track a single multi line message.
-    """
-    return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(thread.get_ident())[-5:])
-
-
 @setup_logging.connect
 def start_logging(*args, **kwargs):
     """
@@ -115,6 +107,14 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
     """
     MAX_MSG_LENGTH = 2041
 
+    @staticmethod
+    def _log_id():
+        """
+        Return a id for a log. Not guaranteed to be unique because threads can be
+        recycled, but it can be used to track a single multi line message.
+        """
+        return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(thread.get_ident())[-5:])
+
     def emit(self, record):
         """
         This gets called whenever a log message needs to get sent to the syslog. This method will
@@ -134,8 +134,8 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
             record.exc_info = None
         formatter_buffer = self._calculate_formatter_buffer(record)
 
-        if len(record.getMessage().split('\n')) > 1:
-            msg_id = _log_id()
+        if '\n' in record.getMessage():
+            msg_id = CompliantSysLogHandler._log_id()
         else:
             msg_id = ""
 
@@ -207,7 +207,7 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
 
             # Message is longer than allowed length
             if len(message) > i + relative_ending_index:
-                msg_id = _log_id()
+                msg_id = CompliantSysLogHandler._log_id()
 
                 # Since the remaining message is too long, the correct length of
                 # the line is the maximum length - whatever we are prepending.

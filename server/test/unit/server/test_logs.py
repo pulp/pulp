@@ -129,7 +129,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         msg = u'Please do not cut ☃ in half.'
 
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-TID-"
 
             # This one cuts exactly before the snowman starts, so it's OK.
@@ -182,7 +182,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         long_string = 'This string is too long with the formatter.'
 
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-TID-"
 
             # Let's suppose that we have a 6 character formatter of "pulp: %(message)s"
@@ -211,7 +211,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         msg = "This message needs cutting, because it's longer than 5 characters."
 
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, ""))
@@ -240,7 +240,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         msg = "The first line ends right on the limit and second line only overflows if prepended"
 
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, ""))
@@ -290,7 +290,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         # This format string will add 29 characters to each message, which will push our message
         # over the limit by one character.
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -330,7 +330,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
     def test_emit_prepends_pid_if_newlines(self, super_emit):
         """Test emit() with a message that contains newlines."""
 
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-TID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -353,7 +353,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
     def test_emit_prepends_pid_if_too_long(self, super_emit):
         """Test emit() with a message that is longer than the maximum allowable length."""
 
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-TID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -397,7 +397,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         Make sure that if there are newline characers and the message is too long
         the msg_id is not prepended twice.
         """
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -423,7 +423,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         # This format string will add 29 characters to each message, which will push our message
         # over the limit by one character.
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -465,7 +465,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         Test emit() with a message that contains newlines.
         """
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -503,7 +503,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         Make sure emit() handles tracebacks appropriately.
         """
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -557,7 +557,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         Make sure emit() handles tracebacks appropriately.
         """
-        with mock.patch('pulp.server.logs._log_id') as _log_id:
+        with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
 
             format_string = 'pulp: %(name)s:%(levelname)s: %(message)s'
@@ -665,7 +665,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         # checked against once.
         msg_id_dict = {}
         # not a constant because PID is variable length
-        prepend_length = len(logs._log_id())
+        prepend_length = len(logs.CompliantSysLogHandler._log_id())
         check_same = 0
         for msg in messages:
             # The first character of the first line of a message after the
