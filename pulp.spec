@@ -29,8 +29,8 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.3.beta%{?dist}
-%define nondist_release %(if [ -n %{?dist} ]; then echo %{release} | sed 's/%{?dist}//'; fi;)
+%define nondist_release 0.4.beta
+Release: %{nondist_release}%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
