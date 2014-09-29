@@ -1,3 +1,5 @@
+import os
+import errno
 import itertools
 
 
@@ -27,3 +29,18 @@ def paginate(iterable, page_size=DEFAULT_PAGE_SIZE):
         if not page:
             return
         yield page
+
+
+def mkdir(path):
+    """
+    Create the specified directory.
+    Tolerant of race conditions.
+
+    :param path: The absolute path to the directory.
+    :type path: str
+    """
+    try:
+        os.makedirs(path)
+    except OSError, e:
+        if e.errno != errno.EEXIST:
+            raise
