@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import web
 
 from pulp.server.async import tasks
@@ -5,6 +7,7 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth.authorization import READ
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
@@ -94,7 +97,8 @@ class TaskResource(JSONController):
             task.update(link)
             task.update(serialization.dispatch.spawned_tasks(task))
             if 'worker_name' in task:
-                task.update({'queue': task['worker_name']})
+                queue_name = Worker(task['worker_name'], datetime.now()).queue_name
+                task.update({'queue': queue_name})
             return self.ok(task)
 
     @auth_required(authorization.DELETE)

@@ -83,6 +83,16 @@ class TestTaskResource(PulpWebservicesTests):
         self.assertEqual(revoke.call_count, 1)
         revoke.assert_called_once_with(task_id, terminate=True)
 
+    def test_GET_has_correct_queue_attribute(self):
+        task_id = '1234abcd'
+        TaskStatusManager.create_task_status(task_id, worker_name='worker1')
+
+        result = self.task_resource.GET(task_id)
+
+        result_json = json.loads(result)
+        self.assertTrue('queue' in result_json)
+        self.assertTrue(result_json['queue'] == 'worker1.dq')
+
 
 class TestTaskCollection(base.PulpWebserviceTests):
     """
