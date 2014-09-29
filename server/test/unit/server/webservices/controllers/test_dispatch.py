@@ -93,6 +93,26 @@ class TestTaskResource(PulpWebservicesTests):
         self.assertTrue('queue' in result_json)
         self.assertTrue(result_json['queue'] == 'worker1.dq')
 
+    def test_GET_has_correct_worker_name_attribute(self):
+        task_id = '1234abcd'
+        TaskStatusManager.create_task_status(task_id, worker_name='worker1')
+
+        result = self.task_resource.GET(task_id)
+
+        result_json = json.loads(result)
+        self.assertTrue('worker_name' in result_json)
+        self.assertTrue(result_json['worker_name'] == 'worker1')
+
+    def test_GET_has_correct_task_id_attribute(self):
+        task_id = '1234abcd'
+        TaskStatusManager.create_task_status(task_id, worker_name='worker1')
+
+        result = self.task_resource.GET(task_id)
+
+        result_json = json.loads(result)
+        self.assertTrue('task_id' in result_json)
+        self.assertTrue(result_json['task_id'] == task_id)
+
 
 class TestTaskCollection(base.PulpWebserviceTests):
     """
