@@ -472,3 +472,16 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual(self.recorder.lines[0], 'abcdef  ABCDEF\n')
         self.assertEqual(self.recorder.lines[1], 'xyz     XYZ\n')
 
+    def test_summary_when_empty(self):
+        # Test that summmary is an empty list when there are no repositories
+        data = {
+            'summary': True,
+            'details': False,
+        }
+
+        self.command.get_repositories = mock.MagicMock()
+        self.command.get_repositories.return_value = []
+
+        self.command.run(**data)
+        self.assertEqual(self.command.get_repositories.call_count, 1)
+        self.assertEqual(len(self.recorder.lines), 0)
