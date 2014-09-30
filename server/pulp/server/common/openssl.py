@@ -66,12 +66,6 @@ class Certificate(object):
             return True
         finally:
             # Make sure we always clean up
-            self.__del__()
-
-    def __del__(self):
-        """
-        Remove the temporary files if they still exist.
-        """
-        if self._tempdir:
-            shutil.rmtree(self._tempdir)
-            self._tempdir = None
+            if self._tempdir:
+                shutil.rmtree(self._tempdir)
+                self._tempdir = None
