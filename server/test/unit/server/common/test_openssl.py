@@ -25,11 +25,11 @@ class TestCertificate(unittest.TestCase):
         self.assertEqual(cert._cert, cert_data)
         self.assertEqual(cert._tempdir, None)
 
-    @mock.patch('pulp.server.common.openssl.Certificate.__del__')
+    @mock.patch('shutil.rmtree')
     @mock.patch('pulp.server.common.openssl.subprocess.check_call')
     @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
     @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
-    def test_verify_cert_expired(self, NamedTemporaryFile, mkdtemp, check_call, __del__):
+    def test_verify_cert_expired(self, NamedTemporaryFile, mkdtemp, check_call, mock_rmtree):
         """
         Ensure that verify() returns False when the certificate is expired.
         """
@@ -65,13 +65,13 @@ class TestCertificate(unittest.TestCase):
         check_call.assert_called_once_with(expected_args, stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
         # Cleanup should have happened
-        __del__.assert_called_once_with()
+        mock_rmtree.assert_called_once_with(a_tempdir)
 
-    @mock.patch('pulp.server.common.openssl.Certificate.__del__')
+    @mock.patch('shutil.rmtree')
     @mock.patch('pulp.server.common.openssl.subprocess.check_call')
     @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
     @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
-    def test_verify_signature_invalid(self, NamedTemporaryFile, mkdtemp, check_call, __del__):
+    def test_verify_signature_invalid(self, NamedTemporaryFile, mkdtemp, check_call, mock_rmtree):
         """
         Ensure that verify() returns False when the signature is invalid.
         """
@@ -145,13 +145,13 @@ class TestCertificate(unittest.TestCase):
         self.assertEqual(check_call.mock_calls[1][2],
                          {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE})
         # Cleanup should have happened
-        __del__.assert_called_once_with()
+        mock_rmtree.assert_called_once_with(a_tempdir)
 
-    @mock.patch('pulp.server.common.openssl.Certificate.__del__')
+    @mock.patch('shutil.rmtree')
     @mock.patch('pulp.server.common.openssl.subprocess.check_call')
     @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
     @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
-    def test_verify_valid(self, NamedTemporaryFile, mkdtemp, check_call, __del__):
+    def test_verify_valid(self, NamedTemporaryFile, mkdtemp, check_call, mock_rmtree):
         """
         Ensure that verify() returns True when the client certificate is legitimate.
         """
@@ -210,32 +210,4 @@ class TestCertificate(unittest.TestCase):
         self.assertEqual(check_call.mock_calls[1][2],
                          {'stdout': subprocess.PIPE, 'stderr': subprocess.PIPE})
         # Cleanup should have happened
-        __del__.assert_called_once_with()
-
-    @mock.patch('pulp.server.common.openssl.shutil.rmtree')
-    def test___del___tempdir_none(self, rmtree):
-        """
-        Test __del__() when the Certificate's _tempdir attribute is None.
-        """
-        cert = openssl.Certificate('some cert')
-
-        del cert
-
-        # rmtree should not be called since there's nothing to clean up
-        self.assertEqual(rmtree.call_count, 0)
-
-    @mock.patch('pulp.server.common.openssl.shutil.rmtree')
-    def test___del___tempdir_set(self, rmtree):
-        """
-        Test __del__() when the Certificate's _tempdir attribute is None.
-        """
-        a_dir = '/tmp/some/dir/'
-        cert = openssl.Certificate('some cert')
-        cert._tempdir = a_dir
-
-        # We will call __del__() explicitly so that cert doesn't get unbound. This way we can also
-        # assert that cert._tempdir gets set back to None.
-        cert.__del__()
-
-        rmtree.assert_called_once_with(a_dir)
-        self.assertEqual(cert._tempdir, None)
+        mock_rmtree.assert_called_once_with(a_tempdir)
