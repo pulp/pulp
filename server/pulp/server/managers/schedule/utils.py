@@ -14,10 +14,12 @@
 from gettext import gettext as _
 import itertools
 import logging
+import pickle
 import time
 
 from bson import ObjectId
 from bson.errors import InvalidId
+from celery.schedules import schedule as CelerySchedule
 import isodate
 
 from pulp.common import dateutils
@@ -140,6 +142,12 @@ def update(schedule_id, delta):
         raise exceptions.UnsupportedValue(list(unknown_keys))
 
     delta['last_updated'] = time.time()
+
+
+    # bz 1139703 - if we update iso_schedule, update the pickled object as well
+    if delta.has_key('iso_schedule'):
+        interval, start_time, occurrences = dateutils.parse_iso8601_interval(delta['iso_schedule'])
+        delta['schedule'] = pickle.dumps(CelerySchedule(interval))
 
     try:
         spec = {'_id': ObjectId(schedule_id)}
