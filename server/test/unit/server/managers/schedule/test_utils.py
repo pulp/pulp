@@ -234,8 +234,9 @@ class TestDeleteByResource(unittest.TestCase):
 class TestUpdate(unittest.TestCase):
     schedule_id = str(ObjectId())
 
+    @mock.patch('pickle.dumps')
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
-    def test_update(self, mock_get):
+    def test_update(self, mock_get, mock_pickle):
         mock_find = mock_get.return_value.find_and_modify
         mock_find.return_value = SCHEDULES[0]
 
@@ -245,6 +246,31 @@ class TestUpdate(unittest.TestCase):
         self.assertEqual(len(mock_find.call_args[0]), 0)
         self.assertEqual(mock_find.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
         self.assertTrue(mock_find.call_args[1]['update']['$set']['enabled'] is True)
+        last_updated = mock_find.call_args[1]['update']['$set']['last_updated']
+        # make sure the last_updated value is within the last tenth of a second
+        self.assertTrue(time.time() - last_updated < .1)
+        # make sure it asks for the new version of the schedule to be returned
+        self.assertTrue(mock_find.call_args[1]['new'] is True)
+
+        self.assertTrue(isinstance(ret, ScheduledCall))
+        self.assertEqual(mock_pickle.call_args_list, [])
+
+    @mock.patch('pickle.dumps')
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_update_iso_schedule(self, mock_get, mock_pickle):
+        mock_find = mock_get.return_value.find_and_modify
+        mock_find.return_value = SCHEDULES[0]
+        mock_pickle.return_value = "NEW_SCHEDULE"
+
+        new_iso_sched = '2014-08-27T00:38:00Z/PT24H'
+
+        ret = utils.update(self.schedule_id, {'iso_schedule': new_iso_sched})
+
+        self.assertEqual(mock_find.call_count, 1)
+        self.assertEqual(len(mock_find.call_args[0]), 0)
+        self.assertEqual(mock_find.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
+        self.assertTrue(mock_find.call_args[1]['update']['$set']['iso_schedule'] == new_iso_sched)
+        self.assertTrue(mock_find.call_args[1]['update']['$set']['schedule'] == "NEW_SCHEDULE")
         last_updated = mock_find.call_args[1]['update']['$set']['last_updated']
         # make sure the last_updated value is within the last tenth of a second
         self.assertTrue(time.time() - last_updated < .1)
