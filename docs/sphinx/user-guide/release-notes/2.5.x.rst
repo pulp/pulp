@@ -9,7 +9,15 @@ New Features
 ------------
 
 - pulp-admin now has a bash tab completion script.
-- A new selinux policy that confines the pulp_workers, pulp_celerybeat, and pulp_resource_manager
+
+- A new selinux policy that confines the pulp_workers, pulp_celerybeat, and
+  pulp_resource_manager
+
+- Pulp 2.5.0 includes `pulp_docker`, an optional plugin to manage Docker
+  repositories. In Pulp 2.5.0 this optional plugin is considered "tech preview"
+  and did not undergo the same level of testing as other plugins. Please
+  refer to the `pulp_docker documentation <https://github.com/pulp/pulp_docker/tree/master/docs/user-guide>`_
+  for usage information.
 
 Deprecation
 -----------
