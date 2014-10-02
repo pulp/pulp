@@ -78,10 +78,11 @@ corenet_tcp_connect_smtp_port(celery_t)
 
 ######################################
 #
-# I'm not sure that this rule is needed or why on EL7 anymore
+# rpm_exec is needed with the startup of pulp_workers and pulp_resource_manager on systemd based
+# systems
 #
 
-ifdef(`distro_rhel7', `
+ifndef(`distro_rhel6', `
     rpm_exec(celery_t)
 ')
 
