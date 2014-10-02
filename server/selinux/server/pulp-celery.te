@@ -71,6 +71,13 @@ sysnet_read_config(celery_t)
 
 ######################################
 #
+# corenet_tcp_connect_smtp_port is needed for Email Notifier to send event info via SMTP
+#
+
+corenet_tcp_connect_smtp_port(celery_t)
+
+######################################
+#
 # rpm_exec is needed with the startup of pulp_workers and pulp_resource_manager on systemd based
 # systems
 #
