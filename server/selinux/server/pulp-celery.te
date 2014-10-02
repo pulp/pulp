@@ -71,6 +71,13 @@ sysnet_read_config(celery_t)
 
 ######################################
 #
+# corenet_tcp_connect_smtp_port is needed for Email Notifier to send event info via SMTP
+#
+
+corenet_tcp_connect_smtp_port(celery_t)
+
+######################################
+#
 # I'm not sure that this rule is needed or why on EL7 anymore
 #
 
