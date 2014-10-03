@@ -36,19 +36,16 @@ from pulp.server.webservices.middleware.postponed import PostponedOperationMiddl
 
 SerialNumber.PATH = '/tmp/sn.dat'
 
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../data/'))
 
 def load_test_config():
     if not os.path.exists('/tmp/pulp'):
         os.makedirs('/tmp/pulp')
 
-    override_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data',
-                                 'test-override-pulp.conf')
-    override_repo_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data',
-                                      'test-override-repoauth.conf')
+    override_file = os.path.join(DATA_DIR, 'test-override-pulp.conf')
     stop_logging()
     try:
         config.add_config_file(override_file)
-        config.add_config_file(override_repo_file)
     except RuntimeError:
         pass
     start_logging()

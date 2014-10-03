@@ -83,17 +83,13 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
 
         # If username & password have been specified in the database config,
         # attempt to authenticate to the database
-        if config.config.has_option('database', 'username') and \
-                config.config.has_option('database', 'password'):
-            username = config.config.get('database', 'username')
-            password = config.config.get('database', 'password')
+        username = config.config.get('database', 'username')
+        password = config.config.get('database', 'password')
+        if username and password:
             _log.debug('Database authentication enabled, attempting username/password'
                        ' authentication.')
             _DATABASE.authenticate(username, password)
-        elif ((config.config.has_option('database', 'username') and
-               not config.config.has_option('database', 'password')) or
-              (not config.config.has_option('database', 'username') and
-               config.config.has_option('database', 'password'))):
+        elif (username and not password) or (password and not username):
             raise Exception("The server config specified username/password authentication but "
                             "is missing either the username or the password")
 
