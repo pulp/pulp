@@ -43,11 +43,9 @@ def load_test_config():
         os.makedirs('/tmp/pulp')
 
     override_file = os.path.join(DATA_DIR, 'test-override-pulp.conf')
-    #override_repo_file = os.path.join(DATA_DIR, 'test-override-repoauth.conf')
     stop_logging()
     try:
         config.add_config_file(override_file)
-        #config.add_config_file(override_repo_file)
     except RuntimeError:
         pass
     start_logging()
