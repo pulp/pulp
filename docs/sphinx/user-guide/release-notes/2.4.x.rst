@@ -372,7 +372,8 @@ Here are other APIs that have changed, arranged by path:
 
 ``/v2/catalog/<source_id>/``
 
-    This is a new API.
+    This is a new API. See the `developer documentation <http://pulp-dev-guide.readthedocs.org/en/pulp-2.4/integration/rest-api/content/catalog.html>`_
+    for more detail.
 
 ``/v2/consumers/<consumer_id>/actions/content/regenerate_applicability/``
     The original applicability generation API did not allow a consumer to request regeneration of its
