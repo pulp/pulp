@@ -241,7 +241,7 @@ class ExceptionHandler:
         :return: appropriate exit code for this error
         """
 
-        self._log_client_exception(e)
+        self._log_client_error(e)
 
         msg = _('The specified user does not have permission to execute '
                 'the given command')
@@ -455,6 +455,13 @@ class ExceptionHandler:
                 'd' : e.extra_data}
 
         _logger.error(template % data)
+
+    def _log_client_error(self, e):
+        """
+        Logs a client-side error to the log.
+        :param e: Error to be logged.
+        """
+        _logger.error(e)
 
     def _log_client_exception(self, e):
         """
