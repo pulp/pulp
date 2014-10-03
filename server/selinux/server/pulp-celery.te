@@ -6,17 +6,26 @@ type celery_exec_t;
 init_daemon_domain(celery_t, celery_exec_t)
 
 require {
-        type var_run_t;
         type celery_t;
         type pulp_cert_t;
+        type puppet_etc_t;
+        type var_run_t;
+        class dir { getattr search write remove_name create add_name rmdir };
+        class file { lock rename write setattr getattr read create unlink open };
         class process { setsched signal signull };
         class tcp_socket { getopt create connect setopt getattr write read };
-        class file { lock rename write setattr getattr read create unlink open };
+        class lnk_file { create };
         class netlink_route_socket { bind create getattr nlmsg_read write read };
-        class unix_dgram_socket { create connect };
         class udp_socket { ioctl create getattr connect write read };
-        class dir { getattr search write remove_name create add_name rmdir };
+        class unix_dgram_socket { create connect };
 }
+
+## <desc>
+## <p>
+## Allow pulp to manage puppet content, defaulting to false.
+## </p>
+## </desc>
+gen_tunable(pulp_manage_puppet, false)
 
 #============= celery_t ==============
 allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
@@ -75,6 +84,19 @@ sysnet_read_config(celery_t)
 #
 
 corenet_tcp_connect_smtp_port(celery_t)
+
+######################################
+#
+# Add an sebool that will enable Pulp to manage puppet_etc_t directories and files.
+#
+
+optional_policy(`
+    tunable_policy(`pulp_manage_puppet', `
+        allow celery_t puppet_etc_t:lnk_file create;
+        manage_dirs_pattern(celery_t, puppet_etc_t, puppet_etc_t)
+        manage_files_pattern(celery_t, puppet_etc_t, puppet_etc_t)
+    ')
+')
 
 ######################################
 #

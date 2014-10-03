@@ -2,17 +2,9 @@
 # replaced with the version in the spec file
 policy_module(pulp-server, 0.0.0)
 
-## <desc>
-## <p>
-## Allow pulp to manage puppet content
-## </p>
-## </desc>
-gen_tunable(pulp_manage_puppet, false)
-
 require {
     type httpd_t;
     type rpm_var_lib_t;
-    type puppet_etc_t;
 }
 
 type pulp_cert_t;
@@ -20,13 +12,6 @@ miscfiles_cert_type(pulp_cert_t)
 manage_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
 manage_dirs_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
 read_lnk_files_pattern(httpd_t, pulp_cert_t, pulp_cert_t)
-
-optional_policy(`
-    tunable_policy(`pulp_manage_puppet', `
-        manage_dirs_pattern(httpd_t, puppet_etc_t, puppet_etc_t)
-        manage_files_pattern(httpd_t, puppet_etc_t, puppet_etc_t)
-    ')
-')
 
 #https://bugzilla.redhat.com/show_bug.cgi?id=784280#c2
 dontaudit httpd_t rpm_var_lib_t:dir { getattr search open };
