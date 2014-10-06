@@ -42,7 +42,7 @@ class AdminExceptionHandler(ExceptionHandler):
         :return: appropriate exit code for this error
         """
 
-        self._log_client_exception(e)
+        self._log_client_error(e)
 
         handlers = {
             auth_utils.CODE_FAILED : self._handle_authentication_failed,

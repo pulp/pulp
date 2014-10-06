@@ -24,14 +24,13 @@ class ConsumerExceptionHandler(ExceptionHandler):
         the displayed error message to that behavior.
         """
 
-        self._log_client_exception(e)
-
         msg = _('Authentication Failed')
 
         desc = _('A valid Pulp user is required to register a new consumer. '
                  'Please double check the username and password and attempt the '
                  'request again.')
 
+        self._log_client_error("%(msg)s - %(desc)s" % {'msg': msg, 'desc': desc})
         self.prompt.render_failure_message(msg)
         self.prompt.render_paragraph(desc)
 
