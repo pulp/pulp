@@ -89,7 +89,6 @@ class PluginCallConfiguration:
         @type  default: object
 
         @return: value for the configuration key
-        @rtype:  object
         """
 
         # Find the first config (ordered by priority) where the key is present

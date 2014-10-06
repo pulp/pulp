@@ -1,5 +1,8 @@
 import inspect
 import unittest
+import errno
+
+from mock import patch
 
 from pulp.plugins.util import misc
 
@@ -73,3 +76,26 @@ class TestPaginate(unittest.TestCase):
         pieces = list(ret)
 
         self.assertEqual(pieces, [tuple(range(10))])
+
+
+class TestMkdir(unittest.TestCase):
+
+    @patch('os.makedirs')
+    def test_succeeded(self, fake_mkdir):
+        path = 'path-123'
+        misc.mkdir(path)
+        fake_mkdir.assert_called_once_with(path)
+
+    @patch('os.makedirs')
+    def test_already_exists(self, fake_mkdir):
+        path = 'path-123'
+        misc.mkdir(path)
+        fake_mkdir.assert_called_once_with(path)
+        fake_mkdir.side_effect = OSError(errno.EEXIST, path)
+
+    @patch('os.makedirs')
+    def test_other_exception(self, fake_mkdir):
+        path = 'path-123'
+        misc.mkdir(path)
+        fake_mkdir.side_effect = OSError(errno.EPERM, path)
+        self.assertRaises(OSError, misc.mkdir, path)
