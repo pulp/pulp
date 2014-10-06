@@ -13,17 +13,17 @@ Pulp uses one Koji tag per Pulp release stream, per distribution, per architectu
 release streams per release, corresponding to development, testing, and production. In Koji, these
 three concepts map to "testing", "beta", and "" (empty string) in our tag names respectively.
 
-This table maps the git branches to their appropriate Koji tags::
+This table maps the git branches to their appropriate Koji tags:
 
-    +---------------+-----------------------------------+
-    | Git Branch    | Koji Tag per <distribution>       |
-    +===============+===================================+
-    | <X.Y>-dev     | pulp-<X.Y>-testing-<distribution> |
-    +---------------+-----------------------------------+
-    | <X.Y>-testing | pulp-<X.Y>-beta-<distribution>    |
-    +---------------+-----------------------------------+
-    | <X.Y>-release | pulp-<X.Y>-<distribution>         |
-    +---------------+-----------------------------------+
++---------------+-----------------------------------+
+| Git Branch    | Koji Tag per <distribution>       |
++===============+===================================+
+| <X.Y>-dev     | pulp-<X.Y>-testing-<distribution> |
++---------------+-----------------------------------+
+| <X.Y>-testing | pulp-<X.Y>-beta-<distribution>    |
++---------------+-----------------------------------+
+| <X.Y>-release | pulp-<X.Y>-<distribution>         |
++---------------+-----------------------------------+
 
 .. warning::
 
@@ -47,11 +47,14 @@ this.
 What you will need
 ^^^^^^^^^^^^^^^^^^
 
-In order to build Pulp, you will need the following from the Katello team:
+In order to build Pulp, you will need the following from the Foreman team:
 
-#. An account on Katello's Koji instance
+#. An account on Foreman's Koji instance
 #. A client certificate for your account
 #. The Katello CA certificate
+
+See the `Foreman Wiki <http://projects.theforeman.org/projects/foreman/wiki/Koji>`_ to get these
+items.
 
 In order to publish builds to the Pulp repository, you will need the ssh keypair used to upload
 packages to the fedorapeople.org repository. You can get these from members of the Pulp team.
@@ -61,14 +64,14 @@ Configuring your build environment
 
 If you are interested in building Pulp, it is strongly recommended that you use a separate checkout
 from your normal development environment to avoid any potential errors (such as building in local
-changes, or building the wrong branches). Thus, the first step is to make a clean checkout of the
-three Pulp repositories, and put them somewhere away from your other checkouts::
+changes, or building the wrong branches). It is also a good idea to use a build host in a location
+with good outbound bandwidth, as the repository publish can be at or over 250 MB. Thus, the first
+step is to make a clean checkout of the three Pulp repositories, and put them somewhere away from
+your other checkouts::
 
     $ mkdir ~/pulp_build
     $ cd ~/pulp_build
-    $ git clone git@github.com:pulp/pulp.git
-    $ git clone git@github.com:pulp_puppet/pulp.git
-    $ git clone git@github.com:pulp_rpm/pulp.git
+    $ for r in {,_puppet,_rpm}; do git clone git@github.com:pulp/pulp$r.git; done;
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
 Katello CA certificate and your client certificate in your home folder::
@@ -134,8 +137,8 @@ Building Dependencies
 
 If you wish to add or update the version or release of one of our dependencies, you should begin by
 adding/updating the dependency's tarball, patches, and spec file in the Pulp git repository as
-appropriate for the task at hand. Don't forget to set the version/release in the spec file. Once you
-have finished that work, you are ready to test the changes. In the directory that contains the
+appropriate for the task at hand. **Don't forget to set the version/release in the spec file.** Once
+you have finished that work, you are ready to test the changes. In the directory that contains the
 dependency, use tito to build a test RPM. For example, for python-celery::
 
     $ cd deps/python-celery
@@ -182,12 +185,12 @@ repository::
 Bringing Builds into New Tags
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have built a dependency in Koji and you want it to be included in another Koji tag, you can
-use builder.py to tag the correct dependencies in automatically::
+If you are building in a never-before-used Koji tag, you can use builder.py to tag the correct
+dependencies in automatically::
 
     $ ./builder.py --update-tag-package-list <version X.Y> <stream>
 
-Continuing on from our earlier example, if everything was so thrilled with your build of
+Continuing on from our earlier example, if everyone was so thrilled with your build of
 python-celery-3.1.11-1.el7.x86_64 that you had tagged into 2.4 testing that they wanted it in the
 2.4 beta stream, all you have to do is this::
 
@@ -220,23 +223,28 @@ At this point, you may wish to ensure that the branches are all merged forward t
 is not strictly required at this point, as we will have to do it again later. However, sometimes
 developers forget to do this, and it may be advantageous to resolve these problems before tagging.
 
+If you are building into a Koji tag that has never been built before, you need to add the Pulp
+packages to that tag. For example, if nobody has ever built Pulp in the ``pulp-2.5-beta-rhel7`` tag
+and your Koji username is ``cduryee``, you should do this::
+
+    $ for x in pulp pulp-puppet pulp-rpm pulp-nodes; do koji -d add-pkg --owner "cduryee" pulp-2.5-beta-rhel7 $x; done
+
 Next it is time to tag the HEADS of these branches. The Pulp repository has a tag.sh script that you
-can use to do this, or you can do it by hand if you like. For example, to tag 2.4.2-0.3.beta you can
-do this::
+can use to do this. For example, to tag 2.4.2-0.3.beta you can do this::
 
     $ ./pulp/tag.sh -v 2.4.2-0.3.beta
 
 The tag.sh script will ask you to edit the changelog entries, tag the git repositories, and push the
 tags to github.
 
-After the repositories are tagged, the next step is to merge the tag changes you
-have just made all the way forward to master. You may experience merge conflicts with this step. Be
-sure to merge forward on all of the repositories.
+.. note::
 
-.. warning::
-   
-   Do not use the ours strategy, as that will drop the changelog entries. You must manually resolve
-   the conflicts!
+   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
+   will always be 0.1, and every build thereafter prior to the release will be the last release plus
+   0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
+   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
+   follow the
+   `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
 
 We are now prepared to submit the build to Koji. This task is simple::
 
@@ -251,6 +259,24 @@ fail, you can view the
 `failed builds <http://koji.katello.org/koji/tasks?state=failed&view=tree&method=all&order=-id>`_ to
 see what went wrong. If the build was successful, it will automatically download the results into a
 new folder called mash that will be a peer to your git checkouts.
+
+Now is a good time to start our Jenkins builder to run the unit tests in all the supported operating
+systems. You can configure it to run the tests in the git branch that you are building. Make sure
+these pass before publishing the build.
+
+After the repositories are built, the next step is to merge the tag changes you
+have made all the way forward to master. You may experience merge conflicts with this step. Be
+sure to merge forward on all of the repositories.
+
+.. warning::
+   
+   Do not use the ours strategy, as that will drop the changelog entries. You must manually resolve
+   the conflicts!
+
+You may experience conflicts when you push these changes. If you do, merge your checkout with
+upstream. Then you can ``git push <branch>:<branch>`` after you check the diff to make sure it is
+correct. Lastly, do a new git checkout elsewhere and check that ``tito build --srpm`` is tagged
+correctly and builds.
 
 Testing the Build
 -----------------
@@ -267,7 +293,8 @@ For our 2.4 beta example, the rsync command would be:
     $ rsync -avz --delete * pulpadmin@repos.fedorapeople.org:/srv/repos/pulp/pulp/testing/2.4/
 
 You can now run the automated QE suite against the testing repository to ensure that the build is
-stable and has no known issues.
+stable and has no known issues. We have a Jenkins server for this purpose, and you can configure it
+to test the repository you just published.
 
 Publishing the Build
 --------------------
@@ -285,6 +312,27 @@ example::
 
 Note the ``--dry-run`` argument. This causes rsync to print out what it *would* do. Review its
 output to ensure that it is correct. If it is, run the command again while omitting that flag.
+
+.. warning::
+
+   Be sure to check that you are publishing the build to the correct repository. It's important to
+   never publish an alpha build to anything other than a testing repository. A beta build can go to
+   testing or the beta repository (but never the stable repository), and a stable build can go to a
+   testing or a stable repository.
+
+If you have published a beta build, you must query Bugzilla for all of our bugs that are in the
+``MODIFIED`` state for the version you have published and move them to ``ON_QA``.
+
+If you have published a stable build, there are a few more items to take care of:
+
+#. Update the "latest release" text on http://www.pulpproject.org/.
+#. Verify that the new documentation was published. You may need to
+   `explicitly build <https://pulp-dev-guide.readthedocs.org/en/latest/contributing/documenting.html#rtd-versions>`_
+   them if they were not automatically build.
+#. Update the channel topic in #pulp on Freenode with the new release.
+#. Send an announcement e-mail to pulp-list@redhat.com.
+#. Move all bugs that were in the ``VERIFIED`` state for this target release to ``CLOSED CURRENT
+   RELEASE``.
 
 New Stable Major/Minor Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
