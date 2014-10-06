@@ -23,3 +23,4 @@ your particular area of interest.
    merging
    documenting
    bugs
+   building
