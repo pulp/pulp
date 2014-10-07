@@ -11,11 +11,13 @@ Contents:
    installation
    tuning
    server
+   services
    authentication
    admin-client/index
    consumer-client/index
    nodes
    content-sources
+   support-packages
    general-reference
    glossary
    troubleshooting
