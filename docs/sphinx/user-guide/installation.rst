@@ -56,6 +56,14 @@ Prerequisites
   mod_wsgi which conflicts with mod_python and will cause the server to fail.
 
 .. warning::
+  The python-qpid package is not available from Pulp installation repositories
+  on RHEL 5 or CentOS 5. This will prevent management of RHEL 5 or CentOS 5
+  clients with pulp-consumer using Qpid. Users who want to use Qpid instead of
+  RabbitMQ and manage these RHEL 5 or CentOS 5 clients will need to build
+  python-qpid from source.
+  
+
+.. warning::
   MongoDB is known to have
   `serious limitations <http://docs.mongodb.org/manual/faq/fundamentals/#what-are-the-32-bit-limitations>`_
   on 32-bit architectures. It is strongly advised that you run MongoDB on a 64-bit architecture.
