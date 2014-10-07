@@ -113,14 +113,13 @@ Server
     $ sudo systemctl start mongod
 
    .. warning::
-      On new MongoDB installations, the start call may exit before the database is
-      accepting connections. MongoDB takes some time to preallocate large files and will not accept
-      connections until it finishes. When this happens, it is possible for Pulp to fail to start.
-      If this occurs, give MongoDB a few minutes to finish initializing and start Pulp again.
+      On new MongoDB installations, MongoDB takes some time to preallocate large files and will not
+      accept connections until it finishes. When this happens, Pulp will wait for MongoDB to
+      become available before starting.
 
 #. You must also provide a message bus for Pulp to use. Pulp will work with Qpid or RabbitMQ, but
-   is tested with Qpid, and uses Qpid by default. This can also be on the same host that you will
-   run Pulp on, or it can be elsewhere as you please. To install Qpid on a yum based system, use
+   is tested with Qpid, and uses Qpid by default. This can be on the same host that you will
+   run Pulp on, or elsewhere as you please. To install Qpid on a yum based system, use
    this command::
     
     $ sudo yum install qpid-cpp-server qpid-cpp-server-store
@@ -239,8 +238,7 @@ Server
       see how the second worker is doing.
 
 #. There are two more services that need to be running, but it is important that these two only run
-   once each (i.e., do not enable either of these on any more than one Pulp server, if you are
-   experimenting with our untested distributed installation).
+   once each (i.e., do not enable either of these on any more than one Pulp server).
 
    .. warning::
       
@@ -248,7 +246,7 @@ Server
       only enable each of these on one host if you are experimenting with Pulp's untested HA
       deployment. They do not have to run on the same host, however.
 
-   One some Pulp system, configure, start and enable the Celerybeat process. This process performs a
+   On some Pulp system, configure, start and enable the Celerybeat process. This process performs a
    job similar to a cron daemon for Pulp. Edit ``/etc/default/pulp_celerybeat`` to your liking, and
    then enable and start it. Again, do not enable this on more than one host. For Upstart::
 
