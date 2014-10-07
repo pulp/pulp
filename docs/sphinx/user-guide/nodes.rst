@@ -97,7 +97,9 @@ To install *Nodes* parent support, follow the instructions below.
    must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
    on enabling and configuring OAuth.
 
-3. Follow the instructions for installing :doc:`support packages<support-packages>`.
+3. Run ``pulp-manage-db``.
+
+4. Restart :ref:`server components<server-components>`.
 
 
 Child
@@ -153,7 +155,11 @@ Example:
  secret: eePa7Bi3gohdir1pai2icohvaidai0io
  user_id: admin
 
-4. Follow the instructions for installing :doc:`support packages<support-packages>`.
+4. Run ``pulp-manage-db``.
+
+5. Restart :ref:`server components<server-components>`.
+
+6. Restart ``goferd``.
 
 
 Admin Client Extensions
