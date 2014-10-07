@@ -22,7 +22,7 @@ CRITICAL, ERROR, WARNING, INFO, DEBUG, and NOTSET.
 .. note::
    
    This setting will only adjust the verbosity of the messages that Pulp emits. If you wish to see
-   all of these messages you may also need to set the log level on your syslog handler. For example,
+   all of these messages, you may also need to set the log level on your syslog handler. For example,
    rsyslog typically only displays INFO and higher, so if you set Pulp to DEBUG it will still be
    filtered by rsyslog. See the :ref:`rsyslogd` section for more information.
 
