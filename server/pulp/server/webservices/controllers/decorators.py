@@ -164,10 +164,10 @@ def auth_required(operation=None, super_user_only=False):
 
             # Run through each registered and enabled auth function
             is_consumer = False
-            registered_auth_functions = [check_preauthenticated, 
-                                         password_authentication, 
-                                         user_cert_authentication, 
-                                         consumer_cert_authentication, 
+            registered_auth_functions = [check_preauthenticated,
+                                         password_authentication,
+                                         user_cert_authentication,
+                                         consumer_cert_authentication,
                                          oauth_authentication]
 
             user_authenticated = False
@@ -187,7 +187,7 @@ def auth_required(operation=None, super_user_only=False):
                 raise PulpCodedAuthenticationException(error_code=error_codes.PLP0025)
 
             # Check Authorization
-            
+
             principal_manager = factory.principal_manager()
             user_query_manager = factory.user_query_manager()
 
@@ -195,7 +195,7 @@ def auth_required(operation=None, super_user_only=False):
                 raise PulpCodedAuthenticationException(error_code=error_codes.PLP0029, user=userid)
             # if the operation is None, don't check authorization
             elif operation is not None:
-                if is_consumer: 
+                if is_consumer:
                     if is_consumer_authorized(http.resource_path(), userid, operation):
                         # set default principal = SYSTEM
                         principal_manager.set_principal()
