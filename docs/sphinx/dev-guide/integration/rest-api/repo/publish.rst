@@ -20,7 +20,6 @@ call always executes asynchronously and will return a :term:`call report`.
 | :response_list:`_`
 
 * :response_code:`202, if the publish is set to be executed`
-* :response_code:`409, if a conflicting operation is in progress`
 
 | :return:`a` :ref:`call_report` representing the current state of they sync`
 

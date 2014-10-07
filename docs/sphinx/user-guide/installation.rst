@@ -78,8 +78,16 @@ Repositories
  * Fedora: http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
  * RHEL: http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
-2. For RHEL and CentOS systems, the EPEL repositories are required. More information can
-   be found at: `<http://fedoraproject.org/wiki/EPEL/FAQ#howtouse>`_
+2. For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
+   appropriate repositories for RHEL6 and RHEL7 respectively:
+
+   RHEL6::
+
+    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+
+   RHEL7::
+
+    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm
 
 3. For RHEL 5 systems, subscribe to the following RHN channels:
 
@@ -116,12 +124,12 @@ Server
 
    .. warning::
       On new MongoDB installations, MongoDB takes some time to preallocate large files and will not
-      accept connections until it finishes. When this happens, Pulp will delay wait for MongoDB to
+      accept connections until it finishes. When this happens, Pulp will wait for MongoDB to
       become available before starting.
 
 #. You must also provide a message bus for Pulp to use. Pulp will work with Qpid or RabbitMQ, but
-   is tested with Qpid, and uses Qpid by default. This can also be on the same host that you will
-   run Pulp on, or it can be elsewhere as you please. To install Qpid on a yum based system, use
+   is tested with Qpid, and uses Qpid by default. This can be on the same host that you will
+   run Pulp on, or elsewhere as you please. To install Qpid on a yum based system, use
    this command::
     
     $ sudo yum install qpid-cpp-server qpid-cpp-server-store
@@ -136,12 +144,11 @@ Server
       ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
       this package, you will need to restart the Qpid broker to enable the durability feature.
 
-   For Pulp to operate with the Qpid broker, either broker authentication needs to be disabled, or
-   authentication needs to be configured. To disable authentication add ``auth=no`` to the
+   For Pulp to operate with the Qpid broker, authentication needs to be either disabled or
+   configured. To disable authentication add ``auth=no`` to the
    ``qpidd.conf`` file. Qpid 0.24 and higher places the config file is at ``/etc/qpid/qpidd.conf``,
-   and earlier Qpid versions place the config file at ``/etc/qpidd.conf``. Changes made to
-   ``qpidd.conf`` go into effect the next time Qpid starts; if Qpid is already running prior to
-   making a change to ``qpidd.conf`` then restart the Qpid.
+   and earlier Qpid versions place the config file at ``/etc/qpidd.conf``. Qpid
+   must be restarted after changes are made to ``qpidd.conf``.
 
    To leave broker authentication enabled, you will need to configure SASL with a
    username/password, and then configure Pulp to use that username/password. Refer to the Qpid docs
@@ -245,8 +252,7 @@ Server
       see how the second worker is doing.
 
 #. There are two more services that need to be running, but it is important that these two only run
-   once each (i.e., do not enable either of these on any more than one Pulp server, if you are
-   experimenting with our untested distributed installation).
+   once each (i.e., do not enable either of these on any more than one Pulp server).
 
    .. warning::
       
@@ -254,7 +260,7 @@ Server
       only enable each of these on one host if you are experimenting with Pulp's untested HA
       deployment. They do not have to run on the same host, however.
 
-   One some Pulp system, configure, start and enable the Celerybeat process. This process performs a
+   On some Pulp system, configure, start and enable the Celerybeat process. This process performs a
    job similar to a cron daemon for Pulp. Edit ``/etc/default/pulp_celerybeat`` to your liking, and
    then enable and start it. Again, do not enable this on more than one host. For Upstart::
 
