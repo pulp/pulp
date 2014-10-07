@@ -481,20 +481,3 @@ If you are a plugin author, these changes are relevant to you:
   we no longer had a need for those extra arguments, so each call now receives only the Importer or
   Distributor instance (self). If you have written an Importer or a Distributor, you will need to
   adjust your method signatures accordingly in order to work with this release of Pulp.
-
-
-Pulp 2.4.1
-==========
-
-Rest API Changes
-----------------
-
-* The timestamps returned for the following objects and fields have been converted from an
-  ISO 8601 timestamp with a timezone offset to native ISO 8601 timestamps in UTC
-
-  #. Repository Distributor (last_published)
-  #. Repository Group Distributor (last_published)
-  #. Repository Publish Results (started, completed)
-  #. Repository Group Publish Results (started, completed)
-  #. Repository Importer (last_sync)
-  #. Repository Importer Sync Results (started, completed)
