@@ -1,10 +1,12 @@
 import inspect
+import os
 import unittest
 
 from pulp.plugins.util import misc
 
 
 class TestPaginate(unittest.TestCase):
+
     def test_list(self):
         iterable = list(range(10))
         ret = misc.paginate(iterable, 3)
@@ -73,3 +75,30 @@ class TestPaginate(unittest.TestCase):
         pieces = list(ret)
 
         self.assertEqual(pieces, [tuple(range(10))])
+
+
+class TestGetParentDirectory(unittest.TestCase):
+
+    def test_relative_path_ends_in_slash(self):
+        path = 'a/relative/path/'
+        parent_dir = 'a/relative'
+        result = misc.get_parent_directory(path)
+        self.assertEqual(result, parent_dir)
+
+    def test_relative_path_does_not_end_in_slash(self):
+        path = 'a/relative/path'
+        parent_dir = 'a/relative'
+        result = misc.get_parent_directory(path)
+        self.assertEqual(result, parent_dir)
+
+    def test_absolute_path_ends_in_slash(self):
+        path = '/an/absolute/path'
+        parent_dir = '/an/absolute'
+        result = misc.get_parent_directory(path)
+        self.assertEqual(result, parent_dir)
+
+    def test_absolute_path_does_not_end_in_slash(self):
+        path = '/an/absolute/path'
+        parent_dir = '/an/absolute'
+        result = misc.get_parent_directory(path)
+        self.assertEqual(result, parent_dir)
