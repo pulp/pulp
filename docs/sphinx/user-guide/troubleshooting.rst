@@ -19,6 +19,13 @@ Pulp's log level can be adjusted with the ``log_level`` setting in the ``[server
 ``/etc/pulp/server.conf``. This setting is optional and defaults to INFO. Valid choices are
 CRITICAL, ERROR, WARNING, INFO, DEBUG, and NOTSET.
 
+.. note::
+   
+   This setting will only adjust the verbosity of the messages that Pulp emits. If you wish to see
+   all of these messages you may also need to set the log level on your syslog handler. For example,
+   rsyslog typically only displays INFO and higher, so if you set Pulp to DEBUG it will still be
+   filtered by rsyslog. See the :ref:`rsyslogd` section for more information.
+
 journald
 ^^^^^^^^
 
@@ -44,6 +51,8 @@ log messages from all server processes together you could use this command::
 A ``journalctl`` flag to know about is ``-f``, which performs a similar function
 as ``tail``'s ``-f`` flag.
 
+.. _rsyslogd:
+
 rsyslogd
 ^^^^^^^^
 
@@ -51,7 +60,7 @@ rsyslogd is another popular logging daemon. If you are using RHEL 6, this is you
 On many distributions, it is configured to log most messages to ``/var/log/messages``. If this is
 your logging daemon, it is likely that all of Pulp's logs will go to this file by default. If you
 wish to filter Pulp's log messages out and place them into a separate file, you will need to
-configure rsyslogd to match Pulp's messages. Pulp prefixes all of its log messages with "pulp", to
+configure rsyslogd to match Pulp's messages. Pulp prefixes all of its log messages with "pulp" to
 aid in matching its messages in the logging daemon.
 
 If you wish to match Pulp messages and have them logged to a different file than
@@ -61,6 +70,12 @@ prevent Pulp logs from going to that file. After that, you can add a line to cap
 messages and send them to a file::
 
     pulp.*  /var/log/pulp.log
+
+.. note::
+
+   The text after ``pulp.`` in this config file sets the log level that you wish rsyslog to filter.
+   For example, ``pulp.debug`` would set the log level to debug for Pulp messages. ``pulp.*``
+   captures all messages, and ``pulp.none`` discards all messages.
 
 Why Syslog?
 ^^^^^^^^^^^
