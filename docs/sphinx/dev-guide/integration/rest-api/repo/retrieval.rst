@@ -310,6 +310,39 @@ will either be empty (no importer configured) or contain a single entry.
   }
  ]
 
+Retrieve an Importer Associated with a Repository
+-------------------------------------------------
+
+Retrieves the given :term:`importer` (if any) associated with a repository.
+
+| :method:`get`
+| :path:`/v2/repositories/<repo_id>/importers/<importer_id>/`
+| :permission:`read`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`200,containing the details of the importer`
+* :response_code:`404,if there is either no repository or importer with a matching ID.`
+
+| :return:`database representation of the repository's importer`
+
+:sample_response:`200` ::
+
+  {
+    "scratchpad": 1,
+    "_ns": "gc_repo_importers",
+    "importer_type_id": "harness_importer",
+    "last_sync": "2012-01-25T15:26:32Z",
+    "repo_id": "harness_repo_1",
+    "sync_in_progress": false,
+    "_id": {"$oid": "bbe81308-ef7c-4c0c-b684-385fd627d99e"},
+    "config": {
+      "num_units": "5",
+      "write_files": "true"
+    },
+    "id": "harness_importer"
+  }
+
 Retrieve Distributors Associated with a Repository
 --------------------------------------------------
 
@@ -346,3 +379,38 @@ If the repository has no associated distributors, an empty array is returned.
     "id": "dist_1"
   }
  ]
+
+Retrieve a Distributor Associated with a Repository
+---------------------------------------------------
+
+Retrieves a single :term:`distributors <distributor>` associated with a repository.
+
+| :method:`get`
+| :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/`
+| :permission:`read`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`200,containing the details of a distributors`
+* :response_code:`404,if there is either no repository or distributor with a matching ID.`
+
+| :return:`database representations of the distributor`
+
+:sample_response:`200` ::
+
+ {
+   "scratchpad": 1,
+   "_ns": "gc_repo_distributors",
+   "last_publish": "2012-01-25T15:26:32Z",
+   "auto_publish": false,
+   "distributor_type_id": "harness_distributor",
+   "repo_id": "harness_repo_1",
+   "publish_in_progress": false,
+   "_id": {"$oid": "addf9261-345e-4ce3-ad1e-436ba005287f"},
+   "config": {
+     "publish_dir": "/tmp/harness-publish",
+     "write_files": "true"
+   },
+   "id": "dist_1"
+ }
+
