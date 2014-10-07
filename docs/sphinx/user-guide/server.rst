@@ -78,3 +78,24 @@ performs those tasks.
 
   $ sudo service pulp_resource_manager restart   # if you use upstart
   $ sudo systemctl restart pulp_resource_manager # if you use systemd
+
+Configuration
+-------------
+
+This section contains documentation on the configuration of the various Pulp Server components.
+
+httpd
+^^^^^
+
+.. _crl-support:
+
+CRL Support
+~~~~~~~~~~~
+
+Pulp used to support Certificate Revocation Lists in versions up to and including 2.4.0. Starting
+with 2.4.1, the Pulp team decided not to carry their own M2Crypto build which had the patches
+necessary to perform CRL checks. Instead, users can configure httpd to do this using its
+SSLCARevocationFile and SSLCARevocationPath directives. See the `mod-ssl documentation`_ for more
+information.
+
+.. _mod-ssl documentation: https://httpd.apache.org/docs/2.2/mod/mod_ssl.html
