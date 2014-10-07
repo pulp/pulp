@@ -17,15 +17,25 @@ pull requests into the Pulp repositories as described in :doc:`merging`.
 Dependencies
 ^^^^^^^^^^^^
 
-The easiest way to download the dependencies is to install Pulp through yum, which will pull in
+The easiest way to download the other dependencies is to install Pulp through yum, which will pull in
 the latest dependencies according to the spec file.
 
-#. Download the appropriate repository file at: http://repos.fedorapeople.org/repos/pulp/pulp/
-#. Enable the testing repository ``pulp-v2-testing``.
+#. Download the appropriate repository to at: http://repos.fedorapeople.org/repos/pulp/pulp/
+
+   Example for Fedora::
+
+       $ cd /etc/yum.repos.d/
+       $ sudo wget https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+
+#. Edit the repo and enable the most recent testing repository.
 #. Install the main Pulp groups to get all of the dependencies.
-   ``$ sudo yum install @pulp-server @pulp-admin @pulp-consumer``
+   ``$ sudo yum install @pulp-server-qpid @pulp-admin @pulp-consumer``
 #. Remove the installed Pulp RPMs; these will be replaced with running directly from the checked
    out code. ``$ sudo yum remove pulp-\* python-pulp\*``
+
+#. Install some additional dependencies for development::
+   
+   $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server qpid-cpp-server qpid-cpp-server-store python-qpid-qmf
 
 The only caveat to this approach is that these dependencies will need to be maintained after this
 initial setup. Leaving the testing builds repository enabled will cause them to be automatically
@@ -52,29 +62,10 @@ In the root of the repository, run::
   the Pulp platform can continue to be run from the RPM installation and the pulp_rpm and
   pulp_puppet plugins would not be required.
 
-Additionally, Pulp specific files such as configuration and package directories must be linked to
-the checked out code base. These additions are not performed by ``setup.py`` but rather by the
-``pulp-dev.py`` script located in the root of each git repository. The full command is:
+Additionally, Pulp specific files such as configuration and package directories must be linked to the checked out code base.::
 
-::
+  sudo python ./pulp-dev.py -I
 
-  $ sudo python ./pulp-dev.py -I
-
-Uninstallation
-^^^^^^^^^^^^^^
-
-The ``pulp-dev.py`` script has an uninstall option that will remove the symlinks from the system
-into the local source directory. It is run using the ``-U`` flag:
-
-::
-
- $ sudo python ./pulp-dev.py -U
-
-Each python package installed above must be removed by its package name.
-
-::
-
-  $ sudo pip uninstall <package name>
 
 Permissions
 ^^^^^^^^^^^
@@ -97,6 +88,7 @@ commands would grant Apache the required access:
  $ cd pulp
  $ setfacl -m user:apache:rwx .
 
+
 SELinux
 ^^^^^^^
 
@@ -105,6 +97,9 @@ development environments will be created with ``pulp-dev.py``, which deploys Pul
 differently than a rpm based install. The SELinux policy of Pulp expects an RPM layout, and if
 SELinux is run in Enforcing mode your development to not function correctly.
 
+To turn off SELinux, you can use ``sudo setenforce 0`` which will set SELinux to permissive. By default, SELinux will be enabled on the next restart so make the change persistent by editing ``/etc/sysconfig/selinux``. ::
+
+    SELINUX=permissive
 
 mod_python
 ^^^^^^^^^^
@@ -112,3 +107,59 @@ mod_python
 Pulp is a mod_wsgi application. The mod_wsgi and mod_python modules can not both be loaded into
 Apache at the same time as they conflict in odd ways. Either uninstall mod_python before starting
 Pulp or make sure the mod_python module is not loaded in the Apache config.
+
+Start Pulp and Related Services
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The instructions below are written to be a simple process to start pulp. You should read the user docs for more information on each of these services. Systemd shown below,see user docs for upstart commands.
+
+Start the broker (Though qpid shown here, it is not your only option)::
+
+    sudo systemctl start qpidd
+
+Start the agent::
+
+    sudo systemctl start goferd
+
+Initialize the database::
+
+    sudo systemctl start mongod
+    sudo -u apache pulp-manage-db
+
+Install a plugin (the server requires at least one to start)::
+
+    git clone https://github.com/pulp/pulp_rpm.git
+    cd pulp_rpm
+    sudo ./manage_setup_pys.sh develop
+    sudo python ./pulp-dev.py -I
+
+Start the server::
+
+    sudo systemctl start httpd
+
+Start pulp services::
+
+    sudo systemctl start pulp_workers
+    sudo systemctl start pulp_celerybeat
+    sudo systemctl start pulp_resource_manager
+
+Login::
+
+    pulp-admin login -u admin
+
+The default password is ``admin``
+
+Uninstallation
+^^^^^^^^^^^^^^
+
+The ``pulp-dev.py`` script has an uninstall option that will remove the symlinks from the system
+into the local source directory. It is run using the ``-U`` flag:
+
+::
+
+ $ sudo python ./pulp-dev.py -U
+
+Each python package installed above must be removed by its package name.::
+
+  $ sudo pip uninstall <package name>
+
