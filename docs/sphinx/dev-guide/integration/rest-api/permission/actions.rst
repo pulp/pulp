@@ -18,8 +18,7 @@ Grants permissions to a user.
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully granted to the user`
-* :response_code:`404,if user with given login doesn't exist`
-* :response_code:`409,if any of the parameters are invalid`
+* :response_code:`404,if any of the parameters are invalid`
 
 | :return:`null`
 
@@ -49,8 +48,7 @@ Revokes permissions from a user.
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully revoked from the user`
-* :response_code:`404,if user with given login doesn't exist`
-* :response_code:`409,if any of the parameters are invalid`
+* :response_code:`404,if any of the parameters are invalid`
 
 | :return:`null`
 
@@ -81,8 +79,7 @@ Note that users added to the role after granting permissions will inherit these 
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully granted to the role`
-* :response_code:`404,if role with given id doesn't exist`
-* :response_code:`409,if any of the parameters are invalid`
+* :response_code:`404,if any of the parameters are invalid`
 
 | :return:`null`
 
@@ -113,8 +110,7 @@ granted by other roles as well.
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully revoked from the role`
-* :response_code:`404,if role with given id doesn't exist`
-* :response_code:`409,if any of the parameters are invalid`
+* :response_code:`404,if any of the parameters are invalid`
 
 | :return:`null`
 

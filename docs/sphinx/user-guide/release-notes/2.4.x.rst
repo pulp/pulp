@@ -37,6 +37,15 @@ Bugs
 You can see the complete list of bugs that were
 `fixed in Pulp 2.4.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.4.1>`_.
 
+Backwards Incompatible Changes
+------------------------------
+
+This version of Pulp no longer performs CRL checks. Pulp used a custom version of M2Crypto to do this
+and it was decided that it was too risky to carry our own custom cryptography library in our
+repositories. As a result, users who were using that feature must configure their web server to
+perform CRL checks against client certificates. You can read more about :ref:`crl-support` in our
+server configuration documentation.
+
 Rest API Changes
 ----------------
 
