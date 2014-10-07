@@ -25,6 +25,30 @@ missing worker. This causes new Pulp operations dispatched to continue normally 
 available workers. If a worker with the same name is started again after being missing, it is
 added into the pool of workers as any worker starting up normally would.
 
+Backups
+-------
+
+A complete backup of a pulp server includes:
+
+- ``/var/lib/pulp`` a full copy of the filesystem
+- ``/etc/pulp`` a full copy of the filesystem
+- ``/etc/pki/pulp`` a full copy of the filesystem
+- any custom Apache configuration
+- `MongoDB`: a full backup of the database and configuration
+- `Qpid` or `RabbitMQ`: a full backup of the durable queues and configuration
+
+To do a complete restoration:
+
+#. Install pulp and restore ``/etc/pulp`` and ``/etc/pki/pulp``
+#. Restore ``/var/lib/pulp``
+#. Restore the message broker service. If you cannot restore the state of the
+   broker's durable queues, then first run ``pulp-manage-db`` against an empty
+   database. Pulp will perform all initialization operations, including creation
+   of required queues. Then drop the database before moving on.
+#. Restore the database
+#. Start all of the pulp services
+#. Cancel any tasks that are not in a final state
+
 Components
 ----------
 
