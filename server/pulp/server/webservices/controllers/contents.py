@@ -25,6 +25,7 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.managers.content import orphan
+from pulp.server.content.sources.container import ContentContainer
 
 
 class ContentTypesCollection(JSONController):
@@ -337,6 +338,14 @@ class CatalogResource(JSONController):
         return self.ok(None)
 
 
+class Sources(JSONController):
+
+    def GET(self):
+        container = ContentContainer()
+        sources = [s.__dict__ for s in container.sources.values()]
+        return self.ok(sources)
+
+
 # wsgi application -------------------------------------------------------------
 
 _URLS = ('/types/$', ContentTypesCollection,
@@ -351,6 +360,7 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/([^/]+)/$', OrphanTypeSubCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
          '/actions/delete_orphans/$', DeleteOrphansAction,  # deprecated in 2.4
-         '/catalog/([^/]+)$', CatalogResource,)
+         '/catalog/([^/]+)$', CatalogResource,
+         '/sources/$', Sources,)
 
 application = web.application(_URLS, globals())
