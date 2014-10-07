@@ -80,7 +80,9 @@ node may no longer be managed using ``node`` commands.
   --node-id - (required) unique identifier; only alphanumeric, -, and _ allowed
 
 
-.. note:: Consumer un-registration will automatically deactivate the node.
+.. note:: Consumer (child node) un-registration will automatically deactivate the node. When a node 
+          is activated again, it will have the same repositories bound to it as it had before 
+          deactivation.   
 
 Repositories
 ------------
