@@ -108,3 +108,6 @@ Most of Pulp's importers support these key-value settings in their config files:
 
 ``proxy_username``: If provided, Pulp will attempt to use basic auth with the proxy server using this
                     as the username
+
+``proxy_password``: If provided, Pulp will attempt to use basic auth with the proxy server using this
+                    as the password
