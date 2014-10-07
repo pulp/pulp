@@ -28,7 +28,7 @@ Grants permissions to a user.
  {
   "operations": ["CREATE", "READ", "DELETE"], 
   "login": "test-login", 
-  "resource": "/repositories/"
+  "resource": "/v2/repositories/"
  }
 
 
@@ -59,7 +59,7 @@ Revokes permissions from a user.
  {
   "operations": ["CREATE", "DELETE"], 
   "login": "test-login", 
-  "resource": "/repositories/"
+  "resource": "/v2/repositories/"
  }
 
 
@@ -90,7 +90,7 @@ Note that users added to the role after granting permissions will inherit these 
 
  {
   "operations": ["CREATE", "READ", "DELETE"], 
-  "resource": "/repositories/", 
+  "resource": "/v2/repositories/", 
   "role_id": "test-role"
  }
 
@@ -122,7 +122,7 @@ granted by other roles as well.
 
  {
   "operations": ["CREATE", "READ", "DELETE"], 
-  "resource": "/repositories/", 
+  "resource": "/v2/repositories/", 
   "role_id": "test-role"
  }
 
