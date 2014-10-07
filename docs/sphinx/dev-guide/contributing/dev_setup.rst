@@ -22,7 +22,7 @@ the latest dependencies according to the spec file.
 
 #. Download the appropriate repository to at: http://repos.fedorapeople.org/repos/pulp/pulp/
 
-   Example for fedora::
+   Example for Fedora::
 
        $ cd /etc/yum.repos.d/
        $ sudo wget https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
@@ -97,12 +97,9 @@ development environments will be created with ``pulp-dev.py``, which deploys Pul
 differently than a rpm based install. The SELinux policy of Pulp expects an RPM layout, and if
 SELinux is run in Enforcing mode your development to not function correctly.
 
-To turn off SELinux, edit ``/etc/sysconfig/selinux``::
+To turn off SELinux, you can use ``sudo setenforce 0`` which will set SELinux to permissive. By default, SELinux will be enabled on the next restart so make the change persistent by editing ``/etc/sysconfig/selinux``. ::
 
-    SELINUX=disabled
-
-You will need to restart for the changes to take effect.
-
+    SELINUX=permissive
 
 mod_python
 ^^^^^^^^^^
