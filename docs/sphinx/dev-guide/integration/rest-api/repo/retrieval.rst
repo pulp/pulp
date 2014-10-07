@@ -394,7 +394,7 @@ Retrieves a single :term:`distributors <distributor>` associated with a reposito
 * :response_code:`200,containing the details of a distributors`
 * :response_code:`404,if there is either no repository or distributor with a matching ID.`
 
-| :return:`database representations of the distributor`
+| :return:`database representation of the distributor`
 
 :sample_response:`200` ::
 
