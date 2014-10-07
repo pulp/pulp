@@ -78,8 +78,16 @@ Repositories
  * Fedora: http://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
  * RHEL: http://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
 
-2. For RHEL and CentOS systems, the EPEL repositories are required. More information can
-   be found at: `<http://fedoraproject.org/wiki/EPEL/FAQ#howtouse>`_
+2. For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
+   appropriate repositories for RHEL6 and RHEL7 respectively:
+
+   RHEL6::
+
+    $ sudo rpm -Uvh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+
+   RHEL7::
+
+    $ sudo rpm -Uvh http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-1.noarch.rpm
 
 3. For RHEL 5 systems, subscribe to the following RHN channels:
 
