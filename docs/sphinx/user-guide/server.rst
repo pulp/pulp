@@ -99,3 +99,24 @@ SSLCARevocationFile and SSLCARevocationPath directives. See the `mod-ssl documen
 information.
 
 .. _mod-ssl documentation: https://httpd.apache.org/docs/2.2/mod/mod_ssl.html
+
+Plugins
+^^^^^^^
+
+Many Pulp plugins support these settings in their config files. Rather than documenting these
+settings in each project repeatedly, the commonly accepted key-value pairs are documented below.
+
+Importers
+~~~~~~~~~
+
+Most of Pulp's importers support these key-value settings in their config files:
+
+``proxy_url``: A string in the form of scheme://host, where scheme is either ``http`` or ``https``
+
+``proxy_port``: An integer representing the port number to use when connecting to the proxy server
+
+``proxy_username``: If provided, Pulp will attempt to use basic auth with the proxy server using this
+                    as the username
+
+``proxy_password``: If provided, Pulp will attempt to use basic auth with the proxy server using this
+                    as the password
