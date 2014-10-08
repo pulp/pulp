@@ -130,10 +130,19 @@ Qpid with Username and Password Authentication
 The Pulp Server <--> Pulp Consumer Agent only support certificate based authentication, however the
 Pulp Server <--> Pulp Worker communication does allow for username and password based auth.
 
-To use Pulp with Qpid and username and password authentication, you'll need to configure the
-usernames and passwords on the Qpid broker, and then configure Pulp. Refer to the Qpid
-documentation for how to configure the broker. This section explains how to configure Pulp to use a
-username and password configured in Qpid.
+Pulp can authenticate using a username and password with Qpid using SASL. Refer to the Qpid docs
+on how to configure Qpid for SASL, but here are a few helpful pointers:
+
+1. Ensure the Qpid machine has the ``cyrus-sasl-plain`` package installed. After installing it,
+   restart Qpid to ensure it has taken effect.
+
+2. Configure the username and password in the SASL database. Refer to Qpid docs for the specifics
+   of this.
+
+3. Ensure the qpidd user has read access to the SASL database.
+
+After configuring the broker for SASL, then configure Pulp. This section explains how to configure
+Pulp to use a username and password configured in Qpid.
 
 Assuming Qpid has the user ``foo`` and the password ``bar`` configured, enable Pulp to use them by
 uncommenting the ``broker_url`` setting in ``[tasks]`` and setting it as follows:
