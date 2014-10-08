@@ -44,6 +44,28 @@ from pulp.server.webservices.controllers import repositories
 from .... import base
 
 
+class ConvertRepoDatesToStringsTests(unittest.TestCase):
+
+    def test_last_unit_added_and_removed(self):
+        dt = datetime.datetime.utcnow()
+        repo = {'id': 'dummy-1', 'display_name': 'dummy',
+                  'last_unit_added': dt,
+                  'last_unit_removed': dt}
+        string_date = dateutils.format_iso8601_datetime(
+            dateutils.to_utc_datetime(dt, no_tz_equals_local_tz=False))
+        repositories._convert_repo_dates_to_strings(repo)
+        self.assertEquals(repo['last_unit_added'], string_date)
+        self.assertEquals(repo['last_unit_removed'], string_date)
+
+    def test_process_repos_calls_serialize_last_unit_added_and_removed(self):
+        repo = {'id': 'dummy-1', 'display_name': 'dummy',
+                  'last_unit_added': None,
+                  'last_unit_removed': None}
+        repositories._convert_repo_dates_to_strings(repo)
+        self.assertEquals(repo['last_unit_added'], None)
+        self.assertEquals(repo['last_unit_removed'], None)
+
+
 class RepoControllersTests(base.PulpWebserviceTests):
     def setUp(self):
         super(RepoControllersTests, self).setUp()
@@ -270,6 +292,21 @@ class RepoCollectionTests(RepoControllersTests):
         repositories.RepoCollection._process_repos(REPOS)
         mock_link_obj.assert_called_once_with(REPOS[0]['id'])
 
+    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
+    def test_process_repos_calls_serialize_last_unit_added_and_removed(self, mock_link_obj):
+        mock_link_obj.return_value = {}
+        dt = datetime.datetime.utcnow()
+        REPOS = [{'id': 'dummy-1', 'display_name': 'dummy',
+                  'last_unit_added': dt,
+                  'last_unit_removed': dt}]
+        string_date = dateutils.format_iso8601_datetime(
+            dateutils.to_utc_datetime(dt, no_tz_equals_local_tz=False))
+        repositories.RepoCollection._process_repos(REPOS)
+        self.assertEquals(REPOS[0]['last_unit_added'], string_date)
+        self.assertEquals(REPOS[0]['last_unit_removed'], string_date)
+
+        mock_link_obj.assert_called_once_with(REPOS[0]['id'])
+
     @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj',
                 return_value={})
     def test_process_repos_without_details(self, mock_link_obj):
@@ -481,7 +518,9 @@ class RepoResourceTests(RepoControllersTests):
         """
         Make sure the GET method calls _merge_related_objects
         """
-        mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
+        repo = Repo('repo-1', 'Repo 1')
+        mock_merge_method.return_value = [repo]
+        mock_find_by_id.return_value = repo
         status, body = self.get('/v2/repositories/repo-1/?details=1')
         self.assertEqual(200, status)
         self.assertEqual(mock_merge_method.call_count, 2)
@@ -503,7 +542,9 @@ class RepoResourceTests(RepoControllersTests):
         """
         Make sure the GET method calls _merge_related_objects
         """
-        mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
+        repo = Repo('repo-1', 'Repo 1')
+        mock_merge_method.return_value = [repo]
+        mock_find_by_id.return_value = repo
         status, body = self.get('/v2/repositories/repo-1/?importers=1')
         self.assertEqual(200, status)
         self.assertEqual(mock_merge_method.call_count, 1)
@@ -517,7 +558,9 @@ class RepoResourceTests(RepoControllersTests):
         """
         Make sure the GET method calls _merge_related_objects
         """
-        mock_merge_method.return_value = [Repo('repo-1', 'Repo 1')]
+        repo = Repo('repo-1', 'Repo 1')
+        mock_merge_method.return_value = [repo]
+        mock_find_by_id.return_value = repo
         status, body = self.get('/v2/repositories/repo-1/?distributors=1')
         self.assertEqual(200, status)
         self.assertEqual(mock_merge_method.call_count, 1)
