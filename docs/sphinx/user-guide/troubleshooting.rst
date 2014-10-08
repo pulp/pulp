@@ -238,3 +238,26 @@ You will encounter this while upgrading to Pulp 2.4.0 if there are still 2.3.x o
 running. All consumers must be upgraded first, or turned off, prior to running the
 pulp-manage-db that is part of the Pulp 2.3.x --> 2.4.0 upgrade. For more information see the
 :ref:`Pulp 2.3.x --> 2.4.0 upgrade docs <2.3.x_upgrade_to_2.4.0>`.
+
+Cannot start/stop Qpid -- Not enough file descriptors or AIO contexts
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In environments with a very large number of Consumers, Pulp relies on the broker to manage a large
+number of persistent queues. Pulp installations that have a very large number of consumers and are
+using Qpid may experience issues when starting or stopping qpidd.
+
+If you experience an issue starting or stopping qpidd that complains about file descriptors or AIO
+contexts, you probably have encountered a scalability limit within Qpid. If you experience this
+issue you can:
+
+  1. Ensure you are running the latest version of Qpid that is available to you. An improvement was
+     made in Qpid 0.30 that improves its scalability of Qpid in this area.
+
+  2. Follow the `Qpid scalability guide`_ for configuring Qpid to handle a large number of
+     persistent queues.
+
+  3. Consider spreading your consumers over multiple Pulp installations, each with its own Qpid
+     broker to reduce the number of Pulp Consumers per broker. The Pulp nodes feature should make
+     this architecture manageable.
+
+.. _Qpid scalability guide: https://bugzilla.redhat.com/attachment.cgi?id=930496
