@@ -25,22 +25,45 @@ missing worker. This causes new Pulp operations dispatched to continue normally 
 available workers. If a worker with the same name is started again after being missing, it is
 added into the pool of workers as any worker starting up normally would.
 
+Backups
+-------
+
+A complete backup of a pulp server includes:
+
+- ``/var/lib/pulp`` a full copy of the filesystem
+- ``/etc/pulp`` a full copy of the filesystem
+- ``/etc/pki/pulp`` a full copy of the filesystem
+- any custom Apache configuration
+- `MongoDB`: a full backup of the database and configuration
+- `Qpid` or `RabbitMQ`: a full backup of the durable queues and configuration
+
+To do a complete restoration:
+
+#. Install pulp and restore ``/etc/pulp`` and ``/etc/pki/pulp``
+#. Restore ``/var/lib/pulp``
+#. Restore the message broker service. If you cannot restore the state of the
+   broker's durable queues, then first run ``pulp-manage-db`` against an empty
+   database. Pulp will perform all initialization operations, including creation
+   of required queues. Then drop the database before moving on.
+#. Restore the database
+#. Start all of the pulp services
+#. Cancel any tasks that are not in a final state
+
+.. _server-components:
+
 Components
 ----------
 
-Pulp server has several components that can be restarted individually if the
-need arises. Each has a description below along with an example of how to
-restart.
+Pulp server has several components that can be restarted individually if the need arises.
+Each has a description below.  See the :ref:`services` section in this guide for more information
+on restarting services.
 
 Apache
 ^^^^^^
 
 This component is responsible for the REST API.
 
-::
-
-  $ sudo service httpd restart   # if you use upstart
-  $ sudo systemctl restart httpd # if you use systemd
+The service name is ``httpd``.
 
 Workers
 ^^^^^^^
@@ -48,10 +71,7 @@ Workers
 This component is responsible for performing asynchronous tasks, such as sync
 and publish.
 
-::
-
-  $ sudo service pulp_workers restart   # if you use upstart
-  $ sudo systemctl restart pulp_workers # if you use systemd
+The service name is ``pulp_workers``.
 
 Celery Beat
 ^^^^^^^^^^^
@@ -60,10 +80,8 @@ This is a singleton (there must only be one celery beat process per pulp deploym
 that is responsible for queueing scheduled tasks. It also plays a role in
 monitoring the availability of workers.
 
-::
+The service name is ``pulp_celerybeat``.
 
-  $ sudo service pulp_celerybeat restart   # if you use upstart
-  $ sudo systemctl restart pulp_celerybeat # if you use systemd
 
 Resource Manager
 ^^^^^^^^^^^^^^^^
@@ -74,10 +92,7 @@ other workers based on which resource they need to reserve. When you see log
 messages about tasks that reserve and release resources, this is the worker that
 performs those tasks.
 
-::
-
-  $ sudo service pulp_resource_manager restart   # if you use upstart
-  $ sudo systemctl restart pulp_resource_manager # if you use systemd
+The service name is ``pulp_resource_manager``.
 
 Configuration
 -------------
