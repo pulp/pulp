@@ -194,7 +194,7 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
                                  extra data that the formatter will add to this message
         :type  formatter_buffer: int
         :param msg_id:           Process and thread id that will be prepended to multi line messages
-        :type  msg_is:           string
+        :type  msg_id:           string
         :return:                 A generator of str objects, each of which is no longer than
                                  MAX_MSG_LENGTH - formatter_buffer octets.
         :rtype:                  generator
