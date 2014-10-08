@@ -65,9 +65,8 @@ Bug Fix Branches
 
 When creating a pull request that fixes a specific bug in bugzilla, a naming
 convention is used for the pull request branch that is merged with the
-development branch. A bugzilla bug fix branch name should contain the
-developer's username and a bugzilla bug number, separated by a hyphen. For
-example, "mhrivnak-876543". Optionally, a short description may follow the BZ
+development branch. A bugzilla bug fix branch name should contain
+the bugzilla bug number and optionally, a short description may follow the BZ
 number.
 
 
@@ -76,12 +75,8 @@ Feature Branches
 
 Similar to bug fix branches, when creating a pull request that holds features
 until they are merged into a development branch, the pull request branch should
-be the developer's username plus a brief name relevant to the feature. For
-example, a branch to add persistent named searches might be named
-"mhrivnak-named-searches".
-
-In a case where multiple developers will contribute to a feature branch, simply
-omit the username and call it "named-searches".
+be a brief name relevant to the feature. For example, a branch to add persistent
+named searches might be named "feature/named-searches".
 
 
 .. _choosing-upstream-branch:
@@ -97,6 +92,12 @@ After choosing your upstream branch to merge your changes into and performing
 that merge, you additionally need to merge forward your commit to all "newer"
 branches. See :ref:`Merging to Multiple Releases <merging-to-multiple-releases>`
 for more information on merging forward from an older branch.
+
+Commit Messages
+---------------
+
+The primary commit in a bug fix should have a log message that starts with
+'<bz_id> - ', for example ``123456 - fixes a silly bug``.
 
 
 Cherry-picking and Rebasing
