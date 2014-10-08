@@ -202,3 +202,21 @@ Boolean values are specified for cases where the value is saved::
 
   $ pulp-admin rpm repo create --repo-id foo --verify-feed-ssl true
   $ pulp-admin rpm repo create --repo-id foo --verify-feed-ssl false
+
+.. _services:
+
+Services
+--------
+The platform includes several services which can be managed using standard system
+tools such as *upstart* and *systemd*.
+
+For further information:
+
+* For upstart: ``$ man service``. Pulp init.d scripts support the following actions:
+
+ - start
+ - restart
+ - status
+ - stop
+
+* For systemd: ``$ man systemctl``
