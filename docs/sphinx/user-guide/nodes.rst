@@ -97,11 +97,9 @@ To install *Nodes* parent support, follow the instructions below.
    must have OAuth enabled and configured. Please see :ref:`OAuth <oauth-config>` for instructions
    on enabling and configuring OAuth.
 
-3. Restart Apache.
+3. Run ``pulp-manage-db``.
 
-::
-
- $ sudo service httpd restart
+4. Restart :ref:`server components<server-components>`.
 
 
 Child
@@ -157,21 +155,11 @@ Example:
  secret: eePa7Bi3gohdir1pai2icohvaidai0io
  user_id: admin
 
-4. Restart Apache.  For upstart::
+4. Run ``pulp-manage-db``.
 
-     $ sudo service httpd restart
+5. Restart :ref:`server components<server-components>`.
 
-   For systemd::
-
-     $sudo systemctl restart httpd
-
-5. Restart the Pulp agent.  For upstart::
-
-     $ sudo service goferd restart
-
-   For systemd::
-
-     $ sudo systemctl restart goferd
+6. Restart ``goferd``.
 
 
 Admin Client Extensions
