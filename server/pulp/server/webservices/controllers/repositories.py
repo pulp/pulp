@@ -16,7 +16,7 @@ import sys
 
 import web
 
-from pulp.common import constants, tags
+from pulp.common import constants, tags, dateutils
 from pulp.server.auth.authorization import CREATE, READ, DELETE, EXECUTE, UPDATE
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.repository import RepoContentUnit, Repo
@@ -74,6 +74,27 @@ def _merge_related_objects(name, manager, repos):
     return repos
 
 
+def _convert_repo_dates_to_strings(repo):
+    """
+    Convert the last_unit_added & last_unit_removed fields of a repository
+    This modifies the repository in place
+
+    :param repo:  diatabase representation of a repo
+    :type repo: dict
+    """
+    # convert the native datetime object to a string with timezone specified
+    last_unit_added = repo.get('last_unit_added')
+    if last_unit_added:
+        new_date = dateutils.to_utc_datetime(last_unit_added,
+                                             no_tz_equals_local_tz=False)
+        repo['last_unit_added'] = dateutils.format_iso8601_datetime(new_date)
+    last_unit_removed = repo.get('last_unit_removed')
+    if last_unit_removed:
+        new_date = dateutils.to_utc_datetime(last_unit_removed,
+                                             no_tz_equals_local_tz=False)
+        repo['last_unit_removed'] = dateutils.format_iso8601_datetime(new_date)
+
+
 class RepoCollection(JSONController):
 
     # Scope: Collection
@@ -111,6 +132,8 @@ class RepoCollection(JSONController):
 
         for repo in repos:
             repo.update(serialization.link.search_safe_link_obj(repo['id']))
+            _convert_repo_dates_to_strings(repo)
+
             # Remove internally used scratchpad from repo details
             if 'scratchpad' in repo:
                 del repo['scratchpad']
@@ -228,6 +251,7 @@ class RepoResource(JSONController):
             raise exceptions.MissingResource(repo=id)
 
         repo.update(serialization.link.current_link_obj())
+        _convert_repo_dates_to_strings(repo)
 
         if query_params.get('details', False):
             query_params['importers'] = True
@@ -272,6 +296,7 @@ class RepoResource(JSONController):
         # TODO Do we need to filter those out here?
         repo = task_result.return_value
         repo.update(serialization.link.current_link_obj())
+        _convert_repo_dates_to_strings(repo)
 
         # If tasks were spawned, raise that as a result
         if task_result.spawned_tasks:
