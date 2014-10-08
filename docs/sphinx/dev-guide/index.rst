@@ -11,3 +11,4 @@ Pulp Developer Guide
    newtypesupport/index
    integration/index
    glossary
+   troubleshooting
