@@ -1,4 +1,5 @@
 import itertools
+import os
 
 
 DEFAULT_PAGE_SIZE = 1000
@@ -27,3 +28,23 @@ def paginate(iterable, page_size=DEFAULT_PAGE_SIZE):
         if not page:
             return
         yield page
+
+
+def get_parent_directory(path):
+    """
+    Returns the path of the parent directory without a trailing slash on the end.
+
+    Accepts a relative or absolute path to a file or directory, and returns the parent directory
+    that contains the item specified by path. Using this method avoids issues introduced when
+    os.path.dirname() is used with paths that include trailing slashes.
+
+    The returned parent directory path does not include a trailing slash. The existence of the
+    directory does not affect this functions behavior.
+
+    :param path: file or directory path
+    :type path: basestring
+
+    :return: The path to the parent directory without a trailing slash
+    :rtype: basestring
+    """
+    return os.path.dirname(path.rstrip(os.sep))
