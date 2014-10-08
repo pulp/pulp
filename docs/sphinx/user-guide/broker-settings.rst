@@ -122,6 +122,8 @@ To use Qpid on a different host for Pulp Sever <--> Pulp Worker communication, u
     ``broker_url: qpid://guest@someotherhost.com/``
 
 
+.. _pulp-broker-qpid-with-username-password:
+
 Qpid with Username and Password Authentication
 ----------------------------------------------
 

@@ -154,8 +154,9 @@ Server
    enable username/password-based ``PLAIN`` broker authentication, you will need
    to configure SASL with a username/password, and then configure Pulp to use that
    username/password. Refer to the Qpid docs on how to configure username/password
-   authentication using SASL. Once the broker is configured, update Pulp according
-   to the :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
+   authentication using SASL. Once the broker is configured, configure Pulp according
+   to the docs on using
+   :ref:`Pulp with Qpid and username/password authentication <pulp-broker-qpid-with-username-password>`.
 
    The server can be *optionally* configured so that it will connect to the broker using SSL by following the steps
    defined in the :ref:`Qpid SSL Configuration Guide <qpid-ssl-configuration>`. By default, Pulp
