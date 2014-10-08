@@ -16,7 +16,7 @@ This module defines and configures Pulp's logging system.
 import ConfigParser
 import logging
 import os
-import thread
+import threading
 
 from celery.signals import setup_logging
 
@@ -112,8 +112,10 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         """
         Return a id for a log. Not guaranteed to be unique because threads can be
         recycled, but it can be used to track a single multi line message.
+        :return: process id and the last 5 digits of thread id
+        :rtype: string
         """
-        return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(thread.get_ident())[-5:])
+        return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(threading.current_thread().ident)[-5:])
 
     def emit(self, record):
         """
@@ -191,6 +193,8 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         :param formatter_buffer: How many octets of room to leave on each message to account for
                                  extra data that the formatter will add to this message
         :type  formatter_buffer: int
+        :param msg_id:           Process and thread id that will be prepended to multi line messages
+        :type  msg_is:           string
         :return:                 A generator of str objects, each of which is no longer than
                                  MAX_MSG_LENGTH - formatter_buffer octets.
         :rtype:                  generator

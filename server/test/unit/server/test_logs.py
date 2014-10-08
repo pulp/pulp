@@ -209,7 +209,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
         """
         Make sure the case where a message needs cutting is handled well.
         """
-        msg = "This message needs cutting, because it's longer than 5 characters."
+        msg = "This message needs cutting, because it's longer than 9 characters."
 
         with mock.patch('pulp.server.logs.CompliantSysLogHandler._log_id') as _log_id:
             _log_id.return_value = "PID-"
@@ -218,7 +218,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
 
             expected_messages = ['PID-This ', 'PID-messa', 'PID-ge ne', 'PID-eds c', 'PID-uttin',
                                  'PID-g, be', 'PID-cause', "PID- it's", 'PID- long', 'PID-er th',
-                                 'PID-an 5 ', 'PID-chara', 'PID-cters', 'PID-.']
+                                 'PID-an 9 ', 'PID-chara', 'PID-cters', 'PID-.']
             self.assertEqual(messages, expected_messages)
 
     def test__cut_message_with_short_message(self):
