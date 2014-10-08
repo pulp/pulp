@@ -10,6 +10,7 @@ Contents:
    release-notes/index
    installation
    tuning
+   broker-settings
    server
    authentication
    admin-client/index
