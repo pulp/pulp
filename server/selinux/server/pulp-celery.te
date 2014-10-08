@@ -20,13 +20,6 @@ require {
         class unix_dgram_socket { create connect };
 }
 
-## <desc>
-## <p>
-## Allow pulp to manage puppet content, defaulting to false.
-## </p>
-## </desc>
-gen_tunable(pulp_manage_puppet, false)
-
 #============= celery_t ==============
 allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
 allow celery_t self:process { signal signull };
@@ -87,11 +80,17 @@ corenet_tcp_connect_smtp_port(celery_t)
 
 ######################################
 #
-# Add an sebool that will enable Pulp to manage puppet_etc_t directories and files.
+# Adds a SELinux boolean called pulp_manage_puppet that enables Pulp to manage puppet_etc_t
+# directories, files, and symlinks. The puppet_etc_t label is applied to /etc/puppet/*. Defaults to
+# false.
 #
+
+gen_tunable(pulp_manage_puppet, false)
 
 optional_policy(`
     tunable_policy(`pulp_manage_puppet', `
+        # Puppet modules can contain symlinks, though it seems they often do not. This line allows
+        # Pulp to install the symlinks if they are present.
         allow celery_t puppet_etc_t:lnk_file create;
         manage_dirs_pattern(celery_t, puppet_etc_t, puppet_etc_t)
         manage_files_pattern(celery_t, puppet_etc_t, puppet_etc_t)
