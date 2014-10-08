@@ -20,7 +20,7 @@ from pulp.server.managers.consumer.applicability import RepoProfileApplicability
 connection.initialize()
 
 @task
-def monthly_maintenance():
+def monthly_maintenance(*args, **kwargs):
     """
     Perform tasks that should happen on a monthly basis.
     """

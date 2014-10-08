@@ -40,7 +40,7 @@ _logger = logging.getLogger(__name__)
 
 
 @task(base=Task)
-def reap_expired_documents():
+def reap_expired_documents(*args, **kwargs):
     """
     For each collection in _COLLECTION_TIMEDELTAS, call the class method reap_old_documents().
 

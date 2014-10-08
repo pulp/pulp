@@ -7,14 +7,16 @@ import threading
 import time
 
 from celery import beat
+from celery.app import defaults
 from celery.result import AsyncResult
 
+from pulp.common import constants
 from pulp.server.async.celery_instance import celery as app, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.tasks import _delete_worker
 from pulp.server.async import worker_watcher
 from pulp.server.db import connection as db_connection
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
+from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry, TaskStatus
 from pulp.server.managers import resources
 from pulp.server.managers.schedule import utils
 
@@ -408,7 +410,19 @@ class Scheduler(beat.Scheduler):
         :type kwargs:       dict
         :return:
         """
+        # Pull the kwargs needed to create a TaskStatus for this ScheduleEntry
+        routing_key = entry.kwargs.get('routing_key',
+                                       defaults.NAMESPACES['CELERY']['DEFAULT_ROUTING_KEY'].default)
+        tags = entry.kwargs['tags']
         result = super(Scheduler, self).apply_async(entry, publisher, **kwargs)
+        # Create a new task status with the task id and tags.
+        task_status = TaskStatus(task_id=result.id, task_type=entry.name,
+                                 state=constants.CALL_WAITING_STATE,
+                                 worker_name=routing_key, tags=tags)
+        # To avoid the race condition where __call__ method is called before
+        # this change is propagated to all db nodes, using an 'upsert' here and setting
+        # the task state to 'waiting' only on an insert.
+        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
         if isinstance(entry, ScheduleEntry) and entry._scheduled_call.failure_threshold:
             has_failure = bool(entry._scheduled_call.consecutive_failures)
             self._failure_watcher.add(result.id, entry.name, has_failure)
