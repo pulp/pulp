@@ -38,7 +38,7 @@ def get_parent_directory(path):
     that contains the item specified by path. Using this method avoids issues introduced when
     os.path.dirname() is used with paths that include trailing slashes.
 
-    The returned parent directory path does not include a trailing slash . The existence of the
+    The returned parent directory path does not include a trailing slash. The existence of the
     directory does not affect this functions behavior.
 
     :param path: file or directory path

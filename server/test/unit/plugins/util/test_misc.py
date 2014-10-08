@@ -92,7 +92,7 @@ class TestGetParentDirectory(unittest.TestCase):
         self.assertEqual(result, parent_dir)
 
     def test_absolute_path_ends_in_slash(self):
-        path = '/an/absolute/path'
+        path = '/an/absolute/path/'
         parent_dir = '/an/absolute'
         result = misc.get_parent_directory(path)
         self.assertEqual(result, parent_dir)
