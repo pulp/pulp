@@ -6,16 +6,18 @@ type celery_exec_t;
 init_daemon_domain(celery_t, celery_exec_t)
 
 require {
-        type var_run_t;
         type celery_t;
         type pulp_cert_t;
+        type puppet_etc_t;
+        type var_run_t;
+        class dir { getattr search write remove_name create add_name rmdir };
+        class file { lock rename write setattr getattr read create unlink open };
         class process { setsched signal signull };
         class tcp_socket { getopt create connect setopt getattr write read };
-        class file { lock rename write setattr getattr read create unlink open };
+        class lnk_file { create };
         class netlink_route_socket { bind create getattr nlmsg_read write read };
-        class unix_dgram_socket { create connect };
         class udp_socket { ioctl create getattr connect write read };
-        class dir { getattr search write remove_name create add_name rmdir };
+        class unix_dgram_socket { create connect };
 }
 
 #============= celery_t ==============
@@ -75,6 +77,25 @@ sysnet_read_config(celery_t)
 #
 
 corenet_tcp_connect_smtp_port(celery_t)
+
+######################################
+#
+# Adds a SELinux boolean called pulp_manage_puppet that enables Pulp to manage puppet_etc_t
+# directories, files, and symlinks. The puppet_etc_t label is applied to /etc/puppet/*. Defaults to
+# false.
+#
+
+gen_tunable(pulp_manage_puppet, false)
+
+optional_policy(`
+    tunable_policy(`pulp_manage_puppet', `
+        # Puppet modules can contain symlinks, though it seems they often do not. This line allows
+        # Pulp to install the symlinks if they are present.
+        allow celery_t puppet_etc_t:lnk_file create;
+        manage_dirs_pattern(celery_t, puppet_etc_t, puppet_etc_t)
+        manage_files_pattern(celery_t, puppet_etc_t, puppet_etc_t)
+    ')
+')
 
 ######################################
 #
