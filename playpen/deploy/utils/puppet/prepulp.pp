@@ -3,7 +3,12 @@
 class prepulp {
     include stdlib
 
-    package { 'redhat-lsb':
+    $base_packages = [
+        'redhat-lsb',
+        'java-1.7.0-openjdk-devel',
+        'wget'
+    ]
+    package { $base_packages:
         ensure => 'installed'
     }
 
@@ -12,16 +17,22 @@ class prepulp {
         # Get the latest puppet verson from puppetlabs. This should pull in
         # the json ruby gem for facter to use.
         $el5_packages = [
+            'git',
             'ruby-devel',
             'rubygems',
             'puppet',
+            'pymongo',
             'python-qpid',
+            'python-setuptools',
         ]
 
         exec { 'install puppet repo':
             command => '/bin/rpm -ivh http://yum.puppetlabs.com/puppetlabs-release-el-5.noarch.rpm'
         } -> package { $el5_packages:
             ensure => 'installed'
+        } -> exec { 'install pip':
+            # This depends on the el5_packages because python-setuptools must be installed before this step
+            command => '/usr/bin/curl -O https://pypi.python.org/packages/source/p/pip/pip-1.1.tar.gz && /bin/tar xfz pip-1.1.tar.gz && pushd pip-1.1 && /usr/bin/python setup.py install && popd && rm -rf pip-*'
         }
     } elsif ($::operatingsystem == 'RedHat' or $::operatingsystem == 'CentOS')
         and $::lsbmajdistrelease == 6 {
