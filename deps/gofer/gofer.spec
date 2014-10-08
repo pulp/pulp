@@ -7,7 +7,7 @@
 %endif
 
 Name: gofer
-Version: 1.3.0
+Version: 1.3.1
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -144,8 +144,9 @@ Summary: Gofer python lib modules
 Group: Development/Languages
 Obsoletes: %{name}-lib
 BuildRequires: python
-Requires: PyPAM
+Requires: pam
 %if 0%{?rhel} && 0%{?rhel} < 6
+Requires: python-ctypes
 Requires: python-simplejson
 Requires: python-hashlib
 Requires: python-uuid
@@ -286,6 +287,14 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Fri Aug 15 2014 Jeff Ortel <jortel@redhat.com> 1.3.1-1
+- 1129828 - split stack traces into separate log records. (jortel@redhat.com)
+- Added python-ctypes dependency. (jortel@redhat.com)
+- PyPAM replaced with ctypes implementation. (jortel@redhat.com)
+- Refactor: add transport Loader; transports loaded and cached when Transport
+  is instantiated instead of package import. (jortel@redhat.com)
+- Support passing url=None in broker meta-class. (jortel@redhat.com)
+
 * Mon Jun 16 2014 Jeff Ortel <jortel@redhat.com> 1.3.0-1
 - Update man page to reference github. (jortel@redhat.com)
 - Replace --console option with --foreground and use in systemd unit.
