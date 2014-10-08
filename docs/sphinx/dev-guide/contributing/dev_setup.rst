@@ -41,11 +41,7 @@ it is also recommended to install ``python-pip`` for access to additional setup-
 
 This method of installation links the git repositories as the locally deployed libraries and scripts.
 Any changes made in the working copy will be immediately deployed in the site-packages libraries
-and installed scripts. Setup scripts can be found in the following locations:
-
-In the root of the repository, run::
-
-  sudo ./manage_setup_pys.sh develop
+and installed scripts. Setup scripts are automatically run for you by ``pulp-dev.py``.
 
 .. note::
   Not all Pulp projects need to be installed in this fashion. When working on a new plugin,
@@ -53,8 +49,8 @@ In the root of the repository, run::
   pulp_puppet plugins would not be required.
 
 Additionally, Pulp specific files such as configuration and package directories must be linked to
-the checked out code base. These additions are not performed by ``setup.py`` but rather by the
-``pulp-dev.py`` script located in the root of each git repository. The full command is:
+the checked out code base. These additions are performed by the ``pulp-dev.py`` script located in the
+root of each git repository. The full command is:
 
 ::
 
@@ -64,17 +60,11 @@ Uninstallation
 ^^^^^^^^^^^^^^
 
 The ``pulp-dev.py`` script has an uninstall option that will remove the symlinks from the system
-into the local source directory. It is run using the ``-U`` flag:
+into the local source directory, as well as the Python packages. It is run using the ``-U`` flag:
 
 ::
 
  $ sudo python ./pulp-dev.py -U
-
-Each python package installed above must be removed by its package name.
-
-::
-
-  $ sudo pip uninstall <package name>
 
 Permissions
 ^^^^^^^^^^^

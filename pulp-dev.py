@@ -91,6 +91,8 @@ DIR_ADMIN_EXTENSIONS = '/usr/lib/pulp/admin/extensions/'
 DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 DIR_PLUGINS = '/usr/lib/pulp/plugins'
 
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+
 LINKS = [
     # Consumer Configuration
     ('agent/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
@@ -229,6 +231,9 @@ def get_paths_to_copy():
                           'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
                           'group': 'root', 'mode': '644', 'overwrite': True})
 
+    for path in paths:
+        path['source'] = os.path.join(ROOT_DIR, path['source'])
+
     return paths
 
 
@@ -296,13 +301,32 @@ def getlinks():
     return links
 
 
+def _manage_setup_pys(action):
+    """
+    This function can install or uninstall the Pulp Python packages in developer mode.
+
+    :param action: Which action you want to perform. May be "install" or "uninstall".
+    :type  action: basestring
+    """
+    command = ['./manage_setup_pys.sh', 'develop']
+    if action == 'uninstall':
+        command.append('--uninstall')
+
+    starting_cwd = os.getcwd()
+    os.chdir(ROOT_DIR)
+    subprocess.call(command)
+    os.chdir(starting_cwd)
+
+
 def install(opts):
+    # Install the Python packages
+    _manage_setup_pys('install')
+
     warnings = []
     create_dirs(opts)
     gen_rsa_keys()
-    currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
-        warning_msg = create_link(opts, os.path.join(currdir,src), dst)
+        warning_msg = create_link(opts, os.path.join(ROOT_DIR, src), dst)
         if warning_msg:
             warnings.append(warning_msg)
 
@@ -332,9 +356,9 @@ def install(opts):
         # Generate certificates
         print 'generating certificates'
         if not os.path.exists('/etc/pki/pulp/ca.crt'):
-            os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+            os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-ca-certificate'))
         if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
-            os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
+            os.system(os.path.join(ROOT_DIR, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
         # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
         # those world readable. Until we fix this, we cannot close #1048297
@@ -380,6 +404,9 @@ def uninstall(opts):
     # Remove generated certificates
     print 'removing certificates'
     os.system('rm -rf /etc/pki/pulp/*')
+
+    # Remove the Python packages
+    _manage_setup_pys('uninstall')
 
     return os.EX_OK
 
