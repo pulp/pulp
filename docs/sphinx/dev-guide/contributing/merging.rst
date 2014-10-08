@@ -15,6 +15,13 @@ On the GitHub page for the repo where your development branch lives, there will 
 a "Pull Request" button. Click it. From there you will choose the source and
 destination branches.
 
+If there is a bugzilla issue, please title the pull request "<bz_id> -
+Short Message". In the comment section below, please include a link to the
+issue. Use of GitHub's markdown for the link is prefered. Example:
+``[BZ-123456](http://link.tobug)`` Additionally, please also include a link to the
+pull request in the bugzilla comments.
+
+
 For details about using pull requests, see GitHub's
 `official documentation <https://help.github.com/articles/using-pull-requests>`_.
 
@@ -81,9 +88,10 @@ Merging to Multiple Releases
 The most important aspect of merging a change into multiple release branches is
 :ref:`choosing the right branch to start from <choosing-upstream-branch>`.
 
-Once your work is complete, submit a pull request into the branch for the oldest
-release you intend to merge into. Once review and revision is complete, merge
-your branch from the pull request web page. Do not delete the branch yet.
+Once your work is complete, submit a pull request from your GitHub fork into the
+branch for the oldest release you intend to merge into. Once review and revision
+is complete, merge your branch from the pull request web page. Do not delete the
+branch yet.
 
 For cases where there are few merge conflicts, merge your working branch manually
 into each successively newer release branch, and finally into master. Generally,

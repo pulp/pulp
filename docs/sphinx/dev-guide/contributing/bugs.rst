@@ -27,9 +27,9 @@ Developer
 
 #. Once the bug has been triaged and assigned to a developer, the state of the bug is set to
    ``ASSIGNED``.
-#. The developer creates a new remote branch for the bug. The name of the branch should follow the
-   convention of the developer's login name, a hyphen, and the number of the bugzilla entry.
-   Example: jdob-123456
+#. The developer creates a new remote branch for the bug on their GitHub fork. The name of the
+   branch should be the number of the bugzilla entry.
+   Example: 123456
 #. When the fix is complete, the developer submits a pull request for the bug into the appropriate
    branch (master, release branch, etc.). It's appreciated by the reviewer if a link to the bugzilla
    is included in the merge request, as well as a brief description of what the change is. It is
