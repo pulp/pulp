@@ -97,7 +97,7 @@ Commit Messages
 ---------------
 
 The primary commit in a bug fix should have a log message that starts with
-<bz_id> - and the commit message.
+'<bz_id> - ', for example ``123456 - fixes a silly bug``.
 
 
 Cherry-picking and Rebasing
