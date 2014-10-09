@@ -84,6 +84,9 @@ class PublishStepStatusRenderer(StatusRenderer):
             return
 
         step.processed = step_details[reporting_constants.PROGRESS_NUM_PROCESSED_KEY]
+        step.details = step_details[reporting_constants.PROGRESS_DETAILS_KEY]
+        if not step.details:
+            step.details = None
 
         if not step.initialized \
                 and current_state != reporting_constants.STATE_NOT_STARTED:
@@ -102,15 +105,20 @@ class PublishStepStatusRenderer(StatusRenderer):
             return
 
         if step.total > 1:
-            template = _("%s of %s items")
-            message = template % (step.processed, step.total)
+            if step.details:
+                template = _("%s of %s items: %s")
+                message = template % (step.processed, step.total, step.details)
+            else:
+                template = _("%s of %s items")
+                message = template % (step.processed, step.total)
+
             step.progress_bar.render(step.processed, step.total, message=message)
         else:
             if current_state in reporting_constants.FINAL_STATES:
-                step.spinner.next(finished=True)
+                step.spinner.next(finished=True, message=step.details)
                 step.done = True
             else:
-                step.spinner.next()
+                step.spinner.next(message=step.details)
 
         if current_state != step.state:
             if current_state == reporting_constants.STATE_COMPLETE:

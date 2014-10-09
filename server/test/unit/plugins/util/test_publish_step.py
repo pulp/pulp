@@ -223,6 +223,7 @@ class PluginStepTests(PluginBase):
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
             reporting_constants.PROGRESS_DESCRIPTION_KEY: '',
+            reporting_constants.PROGRESS_DETAILS_KEY: '',
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
@@ -247,6 +248,7 @@ class PluginStepTests(PluginBase):
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
             reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar',
+            reporting_constants.PROGRESS_DETAILS_KEY: '',
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
@@ -469,6 +471,7 @@ class PublishStepTests(PublisherBase):
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
             reporting_constants.PROGRESS_DESCRIPTION_KEY: '',
+            reporting_constants.PROGRESS_DETAILS_KEY: '',
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
@@ -477,6 +480,7 @@ class PublishStepTests(PublisherBase):
     def test_get_progress_report_description(self):
         step = PublishStep('bar_step')
         step.description = 'bar'
+        step.progress_details = 'baz'
         step.error_details = "foo"
         step.state = reporting_constants.STATE_COMPLETE
         step.total_units = 2
@@ -493,6 +497,7 @@ class PublishStepTests(PublisherBase):
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
             reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar',
+            reporting_constants.PROGRESS_DETAILS_KEY: 'baz',
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
