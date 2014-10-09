@@ -472,3 +472,8 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual(self.recorder.lines[0], 'abcdef  ABCDEF\n')
         self.assertEqual(self.recorder.lines[1], 'xyz     XYZ\n')
 
+    def test_summary_when_empty(self):
+        # Test that summmary is an empty list when there are no repositories
+        repo_list = []
+        cudl._default_summary_view(repo_list, self.context.prompt)
+        self.assertEqual(len(self.recorder.lines), 0)
