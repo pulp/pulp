@@ -480,7 +480,7 @@ class PublishStepTests(PublisherBase):
     def test_get_progress_report_description(self):
         step = PublishStep('bar_step')
         step.description = 'bar'
-        step.details = 'baz'
+        step.progress_details = 'baz'
         step.error_details = "foo"
         step.state = reporting_constants.STATE_COMPLETE
         step.total_units = 2

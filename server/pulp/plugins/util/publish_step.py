@@ -58,7 +58,7 @@ class Step(object):
         self.step_id = step_type
         self.canceled = False
         self.description = ""
-        self.details = ""
+        self.progress_details = ""
         self.state = reporting_constants.STATE_NOT_STARTED
         self.progress_successes = 0
         self.progress_failures = 0
@@ -178,7 +178,7 @@ class Step(object):
                 self.initialize()
                 self.report_progress()
                 self._process_block()
-                self.details = ""
+                self.progress_details = ""
                 # Double check & return if we have been canceled
                 if self.canceled:
                     return
@@ -266,7 +266,7 @@ class Step(object):
             reporting_constants.PROGRESS_NUM_FAILURES_KEY: self.progress_failures,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: self.total_units,
             reporting_constants.PROGRESS_DESCRIPTION_KEY: self.description,
-            reporting_constants.PROGRESS_DETAILS_KEY: self.details
+            reporting_constants.PROGRESS_DETAILS_KEY: self.progress_details
         }
         if self.children:
             child_reports = []
@@ -659,7 +659,7 @@ class UnitPublishStep(PublishStep):
                 return
             self.process_unit(package_unit)
             self.progress_successes += 1
-            self.details = ""
+            self.progress_details = ""
             self.report_progress()
 
     def _get_total(self, id_list=None, ignore_filter=False):
@@ -866,7 +866,7 @@ class PluginStepIterativeProcessingMixin(object):
                 return
             # Clear the details text so that the details from a previous iteration won't
             # show up for the next iteration
-            self.details = ""
+            self.progress_details = ""
             self.process_item(item)
             self.progress_successes += 1
             self.report_progress()
