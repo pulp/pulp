@@ -338,11 +338,16 @@ class CatalogResource(JSONController):
         return self.ok(None)
 
 
-class Sources(JSONController):
+class ContentSourceCollection(JSONController):
 
     def GET(self):
+        """
+        Get all content sources.
+        :return: List of sources.
+        :rtype: list
+        """
         container = ContentContainer()
-        sources = [s.__dict__ for s in container.sources.values()]
+        sources = [serialization.content_source.serialize(s) for s in container.sources.values()]
         return self.ok(sources)
 
 
@@ -361,6 +366,6 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
          '/actions/delete_orphans/$', DeleteOrphansAction,  # deprecated in 2.4
          '/catalog/([^/]+)$', CatalogResource,
-         '/sources/$', Sources,)
+         '/sources/$', ContentSourceCollection,)
 
 application = web.application(_URLS, globals())
