@@ -79,3 +79,28 @@ class OrphanContentAPI(PulpAPI):
         """
         path = self.PATH + "%s/" % type_id
         return self.server.DELETE(path)
+
+
+class ContentSourceAPI(PulpAPI):
+
+    BASE_URL = 'v2/content/sources/'
+
+    def get(self, source_id):
+        """
+        Get a content source by ID.
+        :param source_id: A content source ID.
+        :type source_id: str
+        :return: A content source.
+        :rtype: dict
+        """
+        path = '%s/%s/' % (self.BASE_URL, source_id)
+        return self.server.GET(path)
+
+    def get_all(self):
+        """
+        Get all loaded content sources.
+        :return: List of content sources.
+        :rtype: list
+        """
+        path = self.BASE_URL
+        return self.server.GET(path)

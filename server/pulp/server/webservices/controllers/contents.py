@@ -347,8 +347,28 @@ class ContentSourceCollection(JSONController):
         :rtype: list
         """
         container = ContentContainer()
-        sources = [serialization.content_source.serialize(s) for s in container.sources.values()]
-        return self.ok(sources)
+        sources = container.sources.values()
+        serialized = serialization.content_source.serialize_all(sources)
+        return self.ok(list(serialized))
+
+
+class ContentSourceResource(JSONController):
+
+    def GET(self, source_id):
+        """
+        Get a content source by ID.
+        :param source_id: A content source ID.
+        :type source_id: str
+        :return: A content source object.
+        :rtype: dict
+        """
+        container = ContentContainer()
+        source = container.sources.get(source_id)
+        if source:
+            serialized = serialization.content_source.serialize(source)
+            return self.ok(serialized)
+        else:
+            raise MissingResource(source_id=source_id)
 
 
 # wsgi application -------------------------------------------------------------
@@ -366,6 +386,7 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
          '/actions/delete_orphans/$', DeleteOrphansAction,  # deprecated in 2.4
          '/catalog/([^/]+)$', CatalogResource,
-         '/sources/$', ContentSourceCollection,)
+         '/sources/$', ContentSourceCollection,
+         '/sources/([^/]+)/$', ContentSourceResource,)
 
 application = web.application(_URLS, globals())

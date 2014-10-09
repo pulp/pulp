@@ -3,21 +3,34 @@ import link
 from pulp.server.content.sources import constants
 
 
+def serialize_all(sources):
+    """
+    Get a REST object representation of a collection of content source model objects.
+    :param sources: A collection of content source model objects.
+    :type sources: iterable
+    :return: The REST objects.
+    :rtype: generator
+    """
+    for source in sources:
+        serialized = serialize(source)
+        href = link.child_link_obj(serialized[constants.SOURCE_ID])
+        serialized.update(href)
+        yield serialized
+
+
 def serialize(source):
     """
     Get a REST object representation of a content source model object.
     :param source: A content source model object.
     :type source: pulp.server.content.sources.model.ContentSource
-    :return: A dict representations of the model object.
+    :return: The REST object.
     :rtype: dict
     """
-    serial = {}
-    serial.update(source.descriptor)
-    serial[constants.SOURCE_ID] = source.id
-    serial[constants.PRIORITY] = source.priority
-    serial[constants.EXPIRES] = source.expires
-    serial[constants.URL] = source.urls
-    serial[constants.MAX_CONCURRENT] = source.max_concurrent
-    href = link.child_link_obj(source.id)
-    serial.update(href)
-    return serial
+    serialized = {}
+    serialized.update(source.descriptor)
+    serialized[constants.SOURCE_ID] = source.id
+    serialized[constants.PRIORITY] = source.priority
+    serialized[constants.EXPIRES] = source.expires
+    serialized[constants.URL] = source.urls
+    serialized[constants.MAX_CONCURRENT] = source.max_concurrent
+    return serialized
