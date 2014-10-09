@@ -474,6 +474,9 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
     def test_summary_when_empty(self):
         # Test that summmary is an empty list when there are no repositories
+        self.command.prompt.terminal_size = mock.MagicMock()
+        self.command.prompt.terminal_size.return_value = 20, 20
+
         repo_list = []
         cudl._default_summary_view(repo_list, self.context.prompt)
         self.assertEqual(len(self.recorder.lines), 0)
