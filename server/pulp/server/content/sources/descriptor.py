@@ -80,6 +80,12 @@ from pulp.server.content.sources import constants
 
 log = getLogger(__name__)
 
+DEFAULT = {
+    constants.PRIORITY: '0',
+    constants.EXPIRES: '24h',
+    constants.MAX_CONCURRENT: '2',
+    constants.SSL_VALIDATION: 'true'
+}
 
 SCHEMA = [
     None, REQUIRED,

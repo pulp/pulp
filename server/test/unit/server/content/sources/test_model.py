@@ -167,11 +167,12 @@ class TestRequest(TestCase):
 
 class TestContentSource(TestCase):
 
+    @patch('os.path.isfile')
     @patch('os.listdir')
     @patch('pulp.server.content.sources.model.ConfigParser')
     @patch('pulp.server.content.sources.model.ContentSource.enabled')
     @patch('pulp.server.content.sources.model.ContentSource.is_valid')
-    def test_load_all(self, fake_valid, fake_enabled, fake_parser, fake_listdir):
+    def test_load_all(self, fake_valid, fake_enabled, fake_parser, fake_listdir, fake_isfile):
         conf_d = '/fake/conf_d'
         files = ['one.conf', 'other']
         fake_listdir.return_value = files
@@ -182,6 +183,8 @@ class TestContentSource(TestCase):
             True,  # s-2
             False  # s-3
         ]
+
+        fake_isfile.side_effect = [True, False]
 
         fake_enabled.__get__ = Mock(side_effect=[d[1]['enabled'] for d in DESCRIPTOR])
 
@@ -285,8 +288,6 @@ class TestContentSource(TestCase):
         source = ContentSource('s-1', {constants.ENABLED: 'true'})
         self.assertTrue(source.enabled)
         source.descriptor[constants.ENABLED] = 'false'
-        self.assertFalse(source.enabled)
-        source.descriptor = {}
         self.assertFalse(source.enabled)
 
     def test_priority(self):
@@ -487,6 +488,18 @@ class TestContentSource(TestCase):
             self.assertEqual(report[n].added_count, 0)
             self.assertEqual(report[n].deleted_count, 0)
             n += 1
+
+    def test_dict(self):
+        descriptor = {'A': 1, 'B': 2}
+
+        # test
+        source = ContentSource('s-1', descriptor)
+
+        # validation
+        expected = {}
+        expected.update(descriptor)
+        expected[constants.SOURCE_ID] = source.id
+        self.assertEqual(source.dict(), expected)
 
     def test_eq_(self):
         s1 = ContentSource('s-1', {})

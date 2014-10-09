@@ -373,18 +373,3 @@ class ImportUnitTests(BaseUploadTest):
                               {'name': 'foo'}, {'stuff': 'bar'},
                               upload_id, test_override_config]
         self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])
-
-
-class CatalogTests(base.PulpWebserviceTests):
-
-    @mock.patch('pulp.server.managers.content.catalog.ContentCatalogManager.purge')
-    def test_delete(self, mock_purge):
-        source_id = 'test-source'
-
-        # test
-        url = '/v2/content/catalog/%s' % source_id
-        status, body = self.delete(url)
-
-        # validation
-        self.assertEqual(status, 200)
-        mock_purge.assert_called_with(source_id)

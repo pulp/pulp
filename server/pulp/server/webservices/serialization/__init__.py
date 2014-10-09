@@ -29,11 +29,10 @@ repo_repr = serialization.repo.serialize(repo)
 
 import binding
 import content
-import content_source
 import dispatch
 import error
 import link
 import consumer
 import db
 
-__all__ = ['binding', 'content', 'content_source', 'dispatch', 'error', 'link', 'consumer', 'db']
+__all__ = ['binding', 'content', 'dispatch', 'error', 'link', 'consumer', 'db']

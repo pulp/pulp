@@ -347,9 +347,13 @@ class ContentSourceCollection(JSONController):
         :rtype: list
         """
         container = ContentContainer()
-        sources = container.sources.values()
-        serialized = serialization.content_source.serialize_all(sources)
-        return self.ok(list(serialized))
+        sources = []
+        for source in container.sources.values():
+            d = source.dict()
+            href = serialization.link.child_link_obj(source.id)
+            d.update(href)
+            sources.append(d)
+        return self.ok(sources)
 
 
 class ContentSourceResource(JSONController):
@@ -365,8 +369,7 @@ class ContentSourceResource(JSONController):
         container = ContentContainer()
         source = container.sources.get(source_id)
         if source:
-            serialized = serialization.content_source.serialize(source)
-            return self.ok(serialized)
+            return self.ok(source.dict())
         else:
             raise MissingResource(source_id=source_id)
 
