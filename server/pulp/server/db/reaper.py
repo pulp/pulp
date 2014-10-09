@@ -16,6 +16,7 @@ from gettext import gettext as _
 
 from celery import task
 
+from pulp.common.tags import action_tag
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import Task
 from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, repository
@@ -38,6 +39,13 @@ _COLLECTION_TIMEDELTAS = {
 
 _logger = logging.getLogger(__name__)
 
+@task
+def schedule_reap_expired_documents():
+    """
+    Create an itinerary for reaper task
+    """
+    tags = [action_tag('reaper')]
+    reap_expired_documents.apply_async(tags=tags)
 
 @task(base=Task)
 def reap_expired_documents(*args, **kwargs):

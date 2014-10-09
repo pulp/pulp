@@ -168,7 +168,7 @@ def distributor_update(repo_id, distributor_id, config, delta):
     return TaskResult(distributor, bind_error, additional_tasks)
 
 
-@celery.task(base=Task)
+@celery.task()
 def publish(repo_id, distributor_id, overrides=None):
     """
     Create an itinerary for repo publish.

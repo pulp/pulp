@@ -12,6 +12,8 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from celery import task
 
+from pulp.common.tags import action_tag
+from pulp.server.async.tasks import Task
 from pulp.server.db import connection
 from pulp.server.managers.consumer.applicability import RepoProfileApplicabilityManager
 
@@ -20,6 +22,14 @@ from pulp.server.managers.consumer.applicability import RepoProfileApplicability
 connection.initialize()
 
 @task
+def schedule_monthly_maintenance():
+    """
+    Create an itinerary for monthly task
+    """
+    tags = [action_tag('monthly')]
+    monthly_maintenance.apply_async(tags=tags)
+
+@task(base=Task)
 def monthly_maintenance(*args, **kwargs):
     """
     Perform tasks that should happen on a monthly basis.
