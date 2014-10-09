@@ -16,6 +16,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
             reporting_constants.PROGRESS_STEP_TYPE_KEY: u'foo_step',
             reporting_constants.PROGRESS_STEP_UUID: u'abcde',
             reporting_constants.PROGRESS_DESCRIPTION_KEY: u'foo description',
+            reporting_constants.PROGRESS_DETAILS_KEY: u'bar details',
             reporting_constants.PROGRESS_STATE_KEY: reporting_constants.STATE_NOT_STARTED,
             reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 1,
             reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 0,
@@ -68,7 +69,7 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.renderer.render_step(self.step)
 
         step = self.renderer.steps[self.step[reporting_constants.PROGRESS_STEP_UUID]]
-        step.spinner.next.assert_called_once_with(finished=True)
+        step.spinner.next.assert_called_once_with(message=u'bar details', finished=True)
         self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
 
     def test_render_step_skipped(self):
