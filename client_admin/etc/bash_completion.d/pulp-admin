@@ -26,14 +26,21 @@ _elogin_pa_options() {
 
 _epulp-admin_tab() {
 
-  local cur pa_prev  pa_options pa_sections grep_pa_sections
+  local cur pa_prev pa_options pa_sections array_pa_sections grep_pa_sections
 
   COMPREPLY=()
   cur=${COMP_WORDS[COMP_CWORD]}
   pa_prev=${COMP_WORDS[COMP_CWORD-1]}
   pa_options="-u -p --username --password --help -h --debug --config"
-  pa_sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
-  grep_pa_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
+  pa_sections=$(pulp-admin --map | egrep -o '^[^ ]*:' | tr -d ':' | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" | sed 's/login//g;s/logout//g')
+  array_pa_sections=(${pa_sections})
+
+  for ix in ${!array_pa_sections[*]}; do
+    grep_pa_sections=$(echo $COMP_LINE | egrep -o "(${array_pa_sections[$ix]})(?|.)*" )
+    if [[ -n "${grep_pa_sections}" ]]; then
+      break
+    fi
+  done
 
   if [[ $COMP_LINE == *logout?* ]] \
     || [[ $COMP_LINE == *--map?* ]] \
