@@ -22,7 +22,7 @@ from pulp.server.managers.consumer.applicability import RepoProfileApplicability
 connection.initialize()
 
 @task
-def schedule_monthly_maintenance():
+def queue_monthly_maintenance():
     """
     Create an itinerary for monthly task
     """

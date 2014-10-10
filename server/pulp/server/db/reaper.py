@@ -40,7 +40,7 @@ _COLLECTION_TIMEDELTAS = {
 _logger = logging.getLogger(__name__)
 
 @task
-def schedule_reap_expired_documents():
+def queue_reap_expired_documents():
     """
     Create an itinerary for reaper task
     """
