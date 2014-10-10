@@ -50,10 +50,6 @@ class TestInitialize(unittest.TestCase):
         initialize()
         self.mock_plugin_api.initialize.assert_called_once_with()
 
-    def test_initialize_catches_Exception_and_raises_InitializationException(self):
-        self.mock_plugin_api.initialize.side_effect = OSError('my message')
-        self.assertRaises(InitializationException, initialize)
-
     def test_initialize_does_not_call_manager_factory_if_plugin_api_raises_Exception(self):
         self.mock_plugin_api.initialize.side_effect = OSError('my message')
         try:

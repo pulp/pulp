@@ -23,7 +23,7 @@ from pulp.plugins.cataloger import Cataloger
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
 
-_LOG = logging.getLogger('db')
+_logger = logging.getLogger('db')
 
 # implicit singleton instance of PluginManager
 
@@ -408,7 +408,7 @@ def load_content_types(types_dir=_TYPES_DIR):
     """
     if not os.access(types_dir, os.F_OK | os.R_OK):
         msg = _('Cannot load types: path does not exist or cannot be read: %(p)s')
-        _LOG.critical(msg % {'p': types_dir})
+        _logger.critical(msg % {'p': types_dir})
         raise IOError(msg % {'p': types_dir})
     descriptors = _load_type_descriptors(types_dir)
     _load_type_definitions(descriptors)
@@ -433,7 +433,7 @@ def _load_type_descriptors(path):
     :type path: str
     :rtype: list [TypeDescriptor, ...]
     """
-    _LOG.debug('Loading type descriptors from: %s' % path)
+    _logger.debug('Loading type descriptors from: %s' % path)
     descriptors = []
     for file_name in os.listdir(path):
         full_file_name = os.path.join(path, file_name)
