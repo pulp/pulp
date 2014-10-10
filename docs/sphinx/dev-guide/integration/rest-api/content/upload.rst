@@ -91,7 +91,7 @@ the repository itself and the URL reflects this accordingly.
 The task created will have the following tags.  ``"pulp:repository:<repo_id>",
 "pulp:action:import_upload"``
 
-:sample_response:`202` ::
+:sample_request:`_` ::
 
  {
     "override_config": {},
