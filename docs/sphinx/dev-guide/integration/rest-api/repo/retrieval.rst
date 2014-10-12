@@ -49,6 +49,8 @@ and :term:`distributors <distributor>` associated with it.
   ],
   "notes": {},
   "content_unit_count": 0,
+  "last_unit_added": "2012-01-25T15:26:32Z",
+  "last_unit_removed": "2012-01-25T15:26:32Z",
   "importers": [
     {
       "scratchpad": 1,
@@ -97,6 +99,8 @@ where there are no repositories.
   {
     "display_name": "Harness Repository: harness_repo_1",
     "description": null,
+    "last_unit_added": "2012-01-25T15:26:32Z",
+    "last_unit_removed": null,
     "distributors": [
       {
         "scratchpad": 1,
@@ -184,6 +188,8 @@ array is returned in the case where there are no repositories.
     ],
     "notes": {},
     "content_unit_count": 0,
+    "last_unit_added": null,
+    "last_unit_removed": null,
     "importers": [
       {
         "scratchpad": 1,
@@ -254,6 +260,8 @@ filter expressions may not be serializable as query parameters.
     ],
     "notes": {},
     "content_unit_count": 0,
+    "last_unit_added": null,
+    "last_unit_removed": null,
     "importers": [
       {
         "scratchpad": 1,

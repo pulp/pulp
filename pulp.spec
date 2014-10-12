@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.7.beta%{?dist}
+Release: 0.8.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -606,6 +606,30 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
+- 1117512 - Fix formatting of last_unit_added & last_unit_removed fields
+  (bcourt@redhat.com)
+- 1138356 - adding docs on how to backup pulp (mhrivnak@redhat.com)
+- 1122987 - Adds troubleshooting note around Qpid scalability limits
+  (bmbouter@gmail.com)
+- 1066472 - Removed 409 response codes in docs for permission api calls
+  (dkliban@redhat.com)
+- 1103232 - Document common proxy config options. (rbarlow@redhat.com)
+- 1081518 - Add help documentation for retrieving a single distributor or
+  importer (bcourt@redhat.com)
+- 1064150 - Creates a troubleshooting page that mentions inconsistency with
+  trailing slashes (asmacdo@gmail.com)
+- 1148555 - removes doubled 2.4.1 rest api changes from release notes
+  (asmacdo@gmail.com)
+- 1022188 - Docs about repos binding to nodes which were activated after
+  deactivation (dkliban@redhat.com)
+- 1145320 - document running pulp-manage-db after installation.
+  (jortel@redhat.com)
+- 1129489 - Document Apache CRLs. (rbarlow@redhat.com)
+- 1096294 - Document the rsyslog log level settings. (rbarlow@redhat.com)
+- 1087997 - add link to release note (cduryee@redhat.com)
+- 1009429 - Move pulp_manage_puppet bool 2 celery_t. (rbarlow@redhat.com)
+
 * Thu Oct 02 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.7.beta
 - Pulp rebuild
 
