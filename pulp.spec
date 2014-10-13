@@ -41,7 +41,7 @@
 
 Name: pulp
 Version: 2.4.2
-Release: 0.1.beta%{?dist}
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,8 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-0.1.beta
+* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
 - 1138356 - adding docs on how to backup pulp (mhrivnak@redhat.com)
+- 1060752 - Add sample output for repo import_upload (bcourt@redhat.com)
 - 1066472 - Removed 409 response codes in docs for permission api calls
   (dkliban@redhat.com)
 - 1103232 - Document common proxy config options. (rbarlow@redhat.com)
@@ -623,6 +624,7 @@ exit 0
 - 1096294 - Document the rsyslog log level settings. (rbarlow@redhat.com)
 - 1087997 - add link to release note (cduryee@redhat.com)
 - 1150714 - remove old distribution units when syncing (cduryee@redhat.com)
+
 * Tue Sep 23 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
 - 1136883 - Fixed incorrect tags for applicability in the docs
   (jcline@redhat.com)
