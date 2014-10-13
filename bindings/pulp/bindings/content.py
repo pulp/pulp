@@ -93,7 +93,7 @@ class ContentSourceAPI(PulpAPI):
         :return: A content source.
         :rtype: dict
         """
-        path = '%s/%s/' % (self.BASE_URL, source_id)
+        path = '%s%s/' % (self.BASE_URL, source_id)
         return self.server.GET(path)
 
     def get_all(self):

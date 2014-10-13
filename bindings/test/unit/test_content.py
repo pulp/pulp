@@ -15,6 +15,7 @@ import unittest
 import mock
 
 from pulp.bindings.content import OrphanContentAPI
+from pulp.bindings.content import ContentSourceAPI
 from pulp.common.compat import json
 
 
@@ -89,3 +90,30 @@ class TestRemoveBulk(unittest.TestCase):
         body)
 
         self.assertEqual(ret, self.api.server.POST.return_value)
+
+
+class TestContentSources(unittest.TestCase):
+
+    def test_get_all(self):
+        connection = mock.Mock()
+        api = ContentSourceAPI(connection)
+
+        # test
+        body = api.get_all()
+
+        # validation
+        connection.GET.assert_called_once_with(ContentSourceAPI.BASE_URL)
+        self.assertEqual(body, connection.GET.return_value)
+
+    def test_get(self):
+        source_id = 'test-id'
+        connection = mock.Mock()
+        api = ContentSourceAPI(connection)
+
+        # test
+        body = api.get(source_id)
+
+        # validation
+        path = '%s%s/' % (ContentSourceAPI.BASE_URL, source_id)
+        connection.GET.assert_called_once_with(path)
+        self.assertEqual(body, connection.GET.return_value)
