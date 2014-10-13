@@ -261,3 +261,31 @@ issue you can:
      this architecture manageable.
 
 .. _Qpid scalability guide: https://bugzilla.redhat.com/attachment.cgi?id=930496
+
+Pickle Security Warning
+^^^^^^^^^^^^^^^^^^^^^^^
+
+In the Pulp logs you may see a Celery warning similar to the following::
+
+  CDeprecationWarning:
+  Starting from version 3.2 Celery will refuse to accept pickle by default.
+
+  The pickle serializer is a security concern as it may give attackers
+  the ability to execute any command.  It's important to secure
+  your broker from unauthorized access when using pickle, so we think
+  that enabling pickle should require a deliberate action and not be
+  the default choice.
+
+  If you depend on pickle then you should set a setting to disable this
+  warning and to be sure that everything will continue working
+  when you upgrade to Celery 3.2::
+
+     CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+
+  You must only enable the serializers that you will actually use.
+
+
+   warnings.warn(CDeprecationWarning(W_PICKLE_DEPRECATED))
+
+This is related to how data is passed around internally inside of Pulp, and this warning is
+displayed as part of normal Pulp operation.
