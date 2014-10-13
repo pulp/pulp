@@ -96,6 +96,9 @@ python setup.py install --skip-build --root %{buildroot}
 
 
 %changelog
+* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 0.7.10-2
+- new package built with tito
+
 * Tue Oct 08 2013 Yohan Graterol <yohangraterol92@gmail.com> - 0.7.10-2
 - Fix BR
 * Fri Sep 13 2013 Tim Flink <tflink@fedoraproject.org> - 0.7.10-1
