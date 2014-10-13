@@ -21,7 +21,6 @@ _DATABASE = None
 
 _log = logging.getLogger(__name__)
 _DEFAULT_MAX_POOL_SIZE = 10
-_MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
 
 # please keep this in X.Y.Z format, with only integers.
 # see version.cpp in mongo source code for version format info.
@@ -29,9 +28,13 @@ MONGO_MINIMUM_VERSION = "2.4.0"
 
 # -- connection api ------------------------------------------------------------
 
-def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
+def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_timeout=32):
     """
     Initialize the connection pool and top-level database for pulp.
+
+    :param max_timeout: the maximum number of seconds to wait between
+                        connection retries
+    :type  max_timeout: int
     """
     global _CONNECTION, _DATABASE
 
@@ -60,11 +63,12 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
         _log.debug('Connection Arguments: %s' % connection_kwargs)
 
         # Wait until the Mongo database is available
+        mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
         while True:
             try:
                 _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
             except pymongo.errors.ConnectionFailure:
-                next_delay = _MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next()
+                next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
                 msg = _(
                     "Could not connect to MongoDB at %(url)s ... Waiting %(retry_timeout)s seconds "
                     "and trying again.")
