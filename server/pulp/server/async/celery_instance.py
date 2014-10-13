@@ -21,12 +21,12 @@ DEDICATED_QUEUE_EXCHANGE = 'C.dq'
 RESOURCE_MANAGER_QUEUE = 'resource_manager'
 CELERYBEAT_SCHEDULE = {
     'reap_expired_documents': {
-        'task': 'pulp.server.db.reaper.reap_expired_documents',
+        'task': 'pulp.server.db.reaper.queue_reap_expired_documents',
         'schedule': timedelta(days=config.getfloat('data_reaping', 'reaper_interval')),
         'args': tuple(),
     },
     'monthly_maintenance': {
-        'task': 'pulp.server.maintenance.monthly.monthly_maintenance',
+        'task': 'pulp.server.maintenance.monthly.queue_monthly_maintenance',
         'schedule': timedelta(days=30),
         'args': tuple(),
     },

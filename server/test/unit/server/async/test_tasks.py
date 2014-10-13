@@ -14,13 +14,16 @@ import mock
 from ...base import PulpServerTests, ResourceReservationTests
 from pulp.common import dateutils
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
+from pulp.common.tags import action_tag
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker, ReservedResource
+from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers
+from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
 
 # Worker names
@@ -812,10 +815,23 @@ class TestGetCurrentTaskId(unittest.TestCase):
         self.assertEquals(None, tasks.get_current_task_id())
 
 
-class TestCleanupOldWorker (unittest.TestCase):
+class TestCleanupOldWorker(unittest.TestCase):
 
     @mock.patch('pulp.server.async.tasks._delete_worker')
     def test_assert_calls__delete_worker_synchronously(self, mock__delete_worker):
         sender = mock.Mock()
         tasks.cleanup_old_worker(sender=sender)
         mock__delete_worker.assert_called_once_with(sender.hostname, normal_shutdown=True)
+
+
+class TestScheduledTasks(unittest.TestCase):
+
+    @mock.patch('pulp.server.db.reaper.reap_expired_documents.apply_async')
+    def test_reap_expired_documents_apply_async(self, mock_reaper_apply_async):
+        queue_reap_expired_documents()
+        mock_reaper_apply_async.assert_called_once_with(tags=[action_tag('reaper')])
+
+    @mock.patch('pulp.server.maintenance.monthly.monthly_maintenance.apply_async')
+    def test_monthly_maintenance_apply_async(self, mock_monthly_apply_async):
+        queue_monthly_maintenance()
+        mock_monthly_apply_async.assert_called_once_with(tags=[action_tag('monthly')])

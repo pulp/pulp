@@ -62,9 +62,23 @@ Listing
 To see all the tasks on the server at any given time, the **pulp-admin**
 command line client provides the ``tasks`` section and the ``list`` command.
 
-It provides all the same information as the ``details`` command, but for every
-task currently operating on the pulp server.
+It provides all the same information as the ``details`` command, but for every task that has been
+executed on the pulp server. The length of history depends on the settings described below.
 
+In addition to tasks launched using pulp-admin or the API , ``reaper`` and ``monthly`` tasks appear
+in the list.
+
+The ``reaper`` task is responsible for cleaning up the database on a regularly scheduled interval.
+The interval is configured with ``reaper_interval`` in ``[data_reaping]`` section of
+``/etc/pulp/server.conf``. The value can be whole or fraction of days. The length of time to keep
+documents for each collection is also configured in the same section. ``archived_calls``,
+``task_status_history``, ``consumer_history``, ``repo_sync_history``, ``repo_publish_history``,
+``repo_group_publish_history``, and ``task_result_history`` take values of whole or fraction of
+days to keep that type of history. This database cleanup is needed because these transactions can
+occur very frequently and as result the database can grow to an unreasonable size.
+
+The ``monthly`` task is run every 30 days to clean up data referencing any repositories that no
+longer exist.
 
 Canceling a Task
 ----------------
