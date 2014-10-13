@@ -18,6 +18,7 @@ from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.content.sources import constants
 from pulp.server.content.sources.model import Request, PrimarySource, ContentSource, RefreshReport
 from pulp.server.content.sources.model import PRIMARY_ID, DownloadDetails, DownloadReport
+from pulp.server.content.sources.descriptor import DEFAULT
 
 TYPE = '1234'
 TYPE_ID = 'ABCD'
@@ -555,6 +556,10 @@ class TestPrimarySource(TestCase):
     def test_priority(self):
         primary = PrimarySource(None)
         self.assertEqual(primary.priority, sys.maxint)
+
+    def test_max_concurrent(self):
+        primary = PrimarySource(None)
+        self.assertEqual(primary.max_concurrent, int(DEFAULT[constants.MAX_CONCURRENT]))
 
 
 class TestDownloadDetails(TestCase):
