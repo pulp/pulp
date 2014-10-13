@@ -91,6 +91,17 @@ the repository itself and the URL reflects this accordingly.
 The task created will have the following tags.  ``"pulp:repository:<repo_id>",
 "pulp:action:import_upload"``
 
+:sample_request:`_` ::
+
+ {
+    "override_config": {},
+    "unit_type_id": "srpm",
+    "upload_id": "768b18c1-fef1-4443-bd5b-a4cc9bda3b03",
+    "unit_key": {},
+    "unit_metadata": {"checksum_type": null}
+ }
+
+
 Delete an Upload Request
 ------------------------
 
