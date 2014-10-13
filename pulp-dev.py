@@ -1,16 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import optparse
 import os
@@ -18,6 +7,13 @@ import re
 import shutil
 import subprocess
 import sys
+
+
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# In order to import pulp.devel.environment, we will need to add pulp.devel to the syspath
+sys.path.append(os.path.join(ROOT_DIR, 'devel', 'pulp', 'devel'))
+import environment
 
 
 WARNING_COLOR = '\033[31m'
@@ -90,8 +86,6 @@ if sys.version_info >= (2, 6):
 DIR_ADMIN_EXTENSIONS = '/usr/lib/pulp/admin/extensions/'
 DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 DIR_PLUGINS = '/usr/lib/pulp/plugins'
-
-ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 LINKS = [
     # Consumer Configuration
@@ -301,26 +295,9 @@ def getlinks():
     return links
 
 
-def _manage_setup_pys(action):
-    """
-    This function can install or uninstall the Pulp Python packages in developer mode.
-
-    :param action: Which action you want to perform. May be "install" or "uninstall".
-    :type  action: basestring
-    """
-    command = ['./manage_setup_pys.sh', 'develop']
-    if action == 'uninstall':
-        command.append('--uninstall')
-
-    starting_cwd = os.getcwd()
-    os.chdir(ROOT_DIR)
-    subprocess.call(command)
-    os.chdir(starting_cwd)
-
-
 def install(opts):
     # Install the Python packages
-    _manage_setup_pys('install')
+    environment._manage_setup_pys('install')
 
     warnings = []
     create_dirs(opts)
@@ -406,7 +383,7 @@ def uninstall(opts):
     os.system('rm -rf /etc/pki/pulp/*')
 
     # Remove the Python packages
-    _manage_setup_pys('uninstall')
+    environment._manage_setup_pys('uninstall')
 
     return os.EX_OK
 
