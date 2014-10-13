@@ -30,7 +30,7 @@ def queue_monthly_maintenance():
     monthly_maintenance.apply_async(tags=tags)
 
 @task(base=Task)
-def monthly_maintenance(*args, **kwargs):
+def monthly_maintenance():
     """
     Perform tasks that should happen on a monthly basis.
     """

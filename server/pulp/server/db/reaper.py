@@ -48,7 +48,7 @@ def queue_reap_expired_documents():
     reap_expired_documents.apply_async(tags=tags)
 
 @task(base=Task)
-def reap_expired_documents(*args, **kwargs):
+def reap_expired_documents():
     """
     For each collection in _COLLECTION_TIMEDELTAS, call the class method reap_old_documents().
 
