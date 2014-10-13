@@ -10,8 +10,8 @@ import mock
 
 from pulp.server.async import celery_instance
 from pulp.server.config import config, _default_values
-from pulp.server.db.reaper import reap_expired_documents
-from pulp.server.maintenance.monthly import monthly_maintenance
+from pulp.server.db.reaper import queue_reap_expired_documents
+from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
 
 class TestCelerybeatSchedule(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         """
         reap = celery_instance.celery.conf['CELERYBEAT_SCHEDULE']['reap_expired_documents']
         expected_reap = {
-            'task': reap_expired_documents.name,
+            'task': queue_reap_expired_documents.name,
             'schedule': timedelta(days=(config.getfloat('data_reaping', 'reaper_interval'))),
             'args': tuple(),
         }
@@ -46,7 +46,7 @@ class TestCelerybeatSchedule(unittest.TestCase):
         Make sure the monthly maintenance Task is present and properly configured.
         """
         expected_monthly_maintenance = {
-            'task': monthly_maintenance.name,
+            'task': queue_monthly_maintenance.name,
             'schedule': timedelta(days=30),
             'args': tuple(),
         }
