@@ -1,0 +1,11 @@
+--- mongoengine-0.7.10-orig/setup.py	2013-10-04 10:39:23.587216966 -0430
++++ mongoengine-0.7.10/setup.py	2013-10-04 10:38:34.505424296 -0430
+@@ -58,7 +58,7 @@
+         extra_opts['packages'].append("tests")
+         extra_opts['package_data'] = {"tests": ["mongoengine.png"]}
+ else:
+-    extra_opts['tests_require'] = ['nose', 'coverage', 'blinker', 'django==1.4.2', 'PIL']
++    extra_opts['tests_require'] = ['nose', 'coverage', 'blinker', 'django==1.4.2', 'pillow']
+     extra_opts['packages'] = find_packages(exclude=('tests',))
+
+ setup(name='mongoengine',
