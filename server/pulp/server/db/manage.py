@@ -103,7 +103,7 @@ def main():
     try:
         options = parse_args()
         _start_logging()
-        connection.initialize()
+        connection.initialize(max_timeout=1)
         _auto_manage_db(options)
     except DataError, e:
         logger.critical(str(e))

@@ -151,6 +151,14 @@ class TestManageDB(MigrationTest):
         # Also, make sure the factory was initialized
         factory.initialize.assert_called_once_with()
 
+    @patch('sys.argv', ["pulp-manage-db"])
+    @patch('pulp.server.db.connection.initialize')
+    @patch('pulp.server.db.manage._auto_manage_db')
+    def test_set_connection_timeout(self, mock_auto_manage_db, mock_initialize):
+        manage.main()
+
+        mock_initialize.assert_called_once_with(max_timeout=1)
+
     @patch('sys.stderr')
     @patch('os.getuid', return_value=0)
     def test_wont_run_as_root(self, mock_getuid, mock_stderr):
