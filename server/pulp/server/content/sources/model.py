@@ -360,6 +360,15 @@ class PrimarySource(ContentSource):
         """
         return sys.maxint
 
+    @property
+    def max_concurrent(self):
+        """
+        Get the download concurrency specified in the source definition.
+        :return: The download concurrency.
+        :rtype: int
+        """
+        return int(DEFAULT[constants.MAX_CONCURRENT])
+
     def get_downloader(self):
         """
         Get the wrapped downloader.
