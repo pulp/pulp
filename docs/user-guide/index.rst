@@ -1,5 +1,5 @@
-Pulp User Guide
-===============
+User Guide
+==========
 
 Contents:
 
@@ -20,10 +20,3 @@ Contents:
    general-reference
    glossary
    troubleshooting
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`

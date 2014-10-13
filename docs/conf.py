@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Pulp v2 REST APIs documentation build configuration file, created by
-# sphinx-quickstart on Tue Mar 27 12:32:49 2012.
+# Pulp Documentation build configuration file, created by
+# sphinx-quickstart on Tue Nov 27 13:39:59 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -17,7 +17,7 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../_extensions'))
+sys.path.insert(0, os.path.abspath('./_extensions'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath('../_extensions'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['rest_api']
+extensions = ['sphinx.ext.intersphinx', 'rest_api']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -41,8 +41,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Pulp v2 Developer Guide'
-copyright = u'2012-2013, Pulp Team'
+project = u'Pulp Project'
+copyright = u'2012-2014, Pulp Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -165,7 +165,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Pulpv2devguide'
+htmlhelp_basename = 'PulpDocs'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -184,7 +184,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Pulpv2devguide.tex', u'Pulp v2 Developer Guide',
+  ('index', 'PulpDocs.tex', u'Pulp Documentation',
    u'Pulp Team', 'manual'),
 ]
 
@@ -214,7 +214,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pulpv2devguide', u'Pulp v2 Developer Guide',
+    ('index', 'pulpdocs', u'Pulp Documentation',
      [u'Pulp Team'], 1)
 ]
 
@@ -228,8 +228,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Pulpv2devguide', u'Pulp v2 Developer Guide',
-   u'Pulp Team', 'Pulpv2devguide', 'One line description of project.',
+  ('index', 'PulpDocs', u'Pulp Documentation',
+   u'Pulp Team', 'PulpDocs', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -242,5 +242,7 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
+
+# Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None,
                        'okaara' : ('http://jdob.fedorapeople.org/okaara', None)}

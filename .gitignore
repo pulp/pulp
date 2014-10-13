@@ -13,7 +13,7 @@ dist
 .idea
 .coverage
 cover
-*/sphinx/*/_build
+docs/_build
 .DS_Store
 *,cover
 tags
