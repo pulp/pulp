@@ -12,6 +12,7 @@ import uuid
 
 from pulp.common.plugins import reporting_constants, importer_constants
 from pulp.plugins.model import Unit
+from pulp.plugins.util import misc
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.managers.factory as manager_factory
@@ -465,6 +466,10 @@ class PluginStep(Step):
 
 
 class PublishStep(PluginStep):
+    """
+    The PublishStep has been deprecated in favor of the PluginStep
+    All code that is currently using the PublishStep should migrate to use the PluginStep
+    """
 
     def __init__(self, step_type, repo=None, publish_conduit=None, config=None, working_dir=None,
                  distributor_type=None):
@@ -526,34 +531,7 @@ class PublishStep(PluginStep):
         :param link_path: path of the link
         :type  link_path: str
         """
-
-        if not os.path.exists(source_path):
-            msg = _('Will not create a symlink to a non-existent source [%(s)s]')
-            raise RuntimeError(msg % {'s': source_path})
-
-        if link_path.endswith('/'):
-            link_path = link_path[:-1]
-
-        link_parent_dir = os.path.dirname(link_path)
-
-        if not os.path.exists(link_parent_dir):
-            os.makedirs(link_parent_dir, mode=0770)
-        elif os.path.lexists(link_path):
-            if os.path.islink(link_path):
-                link_target = os.readlink(link_path)
-                if link_target == source_path:
-                    # a pre existing link already points to the correct location
-                    return
-                msg = _('Removing old link [%(l)s] that was pointing to [%(t)s]')
-                _LOG.debug(msg % {'l': link_path, 't': link_target})
-                os.unlink(link_path)
-            else:
-                msg = _('Link path [%(l)s] exists, but is not a symbolic link')
-                raise RuntimeError(msg % {'l': link_path})
-
-        msg = _('Creating symbolic link [%(l)s] pointing to [%(s)s]')
-        _LOG.debug(msg % {'l': link_path, 's': source_path})
-        os.symlink(source_path, link_path)
+        misc.create_symlink(source_path, link_path)
 
     @staticmethod
     def _clear_directory(path, skip_list=()):
@@ -565,26 +543,17 @@ class PublishStep(PluginStep):
         :param skip_list: list of files or directories to not remove
         :type  skip_list: list or tuple
         """
-        _LOG.debug('Clearing out directory: %s' % path)
-
-        if not os.path.exists(path):
-            return
-
-        for entry in os.listdir(path):
-
-            if entry in skip_list:
-                continue
-
-            entry_path = os.path.join(path, entry)
-
-            if os.path.isdir(entry_path):
-                shutil.rmtree(entry_path, ignore_errors=True)
-
-            elif os.path.isfile(entry_path):
-                os.unlink(entry_path)
+        misc.clear_directory(path, skip_list)
 
 
 class UnitPublishStep(PublishStep):
+    """
+    The UnitPublishStep has been deprecated in favor of the PluginStep with the
+    PluginStepIterativeProcessingMixin
+
+    All code that is currently using the UnitPublishStep should migrate to use the
+    PluginStep with the PluginStepIterativeProcessingMixin
+    """
 
     def __init__(self, step_type, unit_type=None, association_filters=None,
                  unit_fields=None):

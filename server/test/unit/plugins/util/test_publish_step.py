@@ -45,6 +45,11 @@ class PublisherBase(unittest.TestCase):
         self.publisher = PublishStep("base-step", repo=self.repo, publish_conduit=self.conduit,
                                      config=self.config, distributor_type='test_distributor_type')
 
+    def tearDown(self):
+        shutil.rmtree(self.working_dir)
+        shutil.rmtree(self.published_dir)
+
+
 class PluginBase(unittest.TestCase):
 
     def setUp(self):
@@ -100,6 +105,18 @@ class StepTests(PublisherBase):
         step.add_child(step3)
         step.insert_child(0, step4)
         self.assertEquals(step.children, [step4, step2, step3])
+
+    def test_get_status_conduit(self):
+        step = Step('foo_step')
+        step.status_conduit = 'foo'
+        self.assertEquals('foo', step.get_status_conduit())
+
+    def test_get_status_conduit_from_parent(self):
+        step = Step('foo_step')
+        step.parent = Mock()
+        step.parent.get_status_conduit.return_value = 'foo'
+        self.assertEquals('foo', step.get_status_conduit())
+
 
 class PluginStepTests(PluginBase):
     """
@@ -354,6 +371,19 @@ class PluginStepTests(PluginBase):
         step = PluginStep("foo")
         self.assertRaises(RuntimeError, step.process_lifecycle)
 
+    @patch('pulp.plugins.util.publish_step.PluginStep._build_final_report')
+    @patch('pulp.plugins.util.publish_step.PluginStep.report_progress')
+    @patch('pulp.plugins.util.publish_step.shutil.rmtree')
+    @patch('pulp.plugins.util.publish_step.PluginStep.get_working_dir')
+    def test_process_lifecycle_non_existent_working_dir(self, mock_wd, mock_rmtree, mock_progress,
+                                                        mock_build_report):
+        new_dir = os.path.join(self.working_dir, 'test', 'bar')
+        mock_wd.return_value = new_dir
+        step = PluginStep("foo")
+        step.process_lifecycle()
+        self.assertTrue(os.path.exists(new_dir))
+        mock_rmtree.assert_called_once_with(new_dir, ignore_errors=True)
+
 
 class PublishStepTests(PublisherBase):
 
@@ -514,106 +544,18 @@ class PublishStepTests(PublisherBase):
         }
         compare_dict(report, target_report)
 
-    def test_create_symlink(self):
-        source_path = os.path.join(self.working_dir, 'source')
-        link_path = os.path.join(self.published_dir, 'link')
+    @patch('pulp.plugins.util.misc.create_symlink')
+    def test_create_symlink(self, mock_symlink):
+        step = PublishStep("foo")
+        step._create_symlink('foo', 'bar')
+        mock_symlink.assert_called_once_with('foo', 'bar')
 
-        touch(source_path)
-        self.assertFalse(os.path.exists(link_path))
-
-        PublishStep._create_symlink(source_path, link_path)
-
-        self.assertTrue(os.path.exists(link_path))
-        self.assertTrue(os.path.islink(link_path))
-        self.assertEqual(os.readlink(link_path), source_path)
-
-    def test_create_symlink_no_source(self):
-        source_path = os.path.join(self.working_dir, 'source')
-        link_path = os.path.join(self.published_dir, 'link')
-
-        self.assertRaises(RuntimeError, PublishStep._create_symlink, source_path, link_path)
-
-    def test_create_symlink_no_link_parent(self):
-        source_path = os.path.join(self.working_dir, 'source')
-        link_path = os.path.join(self.published_dir, 'foo/bar/baz/link')
-
-        touch(source_path)
-        self.assertFalse(os.path.exists(os.path.dirname(link_path)))
-
-        PublishStep._create_symlink(source_path, link_path)
-
-        self.assertTrue(os.path.exists(link_path))
-
-    def test_create_symlink_link_parent_bad_permissions(self):
-        source_path = os.path.join(self.working_dir, 'source')
-        link_path = os.path.join(self.published_dir, 'foo/bar/baz/link')
-
-        touch(source_path)
-        os.makedirs(os.path.dirname(link_path))
-        os.chmod(os.path.dirname(link_path), 0000)
-
-        self.assertRaises(OSError, PublishStep._create_symlink, source_path, link_path)
-
-        os.chmod(os.path.dirname(link_path), 0777)
-
-    def test_create_symlink_link_exists(self):
-        old_source_path = os.path.join(self.working_dir, 'old_source')
-        new_source_path = os.path.join(self.working_dir, 'new_source')
-        link_path = os.path.join(self.published_dir, 'link')
-
-        touch(old_source_path)
-        touch(new_source_path)
-
-        os.symlink(old_source_path, link_path)
-
-        self.assertEqual(os.readlink(link_path), old_source_path)
-
-        link_path_with_slash = link_path + '/'
-
-        PublishStep._create_symlink(new_source_path, link_path_with_slash)
-
-        self.assertEqual(os.readlink(link_path), new_source_path)
-
-    def test_create_symlink_link_exists_and_is_correct(self):
-        new_source_path = os.path.join(self.working_dir, 'new_source')
-        link_path = os.path.join(self.published_dir, 'link')
-
-        touch(new_source_path)
-
-        os.symlink(new_source_path, link_path)
-
-        self.assertEqual(os.readlink(link_path), new_source_path)
-
-        PublishStep._create_symlink(new_source_path, link_path)
-
-        self.assertEqual(os.readlink(link_path), new_source_path)
-
-    def test_create_symlink_link_exists_not_link(self):
-        source_path = os.path.join(self.working_dir, 'source')
-        link_path = os.path.join(self.published_dir, 'link')
-
-        touch(source_path)
-        touch(link_path)
-
-        self.assertRaises(RuntimeError, PublishStep._create_symlink, source_path, link_path)
-
-    def test_clear_directory(self):
-
-        for file_name in ('one', 'two', 'three'):
-            touch(os.path.join(self.working_dir, file_name))
-
-        os.makedirs(os.path.join(self.working_dir, 'four'))
-        self.assertEqual(len(os.listdir(self.working_dir)), 4)
+    @patch('pulp.plugins.util.misc.clear_directory')
+    def test_clear_directory(self, mock_clear):
         step = PublishStep("foo")
 
         step._clear_directory(self.working_dir, ['two'])
-
-        self.assertEqual(len(os.listdir(self.working_dir)), 1)
-
-    def test_clear_directory_that_does_not_exist(self):
-        # If this doesn't throw we are ok
-        step = PublishStep("foo")
-        step._clear_directory(os.path.join(self.working_dir, 'imaginary'))
+        mock_clear.assert_called_once_with(self.working_dir, ['two'])
 
     def test_get_total(self):
         step = PublishStep("foo")
