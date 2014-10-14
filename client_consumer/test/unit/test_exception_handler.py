@@ -13,7 +13,6 @@
 from pulp.client.consumer.exception_handler import ConsumerExceptionHandler
 from pulp.client.extensions import exceptions
 from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
-from pulp.common import auth_utils
 from pulp.devel.unit import base
 
 
@@ -29,7 +28,7 @@ class ConsumerExceptionHandlerTests(base.PulpClientTests):
         Tests a client-side error when the connection is rejected due to auth reasons.
         """
         # Test
-        response_body = auth_utils.generate_failure_response(auth_utils.CODE_FAILED)
+        response_body = {'auth_error_code': 'authentication_failed'}
         e = exceptions.PermissionsException(response_body)
         code = self.handler.handle_permission(e)
 
