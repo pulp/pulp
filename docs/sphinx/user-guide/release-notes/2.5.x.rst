@@ -22,6 +22,8 @@ New Features
 Deprecation
 -----------
 
+- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will be removed in a future release.
+
 Client Changes
 --------------
 
