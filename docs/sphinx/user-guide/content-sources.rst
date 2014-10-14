@@ -19,7 +19,7 @@ Content sources are defined in ``/etc/pulp/content/sources/conf.d``. Each file w
 may contain one or more sections. Each section defines a content source.
 
 The [section] defines the content source ID. The following properties
-are supported::
+are supported:
 
  - **enabled** <bool>
      The content source is enabled. Disabled sources are ignored.
@@ -79,5 +79,27 @@ Example:
  ssl_client_key: /etc/pki/tls/private/content-world.key
  ssl_client_cert: /etc/pki/tls/certs/content-world.crt
 
+
+Recipes
+^^^^^^^
+
+The pulp-admin client can be use to list all defined content sources as follows::
+
+  $ pulp-admin content sources list
+
+  +----------------------------------------------------------------------+
+                              Content Sources
+  +----------------------------------------------------------------------+
+
+  Base URL:       http://content-world/content/
+  Enabled:        1
+  Expires:        3d
+  Max Concurrent: 2
+  Name:           Content World
+  Paths:          f18/x86_64/os/ f18/i386/os/ f19/x86_64/os f19/i386/os
+  Priority:       0
+  Source Id:      content-world
+  SSL Validation: true
+  Type:           yum
 
 
