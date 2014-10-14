@@ -13,7 +13,7 @@ require {
         class dir { getattr search write remove_name create add_name rmdir };
         class file { lock rename write setattr getattr read create unlink open };
         class process { setsched signal signull };
-        class tcp_socket { getopt create connect setopt getattr write read };
+        class tcp_socket { connect create getattr getopt read setopt shutdown write };
         class lnk_file { create };
         class netlink_route_socket { bind create getattr nlmsg_read write read };
         class udp_socket { ioctl create getattr connect write read };
@@ -21,9 +21,13 @@ require {
 }
 
 #============= celery_t ==============
+#
+# tcp_socket { shutdown } is needed for CentOS 6 `sudo service pulp_workers restart`
+#
+
 allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
 allow celery_t self:process { signal signull };
-allow celery_t self:tcp_socket { getopt create connect setopt getattr write read };
+allow celery_t self:tcp_socket { connect create getattr getopt read setopt shutdown write };
 allow celery_t self:udp_socket { ioctl getattr create connect write read };
 allow celery_t self:unix_dgram_socket { create connect };
 
