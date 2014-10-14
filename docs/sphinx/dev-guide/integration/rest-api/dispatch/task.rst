@@ -18,7 +18,7 @@ task.
 * **_href** *(string)* - uri path to retrieve this task report object.
 * **state** *(string)* - the current state of the task. The possible values include: 'waiting', 'skipped', 'running', 'suspended', 'finished', 'error', 'canceled', and 'timed out'.
 * **task_id** *(string)* - the unique id of the task that is executing the asynchronous call
-* **task_type** *(string)* - the fully qualified (package/method) type of the task that is executing the asynchronous call
+* **task_type** *(string)* - **deprecated** the fully qualified (package/method) type of the task that is executing the asynchronous call. The field is empty for tasks performed by consumer agent.
 * **progress_report** *(object)* - arbitrary progress information, usually in the form of an object
 * **result** *(any)* - the return value of the call, if any
 * **exception** *(null or string)* - **deprecated** the error exception value, if any
