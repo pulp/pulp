@@ -41,7 +41,8 @@ def initialize():
             'run pulp-manage-db to load the type into the database and restart the application. '
             'Error message: %s')
         msg = msg % str(e)
-        raise InitializationException(msg), None, sys.exc_info()[2]
+        logger.error(msg)
+        raise
 
     # Load the mappings of manager type to managers
     manager_factory.initialize()
