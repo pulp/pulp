@@ -56,22 +56,22 @@ In order to build Pulp, you will need the following from the Foreman team:
 See the `Foreman Wiki <http://projects.theforeman.org/projects/foreman/wiki/Koji>`_ to get these
 items.
 
-In order to publish builds to the Pulp repository, you will need the ssh keypair used to upload
-packages to the fedorapeople.org repository. You can get these from members of the Pulp team.
+In order to publish builds to the Pulp repository, you will need the SSH keypair used to upload
+packages to the fedorapeople.org repository. You can get this from members of the Pulp team.
 
 Configuring your build environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you are interested in building Pulp, it is strongly recommended that you use a separate checkout
-from your normal development environment to avoid any potential errors (such as building in local
-changes, or building the wrong branches). It is also a good idea to use a build host in a location
+from your normal development environment to avoid any potential errors such as building in local
+changes, or building the wrong branches. It is also a good idea to use a build host in a location
 with good outbound bandwidth, as the repository publish can be at or over 250 MB. Thus, the first
 step is to make a clean checkout of the three Pulp repositories, and put them somewhere away from
 your other checkouts::
 
     $ mkdir ~/pulp_build
     $ cd ~/pulp_build
-    $ for r in {,_puppet,_rpm}; do git clone git@github.com:pulp/pulp$r.git; done;
+    $ for r in {pulp,pulp_puppet,pulp_rpm}; do git clone git@github.com:pulp/$r.git; done;
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
 Katello CA certificate and your client certificate in your home folder::
@@ -211,7 +211,7 @@ python-celery-3.1.11-1.el7.x86_64 that you had tagged into 2.4 testing that they
 Building Pulp, RPM Support, and Puppet Support
 ----------------------------------------------
 
-Are you ready to build the platform, RPM, and Puppet packages? If so, you should cd to the top level
+Are you ready to build the platform, RPM, and Puppet packages? If so, you should `cd` to the top level
 directory where you have checked out all three of those repositories. Ensure that all three
 repositories have the branches you wish to build checked out. For example, if you are trying to
 build a new 2.4.z beta release, all three repositories should have the 2.4-testing branch checked
@@ -221,7 +221,13 @@ out::
 
 At this point, you may wish to ensure that the branches are all merged forward to master. This step
 is not strictly required at this point, as we will have to do it again later. However, sometimes
-developers forget to do this, and it may be advantageous to resolve these problems before tagging.
+developers forget to do this, and it may be advantageous to resolve potential merge conflicts before
+tagging.
+
+Here is a quick way to see if everything's been merged forward through to master. You'll likely want
+to edit the BRANCHES list so the branch you are releasing from is the first in the list::
+
+    $ BRANCHES="2.4-release 2.4-testing 2.4-dev 2.5-testing 2.5-dev"; git log origin/master | fgrep -f <(for b in $BRANCHES; do git log origin/$b | head -n1 | awk '{print $NF}' ; done)
 
 If you are building into a Koji tag that has never been built before, you need to add the Pulp
 packages to that tag. For example, if nobody has ever built Pulp in the ``pulp-2.5-beta-rhel7`` tag
@@ -323,6 +329,13 @@ output to ensure that it is correct. If it is, run the command again while omitt
 If you have published a beta build, you must query Bugzilla for all of our bugs that are in the
 ``MODIFIED`` state for the version you have published and move them to ``ON_QA``.
 
+After publishing a beta build, email pulp-list@redhat.com to announce the beta. Here is a
+typical email you can use::
+
+   Subject: [devel] Pulp beta <version> is available
+
+   Pulp <version> has been published to the beta repositories. This fixes <add some text here>.
+
 If you have published a stable build, there are a few more items to take care of:
 
 #. Update the "latest release" text on http://www.pulpproject.org/.
@@ -330,9 +343,25 @@ If you have published a stable build, there are a few more items to take care of
    `explicitly build <https://pulp-dev-guide.readthedocs.org/en/latest/contributing/documenting.html#rtd-versions>`_
    them if they were not automatically build.
 #. Update the channel topic in #pulp on Freenode with the new release.
-#. Send an announcement e-mail to pulp-list@redhat.com.
 #. Move all bugs that were in the ``VERIFIED`` state for this target release to ``CLOSED CURRENT
    RELEASE``.
+
+After publishing a stable build, email pulp-list@redhat.com to announce the new release. Here is
+a typical email you can use::
+
+   Subject: Pulp <version> is available!
+
+   The Pulp team is pleased to announce that we have released <version>
+   to our stable repositories. <Say if it's just bugfixes or bugs and features>.
+
+   Please see the release notes[0][1][2] if you are interested in reading about
+   the fixes that are included. Happy upgrading!
+
+   [0] link to pulp release notes (if updated)
+   [0] link to pulp-rpm release notes (if updated)
+   [0] link to pulp-puppet release notes (if updated)
+
+Please ensure that the release notes have in fact been updated before sending the email out.
 
 New Stable Major/Minor Versions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
