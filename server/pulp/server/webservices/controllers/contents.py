@@ -340,6 +340,7 @@ class CatalogResource(JSONController):
 
 class ContentSourceCollection(JSONController):
 
+    @auth_required(READ)
     def GET(self):
         """
         Get all content sources.
@@ -358,6 +359,7 @@ class ContentSourceCollection(JSONController):
 
 class ContentSourceResource(JSONController):
 
+    @auth_required(READ)
     def GET(self, source_id):
         """
         Get a content source by ID.

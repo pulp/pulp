@@ -90,8 +90,8 @@ class ContentSourceAPI(PulpAPI):
         Get a content source by ID.
         :param source_id: A content source ID.
         :type source_id: str
-        :return: A content source.
-        :rtype: dict
+        :return: The response. The *body* is a content source object.
+        :rtype: pulp.bindings.responses.Response
         """
         path = '%s%s/' % (self.BASE_URL, source_id)
         return self.server.GET(path)
@@ -99,8 +99,8 @@ class ContentSourceAPI(PulpAPI):
     def get_all(self):
         """
         Get all loaded content sources.
-        :return: List of content sources.
-        :rtype: list
+        :return: The response. The *body* is a list of content source objects.
+        :rtype: pulp.bindings.responses.Response
         """
         path = self.BASE_URL
         return self.server.GET(path)
