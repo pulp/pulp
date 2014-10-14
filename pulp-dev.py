@@ -1,16 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import optparse
 import os
@@ -18,6 +7,13 @@ import re
 import shutil
 import subprocess
 import sys
+
+
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# In order to import pulp.devel.environment, we will need to add pulp.devel to the syspath
+sys.path.append(os.path.join(ROOT_DIR, 'devel', 'pulp', 'devel'))
+import environment
 
 
 WARNING_COLOR = '\033[31m'
@@ -254,6 +250,9 @@ def get_paths_to_copy():
                       'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': True})
 
+    for path in paths:
+        path['source'] = os.path.join(ROOT_DIR, path['source'])
+
     return paths
 
 
@@ -313,12 +312,14 @@ def getlinks():
 
 
 def install(opts):
+    # Install the Python packages
+    environment._manage_setup_pys('install')
+
     warnings = []
     create_dirs(opts)
     gen_rsa_keys()
-    currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
-        warning_msg = create_link(opts, os.path.join(currdir,src), dst)
+        warning_msg = create_link(opts, os.path.join(ROOT_DIR, src), dst)
         if warning_msg:
             warnings.append(warning_msg)
 
@@ -348,9 +349,9 @@ def install(opts):
         # Generate certificates
         print 'generating certificates'
         if not os.path.exists('/etc/pki/pulp/ca.crt'):
-            os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+            os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-ca-certificate'))
         if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
-            os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
+            os.system(os.path.join(ROOT_DIR, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
         # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
         # those world readable. Until we fix this, we cannot close #1048297
@@ -396,6 +397,9 @@ def uninstall(opts):
     # Remove generated certificates
     print 'removing certificates'
     os.system('rm -rf /etc/pki/pulp/*')
+
+    # Remove the Python packages
+    environment._manage_setup_pys('uninstall')
 
     return os.EX_OK
 
