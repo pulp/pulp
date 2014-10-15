@@ -25,6 +25,7 @@ from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 from pulp.server.managers.content import orphan
+from pulp.server.content.sources.container import ContentContainer
 
 
 class ContentTypesCollection(JSONController):
@@ -337,6 +338,44 @@ class CatalogResource(JSONController):
         return self.ok(None)
 
 
+class ContentSourceCollection(JSONController):
+
+    @auth_required(READ)
+    def GET(self):
+        """
+        Get all content sources.
+        :return: List of sources.
+        :rtype: list
+        """
+        container = ContentContainer()
+        sources = []
+        for source in container.sources.values():
+            d = source.dict()
+            href = serialization.link.child_link_obj(source.id)
+            d.update(href)
+            sources.append(d)
+        return self.ok(sources)
+
+
+class ContentSourceResource(JSONController):
+
+    @auth_required(READ)
+    def GET(self, source_id):
+        """
+        Get a content source by ID.
+        :param source_id: A content source ID.
+        :type source_id: str
+        :return: A content source object.
+        :rtype: dict
+        """
+        container = ContentContainer()
+        source = container.sources.get(source_id)
+        if source:
+            return self.ok(source.dict())
+        else:
+            raise MissingResource(source_id=source_id)
+
+
 # wsgi application -------------------------------------------------------------
 
 _URLS = ('/types/$', ContentTypesCollection,
@@ -351,6 +390,8 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/([^/]+)/$', OrphanTypeSubCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
          '/actions/delete_orphans/$', DeleteOrphansAction,  # deprecated in 2.4
-         '/catalog/([^/]+)$', CatalogResource,)
+         '/catalog/([^/]+)$', CatalogResource,
+         '/sources/$', ContentSourceCollection,
+         '/sources/([^/]+)/$', ContentSourceResource,)
 
 application = web.application(_URLS, globals())
