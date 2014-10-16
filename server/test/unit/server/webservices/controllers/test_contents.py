@@ -2,7 +2,7 @@
 Test the pulp.server.webservices.controllers.contents module.
 """
 
-import mock
+from mock import patch, Mock
 
 from .... import base
 from pulp.devel import mock_plugins
@@ -20,7 +20,7 @@ class ContentsTest(base.PulpWebserviceTests):
         super(ContentsTest, self).tearDown()
         mock_plugins.reset()
 
-    @mock.patch('pulp.server.managers.content.orphan.delete_all_orphans')
+    @patch('pulp.server.managers.content.orphan.delete_all_orphans')
     def test_post_to_deleteorphan(self, mock_delete_all_orphans):
         """
         Tests deleting an orphan via DeleteOrphansAction
@@ -34,7 +34,7 @@ class ContentsTest(base.PulpWebserviceTests):
         self.assertEqual(202, status)
         mock_delete_all_orphans.assert_called_once()
 
-    @mock.patch('pulp.server.managers.content.orphan.OrphanManager.delete_orphans_by_type')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete_orphans_by_type')
     def test_delete_orphan_by_type(self, mock_delete_orphans_by_type):
         """
         Tests deleting orphans by type
@@ -46,3 +46,69 @@ class ContentsTest(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(202, status)
         mock_delete_orphans_by_type.assert_called_once()
+
+
+class CatalogTests(base.PulpWebserviceTests):
+
+    @patch('pulp.server.managers.content.catalog.ContentCatalogManager.purge')
+    def test_delete(self, mock_purge):
+        source_id = 'test-source'
+
+        # test
+        url = '/v2/content/catalog/%s' % source_id
+        status, body = self.delete(url)
+
+        # validation
+        self.assertEqual(status, 200)
+        mock_purge.assert_called_with(source_id)
+
+
+class ContentSourcesTests(base.PulpWebserviceTests):
+
+    @patch('pulp.server.content.sources.model.ContentSource.load_all')
+    def test_get(self, mock_load):
+        sources = {
+            'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
+            'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
+            'C': Mock(id='C', dict=Mock(return_value={'C': 3})),
+        }
+
+        mock_load.return_value = sources
+
+        # test
+        url = '/v2/content/sources/'
+        status, body = self.get(url)
+
+        # validation
+        mock_load.assert_called_with(None)
+        self.assertEqual(status, 200)
+        self.assertEqual(body, [s.dict() for s in sources.values()])
+
+
+class ContentSourceResourceTests(base.PulpWebserviceTests):
+
+    @patch('pulp.server.content.sources.model.ContentSource.load_all')
+    def test_get(self, mock_load):
+        sources = {
+            'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
+            'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
+            'C': Mock(id='C', dict=Mock(return_value={'C': 3})),
+        }
+
+        mock_load.return_value = sources
+
+        # test 200
+        url = '/v2/content/sources/B/'
+        status, body = self.get(url)
+
+        # validation
+        mock_load.assert_called_with(None)
+        self.assertEqual(status, 200)
+        self.assertEqual(body, {'B': 2})
+
+        # test 404
+        url = '/v2/content/sources/Z/'
+        status, body = self.get(url)
+
+        # validation
+        self.assertEqual(status, 404)

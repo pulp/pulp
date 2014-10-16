@@ -22,7 +22,7 @@ from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 
 from pulp.server.content.sources import constants
-from pulp.server.content.sources.descriptor import is_valid, to_seconds
+from pulp.server.content.sources.descriptor import is_valid, to_seconds, DEFAULT
 
 
 log = getLogger(__name__)
@@ -133,13 +133,15 @@ class ContentSource(object):
         sources = {}
         _dir = conf_d or ContentSource.CONF_D
         for name in os.listdir(_dir):
-            if not name.endswith('.conf'):
-                continue
             path = os.path.join(_dir, name)
+            if not os.path.isfile(path):
+                continue
             cfg = ConfigParser()
             cfg.read(path)
             for section in cfg.sections():
-                descriptor = dict(cfg.items(section))
+                descriptor = {}
+                descriptor.update(DEFAULT)
+                descriptor.update(dict(cfg.items(section)))
                 source = ContentSource(section, descriptor)
                 if not source.enabled:
                     continue
@@ -183,7 +185,7 @@ class ContentSource(object):
         :return: True if enabled.
         :rtype: bool
         """
-        enabled = self.descriptor.get(constants.ENABLED, '0')
+        enabled = self.descriptor[constants.ENABLED]
         return enabled.lower() in ('1', 'true', 'yes')
 
     @property
@@ -194,7 +196,7 @@ class ContentSource(object):
         :return: The priority.
         :rtype: int
         """
-        return int(self.descriptor.get(constants.PRIORITY, 0))
+        return int(self.descriptor[constants.PRIORITY])
 
     @property
     def expires(self):
@@ -205,7 +207,7 @@ class ContentSource(object):
         :return: The expiration in seconds.
         :rtype int
         """
-        return to_seconds(self.descriptor.get(constants.EXPIRES, '24h'))
+        return to_seconds(self.descriptor[constants.EXPIRES])
 
     @property
     def base_url(self):
@@ -224,7 +226,7 @@ class ContentSource(object):
         :return: The download concurrency.
         :rtype: int
         """
-        return int(self.descriptor.get(constants.MAX_CONCURRENT, 2))
+        return int(self.descriptor[constants.MAX_CONCURRENT])
 
     @property
     def urls(self):
@@ -311,6 +313,17 @@ class ContentSource(object):
                 reports.append(report)
         return reports
 
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        d = {}
+        d.update(self.descriptor)
+        d[constants.SOURCE_ID] = self.id
+        return d
+
     def __eq__(self, other):
         return self.id == other.id
 
@@ -346,6 +359,15 @@ class PrimarySource(ContentSource):
         Must be last.
         """
         return sys.maxint
+
+    @property
+    def max_concurrent(self):
+        """
+        Get the download concurrency specified in the source definition.
+        :return: The download concurrency.
+        :rtype: int
+        """
+        return int(DEFAULT[constants.MAX_CONCURRENT])
 
     def get_downloader(self):
         """
