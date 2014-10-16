@@ -5,7 +5,7 @@ import locale
 import logging
 import unittest
 
-from M2Crypto import SSL
+from M2Crypto import m2, SSL
 import mock
 
 from pulp.bindings import exceptions, server
@@ -28,6 +28,32 @@ class TestHTTPSServerWrapper(unittest.TestCase):
 
         self.assertRaises(exceptions.CertificateVerificationException, wrapper.request, 'GET',
                           '/awesome/api/', '')
+
+    @mock.patch('pulp.bindings.server.httpslib.HTTPSConnection.getresponse')
+    @mock.patch('pulp.bindings.server.httpslib.HTTPSConnection.request')
+    @mock.patch('pulp.bindings.server.SSL.Context.__init__',
+                side_effect=server.SSL.Context.__init__, autospec=True)
+    @mock.patch('pulp.bindings.server.SSL.Context.set_options', autospec=True)
+    def test_request_refuses_ssl(self, set_options, Context, request, getresponse):
+        """
+        Assert that request() configures m2crypto to refuse to do SSLv2.0 and SSLv3.0.
+
+        https://bugzilla.redhat.com/show_bug.cgi?id=1153054
+        """
+        conn = server.PulpConnection('host', validate_ssl_ca=False)
+        wrapper = server.HTTPSServerWrapper(conn)
+
+        status, body = wrapper.request('GET', '/awesome/api/', '')
+
+        ssl_context = Context.mock_calls[0][1][0]
+        # Don't let the name of this argument scare you. Despite it's misleading name, this means
+        # that we are willing to do any protocol supported by the openssl installation on this box.
+        Context.assert_called_once_with(ssl_context, 'sslv23')
+        # set_options gets called twice. The Context.__init__ calls it with defaults, and then we
+        # call it again to tell it to not do SSLv2 or SSLv3.
+        self.assertEqual(set_options.call_count, 2)
+        self.assertEqual(set_options.mock_calls[1][1],
+                         (ssl_context, m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3))
 
     @mock.patch('pulp.bindings.server.httpslib.HTTPSConnection.getresponse')
     @mock.patch('pulp.bindings.server.httpslib.HTTPSConnection.request')
