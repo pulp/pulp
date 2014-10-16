@@ -40,8 +40,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.4.2
-Release: 1%{?dist}
+Version: 2.4.3
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-0.1.beta
+- 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
+
 * Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
 - 1138356 - adding docs on how to backup pulp (mhrivnak@redhat.com)
 - 1060752 - Add sample output for repo import_upload (bcourt@redhat.com)
