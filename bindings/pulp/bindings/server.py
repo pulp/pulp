@@ -269,7 +269,7 @@ class HTTPSServerWrapper(object):
         # Create a new connection each time since HTTPSConnection has problems
         # reusing a connection for multiple calls (lame).
         ssl_context = SSL.Context('sslv23')
-        ssl_context.set_options(m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3 | m2.SSL_OP_NO_TLSv1)
+        ssl_context.set_options(m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3)
         if self.pulp_connection.validate_ssl_ca:
             ssl_context.set_verify(SSL.verify_peer, depth=100)
             # We need to stat the ca_path to see if it exists (error if it doesn't), and if so
