@@ -604,9 +604,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
-- 1117512 - Fix formatting of last_unit_added & last_unit_removed fields
-  (bcourt@redhat.com)
+* Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-0.1.beta
+- 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
+
+* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
 - 1138356 - adding docs on how to backup pulp (mhrivnak@redhat.com)
 - 1122987 - Adds troubleshooting note around Qpid scalability limits
   (bmbouter@gmail.com)
@@ -628,6 +629,10 @@ exit 0
 - 1087997 - add link to release note (cduryee@redhat.com)
 - 1009429 - Move pulp_manage_puppet bool 2 celery_t. (rbarlow@redhat.com)
 
+* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
+- 1117512 - Fix formatting of last_unit_added & last_unit_removed fields
+  (bcourt@redhat.com)
+
 * Thu Oct 02 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.7.beta
 - Pulp rebuild
 
@@ -648,14 +653,11 @@ exit 0
 - 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
 
 * Tue Sep 23 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
+- 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
+- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
+- 1131260 - relax version requirement. (jortel@redhat.com)
 - 1136883 - Fixed incorrect tags for applicability in the docs
   (jcline@redhat.com)
-
-* Tue Sep 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.9.rc
-- Pulp rebuild
-
-* Thu Sep 11 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.8.beta
-- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
 
 * Tue Sep 09 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.1.alpha
 - 1134972 - remove calls to mongo flush (cduryee@redhat.com)
@@ -709,18 +711,6 @@ exit 0
   importer syncs to UTC instead of timezone offset (bcourt@redhat.com)
 - 1100805 - Fixing consumer group bind and unbind and moving tasks from
   tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
-
-* Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.7.beta
-- 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
-
-* Thu Aug 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.6.beta
-- Pulp rebuild
-
-* Tue Aug 26 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.5.rc1
-- Pulp rebuild
-
-* Mon Aug 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.4.beta
-- 1131260 - relax version requirement. (jortel@redhat.com)
 
 * Fri Aug 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.3.beta
 - 1130312 - Fix bug query for 2.4.1. (rbarlow@redhat.com)
