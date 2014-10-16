@@ -266,9 +266,11 @@ class HTTPSServerWrapper(object):
         """
         headers = dict(self.pulp_connection.headers)  # copy so we don't affect the calling method
 
-        # Create a new connection each time since HTTPSConnection has problems
-        # reusing a connection for multiple calls (lame).
+        # Despite the confusing name, 'sslv23' configures m2crypto to use any available protocol in
+        # the underlying openssl implementation.
         ssl_context = SSL.Context('sslv23')
+        # This restricts the protocols we are willing to do by configuring m2 not to do SSLv2.0 or
+        # SSLv3.0.
         ssl_context.set_options(m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3)
         if self.pulp_connection.validate_ssl_ca:
             ssl_context.set_verify(SSL.verify_peer, depth=100)
