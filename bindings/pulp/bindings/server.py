@@ -251,6 +251,8 @@ class HTTPSServerWrapper(object):
     def request(self, method, url, body):
         """
         Make the request against the Pulp server, returning a tuple of (status_code, respose_body).
+        This method creates a new connection each time since HTTPSConnection has problems
+        reusing a connection for multiple calls (as claimed by a prior comment in this module).
 
         :param method: The HTTP method to be used for the request (GET, POST, etc.)
         :type  method: str
