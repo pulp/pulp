@@ -10,7 +10,7 @@ except ImportError:
     oauth = None
 
 from types import NoneType
-from M2Crypto import SSL, httpslib
+from M2Crypto import httpslib, m2, SSL
 
 from pulp.bindings import exceptions
 from pulp.bindings.responses import Response, Task
@@ -251,6 +251,8 @@ class HTTPSServerWrapper(object):
     def request(self, method, url, body):
         """
         Make the request against the Pulp server, returning a tuple of (status_code, respose_body).
+        This method creates a new connection each time since HTTPSConnection has problems
+        reusing a connection for multiple calls (as claimed by a prior comment in this module).
 
         :param method: The HTTP method to be used for the request (GET, POST, etc.)
         :type  method: str
@@ -266,9 +268,14 @@ class HTTPSServerWrapper(object):
         """
         headers = dict(self.pulp_connection.headers)  # copy so we don't affect the calling method
 
-        # Create a new connection each time since HTTPSConnection has problems
-        # reusing a connection for multiple calls (lame).
-        ssl_context = SSL.Context('sslv3')
+        # Despite the confusing name, 'sslv23' configures m2crypto to use any available protocol in
+        # the underlying openssl implementation.
+        ssl_context = SSL.Context('sslv23')
+        # This restricts the protocols we are willing to do by configuring m2 not to do SSLv2.0 or
+        # SSLv3.0. EL 5 does not have support for TLS > v1.0, so we have to leave support for
+        # TLSv1.0 enabled.
+        ssl_context.set_options(m2.SSL_OP_NO_SSLv2 | m2.SSL_OP_NO_SSLv3)
+
         if self.pulp_connection.validate_ssl_ca:
             ssl_context.set_verify(SSL.verify_peer, depth=100)
             # We need to stat the ca_path to see if it exists (error if it doesn't), and if so
