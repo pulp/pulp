@@ -55,6 +55,12 @@ class ProfilerConduitException(Exception):
     """
     pass
 
+class ContentSourcesConduitException(Exception):
+    """
+    General exception that wraps any exception coming out of the Pulp server.
+    """
+    pass
+
 # -- mixins -------------------------------------------------------------------
 
 class RepoScratchPadMixin(object):

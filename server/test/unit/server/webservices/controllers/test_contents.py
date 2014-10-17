@@ -84,6 +84,24 @@ class ContentSourcesTests(base.PulpWebserviceTests):
         self.assertEqual(status, 200)
         self.assertEqual(body, [s.dict() for s in sources.values()])
 
+    @patch('pulp.server.content.sources.model.ContentSource.load_all')
+    def test_post(self, mock_load):
+        sources = {
+            'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
+            'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
+            'C': Mock(id='C', dict=Mock(return_value={'C': 3})),
+        }
+
+        mock_load.return_value = sources
+
+        # test 202
+        url = '/v2/content/sources/action/refresh/'
+
+        status, body = self.post(url)
+        # validation
+        self.assertEqual(status, 202)
+        self.assertIsNotNone(body.get('spawned_tasks', None))
+
 
 class ContentSourceResourceTests(base.PulpWebserviceTests):
 
@@ -109,6 +127,58 @@ class ContentSourceResourceTests(base.PulpWebserviceTests):
         # test 404
         url = '/v2/content/sources/Z/'
         status, body = self.get(url)
+
+        # validation
+        self.assertEqual(status, 404)
+
+    @patch('pulp.server.content.sources.model.ContentSource.load_all')
+    def test_post(self, mock_load):
+        sources = {
+            'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
+            'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
+            'C': Mock(id='C', dict=Mock(return_value={'C': 3})),
+        }
+
+        mock_load.return_value = sources
+
+        # test 200
+        url = '/v2/content/sources/B/action/refresh/'
+        status, body = self.post(url)
+
+        # validation
+        self.assertEqual(status, 202)
+        self.assertIsNotNone(body.get('spawned_tasks', None))
+
+    @patch('pulp.server.content.sources.model.ContentSource.load_all')
+    def test_post_bad_request(self, mock_load):
+        sources = {
+            'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
+            'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
+            'C': Mock(id='C', dict=Mock(return_value={'C': 3})),
+        }
+
+        mock_load.return_value = sources
+
+        # test 400
+        url = '/v2/content/sources/B/action/create/'
+        status, body = self.post(url)
+
+        # validation
+        self.assertEqual(status, 400)
+
+    @patch('pulp.server.content.sources.model.ContentSource.load_all')
+    def test_post_bad_request(self, mock_load):
+        sources = {
+            'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
+            'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
+            'C': Mock(id='C', dict=Mock(return_value={'C': 3})),
+        }
+
+        mock_load.return_value = sources
+
+        # test 404
+        url = '/v2/content/sources/Z/action/refresh/'
+        status, body = self.post(url)
 
         # validation
         self.assertEqual(status, 404)
