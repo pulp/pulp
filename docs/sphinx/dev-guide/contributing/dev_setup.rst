@@ -1,6 +1,24 @@
 Developer Setup
 ===============
 
+For the Impatient
+^^^^^^^^^^^^^^^^^
+
+* Start a Fedora 20 x86_64 instance that will be dedicated for development with
+  at least 2GB of memory and 10GB of disk space. More disk space is needed if
+  you plan on syncing larger repos for test purposes.
+
+* If one does not already exist, create a non-root user with sudo access.
+
+* As that user, ``wget https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh``.
+  Note that this installs RPMs and makes system modifications that you wouldn't
+  want to apply on a VM that was not dedicated to Pulp development.
+
+* As that user, ``bash dev-setup.sh``.
+
+* While it runs, read the rest of this document!
+
+
 Source Code
 ^^^^^^^^^^^
 
@@ -35,7 +53,9 @@ the latest dependencies according to the spec file.
 
 #. Install some additional dependencies for development::
    
-   $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server qpid-cpp-server qpid-cpp-server-store python-qpid-qmf
+   $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server \
+          qpid-cpp-server qpid-cpp-server-store python-qpid-qmf python-nose \
+          python-mock python-paste python-pip
 
 The only caveat to this approach is that these dependencies will need to be maintained after this
 initial setup. Leaving the testing builds repository enabled will cause them to be automatically
@@ -128,17 +148,17 @@ Start the agent::
 
     sudo systemctl start goferd
 
-Initialize the database::
-
-    sudo systemctl start mongod
-    sudo -u apache pulp-manage-db
-
 Install a plugin (the server requires at least one to start)::
 
     git clone https://github.com/pulp/pulp_rpm.git
     cd pulp_rpm
     sudo ./manage_setup_pys.sh develop
     sudo python ./pulp-dev.py -I
+
+Initialize the database::
+
+    sudo systemctl start mongod
+    sudo -u apache pulp-manage-db
 
 Start the server::
 
