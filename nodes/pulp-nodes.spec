@@ -6,7 +6,7 @@
 
 Name: pulp-nodes
 Version: 2.5.0
-Release: 0.8.beta%{?dist}
+Release: 0.10.beta%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -235,6 +235,9 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Mon Oct 20 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.10.beta
+- 1150297 - Update versions from 2.4.x to 2.5.0. (rbarlow@redhat.com)
+
 * Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - Pulp rebuild
 
@@ -244,279 +247,60 @@ Pulp nodes consumer client extensions.
 * Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
 - Pulp rebuild
 
-* Thu Oct 02 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.7.beta
+* Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
 - Pulp rebuild
 
-* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.6.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.5.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.2.beta
-- Pulp rebuild
-
-* Tue Sep 09 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.1.alpha
-- Pulp rebuild
-
-* Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.7.beta
-- Pulp rebuild
-
-* Thu Aug 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.6.beta
-- Pulp rebuild
-
-* Tue Aug 26 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.5.rc1
-- Pulp rebuild
-
-* Mon Aug 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.4.beta
-- Pulp rebuild
-
-* Fri Aug 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.3.beta
-- Pulp rebuild
-
-* Wed Aug 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.2.alpha
-- Pulp rebuild
-
-* Thu Jul 31 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.30.beta
+* Thu Jul 31 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-1
 - 1125030 - Handle both styles of certificate stores. (rbarlow@redhat.com)
-
-* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.29.beta
-- Pulp rebuild
-
-* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.28.beta
-- Pulp rebuild
-
-* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.27.beta
-- Pulp rebuild
-
-* Mon Jul 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.26.beta
 - 1113590 - Nodes requires Pulp's cert to be trusted 1112906 - pulp-admin
   requires Pulp's cert to be trusted 1112904 - pulp-consumer requires Pulp's
   cert to be trusted (rbarlow@redhat.com)
-
-* Wed Jul 16 2014 Unknown name 2.4.0-0.25.beta
 - 1005899 - support 'message' reported during node sync. (jortel@redhat.com)
-
-* Fri Jul 11 2014 Brian Bouterse <bmbouter@gmail.com> 2.4.0-0.24.beta
-- Pulp rebuild
-
-* Wed Jun 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.23.beta
-- Pulp rebuild
-
-* Tue Jun 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.22.beta
-- Pulp rebuild
-
-* Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
-- Pulp rebuild
-
-* Tue Jun 10 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.20.beta
-- Pulp rebuild
-
-* Thu May 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.19.beta
-- Pulp rebuild
-
-* Wed May 21 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.18.beta
 - 1096931 - improving repo update command to better detect spawned tasks
   (mhrivnak@redhat.com)
-
-* Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.17.beta
-- Pulp rebuild
-
-* Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.16.beta
-- Pulp rebuild
-
-* Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.15.beta
-- Pulp rebuild
-
-* Thu May 15 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.14.beta
-- Pulp rebuild
-
-* Thu May 08 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.13.beta
-- Pulp rebuild
-
-* Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.12.beta
-- Pulp rebuild
-
-* Fri May 02 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.11.beta
 - 1091530 - fix rendering a progress report = None. (jortel@redhat.com)
-
-* Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.10.beta
 - 1087863 - Fix progress reporting in node sync command. (jortel@redhat.com)
-
-* Mon Apr 14 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.9.beta
 - 1085545 - Fix permissions on /etc/pulp/server/plugins.conf.d/nodes/importer.
   (jortel@redhat.com)
-
-* Mon Apr 07 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.8.beta
-- Pulp rebuild
-
-* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.beta
-- Pulp rebuild
-
-* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.alpha
 - 1073154 - Do not log newlines or long messages. (rbarlow@redhat.com)
-
-* Thu Mar 13 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.6.alpha
-- Pulp rebuild
-
-* Thu Mar 13 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.5.alpha
-- Pulp rebuild
-
-* Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.4.alpha
-- Pulp rebuild
-
-* Mon Feb 24 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.3.alpha
-- Pulp rebuild
-
-* Tue Jan 28 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.2.alpha
 - 921743 - Adjust ownership and permissions for a variety of the RPM paths.
   (rbarlow@redhat.com)
 - 1005899 - report errors fetching bindings from the parent in the report.
   (jortel@redhat.com)
-
-* Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
 - 995076 - make sure to call finalize on the nectar config object
   (jason.connor@gmail.com)
 - 1029057 - have nodes replicate the repository scratchpad. (jortel@redhat.com)
 - 1022646 - remove units_path; in 2.3, it's method. (jortel@redhat.com)
 
-* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
-- Pulp rebuild
-
-* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.28.beta
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-1
 - 1022646 - migration_0 needs to add units_size=0. (jortel@redhat.com)
-
-* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
 - 1022646 - fix migration of nodes 2.2 => 2.3 manifests. (jortel@redhat.com)
-
-* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
-- Pulp rebuild
-
-* Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
-- Pulp rebuild
-
-* Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
 - 1020549 - tar the content of the distribution directory instead of the
   directory. (jortel@redhat.com)
-
-* Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
-- Pulp rebuild
-
-* Wed Oct 16 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.22.beta
-- Pulp rebuild
-
-* Tue Oct 15 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.21.beta
-- Pulp rebuild
-
-* Mon Oct 14 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.20.beta
-- Pulp rebuild
-
-* Fri Oct 11 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.19.beta
 - 1017924 - unzip the units.json instead of reading/seeking using gzip.
   (jortel@redhat.com)
-
-* Thu Oct 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.18.beta
-- Pulp rebuild
-
-* Wed Oct 02 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.17.beta
 - 1013097 - permit (.) in node IDs. (jortel@redhat.com)
-
-* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.16.alpha
-- Pulp rebuild
-
-* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.15.alpha
-- Pulp rebuild
-
-* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.14.alpha
-- Pulp rebuild
-
-* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.13.alpha
 - 965751 - migrate nodes to use threaded downloader. (jortel@redhat.com)
 - 1004346 - deal with bindings w (None) as binding_config. (jortel@redhat.com)
-
-* Fri Sep 13 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.12.alpha
-- Pulp rebuild
-
-* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.11.alpha
-- Pulp rebuild
-
-* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.10.alpha
 - 1005898 - Remove unnecessary dependency on gofer in pulp-nodes.spec file
   (bcourt@redhat.com)
 - 1003285 - fixed an attribute access for an attribute that doesn't exist in
   python 2.6. (mhrivnak@redhat.com)
-
-* Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.9.alpha
-- Pulp rebuild
-
-* Fri Sep 06 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.8.alpha
 - 915330 - Fix performance degradation of importer and distributor
   configuration validation as the number of repositories increased
   (bcourt@redhat.com)
-
-* Fri Aug 30 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.7.alpha
-- Pulp rebuild
-
-* Thu Aug 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.6.alpha
 - nodes support updated content units. (jortel@redhat.com)
-
-* Thu Aug 29 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.5.alpha
-- Pulp rebuild
-
-* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.4.alpha
-- Pulp rebuild
-
-* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
 - 991201 - use plugin specific attribute for type_id. (jortel@redhat.com)
 - 989627 - dont use rstrip() to remove a file suffix. (jortel@redhat.com)
-
-* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
-- Pulp rebuild
-
-* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.1.alpha
 - 988913 - mirror (node) strategy only affect specified repos when units
   type_id=repository. (jortel@redhat.com)
 - 977948 - fix distributor updating during node sync. (jortel@redhat.com)
 - purge changelog
 - 924832 - check if node is already activated. (jortel@redhat.com)
 
-* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.16.alpha
+* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-1
 - 968543 - remove conditional in pulp_version macro. (jortel@redhat.com)
-
-* Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
-- Pulp rebuild
-
-* Fri May 24 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.14.alpha
-- Pulp rebuild
-
-* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.13.alpha
-- Pulp rebuild
-
-* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
-- Pulp rebuild
-
-* Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
-- Pulp rebuild
-
-* Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.10.alpha
-- Pulp rebuild
-
-* Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.9.alpha
-- Pulp rebuild
-
-* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.8.alpha
-- Pulp rebuild
-
-* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
-- Pulp rebuild
-
-* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
 - 955356 - pulp-nodes-child requires: pulp-agent. (jortel@redhat.com)
-
-* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
-- Pulp rebuild
-
-* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
 - 922229 - fix progress rendering. rendering depends on bindings processed in a
   determined order.  Perhaps fragile and should revisit progress rendering.
   (jortel@redhat.com)
@@ -531,33 +315,7 @@ Pulp nodes consumer client extensions.
 - 921107 - Fix grammatical error in node activate message. (jortel@redhat.com)
 - 921104 - Fix variable substitution in message. (jortel@redhat.com)
 
-* Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
+* Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-1
 - 916345 - SSLCACertificateFile not supported with <Directory/> in apache 2.4
   (jortel@redhat.com)
-
-* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
-- Pulp rebuild
-
-* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
-- Pulp rebuild
-
-* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
-- Pulp rebuild
-
-* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
-- Pulp rebuild
-
-* Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
-- Pulp rebuild
-
-* Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
-- Pulp rebuild
-
-* Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
-- Pulp rebuild
-
-* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
 - new package built with tito
-
-
-
