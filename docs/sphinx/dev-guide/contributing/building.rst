@@ -235,13 +235,28 @@ and your Koji username is ``cduryee``, you should do this::
 
     $ for x in pulp pulp-puppet pulp-rpm pulp-nodes; do koji -d add-pkg --owner "cduryee" pulp-2.5-beta-rhel7 $x; done
 
-Next it is time to tag the HEADS of these branches. The Pulp repository has a tag.sh script that you
-can use to do this. For example, to tag 2.4.2-0.3.beta you can do this::
+Next it is time to raise the versions of the setup.py, conf.py, and spec files. Each Python package
+in each Pulp repository has a setup.py. Find each of these, and set its version appropriately. Do
+the same for the conf.py in the ``docs/`` folder for each repository.
 
-    $ ./pulp/tag.sh -v 2.4.2-0.3.beta
+.. note::
 
-The tag.sh script will ask you to edit the changelog entries, tag the git repositories, and push the
-tags to github.
+   We do not include the release field in the setup.py or conf.py files, so this is only necessary
+   when introducing a new x.y.z version.
+
+Edit the spec file and raise the version and release fields to the desired values. Be sure to add an
+entry to the changelog as well, including any bug fixes that you find in the git log since the last
+build. We do not want to carry lots of old pre-release changelog entries around, so please find the
+changelog entries for the last build in your release stream and group them into the current version
+you are building. This way we can avoid lots of entries for ``0.1.beta``, ``0.2.beta``, etc. that
+all have a bug or two (or none) each. If you are making a release, there should be no changelog
+entries for the pre-release builds included at all. Once you have done this, you can use tito to tag
+the repository for building::
+
+    $ tito tag --keep-version --no-auto-changelog
+
+Pay attention to the output of tito, as you will need to push your changes to the upstream Pulp
+repository, as well as the tags that tito generated.
 
 .. note::
 
