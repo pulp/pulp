@@ -34,12 +34,4 @@ boolean -m --on httpd_can_network_connect
 boolean -m --on httpd_tmp_exec
 _EOF
 
-    semanage port -l | grep amqp_port_t | grep tcp | grep 5672 > /dev/null || \
-        /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5672
-    semanage port -l | grep amqp_port_t | grep udp | grep 5672 > /dev/null || \
-        /usr/sbin/semanage port -a -t amqp_port_t -p udp 5672
-    semanage port -l | grep amqp_port_t | grep tcp | grep 5671 > /dev/null || \
-        /usr/sbin/semanage port -a -t amqp_port_t -p tcp 5671
-    semanage port -l | grep amqp_port_t | grep udp | grep 5671 > /dev/null || \
-        /usr/sbin/semanage port -a -t amqp_port_t -p udp 5671
 fi
