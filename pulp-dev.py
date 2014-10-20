@@ -313,7 +313,7 @@ def getlinks():
 
 def install(opts):
     # Install the Python packages
-    environment._manage_setup_pys('install')
+    environment.manage_setup_pys('install')
 
     warnings = []
     create_dirs(opts)
@@ -399,7 +399,7 @@ def uninstall(opts):
     os.system('rm -rf /etc/pki/pulp/*')
 
     # Remove the Python packages
-    environment._manage_setup_pys('uninstall')
+    environment.manage_setup_pys('uninstall')
 
     return os.EX_OK
 
