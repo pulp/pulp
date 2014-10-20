@@ -238,10 +238,10 @@ Pulp nodes consumer client extensions.
 * Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - Pulp rebuild
 
-* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
+* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
 - Pulp rebuild
 
-* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
+* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
 - Pulp rebuild
 
 * Thu Oct 02 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.7.beta
