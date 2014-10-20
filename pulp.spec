@@ -606,7 +606,7 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-0.1.beta
+* Mon Oct 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
 
 * Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
