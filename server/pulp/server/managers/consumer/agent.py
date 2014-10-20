@@ -26,9 +26,9 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
 from pulp.server.db.model.consumer import Bind
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.agent import Context
 
 
@@ -68,10 +68,10 @@ class AgentManager(object):
         :type distributor_id: str
         :param options: The options are handler specific.
         :type options: dict
-        :return: The task created by the bind
-        :rtype: dict
+        :return: The task status created by the bind
+        :rtype: TaskStatus
         """
-        # track agent operations using a pseudo task
+        # track agent operations using a TaskStatus
         task_id = str(uuid4())
         task_tags = [
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
@@ -79,7 +79,9 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag(tags.ACTION_AGENT_BIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task_name = 'pulp.agent.gofer.pulpplugin.consumer.bind'
+        task_status = TaskStatus(task_id=task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=task_tags)
 
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -106,7 +108,7 @@ class AgentManager(object):
             Bind.Action.BIND,
             task_id)
 
-        return task
+        return task_status
 
     @staticmethod
     def unbind(consumer_id, repo_id, distributor_id, options):
@@ -120,8 +122,8 @@ class AgentManager(object):
         :type distributor_id: str
         :param options: The options are handler specific.
         :type options: dict
-        :return: A task ID that may be used to track the agent request.
-        :rtype: str
+        :return: A task status used to track the agent request.
+        :rtype: TaskStatus
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -131,7 +133,9 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag(tags.ACTION_AGENT_UNBIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task_name = 'pulp.agent.gofer.pulpplugin.consumer.unbind'
+        task_status = TaskStatus(task_id=task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=task_tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -157,7 +161,7 @@ class AgentManager(object):
             Bind.Action.UNBIND,
             task_id)
 
-        return task
+        return task_status
 
     @staticmethod
     def install_content(consumer_id, units, options):
@@ -170,8 +174,8 @@ class AgentManager(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Install options; based on unit type.
         :type options: dict
-        :return: A task used to track the agent request.
-        :rtype: dict
+        :return: A task status used to track the agent request.
+        :rtype: TaskStatus
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -179,7 +183,9 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_INSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task_name = 'pulp.agent.gofer.pulpplugin.content.install_content'
+        task_status = TaskStatus(task_id=task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=task_tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -201,7 +207,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.install(context, units, options)
-        return task
+        return task_status
 
     @staticmethod
     def update_content(consumer_id, units, options):
@@ -214,8 +220,8 @@ class AgentManager(object):
             { type_id:<str>, unit_key:<dict> }
         :param options: Update options; based on unit type.
         :type options: dict
-        :return: A task used to track the agent request.
-        :rtype: dict
+        :return: A task status used to track the agent request.
+        :rtype: TaskStatus
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -223,7 +229,9 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_UPDATE)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task_name = 'pulp.agent.gofer.pulpplugin.content.update_content'
+        task_status = TaskStatus(task_id=task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=task_tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -245,7 +253,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.update(context, units, options)
-        return task
+        return task_status
 
     @staticmethod
     def uninstall_content(consumer_id, units, options):
@@ -258,8 +266,8 @@ class AgentManager(object):
             { type_id:<str>, type_id:<dict> }
         :param options: Uninstall options; based on unit type.
         :type options: dict
-        :return: A task ID that may be used to track the agent request.
-        :rtype: dict
+        :return: A task status used to track the agent request.
+        :rtype: TaskStatus
         """
         # track agent operations using a pseudo task
         task_id = str(uuid4())
@@ -267,7 +275,9 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_UNINSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task_name = 'pulp.agent.gofer.pulpplugin.content.uninstall_content'
+        task_status = TaskStatus(task_id=task_id, task_type=task_name,
+                                 state=constants.CALL_WAITING_STATE, tags=task_tags)
 
         # agent request
         manager = managers.consumer_manager()
@@ -289,7 +299,7 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.uninstall(context, units, options)
-        return task
+        return task_status
 
     def cancel_request(self, consumer_id, task_id):
         """
