@@ -190,16 +190,16 @@ package to be installed. This exception may not occur until the Qpid broker is r
 unexpectedly with other Pulp services running. The exception is shown as Pulp recovers from a Qpid
 availability issue.
 
-No available workers
-^^^^^^^^^^^^^^^^^^^^
+Tasks are accepted but never run
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Pulp requires three Celery services to be running: ``pulp_celerybeat``, ``pulp_resource_manager``,
-and ``pulp_workers``. If you are using systemd, please see the special note about ``pulp_workers``
-below. If you are experiencing this error, you may see a message similar to "There are no Celery
-workers found in the system for reserved task work. Please ensure that there is at least one Celery
-worker running, and that the celerybeat service is also running." in the logs or from the CLI. Pulp
-will not work correctly if any of the required services are not running, so please ensure that they
-are all started and configured to start after a reboot.
+Starting with Pulp 2.5.1, any pulp-admin or API action that creates a Pulp Task will be accepted
+without error as long as the webserver is running. Once those tasks are accepted, they wait to be
+executed through a coordination between the non-webserver components: ``pulp_celerybeat``,
+``pulp_resource_manager``, and ``pulp_workers``. If your tasks are being accepted but not running,
+ensure that you have ``pulp_celerybeat``, ``pulp_resource_manager``, and ``pulp_workers``
+configured and running correctly. If you are using systemd, please see the special note about
+``pulp_workers`` below.
 
 .. note::
 
