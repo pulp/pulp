@@ -100,7 +100,6 @@ def update_images():
         old_snapshots = os1.get_pulp_images(distributions=args.distributions)
 
         # Update each vanilla instance and then snapshot them
-        # TODO: It would be nice if this was threaded
         for instance in instance_list:
             update(instance)
             snapshot = os1.take_snapshot(instance, instance.name + '-SNAP')

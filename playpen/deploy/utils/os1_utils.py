@@ -88,7 +88,7 @@ class OS1Manager:
         :param image_status:    The type of image to retrieve (options are vanilla and pulpy)
         :type  image_status:    str
         :param distributions:   A list of platforms to retrieve. By default all images with the
-        META_DISTRIBUTION_KEYWORD in their metadata are returned.
+                                META_DISTRIBUTION_KEYWORD in their metadata are returned.
         :type  distributions:   list of str
 
         :return: a list of of novaclient.images.Image
@@ -99,11 +99,9 @@ class OS1Manager:
         pulp_images = []
         for image in image_list:
             meta = image.metadata
-            if META_DISTRIBUTION_KEYWORD in meta and meta[META_IMAGE_STATUS_KEYWORD] == image_status:
-                if distributions and meta[META_DISTRIBUTION_KEYWORD] in distributions:
-                    pulp_images.append(image)
-                else:
-                    pulp_images.append(image)
+            # Add any image to the list if it matches the given image status
+            if META_IMAGE_STATUS_KEYWORD in meta and meta[META_IMAGE_STATUS_KEYWORD] == image_status:
+                pulp_images.append(image)
 
         # Filter out unwanted platforms
         if distributions:
