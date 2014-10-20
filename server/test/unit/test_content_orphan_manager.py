@@ -16,7 +16,11 @@ import shutil
 import string
 import tempfile
 import traceback
+
 from pprint import pformat
+from unittest import TestCase
+
+from mock import patch
 
 import base
 
@@ -104,6 +108,7 @@ class OrphanManagerInstantiationTests(base.PulpServerTests):
             self.fail(traceback.format_exc())
 
 # manager tests ----------------------------------------------------------------
+
 
 class OrphanManagerTests(base.PulpServerTests):
 
@@ -284,3 +289,221 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         self.assertEqual(self.number_of_files_in_content_root(), 0)
 
 
+class TestDelete(TestCase):
+
+    @patch('shutil.rmtree')
+    @patch('os.unlink')
+    @patch('os.path.islink')
+    @patch('os.path.isfile')
+    def test_delete_dir(self, is_file, is_link, unlink, rmtree):
+        path = 'path-1'
+        is_file.return_value = False
+        is_link.return_value = False
+
+        # test
+        OrphanManager.delete(path)
+
+        # validation
+        is_file.assert_called_with(path)
+        is_link.assert_called_with(path)
+        rmtree.assert_called_with(path)
+        self.assertFalse(unlink.called)
+
+    @patch('shutil.rmtree')
+    @patch('os.unlink')
+    @patch('os.path.isfile')
+    def test_delete_file(self, is_file, unlink, rmtree):
+        path = 'path-1'
+        is_file.return_value = True
+
+        # test
+        OrphanManager.delete(path)
+
+        # validation
+        is_file.assert_called_with(path)
+        unlink.assert_called_with(path)
+        self.assertFalse(rmtree.called)
+
+    @patch('shutil.rmtree')
+    @patch('os.unlink')
+    @patch('os.path.islink')
+    @patch('os.path.isfile')
+    def test_delete_link(self, is_file, is_link, unlink, rmtree):
+        path = 'path-1'
+        is_file.return_value = False
+        is_link.return_value = True
+
+        # test
+        OrphanManager.delete(path)
+
+        # validation
+        is_file.assert_called_with(path)
+        is_link.assert_called_with(path)
+        unlink.assert_called_with(path)
+        self.assertFalse(rmtree.called)
+
+    @patch('logging.Logger.error')
+    @patch('os.unlink')
+    @patch('os.path.isdir')
+    def test_delete_exception(self, is_dir, unlink, log_error):
+        path = 'path-1'
+        is_dir.return_value = False
+        unlink.side_effect = OSError
+
+        # test
+        OrphanManager.delete(path)
+
+        # validation
+        self.assertTrue(log_error.called)
+
+
+class TestIsShared(TestCase):
+
+    @patch('os.path.islink')
+    def test_shared(self, is_link):
+        storage_dir = '/var/lib/pulp'
+        path = os.path.join(storage_dir, 'content/shared/repo-id/links/link-1')
+        is_link.return_value = True
+
+        # test
+        shared = OrphanManager.is_shared(storage_dir, path)
+
+        # validation
+        self.assertTrue(shared)
+
+    @patch('os.path.islink')
+    def test_not_shared(self, is_link):
+        storage_dir = '/var/lib/pulp'
+        path = os.path.join(storage_dir, 'content/repo-id/links/link-1')
+        is_link.return_value = True
+
+        # test
+        shared = OrphanManager.is_shared(storage_dir, path)
+
+        # validation
+        self.assertFalse(shared)
+
+    @patch('os.path.islink')
+    def test_not_link(self, is_link):
+        storage_dir = '/var/lib/pulp'
+        path = os.path.join(storage_dir, 'content/shared/repo-id/links/link-1')
+        is_link.return_value = False
+
+        # test
+        shared = OrphanManager.is_shared(storage_dir, path)
+
+        # validation
+        self.assertFalse(shared)
+
+    @patch('os.path.islink')
+    def test_not_links_dir(self, is_link):
+        storage_dir = '/var/lib/pulp'
+        path = os.path.join(storage_dir, 'content/shared/repo-id/OTHER/link-1')
+        is_link.return_value = True
+
+        # test
+        shared = OrphanManager.is_shared(storage_dir, path)
+
+        # validation
+        self.assertFalse(shared)
+
+
+class TestUnlinkShared(TestCase):
+
+    @patch('os.listdir')
+    @patch('os.readlink')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
+    def test_delete_all(self, delete, read_link, listdir):
+        path = '/parent/links/path-1'
+        content = '/parent/content'
+        read_link.return_value = content
+        listdir.return_value = []
+
+        # test
+        OrphanManager.unlink_shared(path)
+
+        # validation
+        read_link.assert_called_once_with(path)
+        listdir.assert_called_once_with(os.path.dirname(path))
+        self.assertEqual(
+            delete.call_args_list,
+            [
+                ((path,), {}),
+                ((content,), {}),
+            ])
+
+    @patch('os.listdir')
+    @patch('os.readlink')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
+    def test_delete_links_not_empty(self, delete, read_link, listdir):
+        path = '/parent/links/path-1'
+        content = '/parent/content'
+        read_link.return_value = content
+        listdir.return_value = ['link-2']
+
+        # test
+        OrphanManager.unlink_shared(path)
+
+        # validation
+        read_link.assert_called_once_with(path)
+        listdir.assert_called_once_with(os.path.dirname(path))
+        delete.assert_called_once_with(path)
+
+    @patch('os.listdir')
+    @patch('os.readlink')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
+    def test_delete_target_not_sibling(self, delete, read_link, listdir):
+        path = '/parent/links/path-1'
+        content = '/NOT-SAME-PARENT/content'
+        read_link.return_value = content
+        listdir.return_value = []
+
+        # test
+        OrphanManager.unlink_shared(path)
+
+        # validation
+        read_link.assert_called_once_with(path)
+        listdir.assert_called_once_with(os.path.dirname(path))
+        delete.assert_called_once_with(path)
+
+
+class TestDeleteOrphanedFile(TestCase):
+
+    def test_not_absolute_path(self):
+        self.assertRaises(ValueError, OrphanManager.delete_orphaned_file, 'path-1')
+
+    @patch('pulp.server.managers.content.orphan.pulp_config.config')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.unlink_shared')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.is_shared')
+    def test_shared(self, is_shared, unlink_shared, delete, config):
+        path = '/path-1'
+        storage_dir = '/storage/pulp/dir'
+        is_shared.return_value = True
+        config.get.return_value = storage_dir
+
+        # test
+        OrphanManager.delete_orphaned_file(path)
+
+        # validation
+        is_shared.assert_called_once_with(storage_dir, path)
+        unlink_shared.assert_called_once_with(path)
+        self.assertFalse(delete.called)
+
+    @patch('pulp.server.managers.content.orphan.pulp_config.config')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.delete')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.unlink_shared')
+    @patch('pulp.server.managers.content.orphan.OrphanManager.is_shared')
+    def test_not_shared(self, is_shared, unlink_shared, delete, config):
+        path = '/path-1'
+        storage_dir = '/storage/pulp/dir'
+        is_shared.return_value = False
+        config.get.return_value = storage_dir
+
+        # test
+        OrphanManager.delete_orphaned_file(path)
+
+        # validation
+        is_shared.assert_called_once_with(storage_dir, path)
+        delete.assert_called_once_with(path)
+        self.assertFalse(unlink_shared.called)
