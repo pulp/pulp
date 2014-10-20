@@ -1,5 +1,5 @@
 from gettext import gettext as _
-from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption
+from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand
 
 
 def initialize(context):
