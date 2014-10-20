@@ -319,10 +319,10 @@ class OrphanManager(object):
         :type path: str
         """
         try:
-            if os.path.isdir(path):
-                shutil.rmtree(path)
-            else:
+            if os.path.isfile(path) or os.path.islink(path):
                 os.unlink(path)
+            else:
+                shutil.rmtree(path)
         except OSError, e:
             logger.error(_('Delete path: %(p)s failed: %(m)s'), {'p': path, 'm': str(e)})
 

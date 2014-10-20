@@ -291,34 +291,54 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
 
 class TestDelete(TestCase):
 
-
     @patch('shutil.rmtree')
     @patch('os.unlink')
-    @patch('os.path.isdir')
-    def test_delete_dir(self, is_dir, unlink, rmtree):
+    @patch('os.path.islink')
+    @patch('os.path.isfile')
+    def test_delete_dir(self, is_file, is_link, unlink, rmtree):
         path = 'path-1'
-        is_dir.return_value = True
+        is_file.return_value = False
+        is_link.return_value = False
 
         # test
         OrphanManager.delete(path)
 
         # validation
-        is_dir.assert_called_with(path)
+        is_file.assert_called_with(path)
+        is_link.assert_called_with(path)
         rmtree.assert_called_with(path)
         self.assertFalse(unlink.called)
 
     @patch('shutil.rmtree')
     @patch('os.unlink')
-    @patch('os.path.isdir')
-    def test_delete_file(self, is_dir, unlink, rmtree):
+    @patch('os.path.isfile')
+    def test_delete_file(self, is_file, unlink, rmtree):
         path = 'path-1'
-        is_dir.return_value = False
+        is_file.return_value = True
 
         # test
         OrphanManager.delete(path)
 
         # validation
-        is_dir.assert_called_with(path)
+        is_file.assert_called_with(path)
+        unlink.assert_called_with(path)
+        self.assertFalse(rmtree.called)
+
+    @patch('shutil.rmtree')
+    @patch('os.unlink')
+    @patch('os.path.islink')
+    @patch('os.path.isfile')
+    def test_delete_link(self, is_file, is_link, unlink, rmtree):
+        path = 'path-1'
+        is_file.return_value = False
+        is_link.return_value = True
+
+        # test
+        OrphanManager.delete(path)
+
+        # validation
+        is_file.assert_called_with(path)
+        is_link.assert_called_with(path)
         unlink.assert_called_with(path)
         self.assertFalse(rmtree.called)
 
