@@ -2,6 +2,41 @@
 Pulp 2.4 Release Notes
 ======================
 
+Pulp 2.4.3
+==========
+
+This release is a response to
+`CVE-2014-3566 <https://access.redhat.com/security/cve/CVE-2014-3566>`_, commonly known as the
+POODLE attack.
+
+Bugs
+----
+You can see the complete list of bugs that were
+`fixed in Pulp 2.4.3 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.4.3>`_.
+
+Upgrade Instructions for 2.4.2 --> 2.4.3
+----------------------------------------
+
+Upgrading from Pulp 2.4.2 to 2.4.3 is straightforward. All that is required is a yum update, and a
+restart::
+
+    $ sudo yum update
+
+It is recommended that you configure your web server to refuse SSLv3.0. In Apache, you can do this
+by editing ``/etc/httpd/conf.d/ssl.conf`` and configuring the ``SSLProtocol`` directive like this::
+
+    SSLProtocol all -SSLv2 -SSLv3
+
+Next, restart all of the Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl restart $s; done;
+
+.. note::
+
+   If you are using Upstart, substitute the above command with ``s/systemctl restart $s/service $s
+   restart/``.
+
+
 Pulp 2.4.1
 ==========
 
