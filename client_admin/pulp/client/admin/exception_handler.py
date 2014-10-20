@@ -10,10 +10,14 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import logging
 from gettext import gettext as _
 
 from pulp.client.extensions.exceptions import ExceptionHandler, CODE_PERMISSIONS_EXCEPTION
 from pulp.common import auth_utils
+
+
+_logger = logging.getLogger(__name__)
 
 
 class AdminExceptionHandler(ExceptionHandler):
@@ -42,7 +46,7 @@ class AdminExceptionHandler(ExceptionHandler):
         :return: appropriate exit code for this error
         """
 
-        self._log_client_exception(e)
+        _logger.error(e)
 
         handlers = {
             auth_utils.CODE_FAILED : self._handle_authentication_failed,
