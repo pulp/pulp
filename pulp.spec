@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.9.beta%{?dist}
+Release: 0.10.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,12 +604,16 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Mon Oct 20 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.9.beta
+* Mon Oct 20 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.10.beta
+- 1117512 - Fix formatting of last_unit_added & last_unit_removed fields
+  (bcourt@redhat.com)
 - 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
 - 1102269 - Added documentation about deprecation of task_type
   (dkliban@redhat.com)
 - 1150297 - Update versions from 2.4.x to 2.5.0. (rbarlow@redhat.com)
 - 1060752 - Add sample output for repo import_upload (bcourt@redhat.com)
+- 1146680 - Stop pulp_workers services with SIGQUIT. (rbarlow@redhat.com)
+- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
 
 * Mon Oct 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
@@ -635,38 +639,6 @@ exit 0
 - 1096294 - Document the rsyslog log level settings. (rbarlow@redhat.com)
 - 1087997 - add link to release note (cduryee@redhat.com)
 - 1009429 - Move pulp_manage_puppet bool 2 celery_t. (rbarlow@redhat.com)
-
-* Sun Oct 12 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.8.beta
-- 1117512 - Fix formatting of last_unit_added & last_unit_removed fields
-  (bcourt@redhat.com)
-
-* Thu Oct 02 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.7.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.6.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.5.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.4.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.3.beta
-- Pulp rebuild
-
-* Fri Sep 26 2014 Chris Duryee <cduryee@redhat.com> 2.5.0-0.2.beta
-- 1146680 - Stop pulp_workers services with SIGQUIT. (rbarlow@redhat.com)
-- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
-
-* Tue Sep 23 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
-- 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
-- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
-- 1131260 - relax version requirement. (jortel@redhat.com)
-- 1136883 - Fixed incorrect tags for applicability in the docs
-  (jcline@redhat.com)
-
-* Tue Sep 09 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.1.alpha
 - 1134972 - remove calls to mongo flush (cduryee@redhat.com)
 - 1132609 - celery result backend gets mongo username correctly
   (mhrivnak@redhat.com)
@@ -719,37 +691,24 @@ exit 0
 - 1100805 - Fixing consumer group bind and unbind and moving tasks from
   tasks/consumer_group.py to consumer group cud manager (skarmark@redhat.com)
 
-* Fri Aug 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.3.beta
+* Tue Sep 23 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
+- 1136883 - Fixed incorrect tags for applicability in the docs
+  (jcline@redhat.com)
+- 1131260 - Shell out to for certificate validation. (rbarlow@redhat.com)
+- 1129719 - Raise the certificate validation depth. (rbarlow@redhat.com)
+- 1131260 - relax version requirement. (jortel@redhat.com)
 - 1130312 - Fix bug query for 2.4.1. (rbarlow@redhat.com)
 - 1130312 - Add upgrade instructions for 2.4.1. (rbarlow@redhat.com)
 - 1108306 - Update nectar to fix hang on canceling downloads of large numbers
   of files. (bcourt@redhat.com)
-
-* Wed Aug 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-0.2.alpha
 - 1093760 - pulp-manage-db now halts if a migration fails (jcline@redhat.com)
 
 * Sat Aug 09 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-1
-- Pulp rebuild
-
-* Thu Jul 31 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.30.beta
 - 1125030 - Handle both styles of certificate stores. (rbarlow@redhat.com)
-
-* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.29.beta
-- Pulp rebuild
-
-* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.28.beta
-- Pulp rebuild
-
-* Tue Jul 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.27.beta
-- Pulp rebuild
-
-* Mon Jul 28 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.26.beta
 - 1113590 - Nodes requires Pulp's cert to be trusted 1112906 - pulp-admin
   requires Pulp's cert to be trusted 1112904 - pulp-consumer requires Pulp's
   cert to be trusted (rbarlow@redhat.com)
 - 1110893 - adding a trailing slash to an API path (mhrivnak@redhat.com)
-
-* Wed Jul 16 2014 Unknown name 2.4.0-0.25.beta
 - 1115631 - discard disabled sources before doing is_valid check.
   (jortel@redhat.com)
 - 1005899 - support 'message' reported during node sync. (jortel@redhat.com)
@@ -761,8 +720,6 @@ exit 0
   certificates (skarmark@redhat.com)
 - 1112904 - adding configuration for pulp ssl certificates
   (skarmark@redhat.com)
-
-* Fri Jul 11 2014 Brian Bouterse <bmbouter@gmail.com> 2.4.0-0.24.beta
 - 1110668 - updated consumer group binding documentation to refect the actual
   behaviour (jcline@redhat.com)
 - 1117060 - added umask setting to celery worker command line, since the
@@ -777,18 +734,12 @@ exit 0
   (mhrivnak@redhat.com)
 - 1100638 - Update task search API to match the serialization used for task
   collection & task get APIs (bcourt@redhat.com)
-
-* Wed Jun 25 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.23.beta
 - 1110674 - A 400 Bad Request is returned when attempting to bind a consumer
   group to an invalid repo or distributor id (jcline@redhat.com)
-
-* Tue Jun 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.22.beta
 - 1104654 - Don't require python-oauth2 on RHEL 5. (rbarlow@redhat.com)
 - 1020912 - add pulp_manage_puppet selinux boolean (lzap+git@redhat.com)
 - 1110668 - consumer group binding calls now return 404 when invalid group,
   repo, or distributor ids are given (jcline@redhat.com)
-
-* Tue Jun 17 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.21.beta
 - 1074426 - Updated the repository group API docs to reflect actual DELETE
   behaviour (jcline@redhat.com)
 - 1109430 - goferd supporting systemd. (jortel@redhat.com)
@@ -805,15 +756,11 @@ exit 0
   (jcline@redhat.com)
 - 1097781 - Indicate that consumer bind fails when it does.
   (rbarlow@redhat.com)
-
-* Tue Jun 10 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.20.beta
 - 1107782 - fixed in gofer 1.2.1. (jortel@redhat.com)
 - 1102393 - Rework how we select the queue for new reservations.
   (rbarlow@redhat.com)
 - 1100892 - check if filename exists before printing (cduryee@redhat.com)
 - 1100330 - Improve error message and documentation. (rbarlow@redhat.com)
-
-* Thu May 29 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.19.beta
 - 1102236 - pass the authenticator to the reply consumer. (jortel@redhat.com)
 - 1099272 - bump mongodb version requirement in docs (cduryee@redhat.com)
 - 1098620 - Report NoAvailableQueues as a coded Exception. (rbarlow@redhat.com)
@@ -821,15 +768,11 @@ exit 0
   (mhrivnak@redhat.com)
 - 1097247 - Add status to pulp_celerybeat script. (rbarlow@redhat.com)
 - 1100084 - read consumer.conf during setup_plugin(). (jortel@redhat.com)
-
-* Wed May 21 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.18.beta
 - 1099945 - use correct serializer when publishing http events
   (cduryee@redhat.com)
 - 1096931 - improving repo update command to better detect spawned tasks
   (mhrivnak@redhat.com)
 - 1051700 - Don't build pulp-admin on RHEL 5. (rbarlow@redhat.com)
-
-* Tue May 20 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.17.beta
 - 1096822 - Don't set a canceled Task to finished. (rbarlow@redhat.com)
 - 1099168 - move %%postun block inside pulp_server if block
   (cduryee@redhat.com)
@@ -837,14 +780,6 @@ exit 0
   (bmbouter@gmail.com)
 - 1091980 - Update install and upgrade docs with qpid client deps
   (bmbouter@gmail.com)
-
-* Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.16.beta
-- Pulp rebuild
-
-* Fri May 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.15.beta
-- Pulp rebuild
-
-* Thu May 15 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.14.beta
 - 1096968 - return created profile; log reported profiles at debug in the
   agent. (jortel@redhat.com)
 - 1094647 - GET of consumer schedule that doesn't exist now returns 404
@@ -860,19 +795,12 @@ exit 0
   (bmbouter@gmail.com)
 - 1093429 - Changing repo create API to match documented key name.
   (mhrivnak@redhat.com)
-
-* Thu May 08 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.13.beta
-- Pulp rebuild
-
-* Wed May 07 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.12.beta
 - 1094637 - fixing consumer schedule API urls in the documentation
   (mhrivnak@redhat.com)
 - 1094653 - correctly handling the case where an invalid schedule ID is
   provided to the REST API (mhrivnak@redhat.com)
 - 1087514 - correct dev-guide for create/update user. (jortel@redhat.com)
 - 1091922  - Fix _delete_queue() traceback. (bmbouter@gmail.com)
-
-* Fri May 02 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.11.beta
 - 1093417 - propagate transport configuration property. (jortel@redhat.com)
 - 1086278 - Convert upload into a polling command. (rbarlow@redhat.com)
 - 1091919 - agent load rsa keys on demand. (jortel@redhat.com)
@@ -887,8 +815,6 @@ exit 0
 - 1073999 - removing result from task list and adding it to the task details
   (skarmark@redhat.com)
 - 1069909 - Don't run server code on EL5 for pulp-dev.py. (rbarlow@redhat.com)
-
-* Thu Apr 24 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.10.beta
 - 1074670 - Save initialize & finalize in step processing even if no units are
   processed. (bcourt@redhat.com)
 - 1080609 - pulp-manage-db now ensures the admin. (rbarlow@redhat.com)
@@ -897,8 +823,6 @@ exit 0
 - 1084716 - Register with Celery's setup_logging. (rbarlow@redhat.com)
 - 1086437 - Fixes consumer reregistration. (jortel@redhat.com)
 - 1065450 - updating repo delete api docs for responses (skarmark@redhat.com)
-
-* Mon Apr 14 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-0.9.beta
 - 1080647 - added validation that a unit profile is not None before requesting
   applicability regeneration by repos (skarmark@redhat.com)
 - 1061783 - added missing example for the consumer group update api
@@ -909,14 +833,6 @@ exit 0
   ids (skarmark@redhat.com)
 - 1085545 - Fix permissions on /etc/pulp/server/plugins.conf.d/nodes/importer.
   (jortel@redhat.com)
-
-* Mon Apr 07 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.8.beta
-- Pulp rebuild
-
-* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.beta
-- Pulp rebuild
-
-* Wed Apr 02 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.7.alpha
 - 1082130 - Update progress only when task_id != None. (jortel@redhat.com)
 - 1082064 - task status created with state=WAITING when None is passed.
   (jortel@redhat.com)
@@ -942,14 +858,6 @@ exit 0
 - 1076628 - Fix base class for unassociate task and update test case for unit
   deletion (bcourt@redhat.com)
 - 1018183 - Include _href's on tasks during GET all. (rbarlow@redhat.com)
-
-* Thu Mar 13 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.6.alpha
-- Pulp rebuild
-
-* Thu Mar 13 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.5.alpha
-- Pulp rebuild
-
-* Wed Mar 12 2014 Barnaby Court <bcourt@redhat.com> 2.4.0-0.4.alpha
 - 1075701 - Re-enable Celery log capturing. (rbarlow@redhat.com)
 - 1071960 - Support message authentication. Port pulp to gofer 1.0. Removed
   timeouts for agent related tasks. (jortel@redhat.com)
@@ -957,8 +865,6 @@ exit 0
   moving manager functionality out of authorization.py, removing duplicate
   declaration of permission operation constants in permission.py and adding
   missing unit tests (skarmark@redhat.com)
-
-* Mon Feb 24 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.3.alpha
 - 980150 - support broker host that is different than pulp host.
   (jortel@redhat.com)
 - 1058835 - Fix documentation of URL path for deletion of upload requests.
@@ -970,8 +876,6 @@ exit 0
   (mhrivnak@redhat.com)
 - 1051700 - adding an explicit requirement for python 2.6 to pulp-admin-client
   (mhrivnak@redhat.com)
-
-* Tue Jan 28 2014 Jeff Ortel <jortel@redhat.com> 2.4.0-0.2.alpha
 - 1048297 - pulp-dev.py sets the CA cert and key world readable.
   (rbarlow@redhat.com)
 - 921743 - Adjust ownership and permissions for a variety of the RPM paths.
@@ -983,8 +887,6 @@ exit 0
   0.24 (jortel@redhat.com)
 - 1005899 - report errors fetching bindings from the parent in the report.
   (jortel@redhat.com)
-
-* Thu Dec 12 2013 Jeff Ortel <jortel@redhat.com> 2.4.0-0.1.alpha
 - 1031220 - raising an AttributeError when an attribute is missing on a Model
   (mhrivnak@redhat.com)
 - Add support for alternate content sources. (jortel@redhat.com)
@@ -1002,14 +904,10 @@ exit 0
 - 996606 - Check to see if a repo exists before starting upload process
   (jason.dobies@redhat.com)
 
-* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.29.beta
+* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-1
 - 1027500 - init python-gofer before agent and tasking services started.
   (jortel@redhat.com)
-
-* Wed Nov 06 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.28.beta
 - 1022646 - migration_0 needs to add units_size=0. (jortel@redhat.com)
-
-* Fri Nov 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.27.beta
 - 1023056 - fix SSL on f19 by using qpid builtin SSL transport.
   (jortel@redhat.com)
 - 1022646 - fix migration of nodes 2.2 => 2.3 manifests. (jortel@redhat.com)
@@ -1019,45 +917,24 @@ exit 0
   (jason.dobies@redhat.com)
 - 1017587 - Added a list of possible task states to the docs.
   (rbarlow@redhat.com)
-
-* Tue Oct 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.26.beta
-- Pulp rebuild
-
-* Mon Oct 28 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.25.beta
 - 1017865 - Corrected task response docs (jason.dobies@redhat.com)
 - 1021116 - Convert info level log messages that include Task arguments into
   debug level messages. (rbarlow@redhat.com)
 - 1017253 - Removed v1 attribute that no longer exists
   (jason.dobies@redhat.com)
-
-* Wed Oct 23 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.24.beta
 - 1019909 - Added replica set support (jason.dobies@redhat.com)
 - 1020549 - tar the content of the distribution directory instead of the
   directory. (jortel@redhat.com)
-
-* Fri Oct 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.23.beta
 - 1019455 - Loosened validation checks on the presence of the feed for certain
   configuration parameters (jason.dobies@redhat.com)
-
-* Wed Oct 16 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.22.beta
-- Pulp rebuild
-
-* Tue Oct 15 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.21.beta
 - 1011716 - updated spec file to add selinux-policy-targeted dependency for f19
   and removing wrong version dependency on policycoreutils-python
   (skarmark@redhat.com)
 - 973678 - Add support for reporting unit upload statuses to the API and CLI.
   (rbarlow@lemonade.usersys.redhat.com)
 - 975503 - Add status command to iso publish (bcourt@redhat.com)
-
-* Mon Oct 14 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.20.beta
-- Pulp rebuild
-
-* Fri Oct 11 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.19.beta
 - 1017924 - unzip the units.json instead of reading/seeking using gzip.
   (jortel@redhat.com)
-
-* Thu Oct 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.18.beta
 - 1017815 - Added logging about publish success and failure
   (mhrivnak@redhat.com)
 - 965283 - Document the response for a repo importer delete (bcourt@redhat.com)
@@ -1081,8 +958,6 @@ exit 0
 - 1011972 - fixed in nectar 1.1.2. (jortel@redhat.com)
 - 952748 - adding documentation about how to use a UnitAssociationCriteria with
   the REST API. (mhrivnak@redhat.com)
-
-* Wed Oct 02 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.17.beta
 - 1009926 - Fix Exception thrown on applicability generation
   (bcourt@redhat.com)
 - 1013097 - permit (.) in node IDs. (jortel@redhat.com)
@@ -1094,13 +969,9 @@ exit 0
   api documentation (bcourt@redhat.com)
 - 1011053 - Add a from_dict() method to the Criteria model.
   (rbarlow@redhat.com)
-
-* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.16.alpha
 - 1012636 - fix post script. (jortel@redhat.com)
 - 976435 - load puppet importer config from a file using a common method.
   (bcourt@redhat.com)
-
-* Thu Sep 26 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.15.alpha
 - 1004559 - python-simplejson is now required by pulp-common on rhel5. this
   also removes any direct imports of simplejson from outside the pulp-common
   package. (mhrivnak@redhat.com)
@@ -1114,11 +985,6 @@ exit 0
   (jason.connor@gmail.com)
 - 1009617 - Fixed the limit option in 'pulp-admin repo history publish'
   (einecline@gmail.com)
-
-* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.14.alpha
-- Pulp rebuild
-
-* Wed Sep 18 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.13.alpha
 - 965751 - migrate nodes to use threaded downloader. (jortel@redhat.com)
 - 1009118 - bindings require python-oauth. (jortel@redhat.com)
 - 1004346 - deal with bindings w (None) as binding_config. (jortel@redhat.com)
@@ -1132,23 +998,10 @@ exit 0
 - 959031 - 968524 - rewritten scheduler that fixes bug in subsequent schedule
   runs and allows next_run to be updated when upating the schedule of a
   scheduled_call (jason.connor@gmail.com)
-
-* Fri Sep 13 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.12.alpha
-- Pulp rebuild
-
-* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.11.alpha
-- Pulp rebuild
-
-* Thu Sep 12 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.10.alpha
 - 1005898 - Remove unnecessary dependency on gofer in pulp-nodes.spec file
   (bcourt@redhat.com)
 - 1003285 - fixed an attribute access for an attribute that doesn't exist in
   python 2.6. (mhrivnak@redhat.com)
-
-* Tue Sep 10 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.9.alpha
-- Pulp rebuild
-
-* Fri Sep 06 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.8.alpha
 - 1004897 - Fix bug where distributor validate_config is finding relative path
   conflicts with the repository that is being updated (bcourt@redhat.com)
 - 952737 - updated repo creation documentation with parameters to configure
@@ -1156,20 +1009,6 @@ exit 0
 - 915330 - Fix performance degradation of importer and distributor
   configuration validation as the number of repositories increased
   (bcourt@redhat.com)
-
-* Fri Aug 30 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.7.alpha
-- Pulp rebuild
-
-* Thu Aug 29 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.6.alpha
-- Pulp rebuild
-
-* Thu Aug 29 2013 Barnaby Court <bcourt@redhat.com> 2.3.0-0.5.alpha
-- Pulp rebuild
-
-* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.4.alpha
-- Pulp rebuild
-
-* Tue Aug 27 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.3.alpha
 - 956711 - Raise an error to the client if an attempt is made to install an
   errata that does not exist in a repository bound to the consumer
   (bcourt@redhat.com)
@@ -1179,11 +1018,6 @@ exit 0
   Collection object in 2.1.1 (jason.connor@gmail.com)
 - 976561 - removed superfluous re-fetching of collection we already have a
   handle to (jason.connor@gmail.com)
-
-* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.2.alpha
-- Pulp rebuild
-
-* Thu Aug 01 2013 Jeff Ortel <jortel@redhat.com> 2.3.0-0.1.alpha
 - 976561 - added and explicit pool size for the socket "pool" added a new
   decorator around the query methods that calls end_request in order to manage
   the sockets automagically (jason.connor@gmail.com)
@@ -1201,7 +1035,7 @@ exit 0
 - 968012 - Replaced grinder logging config with nectar logging config
   (jason.dobies@redhat.com)
 
-* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.16.alpha
+* Tue Jun 04 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-1
 - 947445 - allowing consumer ids to allow dots (skarmark@redhat.com)
 - 906420 - update storing of resources used by each task in the taskqueue to
   allow dots in the repo id (skarmark@redhat.com)
@@ -1218,47 +1052,12 @@ exit 0
   (jason.dobies@redhat.com)
 - 963823 - Made the feed SSL options group name a bit more accurate
   (jason.dobies@redhat.com)
-
-* Thu May 30 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.15.alpha
 - 913670 - fix consumer group bind/unbind. (jortel@redhat.com)
 - 878234 - use correct method on coordinator. (jortel@redhat.com)
-
-* Fri May 24 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.14.alpha
 - 966202 - Change the config options to use the optional parsers.
   (jason.dobies@redhat.com)
-
-* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.13.alpha
-- Pulp rebuild
-
-* Thu May 23 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.12.alpha
-- Pulp rebuild
-
-* Tue May 21 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.11.alpha
 - 923796 - Changed example to not cite a specific command
   (jason.dobies@redhat.com)
-
-* Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.10.alpha
-- Pulp rebuild
-
-* Mon May 20 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.9.alpha
-- Pulp rebuild
-
-* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.8.alpha
-- Pulp rebuild
-
-* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.7.alpha
-- Pulp rebuild
-
-* Fri May 17 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.6.alpha
-- Pulp rebuild
-
-* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.5.alpha
-- Pulp rebuild
-
-* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.4.alpha
-- Pulp rebuild
-
-* Mon May 13 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.3.alpha
 - 952775 - Fixed broken unit filter application when sorted by association
   (jason.dobies@redhat.com)
 - 913171 - using get method instead of dict lookup (skarmark@redhat.com)
@@ -1285,8 +1084,6 @@ exit 0
 - 927244 - unit association log blacklist criteria (jason.connor@gmail.com)
 - 903414 - handle malformed queued calls (jason.connor@gmail.com)
 - 927216 - remove CDS section from server.conf. (jortel@redhat.com)
-
-* Fri Apr 19 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.2.alpha
 - 953665 - added ability for copy commands to specify the fields of their units
   that should be fetched, so as to avoid loading the entirety of every unit in
   the source repository into RAM. Also added the ability to provide a custom
@@ -1294,8 +1091,6 @@ exit 0
 - 952310 - support file:// urls. (jortel@redhat.com)
 - 949174 - Use a single boolean setting for whether the downloaders should
   validate SSL hosts. (rbarlow@redhat.com)
-
-* Fri Apr 12 2013 Jeff Ortel <jortel@redhat.com> 2.2.0-0.1.alpha
 - 950632 - added unit_id search index on the repo_content_units collection
   (jason.connor@gmail.com)
 - 928081 - Take note of HTTP status codes when downloading files.
@@ -1332,7 +1127,7 @@ exit 0
 - 918600 - _content_type_id wasn't being set for erratum and drpm
   (jason.dobies@redhat.com)
 
-* Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.19.alpha
+* Mon Mar 04 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-1
 - 855053 - repository unit counts are now tracked per-unit-type. Also wrote a
   migration that will convert previously-created repositories to have the new
   style of unit counts. (mhrivnak@redhat.com)
@@ -1343,63 +1138,26 @@ exit 0
   (jason.connor@gmail.com)
 - 860089 - added ability to filter tasks using ?id=...&id=...
   (jason.connor@gmail.com)
-
-* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.18.alpha
-- Pulp rebuild
-
-* Tue Feb 26 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.17.alpha
 - 915795 - Fix logging import statemet in pulp-manage-db. (rbarlow@redhat.com)
-
-* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.16.alpha
-- Pulp rebuild
-
-* Mon Feb 25 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.15.alpha
 - 908676 - adding pulp-v1-upgrade-selinux script to enable new selinux policy
   and relabel filesystem after v1 upgrade (skarmark@redhat.com)
 - 908676 - adding obsoletes back again for pulp-selinux-server since pulp v1
   has a dependency on this package (skarmark@redhat.com)
-
-* Fri Feb 22 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.14.alpha
 - 909493 - adding a separate apache2.4 compatible pulp apache conf file for F18
   (skarmark@redhat.com)
 - 909493 - adding a different httpd2.4 compatible pulp config file for f18
   build (skarmark@redhat.com)
 - 908676 - make pulp-selinux conflict with pulp-selinux-server instead of
   obsoleting pulp-selinux-server (skarmark@redhat.com)
-
-* Thu Feb 21 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.13.alpha
 - 913205 - Removed config options if they aren't relevant
   (jason.dobies@redhat.com)
 - 913205 - Corrected storage of feed certificates on upgrade
   (jason.dobies@redhat.com)
-
-* Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.12.alpha
-- Pulp rebuild
-
-* Tue Feb 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.11.alpha
 - 910419 - added *args and **kwargs to OPTIONS signature to handle regular
   expressions in the url path (jason.connor@gmail.com)
-
-* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.10.alpha
-- Pulp rebuild
-
-* Thu Feb 14 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.9.alpha
 - 906426 - Create the upload directory if someone deletes it
   (jason.dobies@redhat.com)
-
-* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.8.alpha
-- Pulp rebuild
-
-* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.7.alpha
-- Pulp rebuild
-
-* Wed Feb 13 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.6.alpha
 - 910540 - fix file overlaps in platform packaging. (jortel@redhat.com)
-
-* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.5.alpha
-- Pulp rebuild
-
-* Tue Feb 12 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.4.alpha
 - 908510 - Corrected imports to use compat layer (jason.dobies@redhat.com)
 - 908082 - updated SSLRenegBufferSize in apache config to 1MB
   (skarmark@redhat.com)
@@ -1407,11 +1165,6 @@ exit 0
 - 905588 - Adding "puppet_module" as an example unit type. This should not
   become a list of every possible unit type, but it's not unreasonable here to
   include some mention of puppet modules. (mhrivnak@redhat.com)
-
-* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.3.alpha
-- Pulp rebuild
-
-* Tue Feb 05 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.2.alpha
 - 880780 - Added config parsing exception to convey more information in the
   event the conf file isn't valid JSON (jason.dobies@redhat.com)
 - 905548 - fix handler loading; imp.load_source() supports .py files only.
@@ -1425,8 +1178,6 @@ exit 0
   and specified to the launcher, allowing an individual client (admin,
   consumer, future other) to customize error messages where relevant.
   (jason.dobies@redhat.com)
-
-* Sat Jan 19 2013 Jeff Ortel <jortel@redhat.com> 2.1.0-0.1.alpha
 - 891423 - Added conduit calls to be able to create units on copy
   (jason.dobies@redhat.com)
 - 894467 - Parser methods need to return the value, not just validate it
@@ -1557,23 +1308,9 @@ exit 0
   used (jason.dobies@redhat.com)
 - 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
 
-* Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.rc
-- Pulp rebuild
-
-* Wed Dec 19 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.19.beta
-- Pulp rebuild
-
-* Tue Dec 18 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.18.beta
+* Thu Dec 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-1
 - 887959 - Removing NameVirtualHost entries from plugin httpd conf files and
   adding it only at one place in main pulp.conf (skarmark@redhat.com)
-
-* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.17.beta
-- Pulp rebuild
-
-* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.16.beta
-- Pulp rebuild
-
-* Thu Dec 13 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.15.beta
 - 886547 - added check for deleted schedule in scheduled call complete callback
   (jason.connor@gmail.com)
 - 882412 - Re-raising PulpException upon upload error instead of always
@@ -1596,18 +1333,12 @@ exit 0
   intention but never actually came to fruition. (jason.dobies@redhat.com)
 - 882422 - added the distributor_list keyword argument to the call requets
   kwarg_blacklist to prevent it from being logged (jason.connor@gmail.com)
-
-* Mon Dec 10 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.14.beta
 - 885229 - add requires: nss-tools. (jortel@redhat.com)
-
-* Fri Dec 07 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.13.beta
 - 885098 - Use a separate logging config for pulp-manage-db.
   (rbarlow@redhat.com)
 - 885134 - Added check to not parse an apache error as if it has the Pulp
   structure and handling in the exception middleware for it
   (jason.dobies@redhat.com)
-
-* Thu Dec 06 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.12.beta
 - 867464 - Renaming modules to units and a fixing a few minor output errors
   (skarmark@redhat.com)
 - 882421 - moving unit remove command into the platform from RPM extensions so
@@ -1641,11 +1372,6 @@ exit 0
   (jason.connor@gmail.com)
 - 882401 - added skipped as a recognized state to the cli parser
   (jason.connor@gmail.com)
-
-* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.11.beta
-- Pulp rebuild
-
-* Thu Nov 29 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.10.beta
 - 862290 - Added documentation for the new ListRepositoriesCommand methods
   (jason.dobies@redhat.com)
 - 881639 - more programmatic. (jortel@redhat.com)
@@ -1672,29 +1398,10 @@ exit 0
   remove old documents from configured collections (jason.connor@gmail.com)
 - 876662 - Added middleware exception handling for when the client cannot
   resolve the server hostname (jason.dobies@redhat.com)
-
-* Mon Nov 26 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.9.beta
-- Pulp rebuild
-
-* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.8.beta
-- Pulp rebuild
-
-* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.7.beta
-- Pulp rebuild
-
-* Wed Nov 21 2012 Jay Dobies <jason.dobies@redhat.com> 2.0.6-0.6.beta
-- Pulp rebuild
-
-* Wed Nov 21 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.5.beta
 - 753680 - Taking this opportunity to quiet the logs a bit too
   (jason.dobies@redhat.com)
 - 753680 - Increased the logging clarity and location for initialization errors
   (jason.dobies@redhat.com)
-
-* Wed Nov 21 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.4.beta
-- Pulp rebuild
-
-* Tue Nov 20 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.3.beta
 - 871858 - Implemented sync and publish status commands
   (jason.dobies@redhat.com)
 - 873421 - changed a wait-time message to be more appropriate, and added a bit
@@ -1711,9 +1418,3 @@ exit 0
 - 876662 - Added pretty error message when the incorrect server hostname is
   used (jason.dobies@redhat.com)
 - 876332 - add missing tags to bind itinerary. (jortel@redhat.com)
-
-* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.2.beta
-- Pulp rebuild
-
-* Mon Nov 12 2012 Jeff Ortel <jortel@redhat.com> 2.0.6-0.1.beta
-- Pulp rebuild
