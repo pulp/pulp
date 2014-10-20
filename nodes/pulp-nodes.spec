@@ -1,15 +1,3 @@
-# Copyright (c) 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0
-
-
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 %{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
@@ -18,7 +6,7 @@
 
 Name: pulp-nodes
 Version: 2.4.3
-Release: 0.1.beta%{?dist}
+Release: 1%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -247,7 +235,7 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
-* Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-0.1.beta
+* Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - Pulp rebuild
 
 * Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
