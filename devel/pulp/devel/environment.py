@@ -9,7 +9,7 @@ import subprocess
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..', '..')
 
 
-def _manage_setup_pys(action, path_to_manage_script=ROOT_DIR):
+def manage_setup_pys(action, path_to_manage_script=ROOT_DIR):
     """
     This function can install or uninstall the Pulp Python packages in developer mode.
 
