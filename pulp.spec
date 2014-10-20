@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.8.beta%{?dist}
+Release: 0.9.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -606,6 +606,13 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Oct 20 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.9.beta
+- 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
+- 1102269 - Added documentation about deprecation of task_type
+  (dkliban@redhat.com)
+- 1150297 - Update versions from 2.4.x to 2.5.0. (rbarlow@redhat.com)
+- 1060752 - Add sample output for repo import_upload (bcourt@redhat.com)
+
 * Mon Oct 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
 
