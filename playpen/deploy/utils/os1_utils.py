@@ -79,14 +79,18 @@ class OS1Manager:
         glance_url = self.keystone.service_catalog.get_endpoints()['image'][0]['adminURL']
         self.glance = glance_client.Client('1', endpoint=glance_url, token=self.keystone.auth_token)
 
-    def get_pulp_images(self, image_status=META_IMAGE_STATUS_PREPPED):
+    def get_pulp_images(self, image_status=META_IMAGE_STATUS_PREPPED, distributions=None):
         """
         Return all images containing the META_DISTRIBUTION_KEYWORD and that
         have the META_IMAGE_STATUS_KEYWORD set to the given value. By default
         this returns all images that have pulp's dependencies installed.
 
-        :param image_status: The type of image to retrieve (options are vanilla and pulpy)
-        :type  image_status: str
+        :param image_status:    The type of image to retrieve (options are vanilla and pulpy)
+        :type  image_status:    str
+        :param distributions:   A list of platforms to retrieve. By default all images with the
+                                META_DISTRIBUTION_KEYWORD in their metadata are returned.
+        :type  distributions:   list of str
+
         :return: a list of of novaclient.images.Image
         :rtype:  list
         """
@@ -95,8 +99,13 @@ class OS1Manager:
         pulp_images = []
         for image in image_list:
             meta = image.metadata
-            if META_DISTRIBUTION_KEYWORD in meta and meta[META_IMAGE_STATUS_KEYWORD] == image_status:
+            # Add any image to the list if it matches the given image status
+            if META_IMAGE_STATUS_KEYWORD in meta and meta[META_IMAGE_STATUS_KEYWORD] == image_status:
                 pulp_images.append(image)
+
+        # Filter out unwanted platforms
+        if distributions:
+            pulp_images = [img for img in pulp_images if img.metadata[META_DISTRIBUTION_KEYWORD] in distributions]
 
         return pulp_images
 
@@ -188,10 +197,10 @@ class OS1Manager:
         The configurations will have the 'user', 'host_string' and 'server' keys added, which will contain
         the user to SSH in as, the host string for Fabric, and the novaclient.v1_1.server.Server created.
 
-        :param global_config:  The structure dictionary produced by the configuration parser
-        :type  global_config:  dict
-        :param metadata:            The metadata to attach to the instances. Limit to 5 keys, 255 character values
-        :type  metadata:            dict
+        :param global_config:   The structure dictionary produced by the configuration parser
+        :type  global_config:   dict
+        :param metadata:        The metadata to attach to the instances. Limit to 5 keys, 255 character values
+        :type  metadata:        dict
         """
         for instance in config_utils.config_generator(global_config):
             # Build the base instance
@@ -284,10 +293,10 @@ class OS1Manager:
         """
         Set image metadata
 
-        :param image: the image to set the metadata for
-        :type  image: novaclient.v1_1.images.Image
-        :param metadata: A dictionary of arbitrary key-value pairs
-        :type  metadata: dict
+        :param image:       the image to set the metadata for
+        :type  image:       novaclient.v1_1.images.Image
+        :param metadata:    A dictionary of arbitrary key-value pairs
+        :type  metadata:    dict
         """
         self._authenticate()
         self.nova.images.set_meta(image.id, metadata)

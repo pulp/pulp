@@ -1,10 +1,10 @@
 # ==============
-# Default Values 
+# Default Values
 # ==============
 repository: https://repos.fedorapeople.org/repos/pulp/pulp/stable/2/
 keypair_name: pulp-ci-key
 private_key: id_rsa
-distribution: el6
+distribution: el6.6
 flavor: m1.small
 security_group: pulp
 cloud_config: cloud-init/cloud-config.txt
