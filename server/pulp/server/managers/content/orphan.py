@@ -22,7 +22,6 @@ from celery import task
 from pulp.plugins.types import database as content_types_db
 from pulp.server import config as pulp_config, exceptions as pulp_exceptions
 from pulp.server.async.tasks import Task
-from pulp.server.db import connection as db_connection
 from pulp.server.db.model.repository import RepoContentUnit
 
 
@@ -238,26 +237,21 @@ class OrphanManager(object):
         @param path: absolute path to the file to delete
         @type  path: str
         """
-        assert os.path.isabs(path)
-
         logger.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
 
-        if not os.path.exists(path):
-            logger.warn(_('Cannot delete orphaned file: %(p)s, No such file') % {'p': path})
+        if not os.path.isabs(path):
+            raise ValueError(_('Path: %(p)s must be absolute path') % {'p': path})
+
+        storage_dir = pulp_config.config.get('server', 'storage_dir')
+
+        # shared content
+        if OrphanManager.is_shared(storage_dir, path):
+            OrphanManager.unlink_shared(path)
             return
 
-        if not os.access(path, os.W_OK):
-            logger.warn(
-                _('Cannot delete orphaned file: %(p)s, Insufficient permissions') % {'p': path})
-            return
-
-        if os.path.isfile(path) or os.path.islink(path):
-            os.unlink(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
+        OrphanManager.delete(path)
 
         # delete parent directories on the path as long as they fall empty
-        storage_dir = pulp_config.config.get('server', 'storage_dir')
         root_content_regex = re.compile(os.path.join(storage_dir, 'content', '[^/]+/?'))
         while True:
             path = os.path.dirname(path)
@@ -269,6 +263,68 @@ class OrphanManager(object):
             if not os.access(path, os.W_OK):
                 break
             os.rmdir(path)
+
+    @staticmethod
+    def is_shared(storage_dir, path):
+        """
+        Determine specified path references shared storage.
+        Here, the term *shared* indicates that multiple units share the
+        same filesystem storage.  Shared storage is: <storage-dir>/content/shared.
+        Shared storage layout:
+          <storage-dir>/content/shared/*/
+              |--content/
+              |--links/
+                   |--link1 --> ../content
+                   |--link2 --> ../content
+        :param storage_dir: The absolute path to the pulp content storage directory.
+        :type storage_dir: str
+        :param path: A unit storage path.
+        :type path: str
+        :return: True if references shared storage.
+        """
+        shared_root = os.path.join(os.path.normpath(storage_dir), 'content', 'shared')
+        matched = os.path.normpath(path).startswith(shared_root) and \
+            os.path.basename(os.path.dirname(path)) == 'links' and \
+            os.path.islink(path)
+        return matched
+
+    @staticmethod
+    def unlink_shared(path):
+        """
+        Unlink the specified shared storage.
+        After all of the links have been removed, the link target is removed.
+        :param path: The absolute path to a link.
+        :type path: str
+        :see: is_shared
+        """
+        path = os.path.normpath(path)
+        ref_path = os.path.abspath(os.readlink(path))
+        OrphanManager.delete(path)
+        link_dir = os.path.dirname(path)
+        if os.listdir(link_dir):
+            # still used
+            return
+        if os.path.dirname(link_dir) != os.path.dirname(ref_path):
+            # must be siblings
+            return
+        OrphanManager.delete(ref_path)
+
+    @staticmethod
+    def delete(path):
+        """
+        Delete the specified path.
+        File and links are unlinked.  Directories are recursively deleted.
+        Exceptions are logged and discarded.
+        :param path: An absolute path.
+        :type path: str
+        """
+        try:
+            if os.path.isfile(path) or os.path.islink(path):
+                os.unlink(path)
+            else:
+                shutil.rmtree(path)
+        except OSError, e:
+            logger.error(_('Delete path: %(p)s failed: %(m)s'), {'p': path, 'm': str(e)})
 
 
 delete_all_orphans = task(OrphanManager.delete_all_orphans, base=Task, ignore_result=True)

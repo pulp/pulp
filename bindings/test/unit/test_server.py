@@ -40,7 +40,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
 
         https://bugzilla.redhat.com/show_bug.cgi?id=1153054
         """
-        conn = server.PulpConnection('host', validate_ssl_ca=False)
+        conn = server.PulpConnection('host', verify_ssl=False)
         wrapper = server.HTTPSServerWrapper(conn)
 
         status, body = wrapper.request('GET', '/awesome/api/', '')

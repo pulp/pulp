@@ -241,7 +241,7 @@ class ExceptionHandler:
         :return: appropriate exit code for this error
         """
 
-        self._log_client_exception(e)
+        _logger.error(e)
 
         msg = _('The specified user does not have permission to execute '
                 'the given command')

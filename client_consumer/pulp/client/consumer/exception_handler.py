@@ -10,9 +10,13 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import logging
 from gettext import gettext as _
 
 from pulp.client.extensions.exceptions import ExceptionHandler, CODE_PERMISSIONS_EXCEPTION
+
+
+_logger = logging.getLogger(__name__)
 
 
 class ConsumerExceptionHandler(ExceptionHandler):
@@ -24,13 +28,13 @@ class ConsumerExceptionHandler(ExceptionHandler):
         the displayed error message to that behavior.
         """
 
-        self._log_client_exception(e)
-
         msg = _('Authentication Failed')
 
         desc = _('A valid Pulp user is required to register a new consumer. '
                  'Please double check the username and password and attempt the '
                  'request again.')
+
+        _logger.error("%(msg)s - %(desc)s" % {'msg': msg, 'desc': desc})
 
         self.prompt.render_failure_message(msg)
         self.prompt.render_paragraph(desc)
