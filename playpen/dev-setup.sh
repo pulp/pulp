@@ -12,7 +12,7 @@ sudo setenforce 0
 sudo sed -i 's/enforcing/permissive/' /etc/sysconfig/selinux
 
 echo "Install some prereqs"
-sudo yum install wget yum-utils
+sudo yum install -y wget yum-utils
 
 echo "setting up repos"
 # repo setup
