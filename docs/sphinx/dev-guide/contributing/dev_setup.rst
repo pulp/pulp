@@ -4,20 +4,22 @@ Developer Setup
 For the Impatient
 ^^^^^^^^^^^^^^^^^
 
+These instructions will create a developer install of Pulp on a dedicated
+development instance.
+
 * Start a Fedora 20 x86_64 instance that will be dedicated for development with
   at least 2GB of memory and 10GB of disk space. More disk space is needed if
   you plan on syncing larger repos for test purposes.
 
-* If one does not already exist, create a non-root user with sudo access.
+* If one does not already exist, create a non-root user on that instance with
+  sudo access. If you are using a Fedora cloud image, the "fedora" user is
+  sufficient.
 
-* As that user, ``wget https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh``.
+* As that user, ``curl https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh | bash``.
   Note that this installs RPMs and makes system modifications that you wouldn't
   want to apply on a VM that was not dedicated to Pulp development.
 
-* As that user, ``bash dev-setup.sh``.
-
 * While it runs, read the rest of this document!
-
 
 Source Code
 ^^^^^^^^^^^
