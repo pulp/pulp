@@ -229,6 +229,24 @@ _chuid () {
     su - "$CELERYD_USER" -s /bin/sh -c "$CELERYD_MULTI $*"
 }
 
+# this function implements the fix for bz #1145723
+write_log_message () {
+  if [ $PULP_CONCURRENCY -ge 1 ]; then
+    for i in "${CELERYD_NODES_ARRAY[@]}"
+    do
+      local log_file="`dirname $CELERYD_LOG_FILE`/${i}.log"
+      echo -n `date "+%Y-%m-%d %T"` >> $log_file
+      echo " $1" >> $log_file
+    done
+  else
+    local log_file="`dirname $CELERYD_LOG_FILE`/${CELERYD_NODES}.log"
+    echo -n `date "+%Y-%m-%d %T"` >> $log_file
+    echo " $1" >> $log_file
+  fi
+  # it is possible that we are the first to touch this file. If so, fix
+  # permissions.
+  chown $CELERYD_USER $log_file
+}
 
 start_workers () {
     if [ ! -z "$CELERYD_ULIMIT" ]; then
@@ -324,6 +342,10 @@ case "$1" in
     start)
         check_dev_null
         check_paths
+        write_log_message "********************************************************"
+        write_log_message "* Celery startup requested. After startup is complete, *"
+        write_log_message "* messages will be logged to /var/log/messages.        *"
+        write_log_message "********************************************************"
         start_workers
     ;;
 
