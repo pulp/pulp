@@ -299,6 +299,39 @@ upstream. Then you can ``git push <branch>:<branch>`` after you check the diff t
 correct. Lastly, do a new git checkout elsewhere and check that ``tito build --srpm`` is tagged
 correctly and builds.
 
+Building Crane
+--------------
+
+Crane is built using tito and koji commands and is typically built off of the
+master branch for now. To tag a new build, edit ``python-crane.spec`` to the
+version you'd like, save and push this change to upstream. This typically does
+not require a pull request.
+
+To tag::
+
+   $ tito tag --keep-version
+
+Follow the instructions given by tito on pushing the updated branch and tag. At
+this point tagging is complete and you need to create SRPMs to feed to Koji::
+
+   $ for r in el6 el7 fc19 fc20; do tito build --srpm --dist .$r; done
+
+This will create four SRPMs. Here is how to feed them into Koji::
+
+   $ koji build <tag> <srpm>
+
+Note that you should use the testing tag and then add additional tags later.
+For example, ``koji build pulp-2.5-testing-fedora20
+python-crane-0.2.2-0.3.beta.fc20.src.rpm`` will build crane and associate it
+with the Fedora 20 testing tag. Once you have completed this for all four
+SRPMs, you can associate additional tags if needed::
+
+  $ koji tag-build <tag> <build>
+
+An example of this would be ``koji tag-build pulp-2.5-beta-fedora20
+python-crane-0.2.2-0.3.beta.fc20``. Once this is completed, you can pull down a
+new mash and upload using the instructions below.
+
 Testing the Build
 -----------------
 
