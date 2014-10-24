@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+import ssl
 import time
 from gettext import gettext as _
 
@@ -14,17 +15,14 @@ from pulp.server import config
 from pulp.server.compat import wraps
 from pulp.server.exceptions import PulpException
 
-# globals ----------------------------------------------------------------------
 
 _CONNECTION = None
 _DATABASE = None
-
-_LOG = logging.getLogger(__name__)
 _DEFAULT_MAX_POOL_SIZE = 10
 _MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
 
+_logger = logging.getLogger(__name__)
 
-# -- connection api ------------------------------------------------------------
 
 def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
     """
@@ -53,19 +51,32 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
         if replica_set is not None:
             connection_kwargs['replicaset'] = replica_set
 
-        _LOG.info("Attempting Database connection with seeds = %s" % seeds)
-        _LOG.info('Connection Arguments: %s' % connection_kwargs)
+        # Process SSL settings
+        if config.config.getboolean('database', 'ssl'):
+            connection_kwargs['ssl'] = True
+            ssl_keyfile = config.config.get('database', 'ssl_keyfile')
+            ssl_certfile = config.config.get('database', 'ssl_certfile')
+            if ssl_keyfile:
+                connection_kwargs['ssl_keyfile'] = ssl_keyfile
+            if ssl_certfile:
+                connection_kwargs['ssl_certfile'] = ssl_certfile
+            verify_ssl = config.config.getboolean('database', 'verify_ssl')
+            connection_kwargs['ssl_cert_reqs'] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
+            connection_kwargs['ssl_ca_certs'] = config.config.get('database', 'ca_path')
+
+        _logger.info("Attempting Database connection with seeds = %s" % seeds)
+        _logger.info('Connection Arguments: %s' % connection_kwargs)
 
         # Wait until the Mongo database is available
         while True:
             try:
                 _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
-            except pymongo.errors.ConnectionFailure:
+            except pymongo.errors.ConnectionFailure as e:
                 next_delay = _MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next()
                 msg = _(
-                    "Could not connect to MongoDB at %(url)s ... Waiting %(retry_timeout)s seconds "
-                    "and trying again.")
-                _LOG.error(msg % {'retry_timeout': next_delay, 'url': seeds})
+                    "Could not connect to MongoDB at %(url)s:\n%(e)s\n... Waiting "
+                    "%(retry_timeout)s seconds and trying again.")
+                _logger.error(msg % {'retry_timeout': next_delay, 'url': seeds, 'e': str(e)})
             else:
                 break
             time.sleep(next_delay)
@@ -84,7 +95,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
                 config.config.has_option('database', 'password'):
             username = config.config.get('database', 'username')
             password = config.config.get('database', 'password')
-            _LOG.info('Database authentication enabled, attempting username/password'
+            _logger.info('Database authentication enabled, attempting username/password'
                       'authentication.')
             _DATABASE.authenticate(username, password)
         elif ((config.config.has_option('database', 'username') and
@@ -97,13 +108,13 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None):
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
         # Query the collection names to ensure that we are authenticated properly
-        _LOG.debug("Querying the database to validate the connection.")
+        _logger.debug("Querying the database to validate the connection.")
         _DATABASE.collection_names()
 
-        _LOG.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
+        _logger.info("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
     except Exception, e:
-        _LOG.critical('Database initialization failed: %s' % str(e))
+        _logger.critical('Database initialization failed: %s' % str(e))
         _CONNECTION = None
         _DATABASE = None
         raise
@@ -122,7 +133,7 @@ def _retry_decorator(full_name=None, retries=0):
     AutoReconnect exceptions
     :param full_name: the full name of the database collection
     :type  full_name: str
-    :param retries: the number of times to retry the operation before allowing 
+    :param retries: the number of times to retry the operation before allowing
                     the exception to blow the stack
     :type  retries: int
     """
@@ -142,7 +153,7 @@ def _retry_decorator(full_name=None, retries=0):
                 except AutoReconnect:
                     tries += 1
 
-                    _LOG.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
+                    _logger.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
                               {'method': method.__name__, 'name': full_name,
                                'tries': retries - tries + 1})
 
