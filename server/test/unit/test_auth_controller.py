@@ -125,8 +125,8 @@ class UserCollectionTests(AuthControllersTests):
         
         permission = Permission.get_collection().find_one({'resource' : '/v2/users/user-1/'})
         self.assertTrue(permission is not None)
-        self.assertTrue('user-1' in permission['users'])
-        self.assertTrue('ws-user' in permission['users'])
+        self.assertTrue(next(d for (index, d) in enumerate(permission['users']) if d['username'] == 'user-1') is not None)
+        self.assertTrue(next(d for (index, d) in enumerate(permission['users']) if d['username'] == 'ws-user') is not None)
 
     def test_post_bad_data(self):
         """

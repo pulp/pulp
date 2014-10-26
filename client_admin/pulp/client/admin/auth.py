@@ -68,7 +68,8 @@ class UserSection(PulpCliSection):
         self.prompt = context.prompt # for easier access
 
         # Common Options
-        login_option = PulpCliOption('--login', 'uniquely identifies the user; only alphanumeric, -, and _ allowed', required=True, validate_func=validators.id_validator)
+        login_option = PulpCliOption('--login', 'uniquely identifies the user; only alphanumeric, -, ., and _ allowed',
+                                     required=True, validate_func=validators.id_validator_allow_dots)
         name_option = PulpCliOption('--name', 'user-readable full name of the user', required=False)
 
         # Create command
