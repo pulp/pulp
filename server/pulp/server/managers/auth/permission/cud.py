@@ -140,7 +140,9 @@ class PermissionManager(object):
         if permission is None:
             permission = PermissionManager.create_permission(resource)
 
-        current_ops = permission['users'].setdefault(user['login'], [])
+        current_ops = factory.permission_query_manager().find_user_permission(permission,
+                                                                              user['login'],
+                                                                              create=True)
         for o in operations:
             if o in current_ops:
                 continue
@@ -160,6 +162,7 @@ class PermissionManager(object):
         :param operations: list of allowed operations being revoked
         :type  operations: list or tuple of integers
         """
+        permission_query_manager = factory.permission_query_manager()
         # we don't revoke permissions from the system
         if login == system.SYSTEM_LOGIN:
             return
@@ -172,7 +175,7 @@ class PermissionManager(object):
         if permission is None:
             return
 
-        current_ops = permission['users'].get(user['login'], [])
+        current_ops = permission_query_manager.find_user_permission(permission, user['login'])
         if not current_ops:
             return
 
@@ -183,7 +186,7 @@ class PermissionManager(object):
 
         # delete the user if there are no more allowed operations
         if not current_ops:
-            del permission['users'][user['login']]
+            permission_query_manager.delete_user_permission(permission, user['login'])
 
         # delete the permission if there are no more users
         if not permission['users']:
@@ -252,11 +255,12 @@ class PermissionManager(object):
         :rtype: bool
         :return: True on success
         """
-        for permission in factory.permission_query_manager().find_all():
-            if login not in permission['users']:
+        permission_query_manager = factory.permission_query_manager()
+        for permission in permission_query_manager.find_all():
+            if permission_query_manager.get_user_permission(permission, login) is None:
                 continue
-            del permission['users'][login]
-            if permission['users']:
+            permission_query_manager.delete_user_permission(permission, login)
+            if len(permission['users']) > 0:
                 Permission.get_collection().save(permission, safe=True)
             else:
                 # Delete entire permission if there are no more users

@@ -138,13 +138,13 @@ class UserQueryManager(object):
             current_resource = '/%s/' % '/'.join(parts)
             permission = permission_query_manager.find_by_resource(current_resource)
             if permission is not None:
-                if operation in permission['users'].get(login, []):
+                if operation in permission_query_manager.find_user_permission(permission, login):
                     return True
             parts = parts[:-1]
 
         permission = Permission.get_collection().find_one({'resource' : '/'})
         return (permission is not None and
-                operation in permission['users'].get(login, []))
+                operation in permission_query_manager.find_user_permission(permission, login))
 
 
     def is_last_super_user(self, login):

@@ -55,5 +55,47 @@ class PermissionQueryManager(object):
         permission = Permission.get_collection().find_one({'resource' : resource_uri})
         return permission
 
+    def find_user_permission(self, permission, login, create=False):
+        """
+        Returns an array of permissions for the given user for the given
+        resource permission
 
-    
+        :param permission: The permission document from the database
+        :param login: the username permissions are being checked for
+        :return: array of permissions for user
+        :rtype: array of permissions or empty array
+        """
+        user_permission = self.get_user_permission(permission, login)
+        if user_permission is None:
+            if create:
+                user_permission = dict(username=login, permissions=[])
+                permission['users'].append(user_permission)
+                return user_permission['permissions']
+            else:
+                return []
+        else:
+            return user_permission['permissions']
+
+    def delete_user_permission(self, permission, login):
+        """
+        Centralizes the deletion of user permissions from the permissions document
+
+        :param permission:  The permissions document to modify
+        :param login:  The users login to remove permissions from
+        """
+        user_permission = self.get_user_permission(permission, login)
+        if user_permission is not None:
+            permission['users'].remove(user_permission)
+
+    def get_user_permission(self, permission, login):
+        """
+        Gets the dictionary that contains the username and granted permissions
+
+        :param permission: The permissions document
+        :param login: The users login to find permissions for
+        :return: dictionary of username and permissions for given user
+        """
+        for item in permission['users']:
+            if item['username'] == login:
+                return item
+        return None
