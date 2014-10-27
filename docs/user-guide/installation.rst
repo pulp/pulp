@@ -224,6 +224,13 @@ Server
       If Apache or Pulp services are already running, restart them after running the
       ``pulp-manage-db`` command.
 
+  .. warning::
+     It is recommended that you configure your web server to refuse SSLv3.0. In Apache, you can do
+     this by editing ``/etc/httpd/conf.d/ssl.conf`` and configuring the ``SSLProtocol`` directive
+     like this::
+
+        `SSLProtocol all -SSLv2 -SSLv3`
+
 #. Start Apache httpd and set it to start on boot. For Upstart based systems::
 
     $ sudo service httpd start
