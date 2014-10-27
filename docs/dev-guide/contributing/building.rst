@@ -350,6 +350,67 @@ You can now run the automated QE suite against the testing repository to ensure 
 stable and has no known issues. We have a Jenkins server for this purpose, and you can configure it
 to test the repository you just published.
 
+Signing the RPMS
+----------------
+
+Before signing RPMs, you will need access to the Pulp signing key. Someone on
+the Pulp team can provide you with this. Additionally you should be familiar
+with the concepts in the `Creating GPG Keys
+<https://fedoraproject.org/wiki/Creating_GPG_Keys>`_ guide.
+
+All beta and GA RPMs should be signed with the Pulp team's GPG key. A new key
+is created for each X release (3.0.0, 4.0.0, etc).  If you are doing a new X
+release, a new key needs to be created. To create a new key, run ``gpg
+--gen-key`` and follow the prompts. We usually set "Real Name" to "Pulp (3)"
+and "Email address" to "pulp-list@redhat.com". Key expiriation should occur
+five years after the key's creation date. After creating the key, export both
+the private and public keys.  The public key should be saved as
+``GPG-RPM-KEY-pulp-3`` and the private as ``pulp-3.private.asc``. The password
+can go into ``pulp-3-password.txt``.  Please update ``encrypt.sh`` and
+``decrypt.sh`` as well to include the new private key and password file. Run
+``encrypt.sh`` to encrypt the new keys.
+
+.. warning::
+
+   If you are making an update to the key repo, be sure to always verify that
+   you are not committing the unencrypted private key or password file!
+
+.. note::
+
+   If you are adding a new team member, just add their key to ``encrypt.sh``
+   and ``decrypt.sh``, then re-encrypt the keys and commit. The new team member
+   will also need to obtain the "sign" permission in koji.
+
+The ``GPG-RPM-KEY-pulp-3`` file should be made available under
+https://repos.fedorapeople.org/repos/pulp/pulp/.
+
+If you are simply creating a new build in an existing X stream release, you
+need to perform some one-time setup steps in your local environment. First,
+create or update your ``~/.rpmmacros`` file to include content like so,
+substituting X with your intended release::
+
+    %_gpg_name Pulp (X)
+
+Next, run the following from your mash directory::
+
+    $ find -name "*.rpm" | xargs rpm --addsign
+
+This will sign all of the RPMs in the mash. You then need to import signatures into koji::
+
+   $ find -name "*.rpm" | xargs koji import-sig
+
+As ``list-signed`` does not seem to work, do a random check in
+http://koji.katello.org/packages/ that
+http://koji.katello.org/packages/<name>/<version>/<release>/data/sigcache/<sig-hash>/
+exists and has some content in it. Once this is complete, you will need to
+re-import the RPMs as well into koji::
+
+   $ find -name "*.rpm" | xargs koji write-signed-rpm <sig-hash>
+
+Sync down your mash one more time and push to the testing repo. Create an
+instance somewhere and update your pulp repo file to point to the testing repo,
+but enable GPG signatures and attempt an install. It should be successful.
+
 Publishing the Build
 --------------------
 
@@ -435,3 +496,6 @@ was 2.5, the stable folder should look similar to this::
     drwxrwxr-x. 7 pulpadmin pulpadmin 4.0K Aug 24 06:32 3.1
     lrwxrwxrwx. 1 pulpadmin pulpadmin    3 Aug 24 06:35 3 -> 3.1
     lrwxrwxrwx. 1 pulpadmin pulpadmin   29 Aug 20 06:32 latest -> /srv/repos/pulp/pulp/stable/3
+
+The ``rhel-pulp.repo`` and ``fedora-pulp.repo`` files also need to be updated
+for the new GPG public key location if you are creating a new X release.
