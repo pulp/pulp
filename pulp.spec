@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.11.beta%{?dist}
+Release: 0.12.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -606,7 +606,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Mon Oct 20 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.10.beta
+* Mon Oct 27 2014 Randy Barlow <rbarlow@redhat.com> 2.5.0-0.12.beta
+- 1153344 - Allow Mongo connections over SSL. (rbarlow@redhat.com)
+- 1145701 - bump release to allow a koji rebuild (cduryee@redhat.com)
 - 1117512 - Fix formatting of last_unit_added & last_unit_removed fields
   (bcourt@redhat.com)
 - 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
