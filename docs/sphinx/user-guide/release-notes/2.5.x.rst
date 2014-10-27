@@ -16,13 +16,22 @@ New Features
 - Pulp 2.5.0 includes `pulp_docker`, an optional plugin to manage Docker
   repositories. In Pulp 2.5.0 this optional plugin is considered "tech preview"
   and did not undergo the same level of testing as other plugins. Please
-  refer to the `pulp_docker documentation <https://github.com/pulp/pulp_docker/tree/master/docs/user-guide>`_
+  refer to the
+  `pulp_docker documentation <https://github.com/pulp/pulp_docker/tree/master/docs/user-guide>`_
   for usage information.
+
+- Pulp now supports SSL on its connection to MongoDB. It is strongly recommended that you
+  `configure MongoDB to perform SSL`_, and configure Pulp to require a validly signed certificate
+  from Mongo. If you wish to do this, edit ``/etc/pulp/server.conf`` and configure ``ssl`` and
+  ``verify_ssl`` to ``true`` in the ``[database]`` section.
+
+.. _configure MongoDB to perform SSL: http://docs.mongodb.org/v2.4/tutorial/configure-ssl/#configure-mongod-and-mongos-for-ssl
 
 Deprecation
 -----------
 
-- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will be removed in a future release.
+- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will
+  be removed in a future release.
 
 Client Changes
 --------------
