@@ -2,6 +2,7 @@
 
 import itertools
 import logging
+import ssl
 import time
 from gettext import gettext as _
 
@@ -14,19 +15,17 @@ from pulp.server import config
 from pulp.server.compat import wraps
 from pulp.server.exceptions import PulpException
 
-# globals ----------------------------------------------------------------------
 
 _CONNECTION = None
 _DATABASE = None
-
-_log = logging.getLogger(__name__)
 _DEFAULT_MAX_POOL_SIZE = 10
-
 # please keep this in X.Y.Z format, with only integers.
 # see version.cpp in mongo source code for version format info.
 MONGO_MINIMUM_VERSION = "2.4.0"
 
-# -- connection api ------------------------------------------------------------
+
+_logger = logging.getLogger(__name__)
+
 
 def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_timeout=32):
     """
@@ -59,20 +58,33 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         if replica_set is not None:
             connection_kwargs['replicaset'] = replica_set
 
-        _log.debug("Attempting Database connection with seeds = %s" % seeds)
-        _log.debug('Connection Arguments: %s' % connection_kwargs)
+        # Process SSL settings
+        if config.config.getboolean('database', 'ssl'):
+            connection_kwargs['ssl'] = True
+            ssl_keyfile = config.config.get('database', 'ssl_keyfile')
+            ssl_certfile = config.config.get('database', 'ssl_certfile')
+            if ssl_keyfile:
+                connection_kwargs['ssl_keyfile'] = ssl_keyfile
+            if ssl_certfile:
+                connection_kwargs['ssl_certfile'] = ssl_certfile
+            verify_ssl = config.config.getboolean('database', 'verify_ssl')
+            connection_kwargs['ssl_cert_reqs'] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
+            connection_kwargs['ssl_ca_certs'] = config.config.get('database', 'ca_path')
+
+        _logger.info("Attempting Database connection with seeds = %s" % seeds)
+        _logger.info('Connection Arguments: %s' % connection_kwargs)
 
         # Wait until the Mongo database is available
         mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
         while True:
             try:
                 _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
-            except pymongo.errors.ConnectionFailure:
-                next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
+            except pymongo.errors.ConnectionFailure as e:
+                next_delay = min(_MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next(), max_timeout)
                 msg = _(
-                    "Could not connect to MongoDB at %(url)s ... Waiting %(retry_timeout)s seconds "
-                    "and trying again.")
-                _log.error(msg % {'retry_timeout': next_delay, 'url': seeds})
+                    "Could not connect to MongoDB at %(url)s:\n%(e)s\n... Waiting "
+                    "%(retry_timeout)s seconds and trying again.")
+                _logger.error(msg % {'retry_timeout': next_delay, 'url': seeds, 'e': str(e)})
             else:
                 break
             time.sleep(next_delay)
@@ -90,7 +102,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         username = config.config.get('database', 'username')
         password = config.config.get('database', 'password')
         if username and password:
-            _log.debug('Database authentication enabled, attempting username/password'
+            _logger.debug('Database authentication enabled, attempting username/password'
                        ' authentication.')
             _DATABASE.authenticate(username, password)
         elif (username and not password) or (password and not username):
@@ -100,11 +112,11 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
         # Query the collection names to ensure that we are authenticated properly
-        _log.debug("Querying the database to validate the connection.")
+        _logger.debug("Querying the database to validate the connection.")
         _DATABASE.collection_names()
 
         db_version = _CONNECTION.server_info()['version']
-        _log.info(_("Mongo database for connection is version %s") % db_version)
+        _logger.info(_("Mongo database for connection is version %s") % db_version)
 
         db_version_tuple = tuple(db_version.split("."))
         db_min_version_tuple = tuple(MONGO_MINIMUM_VERSION.split("."))
@@ -112,10 +124,10 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting version %s") %
                                (MONGO_MINIMUM_VERSION, db_version))
 
-        _log.debug("Database connection established with: seeds = %s, name = %s" % (seeds, name))
+        _logger.debug("Database connection established with: seeds = %s, name = %s" % (seeds, name))
 
     except Exception, e:
-        _log.critical('Database initialization failed: %s' % str(e))
+        _logger.critical('Database initialization failed: %s' % str(e))
         _CONNECTION = None
         _DATABASE = None
         raise
@@ -134,7 +146,7 @@ def _retry_decorator(full_name=None, retries=0):
     AutoReconnect exceptions
     :param full_name: the full name of the database collection
     :type  full_name: str
-    :param retries: the number of times to retry the operation before allowing 
+    :param retries: the number of times to retry the operation before allowing
                     the exception to blow the stack
     :type  retries: int
     """
@@ -154,7 +166,7 @@ def _retry_decorator(full_name=None, retries=0):
                 except AutoReconnect:
                     tries += 1
 
-                    _log.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
+                    _logger.warn(_('%(method)s operation failed on %(name)s: tries remaining: %(tries)d') %
                               {'method': method.__name__, 'name': full_name,
                                'tries': retries - tries + 1})
 
