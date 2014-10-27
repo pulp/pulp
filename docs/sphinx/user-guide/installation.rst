@@ -117,8 +117,13 @@ Server
 
     $ sudo yum install mongodb-server
 
-   You need mongodb-server with version >= 2.4 installed for Pulp server. After installing MongoDB,
-   you should configure it to start at boot and start it. For Upstart based systems::
+   You need mongodb-server with version >= 2.4 installed for Pulp server. It is highly recommended
+   that you `configure MongoDB to use SSL`_.
+
+.. _configure MongoDB to use SSL: http://docs.mongodb.org/v2.4/tutorial/configure-ssl/#configure-mongod-and-mongos-for-ssl
+
+   After installing MongoDB, you should configure it to start at boot and start it. For Upstart
+   based systems::
 
     $ sudo service mongod start
     $ sudo chkconfig mongod on
@@ -196,7 +201,8 @@ Server
    consider looking at before proceeding. Each section is documented in-line.
 
    * **email** if you intend to have the server send email (off by default)
-   * **database** if your database resides on a different host or port
+   * **database** if your database resides on a different host or port. It is strongly recommended
+                  that you set ssl and verify_ssl to True.
    * **messaging** if your message broker for communication between Pulp components is on a
      different host or if you want to use SSL. For more information on this section refer to the
      :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
