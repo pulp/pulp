@@ -405,11 +405,11 @@ class ExceptionHandler:
 
         self._log_client_exception(e)
 
-        msg = _('The web server reported an error trying to access the '
-                'Pulp application. The likely cause is that the pulp-manage-db '
-                'script has not been run prior to starting the server. '
-                'More information can be found in Apache\'s error log file '
-                'on the server itself.')
+        msg = _('There was an internal server error while trying to '
+                'access the Pulp application. One possible cause is that '
+                'the database needs to be migrated to the latest version. If '
+                'this is the case, run pulp-manage-db and restart the services.'
+                ' More information may be found in Apache\'s log.')
 
         self.prompt.render_failure_message(msg)
         return CODE_APACHE_SERVER_EXCEPTION
