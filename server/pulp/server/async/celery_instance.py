@@ -56,6 +56,17 @@ def create_mongo_config():
     if config.has_option('database', 'username') and config.has_option('database', 'password'):
         mongo_config['user'] = config.get('database', 'username')
         mongo_config['password'] = config.get('database', 'password')
+    if config.getboolean('database', 'ssl'):
+        mongo_config['ssl'] = True
+        ssl_keyfile = config.get('database', 'ssl_keyfile')
+        ssl_certfile = config.get('database', 'ssl_certfile')
+        if ssl_keyfile:
+            mongo_config['ssl_keyfile'] = ssl_keyfile
+        if ssl_certfile:
+            mongo_config['ssl_certfile'] = ssl_certfile
+        verify_ssl = config.getboolean('database', 'verify_ssl')
+        mongo_config['ssl_cert_reqs'] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
+        mongo_config['ssl_ca_certs'] = config.get('database', 'ca_path')
     return mongo_config
 
 
