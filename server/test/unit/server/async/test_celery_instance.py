@@ -195,3 +195,62 @@ class TestMongoBackendConfig(unittest.TestCase):
 
             self.assertTrue('user' not in result)
             self.assertTrue('password' not in result)
+
+    @mock.patch('pulp.server.config.config.getboolean', return_value=True)
+    def test_ssl_ca_path(self, getboolean):
+        """
+        Assert correct behavior when a ca_path is provided.
+        """
+        config = {'ca_path': '/some/ca.pem'}
+        custom_fake_get = partial(fake_get, config)
+
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
+
+            self.assertEqual(result['ssl_ca_certs'], config['ca_path'])
+
+    @mock.patch('pulp.server.config.config.getboolean', return_value=True)
+    def test_ssl_client_cert_and_key(self, getboolean):
+        """
+        Assert correct behavior when a client cert and key are provided.
+        """
+        config = {'ssl_keyfile': '/some/file.key', 'ssl_certfile': '/some/file.crt'}
+        custom_fake_get = partial(fake_get, config)
+
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            result = celery_instance.create_mongo_config()
+
+            self.assertEqual(result['ssl_keyfile'], config['ssl_keyfile'])
+            self.assertEqual(result['ssl_certfile'], config['ssl_certfile'])
+
+    @mock.patch('pulp.server.config.config.getboolean',
+                new=lambda x, y: False if y == 'ssl' else True)
+    def test_ssl_false(self):
+        """
+        Assert that no SSL related flags are set if ssl is false.
+        """
+        result = celery_instance.create_mongo_config()
+
+        for s in ('ssl', 'ssl_keyfile', 'ssl_certfile', 'ssl_cert_reqs', 'ssl_ca_certs'):
+            self.assertTrue(s not in result)
+
+    @mock.patch('pulp.server.config.config.getboolean', return_value=True)
+    def test_verify_ssl_true(self, getboolean):
+        """
+        Assert correct behavior when verify_ssl is True.
+        """
+        result = celery_instance.create_mongo_config()
+
+        self.assertEqual(result['ssl'], True)
+        self.assertEqual(result['ssl_cert_reqs'], ssl.CERT_REQUIRED)
+
+    @mock.patch('pulp.server.config.config.getboolean',
+                new=lambda x, y: False if y == 'verify_ssl' else True)
+    def test_verify_ssl_false(self):
+        """
+        Assert correct behavior when verify_ssl is False.
+        """
+        result = celery_instance.create_mongo_config()
+
+        self.assertEqual(result['ssl'], True)
+        self.assertEqual(result['ssl_cert_reqs'], ssl.CERT_NONE)
