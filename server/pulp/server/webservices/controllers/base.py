@@ -14,16 +14,31 @@
 import logging
 import sys
 from gettext import gettext as _
+from datetime import datetime
 
 import web
 
 from pulp.common.util import decode_unicode, encode_unicode
+from pulp.common import dateutils
 from pulp.server.compat import json, json_util
 from pulp.server.exceptions import InputEncodingError
 from pulp.server.webservices import http, serialization
 
 
 _log = logging.getLogger(__name__)
+
+
+def json_encoder(thing):
+    """
+    Specialized json encoding.
+    :param thing: An object to be encoded.
+    :return: The encoded object.
+    :rtype: str
+    """
+    if isinstance(thing, datetime):
+        dt = thing.replace(tzinfo=dateutils.utc_tz())
+        return dateutils.format_iso8601_datetime(dt)
+    return json_util.default(thing)
 
 
 class JSONController(object):
@@ -131,7 +146,7 @@ class JSONController(object):
         """
         JSON encode the response and set the appropriate headers
         """
-        body = json.dumps(data, default=json_util.default)
+        body = json.dumps(data, default=json_encoder)
         http.header('Content-Type', 'application/json')
         http.header('Content-Length', len(body))
         return body
