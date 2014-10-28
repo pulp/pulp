@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.13.beta%{?dist}
+Release: 0.14.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Oct 28 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.14.beta
+- Pulp rebuild
+
 * Tue Oct 28 2014 Dennis Kliban <dkliban@redhat.com> 2.5.0-0.13.beta
 - 1153344 - verify_ssl default to true. (rbarlow@redhat.com)
 - 1153344 - Support Mongo SSL on the result backend. (rbarlow@redhat.com)
