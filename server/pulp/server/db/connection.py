@@ -71,8 +71,8 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             connection_kwargs['ssl_cert_reqs'] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
             connection_kwargs['ssl_ca_certs'] = config.config.get('database', 'ca_path')
 
-        _logger.info("Attempting Database connection with seeds = %s" % seeds)
-        _logger.info('Connection Arguments: %s' % connection_kwargs)
+        _logger.debug("Attempting Database connection with seeds = %s" % seeds)
+        _logger.debug('Connection Arguments: %s' % connection_kwargs)
 
         # Wait until the Mongo database is available
         mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
