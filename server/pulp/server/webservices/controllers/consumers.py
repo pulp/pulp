@@ -440,7 +440,11 @@ class ConsumerHistory(JSONController):
                                                             sort=sort,
                                                             start_date=start_date,
                                                             end_date=end_date)
-        return self.ok(results)
+
+        if results:
+            return self.ok(results)
+        else:
+            return self.not_found()
 
 
 class Profiles(JSONController):
