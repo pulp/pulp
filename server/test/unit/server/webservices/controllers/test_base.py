@@ -14,8 +14,25 @@
 import copy
 import unittest
 
+from datetime import datetime
+
+from mock import patch
+
 from pulp.devel.unit import util
-from pulp.server.webservices.controllers.base import JSONController
+from pulp.common import dateutils
+from pulp.server.webservices.controllers.base import JSONController, json_encoder
+
+
+class TestEncoder(unittest.TestCase):
+
+    def test_datetime(self):
+        dt = datetime(2014, 12, 25, 9, 10, 20, tzinfo=dateutils.utc_tz())
+
+        # test
+        encoded = json_encoder(dt)
+
+        # validation
+        self.assertEqual(encoded, '2014-12-25T09:10:20Z')
 
 
 class JSONControllerTests(unittest.TestCase):
@@ -57,3 +74,27 @@ class JSONControllerTests(unittest.TestCase):
 
         JSONController.process_dictionary_against_whitelist(test_dictionary, [])
         util.compare_dict(target_result, test_dictionary)
+
+    @patch('pulp.server.webservices.http.header')
+    @patch('pulp.server.webservices.controllers.base.json')
+    def test_output(self, json, header):
+        """
+        Test json encoding.
+        """
+        data = {'test': 1234}
+        json.dumps.return_value = repr(data)
+        header.side_effect = ['h1', 'h2']
+
+        # test
+        controller = JSONController()
+        encoded = controller._output(data)
+
+        # validation
+        json.dumps.assert_called_once_with(data, default=json_encoder)
+        self.assertEqual(encoded, json.dumps.return_value)
+        self.assertEqual(
+            header.call_args_list,
+            [
+                (('Content-Type', 'application/json'), {}),
+                (('Content-Length', len(encoded)), {}),
+            ])
