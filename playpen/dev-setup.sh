@@ -6,6 +6,35 @@ if [[ $EUID -eq 0 ]]; then
     exit 1
 fi
 
+if [ $# = 0 ]; then
+    echo "Dev setup does not work with selinux enabled."
+    echo "Selinux will be disabled immediately and for future restarts."
+    while true; do
+        read -p "Do you want to proceed?(y/n)" yn
+        case $yn in
+                [Yy]) break;;
+                [Nn]) echo "Aborting."; exit 1;;
+                *) echo "Please, answer y or n.";;
+        esac
+    done
+else
+    case "$1" in
+        -h|--help)
+            echo -e "Usage:\n$0 [options]\n"
+            echo "Options:"
+            echo "-h, --help                    show this help message and exit"
+            echo "-d, --disable-selinux         disables selinux immediately and for future restarts for dev setup"
+            exit 0
+            ;;
+        -d|--disable-selinux)
+            :;;
+        *)
+            echo "Not a valid option. See --help"
+            exit 1
+            ;;
+    esac
+fi
+
 echo "Disabling selinux for dev install"
 # dev setup does not work with selinux at this time
 sudo setenforce 0
