@@ -432,3 +432,21 @@ class InputEncodingError(PulpDataException):
     def data_dict(self):
         return {'value': self.value}
 
+
+class PulpCodedTaskException(PulpCodedException):
+    """
+    Base class for exceptions that put the error_code and data as init arguments
+    """
+    def __init__(self, error_code=error_codes.PLP1000, **kwargs):
+        super(PulpCodedTaskException, self).__init__(error_code=error_code, **kwargs)
+
+
+class PulpCodedTaskFailedException(PulpCodedException):
+    """
+    Class for wrapping collections of coded task errors.
+
+    :param error_code: The particular error code that should be used for this validation exception
+    :type error_code: pulp.common.error_codes.Error
+    :param task_exceptions: List of coded exceptions for each validation error that occurred
+    :type task_exceptions: list of PulpCodedException
+    """

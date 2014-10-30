@@ -68,3 +68,62 @@ Get a content source by ID.
     "_href": "/pulp/api/v2/content/sources/disk/"
     }
 
+Refresh All Sources
+----------------
+
+Get all content sources.
+
+| :method:`post`
+| :path:`/v2/content/sources/action/refresh/`
+| :permission:`update`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`202, on success`
+
+| :return:`a spawned task id`
+
+:sample_response:`202` ::
+
+    [
+      {
+        "spawned_tasks": [
+          {
+            "_href": "/pulp/api/v2/tasks/1d893293-5849-47d8-830d-f6f888d347e6/",
+            "task_id": "1d893293-5849-47d8-830d-f6f888d347e6"
+          }
+        ],
+        "result": null,
+        "error": null
+      }
+    ]
+
+Refresh Single Source
+----------------
+
+Get all content sources.
+
+| :method:`post`
+| :path:`/v2/content/sources/<source-id>/action/refresh/`
+| :permission:`update`
+| :param_list:`get` None
+| :response_list:`_`
+
+* :response_code:`202, on success`
+
+| :return:`a spawned task id`
+
+:sample_response:`202` ::
+
+    [
+      {
+        "spawned_tasks": [
+          {
+            "_href": "/pulp/api/v2/tasks/7066c9f0-8606-4842-893a-297d435fe11a/",
+            "task_id": "7066c9f0-8606-4842-893a-297d435fe11a"
+          }
+        ],
+        "result": null,
+        "error": null
+      }
+    ]

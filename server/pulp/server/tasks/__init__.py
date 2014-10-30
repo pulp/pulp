@@ -16,3 +16,4 @@ of this Python package.
 """
 import pulp.server.db.reaper
 import pulp.server.maintenance.monthly
+import pulp.server.tasks.content
