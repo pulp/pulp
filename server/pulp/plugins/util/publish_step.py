@@ -10,19 +10,21 @@ import time
 import traceback
 import uuid
 
+from pulp.common import error_codes
 from pulp.common.plugins import reporting_constants, importer_constants
+from pulp.common.util import encode_unicode
 from pulp.plugins.model import Unit
 from pulp.plugins.util import misc
+from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.criteria import Criteria
 import pulp.server.managers.factory as manager_factory
-
+from pulp.server.exceptions import PulpCodedTaskFailedException
 from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
-from pulp.common.util import encode_unicode
-from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
+
 
 _LOG = logging.getLogger(__name__)
 
@@ -46,7 +48,7 @@ class Step(object):
     the use of a conduit that extends StatusMixin for reporting status along the way.
     """
 
-    def __init__(self, step_type, status_conduit=None):
+    def __init__(self, step_type, status_conduit=None, non_halting_exceptions=None):
         """
         :param step_type: The id of the step this processes
         :type step_type: str
@@ -69,6 +71,8 @@ class Step(object):
         self.last_report_time = 0
         self.last_reported_state = self.state
         self.timestamp = str(time.time())
+        self.non_halting_exceptions = non_halting_exceptions
+        self.exceptions = []
 
     def add_child(self, step):
         """
@@ -152,7 +156,7 @@ class Step(object):
         """
         pass
 
-    def process_main(self):
+    def process_main(self, item=None):
         """
         Do any primary work required for this step
         """
@@ -178,7 +182,26 @@ class Step(object):
                 self.report_progress()
                 self.initialize()
                 self.report_progress()
-                self._process_block()
+                if self.get_iterator():
+                    #We are using a generator and will call _process_block for each item
+                    for item in self.get_iterator():
+                        try:
+                            self._process_block(item=item)
+                        except Exception as e:
+                            raise_exception = True
+                            for exception in self.non_halting_exceptions:
+                                if isinstance(e, exception):
+                                    raise_exception = False
+                                    self._record_failure(e=e)
+                                    self.exceptions.append(e)
+                                    break
+                            if raise_exception:
+                                raise
+                    if self.exceptions:
+                        raise PulpCodedTaskFailedException(error_code=error_codes.PLP0032,
+                                                           task_id=self.status_conduit.task_id)
+                else:
+                    self._process_block()
                 self.progress_details = ""
                 # Double check & return if we have been canceled
                 if self.canceled:
@@ -187,9 +210,10 @@ class Step(object):
                 # Always call finalize to allow cleanup of file handles
                 self.finalize()
             self.post_process()
-        except Exception:
-            e_type, e_value, tb = sys.exc_info()
-            self._record_failure(e_value, tb)
+        except Exception as e:
+            tb = sys.exc_info()[2]
+            if not isinstance(e, PulpCodedTaskFailedException):
+                self._record_failure(e, tb)
             parent = self
             while parent:
                 parent.state = reporting_constants.STATE_FAILED
@@ -210,12 +234,18 @@ class Step(object):
         """
         pass
 
-    def _process_block(self):
+    def _process_block(self, item=None):
         """
         This block is called for the main processing loop
         """
-        self.process_main()
-        self.progress_successes += 1
+        failures = self.progress_failures
+        #Need to keep backwards compatibility
+        if item:
+            self.process_main(item=item)
+        else:
+            self.process_main()
+        if failures == self.progress_failures:
+            self.progress_successes += 1
         self.report_progress()
 
     def _get_total(self):
@@ -256,6 +286,9 @@ class Step(object):
         :returns: The machine readable progress report for this task
         :rtype: dict
         """
+        if self.progress_failures > 0:
+            self.state = reporting_constants.STATE_FAILED
+
         total_processed = self.progress_successes + self.progress_failures
         report = {
             reporting_constants.PROGRESS_STEP_UUID: self.uuid,
@@ -315,6 +348,16 @@ class Step(object):
             self.canceled = True
             for step in self.children:
                 step.cancel()
+
+    def get_iterator(self):
+        """
+        This method returns a generator to loop over items.
+        The items created by this generator will be iterated over by the process_main method.
+
+        :return: a list or other iterable
+        :rtype: iterator
+        """
+        return None
 
 
 class PluginStep(Step):
@@ -824,6 +867,7 @@ class PluginStepIterativeProcessingMixin(object):
     """
     A mixin for steps that iterate over a generator
     """
+
 
     def _process_block(self):
         """

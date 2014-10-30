@@ -607,3 +607,15 @@ class TestRefreshReport(TestCase):
         self.assertEqual(report.added_count, 0)
         self.assertEqual(report.deleted_count, 0)
         self.assertEqual(report.errors, [])
+
+    def test_dict(self):
+        source_id = 's-1'
+        url = 'myurl'
+        report = RefreshReport(source_id, url)
+        report_dict = report.dict()
+        self.assertEqual(report_dict['source_id'], source_id)
+        self.assertEqual(report_dict['url'], url)
+        self.assertFalse(report_dict['succeeded'])
+        self.assertEqual(report_dict['added_count'], 0)
+        self.assertEqual(report_dict['deleted_count'], 0)
+        self.assertEqual(report_dict['errors'], [])

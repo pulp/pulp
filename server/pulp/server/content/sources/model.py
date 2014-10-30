@@ -457,3 +457,13 @@ class RefreshReport(object):
         self.added_count = 0
         self.deleted_count = 0
         self.errors = []
+
+    def dict(self):
+        """
+        Dictionary representation.
+        :return: A dictionary representation.
+        :rtype: dict
+        """
+        return dict(source_id=self.source_id, url=self.url, succeeded=self.succeeded,
+                    added_count=self.added_count, deleted_count=self.deleted_count,
+                    errors=self.errors)
