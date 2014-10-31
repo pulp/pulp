@@ -12,7 +12,7 @@
 from gettext import gettext as _
 from operator import itemgetter
 
-from pulp.server.content.sources.model import PRIMARY_ID
+from pulp.common.constants import PRIMARY_ID
 
 from pulp_node.error import *
 from pulp_node.reports import RepositoryProgress, RepositoryReport

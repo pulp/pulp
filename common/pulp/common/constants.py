@@ -50,3 +50,9 @@ CALL_INCOMPLETE_STATES = (CALL_WAITING_STATE, CALL_ACCEPTED_STATE, CALL_RUNNING_
                           CALL_SUSPENDED_STATE)
 CALL_COMPLETE_STATES = (CALL_SKIPPED_STATE, CALL_FINISHED_STATE, CALL_ERROR_STATE,
                         CALL_CANCELED_STATE, CALL_TIMED_OUT_STATE)
+
+# this constant is used to determine which content source is the primary
+# source, vs an alternate source.  Note that this field will go away in Pulp
+# 3.0 as part of https://bugzilla.redhat.com/show_bug.cgi?id=1160410
+
+PRIMARY_ID = '___/primary/___'

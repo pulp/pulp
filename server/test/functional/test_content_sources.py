@@ -23,13 +23,13 @@ from nectar.config import DownloaderConfig
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 
+from pulp.common.constants import PRIMARY_ID
 from pulp.plugins.loader import api as plugins
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db import connection
 from pulp.server.db.model.content import ContentCatalog
 from pulp.server.content.sources import ContentContainer, Request, ContentSource, Listener
 from pulp.server.content.sources.descriptor import nectar_config
-from pulp.server.content.sources.model import PRIMARY_ID
 from pulp.server.managers import factory as managers
 
 
