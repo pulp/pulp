@@ -14,8 +14,7 @@ import unittest
 
 import mock
 
-from pulp.bindings.content import OrphanContentAPI
-from pulp.bindings.content import ContentSourceAPI
+from pulp.bindings.content import OrphanContentAPI, ContentSourceAPI, ContentCatalogAPI
 from pulp.common.compat import json
 
 
@@ -117,3 +116,18 @@ class TestContentSources(unittest.TestCase):
         path = '%s%s/' % (ContentSourceAPI.BASE_URL, source_id)
         connection.GET.assert_called_once_with(path)
         self.assertEqual(body, connection.GET.return_value)
+
+
+class TestCatalog(unittest.TestCase):
+
+    def test_delete(self):
+        source_id = 'content-world'
+        connection = mock.Mock()
+        api = ContentCatalogAPI(connection)
+
+        # test
+        body = api.delete(source_id)
+
+        # validation
+        path = '%s%s' % (ContentCatalogAPI.BASE_URL, source_id)
+        connection.DELETE.assert_called_once_with(path)

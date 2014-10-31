@@ -104,3 +104,19 @@ class ContentSourceAPI(PulpAPI):
         """
         path = self.BASE_URL
         return self.server.GET(path)
+
+
+class ContentCatalogAPI(PulpAPI):
+
+    BASE_URL = 'v2/content/catalog/'
+
+    def delete(self, source_id):
+        """
+        Delete catalog entries by source ID.
+        :param source_id: A content source ID.
+        :type source_id: str
+        :return: The response.
+        :rtype: pulp.bindings.responses.Response
+        """
+        path = '%s%s' % (self.BASE_URL, source_id)
+        self.server.DELETE(path)

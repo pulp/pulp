@@ -1,5 +1,5 @@
 from gettext import gettext as _
-from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand
+from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption
 
 
 def initialize(context):
@@ -27,6 +27,7 @@ class MainSection(PulpCliSection):
         """
         super(MainSection, self).__init__(self.NAME, self.DESCRIPTION)
         self.add_subsection(SourcesSection(context))
+        self.add_subsection(CatalogSection(context))
 
 
 class SourcesSection(PulpCliSection):
@@ -44,6 +45,23 @@ class SourcesSection(PulpCliSection):
         """
         super(SourcesSection, self).__init__(self.NAME, self.DESCRIPTION)
         self.add_command(ListCommand(context))
+
+
+class CatalogSection(PulpCliSection):
+    """
+    The content *catalog* section.
+    """
+
+    NAME = 'catalog'
+    DESCRIPTION = _('manage the content catalog')
+
+    def __init__(self, context):
+        """
+        :param context: The client context.
+        :type context: pulp.client.extensions.core.ClientContext
+        """
+        super(CatalogSection, self).__init__(self.NAME, self.DESCRIPTION)
+        self.add_command(CatalogDeleteCommand(context))
 
 
 class ListCommand(PulpCliCommand):
@@ -72,3 +90,35 @@ class ListCommand(PulpCliCommand):
         self.context.prompt.render_title(self.TITLE)
         response = self.context.server.content_source.get_all()
         self.context.prompt.render_document_list(response.response_body)
+
+
+class CatalogDeleteCommand(PulpCliCommand):
+    """
+    Delete catalog entries command.
+    :ivar context: The client context.
+    :type context: pulp.client.extensions.core.ClientContext
+    """
+
+    NAME = 'delete'
+    DESCRIPTION = _('delete entries from the catalog')
+    SOURCE_ID_OPTION = PulpCliOption('--source-id', _('contributing content source'), aliases='-s')
+
+    def __init__(self, context):
+        """
+        :param context: The client context.
+        :type context: pulp.client.extensions.core.ClientContext
+        """
+        super(CatalogDeleteCommand, self).__init__(self.NAME, self.DESCRIPTION, self._run)
+        self.add_option(self.SOURCE_ID_OPTION)
+        self.context = context
+
+    def _run(self, **kwargs):
+        """
+        Delete the content catalog for the specified source.
+        Supported options:
+          - source-id
+        :param kwargs: User specified options.
+        :type kwargs: dict
+        """
+        source_id = kwargs[self.SOURCE_ID_OPTION.keyword]
+        self.context.server.content_catalog.delete(source_id)
