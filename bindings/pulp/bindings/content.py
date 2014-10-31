@@ -118,5 +118,5 @@ class ContentCatalogAPI(PulpAPI):
         :return: The response.
         :rtype: pulp.bindings.responses.Response
         """
-        path = '%s%s' % (self.BASE_URL, source_id)
-        self.server.DELETE(path)
+        path = '%s%s/' % (self.BASE_URL, source_id)
+        return self.server.DELETE(path)

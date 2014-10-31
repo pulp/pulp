@@ -129,5 +129,6 @@ class TestCatalog(unittest.TestCase):
         body = api.delete(source_id)
 
         # validation
-        path = '%s%s' % (ContentCatalogAPI.BASE_URL, source_id)
+        path = '%s%s/' % (ContentCatalogAPI.BASE_URL, source_id)
         connection.DELETE.assert_called_once_with(path)
+        self.assertEqual(body, connection.DELETE.return_value)

@@ -334,8 +334,9 @@ class CatalogResource(JSONController):
     @auth_required(DELETE)
     def DELETE(self, source_id):
         manager = factory.content_catalog_manager()
-        manager.purge(source_id)
-        return self.ok(None)
+        purged = manager.purge(source_id)
+        deleted = dict(deleted=purged)
+        return self.ok(deleted)
 
 
 class ContentSourceCollection(JSONController):
@@ -390,7 +391,8 @@ _URLS = ('/types/$', ContentTypesCollection,
          '/orphans/([^/]+)/$', OrphanTypeSubCollection,
          '/orphans/([^/]+)/([^/]+)/$', OrphanResource,
          '/actions/delete_orphans/$', DeleteOrphansAction,  # deprecated in 2.4
-         '/catalog/([^/]+)$', CatalogResource,
+         '/catalog/([^/]+)$', CatalogResource,  # deprecated in 2.5, missing trailing '/'
+         '/catalog/([^/]+)/$', CatalogResource,
          '/sources/$', ContentSourceCollection,
          '/sources/([^/]+)/$', ContentSourceResource,)
 

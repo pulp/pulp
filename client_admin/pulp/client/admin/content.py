@@ -102,6 +102,8 @@ class CatalogDeleteCommand(PulpCliCommand):
     NAME = 'delete'
     DESCRIPTION = _('delete entries from the catalog')
     SOURCE_ID_OPTION = PulpCliOption('--source-id', _('contributing content source'), aliases='-s')
+    DELETED_MSG = _('Successfully deleted [%(deleted)s] catalog entries.')
+    NONE_MATCHED_MSG = _('No catalog entries matched.')
 
     def __init__(self, context):
         """
@@ -121,4 +123,8 @@ class CatalogDeleteCommand(PulpCliCommand):
         :type kwargs: dict
         """
         source_id = kwargs[self.SOURCE_ID_OPTION.keyword]
-        self.context.server.content_catalog.delete(source_id)
+        response = self.context.server.content_catalog.delete(source_id)
+        if response.response_body['deleted']:
+            self.context.prompt.render_success_message(self.DELETED_MSG % response.response_body)
+        else:
+            self.context.prompt.render_success_message(self.NONE_MATCHED_MSG)

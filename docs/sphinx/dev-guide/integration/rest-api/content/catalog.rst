@@ -16,6 +16,12 @@ Delete entries from the catalog by content source by ID.
 | :param_list:`delete` None
 | :response_list:`_`
 
-* :response_code:`200,if the entries were successfully deleted from the catalog`
+* :response_code:`200,even if no entries matched and deleted`
 
-| :return:`None`
+| :return:`A summary of entries deleted`
+
+:sample_response:`200` ::
+
+ {"deleted": 10}
+
+

@@ -103,7 +103,8 @@ class TestCatalogManager(PulpServerTests):
         collection = ContentCatalog.get_collection()
         self.assertEqual(20, collection.find().count())
         manager = ContentCatalogManager()
-        manager.purge(source_a)
+        purged = manager.purge(source_a)
+        self.assertEqual(purged, 10)
         self.assertEqual(collection.find({'source_id': source_a}).count(), 0)
         self.assertEqual(collection.find({'source_id': source_b}).count(), 10)
 
@@ -140,7 +141,8 @@ class TestCatalogManager(PulpServerTests):
         collection = ContentCatalog.get_collection()
         self.assertEqual(20, collection.find().count())
         manager = ContentCatalogManager()
-        manager.purge_expired(0)
+        purged = manager.purge_expired(0)
+        self.assertEqual(purged, 10)
         self.assertEqual(collection.find({'source_id': source_a}).count(), 10)
         self.assertEqual(collection.find({'source_id': source_b}).count(), 0)
 
@@ -155,7 +157,8 @@ class TestCatalogManager(PulpServerTests):
         collection = ContentCatalog.get_collection()
         self.assertEqual(20, collection.find().count())
         manager = ContentCatalogManager()
-        manager.purge_orphans([source_b])
+        purged = manager.purge_orphans([source_b])
+        self.assertEqual(purged, 10)
         self.assertEqual(collection.find({'source_id': source_a}).count(), 0)
         self.assertEqual(collection.find({'source_id': source_b}).count(), 10)
 
