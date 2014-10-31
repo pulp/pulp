@@ -106,6 +106,7 @@ The pulp-admin client can be used to delete entries contributed by specific cont
 sources as follows::
 
   $ pulp-admin content catalog delete -s content-world
+  Successfully deleted [10] catalog entries.
 
 
 

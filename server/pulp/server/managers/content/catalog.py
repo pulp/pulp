@@ -81,10 +81,13 @@ class ContentCatalogManager(object):
         to the specified content source by ID.
         :param source_id: A content source ID.
         :type source_id: str
+        :return: The number of entries purged.
+        :rtype: int
         """
         collection = ContentCatalog.get_collection()
         query = {'source_id': source_id}
-        collection.remove(query, safe=True)
+        result = collection.remove(query, safe=True)
+        return result['n']
 
     def purge_expired(self, grace_period=GRACE_PERIOD):
         """
@@ -94,12 +97,15 @@ class ContentCatalogManager(object):
             The grace_period defines how long an entry is permitted to remain
             in the catalog after it has expired.  The default is 1 hour.
         :type grace_period: int
+        :return: The number of entries purged.
+        :rtype: int
         """
         collection = ContentCatalog.get_collection()
         now = ContentCatalog.get_expiration(0)
         timestamp = now - grace_period
         query = {'expiration': {'$lt': timestamp}}
-        collection.remove(query, safe=True)
+        result = collection.remove(query, safe=True)
+        return result['n']
 
     def purge_orphans(self, valid_ids):
         """
@@ -108,11 +114,15 @@ class ContentCatalogManager(object):
         is no longer loaded.
         :param valid_ids: The list of valid (loaded) content source IDs.
         :type valid_ids: list
+        :return: The number of entries purged.
+        :rtype: int
         """
+        purged = 0
         collection = ContentCatalog.get_collection()
         for source_id in collection.distinct('source_id'):
             if source_id not in valid_ids:
-                self.purge(source_id)
+                purged += self.purge(source_id)
+        return purged
 
     def find(self, type_id, unit_key):
         """
