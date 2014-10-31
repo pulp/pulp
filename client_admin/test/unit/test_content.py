@@ -2,7 +2,8 @@ from unittest import TestCase
 
 from mock import Mock, patch
 
-from pulp.client.admin.content import initialize, MainSection, SourcesSection, ListCommand
+from pulp.client.admin.content import (initialize, MainSection, SourcesSection,
+    ListCommand, CatalogDeleteCommand)
 
 
 class TestInitialization(TestCase):
@@ -31,7 +32,7 @@ class TestMainSection(TestCase):
 
         # validation
         sources_section.assert_called_once_with(context)
-        add_subsection.assert_called_once_with(sources_section.return_value)
+        add_subsection.assert_any_with(sources_section.return_value)
 
 
 class TestSourcesSection(TestCase):
@@ -49,6 +50,21 @@ class TestSourcesSection(TestCase):
         add_command.assert_called_once_with(list_command.return_value)
 
 
+class TestCatalogSection(TestCase):
+
+    @patch('pulp.client.admin.content.CatalogSection')
+    @patch('pulp.client.admin.content.MainSection.add_subsection')
+    def test_init(self, add_subsection, catalog_section):
+        context = Mock()
+
+        # test
+        MainSection(context)
+
+        # validation
+        catalog_section.assert_called_once_with(context)
+        add_subsection.assert_any_with(catalog_section.return_value)
+
+
 class TestListCommand(TestCase):
 
     def test_run(self):
@@ -64,3 +80,18 @@ class TestListCommand(TestCase):
         context.prompt.render_title.assert_called_once_with(ListCommand.TITLE)
         context.server.content_source.get_all.assert_called_once_with()
         context.prompt.render_document_list.assert_called_once_with(response.response_body)
+
+
+class TestCatalogDeleteCommand(TestCase):
+
+    def test_run(self):
+        source_id = 'content-world'
+        context = Mock()
+
+        # test
+        command = CatalogDeleteCommand(context)
+        kwargs = {CatalogDeleteCommand.SOURCE_ID_OPTION.keyword: source_id}
+        command._run(**kwargs)
+
+        # validation
+        context.server.content_catalog.delete.assert_called_once_with(source_id)

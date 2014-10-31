@@ -102,4 +102,10 @@ The pulp-admin client can be use to list all defined content sources as follows:
   SSL Validation: true
   Type:           yum
 
+The pulp-admin client can be used to delete entries contributed by specific content
+sources as follows::
+
+  $ pulp-admin content catalog delete -s content-world
+
+
 
