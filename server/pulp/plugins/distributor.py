@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import sys
+
 
 class Distributor(object):
     """
@@ -152,8 +154,12 @@ class Distributor(object):
     def cancel_publish_repo(self):
         """
         Call cancellation control hook.
+
+        This call provides an exit-immediately behavior, and does not provide any cleanup.
+
+        :raise SystemExit: raised through a call to sys.exit()
         """
-        raise NotImplementedError()
+        sys.exit()
 
     def create_consumer_payload(self, repo, config, binding_config):
         """
@@ -321,9 +327,13 @@ class GroupDistributor(object):
         """
         Call cancellation control hook.
 
-        @param call_request: call request for the call to cancel
-        @type call_request: CallRequest
-        @param call_report: call report for the call to cancel
-        @type call_report: CallReport
+        This call provides an exit-immediately behavior, and does not provide any cleanup.
+
+        :param call_request: call request for the call to cancel
+        :type call_request: CallRequest
+        :param call_report: call report for the call to cancel
+        :type call_report: CallReport
+
+        :raise SystemExit: raised through a call to sys.exit()
         """
-        raise NotImplementedError()
+        sys.exit()
