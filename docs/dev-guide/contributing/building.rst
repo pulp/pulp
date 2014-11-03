@@ -37,12 +37,12 @@ and 2.4-release. For RHEL 7, these map to pulp-2.4-testing-rhel7, pulp-2.4-beta-
 pulp-2.4-rhel7, respectively. You can see the full list of Pulp's Koji tags
 `here <http://koji.katello.org/koji/search?match=glob&type=tag&terms=pulp*>`_.
 
-Another thing to know about Koji is that once a particular NEVRA is built in Koji, it cannot be
-built again. However, it can be tagged into multiple Koji tags. For example, if
-python-celery-3.1.11-1.el7.x86_64 is built into the pulp-2.4-beta-rhel7 tag and you wish to add
-that exact package in the pulp-2.4-rhel7 tag, you cannot build it again. Instead, you must tag that
-package for the new tag. You will see later on in this document that Pulp has a tool to help you do
-this.
+Another thing to know about Koji is that once a particular NEVRA (Name, Epoch, Version, Release,
+Architecture) is built in Koji, it cannot be built again. However, it can be tagged into multiple
+Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into the
+``pulp-2.4-beta-rhel7`` tag and you wish to add that exact package in the ``pulp-2.4-rhel7`` tag,
+you cannot build it again. Instead, you must tag that package for the new tag. You will see later
+on in this document that Pulp has a tool to help you do this.
 
 What you will need
 ^^^^^^^^^^^^^^^^^^
@@ -155,7 +155,7 @@ tag the git repository with your changes::
 
     $ tito tag --keep-version
 
-Pay attention to the output of tito here as well. It will instruct you to push you branch and the
+Pay attention to the output of tito here as well. It will instruct you to push your branch and the
 new tag to github.
 
 .. warning::
@@ -235,9 +235,32 @@ and your Koji username is ``cduryee``, you should do this::
 
     $ for x in pulp pulp-puppet pulp-rpm pulp-nodes; do koji -d add-pkg --owner "cduryee" pulp-2.5-beta-rhel7 $x; done
 
-Next it is time to raise the versions of the setup.py, conf.py, and spec files. Each Python package
-in each Pulp repository has a setup.py. Find each of these, and set its version appropriately. Do
-the same for the conf.py in the ``docs/`` folder for each repository.
+Next it is time to raise the version of the branches. This process is different depending on the
+stream you are building.
+
+.. note::
+
+   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
+   will always be 0.1, and every build thereafter prior to the release will be the last release plus
+   0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
+   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
+   follow the
+   `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
+
+Beta, Testing, and Release Candidate Tagging
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+These streams can make use of the tagging bash script, ``tag.sh``. The script will ask you to edit
+the changelog entries, tag the git repositories, and push the tags to GitHub.
+
+For example, to tag 2.4.2-0.3.beta you can do this::
+
+    $ ./pulp/tag.sh -v 2.4.2-0.3.beta
+
+Release Tagging
+^^^^^^^^^^^^^^^
+For a release you will need to raise the versions of the setup.py, conf.py, and spec files. Each
+Python package in each Pulp repository has a setup.py. Find each of these, and set its version
+appropriately. Do the same for the conf.py in the ``docs/`` folder for each repository.
 
 .. note::
 
@@ -251,22 +274,18 @@ changelog entries for the last build in your release stream and group them into 
 you are building. This way we can avoid lots of entries for ``0.1.beta``, ``0.2.beta``, etc. that
 all have a bug or two (or none) each. If you are making a release, there should be no changelog
 entries for the pre-release builds included at all. Once you have done this, you can use tito to tag
-the repository for building::
+the repository for building. You will need to use tito in each of the directories that contain a
+spec file.::
 
     $ tito tag --keep-version --no-auto-changelog
 
-Pay attention to the output of tito, as you will need to push your changes to the upstream Pulp
+Pay attention to the instructions from tito, as you will need to push your changes to the upstream Pulp
 repository, as well as the tags that tito generated.
 
-.. note::
 
-   Pulp uses the release field in pre-release builds as a build number. The first pre-release build
-   will always be 0.1, and every build thereafter prior to the release will be the last release plus
-   0.1, even when switching from alpha to beta. For example, if we have build 7 2.5.0 alphas and it
-   is time for the first beta, we would be going from 2.5.0-0.7.alpha to 2.5.0-0.8.beta. We loosely
-   follow the
-   `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
 
+Submit to Koji
+^^^^^^^^^^^^^^
 We are now prepared to submit the build to Koji. This task is simple::
 
     $ ./builder.py <X.Y> <stream>
