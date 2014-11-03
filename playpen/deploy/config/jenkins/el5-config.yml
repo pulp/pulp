@@ -1,10 +1,9 @@
 # ==============
 # Default Values 
 # ==============
-repository: https://repos.fedorapeople.org/repos/pulp/pulp/stable/2/
+repository: https://repos.fedorapeople.org/repos/pulp/pulp/stable/2
 keypair_name: pulp-ci-key
 private_key: id_rsa
-distribution: fc19
 flavor: m1.small
 security_group: pulp
 cloud_config: cloud-init/cloud-config.txt
@@ -14,11 +13,13 @@ cloud_config: cloud-init/cloud-config.txt
 # Instance Structure
 # ==================
 structure:
-    instance_name: jenkins-fc19-pulp-server
+    instance_name: jenkins-el6-pulp-server
     role: server
     flavor: m1.medium
+    distribution: el6
     children:
-        - instance_name: jenkins-fc19-pulp-consumer
+        - instance_name: jenkins-el5-pulp-consumer
+          distribution: el5
           role: consumer
 
 
@@ -27,9 +28,9 @@ structure:
 # =========================
 pulp_tester:
     distribution: fc20
-    instance_name: jenkins-fc19-pulp-tester
+    instance_name: jenkins-el5-pulp-tester
     role: tester
     os_name: Fedora
     os_version: 20
-    tests_destination: test/fc19.xml
+    tests_destination: test/el5.xml
     test_suite_branch: pulp-2.4

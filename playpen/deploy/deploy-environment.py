@@ -11,15 +11,17 @@ from utils import os1_utils, setup_utils, config_utils
 # Setup the CLI
 description = 'Deploy a Pulp environment; this can be used in conjunction with the run-integrations-tests.py script'
 parser = argparse.ArgumentParser(description=description)
-parser.add_argument('--config', help='path to the configuration file to use to deploy the environment', nargs='+', required=True)
+parser.add_argument('--config', help='path to the configuration file to use to deploy the environment', nargs='+',
+                    required=True)
 parser.add_argument('--deployed-config', help='path to save the deployed instance configuration to; defaults to the'
                                               ' given config file with a json file extension.')
+parser.add_argument('--test-branch', help='test suite branch to checkout on the tester instance')
 parser.add_argument('--repo', help='path the the repository; will override repositories set in the configuration')
 parser.add_argument('--no-teardown', action='store_true', help='do not clean up instances if an error occurs')
 args = parser.parse_args()
 
 print 'Parsing and validating the configuration file(s)...'
-config = config_utils.parse_and_validate_config_files(args.config, args.repo)
+config = config_utils.parse_and_validate_config_files(args.config, args.repo, args.test_branch)
 os1_auth = config.get(config_utils.CONFIG_OS1_CREDENTIALS, {})
 print 'Done. \n\nAuthenticating with OS1...'
 os1 = os1_utils.OS1Manager(**os1_auth)

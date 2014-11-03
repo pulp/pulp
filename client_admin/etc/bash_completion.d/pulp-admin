@@ -2,7 +2,8 @@
 # bash completion support for pulp-admin.
 #
 # The contained completion routines provide support for completing
-# pulp-admin subsections, commands and options.
+# pulp-admin subsections, commands and options. It also supports
+# completion for local file names.
 
 # _elogin_pa_options() function generates completion of the first
 # level options, avoiding duplicates between short and long options.
@@ -25,13 +26,21 @@ _elogin_pa_options() {
 
 _epulp-admin_tab() {
 
-  local pa_cur pa_options pa_sections grep_pa_sections
+  local cur pa_prev pa_options pa_sections array_pa_sections grep_pa_sections
 
   COMPREPLY=()
-  pa_cur=${COMP_WORDS[COMP_CWORD]}
+  cur=${COMP_WORDS[COMP_CWORD]}
+  pa_prev=${COMP_WORDS[COMP_CWORD-1]}
   pa_options="-u -p --username --password --help -h --debug --config"
-  pa_sections="tasks auth bindings event orphan consumer puppet rpm iso repo server"
-  grep_pa_sections=$(echo $COMP_LINE | egrep -o "(tasks|auth|bindings|event|orphan|consumer|puppet|rpm|iso|repo|server)(?|.)*" )
+  pa_sections=$(pulp-admin --map | egrep -o '^[^ ]*:' | tr -d ':' | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" | sed 's/login//g;s/logout//g')
+  array_pa_sections=(${pa_sections})
+
+  for ix in ${!array_pa_sections[*]}; do
+    grep_pa_sections=$(echo $COMP_LINE | egrep -o "(${array_pa_sections[$ix]})(?|.)*" )
+    if [[ -n "${grep_pa_sections}" ]]; then
+      break
+    fi
+  done
 
   if [[ $COMP_LINE == *logout?* ]] \
     || [[ $COMP_LINE == *--map?* ]] \
@@ -40,23 +49,35 @@ _epulp-admin_tab() {
       return
   fi
 
+  pulp-admin $grep_pa_sections --help | egrep -q "^The following options were specified but" && return
+
+  if [[ ${pa_prev} == --feed-ca-cert ]] \
+      || [[ ${pa_prev} == --feed-cert ]] \
+      || [[ ${pa_prev} == --feed-key ]] \
+      || [[ ${pa_prev} == --gpg-key ]] \
+      || [[ ${pa_prev} == --host-ca ]] \
+      || [[ ${pa_prev} == --auth-ca ]] \
+      || [[ ${pa_prev} == --auth-cert ]]; then
+        _filedir
+        return
+  fi
+
   if [[ $COMP_LINE == *login?* ]]; then
     login_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
-    COMPREPLY=( $( compgen -W "$login_pa_options" -- "$pa_cur" ) )
+    COMPREPLY=( $( compgen -W "$login_pa_options" -- "$cur" ) )
 
   elif [ $COMP_CWORD -eq 1 ]; then
-    if [[ "$pa_cur" == -* ]]; then
-      COMPREPLY=( $( compgen -W "$pa_options --map" -- "$pa_cur" ) )
+    if [[ "$cur" == -* ]]; then
+      COMPREPLY=( $( compgen -W "$pa_options --map" -- "$cur" ) )
     else
-      COMPREPLY=( $( compgen -W "$pa_options $pa_sections login logout --map" -- "$pa_cur" ) )
+      COMPREPLY=( $( compgen -W "$pa_options $pa_sections login logout --map" -- "$cur" ) )
     fi
 
   elif [[ -n "${grep_pa_sections}" ]]; then
-    COMPREPLY=( $( compgen -W "$(pulp-admin $grep_pa_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+' | tr -d ' ' | sort | uniq ) --help" -- "$pa_cur" ) )
-
+      COMPREPLY=( $( compgen -W "$(pulp-admin $grep_pa_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+|, -.' | tr -d ' ,' | sort | uniq ) --help" -- "$cur" ) )
   else
     nologin_pa_options=$(_elogin_pa_options "$COMP_LINE" "$pa_options")
-    COMPREPLY=( $( compgen -W "$nologin_pa_options $pa_sections" -- "$pa_cur" ) )
+    COMPREPLY=( $( compgen -W "$nologin_pa_options $pa_sections" -- "$cur" ) )
 
   fi
 

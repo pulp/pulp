@@ -1,16 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import optparse
 import os
@@ -18,6 +7,13 @@ import re
 import shutil
 import subprocess
 import sys
+
+
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# In order to import pulp.devel.environment, we will need to add pulp.devel to the syspath
+sys.path.append(os.path.join(ROOT_DIR, 'devel', 'pulp', 'devel'))
+import environment
 
 
 WARNING_COLOR = '\033[31m'
@@ -124,11 +120,11 @@ try:
 except OSError:
     print ('pulp-dev requires lsb_release to detect which operating system you are using. Please '
            'install it and try again. For Red Hat based distributions, the package is called '
-           'redhat-lsb.')
+           'redhat-lsb-core.')
     sys.exit(1)
 # RedHatEnterpriseEverything is what the EL Beta seems to use, or at least the installation rbarlow
 # performed. Perhaps we need a better matching algorithm than just a list of strings.
-if LSB_VENDOR not in ('RedHatEnterpriseEverything', 'RedHatEnterpriseServer', 'Fedora'):
+if LSB_VENDOR not in ('CentOS', 'Fedora', 'RedHatEnterpriseEverything', 'RedHatEnterpriseServer'):
     print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
     sys.exit(1)
 LSB_VERSION = float(subprocess.Popen(['lsb_release', '-sr'],
@@ -201,6 +197,9 @@ def get_paths_to_copy():
         {'source': 'client_admin/etc/bash_completion.d/pulp-admin',
          'destination': '/etc/bash_completion.d/pulp-admin', 'owner': 'root', 'group': 'root',
          'mode': '644', 'overwrite': True},
+        {'source': 'client_consumer/etc/bash_completion.d/pulp-consumer',
+         'destination': '/etc/bash_completion.d/pulp-consumer', 'owner': 'root', 'group': 'root',
+         'mode': '644', 'overwrite': True},
         {'source': 'client_consumer/etc/pulp/consumer/consumer.conf',
          'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
          'mode': '644', 'overwrite': False},
@@ -221,16 +220,38 @@ def get_paths_to_copy():
             {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
         ])
-        if LSB_VERSION >= 7.0:
-            paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
-                          'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
-                          'group': 'root', 'mode': '644', 'overwrite': True})
-            paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
-                          'destination': '/etc/systemd/system/pulp_resource_manager.service',
-                          'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
-            paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
-                          'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
-                          'group': 'root', 'mode': '644', 'overwrite': True})
+    if LSB_VERSION >= 6.0 and LSB_VERSION < 7.0:
+        paths.append({'source': 'server/etc/default/upstart_pulp_celerybeat',
+                      'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/upstart_pulp_workers',
+                      'destination': '/etc/default/pulp_workers', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/upstart_pulp_resource_manager',
+                      'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+    elif LSB_VERSION >= 7.0:
+        paths.append({'source': 'server/etc/default/systemd_pulp_celerybeat',
+                      'destination': '/etc/default/pulp_celerybeat', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/systemd_pulp_workers',
+                      'destination': '/etc/default/pulp_workers', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/etc/default/systemd_pulp_resource_manager',
+                      'destination': '/etc/default/pulp_resource_manager', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': False})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
+                      'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
+                      'destination': '/etc/systemd/system/pulp_resource_manager.service',
+                      'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
+                      'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
+
+    for path in paths:
+        path['source'] = os.path.join(ROOT_DIR, path['source'])
 
     return paths
 
@@ -286,26 +307,19 @@ def getlinks():
                       '/etc/rc.d/init.d/pulp_workers'))
         links.append(('server/etc/rc.d/init.d/pulp_resource_manager',
                       '/etc/rc.d/init.d/pulp_resource_manager'))
-        links.append(('server/etc/default/upstart_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
-        links.append(('server/etc/default/upstart_pulp_workers', '/etc/default/pulp_workers'))
-        links.append(('server/etc/default/upstart_pulp_resource_manager',
-                      '/etc/default/pulp_resource_manager'))
-    elif LSB_VERSION >= 7.0:
-        links.append(('server/etc/default/systemd_pulp_celerybeat', '/etc/default/pulp_celerybeat'))
-        links.append(('server/etc/default/systemd_pulp_workers', '/etc/default/pulp_workers'))
-        links.append(('server/etc/default/systemd_pulp_resource_manager',
-                      '/etc/default/pulp_resource_manager'))
 
     return links
 
 
 def install(opts):
+    # Install the Python packages
+    environment.manage_setup_pys('install')
+
     warnings = []
     create_dirs(opts)
     gen_rsa_keys()
-    currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
-        warning_msg = create_link(opts, os.path.join(currdir,src), dst)
+        warning_msg = create_link(opts, os.path.join(ROOT_DIR, src), dst)
         if warning_msg:
             warnings.append(warning_msg)
 
@@ -335,9 +349,9 @@ def install(opts):
         # Generate certificates
         print 'generating certificates'
         if not os.path.exists('/etc/pki/pulp/ca.crt'):
-            os.system(os.path.join(os.curdir, 'server/bin/pulp-gen-ca-certificate'))
+            os.system(os.path.join(ROOT_DIR, 'server/bin/pulp-gen-ca-certificate'))
         if not os.path.exists('/etc/pki/pulp/nodes/node.crt'):
-            os.system(os.path.join(os.curdir, 'nodes/common/bin/pulp-gen-nodes-certificate'))
+            os.system(os.path.join(ROOT_DIR, 'nodes/common/bin/pulp-gen-nodes-certificate'))
 
         # Unfortunately, our unit tests fail to mock the CA certificate and key, so we need to make
         # those world readable. Until we fix this, we cannot close #1048297
@@ -383,6 +397,9 @@ def uninstall(opts):
     # Remove generated certificates
     print 'removing certificates'
     os.system('rm -rf /etc/pki/pulp/*')
+
+    # Remove the Python packages
+    environment.manage_setup_pys('uninstall')
 
     return os.EX_OK
 

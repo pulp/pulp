@@ -1,0 +1,60 @@
+#!/bin/bash
+# bash completion support for pulp-consumer.
+#
+# The contained completion routines provide support for completing
+# pulp-consumer subsections, commands and options.
+
+# _elogin_pc_options() function generates completion of the first
+# level options, avoiding duplicates between short and long options.
+# Takes two arguments:
+# 1: COMP_LINE
+# 2: pc_options
+_elogin_pc_options() {
+
+  pc_log_opt=$(comm -13 <(for word in ${1}; do echo $word; done | sort) <(for word in $2; do echo $word; done | sort))
+
+  if [[ $1 == *\ -u* ]] || [[ $1 == *--username* ]]; then
+    pc_log_opt=$(echo $pc_log_opt | sed "s/\(-u\|--username\)//g")
+  fi
+
+  if [[ $1 == *\ -p* ]] || [[ $1 == *--password* ]]; then
+    pc_log_opt=$(echo $pc_log_opt | sed "s/\(-p\|--password\)//g")
+  fi
+
+  echo $pc_log_opt
+}
+
+_epulp-consumer_tab() {
+
+  local pc_cur pc_options pc_sections grep_pc_sections
+
+  COMPREPLY=()
+  pc_cur=${COMP_WORDS[COMP_CWORD]}
+  pc_options="-u -p --username --password --help -h --debug --config"
+  pc_sections="history register status unregister update rpm puppet"
+  grep_pc_sections=$(echo $COMP_LINE | egrep -o "(history|register|status|unregister|update|rpm|puppet)(?|.)*" )
+
+  if [[ $COMP_LINE == *--map?* ]] \
+    || [[ $COMP_LINE == *\ -h?* ]] \
+    || [[ $COMP_LINE == *--help?* ]] \
+    || [[ $COMP_LINE == *status?* ]]; then
+      return
+  fi
+
+  if [ $COMP_CWORD -eq 1 ]; then
+    if [[ "$pc_cur" == -* ]]; then
+      COMPREPLY=( $( compgen -W "$pc_options --map" -- "$pc_cur" ) )
+    else
+      COMPREPLY=( $( compgen -W "$pc_options $pc_sections --map" -- "$pc_cur" ) )
+    fi
+
+  elif [[ -n "${grep_pc_sections}" ]]; then
+    COMPREPLY=( $( compgen -W "$(pulp-consumer $grep_pc_sections --help | egrep -o '^  [A-Za-z_|-]+ | \-\-[A-Za-z_|-]+' | tr -d ' ' | sort | uniq ) --help" -- "$pc_cur" ) )
+
+  else
+    login_pc_options=$(_elogin_pc_options "$COMP_LINE" "$pc_options")
+    COMPREPLY=( $( compgen -W "$login_pc_options $pc_sections" -- "$pc_cur" ) )
+  fi
+}
+
+complete -F _epulp-consumer_tab pulp-consumer

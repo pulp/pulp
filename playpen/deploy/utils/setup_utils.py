@@ -9,7 +9,7 @@ from fabric.context_managers import hide
 from fabric.exceptions import NetworkError
 import yaml
 
-from config_utils import HOSTNAME, HOST_STRING, INSTANCE_NAME, PRIVATE_KEY, ROLE, REPOSITORY_URL
+from config_utils import HOSTNAME, HOST_STRING, INSTANCE_NAME, PRIVATE_KEY, ROLE, REPOSITORY_URL, TEST_SUITE_BRANCH
 from config_utils import get_parent_config, get_instance_config, config_generator, flatten_structure
 
 # Fabric configuration
@@ -62,8 +62,9 @@ YUM_INSTALL_TEMPLATE = 'sudo yum -y install %s'
 
 # The version of gevent provided by Fedora/RHEL is too old, so force it to update here.
 # It seems like setup.py needs to be run twice for now.
-INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git \
-&& sudo pip install -U greenlet gevent requests && cd pulp-automation && sudo python ./setup.py install'
+INSTALL_TEST_SUITE = 'git clone https://github.com/RedHatQE/pulp-automation.git && \
+sudo pip install -U greenlet gevent requests stitches && \
+cd pulp-automation && git checkout %s && sudo python ./setup.py install'
 
 HOSTS_TEMPLATE = "echo '%(ip)s    %(hostname)s %(hostname)s.novalocal' | sudo tee -a /etc/hosts"
 
@@ -97,7 +98,7 @@ def apply_puppet(host_string, key_file, local_module, remote_location=TEMPORARY_
 
     :raise SystemExit: if the applying the puppet module fails
     """
-    with settings(host_string=host_string, key_file=key_file, ok_ret_codes=[0, 2]):
+    with settings(host_string=host_string, key_filename=key_file, ok_ret_codes=[0, 2]):
         put(local_module, remote_location)
         run('sudo puppet apply --verbose --detailed-exitcodes ' + remote_location)
     fabric_network.disconnect_all()
@@ -119,7 +120,7 @@ def fabric_confirm_ssh_key(host_string, key_file):
     # It can take some time for sshd to start and for cloud-init to insert the public key into an instance
     # This waits until ssh works
     print 'Waiting for ' + host_string + ' to become accessible via ssh...'
-    with settings(host_string=host_string, key_file=key_file):
+    with settings(host_string=host_string, key_filename=key_file):
         for x in xrange(0, 30):
             try:
                 run('whoami', warn_only=True)
@@ -142,7 +143,7 @@ def add_external_fact(host_string, key_file, facts):
 
     :raise SystemExit: if adding the external fact fails
     """
-    with settings(host_string=host_string, key_file=key_file):
+    with settings(host_string=host_string, key_filename=key_file):
         # Write the temporary json file to dump
         file_descriptor, path = tempfile.mkstemp()
         os.write(file_descriptor, json.dumps(facts))
@@ -169,7 +170,7 @@ def configure_pulp_server(instance_name, global_config):
     host_string = config[HOST_STRING]
     private_key = config[PRIVATE_KEY]
 
-    with settings(host_string=host_string, key_file=private_key):
+    with settings(host_string=host_string, key_filename=private_key):
         # Confirm the server is available
         fabric_confirm_ssh_key(host_string, private_key)
 
@@ -203,7 +204,7 @@ def configure_consumer(instance_name, global_config):
     config = get_instance_config(instance_name, global_config)
     parent_config = get_parent_config(instance_name, global_config)
 
-    with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
+    with settings(host_string=config[HOST_STRING], key_filename=config[PRIVATE_KEY]):
         fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
         # Set the hostname
@@ -243,7 +244,7 @@ def configure_tester(instance_name, global_config):
     server_config = filter(lambda conf: conf[ROLE] == PULP_SERVER_ROLE, flattened_configs)[0]
     consumer_config = filter(lambda conf: conf[ROLE] == PULP_CONSUMER_ROLE, flattened_configs)[0]
 
-    with settings(host_string=config[HOST_STRING], key_file=config[PRIVATE_KEY]):
+    with settings(host_string=config[HOST_STRING], key_filename=config[PRIVATE_KEY]):
         fabric_confirm_ssh_key(config[HOST_STRING], config[PRIVATE_KEY])
 
         run('sudo hostname ' + config[INSTANCE_NAME])
@@ -258,7 +259,8 @@ def configure_tester(instance_name, global_config):
                 run(YUM_INSTALL_TEMPLATE % dependency)
 
         # Install the test suite
-        run(INSTALL_TEST_SUITE)
+        branch = config.get(TEST_SUITE_BRANCH, 'master')
+        run(INSTALL_TEST_SUITE % branch)
 
         # Write to /etc/hosts
         server_ip = server_config[HOST_STRING].split('@')[1]
@@ -268,7 +270,7 @@ def configure_tester(instance_name, global_config):
 
         # Generate a key pair so the test machine can ssh as root to the consumer
         local('ssh-keygen -f consumer_temp_rsa -N ""')
-        with settings(host_string=consumer_config[HOST_STRING], key_file=consumer_config[PRIVATE_KEY]):
+        with settings(host_string=consumer_config[HOST_STRING], key_filename=consumer_config[PRIVATE_KEY]):
             # Authorize the generated key for root access
             put('consumer_temp_rsa.pub', '~/authorized_keys')
             run('sudo cp ~/authorized_keys /root/.ssh/authorized_keys')
@@ -288,7 +290,8 @@ def configure_tester(instance_name, global_config):
             # Write the server configuration
             server = {
                 'url': 'https://' + server_config[HOSTNAME] + '/',
-                'hostname': server_config[HOSTNAME]
+                'hostname': server_config[HOSTNAME],
+                'verify_api_ssl': False,
             }
             server_yaml = dict(config_yaml[ROLES_KEY][SERVER_YAML_KEY].items() + server.items())
             config_yaml[ROLES_KEY][SERVER_YAML_KEY] = server_yaml
@@ -301,7 +304,8 @@ def configure_tester(instance_name, global_config):
                 'hostname': consumer_config[HOSTNAME],
                 'ssh_key': key_path,
                 'os': {'name': config['os_name'], 'version': config['os_version']},
-                'pulp': server_yaml
+                'pulp': server_yaml,
+                'verify': False
             }
             consumer_yaml = dict(config_yaml[ROLES_KEY][CONSUMER_YAML_KEY][0].items() + consumer.items())
             config_yaml[ROLES_KEY][CONSUMER_YAML_KEY][0] = consumer_yaml
