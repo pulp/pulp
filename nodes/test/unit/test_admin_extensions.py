@@ -19,7 +19,8 @@ from base import ClientTests, Response, Task
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
 from pulp.agent.lib.report import ContentReport
-from pulp.server.content.sources.model import DownloadReport, DownloadDetails, PRIMARY_ID
+from pulp.common.constants import PRIMARY_ID
+from pulp.server.content.sources.model import DownloadReport, DownloadDetails
 
 from pulp_node.extensions.admin.commands import *
 from pulp_node.extensions.admin.rendering import ProgressTracker
