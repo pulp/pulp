@@ -263,12 +263,25 @@ start_beat () {
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
 
+# this function implements the fix for bz #1145723
+write_log_message () {
+  echo -n `date "+%Y-%m-%d %T"` >> $CELERYBEAT_LOG_FILE
+  echo " $1" >> $CELERYBEAT_LOG_FILE
+  # it is possible that we are the first to touch this file. If so, fix
+  # permissions.
+  chown $CELERYD_USER $CELERYBEAT_LOG_FILE
+}
+
 
 
 case "$1" in
     start)
         check_dev_null
         check_paths
+        write_log_message "**********************************************************"
+        write_log_message "* Celerybeat startup requested. After startup is         *"
+        write_log_message "* complete, messages will be logged to /var/log/messages.*"
+        write_log_message "**********************************************************"
         start_beat
     ;;
     stop)
