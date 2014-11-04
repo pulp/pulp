@@ -157,12 +157,8 @@ overwritten.
     "_href": "/pulp/api/v2/events/4ff73d598a905b777d000014/",
     "_id": {"$oid": "4ff73d598a905b777d000014"},
     "_ns": "event_listeners",
-    "event_types": [
-      "repo.sync.started"
-    ],
+    "event_types": ["repo.sync.start"],
     "id": "4ff73d598a905b777d000014",
-    "notifier_config": {
-      "url": "https://localhost/pulp/api"
-    },
+    "notifier_config": {"url": "http://localhost/api"},
     "notifier_type_id": "http"
   }
