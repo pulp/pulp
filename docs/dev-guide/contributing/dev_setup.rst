@@ -19,7 +19,9 @@ development instance.
   Note that this installs RPMs and makes system modifications that you wouldn't
   want to apply on a VM that was not dedicated to Pulp development.
 
-* While it runs, read the rest of this document!
+* While it runs, read the rest of this document! It details what the quickstart
+  script does and gives background information on the development
+  process.
 
 Source Code
 ^^^^^^^^^^^
