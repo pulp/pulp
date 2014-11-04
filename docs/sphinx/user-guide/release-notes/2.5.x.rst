@@ -22,6 +22,10 @@ Rest API Changes
   named `queue`. The `queue` attribute now correctly records the queue a task is put in. The
   `queue` attribute is deprecated and will be removed from the `Task Report` in Pulp 3.0.0.
 
+* The URL for the content catalog entries ``/v2/content/catalog/<source-id>`` is missing
+  the trailing '/' and has been deprecated. Support for the URL ``/v2/content/catalog/<source-id>/``
+  has been added.
+
 .. _2.5.0_upgrade_to_2.5.1:
 
 Upgrade Instructions for 2.5.0 --> 2.5.1
