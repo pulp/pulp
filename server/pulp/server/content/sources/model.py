@@ -17,12 +17,12 @@ from urlparse import urljoin
 from logging import getLogger
 from ConfigParser import ConfigParser
 
-from pulp.server.managers import factory as managers
-from pulp.plugins.loader import api as plugins
+from pulp.common.constants import PRIMARY_ID
 from pulp.plugins.conduits.cataloger import CatalogerConduit
-
+from pulp.plugins.loader import api as plugins
 from pulp.server.content.sources import constants
 from pulp.server.content.sources.descriptor import is_valid, to_seconds, DEFAULT
+from pulp.server.managers import factory as managers
 
 
 log = getLogger(__name__)
@@ -34,8 +34,6 @@ PATHS_REGEX = re.compile(r'\s+')
 REFRESHING = 'Refreshing [%s] url:%s'
 REFRESH_SUCCEEDED = 'Refresh [%s] succeeded.  Added: %d, Deleted: %d'
 REFRESH_FAILED = 'Refresh [%s] url: %s, failed: %s'
-
-PRIMARY_ID = '___/primary/___'
 
 
 class Request(object):

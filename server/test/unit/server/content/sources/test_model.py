@@ -14,10 +14,11 @@ import sys
 from unittest import TestCase
 from mock import patch, Mock
 
+from pulp.common.constants import PRIMARY_ID
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.content.sources import constants
 from pulp.server.content.sources.model import Request, PrimarySource, ContentSource, RefreshReport
-from pulp.server.content.sources.model import PRIMARY_ID, DownloadDetails, DownloadReport
+from pulp.server.content.sources.model import DownloadDetails, DownloadReport
 from pulp.server.content.sources.descriptor import DEFAULT
 
 TYPE = '1234'
