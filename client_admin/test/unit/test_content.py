@@ -87,6 +87,8 @@ class TestCatalogDeleteCommand(TestCase):
     def test_run(self):
         source_id = 'content-world'
         context = Mock()
+        response = Mock(response_code=200, response_body={'deleted': 10})
+        context.server.content_catalog.delete.return_value = response
 
         # test
         command = CatalogDeleteCommand(context)
@@ -94,4 +96,22 @@ class TestCatalogDeleteCommand(TestCase):
         command._run(**kwargs)
 
         # validation
+        msg = 'Successfully deleted [10] catalog entries.'
         context.server.content_catalog.delete.assert_called_once_with(source_id)
+        context.prompt.render_success_message.assert_called_once_with(msg)
+
+    def test_run_nothing_matched(self):
+        source_id = 'content-world'
+        context = Mock()
+        response = Mock(response_code=200, response_body={'deleted': 0})
+        context.server.content_catalog.delete.return_value = response
+
+        # test
+        command = CatalogDeleteCommand(context)
+        kwargs = {CatalogDeleteCommand.SOURCE_ID_OPTION.keyword: source_id}
+        command._run(**kwargs)
+
+        # validation
+        msg = 'No catalog entries matched.'
+        context.server.content_catalog.delete.assert_called_once_with(source_id)
+        context.prompt.render_success_message.assert_called_once_with(msg)

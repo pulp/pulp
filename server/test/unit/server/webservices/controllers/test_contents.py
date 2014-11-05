@@ -53,13 +53,15 @@ class CatalogTests(base.PulpWebserviceTests):
     @patch('pulp.server.managers.content.catalog.ContentCatalogManager.purge')
     def test_delete(self, mock_purge):
         source_id = 'test-source'
+        mock_purge.return_value = 10
 
         # test
-        url = '/v2/content/catalog/%s' % source_id
+        url = '/v2/content/catalog/%s/' % source_id
         status, body = self.delete(url)
 
         # validation
         self.assertEqual(status, 200)
+        self.assertEqual(body, {'deleted': 10})
         mock_purge.assert_called_with(source_id)
 
 
