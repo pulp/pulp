@@ -44,6 +44,19 @@ Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into t
 you cannot build it again. Instead, you must tag that package for the new tag. You will see later
 on in this document that Pulp has a tool to help you do this.
 
+Tools used when building
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pulp has some wrapper scripts in the ``pulp/rel-eng`` directory to assist with
+builds. These wrapper scripts call `tito <https://github.com/dgoodwin/tito>`_
+and `koji <https://fedoraproject.org/wiki/Koji>`_ to do the actual tagging and
+build work.
+
+Both packages are in Fedora and EPEL so you should not need to install from
+source. Technically you do not need to ever call these scripts directly when
+building pulp, pulp_rpm, pulp_nodes or pulp_puppet. However, some familiarity
+with both tito and koji is good, especially when debugging build issues.
+
 What you will need
 ^^^^^^^^^^^^^^^^^^
 
