@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.0
-Release: 0.16.rc%{?dist}
+Release: 0.17.rc%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Nov 06 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.17.rc
+- 1160796 - Allow TCP connections to all hosts and ports (bmbouter@gmail.com)
+- 1111228 - Fix API doc typo. (rbarlow@redhat.com)
+
 * Mon Nov 03 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.16.rc
 - Pulp rebuild
 
