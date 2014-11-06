@@ -1,16 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import optparse
 import os
@@ -163,7 +152,7 @@ def parse_cmdline():
     if not (opts.install or opts.uninstall):
         parser.error('neither install or uninstall specified')
 
-    return (opts, args)
+    return opts, args
 
 
 def warning(msg):
@@ -223,14 +212,14 @@ def get_paths_to_copy():
         ])
         if LSB_VERSION >= 7.0:
             paths.append({'source': 'server/usr/lib/systemd/system/pulp_celerybeat.service',
-                          'destination': '/etc/systemd/system/pulp_celerybeat.service', 'owner': 'root',
-                          'group': 'root', 'mode': '644', 'overwrite': True})
+                          'destination': '/etc/systemd/system/pulp_celerybeat.service',
+                          'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
             paths.append({'source': 'server/usr/lib/systemd/system/pulp_resource_manager.service',
                           'destination': '/etc/systemd/system/pulp_resource_manager.service',
                           'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
             paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
-                          'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
-                          'group': 'root', 'mode': '644', 'overwrite': True})
+                          'destination': '/etc/systemd/system/pulp_workers.service',
+                          'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': True})
 
     return paths
 
@@ -267,10 +256,19 @@ def getlinks():
 
         # Get links for httpd conf files according to apache version, since things
         # changed substantially between apache 2.2 and 2.4.
-        apache_22_conf = ('server/etc/httpd/conf.d/pulp_apache_22.conf', '/etc/httpd/conf.d/pulp.conf')
-        apache_24_conf = ('server/etc/httpd/conf.d/pulp_apache_24.conf', '/etc/httpd/conf.d/pulp.conf')
+        apache_22_conf = (
+            'server/etc/httpd/conf.d/pulp_apache_22.conf',
+            '/etc/httpd/conf.d/pulp.conf'
+        )
+        apache_24_conf = (
+            'server/etc/httpd/conf.d/pulp_apache_24.conf',
+            '/etc/httpd/conf.d/pulp.conf'
+        )
 
-        apachectl_output = subprocess.Popen(['apachectl', '-v'], stdout=subprocess.PIPE).communicate()[0]
+        apachectl_output = subprocess.Popen(
+            ['apachectl', '-v'], stdout=subprocess.PIPE
+        ).communicate()[0]
+
         search_result = re.search(r'Apache\/([0-9]+)\.([0-9]+)\.([0-9]+)', apachectl_output)
         apache_version = tuple(map(int, search_result.groups()))
         if apache_version >= (2, 4, 0):
@@ -305,7 +303,7 @@ def install(opts):
     gen_rsa_keys()
     currdir = os.path.abspath(os.path.dirname(__file__))
     for src, dst in getlinks():
-        warning_msg = create_link(opts, os.path.join(currdir,src), dst)
+        warning_msg = create_link(opts, os.path.join(currdir, src), dst)
         if warning_msg:
             warnings.append(warning_msg)
 
@@ -392,7 +390,8 @@ def create_link(opts, src, dst):
         return _create_link(opts, src, dst)
 
     if not os.path.islink(dst):
-        return "[%s] is not a symbolic link as we expected, please adjust if this is not what you intended." % (dst)
+        return "[%s] is not a symbolic link as we expected, " \
+               "please adjust if this is not what you intended." % dst
 
     if not os.path.exists(os.readlink(dst)):
         warning('BROKEN LINK: [%s] attempting to delete and fix it to point to %s.' % (dst, src))
@@ -400,14 +399,16 @@ def create_link(opts, src, dst):
             os.unlink(dst)
             return _create_link(opts, src, dst)
         except:
-            msg = "[%s] was a broken symlink, failed to delete and relink to [%s], please fix this manually" % (dst, src)
+            msg = "[%s] was a broken symlink, failed to delete " \
+                  "and relink to [%s], please fix this manually" % (dst, src)
             return msg
 
     debug(opts, 'verifying link: %s points to %s' % (dst, src))
     dst_stat = os.stat(dst)
     src_stat = os.stat(src)
     if dst_stat.st_ino != src_stat.st_ino:
-        msg = "[%s] is pointing to [%s] which is different than the intended target [%s]" % (dst, os.readlink(dst), src)
+        msg = "[%s] is pointing to [%s] which is different than " \
+              "the intended target [%s]" % (dst, os.readlink(dst), src)
         return msg
 
 
@@ -416,7 +417,8 @@ def _create_link(opts, src, dst):
     try:
         os.symlink(src, dst)
     except OSError, e:
-        msg = "Unable to create symlink for [%s] pointing to [%s], received error: <%s>" % (dst, src, e)
+        msg = "Unable to create symlink for [%s] pointing to [%s], " \
+              "received error: <%s>" % (dst, src, e)
         return msg
 
 
