@@ -27,7 +27,6 @@ require {
 
 allow celery_t self:netlink_route_socket { bind create getattr nlmsg_read write read };
 allow celery_t self:process { signal signull };
-allow celery_t self:tcp_socket { connect create getattr getopt read setopt shutdown write };
 allow celery_t self:udp_socket { ioctl getattr create connect write read };
 allow celery_t self:unix_dgram_socket { create connect };
 
@@ -62,9 +61,6 @@ apache_read_sys_content(celery_t)
 corecmd_exec_bin(celery_t)
 corecmd_exec_shell(celery_t)
 corecmd_read_bin_symlinks(celery_t)
-corenet_tcp_connect_amqp_port(celery_t)
-corenet_tcp_connect_mongod_port(celery_t)
-corenet_tcp_connect_http_port(celery_t)
 dev_read_urand(celery_t)
 files_list_tmp(celery_t)
 files_rw_pid_dirs(celery_t)
@@ -77,10 +73,21 @@ sysnet_read_config(celery_t)
 
 ######################################
 #
-# corenet_tcp_connect_smtp_port is needed for Email Notifier to send event info via SMTP
+# Pulp workers do network related things including:
+#  - connect to mongod and amqp. This is required for correct processing of tasks
+#  - sync data to/from remote hosts via HTTP/HTTPS
+#  - send e-mail using SMTP for notification purposes
+#  - use a network proxy
+#
+# Pulp allows several protocols above to be used over non-standard ports so all ports are allowed.
+# Users who want additional network security can use a firewall at the host or network level for
+# additional protection.
 #
 
-corenet_tcp_connect_smtp_port(celery_t)
+allow celery_t self:tcp_socket create_stream_socket_perms;
+corenet_tcp_connect_all_ports(celery_t)
+corenet_tcp_bind_all_ports(celery_t)
+corenet_tcp_bind_generic_node(celery_t)
 
 ######################################
 #

@@ -15,6 +15,7 @@ import datetime
 import logging
 
 import mock
+import unittest
 from web.webapi import BadRequest
 
 from .... import base
@@ -1088,6 +1089,52 @@ class TestProfiles(base.PulpWebserviceTests):
         path = '/v2/consumers/%s/profiles/unknown/' % self.CONSUMER_ID
         status, body = self.delete(path)
         self.assertEqual(status, 404)
+
+
+class TestConsumerHistory(unittest.TestCase):
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.filters')
+    @mock.patch('pulp.server.webservices.controllers.consumers.managers')
+    @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.ok')
+    def test_get_consumer_history(self, mock_ok, mock_managers, mock_filters):
+        """
+        For API calls to consumer history, test that the correct response (200) is given when
+        the entry exists.
+        """
+        consumer_history = consumers.ConsumerHistory()
+        consumer_history.params = mock.Mock(return_value={'consumer_history': 'bar'})
+        mock_filters.return_value = {}
+        mock_ok.return_value.status = 200
+
+        mock_db = mock.MagicMock()
+        mock_db.query.return_value = [{'consumer': 'history'}]
+        mock_managers.consumer_history_manager.return_value = mock_db
+
+        response = consumer_history.GET('test-consumer-history')
+        mock_ok.assert_called_with([{'consumer': 'history'}])
+        self.assertEqual(response.status, 200)
+
+    @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.filters')
+    @mock.patch('pulp.server.webservices.controllers.consumers.managers')
+    @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.not_found')
+    def test_get_consumer_history(self, mock_not_found, mock_managers, mock_filters):
+        """
+        For API calls to consumer history, test that the correct response (404) is given when
+        the entry does not exist.
+        """
+        consumer_history = consumers.ConsumerHistory()
+        consumer_history.params = mock.Mock(return_value={'consumer_history': 'bar'})
+        mock_filters.return_value = {}
+        mock_not_found.return_value.status = 404
+
+        mock_db = mock.MagicMock()
+        mock_db.query.return_value = []
+        mock_managers.consumer_history_manager.return_value = mock_db
+
+        response = consumer_history.GET('test-consumer-history')
+
+        mock_not_found.assert_called_with()
+        self.assertEqual(response.status, 404)
 
 
 class TestContentApplicability(base.PulpWebserviceTests,
