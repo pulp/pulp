@@ -301,6 +301,7 @@ Submit to Koji
 ^^^^^^^^^^^^^^
 We are now prepared to submit the build to Koji. This task is simple::
 
+    $ cd pulp/rel-eng/
     $ ./builder.py <X.Y> <stream>
 
 To continue with our example of building a new 2.4 beta::
