@@ -15,7 +15,6 @@ import datetime
 import logging
 
 import mock
-import unittest
 from web.webapi import BadRequest
 
 from .... import base
@@ -1091,7 +1090,7 @@ class TestProfiles(base.PulpWebserviceTests):
         self.assertEqual(status, 404)
 
 
-class TestConsumerHistory(unittest.TestCase):
+class TestConsumerHistory(PulpWebservicesTests):
 
     @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.filters')
     @mock.patch('pulp.server.webservices.controllers.consumers.managers')
@@ -1117,7 +1116,7 @@ class TestConsumerHistory(unittest.TestCase):
     @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.filters')
     @mock.patch('pulp.server.webservices.controllers.consumers.managers')
     @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.not_found')
-    def test_get_consumer_history(self, mock_not_found, mock_managers, mock_filters):
+    def test_get_consumer_history_invalid_consumer(self, mock_not_found, mock_managers, mock_filters):
         """
         For API calls to consumer history, test that the correct response (404) is given when
         the entry does not exist.
