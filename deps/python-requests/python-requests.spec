@@ -42,6 +42,10 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitelib}/requests/*
 
 %changelog
+* Mon Nov 10 2014 Chris Duryee <cduryee@redhat.com> 2.4.3-1
+- 1160794 - update python-requests to 2.4.3 (cduryee@redhat.com)
+- Build for EL 7. (rbarlow@redhat.com)
+
 * Wed Apr 02 2014 Sayli Karmarkar <skarmark@redhat.com> 2.2.1-1
 - correcting a couple of typos in the python-requests version
   (skarmark@redhat.com)
