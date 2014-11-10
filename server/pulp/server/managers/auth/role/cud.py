@@ -228,8 +228,6 @@ class RoleManager(object):
         :type  role_id:         str
         :param login:           login of user
         :type  login:           str
-        :return:                True on success
-        :rtype:                 bool
         :raise MissingResource: if the given role or user does not exist
         """
         role = Role.get_collection().find_one({'id': role_id})
@@ -260,8 +258,6 @@ class RoleManager(object):
         :type  role_id:         str
         :param login:           name of user
         :type  login:           str
-        :return:                True on success
-        :rtype:                 bool
         :raise MissingResource: if the given role or user does not exist
         """
         role = Role.get_collection().find_one({'id': role_id})

@@ -105,11 +105,11 @@ class PermissionManager(object):
             raise InvalidValue(['resource_uri'])
 
         # Check whether the permission exists
-        found = Permission.get_collection().find_one({'resource' : resource_uri})
+        found = Permission.get_collection().find_one({'resource': resource_uri})
         if found is None:
             raise MissingResource(resource_uri)
 
-        Permission.get_collection().remove({'resource' : resource_uri}, safe=True)
+        Permission.get_collection().remove({'resource': resource_uri}, safe=True)
 
     @staticmethod
     def grant(resource, login, operations):
@@ -127,7 +127,7 @@ class PermissionManager(object):
         if login == system.SYSTEM_LOGIN:
             return
 
-        user = User.get_collection().find_one({'login' : login})
+        user = User.get_collection().find_one({'login': login})
         if user is None:
             raise MissingResource(user=login)
 
@@ -136,7 +136,7 @@ class PermissionManager(object):
             raise InvalidValue(resource)
 
         # Get or create permission if it doesn't already exist
-        permission = Permission.get_collection().find_one({'resource' : resource})
+        permission = Permission.get_collection().find_one({'resource': resource})
         if permission is None:
             permission = PermissionManager.create_permission(resource)
 
@@ -155,8 +155,8 @@ class PermissionManager(object):
 
         :param resource:   uri path representing a pulp resource
         :type  resource:   str
-        :param user:       login of user to revoke permissions from
-        :type  user:       str
+        :param login:      login of user to revoke permissions from
+        :type  login:      str
         :param operations: list of allowed operations being revoked
         :type  operations: list or tuple of integers
         """
@@ -164,11 +164,11 @@ class PermissionManager(object):
         if login == system.SYSTEM_LOGIN:
             return
 
-        user = User.get_collection().find_one({'login' : login})
+        user = User.get_collection().find_one({'login': login})
         if user is None:
             raise MissingResource(user=login)
 
-        permission = Permission.get_collection().find_one({'resource' : resource})
+        permission = Permission.get_collection().find_one({'resource': resource})
         if permission is None:
             return
 
@@ -181,7 +181,7 @@ class PermissionManager(object):
                 continue
             current_ops.remove(o)
 
-        # delete the user if there are no more allowed operations
+        # delete the user from this permission if there are no more allowed operations
         if not current_ops:
             del permission['users'][user['login']]
 
@@ -199,8 +199,6 @@ class PermissionManager(object):
         :param resource: resource path to grant permissions to
         :type resource: str
 
-        :rtype: bool
-        :return: True on success, False otherwise
         :raises PulpExecutionException: if the system principal has not been set
         """
         principal_manager = factory.principal_manager()
@@ -214,7 +212,7 @@ class PermissionManager(object):
 
     def grant_automatic_permissions_for_user(self, login):
         """
-        Grant the permissions required for a new user so that they my log into Pulp
+        Grant the permissions required for a new user so that they may log into Pulp
         and update their own information.
 
         :param login: login of the new user
@@ -226,6 +224,8 @@ class PermissionManager(object):
 
     def revoke_permission_from_user(self, resource, login, operation_names):
         """
+        NOTE: This method does not seem to get called by any part of pulp
+
         Revoke the operations on the resource from the user
 
         :param resource: pulp resource to revoke operations on
@@ -248,9 +248,6 @@ class PermissionManager(object):
 
         :param login: login of the user to revoke all permissions from
         :type login: str
-
-        :rtype: bool
-        :return: True on success
         """
         for permission in factory.permission_query_manager().find_all():
             if login not in permission['users']:
@@ -260,10 +257,12 @@ class PermissionManager(object):
                 Permission.get_collection().save(permission, safe=True)
             else:
                 # Delete entire permission if there are no more users
-                Permission.get_collection().remove({'resource':permission['resource']}, safe=True)
+                Permission.get_collection().remove({'resource': permission['resource']}, safe=True)
 
     def operation_name_to_value(self, name):
         """
+        NOTE: This only seems to be called by the method below
+
         Convert an operation name to an operation value
 
         :param name: operation name
