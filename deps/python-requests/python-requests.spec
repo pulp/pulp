@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-requests
-Version:        2.2.1
+Version:        2.4.3
 Release:        1%{?dist}
 Summary:        HTTP library, written in Python, for human beings
 
