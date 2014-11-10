@@ -136,8 +136,8 @@ using the specified content type.
  }
 
 
-Retrieve All Profiles
----------------------
+Retrieve All Profiles By Consumer Id
+------------------------------------
 
 Retrieves information on all :term:`unit profile`s associated with
 a :term:`consumer`.
@@ -232,4 +232,88 @@ content type.
                 "vendor": "Fedora Project",
                 "version": "4.9.1.3"}],
    "profile_hash": "15df1c6105edacd6b167d2e9dd87311b069f50cebb2f7968ef185c1d6eae5197"
+ }
+
+
+Retrieve All Profiles
+---------------------
+
+Retrieves information on all :term:`unit profile`s
+
+| :method:`get`
+| :path:`/v2/consumers/profile/search/`
+| :permission:`read`
+| :param_list:`get` None; There are no supported query parameters
+| :response_list:`_`
+
+* :response_code:`200, containing the array of items`
+
+| :return:`array of unit profiles`
+
+:sample_response:`200` ::
+
+ [
+   {
+     "profile": [{"arch": "i686",
+                 "epoch": 0,
+                 "name": "glib2",
+                 "release": "2.fc17",
+                 "vendor": "Fedora Project",
+                 "version": "2.32.4"},
+                 {"arch": "x86_64",
+                 "epoch": 0,
+                 "name": "rpm-libs",
+                 "release": "8.fc17",
+                 "vendor": "Fedora Project",
+                 "version": "4.9.1.3"}],
+     "_ns": "consumer_unit_profiles", 
+     "profile_hash": "d20dc2d0fce88a064a2f7309863da7ebd068969de0150fd8ff83c220a0785d8a", 
+     "consumer_id": "test-consumer", 
+     "content_type": "rpm", 
+     "_id": {"$oid": "545cacf09cd4ca28c83dd9f5"}, 
+     "id": "545cacf09cd4ca28c83dd9f5"
+   }
+ ]
+
+
+Searching Profiles
+------------------
+
+Returns items that match the search parameters. To understand how to use the SearchAPI look at the :ref:`search_criteria` page. This call will never return a 404; an empty array is returned in the case where there are no items in the database.
+
+| :method:`post`
+| :path:`/v2/consumers/profile/search/`
+| :permission:`read`
+| :param_list:`post` include the key "criteria" whose value is a mapping structure as defined in :ref:`search_criteria`
+| :response_list:`_`
+
+* :response_code:`200, containing the result of the query`
+
+| :return:`elements matching the query`
+
+:sample_request:`_` ::
+
+ {
+   "criteria" : { 
+     "filters" : { "profile.name"  : "pulp-consumer-client" }, 
+     "fields" : [ "consumer_id", "profile.$" ]
+   }
+ }
+
+:sample_response:`200` ::
+
+ {
+   "profile": [
+     {
+       "vendor": "Koji", 
+       "name": "pulp-consumer-client", 
+       "epoch": 0, 
+       "version": "2.4.3", 
+       "release": "1.el6", 
+       "arch": "noarch"
+     }
+   ], 
+   "_id": {"$oid": "545cacf09cd4ca28c83dd9f5"}, 
+   "id": "545cacf09cd4ca28c83dd9f5", 
+   "consumer_id": "pulp-test"
  }
