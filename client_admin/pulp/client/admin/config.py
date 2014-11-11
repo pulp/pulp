@@ -42,6 +42,10 @@ DEFAULT = {
         'wrap_to_terminal': 'false',
         'wrap_width': '80',
     },
+    'auth': {
+        'username': 'admin',
+        'password': 'admin',
+    },
 }
 
 
@@ -81,6 +85,12 @@ SCHEMA = (
             ('enable_color', REQUIRED, BOOL),
             ('wrap_to_terminal', REQUIRED, BOOL),
             ('wrap_width', REQUIRED, NUMBER)
+        )
+    ),
+    ('auth', REQUIRED,
+        (
+            ('username', OPTIONAL, ANY),
+            ('password', OPTIONAL, ANY),
         )
     ),
 )
