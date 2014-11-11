@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from datetime import datetime
 from pymongo.errors import DuplicateKeyError
 
@@ -74,61 +61,111 @@ class TaskStatusManager(object):
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
         """
-        delta = {
-            'state': constants.CALL_ACCEPTED_STATE
+        collection = TaskStatus.get_collection()
+
+        select = {
+            'task_id': task_id,
+            'state': constants.CALL_WAITING_STATE
         }
-        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+        update = {
+            '$set': {'state': constants.CALL_ACCEPTED_STATE}
+        }
+
+        collection.update(select, update, safe=True)
 
     @staticmethod
-    def set_task_started(task_id):
+    def set_task_started(task_id, timestamp=None):
         """
         Update a task's state to reflect that it has started running.
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
+        :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
+        :type timestamp: str
         """
-        now = datetime.now(dateutils.utc_tz())
-        start_time = dateutils.format_iso8601_datetime(now)
-        delta = {
-            'state': constants.CALL_RUNNING_STATE,
-            'start_time': start_time,
+        collection = TaskStatus.get_collection()
+
+        if not timestamp:
+            now = datetime.now(dateutils.utc_tz())
+            started = dateutils.format_iso8601_datetime(now)
+        else:
+            started = timestamp
+
+        select = {
+            'task_id': task_id
         }
-        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+        update = {
+            '$set': {'start_time': started}
+        }
+
+        collection.update(select, update, safe=True)
+
+        select = {
+            'task_id': task_id,
+            'state': {'$in': [constants.CALL_WAITING_STATE, constants.CALL_ACCEPTED_STATE]}
+        }
+        update = {
+            '$set': {'state': constants.CALL_RUNNING_STATE}
+        }
+
+        collection.update(select, update, safe=True)
 
     @staticmethod
-    def set_task_succeeded(task_id, result=None):
+    def set_task_succeeded(task_id, result=None, timestamp=None):
         """
-        Update a task's state to reflect that it succeeded.
+        Update a task's state to reflect that it has succeeded.
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
         :param result: The optional value returned by the task execution.
         :type result: anything
+        :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
+        :type timestamp: str
         """
-        now = datetime.now(dateutils.utc_tz())
-        finish_time = dateutils.format_iso8601_datetime(now)
-        delta = {
-            'state': constants.CALL_FINISHED_STATE,
-            'finish_time': finish_time,
-            'result': result
+        collection = TaskStatus.get_collection()
+
+        if not timestamp:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
+        else:
+            finished = timestamp
+
+        update = {
+            '$set': {
+                'finish_time': finished,
+                'state': constants.CALL_FINISHED_STATE,
+                'result': result
+            }
         }
-        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+        collection.update({'task_id': task_id}, update, safe=True)
 
     @staticmethod
-    def set_task_failed(task_id, traceback=None):
+    def set_task_failed(task_id, traceback=None, timestamp=None):
         """
-        Update a task's state to reflect that it succeeded.
+        Update a task's state to reflect that it has succeeded.
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
         :ivar traceback: A string representation of the traceback resulting from the task execution.
         :type traceback: basestring
+        :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
+        :type timestamp: str
         """
-        now = datetime.now(dateutils.utc_tz())
-        finish_time = dateutils.format_iso8601_datetime(now)
-        delta = {
-            'state': constants.CALL_ERROR_STATE,
-            'finish_time': finish_time,
-            'traceback': traceback
+        collection = TaskStatus.get_collection()
+
+        if not timestamp:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
+        else:
+            finished = timestamp
+
+        update = {
+            '$set': {
+                'finish_time': finished,
+                'state': constants.CALL_ERROR_STATE,
+                'traceback': traceback
+            }
         }
-        TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+
+        collection.update({'task_id': task_id}, update, safe=True)
 
     @staticmethod
     def update_task_status(task_id, delta):

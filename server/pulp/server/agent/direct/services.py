@@ -1,17 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from logging import getLogger
+from gettext import gettext as _
 
 from pulp.server.config import config
 from pulp.server.async.task_status_manager import TaskStatusManager
@@ -47,7 +35,7 @@ class Services:
         broker = Broker(url, transport=transport)
         broker.cacert = config.get('messaging', 'cacert')
         broker.clientcert = config.get('messaging', 'clientcert')
-        log.info('AMQP broker configured: %s', broker)
+        log.info(_('AMQP broker configured: %(b)s'), {'b': broker})
 
     @classmethod
     def start(cls):
@@ -56,7 +44,7 @@ class Services:
         # asynchronous reply
         cls.reply_handler = ReplyHandler(url, transport)
         cls.reply_handler.start()
-        log.info('AMQP reply handler started')
+        log.info(_('AMQP reply handler started'))
 
 
 class ReplyHandler(Listener):
@@ -136,16 +124,17 @@ class ReplyHandler(Listener):
         Start the reply handler (thread)
         """
         self.consumer.start(self)
-        log.info('Task reply handler, started.')
+        log.info(_('Task reply handler, started.'))
 
     def accepted(self, reply):
         """
         Notification that an RMI has started executing in the agent.
         The task status is updated in the pulp DB.
         :param reply: A status reply object.
-        :type reply: gofer.rmi.async.Started
+        :type reply: gofer.rmi.async.Accepted
         """
-        call_context = reply.any
+        log.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
+        call_context = dict(reply.any)
         task_id = call_context['task_id']
         TaskStatusManager.set_task_accepted(task_id)
 
@@ -156,9 +145,10 @@ class ReplyHandler(Listener):
         :param reply: A status reply object.
         :type reply: gofer.rmi.async.Started
         """
-        call_context = reply.any
+        log.debug(_('Task RMI (started): %(r)s'), {'r': reply})
+        call_context = dict(reply.any)
         task_id = call_context['task_id']
-        TaskStatusManager.set_task_started(task_id)
+        TaskStatusManager.set_task_started(task_id, timestamp=reply.timestamp)
 
     def rejected(self, reply):
         """
@@ -167,13 +157,13 @@ class ReplyHandler(Listener):
         :param reply: A rejected reply object.
         :type reply: gofer.rmi.async.Rejected
         """
-        log.info('Task RMI (rejected)\n%s', reply)
+        log.warn(_('Task RMI (rejected): %(r)s'), {'r': reply})
 
         call_context = dict(reply.any)
         action = call_context.get('action')
         task_id = call_context['task_id']
 
-        TaskStatusManager.set_task_failed(task_id)
+        TaskStatusManager.set_task_failed(task_id, timestamp=reply.timestamp)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
@@ -189,14 +179,14 @@ class ReplyHandler(Listener):
         :param reply: A successful reply object.
         :type reply: gofer.rmi.async.Succeeded
         """
-        log.info('Task RMI (succeeded)\n%s', reply)
+        log.info(_('Task RMI (succeeded): %(r)s'), {'r': reply})
 
         call_context = dict(reply.any)
         action = call_context.get('action')
         task_id = call_context['task_id']
         result = dict(reply.retval)
 
-        TaskStatusManager.set_task_succeeded(task_id, result)
+        TaskStatusManager.set_task_succeeded(task_id, result=result, timestamp=reply.timestamp)
 
         if action == 'bind':
             if result['succeeded']:
@@ -218,14 +208,14 @@ class ReplyHandler(Listener):
         :param reply: A failure reply object.
         :type reply: gofer.rmi.async.Failed
         """
-        log.info('Task RMI (failed)\n%s', reply)
+        log.info(_('Task RMI (failed): %(r)s'), {'r': reply})
 
         call_context = dict(reply.any)
         action = call_context.get('action')
         task_id = call_context['task_id']
         traceback = reply.xstate['trace']
 
-        TaskStatusManager.set_task_failed(task_id, traceback)
+        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=reply.timestamp)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
