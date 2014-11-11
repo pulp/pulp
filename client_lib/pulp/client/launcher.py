@@ -35,9 +35,12 @@ def main(config, exception_handler_class=ExceptionHandler):
     parser = OptionParser()
     parser.disable_interspersed_args()
     parser.add_option('-u', '--username', dest='username', action='store', default=None,
-                      help=_('credentials for the Pulp server; if specified will bypass the stored certificate'))
+                      help=_('username for the Pulp server; if used will bypass the stored '
+                             'certificate and override config file values and the default'))
     parser.add_option('-p', '--password', dest='password', action='store', default=None,
-                      help=_('credentials for the Pulp server; must be specified with --username'))
+                      help=_('password for the Pulp server; must be used with --username. '
+                             'if used will bypass the stored certificate and override config '
+                             'file values and the default'))
     parser.add_option('--debug', dest='debug', action='store_true', default=False,
                       help=_('enables debug logging'))
     parser.add_option('--config', dest='config', default=None,
@@ -59,6 +62,12 @@ def main(config, exception_handler_class=ExceptionHandler):
     # REST Bindings
     username = options.username
     password = options.password
+
+    # get username/password from config ~/.pulp/admin.conf if available
+    if not username and not password:
+        username = config['auth']['username']
+        password = config['auth']['password']
+
     if username and not password:
         prompt_msg = 'Enter password: '
         password = prompt.prompt_password(_(prompt_msg))
