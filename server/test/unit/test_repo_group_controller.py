@@ -14,6 +14,7 @@
 import datetime
 
 import mock
+from celery.result import AsyncResult
 
 import base
 from pulp.devel import dummy_plugins
@@ -569,22 +570,48 @@ class PublishActionTests(base.PulpWebserviceTests):
         RepoGroupDistributor.get_collection().remove()
 
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
-    def test_post(self, mock_get_worker_for_reservation):
+    @mock.patch('pulp.server.webservices.controllers.repo_groups.publish')
+    def test_post(self, mock_publish, mock_get_worker_for_reservation):
+        """
+        Test that publish repo group creates a task for a worker.
+        """
         # Setup
         group_id = 'group-1'
         distributor_id = 'dist-1'
+        mock_publish.apply_async_with_reservation.return_value = AsyncResult('1234')
+
         self.manager.create_repo_group(group_id)
-        self.distributor_manager.add_distributor(group_id, 'dummy-group-distributor', {}, distributor_id=distributor_id)
+        self.distributor_manager.add_distributor(
+            group_id, 'dummy-group-distributor', {}, distributor_id=distributor_id
+        )
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
 
         # Test
-        data = {'id' : distributor_id}
+        data = {'id': distributor_id}
         status, body = self.post('/v2/repo_groups/%s/actions/publish/' % group_id, data)
 
         # Verify
-        # Can't verify the status code due to the unit test framework
-#        self.assertEqual(200, status)
-#        self.assertEqual(1, dummy_plugins.DUMMY_GROUP_DISTRIBUTOR.call_count)
+        self.assertEqual(202, status)
+        self.assertEqual(mock_publish.apply_async_with_reservation.call_count, 1)
+        # self.assertEqual(1, dummy_plugins.DUMMY_GROUP_DISTRIBUTOR.call_count)
+
+    @mock.patch('pulp.server.webservices.controllers.repo_groups.publish')
+    def test_post_missing_repo_group_id(self, mock_publish):
+        """
+        Test publish repo group when a nonexistent repo group id is passed. A task should not be
+        created.
+        """
+        # Setup
+        repo_group_id = 'non-existent-group'
+        distributor_id = 'dist-1'
+        data = {'id': distributor_id}
+        mock_publish.apply_async_with_reservation.return_value = AsyncResult('1234')
+
+        status, body = self.post('/v2/repo_groups/%s/actions/publish/' % repo_group_id, data)
+
+        # Verify
+        self.assertEqual(404, status)
+        self.assertEqual(mock_publish.apply_async_with_reservation.call_count, 0)
 
     def test_post_missing_distributor_id(self):
         # Setup
@@ -612,7 +639,6 @@ class PublishActionTests(base.PulpWebserviceTests):
 
         # Clean up
         base.PulpWebserviceTests.HEADERS = old_auth
-
 
 class RepoGroupSearchTests(base.PulpWebserviceTests):
     @mock.patch('pulp.server.webservices.controllers.search.SearchController.params')
