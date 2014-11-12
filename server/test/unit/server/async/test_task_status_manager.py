@@ -1,23 +1,12 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.server.async.task_status_manager module.
 """
-import mock
+
 import uuid
 
 from datetime import datetime
+
+import mock
 
 from ... import base
 
@@ -25,7 +14,7 @@ from pulp.common import constants, dateutils
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
-import pulp.server.exceptions as exceptions
+from pulp.server import exceptions
 
 
 class TaskStatusManagerTests(base.PulpServerTests):
@@ -196,84 +185,193 @@ class TaskStatusManagerTests(base.PulpServerTests):
         mock_query.assert_called_once_with(criteria)
 
 
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_set_accepted(self, mock_update):
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_accepted(self, get_collection):
         task_id = 'test'
+        collection = mock.Mock()
+        get_collection.return_value = collection
 
         # test
-
         TaskStatusManager.set_task_accepted(task_id)
 
         # validation
-
-        delta = {
-            'state': constants.CALL_ACCEPTED_STATE
+        select = {
+            'task_id': task_id,
+            'state': constants.CALL_WAITING_STATE
+        }
+        update = {
+            '$set': {'state': constants.CALL_ACCEPTED_STATE}
         }
 
-        mock_update.assert_called_with(task_id=task_id, delta=delta)
+        collection.update.assert_called_once_with(select, update, safe=True)
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_set_started(self, mock_update, mock_date):
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_started(self, get_collection, mock_date):
         task_id = 'test'
         now = '1234'
         mock_date.return_value = now
+        collection = mock.Mock()
+        get_collection.return_value = collection
 
         # test
-
         TaskStatusManager.set_task_started(task_id)
 
         # validation
-
-        delta = {
-            'state': constants.CALL_RUNNING_STATE,
-            'start_time': now
+        # validation
+        select_1 = {
+            'task_id': task_id
+        }
+        update_1 = {
+            '$set': {'start_time': now}
+        }
+        select_2 = {
+            'task_id': task_id,
+            'state': {'$in': [constants.CALL_WAITING_STATE, constants.CALL_ACCEPTED_STATE]}
+        }
+        update_2 = {
+            '$set': {'state': constants.CALL_RUNNING_STATE}
         }
 
-        mock_update.assert_called_with(task_id=task_id, delta=delta)
+        self.assertEqual(
+            collection.update.call_args_list,
+            [
+                ((select_1, update_1), {'safe': True}),
+                ((select_2, update_2), {'safe': True}),
+            ])
+
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_started_with_timestamp(self, get_collection):
+        task_id = 'test'
+        timestamp = '1234'
+        collection = mock.Mock()
+        get_collection.return_value = collection
+
+        # test
+        TaskStatusManager.set_task_started(task_id, timestamp=timestamp)
+
+        # validation
+        select_1 = {
+            'task_id': task_id
+        }
+        update_1 = {
+            '$set': {'start_time': timestamp}
+        }
+        select_2 = {
+            'task_id': task_id,
+            'state': {'$in': [constants.CALL_WAITING_STATE, constants.CALL_ACCEPTED_STATE]}
+        }
+        update_2 = {
+            '$set': {'state': constants.CALL_RUNNING_STATE}
+        }
+
+        self.assertEqual(
+            collection.update.call_args_list,
+            [
+                ((select_1, update_1), {'safe': True}),
+                ((select_2, update_2), {'safe': True}),
+            ])
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_set_succeeded(self, mock_update, mock_date):
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_succeeded(self, get_collection, mock_date):
         task_id = 'test'
         result = 'done'
         now = '1234'
 
         mock_date.return_value = now
+        collection = mock.Mock()
+        get_collection.return_value = collection
 
         # test
-
         TaskStatusManager.set_task_succeeded(task_id, result)
 
         # validation
-
-        delta = {
-            'state': constants.CALL_FINISHED_STATE,
-            'finish_time': now,
-            'result': result
+        select = {
+            'task_id': task_id
         }
+        update = {
+            '$set': {
+                'finish_time': now,
+                'state': constants.CALL_FINISHED_STATE,
+                'result': result
+            }
+        }
+        collection.update.assert_called_once_with(select, update, safe=True)
 
-        mock_update.assert_called_with(task_id=task_id, delta=delta)
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_succeeded_with_timestamp(self, get_collection):
+        task_id = 'test'
+        result = 'done'
+        timestamp = '1234'
+
+        collection = mock.Mock()
+        get_collection.return_value = collection
+
+        # test
+        TaskStatusManager.set_task_succeeded(task_id, result=result, timestamp=timestamp)
+
+        # validation
+        select = {
+            'task_id': task_id
+        }
+        update = {
+            '$set': {
+                'finish_time': timestamp,
+                'state': constants.CALL_FINISHED_STATE,
+                'result': result
+            }
+        }
+        collection.update.assert_called_once_with(select, update, safe=True)
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_set_failed(self, mock_update, mock_date):
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_failed(self, get_collection, mock_date):
         task_id = 'test'
-        traceback = 'TB'
+        traceback = 'abcdef'
         now = '1234'
 
         mock_date.return_value = now
+        collection = mock.Mock()
+        get_collection.return_value = collection
 
         # test
-
-        TaskStatusManager.set_task_failed(task_id, traceback)
+        TaskStatusManager.set_task_failed(task_id, traceback=traceback)
 
         # validation
-
-        delta = {
-            'state': constants.CALL_ERROR_STATE,
-            'finish_time': now,
-            'traceback': traceback
+        select = {
+            'task_id': task_id
         }
+        update = {
+            '$set': {
+                'finish_time': now,
+                'state': constants.CALL_ERROR_STATE,
+                'traceback': traceback
+            }
+        }
+        collection.update.assert_called_once_with(select, update, safe=True)
 
-        mock_update.assert_called_with(task_id=task_id, delta=delta)
+    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
+    def test_set_failed_with_timestamp(self, get_collection):
+        task_id = 'test'
+        traceback = 'abcdef'
+        timestamp = '1234'
+
+        collection = mock.Mock()
+        get_collection.return_value = collection
+
+        # test
+        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=timestamp)
+
+        # validation
+        select = {
+            'task_id': task_id
+        }
+        update = {
+            '$set': {
+                'finish_time': timestamp,
+                'state': constants.CALL_ERROR_STATE,
+                'traceback': traceback
+            }
+        }
+        collection.update.assert_called_once_with(select, update, safe=True)
