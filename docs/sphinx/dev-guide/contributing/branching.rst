@@ -105,7 +105,7 @@ Cherry-picking and Rebasing
 
 Don't do it! Seriously though, this should not happen between release branches.
 It is a good idea (but not required) for a developer to rebase his or her
-development branch *before* submitting a pull request. Cherry-picking may also
+development branch *before* merging a pull request. Cherry-picking may also
 be valuable among development branches. However, master and release branches
 should not be involved in either.
 
