@@ -7,7 +7,7 @@
 %endif
 
 Name: gofer
-Version: 1.3.1
+Version: 1.4.0
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -185,7 +185,7 @@ Provides the gofer qpid transport package.
 %doc LICENSE
 
 
-# --- python amqplib transport -----------------------------------------------
+# --- python-amqplib transport -----------------------------------------------
 
 %package -n python-%{name}-amqplib
 Summary: Gofer amqplib transport python package
@@ -199,6 +199,23 @@ Provides the gofer amqplib transport package.
 
 %files -n python-%{name}-amqplib
 %{python_sitelib}/%{name}/transport/amqplib
+%doc LICENSE
+
+
+# --- python-amqp transport -----------------------------------------------
+
+%package -n python-%{name}-amqp
+Summary: Gofer amqp transport python package
+Group: Development/Languages
+BuildRequires: python
+Requires: python-%{name} >= %{version}
+Requires: python-amqp >= 1.3
+
+%description -n python-%{name}-amqp
+Provides the gofer amqp transport package.
+
+%files -n python-%{name}-amqp
+%{python_sitelib}/%{name}/transport/amqp
 %doc LICENSE
 
 
@@ -287,6 +304,12 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Nov 03 2014 Jeff Ortel <jortel@redhat.com> 1.4.0-1
+- Add reply timestamp. (jortel@redhat.com)
+- Fix synchronous policy using durable queue.
+  (jortel@redhat.com)
+- Add python-amqp transport. (jortel@redhat.com)
+
 * Fri Aug 15 2014 Jeff Ortel <jortel@redhat.com> 1.3.1-1
 - 1129828 - split stack traces into separate log records. (jortel@redhat.com)
 - Added python-ctypes dependency. (jortel@redhat.com)

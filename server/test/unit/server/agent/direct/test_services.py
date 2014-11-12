@@ -1,15 +1,3 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-
 from unittest import TestCase
 
 from mock import patch, Mock
@@ -84,7 +72,8 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(
+            task_id, result=dispatch_report, timestamp=reply.timestamp)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_accepted')
     def test_accepted(self, mock_task_accepted):
@@ -112,7 +101,7 @@ class TestReplyHandler(TestCase):
         handler.rejected(reply)
 
         # validate task updated
-        mock_task_failed.assert_called_with(task_id)
+        mock_task_failed.assert_called_with(task_id, timestamp=reply.timestamp)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.set_task_started')
     def test_started(self, mock_task_started):
@@ -126,7 +115,7 @@ class TestReplyHandler(TestCase):
         handler.started(reply)
 
         # validate task updated
-        mock_task_started.assert_called_with(task_id)
+        mock_task_started.assert_called_with(task_id, timestamp=reply.timestamp)
 
     @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     def test_progress_reported(self, mock_update_task_status):
@@ -148,6 +137,7 @@ class TestReplyHandler(TestCase):
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
         dist_id = 'dist_1'
+        traceback = 'stack-trace'
         call_context = {
             'task_id': task_id,
             'consumer_id': consumer_id,
@@ -158,7 +148,7 @@ class TestReplyHandler(TestCase):
             exval='Boom',
             xmodule='foo.py',
             xclass=ValueError,
-            xstate={'trace': 'stack-trace'},
+            xstate={'trace': traceback},
             xargs=[]
         )
         document = Document(routing=['A', 'B'], result=raised, any=call_context)
@@ -167,7 +157,7 @@ class TestReplyHandler(TestCase):
         handler.failed(reply)
 
         # validate task updated
-        mock_task_failed.assert_called_with(task_id, 'stack-trace')
+        mock_task_failed.assert_called_with(task_id, traceback=traceback, timestamp=reply.timestamp)
 
     @patch('pulp.server.managers.factory.consumer_bind_manager')
     def test__bind_succeeded(self, mock_get_manager):
@@ -267,7 +257,8 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(
+            task_id, result=dispatch_report, timestamp=reply.timestamp)
         # validate bind action updated
         mock_bind_succeeded.assert_called_with(task_id, call_context)
 
@@ -293,7 +284,8 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(
+            task_id, result=dispatch_report, timestamp=reply.timestamp)
         # validate bind action not updated
         mock_bind_failed.assert_called_with(task_id, call_context)
 
@@ -319,7 +311,8 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(
+            task_id, result=dispatch_report, timestamp=reply.timestamp)
         # validate bind action updated
         mock_unbind_succeeded.assert_called_with(call_context)
 
@@ -345,7 +338,8 @@ class TestReplyHandler(TestCase):
         handler.succeeded(reply)
 
         # validate task updated
-        mock_task_succeeded.assert_called_with(task_id, dispatch_report)
+        mock_task_succeeded.assert_called_with(
+            task_id, result=dispatch_report, timestamp=reply.timestamp)
         # validate bind action updated
         mock_unbind_failed.assert_called_with(task_id, call_context)
 
@@ -356,6 +350,7 @@ class TestReplyHandler(TestCase):
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
         dist_id = 'dist_1'
+        traceback = 'stack-trace'
         call_context = {
             'action': 'bind',
             'task_id': task_id,
@@ -367,7 +362,7 @@ class TestReplyHandler(TestCase):
             exval='Boom',
             xmodule='foo.py',
             xclass=ValueError,
-            xstate={'trace': 'stack-trace'},
+            xstate={'trace': traceback},
             xargs=[]
         )
         document = Document(routing=['A', 'B'], result=raised, any=call_context)
@@ -376,7 +371,7 @@ class TestReplyHandler(TestCase):
         handler.failed(reply)
 
         # validate task updated
-        mock_task_failed.assert_called_with(task_id, 'stack-trace')
+        mock_task_failed.assert_called_with(task_id, traceback=traceback, timestamp=reply.timestamp)
         # validate bind action updated
         mock_bind_failed.assert_called_with(task_id, call_context)
 
@@ -400,7 +395,7 @@ class TestReplyHandler(TestCase):
         handler.rejected(reply)
 
         # validate task updated
-        mock_task_failed.assert_called_with(task_id)
+        mock_task_failed.assert_called_with(task_id, timestamp=reply.timestamp)
         # validate bind action updated
         mock_bind_failed.assert_called_with(task_id, call_context)
 
@@ -411,6 +406,7 @@ class TestReplyHandler(TestCase):
         consumer_id = 'consumer_1'
         repo_id = 'repo_1'
         dist_id = 'dist_1'
+        traceback = 'stack-trace'
         call_context = {
             'action': 'unbind',
             'task_id': task_id,
@@ -422,7 +418,7 @@ class TestReplyHandler(TestCase):
             exval='Boom',
             xmodule='foo.py',
             xclass=ValueError,
-            xstate={'trace': 'stack-trace'},
+            xstate={'trace': traceback},
             xargs=[]
         )
         document = Document(routing=['A', 'B'], result=raised, any=call_context)
@@ -431,7 +427,7 @@ class TestReplyHandler(TestCase):
         handler.failed(reply)
 
         # validate task updated
-        mock_task_failed.assert_called_with(task_id, 'stack-trace')
+        mock_task_failed.assert_called_with(task_id, traceback=traceback, timestamp=reply.timestamp)
         # validate bind action updated
         mock_unbind_failed.assert_called_with(task_id, call_context)
 
@@ -455,6 +451,6 @@ class TestReplyHandler(TestCase):
         handler.rejected(reply)
 
         # validate task updated
-        mock_task_failed.assert_called_with(task_id)
+        mock_task_failed.assert_called_with(task_id, timestamp=reply.timestamp)
         # validate bind action updated
         mock_unbind_failed.assert_called_with(task_id, call_context)
