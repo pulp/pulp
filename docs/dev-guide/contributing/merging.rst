@@ -5,11 +5,8 @@ Pull Requests
 -------------
 
 You have some commits in a branch, and you're ready to merge. The Pulp Team makes
-use of pull requests for all but the most trivial contributions.
-
-Before you make a pull request, please make sure your name is in our AUTHORS file
-found at the root of each of our repositories. That way you can prove to all your
-friends that you contributed to Pulp.
+use of pull requests for all but the most trivial contributions. Please have a
+look at our :doc:`Contribution checklist <index>`.
 
 On the GitHub page for the repo where your development branch lives, there will be
 a "Pull Request" button. Click it. From there you will choose the source and
@@ -59,19 +56,33 @@ go in one of two directions:
    We are very open and honest when we review each other's work. We will do our
    best to review your contribution with respect and professionalism. In return,
    we hope you will accept our review process as an opportunity for everyone to
-   learn something, and to make Pulp the best product it can be.
+   learn something, and to make Pulp the best product it can be. If you are
+   uncertain about comments or instructions, please let us know!
 
+
+.. _rebasing-and-squashing:
 
 Rebasing and Squashing
 ----------------------
 
 Before you submit a pull request, consider an interactive rebase with some
-squashing. Do you have a dozen commits? Consider some squashing.
+squashing. We prefer each PR to contain a single commit. This offers some
+significant advantages:
 
-- Rebasing makes it more likely that your merge will be fast-forward only, which
-  helps avoid conflicts and has other advantages.
+- Squashing makes it more likely that your merge will be fast-forward only, which
+  helps avoid conflicts.
 - Nobody wants to see a your typo fixes in the commit log. Consider squashing
   trivial commits so that each commit you merge is as story-focused as possible.
+- The ``git commit --amend`` command is very useful, but be sure that you
+  `understand what it does <https://www.atlassian.com/git/tutorials/rewriting-history/git-commit--amend>`_
+  before you use it! GitHub will update the PR and keep the comments when you force
+  push an amended commit.
+- Rebasing makes cherry picking features and bug fixes much simpler.
+
+If this is not something that you are comfortable with, an excellent resource can be
+found here:
+
+`How to Rebase a Pull Request <https://github.com/edx/edx-platform/wiki/How-to-Rebase-a-Pull-Request>`_
 
 .. warning::
    Keep in mind that rebasing creates new commits that are unique from your
