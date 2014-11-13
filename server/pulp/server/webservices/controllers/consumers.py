@@ -552,6 +552,14 @@ class Profile(JSONController):
         return self.ok(manager.delete(consumer_id, content_type))
 
 
+class ProfileSearch(SearchController):
+    """
+    Profile search.
+    """
+    def __init__(self):
+        SearchController.__init__(self, managers.consumer_profile_manager().find_by_criteria)
+
+
 class ContentApplicability(JSONController):
     """
     Query content applicability.
@@ -799,6 +807,7 @@ urls = (
     '/actions/content/regenerate_applicability/$', ContentApplicabilityRegeneration,
     '/binding/search/$', BindingSearch,
     '/content/applicability/$', ContentApplicability,
+    '/profile/search/$', ProfileSearch,
     '/search/$', ConsumerSearch,
     '/([^/]+)/actions/content/regenerate_applicability/$', ConsumerContentApplicabilityRegeneration,
     '/([^/]+)/bindings/$', Bindings,

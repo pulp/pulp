@@ -331,6 +331,7 @@ class ConsumersTest(base.PulpWebserviceTests):
     NOTIFY_AGENT = True
     BINDING_CONFIG = {'c' : 'c'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
+    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
 
     def setUp(self):
         base.PulpWebserviceTests.setUp(self)
@@ -349,7 +350,7 @@ class ConsumersTest(base.PulpWebserviceTests):
         Bind.get_collection().remove()
         mock_plugins.reset()
 
-    def populate(self, bindings=False):
+    def populate(self, bindings=False, profiles=False):
         if bindings:
             manager = factory.repo_manager()
             manager.create_repo(self.REPO_ID)
@@ -367,8 +368,12 @@ class ConsumersTest(base.PulpWebserviceTests):
                 manager = factory.consumer_bind_manager()
                 manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID,
                              self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        if profiles:
+            manager = factory.consumer_profile_manager()
+            for consumer_id in self.CONSUMER_IDS:
+                manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    def validate(self, body, bindings=False):
+    def validate(self, body, bindings=False, profiles=False):
         if bindings:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
             fetched = dict([(c['id'],c) for c in body])
@@ -384,7 +389,13 @@ class ConsumersTest(base.PulpWebserviceTests):
                 self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
                 self.assertEquals(bindings[0]['deleted'], False)
                 self.assertEquals(bindings[0]['consumer_actions'], [])
-
+        elif profiles:
+            self.assertEqual(len(self.CONSUMER_IDS), len(body))
+            fetched = dict([(c['consumer_id'],c) for c in body])
+            for consumer_id in self.CONSUMER_IDS:
+                consumer = fetched[consumer_id]
+                self.assertEquals(consumer['consumer_id'], consumer_id)
+                self.assertTrue('profile' in consumer)
         else:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
             fetched = dict([(c['id'],c) for c in body])
@@ -559,6 +570,31 @@ class TestSearch(ConsumersTest):
         # Verify
         self.assertEqual(200, status)
         self.validate(body, True)
+
+
+class TestProfileSearch(ConsumersTest):
+
+    FILTER = {'consumer_id':{'$in':ConsumersTest.CONSUMER_IDS}}
+    SORT = [('consumer_id','ascending')]
+    CRITERIA = dict(filters=FILTER, sort=SORT)
+
+    def test_get(self):
+        # Setup
+        self.populate(profiles=True)
+        # Test
+        status, body = self.get('/v2/consumers/profile/search/')
+        # Verify
+        self.assertEqual(200, status)
+        self.validate(body, profiles=True)
+
+    def test_post(self):
+        # Setup
+        self.populate(profiles=True)
+        # Test
+        body = {'criteria':self.CRITERIA}
+        status, body = self.post('/v2/consumers/profile/search/', body)
+        # Verify
+        self.validate(body, profiles=True)
 
 
 class BindTestNoWSGI(PulpWebservicesTests):
