@@ -39,6 +39,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
+BuildRequires: python-sphinx >= 1.1.3
 BuildRequires: rpm-python
 
 %description
@@ -81,6 +82,11 @@ sed -i "s/policy_module(pulp-celery, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-ce
 cd -
 %endif
 
+# build man pages
+pushd docs
+make man
+popd docs
+
 %install
 rm -rf %{buildroot}
 for directory in agent bindings client_consumer client_lib common
@@ -109,6 +115,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
+mkdir -p %{buildroot}/%{_mandir}/man1
 
 # pulp-admin installation
 %if %{pulp_admin}
@@ -124,6 +131,8 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
 
 cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
 cp client_admin/etc/bash_completion.d/pulp-admin %{buildroot}/%{_sysconfdir}/bash_completion.d/
+# pulp-admin man page
+cp docs/_build/man/pulp-admin.1 %{buildroot}/%{_mandir}/man1/
 %endif # End pulp_admin installation block
 
 # Server installation
@@ -218,6 +227,9 @@ cp -R agent/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
+
+# pulp-consumer man page
+cp docs/_build/man/pulp-consumer.1 %{buildroot}/%{_mandir}/man1
 
 %clean
 rm -rf %{buildroot}
@@ -474,6 +486,7 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
+%doc %{_mandir}/man1/pulp-admin.1*
 %endif # End of pulp_admin if block
 
 
@@ -507,6 +520,7 @@ A tool used to administer a pulp consumer.
 %ghost %{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 %ghost %{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 %doc README LICENSE COPYRIGHT
+%doc %{_mandir}/man1/pulp-consumer.1*
 
 %post consumer-client
 
