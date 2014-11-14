@@ -56,3 +56,6 @@ CALL_COMPLETE_STATES = (CALL_SKIPPED_STATE, CALL_FINISHED_STATE, CALL_ERROR_STAT
 # 3.0 as part of https://bugzilla.redhat.com/show_bug.cgi?id=1160410
 
 PRIMARY_ID = '___/primary/___'
+
+# this is used by both platform and plugins to find the default CA path
+DEFAULT_CA_PATH = '/etc/pki/tls/certs/ca-bundle.crt'
