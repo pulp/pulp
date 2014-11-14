@@ -28,7 +28,7 @@ proceed. Additionally, if you are looking for a bug that is suitable for a
 first-time contributor, feel free to ask.
 
 Pulp is written in Python. While you do not need to be a Python expert to
-contribute, it would be advantegeous to run through the `Python tutorial
+contribute, it would be advantageous to run through the `Python tutorial
 <https://docs.python.org/2/tutorial/>`_ if you are new to Python or programming
 in general. Contributing to an open source project like Pulp is a great way to
 become proficient in a programming language since you will get helpful feedback
@@ -38,6 +38,36 @@ Some knowledge of git and GitHub is useful as well. Documentation on both is
 available on the `GitHub help page <https://help.github.com/>`_.
 
 
+Contribution Checklist
+^^^^^^^^^^^^^^^^^^^^^^
+
+1. Make sure that you choose the appropriate upstream branch.
+
+   :doc:`Branching <branching>`
+
+2. Test your code. We ask that all new code has 100% coverage.
+
+   :doc:`Testing </dev-guide/policies/testing>`
+
+3. Please ensure that your code follows our style guide.
+
+   :doc:`Style Guide </dev-guide/policies/style>`
+
+4. Please make sure that any new features are documented and that changes are
+   reflected in existing docs.
+
+   :doc:`Documentation <documenting>`
+
+5. Please squash your commits and use our commit message guidelines.
+
+   :ref:`rebasing-and-squashing`
+
+6. Make sure your name is in our AUTHORS file found at the root of each of our
+   repositories. That way you can prove to all your friends that you
+   contributed to Pulp!
+
+Developer Guide
+^^^^^^^^^^^^^^^
 .. toctree::
    :maxdepth: 3
 
