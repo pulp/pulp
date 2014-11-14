@@ -198,11 +198,8 @@ class UserManager(object):
         If no super users are found, the default admin user (from the pulp config)
         is looked up or created and added to the super users role.
         """
-        user_query_manager = factory.user_query_manager()
         role_manager = factory.role_manager()
-
-        super_users = user_query_manager.find_users_belonging_to_role(SUPER_USER_ROLE)
-        if super_users:
+        if self.get_admins():
             return
 
         default_login = config.config.get('server', 'default_login')
@@ -215,6 +212,21 @@ class UserManager(object):
 
         role_manager.add_user_to_role(SUPER_USER_ROLE, default_login)
 
+    @staticmethod
+    def get_admins():
+        """
+        Get a list of users with the super-user role.
+
+        :return: list of users who are admins.
+        :rtype:  list of User
+        """
+        user_query_manager = factory.user_query_manager()
+
+        try:
+            super_users = user_query_manager.find_users_belonging_to_role(SUPER_USER_ROLE)
+            return super_users
+        except MissingResource:
+            return None
 
 create_user = task(UserManager.create_user, base=Task)
 delete_user = task(UserManager.delete_user, base=Task, ignore_result=True)
