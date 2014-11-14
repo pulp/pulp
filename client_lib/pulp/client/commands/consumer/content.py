@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 import os
 from gettext import gettext as _
 
@@ -20,15 +7,13 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.client import validators
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.commands.options import DESC_ID, OPTION_CONSUMER_ID
-from pulp.client.commands.schedule import (
-    DeleteScheduleCommand, ListScheduleCommand, CreateScheduleCommand,
-    UpdateScheduleCommand, NextRunCommand, ScheduleStrategy)
+from pulp.client.commands.schedule import (DeleteScheduleCommand, ListScheduleCommand,
+                                           CreateScheduleCommand, UpdateScheduleCommand,
+                                           NextRunCommand, ScheduleStrategy)
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliSection
 
-# root section -----------------------------------------------------------------
 
 class ConsumerContentSection(PulpCliSection):
-
     def __init__(self, context, name=None, description=None):
         name = name or 'content'
         description = description or _('content installation management')
@@ -39,10 +24,8 @@ class ConsumerContentSection(PulpCliSection):
                               ConsumerContentUninstallSection):
             self.add_subsection(section_class(context))
 
-# content installation ---------------------------------------------------------
 
 class ConsumerContentInstallSection(PulpCliSection):
-
     def __init__(self, context, name=None, description=None):
         name = name or 'install'
         description = description or _('run or schedule a content unit installation task')
@@ -148,10 +131,8 @@ class ConsumerContentInstallCommand(PollingCommand):
         msg = _('Install Failed')
         self.context.prompt.render_failure_message(msg)
 
-# content update ---------------------------------------------------------------
 
 class ConsumerContentUpdateSection(PulpCliSection):
-
     def __init__(self, context, name=None, description=None):
         name = name or 'update'
         description = description or _('run or schedule a content unit update task')
@@ -262,10 +243,8 @@ class ConsumerContentUpdateCommand(PollingCommand):
         msg = _('Update Failed')
         self.context.prompt.render_failure_message(msg)
 
-# content uninstall ------------------------------------------------------------
 
 class ConsumerContentUninstallSection(PulpCliSection):
-
     def __init__(self, context, name=None, description=None):
         name = name or 'uninstall'
         description = description or _('run or schedule a content unit removal task')
@@ -371,10 +350,8 @@ class ConsumerContentUninstallCommand(PollingCommand):
         msg = _('Uninstall Failed')
         self.context.prompt.render_failure_message(msg)
 
-# progress tracker -------------------------------------------------------------
 
 class ConsumerContentProgressTracker(object):
-
     def __init__(self, prompt):
         self.prompt = prompt
         self.next_step = 0
@@ -432,10 +409,8 @@ class ConsumerContentProgressTracker(object):
             self.details = '+12%s: %s' % (action, error)
             self.prompt.write(self.details, COLOR_RED)
 
-# schedules section ------------------------------------------------------------
 
 class ConsumerContentSchedulesSection(PulpCliSection):
-
     def __init__(self, context, action, name=None, description=None):
         name = name or 'schedules'
         description = description or _('manage consumer content %(a)s schedules') % {'a': action}
@@ -446,26 +421,25 @@ class ConsumerContentSchedulesSection(PulpCliSection):
         self.add_command(ConsumerContentDeleteScheduleCommand(context, action))
         self.add_command(ConsumerContentNextRunCommand(context, action))
 
-# schedule commands ------------------------------------------------------------
 
 class ConsumerContentListScheduleCommand(ListScheduleCommand):
-
     def __init__(self, context, action, strategy=None, name=None, description=None):
         strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'list'
         description = description or _('list scheduled %(a)s operations') % {'a': action}
-        super(ConsumerContentListScheduleCommand, self).__init__(context, strategy, name, description)
+        super(ConsumerContentListScheduleCommand, self).__init__(context, strategy, name,
+                                                                 description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
 
 class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
-
     def __init__(self, context, action, strategy=None, name=None, description=None):
         strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'create'
         description = description or _('adds a new scheduled %(a)s operation') % {'a': action}
-        super(ConsumerContentCreateScheduleCommand, self).__init__(context, strategy, name, description)
+        super(ConsumerContentCreateScheduleCommand, self).__init__(context, strategy, name,
+                                                                   description)
 
         self.add_option(OPTION_CONSUMER_ID)
         self.add_option(OPTION_CONTENT_TYPE_ID)
@@ -473,41 +447,39 @@ class ConsumerContentCreateScheduleCommand(CreateScheduleCommand):
 
 
 class ConsumerContentDeleteScheduleCommand(DeleteScheduleCommand):
-
     def __init__(self, context, action, strategy=None, name=None, description=None):
         strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'delete'
         description = description or _('deletes a %(a)s schedule') % {'a': action}
-        super(ConsumerContentDeleteScheduleCommand, self).__init__(context, strategy, name, description)
+        super(ConsumerContentDeleteScheduleCommand, self).__init__(context, strategy, name,
+                                                                   description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
 
 class ConsumerContentUpdateScheduleCommand(UpdateScheduleCommand):
-
     def __init__(self, context, action, strategy=None, name=None, description=None):
         strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'update'
         description = description or _('update an existing %(a)s schedule') % {'a': action}
-        super(ConsumerContentUpdateScheduleCommand, self).__init__(context, strategy, name, description)
+        super(ConsumerContentUpdateScheduleCommand, self).__init__(context, strategy, name,
+                                                                   description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
 
 class ConsumerContentNextRunCommand(NextRunCommand):
-
     def __init__(self, context, action, strategy=None, name=None, description=None):
         strategy = strategy or ConsumerContentScheduleStrategy(context, action)
         name = name or 'next'
-        description = description or _('displays the next scheduled %(a)s for a consumer') % {'a': action}
+        description = description or _('displays the next scheduled %(a)s for a'
+                                       ' consumer') % {'a': action}
         super(ConsumerContentNextRunCommand, self).__init__(context, strategy, name, description)
 
         self.add_option(OPTION_CONSUMER_ID)
 
-# schedule strategy ------------------------------------------------------------
 
 class ConsumerContentScheduleStrategy(ScheduleStrategy):
-
     def __init__(self, context, action):
         super(ConsumerContentScheduleStrategy, self).__init__()
 
@@ -542,7 +514,6 @@ class ConsumerContentScheduleStrategy(ScheduleStrategy):
         consumer_id = kwargs.pop(OPTION_CONSUMER_ID.keyword)
         return self.api.update_schedule(self.action, consumer_id, schedule_id, **kwargs)
 
-# common options and flags -----------------------------------------------------
 
 OPTION_CONTENT_TYPE_ID = PulpCliOption('--content-type-id',
                                        DESC_ID,
@@ -550,7 +521,7 @@ OPTION_CONTENT_TYPE_ID = PulpCliOption('--content-type-id',
                                        validate_func=validators.id_validator)
 
 OPTION_CONTENT_UNIT = PulpCliOption('--content-unit',
-                                    _('content unit id; may be repeated for multiple content units'),
+                                    _('content unit id; may be repeated for '
+                                      'multiple content units'),
                                     required=True,
                                     allow_multiple=True)
-

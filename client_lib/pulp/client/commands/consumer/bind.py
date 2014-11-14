@@ -102,8 +102,8 @@ class ConsumerBindCommand(BindRelatedPollingCommand):
     def task_header(self, task):
 
         handlers = {
-            tags.action_tag(tags.ACTION_BIND) : self._render_bind_header,
-            tags.action_tag(tags.ACTION_AGENT_BIND) : self._render_agent_bind_header,
+            tags.action_tag(tags.ACTION_BIND): self._render_bind_header,
+            tags.action_tag(tags.ACTION_AGENT_BIND): self._render_agent_bind_header,
         }
 
         # There will be exactly 1 action tag for each task (multiple resource tags)
@@ -184,9 +184,9 @@ class ConsumerUnbindCommand(BindRelatedPollingCommand):
     def task_header(self, task):
 
         handlers = {
-            tags.action_tag(tags.ACTION_UNBIND) : self._render_unbind_header,
-            tags.action_tag(tags.ACTION_AGENT_UNBIND) : self._render_agent_unbind_header,
-            tags.action_tag(tags.ACTION_DELETE_BINDING) : self._render_delete_binding_header,
+            tags.action_tag(tags.ACTION_UNBIND): self._render_unbind_header,
+            tags.action_tag(tags.ACTION_AGENT_UNBIND): self._render_agent_unbind_header,
+            tags.action_tag(tags.ACTION_DELETE_BINDING): self._render_delete_binding_header,
         }
 
         # There will be exactly 1 action tag for each task (multiple resource tags)

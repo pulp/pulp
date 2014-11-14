@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 from gettext import gettext as _
 
 from pulp.client.commands.criteria import CriteriaCommand
@@ -19,7 +6,6 @@ from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpC
 from pulp.client.parsers import parse_positive_int
 from pulp.client.validators import iso8601_datetime_validator
 
-# consumer query commands ------------------------------------------------------
 
 class ConsumerListCommand(PulpCliCommand):
     """
@@ -104,7 +90,8 @@ class ConsumerSearchCommand(CriteriaCommand):
     def __init__(self, context, name=None, description=None):
         name = name or 'search'
         description = description or _('search consumers')
-        super(ConsumerSearchCommand, self).__init__(self.run, name, description, include_search=True)
+        super(ConsumerSearchCommand, self).__init__(self.run, name, description,
+                                                    include_search=True)
 
         self.context = context
         self.api = context.server.consumer_search
@@ -163,35 +150,42 @@ class ConsumerHistoryCommand(PulpCliCommand):
 # options and flags ------------------------------------------------------------
 
 OPTION_FIELDS = PulpCliOption('--fields',
-                              _('comma-separated list of consumer fields; if specified only the given fields will be displayed'),
+                              _('comma-separated list of consumer fields; if specified only the'
+                                ' given fields will be displayed'),
                               required=False)
 
 OPTION_EVENT_TYPE = PulpCliOption('--event-type',
-                                  _('limits displayed history entries to the given type; '
-                                    'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
-                                    '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
-                                    '"removed_from_group")'),
+                                  _('limits displayed history entries to the given type; supported '
+                                    'types: ("consumer_registered", "consumer_unregistered", '
+                                    '"repo_bound", "repo_unbound", "content_unit_installed", '
+                                    '"content_unit_uninstalled", "unit_profile_changed", '
+                                    '"added_to_group", "removed_from_group")'),
                                   required=False)
 
 OPTION_LIMIT = PulpCliOption('--limit',
-                             _('limits displayed history entries to the given amount (must be greater than zero)'),
+                             _('limits displayed history entries to the given amount'
+                               ' (must be greater than zero)'),
                              required=False,
                              parse_func=parse_positive_int)
 
 OPTION_SORT = PulpCliOption('--sort',
-                            _('indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp'),
+                            _('indicates the sort direction ("ascending" or "descending") '
+                              'based on the entry\'s timestamp'),
                             required=False)
 
 OPTION_START_DATE = PulpCliOption('--start-date',
-                                  _('only return entries that occur on or after the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)'),
+                                  _('only return entries that occur on or after the given date in'
+                                    ' iso8601 format (yyyy-mm-ddThh:mm:ssZ)'),
                                   required=False,
                                   validate_func=iso8601_datetime_validator)
 
 OPTION_END_DATE = PulpCliOption('--end-date',
-                                _('only return entries that occur on or before the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)'),
+                                _('only return entries that occur on or before the given date in '
+                                  'iso8601 format (yyyy-mm-ddThh:mm:ssZ)'),
                                 required=False,
                                 validate_func=iso8601_datetime_validator)
 
-FLAG_DETAILS = PulpCliFlag('--details', _('if specified, all of the consumer information is displayed'))
+FLAG_DETAILS = PulpCliFlag('--details',
+                           _('if specified, all of the consumer information is displayed'))
 
 FLAG_BINDINGS = PulpCliFlag('--bindings', _('if specified, the bindings information is displayed'))
