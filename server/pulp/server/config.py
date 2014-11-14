@@ -27,7 +27,6 @@ _default_values = {
     'database': {
         'name': 'pulp_database',
         'seeds': 'localhost:27017',
-        'operation_retries': '2',
         'ssl': 'false',
         'ssl_keyfile': '',
         'ssl_certfile': '',
