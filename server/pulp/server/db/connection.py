@@ -6,6 +6,7 @@ import ssl
 import time
 from gettext import gettext as _
 
+import mongoengine
 import pymongo
 from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect
@@ -78,7 +79,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
         while True:
             try:
-                _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
+                _CONNECTION = mongoengine.connect(seeds, **connection_kwargs)
             except pymongo.errors.ConnectionFailure as e:
                 next_delay = min(_MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next(), max_timeout)
                 msg = _(

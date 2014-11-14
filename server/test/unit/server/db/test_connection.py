@@ -33,7 +33,7 @@ class TestDatabaseVersion(base.PulpServerTests):
     test DB version parsing. Info on expected versions is at
     https://github.com/mongodb/mongo/blob/master/src/mongo/util/version.cpp#L39-45
     """
-    @patch("pymongo.MongoClient")
+    @patch("mongoengine.connect")
     @patch("pulp.server.db.connection._end_request_decorator")
     def _test_initialize(self, version_str, mock_end, mock_mongoclient):
         mock_mongoclient_instance = mock_mongoclient.return_value
@@ -74,7 +74,7 @@ class TestDatabaseAuthentication(base.PulpServerTests):
         config.load_configuration()
         super(TestDatabaseAuthentication, self).tearDown()
 
-    @patch("pymongo.MongoClient")
+    @patch("mongoengine.connect")
     @patch("pulp.server.db.connection._end_request_decorator")
     def test_initialize_username_and_password(self, mock_end, mock_mongoclient):
         mock_mongoclient_instance = mock_mongoclient.return_value
@@ -85,7 +85,7 @@ class TestDatabaseAuthentication(base.PulpServerTests):
         connection.initialize()
         self.assertTrue(connection._DATABASE.authenticate.called)
 
-    @patch("pymongo.MongoClient")
+    @patch("mongoengine.connect")
     @patch("pulp.server.db.connection._end_request_decorator")
     def test_initialize_no_username_or_password(self, mock_end, mock_mongoclient):
         mock_mongoclient_instance = mock_mongoclient.return_value
@@ -96,7 +96,7 @@ class TestDatabaseAuthentication(base.PulpServerTests):
         connection.initialize()
         self.assertFalse(connection._DATABASE.authenticate.called)
 
-    @patch("pymongo.MongoClient")
+    @patch("mongoengine.connect")
     @patch("pulp.server.db.connection._end_request_decorator")
     def test_initialize_username_no_password(self, mock_end, mock_mongoclient):
         mock_mongoclient_instance = mock_mongoclient.return_value
@@ -106,7 +106,7 @@ class TestDatabaseAuthentication(base.PulpServerTests):
         config.config.set('database', 'password', '')
         self.assertRaises(Exception, connection.initialize)
 
-    @patch("pymongo.MongoClient")
+    @patch("mongoengine.connect")
     @patch("pulp.server.db.connection._end_request_decorator")
     def test_initialize_password_no_username(self, mock_end, mock_mongoclient):
         mock_mongoclient_instance = mock_mongoclient.return_value
