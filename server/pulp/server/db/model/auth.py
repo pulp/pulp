@@ -95,4 +95,4 @@ class Permission(Model):
         super(Permission, self).__init__()
 
         self.resource = resource
-        self.users = users or {}
+        self.users = users or []

@@ -39,7 +39,12 @@ class PermissionCollection(JSONController):
                 permissions = [permission]
 
         for permission in permissions:
-            users = permission['users']
+            # Isolate the database schema change to behind the api.  This should be transparent
+            users = {}
+            user_permission_dict = dict()
+            for item in permission['users']:
+                user_permission_dict[item['username']] = item['permissions']
+            permission['users'] = users
             permission_manager = managers.permission_manager()
             for user, ops in users.items():
                 users[user] = [permission_manager.operation_value_to_name(o) for o in ops]
