@@ -1,41 +1,25 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import logging
-
-import web
+"""
+This module contains the consumer related web controllers.
+"""
 from web.webapi import BadRequest
+import web
 
-from pulp.common import constants
 from pulp.common import tags
-from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.async.tasks import TaskResult
+from pulp.server.auth.authorization import READ, CREATE, UPDATE, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingValue, OperationPostponed, \
     UnsupportedValue, MissingResource
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
-from pulp.server.tasks import consumer
 from pulp.server.managers.schedule.consumer import UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION, \
     UNIT_UPDATE_ACTION
-from pulp.server.webservices.controllers.base import JSONController
-from pulp.server.webservices.controllers.search import SearchController
-from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.tasks import consumer
 from pulp.server.webservices import serialization
+from pulp.server.webservices.controllers.base import JSONController
+from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.controllers.search import SearchController
 import pulp.server.managers.factory as managers
-
-
-logger = logging.getLogger(__name__)
 
 
 def expand_consumers(options, consumers):
@@ -65,10 +49,10 @@ def expand_consumers(options, consumers):
         for b in bindings:
             lst = collated.setdefault(b['consumer_id'], [])
             lst.append(b)
-        for consumer in consumers:
-            consumer['bindings'] = \
+        for _consumer in consumers:
+            _consumer['bindings'] = \
                 [serialization.binding.serialize(b, False)
-                    for b in collated.get(consumer['id'], [])]
+                    for b in collated.get(_consumer['id'], [])]
     return consumers
 
 
@@ -655,18 +639,16 @@ class ContentApplicabilityRegeneration(JSONController):
 
         task_tags = [tags.action_tag('content_applicability_regeneration')]
         async_result = regenerate_applicability_for_consumers.apply_async_with_reservation(
-                                tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE,
-                                tags.RESOURCE_ANY_ID,
-                                (consumer_criteria.as_dict(),),
-                                tags=task_tags)
+            tags.RESOURCE_REPOSITORY_PROFILE_APPLICABILITY_TYPE, tags.RESOURCE_ANY_ID,
+            (consumer_criteria.as_dict(),), tags=task_tags)
         raise OperationPostponed(async_result)
 
 
 class ConsumerContentApplicabilityRegeneration(JSONController):
     """
-    Content applicability regeneration for a given consumer.
-    Since our permission model is closely tied to API URIs, this is a separate API than the one above,
-    so that individual consumers can request applicability generation for themselves.
+    Content applicability regeneration for a given consumer. Since our permission model is closely
+    tied to API URIs, this is a separate API than the one above, so that individual consumers can
+    request applicability generation for themselves.
     """
     @auth_required(CREATE)
     def POST(self, consumer_id):
@@ -751,7 +733,8 @@ class UnitActionScheduleResource(JSONController):
         if scheduled_call is None:
             raise MissingResource(consumer_id=consumer_id, schedule_id=schedule_id)
 
-        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(scheduled_call.for_display())
+        scheduled_obj = serialization.dispatch.scheduled_unit_management_obj(
+            scheduled_call.for_display())
         scheduled_obj.update(serialization.link.current_link_obj())
         return self.ok(scheduled_obj)
 
