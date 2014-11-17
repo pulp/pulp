@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from gettext import gettext as _
 import os
 
@@ -33,14 +20,15 @@ DESC_CANCEL = _('cancels an outstanding upload request')
 
 # Options
 DESC_FORCE = _('removes the client-side tracking file for the upload regardless of '
-    'whether or not it was able to be deleted on the server; this should '
-    'only be used in the event that the server\'s knowledge of an upload '
-    'has been removed')
+               'whether or not it was able to be deleted on the server; this should '
+               'only be used in the event that the server\'s knowledge of an upload '
+               'has been removed')
 FLAG_FORCE = PulpCliFlag('--force', DESC_FORCE)
 
 DESC_FILE = _('full path to a file to upload; may be specified multiple times '
               'for multiple files')
-OPTION_FILE = PulpCliOption('--file', DESC_FILE, aliases=['-f'], allow_multiple=True, required=False)
+OPTION_FILE = PulpCliOption('--file', DESC_FILE, aliases=['-f'], allow_multiple=True,
+                            required=False)
 
 DESC_DIR = _('full path to a directory containing files to upload; '
              'may be specified multiple times for multiple directories')
@@ -216,7 +204,8 @@ class UploadCommand(PerformUploadCommand):
         for d in specified_dirs:
             # Sanity check
             if not os.path.isdir(d):
-                self.context.prompt.render_failure_message(_('Directory %(d)s does not exist') % {'d' : d})
+                self.context.prompt.render_failure_message(
+                    _('Directory %(d)s does not exist') % {'d': d})
                 return os.EX_IOERR
 
             # Load the files in the directory
@@ -231,7 +220,8 @@ class UploadCommand(PerformUploadCommand):
         # Integrity check on the total list of files
         for f in all_filenames:
             if not os.path.isfile(f) or not os.access(f, os.R_OK):
-                self.context.prompt.render_failure_message(_('File %(f)s does not exist or could not be read') % {'f' : f})
+                self.context.prompt.render_failure_message(
+                    _('File %(f)s does not exist or could not be read') % {'f': f})
                 return os.EX_IOERR
 
         # Package into FileBundle DTOs
@@ -246,7 +236,8 @@ class UploadCommand(PerformUploadCommand):
         if self.upload_files:
             for i, file_bundle in enumerate(orig_file_bundles):
                 filename = file_bundle.filename
-                bar.render(i + 1, len(orig_file_bundles), message=_('Analyzing: %(n)s') % {'n' : os.path.basename(filename)})
+                bar.render(i + 1, len(orig_file_bundles),
+                           message=_('Analyzing: %(n)s') % {'n': os.path.basename(filename)})
 
                 try:
                     unit_key, unit_metadata = self.generate_unit_key_and_metadata(filename,
@@ -254,7 +245,7 @@ class UploadCommand(PerformUploadCommand):
                 except MetadataException, e:
                     msg = _('Metadata for %(name)s could not be generated. The '
                             'specific error is as follows:')
-                    msg = msg % {'name' : filename}
+                    msg = msg % {'name': filename}
                     self.prompt.render_spacer()
                     self.prompt.render_failure_message(msg)
                     self.prompt.render_failure_message(e.message)
@@ -318,7 +309,7 @@ class UploadCommand(PerformUploadCommand):
             filename = file_bundle.filename
 
             if self.upload_files:
-                msg = _('Initializing: %(n)s') % {'n' : os.path.basename(filename)}
+                msg = _('Initializing: %(n)s') % {'n': os.path.basename(filename)}
             else:
                 msg = _('Initializing upload')
 
@@ -591,7 +582,7 @@ class ListCommand(PulpCliCommand):
 
             template = '%s %s'
 
-            # bz 1100892
+            # Fix for BZ 1100892 - rpm repo uploads list fails
             if upload.source_filename:
                 source_name = os.path.basename(upload.source_filename)
             else:
@@ -609,7 +600,8 @@ class CancelCommand(PulpCliCommand):
     to cancel.
     """
 
-    def __init__(self, context, upload_manager, name='cancel', description=DESC_CANCEL, method=None):
+    def __init__(self, context, upload_manager, name='cancel', description=DESC_CANCEL,
+                 method=None):
 
         if method is None:
             method = self.run
@@ -646,7 +638,8 @@ class CancelCommand(PulpCliCommand):
         # Prompt for which upload requests to cancel
         source_filenames = [os.path.basename(u.source_filename) for u in non_running_uploads]
         q = _('Select one or more uploads to cancel: ')
-        selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames, interruptable=True)
+        selected_indexes = self.context.prompt.prompt_multiselect_menu(q, source_filenames,
+                                                                       interruptable=True)
 
         # If the user selected none or aborted (or ctrl+c), punch out
         if selected_indexes is self.context.prompt.ABORT or len(selected_indexes) == 0:
@@ -663,9 +656,11 @@ class CancelCommand(PulpCliCommand):
         for i, upload_id in enumerate(selected_ids):
             try:
                 self.upload_manager.delete_upload(upload_id, force=force)
-                self.context.prompt.render_success_message(_('Successfully deleted %(f)s') % {'f' : selected_filenames[i]})
+                self.context.prompt.render_success_message(
+                    _('Successfully deleted %(f)s') % {'f': selected_filenames[i]})
             except Exception, e:
-                self.context.prompt.render_failure_message(_('Error deleting %(f)s') % {'f' : selected_filenames[i]})
+                self.context.prompt.render_failure_message(
+                    _('Error deleting %(f)s') % {'f': selected_filenames[i]})
                 self.context.exception_handler.handle_exception(e)
                 error_encountered = True
 
