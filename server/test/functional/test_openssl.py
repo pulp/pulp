@@ -1,4 +1,6 @@
-
+"""
+This module contains tests for the pulp.server.common.openssl module.
+"""
 from unittest import TestCase
 
 from pulp.server.common.openssl import Certificate
@@ -85,4 +87,3 @@ class TestValidation(TestCase):
 
         # validation
         self.assertFalse(valid)
-
