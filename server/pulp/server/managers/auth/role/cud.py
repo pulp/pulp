@@ -236,7 +236,7 @@ class RoleManager(object):
 
         user = User.get_collection().find_one({'login': login})
         if user is None:
-            raise MissingResource(login)
+            raise InvalidValue(['login'])
 
         if role_id in user['roles']:
             return
