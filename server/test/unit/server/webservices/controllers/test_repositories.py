@@ -1,17 +1,10 @@
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+"""
+This module contains tests for the pulp.server.webservices.controllers.repositories module.
+"""
+from pprint import pformat
 import copy
 import datetime
 import httplib
-from pprint import pformat
 import re
 import traceback
 import unittest
@@ -21,27 +14,27 @@ from bson import ObjectId
 from celery.result import AsyncResult
 import mock
 
+from .... import base
 from pulp.common import dateutils, tags
 from pulp.devel import dummy_plugins, mock_plugins
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict, assert_body_matches_async_task
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.async.tasks import TaskResult
 from pulp.server.auth import authorization
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model import criteria
 from pulp.server.db.model.consumer import UnitProfile, Consumer, Bind, RepoProfileApplicability
 from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.repository import (Repo, RepoImporter, RepoDistributor, RepoPublishResult,
-                                             RepoSyncResult)
+from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter,
+                                             RepoPublishResult, RepoSyncResult)
 from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource, OperationPostponed, PulpException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
-from pulp.server.async.tasks import TaskResult
 from pulp.server.webservices.controllers import repositories
-from .... import base
 
 
 class ConvertRepoDatesToStringsTests(unittest.TestCase):
@@ -49,8 +42,8 @@ class ConvertRepoDatesToStringsTests(unittest.TestCase):
     def test_last_unit_added_and_removed(self):
         dt = datetime.datetime.utcnow()
         repo = {'id': 'dummy-1', 'display_name': 'dummy',
-                  'last_unit_added': dt,
-                  'last_unit_removed': dt}
+                'last_unit_added': dt,
+                'last_unit_removed': dt}
         string_date = dateutils.format_iso8601_datetime(
             dateutils.to_utc_datetime(dt, no_tz_equals_local_tz=False))
         repositories._convert_repo_dates_to_strings(repo)
@@ -59,8 +52,8 @@ class ConvertRepoDatesToStringsTests(unittest.TestCase):
 
     def test_process_repos_calls_serialize_last_unit_added_and_removed(self):
         repo = {'id': 'dummy-1', 'display_name': 'dummy',
-                  'last_unit_added': None,
-                  'last_unit_removed': None}
+                'last_unit_added': None,
+                'last_unit_removed': None}
         repositories._convert_repo_dates_to_strings(repo)
         self.assertEquals(repo['last_unit_added'], None)
         self.assertEquals(repo['last_unit_removed'], None)
@@ -432,16 +425,16 @@ class RepoResourceTestsNoWSGI(PulpWebservicesTests):
         mock_delete_task.apply_async_with_reservation.return_value = async_task
         self.assertRaises(OperationPostponed, repo_distributor.DELETE, "foo-repo")
 
-        #Validate that the check was made to ensure the repo exists
+        # Validate that the check was made to ensure the repo exists
         mock_manager_factory.return_value.get_repository.assert_called_once_with('foo-repo')
 
-        #validate that the task was called with the appropriate tags
+        # validate that the task was called with the appropriate tags
         task_tags = ['pulp:repository:foo-repo',
                      'pulp:action:delete']
         mock_delete_task.apply_async_with_reservation. \
             assert_called_once_with(tags.RESOURCE_REPOSITORY_TYPE,
                                     'foo-repo', ['foo-repo', ], tags=task_tags)
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.DELETE)
 
         try:
@@ -969,7 +962,7 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
             tags.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
             ['foo-repo', 'foo-distributor'], tags=task_tags)
 
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.UPDATE)
 
         try:
@@ -996,7 +989,7 @@ class RepoDistributorTestsNoWSGI(PulpWebservicesTests):
             tags.RESOURCE_REPOSITORY_TYPE, 'foo-repo',
             ['foo-repo', 'foo-distributor', new_config, {}], tags=task_tags)
 
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.UPDATE)
 
         try:
