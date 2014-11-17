@@ -52,9 +52,7 @@ Bug Fixes
 ---------
 
 Multiple proxy-related issues related to authentication and HTTPS to the proxy
-were fixed in
-`1022662 <https://bugzilla.redhat.com/show_bug.cgi?id=1022662>`_ and
-`1014368 <https://bugzilla.redhat.com/show_bug.cgi?id=1014368>`_.
+were fixed in :bz:`1022662` and :bz:`1014368`.
 
 See the RPM-specific user guide for highlights of the most important bug fixes
 there. All bug fixes for this release can be seen at this link:

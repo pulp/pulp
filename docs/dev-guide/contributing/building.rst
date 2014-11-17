@@ -532,3 +532,8 @@ was 2.5, the stable folder should look similar to this::
 
 The ``rhel-pulp.repo`` and ``fedora-pulp.repo`` files also need to be updated
 for the new GPG public key location if you are creating a new X release.
+
+In addition to this, you will also need to create a new readthedocs builder.
+Once that is complete, edit ``rtd_builder`` in ``docs/conf.py`` for each plugin
+to change the version of platform docs that the plugin docs point to. This step
+is not needed for experimental or tech preview plugins.
