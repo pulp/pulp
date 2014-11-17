@@ -214,8 +214,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pulpdocs', u'Pulp Documentation',
-     [u'Pulp Team'], 1)
+    ('user-guide/admin-client/index', 'pulp-admin', u'Pulp Documentation', [u'Pulp Team'], 1),
+    ('user-guide/consumer-client/index', 'pulp-consumer', u'Pulp Documentation', [u'Pulp Team'], 1)
 ]
 
 # If true, show URL addresses after external links.
