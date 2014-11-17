@@ -6,7 +6,7 @@ PEP-8
 
 New Pulp code should adhere as closely as is reasonable to PEP-8. One
 exception is the line length limit, which we are more flexible about. In order to prevent
-line wrapping when code is viewed on github it is recommended that line length be limited
+line wrapping when code is viewed on GitHub it is recommended that line length be limited
 to 100 characters but do whatever makes sense.
 
 
@@ -51,4 +51,5 @@ Encoding
 Specify UTF-8 encoding in each file:
 
 ::
+
   # -*- coding: utf-8 -*-
