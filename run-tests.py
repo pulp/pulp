@@ -11,6 +11,10 @@ PROJECT_DIR = os.path.dirname(__file__)
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 
+config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
+subprocess.call(['flake8', '--config', config_file, PROJECT_DIR])
+
+
 PACKAGES = [
     os.path.dirname(__file__),
     'pulp',
