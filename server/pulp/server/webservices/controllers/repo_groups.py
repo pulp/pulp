@@ -232,6 +232,10 @@ class PublishAction(JSONController):
         if distributor_id is None:
             raise MissingValue(['id'])
 
+        # If a repo group does not exist, get_group raises a MissingResource exception
+        manager = managers_factory.repo_group_query_manager()
+        manager.get_group(repo_group_id)
+
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_GROUP_TYPE, repo_group_id),
                 tags.resource_tag(tags.RESOURCE_REPOSITORY_GROUP_DISTRIBUTOR_TYPE,
                              distributor_id),
