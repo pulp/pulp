@@ -402,7 +402,7 @@ def get_cataloger_by_id(catloger_id):
     return cls(), cfg
 
 
-def load_content_types(types_dir=_TYPES_DIR):
+def load_content_types(types_dir=_TYPES_DIR, dry_run=False):
     """
     :type types_dir: str
     """
@@ -411,10 +411,13 @@ def load_content_types(types_dir=_TYPES_DIR):
         _logger.critical(msg % {'p': types_dir})
         raise IOError(msg % {'p': types_dir})
     descriptors = _load_type_descriptors(types_dir)
-    _load_type_definitions(descriptors)
-
+    if dry_run:
+        return _check_content_definitions(descriptors)
+    else:
+        _load_type_definitions(descriptors)
 
 # initialization methods -------------------------------------------------------
+
 
 def _is_initialized():
     """
@@ -426,6 +429,36 @@ def _is_initialized():
 def _create_manager():
     global _MANAGER
     _MANAGER = PluginManager()
+
+
+def _check_content_definitions(descriptors):
+    """
+    Check whether the given content definitions exist in the database. This method
+    does not make any changes to the content definitions or any indexes.
+
+    :param descriptors: A list of content descriptors
+    :type  descriptors: list of TypeDescriptor
+
+    :return: A list of content types that would have been created or updated by _load_type_definitions
+    :rtype:  list of TypeDefinition
+    """
+    definitions = parser.parse(descriptors)
+    old_content_types = []
+
+    # Ensure all the content types exist and match the definitions
+    for definition in definitions:
+        content_type = database.type_definition(definition.id)
+        if content_type is None:
+            old_content_types.append(definition)
+            continue
+
+        dict_definition = definition.__dict__
+        for key, value in dict_definition.items():
+            if key not in content_type or content_type[key] != value:
+                old_content_types.append(definition)
+                break
+
+    return old_content_types
 
 
 def _load_type_descriptors(path):

@@ -32,6 +32,7 @@ LOG = logging.getLogger('db')
 
 # -- database exceptions ------------------------------------------------------
 
+
 class UpdateFailed(Exception):
     """
     Indicates a call to update the database has failed for one or more type
@@ -63,6 +64,7 @@ class MissingDefinitions(Exception):
         return 'MissingDefinitions [%s]' % ', '.join(self.missing_type_ids)
 
 # -- public -------------------------------------------------------------------
+
 
 def update_database(definitions, error_on_missing_definitions=False):
     """
@@ -254,8 +256,18 @@ def type_units_unit_key(type_id):
 
 # -- private -----------------------------------------------------------------
 
-def _create_or_update_type(type_def):
 
+def _create_or_update_type(type_def):
+    """
+    This method creates or updates a type definition in MongoDB.
+
+    :param type_def: the type definition to update or create. If a type definition with the same
+                     as an existing type, the type is updated, otherwise it is created.
+    :type  type_def: ContentType
+
+    :return: This method will always return None
+    :rtype:  None
+    """
     # Make sure a collection exists for the type
     database = pulp_db.get_database()
     collection_name = unit_collection_name(type_def.id)
@@ -273,6 +285,7 @@ def _create_or_update_type(type_def):
         content_type._id = existing_type['_id']
     # XXX this still causes a potential race condition when 2 users are updating the same type
     content_type_collection.save(content_type, safe=True)
+
 
 def _update_indexes(type_def, unique):
 

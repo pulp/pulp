@@ -185,3 +185,15 @@ class UserManagerTests(base.PulpServerTests):
         self.assertEqual(user['login'], ldap_login)
         self.assertEqual(user['name'], ldap_login)
 
+    def test_get_admins(self):
+        # Setup
+        self.role_manager.create_role(role_id=SUPER_USER_ROLE)
+        self.user_manager.create_user('admin', 'hunter2', roles=[SUPER_USER_ROLE])
+
+        # Test
+        admins = self.user_manager.get_admins()
+        self.assertEquals(len(admins), 1)
+        self.assertEquals(admins[0]['name'], 'admin')
+
+    def test_get_admins_no_admins(self):
+        self.assertEquals(self.user_manager.get_admins(), None)

@@ -290,12 +290,25 @@ class RoleManager(object):
         """
         Ensure that the super user role exists.
         """
-        role = Role.get_collection().find_one({'id': SUPER_USER_ROLE})
+        role = self.get_role(SUPER_USER_ROLE)
         if role is None:
             role = self.create_role(SUPER_USER_ROLE, 'Super Users',
                                     'Role indicates users with admin privileges')
             role['permissions'] = {'/': [CREATE, READ, UPDATE, DELETE, EXECUTE]}
             Role.get_collection().save(role, safe=True)
+
+    @staticmethod
+    def get_role(role):
+        """
+        Get a Role by id.
+
+        :param role: A role id to search for
+        :type  role: str
+
+        :return: a Role object that have the given role id.
+        :rtype:  Role or None
+        """
+        return Role.get_collection().find_one({'id': role})
 
 
 add_permissions_to_role = task(RoleManager.add_permissions_to_role, base=Task, ignore_result=True)

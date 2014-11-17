@@ -189,4 +189,14 @@ class RoleManagerTests(base.PulpServerTests):
         self.role_manager.delete_role(r1['id'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
 
+    def test_get_role(self):
+        # Setup
+        self.role_manager.create_role(role_id='best-user')
 
+        # Test
+        role = self.role_manager.get_role('best-user')
+        self.assertEquals(role['display_name'], 'best-user')
+
+    def test_get_role_bad_role(self):
+        # Test
+        self.assertEquals(self.role_manager.get_role('potato'), None)
