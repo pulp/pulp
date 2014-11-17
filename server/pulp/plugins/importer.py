@@ -11,6 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
+import sys
+
 
 class Importer(object):
     """
@@ -280,13 +282,11 @@ class Importer(object):
         """
         Cancels an in-progress sync.
 
-        This call is responsible for halting a current sync by stopping any
-        in-progress downloads and performing any cleanup necessary to get the
-        system back into a stable state.
+        This call provides an exit-immediately behavior, and does not provide any cleanup.
 
-        :raise NotImplementedError: if this method is not overridden
+        :raise SystemExit: raised through a call to sys.exit()
         """
-        raise NotImplementedError()
+        sys.exit()
 
     def resolve_dependencies(self, repo, units, dependency_conduit, config):
         """

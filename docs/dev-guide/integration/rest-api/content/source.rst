@@ -69,7 +69,7 @@ Get a content source by ID.
     }
 
 Refresh All Sources
-----------------
+-------------------
 
 Get all content sources.
 
@@ -99,7 +99,7 @@ Get all content sources.
     ]
 
 Refresh Single Source
-----------------
+---------------------
 
 Get all content sources.
 
