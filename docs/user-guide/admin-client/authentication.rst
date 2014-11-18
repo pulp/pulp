@@ -203,13 +203,13 @@ The following command will give permissions to create, read and update repositor
 
 ::
 
-	$ pulp-admin auth permission grant --resource /repositories --login test-user -o create -o update -o read
-	Permissions [/repositories : ['CREATE', 'UPDATE', 'READ']] successfully granted
+	$ pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create -o update -o read
+	Permissions [/v2/repositories/ : ['CREATE', 'UPDATE', 'READ']] successfully granted
 	to user [test-user]
 
 ::
 
-	$ pulp-admin auth permission list --resource /repositories
+	$ pulp-admin auth permission list --resource /v2/repositories/
 	+----------------------------------------------------------------------+
     	                 Permissions for /repositories
 	+----------------------------------------------------------------------+
@@ -220,10 +220,12 @@ The following command will revoke permissions to create and update repositories 
 
 ::
 
-	$ pulp-admin auth permission revoke --resource /repositories --login test-user -o create -o update
-	Permissions [/repositories : ['CREATE', 'UPDATE']] successfully revoked from
+	$ pulp-admin auth permission revoke --resource /v2/repositories/ --login test-user -o create -o update
+	Permissions [/v2/repositories/ : ['CREATE', 'UPDATE']] successfully revoked from
 	user [test-user]
 
+Please notice the ``/v2`` prefix and the trailing ``/`` in the resource name.  These elements should be
+present for each resource.
 
 Roles
 -----
