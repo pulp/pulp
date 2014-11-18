@@ -238,3 +238,11 @@ You will encounter this while upgrading to Pulp 2.4.0 if there are still 2.3.x o
 running. All consumers must be upgraded first, or turned off, prior to running the
 pulp-manage-db that is part of the Pulp 2.3.x --> 2.4.0 upgrade. For more information see the
 :ref:`Pulp 2.3.x --> 2.4.0 upgrade docs <2.3.x_upgrade_to_2.4.0>`.
+
+User permissions not behaving as expected
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Resource names should always start with ``/v2`` and end with a trailing ``/``.  For example, the
+following command will add a permission to ``test-user`` to create repositories::
+
+    pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create 
