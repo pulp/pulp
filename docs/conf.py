@@ -19,13 +19,6 @@ import sys, os
 #sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('./_extensions'))
 
-# this var should refer to where intersphinx should pull inv files from. For
-# example, this would be set to '2.6-release' for the 2.6 branches, which would
-# pull objects.inv from http://pulp-rpm.readthedocs.org/en/2.6-release/objects.inv.
-# For master, this should point to 'latest'.
-
-rtd_builder = 'latest'
-
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -249,17 +242,19 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
-intersphinx_mapping = {'python': ('http://docs.python.org/2.7/', None),
-                       'rpm':    (("http://pulp-rpm.readthedocs.org/en/%s/" % rtd_builder),
-                                  None),
-                       'puppet': (("http://pulp-puppet.readthedocs.org/en/%s/" % rtd_builder),
-                                  None),
-                       'ostree': (("http://pulp-ostree.readthedocs.org/en/%s/" % rtd_builder),
-                                  None),
-                       'deb':    (("http://pulp-deb.readthedocs.org/en/%s/" % rtd_builder),
-                                  None),
-                       'docker': (("http://pulp-docker.readthedocs.org/en/%s/" % rtd_builder),
-                                  None)}
+# NOTE: these need to be updated periodically to point to the most recent
+# current release of the plugin. They are all set to "latest" right now but
+# that will change as new plugin versions are released using the new RTD
+# builders. See
+# http://pulp.readthedocs.org/en/latest/dev-guide/contributing/building.html
+# for more info.
+
+intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
+                       'deb':    ("http://pulp-deb.readthedocs.org/en/latest/", None),
+                       'docker': ("http://pulp-docker.readthedocs.org/en/latest/", None),
+                       'puppet': ("http://pulp-puppet.readthedocs.org/en/latest/", None),
+                       'ostree': ("http://pulp-ostree.readthedocs.org/en/latest/", None),
+                       'rpm':    ("http://pulp-rpm.readthedocs.org/en/latest/", None)}
 
 extlinks = {'bz': ('https://bugzilla.redhat.com/show_bug.cgi?id=%s', 'RHBZ #'),
             'fixedbugs': ('https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED'\
