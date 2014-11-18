@@ -289,3 +289,11 @@ In the Pulp logs you may see a Celery warning similar to the following::
 
 This is related to how data is passed around internally inside of Pulp, and this warning is
 displayed as part of normal Pulp operation.
+
+User permissions not behaving as expected
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Resource names should always start with ``/v2`` and end with a trailing ``/``.  For example, the
+following command will add a permission to ``test-user`` to create repositories::
+
+    pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create 
