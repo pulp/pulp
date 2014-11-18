@@ -12,6 +12,10 @@ New Features
   It now works with the ANONYMOUS authentication mechanism. Users can still use a
   username/password however if they set up a SASL database as described in the
   installation document.
+- Pulp now supports `RabbitMQ`_ as its task message broker. See the inline comments in
+  ``/etc/pulp/server.conf`` for instruction on configuring Pulp to use RabbitMQ.
+
+.. _RabbitMQ: https://www.rabbitmq.com/
 
 
 Rest API Changes
