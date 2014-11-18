@@ -1,28 +1,13 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Commands for showing a repository's sync and publish history
 """
 
 from gettext import gettext as _
 
-from pulp.common import constants
 from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag, PulpCliCommand
 from pulp.client import validators
 
-# -- constants ----------------------------------------------------------------
 
 # The default limit on the number of history entries to display
 REPO_HISTORY_LIMIT = 5
@@ -32,8 +17,9 @@ DESC_DETAILS = _('if specified, all history information is displayed')
 DESC_DISTRIBUTOR_ID = _('the distributor id to display history entries for')
 DESC_END_DATE = _('only return entries that occur on or before the given date in iso8601 format'
                   ' (yyyy-mm-ddThh:mm:ssZ)')
-DESC_LIMIT = _('limits displayed history entries to the given amount (must be greater than zero); the default'
-               ' is %(limit)s' % {'limit': REPO_HISTORY_LIMIT})
+DESC_LIMIT = _(
+    'limits displayed history entries to the given amount (must be greater than zero); the default'
+    ' is %(limit)s' % {'limit': REPO_HISTORY_LIMIT})
 DESC_PUBLISH_HISTORY = _('displays the history of publish operations on a repository')
 DESC_SORT = _('indicates the sort direction ("ascending" or "descending") based on the timestamp')
 DESC_SYNC_HISTORY = _('displays the history of sync operations on a repository')
@@ -53,8 +39,6 @@ OPTION_START_DATE = PulpCliOption('--start-date', DESC_START_DATE, required=Fals
 
 # Flags
 FLAG_DETAILS = PulpCliFlag('--details', DESC_DETAILS, aliases='-d')
-
-# -- commands -----------------------------------------------------------------
 
 
 class SyncHistoryCommand(PulpCliCommand):
@@ -177,8 +161,9 @@ class PublishHistoryCommand(PulpCliCommand):
         details = user_input[FLAG_DETAILS.keyword]
 
         # Request the publish history from the server
-        publish_list = self.context.server.repo_history.publish_history(repo_id, distributor_id, limit,
-                                                                        sort, start_date, end_date)
+        publish_list = self.context.server.repo_history.publish_history(repo_id, distributor_id,
+                                                                        limit, sort, start_date,
+                                                                        end_date)
         publish_list = publish_list.response_body
 
         # Filter the fields to show and define the order in which they are displayed
