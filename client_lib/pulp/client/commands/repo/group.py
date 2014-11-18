@@ -233,7 +233,7 @@ class ListRepositoryGroupMembersCommand(PulpCliCommand):
         criteria = {'fields': ('repo_ids',), 'filters': {'id': group_id}}
         repo_group_list = self.context.server.repo_group_search.search(**criteria)
 
-        filters = ['id', 'display_name', 'description', 'content_unit_count', 'notes']
+        filters = ['id', 'display_name', 'description', 'content_unit_counts', 'notes']
         order = filters
 
         if len(repo_group_list) != 1:

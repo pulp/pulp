@@ -50,7 +50,7 @@ Valid values for the event type filtering are as follows:
     "timestamp": "2012-05-23T19:06:40Z", 
     "consumer_id": "test-consumer", 
     "details": null, 
-    "_ns": "gc_consumer_history", 
+    "_ns": "consumer_history",
     "_id": {
       "$oid": "4fbd3540e5e7102dae000016"
     }, 
@@ -62,7 +62,7 @@ Valid values for the event type filtering are as follows:
     "timestamp": "2012-05-23T19:03:29Z", 
     "consumer_id": "test-consumer1", 
     "details": null, 
-    "_ns": "gc_consumer_history", 
+    "_ns": "consumer_history",
     "_id": {
       "$oid": "4fbd3481e5e7102dae00000f"
     }, 

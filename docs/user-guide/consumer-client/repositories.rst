@@ -2,24 +2,22 @@ Repository Search
 =================
 
 For each type of content supported, you can use Pulp's
-:ref:`criteria` search feature to search repositories. For example, to find all
-RPM repositories that contain at least one content unit:
+:ref:`criteria` search feature to search repositories. For example, to find a specific
+repo by its id:
 
 ::
 
-  $ pulp-consumer rpm repos --gt 'content_unit_count=0'
+  $ pulp-consumer rpm repos --str-eq="id=zoo"
   +----------------------------------------------------------------------+
                                 Repositories
   +----------------------------------------------------------------------+
 
-  Id:                 pulp
-  Display Name:       pulp
-  Description:        None
-  Content Unit Count: 39
+  Id:                  zoo
+  Display Name:        zoo
+  Description:         None
+  Content Unit Counts: 
+  Last Unit Added:     None
+  Last Unit Removed:   None
   Notes:
 
-  Id:                 repo1
-  Display Name:       repo1
-  Description:        None
-  Content Unit Count: 36
-  Notes:
+

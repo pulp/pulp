@@ -33,7 +33,7 @@ and :term:`distributors <distributor>` associated with it.
   "distributors": [
     {
       "scratchpad": 1,
-      "_ns": "gc_repo_distributors",
+      "_ns": "repo_distributors",
       "last_publish": "2012-01-25T15:26:32Z",
       "auto_publish": false,
       "distributor_type_id": "harness_distributor",
@@ -48,13 +48,13 @@ and :term:`distributors <distributor>` associated with it.
     }
   ],
   "notes": {},
-  "content_unit_count": 0,
+  "content_unit_counts": {},
   "last_unit_added": "2012-01-25T15:26:32Z",
   "last_unit_removed": "2012-01-25T15:26:32Z",
   "importers": [
     {
       "scratchpad": 1,
-      "_ns": "gc_repo_importers",
+      "_ns": "repo_importers",
       "importer_type_id": "harness_importer",
       "last_sync": "2012-01-25T15:26:32Z",
       "repo_id": "harness_repo_1",
@@ -104,7 +104,7 @@ where there are no repositories.
     "distributors": [
       {
         "scratchpad": 1,
-        "_ns": "gc_repo_distributors",
+        "_ns": "repo_distributors",
         "last_publish": "2012-01-25T15:26:32Z",
         "auto_publish": false,
         "distributor_type_id": "harness_distributor",
@@ -119,11 +119,11 @@ where there are no repositories.
       }
     ],
     "notes": {},
-    "content_unit_count": 0,
+    "content_unit_counts": {},
     "importers": [
       {
         "scratchpad": 1,
-        "_ns": "gc_repo_importers",
+        "_ns": "repo_importers",
         "importer_type_id": "harness_importer",
         "last_sync": "2012-01-25T15:26:32Z",
         "repo_id": "harness_repo_1",
@@ -172,7 +172,7 @@ array is returned in the case where there are no repositories.
     "distributors": [
       {
         "scratchpad": 1,
-        "_ns": "gc_repo_distributors",
+        "_ns": "repo_distributors",
         "last_publish": "2012-01-25T15:26:32Z",
         "auto_publish": false,
         "distributor_type_id": "harness_distributor",
@@ -187,13 +187,13 @@ array is returned in the case where there are no repositories.
       }
     ],
     "notes": {},
-    "content_unit_count": 0,
+    "content_unit_counts": {},
     "last_unit_added": null,
     "last_unit_removed": null,
     "importers": [
       {
         "scratchpad": 1,
-        "_ns": "gc_repo_importers",
+        "_ns": "repo_importers",
         "importer_type_id": "harness_importer",
         "last_sync": "2012-01-25T15:26:32Z",
         "repo_id": "harness_repo_1",
@@ -244,7 +244,7 @@ filter expressions may not be serializable as query parameters.
     "distributors": [
       {
         "scratchpad": 1,
-        "_ns": "gc_repo_distributors",
+        "_ns": "repo_distributors",
         "last_publish": "2012-01-25T15:26:32Z",
         "auto_publish": false,
         "distributor_type_id": "harness_distributor",
@@ -259,13 +259,13 @@ filter expressions may not be serializable as query parameters.
       }
     ],
     "notes": {},
-    "content_unit_count": 0,
+    "content_unit_counts": {},
     "last_unit_added": null,
     "last_unit_removed": null,
     "importers": [
       {
         "scratchpad": 1,
-        "_ns": "gc_repo_importers",
+        "_ns": "repo_importers",
         "importer_type_id": "harness_importer",
         "last_sync": "2012-01-25T15:26:32Z",
         "repo_id": "harness_repo_1",
@@ -304,7 +304,7 @@ will either be empty (no importer configured) or contain a single entry.
  [
   {
     "scratchpad": 1,
-    "_ns": "gc_repo_importers",
+    "_ns": "repo_importers",
     "importer_type_id": "harness_importer",
     "last_sync": "2012-01-25T15:26:32Z",
     "repo_id": "harness_repo_1",
@@ -338,7 +338,7 @@ Retrieves the given :term:`importer` (if any) associated with a repository.
 
   {
     "scratchpad": 1,
-    "_ns": "gc_repo_importers",
+    "_ns": "repo_importers",
     "importer_type_id": "harness_importer",
     "last_sync": "2012-01-25T15:26:32Z",
     "repo_id": "harness_repo_1",
@@ -373,7 +373,7 @@ If the repository has no associated distributors, an empty array is returned.
  [
   {
     "scratchpad": 1,
-    "_ns": "gc_repo_distributors",
+    "_ns": "repo_distributors",
     "last_publish": "2012-01-25T15:26:32Z",
     "auto_publish": false,
     "distributor_type_id": "harness_distributor",
@@ -408,7 +408,7 @@ Retrieves a single :term:`distributors <distributor>` associated with a reposito
 
  {
    "scratchpad": 1,
-   "_ns": "gc_repo_distributors",
+   "_ns": "repo_distributors",
    "last_publish": "2012-01-25T15:26:32Z",
    "auto_publish": false,
    "distributor_type_id": "harness_distributor",
