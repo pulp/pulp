@@ -83,5 +83,5 @@ Pulp 2.3.1
 Bugs Fixed
 ----------
 
-The ``pulp-qpid-ssl-cfg`` tool `displayed an incorrect path <https://bugzilla.redhat.com/show_bug.cgi?id=1039619>`_
+The ``pulp-qpid-ssl-cfg`` tool :bz:`displayed an incorrect path <1039619>`
 to the qpid configuration file.

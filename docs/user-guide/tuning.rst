@@ -122,8 +122,7 @@ and `RabbitMQ <http://www.rabbitmq.com/ha.html>`_.
 
 .. WARNING:: There is a bug in versions of Apache Qpid older than 0.30 that
    involves running out of file descriptors. This is an issue on deployments
-   with large numbers of consumers. See `Red Hat Bugzilla #1122987
-   <https://bugzilla.redhat.com/show_bug.cgi?id=1122987>`_ for more information
+   with large numbers of consumers. See :bz:`1122987` for more information
    about this and for suggested workarounds.
 
 
@@ -213,5 +212,5 @@ typical statistics that can be collected and reviewed periodically:
 
 Many of these statistics can be collected and viewed using tools like `Celery
 Flower <https://pypi.python.org/pypi/flower/>`_ or `Munin
-<http://munin-monitoring.org/`_.
+<http://munin-monitoring.org/>`_.
 
