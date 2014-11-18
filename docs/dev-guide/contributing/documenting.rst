@@ -75,6 +75,26 @@ takes place.
 There may be a "staging" version at times. This build is used by the team to
 share documentation that has not yet been reviewed.
 
+Editing the Docs
+-----------------
+
+The Pulp docs support `intersphinx <http://sphinx-doc.org/ext/intersphinx.html>`_
+and `extlinks <http://sphinx-doc.org/ext/extlinks.html>`_.
+
+To refer to a document in a plugin or platform, you can do something like so:::
+
+     :ref:`installation <platform:server_installation>`
+
+This will create a link to the correct reference in the platform docs.
+
+You can use the extlinks extension to create links to bugzilla. For example:::
+
+     :bz:`123456`
+
+Will create a link like this: :bz:`123456`. There is also a ``:fixedbugs:``
+directive to find all bugs related to a particular version of Pulp. This is
+useful in release notes.
+
 
 Building the Docs
 -----------------
