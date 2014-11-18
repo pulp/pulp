@@ -90,6 +90,39 @@ Returns an array of all event listeners in the server.
    }
   ]
 
+Retrieve a single Event Listener
+--------------------------------
+
+Returns a single event listener from the server.
+
+| :method:`get`
+| :path:`/v2/events/<event_listener_id>/`
+| :permission:`read`
+
+| :response_list:`_`
+
+* :response_code:`200,the event listener detail`
+* :response_code:`404,if the given event listener does not exist`
+
+| :return:`database representation of the event listener`
+
+:sample_response:`200` ::
+
+    {
+     "_href": "/pulp/api/v2/events/4ff708048a905b7016000008/",
+     "_id": {"$oid": "4ff708048a905b7016000008"},
+     "_ns": "event_listeners",
+     "event_types": [
+       "repo.sync.finish",
+       "repo.publish.finish"
+     ],
+     "id": "4ff708048a905b7016000008",
+     "notifier_config": {
+       "url": "http://localhost/api"
+     },
+     "notifier_type_id": "http"
+    }
+
 Delete an Event Listener
 ------------------------
 
