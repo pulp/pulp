@@ -224,8 +224,8 @@ The following command will revoke permissions to create and update repositories 
 	Permissions [/v2/repositories/ : ['CREATE', 'UPDATE']] successfully revoked from
 	user [test-user]
 
-Please notice the ``/v2`` prefix and the trailing ``/`` in the resource name.  These elements should be
-present for each resource.
+.. note::
+    The ``/v2`` prefix and the trailing ``/`` are always present in a resource name for permission commands.
 
 Roles
 -----
