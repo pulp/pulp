@@ -34,7 +34,7 @@ Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
 URL: https://fedorahosted.org/pulp/
-Source0: https://github.com/%{name}/%{name}/archive/%{name}-%{version}.tar.gz
+Source0: https://fedorahosted.org/releases/p/u/%{name}/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
