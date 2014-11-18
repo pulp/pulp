@@ -3,17 +3,20 @@ Entry point for both the admin and consumer clients. The config file location
 is passed in and its contents are used to drive the rest of the client execution.
 """
 
+import errno
 from gettext import gettext as _
 import logging
 import logging.handlers
 from optparse import OptionParser
 import os
+import stat
 import sys
 
 from okaara.prompt import COLOR_CYAN, COLOR_LIGHT_CYAN
 
 from pulp.bindings.bindings import Bindings
 from pulp.bindings.server import PulpConnection
+from pulp.client import constants
 from pulp.client.extensions.core import PulpPrompt, PulpCli, ClientContext, WIDTH_TERMINAL
 from pulp.client.extensions.exceptions import ExceptionHandler
 import pulp.client.extensions.loader as extensions_loader
@@ -30,6 +33,7 @@ def main(config, exception_handler_class=ExceptionHandler):
 
     @return: exit code suitable to return to the shell launching the client
     """
+    ensure_user_pulp_dir()
 
     # Command line argument handling
     parser = OptionParser()
@@ -104,7 +108,40 @@ def main(config, exception_handler_class=ExceptionHandler):
         code = cli.run(args)
         return code
 
-# -- configuration and logging ------------------------------------------------
+
+def ensure_user_pulp_dir():
+    """
+    Creates ~/.pulp/ if it doesn't already exist.
+    Writes a warning to stderr if ~/.pulp/ has unsafe permissions.
+
+    This has to be run before the prompt object gets created, hence the old-school error reporting.
+
+    Several other places try to access ~/.pulp, both from pulp-admin and pulp-consumer. The best
+    we can do in order to create it once with the right permissions is to do call this function
+    early.
+    """
+    path = os.path.expanduser(constants.USER_CONFIG_DIR)
+    # 0700
+    desired_mode = stat.S_IRUSR + stat.S_IWUSR + stat.S_IXUSR
+    try:
+        stats = os.stat(path)
+        actual_mode = stat.S_IMODE(stats.st_mode)
+        if actual_mode != desired_mode:
+            sys.stderr.write(_('Warning: path should have mode 0700 because it may contain '
+                               'sensitive information: %(p)s\n\n' % {'p': path}))
+
+    except Exception, e:
+        # if it doesn't exist, make it
+        if isinstance(e, OSError) and e.errno == errno.ENOENT:
+            try:
+                os.mkdir(path, 0700)
+            except Exception, e:
+                sys.stderr.write(_('Failed to create path %(p)s: %(e)s\n\n' %
+                                   {'p': path, 'e': str(e)}))
+                sys.exit(1)
+        else:
+            sys.stderr.write(_('Failed to access path %(p)s: %(e)s\n\n' % {'p': path, 'e': str(e)}))
+            sys.exit(1)
 
 
 def _initialize_logging(config, debug=False):
