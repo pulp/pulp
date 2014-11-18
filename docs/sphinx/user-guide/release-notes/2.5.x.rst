@@ -82,6 +82,9 @@ Deprecation
 - The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will
   be removed in a future release.
 
+- Many API calls return an attribute named `_ns`. This attribute will be removed in a future
+  release and should not be used.
+
 Client Changes
 --------------
 
