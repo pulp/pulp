@@ -17,7 +17,7 @@ import string
 import base
 from pulp.server.auth import authorization
 from pulp.server.db.model.auth import Role
-from pulp.server.exceptions import PulpDataException
+from pulp.server.exceptions import PulpDataException, InvalidValue, MissingResource
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.role import cud
 
@@ -104,6 +104,22 @@ class RoleManagerTests(base.PulpServerTests):
         user_names = [
             u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
         self.assertTrue(u['login'] in user_names)
+
+    def test_add_user_no_role(self):
+        """
+        Test that a MissingResource exception is raised when the given role doesn't exist.
+        """
+        user = self._create_user()
+        self.assertRaises(MissingResource, self.role_manager.add_user_to_role, 'not_a_role',
+                          user['login'])
+
+    def test_add_user_no_user(self):
+        """
+        Test that a InvalidValue exception is raised when the given user doesn't exist.
+        """
+        role = self._create_role()
+        self.assertRaises(InvalidValue, self.role_manager.add_user_to_role, role['id'],
+                          'not_a_user')
 
     def test_remove_user(self):
         u = self._create_user()
