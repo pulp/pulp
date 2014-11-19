@@ -1,6 +1,6 @@
 """
 Contains a generic renderer for use printing status for tasks created with the
- pulp.plugins.util.publish_step.BasePublisher & PublishStep.
+pulp.plugins.util.publish_step.BasePublisher & PublishStep.
 """
 from gettext import gettext as _
 
@@ -26,7 +26,6 @@ class StepInfo(object):
 
 
 class PublishStepStatusRenderer(StatusRenderer):
-
     def __init__(self, context):
         super(PublishStepStatusRenderer, self).__init__(context)
         self.steps = {}

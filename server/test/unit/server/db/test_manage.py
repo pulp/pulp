@@ -11,6 +11,7 @@
 """
 Test the pulp.server.db.manage module.
 """
+from argparse import Namespace
 from cStringIO import StringIO
 import os
 
@@ -151,10 +152,12 @@ class TestManageDB(MigrationTest):
         # Also, make sure the factory was initialized
         factory.initialize.assert_called_once_with()
 
+    @patch('logging.config.fileConfig')
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch('pulp.server.db.manage._auto_manage_db')
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.connection.initialize')
-    @patch('pulp.server.db.manage._auto_manage_db')
-    def test_set_connection_timeout(self, mock_auto_manage_db, mock_initialize):
+    def test_set_connection_timeout(self, mock_initialize, *unused_mocks):
         manage.main()
 
         mock_initialize.assert_called_once_with(max_timeout=1)
@@ -388,6 +391,91 @@ class TestManageDB(MigrationTest):
         # Assert that our precious versions have not been updated, since we have the --test flag
         for package in models.get_migration_packages():
             self.assertEqual(package.current_version, 0)
+
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch.object(models.MigrationPackage, 'apply_migration',
+                  side_effect=models.MigrationPackage.apply_migration, autospec=True)
+    @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
+           migration_packages.platform)
+    @patch('sys.argv', ["pulp-manage-db", "--dry-run"])
+    @patch('logging.config.fileConfig')
+    def test_migrate_with_dry_run_flag(self, mock_file_config, mocked_apply_migration, getLogger):
+        """
+        Test that when a dry run is performed, no migrations actually occur.
+        """
+        logger = MagicMock()
+        getLogger.return_value = logger
+
+        # Make sure we start out with a clean slate
+        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        # Make sure that our mock works. There are three valid packages.
+        self.assertEquals(len(models.get_migration_packages()), 4)
+        # Set all versions back to 0
+        for package in models.get_migration_packages():
+            package._migration_tracker.version = 0
+            package._migration_tracker.save()
+        result = manage.main()
+
+        # Test that none of the mock objects were actually called
+        migration_modules_called = [
+            mock_call[1][1].name for mock_call in mocked_apply_migration.mock_calls]
+        self.assertEquals(0, len(migration_modules_called))
+        self.assertEquals(1, result)
+        for package in models.get_migration_packages():
+            self.assertEqual(package.current_version, 0)
+
+
+    @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
+    @patch('pulp.server.db.manage.UserManager.ensure_admin')
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch.object(models.MigrationPackage, 'apply_migration',
+                  side_effect=models.MigrationPackage.apply_migration, autospec=True)
+    @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
+           migration_packages.platform)
+    @patch('sys.argv', ["pulp-manage-db", "--dry-run"])
+    @patch('logging.config.fileConfig')
+    def test_admin_creation_dry_run(self,  mock_file_config, mocked_apply_migration, getLogger,
+                                    mock_ensure_admin, mock_ensure_super_role):
+        logger = MagicMock()
+        getLogger.return_value = logger
+
+        exit_code = manage.main()
+
+        self.assertEqual(exit_code, 1)
+
+        # Make sure the admin user and role creation methods were not called
+        self.assertEquals(0, mock_ensure_admin.call_count)
+        self.assertEquals(0, mock_ensure_super_role.call_count)
+
+    @patch('pulp.server.db.manage.logging.getLogger')
+    @patch.object(models.MigrationPackage, 'apply_migration',
+                  side_effect=models.MigrationPackage.apply_migration, autospec=True)
+    @patch('pkg_resources.iter_entry_points')
+    @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
+           migration_packages.platform)
+    @patch('pulp.server.db.manage.parse_args', autospec=True)
+    @patch('logging.config.fileConfig')
+    def test_dry_run_no_changes(self, mock_file_config, mock_parse_args, mocked_apply_migration, mock_entry, getLogger):
+        logger = MagicMock()
+        getLogger.return_value = logger
+        mock_args = Namespace(dry_run=True, test=False)
+        mock_parse_args.return_value = mock_args
+
+        # Test that when dry run is on, it returns 1 if migrations remain
+        exit_code = manage.main()
+        self.assertEqual(exit_code, 1)
+
+        # Actually apply the migrations
+        mock_args.dry_run = False
+        exit_code = manage.main()
+        self.assertEqual(exit_code, 0)
+
+        # Perform another dry run and check the return value is now 0
+        mock_args.dry_run = True
+        exit_code = manage.main()
+        self.assertEquals(exit_code, 0)
 
 
 class TestMigrationModule(MigrationTest):

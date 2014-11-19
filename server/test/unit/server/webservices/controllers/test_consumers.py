@@ -1,29 +1,19 @@
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
-Test the pulp.server.webservices.controllers.consumer module.
+Test the pulp.server.webservices.controllers.consumers module.
 """
 import datetime
 import logging
 
-import mock
 from web.webapi import BadRequest
+import mock
 
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.auth import authorization
 from pulp.server.async.tasks import TaskResult
+from pulp.server.auth import authorization
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicability,
                                            UnitProfile)
@@ -35,8 +25,8 @@ from pulp.server.exceptions import InvalidValue, OperationPostponed, MissingValu
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.profile import ProfileManager
-from pulp.server.webservices.controllers.consumers import ContentApplicability
 from pulp.server.webservices.controllers import consumers
+from pulp.server.webservices.controllers.consumers import ContentApplicability
 
 
 class ConsumerTest(base.PulpWebserviceTests):
@@ -45,7 +35,7 @@ class ConsumerTest(base.PulpWebserviceTests):
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
     NOTIFY_AGENT = True
-    BINDING_CONFIG = {'b' : 'b'}
+    BINDING_CONFIG = {'b': 'b'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
     def setUp(self):
@@ -102,7 +92,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
-        params = {'bindings':True}
+        params = {'bindings': True}
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
         status, body = self.get(path, params=params)
         # Verify
@@ -137,7 +127,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
-        params = {'details':True}
+        params = {'details': True}
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
         status, body = self.get(path, params=params)
         # Verify
@@ -289,7 +279,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID, display_name='hungry')
         path = '/v2/consumers/%s/' % self.CONSUMER_ID
-        body = {'delta' : {'display_name' : 'thanksgiving'}}
+        body = {'delta': {'display_name': 'thanksgiving'}}
         # Test
         status, body = self.put(path, params=body)
         # Verify
@@ -297,7 +287,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertEqual(body['display_name'], 'thanksgiving')
         self.assertTrue(body['_href'].endswith(path))
         collection = Consumer.get_collection()
-        consumer = collection.find_one({'id':self.CONSUMER_ID})
+        consumer = collection.find_one({'id': self.CONSUMER_ID})
         self.assertEqual(consumer['display_name'], 'thanksgiving')
 
     def test_put_invalid_body(self):
@@ -317,7 +307,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         Tests updating a consumer that doesn't exist.
         """
         # Test
-        body = {'delta' : {'pie' : 'apple'}}
+        body = {'delta': {'pie': 'apple'}}
         status, body = self.put('/v2/consumers/not-there/', params=body)
         # Verify
         self.assertEqual(404, status)
@@ -329,9 +319,9 @@ class ConsumersTest(base.PulpWebserviceTests):
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
     NOTIFY_AGENT = True
-    BINDING_CONFIG = {'c' : 'c'}
+    BINDING_CONFIG = {'c': 'c'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
-    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
+    PROFILE = [{'name': 'zsh', 'version': '1.0'}, {'name': 'ksh', 'version': '1.0'}]
 
     def setUp(self):
         base.PulpWebserviceTests.setUp(self)
@@ -376,7 +366,7 @@ class ConsumersTest(base.PulpWebserviceTests):
     def validate(self, body, bindings=False, profiles=False):
         if bindings:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
-            fetched = dict([(c['id'],c) for c in body])
+            fetched = dict([(c['id'], c) for c in body])
             for consumer_id in self.CONSUMER_IDS:
                 consumer = fetched[consumer_id]
                 self.assertEquals(consumer['id'], consumer_id)
@@ -391,14 +381,14 @@ class ConsumersTest(base.PulpWebserviceTests):
                 self.assertEquals(bindings[0]['consumer_actions'], [])
         elif profiles:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
-            fetched = dict([(c['consumer_id'],c) for c in body])
+            fetched = dict([(c['consumer_id'], c) for c in body])
             for consumer_id in self.CONSUMER_IDS:
                 consumer = fetched[consumer_id]
                 self.assertEquals(consumer['consumer_id'], consumer_id)
                 self.assertTrue('profile' in consumer)
         else:
             self.assertEqual(len(self.CONSUMER_IDS), len(body))
-            fetched = dict([(c['id'],c) for c in body])
+            fetched = dict([(c['id'], c) for c in body])
             for consumer_id in self.CONSUMER_IDS:
                 consumer = fetched[consumer_id]
                 self.assertEquals(consumer['id'], consumer_id)
@@ -489,7 +479,7 @@ class ConsumersTest(base.PulpWebserviceTests):
         Tests registering a consumer with invalid data.
         """
         # Setup
-        body = {'id' : 'HA! This looks so totally invalid'}
+        body = {'id': 'HA! This looks so totally invalid'}
         # Test
         status, body = self.post('/v2/consumers/', params=body)
         # Verify
@@ -502,7 +492,7 @@ class ConsumersTest(base.PulpWebserviceTests):
         # Setup
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_IDS[0])
-        body = {'id' : self.CONSUMER_IDS[0]}
+        body = {'id': self.CONSUMER_IDS[0]}
         # Test
         status, body = self.post('/v2/consumers/', params=body)
         # Verify
@@ -511,8 +501,8 @@ class ConsumersTest(base.PulpWebserviceTests):
 
 class TestSearch(ConsumersTest):
 
-    FILTER = {'id':{'$in':ConsumersTest.CONSUMER_IDS}}
-    SORT = [('id','ascending')]
+    FILTER = {'id': {'$in': ConsumersTest.CONSUMER_IDS}}
+    SORT = [('id', 'ascending')]
     CRITERIA = dict(filters=FILTER, sort=SORT)
 
     def test_get(self):
@@ -546,7 +536,7 @@ class TestSearch(ConsumersTest):
         # Setup
         self.populate()
         # Test
-        body = {'criteria':self.CRITERIA}
+        body = {'criteria': self.CRITERIA}
         status, body = self.post('/v2/consumers/search/', body)
         # Verify
         self.validate(body)
@@ -555,7 +545,7 @@ class TestSearch(ConsumersTest):
         # Setup
         self.populate(True)
         # Test
-        body = {'criteria':self.CRITERIA, 'details':True}
+        body = {'criteria': self.CRITERIA, 'details': True}
         status, body = self.post('/v2/consumers/search/', body)
         # Verify
         self.assertEqual(200, status)
@@ -565,7 +555,7 @@ class TestSearch(ConsumersTest):
         # Setup
         self.populate(True)
         # Test
-        body = {'criteria':self.CRITERIA, 'bindings':True}
+        body = {'criteria': self.CRITERIA, 'bindings': True}
         status, body = self.post('/v2/consumers/search/', body)
         # Verify
         self.assertEqual(200, status)
@@ -574,8 +564,8 @@ class TestSearch(ConsumersTest):
 
 class TestProfileSearch(ConsumersTest):
 
-    FILTER = {'consumer_id':{'$in':ConsumersTest.CONSUMER_IDS}}
-    SORT = [('consumer_id','ascending')]
+    FILTER = {'consumer_id': {'$in': ConsumersTest.CONSUMER_IDS}}
+    SORT = [('consumer_id', 'ascending')]
     CRITERIA = dict(filters=FILTER, sort=SORT)
 
     def test_get(self):
@@ -591,7 +581,7 @@ class TestProfileSearch(ConsumersTest):
         # Setup
         self.populate(profiles=True)
         # Test
-        body = {'criteria':self.CRITERIA}
+        body = {'criteria': self.CRITERIA}
         status, body = self.post('/v2/consumers/profile/search/', body)
         # Verify
         self.validate(body, profiles=True)
@@ -680,7 +670,7 @@ class BindTest(base.PulpWebserviceTests):
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'dist-1'
     NOTIFY_AGENT = True
-    BINDING_CONFIG = {'a' : 'a'}
+    BINDING_CONFIG = {'a': 'a'}
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
     QUERY = dict(
         consumer_id=CONSUMER_ID,
@@ -690,8 +680,8 @@ class BindTest(base.PulpWebserviceTests):
     PAYLOAD = dict(
         server_name='pulp.redhat.com',
         relative_path='/repos/content/repoA',
-        protocols=['https',],
-        gpg_keys=['key1',],
+        protocols=['https'],
+        gpg_keys=['key1'],
         ca_cert='MY-CA',
         client_cert='MY-CLIENT-CERT')
 
@@ -722,7 +712,7 @@ class BindTest(base.PulpWebserviceTests):
             {},
             True,
             distributor_id=self.DISTRIBUTOR_ID)
-        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value=self.PAYLOAD
+        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value = self.PAYLOAD
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
 
@@ -809,9 +799,8 @@ class BindTest(base.PulpWebserviceTests):
             '0')
 
         # Test
-        criteria = {'filters':
-            {'consumer_actions.status':{'$in':['pending', 'failed']}}
-        }
+        criteria = {
+            'filters': {'consumer_actions.status': {'$in': ['pending', 'failed']}}}
         path = '/v2/consumers/binding/search/'
         body = dict(criteria=criteria)
         status, body = self.post(path, body)
@@ -980,6 +969,7 @@ class ContentTest(PulpWebservicesTests):
         # Test
         self.assertRaises(MissingValue, webservice.update, 'test-consumer')
 
+
 class TestProfilesNoWSGI(PulpWebservicesTests):
 
     @mock.patch('pulp.server.webservices.controllers.consumers.Profiles.created')
@@ -1030,8 +1020,8 @@ class TestProfiles(base.PulpWebserviceTests):
     CONSUMER_ID = 'test-consumer'
     TYPE_1 = 'type-1'
     TYPE_2 = 'type-2'
-    PROFILE_1 = {'name':'zsh', 'version':'1.0'}
-    PROFILE_2 = {'name':'ksh', 'version':'2.0', 'arch':'x86_64'}
+    PROFILE_1 = {'name': 'zsh', 'version': '1.0'}
+    PROFILE_2 = {'name': 'ksh', 'version': '2.0', 'arch': 'x86_64'}
 
     def setUp(self):
         self.logger = logging.getLogger('pulp')
@@ -1050,7 +1040,7 @@ class TestProfiles(base.PulpWebserviceTests):
 
     def sort(self, profiles):
         _sorted = []
-        d = dict([(p['content_type'],p) for p in profiles])
+        d = dict([(p['content_type'], p) for p in profiles])
         for k in sorted(d.keys()):
             _sorted.append(d[k])
         return _sorted
@@ -1152,7 +1142,8 @@ class TestConsumerHistory(PulpWebservicesTests):
     @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.filters')
     @mock.patch('pulp.server.webservices.controllers.consumers.managers')
     @mock.patch('pulp.server.webservices.controllers.consumers.ConsumerHistory.not_found')
-    def test_get_consumer_history_invalid_consumer(self, mock_not_found, mock_managers, mock_filters):
+    def test_get_consumer_history_invalid_consumer(self, mock_not_found, mock_managers,
+                                                   mock_filters):
         """
         For API calls to consumer history, test that the correct response (404) is given when
         the entry does not exist.
@@ -1483,7 +1474,7 @@ class TestContentApplicability(base.PulpWebserviceTests,
             return_value={'criteria': {'sort': [['id', 'ascending']], 'limit': '10',
                                        'skip': '20',
                                        'filters': {'id': {'$in':
-                                        ['consumer_1', 'consumer_2']}}}})
+                                                          ['consumer_1', 'consumer_2']}}}})
 
         consumer_criteria = ca._get_consumer_criteria()
 
@@ -1539,12 +1530,12 @@ class TestContentApplicability(base.PulpWebserviceTests,
 class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
 
     CONSUMER_IDS = ['consumer-1', 'consumer-2']
-    FILTER = {'id':{'$in':CONSUMER_IDS}}
-    SORT = [{'id':1}]
+    FILTER = {'id': {'$in': CONSUMER_IDS}}
+    SORT = [{'id': 1}]
     CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT)
-    PROFILE = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
-    REPO_IDS = ['repo-1','repo-2']
-    REPO_CRITERIA = Criteria(filters={'id':{'$in':REPO_IDS}}, sort=[{'id':1}])
+    PROFILE = [{'name': 'zsh', 'version': '1.0'}, {'name': 'ksh', 'version': '1.0'}]
+    REPO_IDS = ['repo-1', 'repo-2']
+    REPO_CRITERIA = Criteria(filters={'id': {'$in': REPO_IDS}}, sort=[{'id': 1}])
     YUM_DISTRIBUTOR_ID = 'yum_distributor'
 
     PATH = '/v2/consumers/actions/content/regenerate_applicability/'
@@ -1562,7 +1553,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
 
         yum_profiler, cfg = plugin_api.get_profiler_by_type('rpm')
         yum_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda p,r,c,x:
+            mock.Mock(side_effect=lambda p, r, c, x:
                       {'rpm': ['rpm-1', 'rpm-2'],
                        'erratum': ['errata-1', 'errata-2']})
 
@@ -1583,11 +1574,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         for repo_id in self.REPO_IDS:
             repo_manager.create_repo(repo_id)
             distributor_manager.add_distributor(
-                                                repo_id,
-                                                'mock-distributor',
-                                                {},
-                                                True,
-                                                self.YUM_DISTRIBUTOR_ID)
+                repo_id, 'mock-distributor', {}, True, self.YUM_DISTRIBUTOR_ID)
 
     def populate_bindings(self):
         self.populate_repos()
@@ -1621,7 +1608,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
     def test_regenerate_applicability_no_consumers(self, mock_get_worker_for_reservation):
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
-        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        request_body = dict(consumer_criteria={'filters': self.FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
@@ -1633,7 +1620,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         # Setup
         self.populate()
         # Test
-        request_body = dict(consumer_criteria={'filters':self.FILTER})
+        request_body = dict(consumer_criteria={'filters': self.FILTER})
         status, body = self.post(self.PATH, request_body)
         # Verify
         self.assertEquals(status, 202)
@@ -1693,7 +1680,8 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
 
         self.assertEquals(status, 404)
         self.assertTrue('Missing resource' in body['error']['description'])
-        self.assertTrue(body['error']['data']['resources'] == {'consumer_id': 'unregistered_consumer'})
+        self.assertEqual(body['error']['data']['resources'],
+                         {'consumer_id': 'unregistered_consumer'})
         self.assertFalse('task_id' in body)
 
 
@@ -1720,7 +1708,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
     def test_create_scheduled_install(self):
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [unit]
         options = dict(importkeys=True)
 
         path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
@@ -1761,7 +1749,8 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, response['_id'])
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (
+            self.consumer_id, response['_id'])
 
         status, response = self.get(path)
 
@@ -1782,7 +1771,8 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, '111111111111111')
+        path = '/v2/consumers/%s/schedules/content/install/%s/' % (
+            self.consumer_id, '111111111111111')
 
         status, response = self.get(path)
 
@@ -1830,7 +1820,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
     def test_update_scheduled_install(self):
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [unit]
         options = dict(importkeys=True)
 
         path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
@@ -1842,7 +1832,8 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (
+            self.consumer_id, schedule_id)
         update_body = {'schedule': 'R2/PT1H'}
 
         status, response = self.put(update_path, update_body)
@@ -1851,7 +1842,7 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
     def test_delete_scheduled_install(self):
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [unit]
         options = dict(importkeys=True)
 
         path = '/v2/consumers/%s/schedules/content/install/' % self.consumer_id
@@ -1863,7 +1854,8 @@ class ScheduledUnitInstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/install/%s/' % (
+            self.consumer_id, schedule_id)
 
         status, response = self.delete(update_path)
         self.assertEqual(status, 200)
@@ -1889,7 +1881,7 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
     def test_create_scheduled_update(self):
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [unit]
         options = dict(importkeys=True)
 
         path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
@@ -1978,7 +1970,7 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
     def test_update_scheduled_update(self):
         unit_key = {'name': 'zsh'}
         unit = {'type_id': 'rpm', 'unit_key': unit_key}
-        units = [unit,]
+        units = [unit]
         options = {'importkeys': True}
 
         path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
@@ -1990,7 +1982,8 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/schedules/content/update/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/update/%s/' % (
+            self.consumer_id, schedule_id)
         update_body = {'schedule': 'R2/PT1H'}
 
         status, response = self.put(update_path, update_body)
@@ -1999,7 +1992,7 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
     def test_delete_scheduled_update(self):
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [unit]
         options = dict(importkeys=True)
 
         path = '/v2/consumers/%s/schedules/content/update/' % self.consumer_id
@@ -2011,7 +2004,8 @@ class ScheduledUnitUpdateTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/schedules/content/update/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/update/%s/' % (
+            self.consumer_id, schedule_id)
 
         status, response = self.delete(update_path)
         self.assertEqual(status, 200)
@@ -2037,7 +2031,7 @@ class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
     def test_create_scheduled_uninstall(self):
         unit_key = {'name': 'zsh'}
         unit = {'type_id': 'rpm', 'unit_key': unit_key}
-        units = [unit,]
+        units = [unit]
         options = {'importkeys': True}
 
         path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
@@ -2078,7 +2072,8 @@ class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
 
         self.assertEqual(status, 201)
 
-        path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, response['_id'])
+        path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (
+            self.consumer_id, response['_id'])
 
         status, response = self.get(path)
 
@@ -2126,7 +2121,7 @@ class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
     def test_update_scheduled_uninstall(self):
         unit_key = dict(name='zsh')
         unit = dict(type_id='rpm', unit_key=unit_key)
-        units = [unit,]
+        units = [unit]
         options = dict(importkeys=True)
 
         path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
@@ -2138,7 +2133,8 @@ class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (
+            self.consumer_id, schedule_id)
         update_body = {'schedule': 'R2/PT1H'}
 
         status, response = self.put(update_path, update_body)
@@ -2147,7 +2143,7 @@ class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
     def test_delete_scheduled_uninstall(self):
         unit_key = {'name': 'zsh'}
         unit = {'type_id': 'rpm', 'unit_key': unit_key}
-        units = [unit,]
+        units = [unit]
         options = {'importkeys': True}
 
         path = '/v2/consumers/%s/schedules/content/uninstall/' % self.consumer_id
@@ -2159,7 +2155,8 @@ class ScheduledUnitUninstallTests(base.PulpWebserviceTests):
         self.assertEquals(status, 201)
 
         schedule_id = response['_id']
-        update_path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (self.consumer_id, schedule_id)
+        update_path = '/v2/consumers/%s/schedules/content/uninstall/%s/' % (
+            self.consumer_id, schedule_id)
 
         status, response = self.delete(update_path)
         self.assertEqual(status, 200)

@@ -109,6 +109,8 @@ class MalformedGraph(TopologicalSortError):
 
 def topological_sort(graph):
     """
+    NOTE: This does not seem to be used by any part of pulp
+
     Perform a topological sort on a directed graph.
     The ordering returned is "sink-first". Think of the directed edges as a
     "greater-than" relation and the ordering would correspond to "ascending".

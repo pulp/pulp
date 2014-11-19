@@ -17,9 +17,9 @@ update, and deletion on a Pulp user.
 """
 
 from gettext import gettext as _
+import re
 
 from celery import task
-import re
 
 from pulp.server import config
 from pulp.server.async.tasks import Task
@@ -52,13 +52,13 @@ class UserManager(object):
         @type  name: str
 
         @param roles: list of roles user will belong to
-        @type  notes: dict
+        @type  roles: list
 
         @raise DuplicateResource: if there is already a user with the requested login
         @raise InvalidValue: if any of the fields are unacceptable
         """
 
-        existing_user = User.get_collection().find_one({'login' : login})
+        existing_user = User.get_collection().find_one({'login': login})
         if existing_user is not None:
             raise DuplicateResource(login)
 
@@ -92,7 +92,7 @@ class UserManager(object):
         permission_manager.grant_automatic_permissions_for_user(create_me['login'])
 
         # Retrieve the user to return the SON object
-        created = User.get_collection().find_one({'login' : login})
+        created = User.get_collection().find_one({'login': login})
         created.pop('password')
 
         return created
@@ -116,7 +116,7 @@ class UserManager(object):
         @raise MissingResource: if there is no user with login
         """
 
-        user = User.get_collection().find_one({'login' : login})
+        user = User.get_collection().find_one({'login': login})
         if user is None:
             raise MissingResource(login)
 
@@ -178,7 +178,7 @@ class UserManager(object):
             raise InvalidValue(['login'])
 
         # Check whether user exists
-        found = User.get_collection().find_one({'login' : login})
+        found = User.get_collection().find_one({'login': login})
         if found is None:
             raise MissingResource(login)
 
@@ -190,7 +190,7 @@ class UserManager(object):
         permission_manager = factory.permission_manager()
         permission_manager.revoke_all_permissions_from_user(login)
 
-        User.get_collection().remove({'login' : login}, safe=True)
+        User.get_collection().remove({'login': login}, safe=True)
 
     def ensure_admin(self):
         """
@@ -198,16 +198,13 @@ class UserManager(object):
         If no super users are found, the default admin user (from the pulp config)
         is looked up or created and added to the super users role.
         """
-        user_query_manager = factory.user_query_manager()
         role_manager = factory.role_manager()
-
-        super_users = user_query_manager.find_users_belonging_to_role(SUPER_USER_ROLE)
-        if super_users:
+        if self.get_admins():
             return
 
         default_login = config.config.get('server', 'default_login')
 
-        admin = User.get_collection().find_one({'login' : default_login})
+        admin = User.get_collection().find_one({'login': default_login})
         if admin is None:
             default_password = config.config.get('server', 'default_password')
             admin = UserManager.create_user(login=default_login,
@@ -215,6 +212,21 @@ class UserManager(object):
 
         role_manager.add_user_to_role(SUPER_USER_ROLE, default_login)
 
+    @staticmethod
+    def get_admins():
+        """
+        Get a list of users with the super-user role.
+
+        :return: list of users who are admins.
+        :rtype:  list of User
+        """
+        user_query_manager = factory.user_query_manager()
+
+        try:
+            super_users = user_query_manager.find_users_belonging_to_role(SUPER_USER_ROLE)
+            return super_users
+        except MissingResource:
+            return None
 
 create_user = task(UserManager.create_user, base=Task)
 delete_user = task(UserManager.delete_user, base=Task, ignore_result=True)

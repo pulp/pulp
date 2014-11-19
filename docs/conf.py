@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.abspath('./_extensions'))
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.intersphinx', 'rest_api']
+extensions = ['sphinx.ext.intersphinx', 'rest_api', 'sphinx.ext.extlinks']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -214,8 +214,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'pulpdocs', u'Pulp Documentation',
-     [u'Pulp Team'], 1)
+    ('user-guide/admin-client/index', 'pulp-admin', u'Pulp Documentation', [u'Pulp Team'], 1),
+    ('user-guide/consumer-client/index', 'pulp-consumer', u'Pulp Documentation', [u'Pulp Team'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -242,7 +242,25 @@ texinfo_documents = [
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
 
+# NOTE: these need to be updated periodically to point to the most recent
+# current release of the plugin. They are all set to "latest" right now but
+# that will change as new plugin versions are released using the new RTD
+# builders. See
+# http://pulp.readthedocs.org/en/latest/dev-guide/contributing/building.html
+# for more info.
 
-# Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'http://docs.python.org/': None,
-                       'okaara' : ('http://jdob.fedorapeople.org/okaara', None)}
+intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
+                       'deb':    ("http://pulp-deb.readthedocs.org/en/latest/", None),
+                       'docker': ("http://pulp-docker.readthedocs.org/en/latest/", None),
+                       'puppet': ("http://pulp-puppet.readthedocs.org/en/latest/", None),
+                       'ostree': ("http://pulp-ostree.readthedocs.org/en/latest/", None),
+                       'rpm':    ("http://pulp-rpm.readthedocs.org/en/latest/", None)}
+
+extlinks = {'bz': ('https://bugzilla.redhat.com/show_bug.cgi?id=%s', 'RHBZ #'),
+            'fixedbugs': ('https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED'\
+                          '&bug_status=RELEASE_PENDING&bug_status=CLOSED&classificatio'\
+                          'n=Community&component=API%%2Fintegration&component=async%%2Ft'\
+                          'asks&component=consumers&component=documentation&component='\
+                          'nodes&component=rel-eng&component=user-experience&component'\
+                          '=z_other&list_id=2768089&product=Pulp&query_format=advanced'\
+                          '&target_release=%s', None)}

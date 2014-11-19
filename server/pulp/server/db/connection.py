@@ -81,7 +81,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             try:
                 _CONNECTION = mongoengine.connect(seeds, **connection_kwargs)
             except pymongo.errors.ConnectionFailure as e:
-                next_delay = min(_MONGO_RETRY_TIMEOUT_SECONDS_GENERATOR.next(), max_timeout)
+                next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
                 msg = _(
                     "Could not connect to MongoDB at %(url)s:\n%(e)s\n... Waiting "
                     "%(retry_timeout)s seconds and trying again.")

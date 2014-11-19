@@ -12,6 +12,10 @@ New Features
   It now works with the ANONYMOUS authentication mechanism. Users can still use a
   username/password however if they set up a SASL database as described in the
   installation document.
+- Pulp now supports `RabbitMQ`_ as its task message broker. See the inline comments in
+  ``/etc/pulp/server.conf`` for instruction on configuring Pulp to use RabbitMQ.
+
+.. _RabbitMQ: https://www.rabbitmq.com/
 
 
 Rest API Changes
@@ -85,6 +89,9 @@ Deprecation
 
 - The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will
   be removed in a future release.
+
+- Many API calls return an attribute named `_ns`. This attribute will be removed in a future
+  release and should not be used.
 
 Client Changes
 --------------

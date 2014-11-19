@@ -11,19 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-"""
-Contains permissions query classes
-"""
-from gettext import gettext as _
-
 from pulp.server.db.model.auth import Permission
-from logging import getLogger
-
-# -- constants ----------------------------------------------------------------
-
-_LOG = getLogger(__name__)
-
-# -- manager ------------------------------------------------------------------
 
 
 class PermissionQueryManager(object):
@@ -43,7 +31,6 @@ class PermissionQueryManager(object):
         all_permissions = list(Permission.get_collection().find())
         return all_permissions
 
-
     def find_by_resource(self, resource_uri):
         """
         Returns a serialized version of the given permission if it exists.
@@ -52,8 +39,5 @@ class PermissionQueryManager(object):
         @return: serialized data describing the permission
         @rtype:  dict or None
         """
-        permission = Permission.get_collection().find_one({'resource' : resource_uri})
+        permission = Permission.get_collection().find_one({'resource': resource_uri})
         return permission
-
-
-    
