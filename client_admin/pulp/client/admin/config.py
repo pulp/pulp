@@ -42,6 +42,10 @@ DEFAULT = {
         'wrap_to_terminal': 'false',
         'wrap_width': '80',
     },
+    'auth': {
+        'username': 'admin',
+        'password': 'admin',
+    },
 }
 
 
@@ -83,6 +87,12 @@ SCHEMA = (
             ('wrap_width', REQUIRED, NUMBER)
         )
     ),
+    ('auth', REQUIRED,
+        (
+            ('username', OPTIONAL, ANY),
+            ('password', OPTIONAL, ANY),
+        )
+    ),
 )
 
 
@@ -103,9 +113,30 @@ def read_config(paths=None, validate=True):
         paths += [os.path.join(conf_d_dir, i) for i in sorted(os.listdir(conf_d_dir))]
         overrides = os.path.expanduser('~/.pulp/admin.conf')
         if os.path.exists(overrides):
+            validate_overrides(overrides)
             paths.append(overrides)
     config = Config(DEFAULT)
     config.update(Config(*paths))
     if validate:
         config.validate(SCHEMA)
     return config
+
+
+def validate_overrides(overrides):
+    """
+    Check if file ~/.pulp/admin.conf is private to owner,
+    if it provides user password
+
+    :param overrides: User's admin.conf
+    :param overrides: basestring
+    :raises: RuntimeError If file is not private
+    """
+    valid_private_perms = [400, 600, 700]
+    file_perm = int(oct(os.stat(overrides).st_mode & 0777))
+
+    cfg = Config(overrides)
+    if cfg.has_option("auth", "password"):
+        if file_perm not in valid_private_perms:
+            raise RuntimeError("File %s has incorrect permissions: %d, "
+                               "It should be one of %s."
+                               % (overrides, file_perm, valid_private_perms))

@@ -10,20 +10,51 @@ All pulp-admin commands accept username and password to capture authentication c
 
 ::
 
-	$ pulp-admin --help
-	Usage: pulp-admin [options]
+    $ pulp-admin --help
+    Usage: pulp-admin [options]
 
-	Options:
-	-h, --help	            show this help message and exit
-	-u USERNAME, --username=USERNAME
-		                    credentials for the Pulp server; if specified will
-	    	                bypass the stored certificate
-	-p PASSWORD, --password=PASSWORD
-		                    credentials for the Pulp server; must be specified
-	    	                with --username
-	--debug	        	    enables debug logging
-	--config=CONFIG	        absolute path to the configuration file
-	--map                   prints a map of the CLI sections and commands
+    Options:
+      -h, --help            show this help message and exit
+      -u USERNAME, --username=USERNAME
+                            username for the Pulp server; if used will bypass the
+                            stored certificate and override config file values and
+                            the default
+      -p PASSWORD, --password=PASSWORD
+                            password for the Pulp server; must be used with
+                            --username. if used will bypass the stored certificate
+                            and override config file values and the default
+      --debug               enables debug logging
+      --config=CONFIG       absolute path to the configuration file
+      --map                 prints a map of the CLI sections and commands
+
+
+Pulp Admin client allows the user to specify username and password credentials
+in the user's local admin.conf ``~/.pulp/admin.conf``. Using the conf file 
+avoids having to pass user credentials repeatedly using the command line.
+Also reading the password from a file that can only be read by certain users 
+is more secure because it cannot be shown by listing the system processes.
+
+::
+
+    # Add the following snippet to ``~/.pulp/admin.conf``
+
+    [auth]
+    username: admin
+    password: admin
+
+    # This enables the user to run pulp-admin commands without providing a username
+    # and password using the command line
+
+    $ pulp-admin repo list
+    +----------------------------------------------------------------------+
+                                  Repositories
+    +----------------------------------------------------------------------+
+
+
+pulp-admin finds username and password credentials in the following order.
+    - credentials specified from the command line.
+    - credentials set in user's ``~/.pulp/admin.conf``.
+    - default credentials used by Pulp.
 
 Pulp Server installation comes with one default user created with admin level privileges.
 Username and password for this user can be configured in ``/etc/pulp/server.conf`` at the time
@@ -34,11 +65,11 @@ running a pulp-admin command.
 
 ::
 
-	$ pulp-admin -u admin repo list
-	Enter password:
-	+----------------------------------------------------------------------+
-	                              Repositories
-	+----------------------------------------------------------------------+
+    $ pulp-admin -u admin repo list
+    Enter password:
+    +----------------------------------------------------------------------+
+                                  Repositories
+    +----------------------------------------------------------------------+
 
 
 Note that username and password are parameters to the ``pulp-admin`` command, not the sub-command,
