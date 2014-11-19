@@ -7,6 +7,7 @@ Contents:
    :maxdepth: 2
 
    master
+   2.6.x
    2.5.x
    2.4.x
    2.3.x
