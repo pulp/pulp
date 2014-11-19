@@ -1,8 +1,8 @@
 Create, Update, and Delete
-================================
+==========================
 
 Create a Role
--------------------
+-------------
 
 Create a new role. Role id must be unique across all roles.
 
@@ -48,7 +48,7 @@ Create a new role. Role id must be unique across all roles.
 
 
 Update a Role
------------------
+-------------
 
 The update role call is used to change the details of an existing role.
 
@@ -58,11 +58,11 @@ The update role call is used to change the details of an existing role.
 | :param_list:`put` The body of the request is a JSON document with a root element
   called ``delta``. The contents of delta are the values to update. Only changed
   parameters need be specified. The following keys are allowed in the delta
-  object. Descriptions for each parameter can be found under the create
-  user API:
+  object.
 
-* :param:`display_name,,`
-* :param:`description,,`
+* :param:`?display_name,string,user-friendly name for the role`
+* :param:`?description,string,user-friendly text describing the role`
+* :param:`?permissions,object, key-array pairs of resource to permissions`
 
 | :response_list:`_`
 
@@ -74,8 +74,13 @@ The update role call is used to change the details of an existing role.
 
 :sample_request:`_` ::
 
+
  {
-  "delta": {"display_name": "New Role Test", "description": "New Demo Role"}
+  "delta": {
+    "display_name": "New Role Test",
+    "description": "New Demo Role",
+    "permissions": {"/v2/roles/": ["CREATE"]}
+  }
  }
 
 :sample_response:`200` ::
@@ -89,11 +94,11 @@ The update role call is used to change the details of an existing role.
     "$oid": "502cb2d7e5e710772d000049"
   }, 
   "id": "role-test", 
-  "permissions": {}
+  "permissions": {"/v2/roles/": ["CREATE"]}
  }
 
 Delete a Role
----------------------
+-------------
 
 Deletes a role from the Pulp server. Users bindings are removed from the role 
 and permissions granted to the users because of the role are revoked as well unless
@@ -112,7 +117,7 @@ those permissions are granted by other role as well.
 
 
 Add a User to a Role
----------------------
+--------------------
 
 Add a user to an existing role. Note that user with given login is NOT created as part of this operation. 
 User with a given login should already exist.
@@ -141,7 +146,7 @@ User with a given login should already exist.
 
 
 Remove a User from a Role
---------------------------
+-------------------------
 
 Removes a user from an existing role. 
 
