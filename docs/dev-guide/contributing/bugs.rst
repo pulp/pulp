@@ -16,6 +16,8 @@ To file a bug:
    you do not already have one.
 #. After logging in, click on "New" in the upper left corner of the main page.
 #. Click "Community" to get a list of community projects and then click "Pulp".
+   You can also go `directly <https://bugzilla.redhat.com/enter_bug.cgi?product=Pulp>`_
+   to the bug entry page if you like.
 #. Enter your bug here. The Pulp team looks through all new bugs at least once
    a week except for during holidays.
 
@@ -72,7 +74,7 @@ Reviewer
 Triaging Bugs
 -------------
 
-Once a week, a rotating subset of the Pulp team meet to sort through that
+Once a week, a rotating subset of the Pulp team meets to sort through that
 week's new bugs. Bugs that need additional information are marked as "needinfo"
 for the reporter. Bugs with enough information will get their severity and
 priority set, as well as a component. At this point they are on the backlog and
