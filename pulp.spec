@@ -39,7 +39,13 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch: noarch
 BuildRequires: python2-devel
 BuildRequires: python-setuptools
-BuildRequires: python-sphinx >= 1.1.3
+# do not include either of these on rhel 5
+%if 0%{?rhel} == 6
+BuildRequires: python-sphinx10 >= 1.0.8
+%endif
+%if 0%{?rhel} >= 7 || 0%{?fedora} >= 19
+BuildRequires: python-sphinx >= 1.0.8
+%endif
 BuildRequires: rpm-python
 
 %description
@@ -82,9 +88,14 @@ sed -i "s/policy_module(pulp-celery, [0-9]*.[0-9]*.[0-9]*)/policy_module(pulp-ce
 cd -
 %endif
 
-# build man pages
+# build man pages if we are able
 pushd docs
+%if 0%{?rhel} == 6
+make man SPHINXBUILD=sphinx-1.0-build
+%endif
+%if 0%{?rhel} >= 7 || 0%{?fedora} >= 19
 make man
+%endif
 popd docs
 
 %install
@@ -115,7 +126,9 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
 mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
+%if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
 mkdir -p %{buildroot}/%{_mandir}/man1
+%endif
 
 # pulp-admin installation
 %if %{pulp_admin}
@@ -131,7 +144,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/admin/extensions
 
 cp -R client_admin/etc/pulp/admin/admin.conf %{buildroot}/%{_sysconfdir}/%{name}/admin/
 cp client_admin/etc/bash_completion.d/pulp-admin %{buildroot}/%{_sysconfdir}/bash_completion.d/
-# pulp-admin man page
+# pulp-admin man page (no need to fence this against el5 again)
 cp docs/_build/man/pulp-admin.1 %{buildroot}/%{_mandir}/man1/
 %endif # End pulp_admin installation block
 
@@ -217,8 +230,10 @@ touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 
 # Configuration
 cp -R agent/etc/pulp/agent/agent.conf %{buildroot}/%{_sysconfdir}/%{name}/agent/
-cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdir}/bash_completion.d/
 cp -R client_consumer/etc/pulp/consumer/consumer.conf %{buildroot}/%{_sysconfdir}/%{name}/consumer/
+%if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
+cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdir}/bash_completion.d/
+%endif
 
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
@@ -229,7 +244,9 @@ cp -R agent/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 
 # pulp-consumer man page
+%if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
 cp docs/_build/man/pulp-consumer.1 %{buildroot}/%{_mandir}/man1
+%endif
 
 %clean
 rm -rf %{buildroot}
@@ -510,7 +527,6 @@ A tool used to administer a pulp consumer.
 %{python_sitelib}/pulp_client_consumer*.egg-info
 %dir %{_sysconfdir}/%{name}/consumer
 %dir %{_sysconfdir}/%{name}/consumer/conf.d
-%{_sysconfdir}/bash_completion.d/pulp-consumer
 %dir %{_sysconfdir}/pki/%{name}/consumer/
 %dir %{_usr}/lib/%{name}/consumer/extensions/
 %config(noreplace) %{_sysconfdir}/%{name}/consumer/consumer.conf
@@ -520,7 +536,11 @@ A tool used to administer a pulp consumer.
 %ghost %{_sysconfdir}/pki/%{name}/consumer/server/rsa_pub.key
 %ghost %{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
 %doc README LICENSE COPYRIGHT
+%if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
+%{_sysconfdir}/bash_completion.d/pulp-consumer
 %doc %{_mandir}/man1/pulp-consumer.1*
+%endif
+
 
 %post consumer-client
 
