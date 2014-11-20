@@ -81,6 +81,10 @@ the repository. All matching units are unassociated from the repository.
 The only restriction is that the content units can only be unassociated by the
 same person that originally associated the units with the repository.
 
+Note that there is a `bug <https://bugzilla.redhat.com/show_bug.cgi?id=1021579>`_
+related to this call in which criteria with no type_ids field will remove all
+units in a repository.
+
 | :method:`post`
 | :path:`/v2/repositories/<repo_id>/actions/unassociate/`
 | :permission:`update`
