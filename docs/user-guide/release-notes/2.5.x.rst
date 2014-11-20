@@ -2,63 +2,6 @@
 Pulp 2.5 Release Notes
 =========================
 
-Pulp 2.5.1
-===========
-
-New Features
-------------
-
-- Pulp no longer requires additional configuration of Qpid after installation.
-  It now works with the ANONYMOUS authentication mechanism. Users can still use a
-  username/password however if they set up a SASL database as described in the
-  installation document.
-- Pulp now supports `RabbitMQ`_ as its task message broker. See the inline comments in
-  ``/etc/pulp/server.conf`` for instruction on configuring Pulp to use RabbitMQ.
-
-.. _RabbitMQ: https://www.rabbitmq.com/
-
-
-Rest API Changes
-----------------
-
-* A new `Task Report` attribute named `worker_name` is introduced that holds the name of the worker
-  a task is associated with. Previously the worker name was stored in a `Task Report` attribute
-  named `queue`. The `queue` attribute now correctly records the queue a task is put in. The
-  `queue` attribute is deprecated and will be removed from the `Task Report` in Pulp 3.0.0.
-
-* The URL for the content catalog entries ``/v2/content/catalog/<source-id>`` is missing
-  the trailing '/' and has been deprecated. Support for the URL ``/v2/content/catalog/<source-id>/``
-  has been added.
-
-.. _2.5.0_upgrade_to_2.5.1:
-
-Upgrade Instructions for 2.5.0 --> 2.5.1
------------------------------------------
-
-Prior to upgrading, all tasks must be stopped. One way to accomplish this is to stop all
-`pulp_workers`, `pulp_celerybeat`, and `pulp_resource_manager` processes and then list the current
-tasks using:
-
-::
-
-    pulp-admin tasks list
-
-Any task that is in the "Running" or "Waiting" state should be canceled by its <uuid> using:
-
-::
-
-    pulp-admin tasks cancel --task-id <uuid>
-
-After all tasks have been canceled upgrade the packages using:
-
-::
-
-    sudo yum update
-
-After yum completes you should restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
-`pulp_resource_manager`.
-
-
 Pulp 2.5.0
 ===========
 
