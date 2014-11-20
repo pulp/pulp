@@ -8,10 +8,6 @@ Pulp master
 New Features
 ------------
 
-- Pulp now allows user credentials to be read from user's ``~/.pulp/admin.conf``.
-  This should allow pulp-admin to be automated more easily and more securely.
-  Please see our :ref:`Authentication` documentation for details.
-
 Deprecation
 -----------
 
@@ -40,3 +36,4 @@ Binding API Changes
 
 Plugin API Changes
 ------------------
+
