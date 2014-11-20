@@ -1,3 +1,5 @@
+.. _pulp_documentation:
+
 Pulp Documentation
 ==================
 
