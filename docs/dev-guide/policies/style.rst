@@ -4,10 +4,8 @@ Style
 PEP-8
 -----
 
-New Pulp code should adhere as closely as is reasonable to PEP-8. One
-exception is the line length limit, which we are more flexible about. In order to prevent
-line wrapping when code is viewed on GitHub it is recommended that line length be limited
-to 100 characters but do whatever makes sense.
+New Pulp code should adhere as closely as is reasonable to PEP-8. One modification is that our line
+length limit is 100 characters, which we chose to prevent line wrapping on GitHub.
 
 
 In-code Documentation
