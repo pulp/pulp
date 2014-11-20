@@ -10,7 +10,7 @@ GROUP_NAME_SYNC = _('Synchronization')
 GROUP_NAME_THROTTLING = _('Throttling')
 GROUP_NAME_SSL = _('Feed SSL')
 GROUP_NAME_PROXY = _('Feed Proxy')
-GROUP_NAME_UNIT_POLICY = _('Repository Contents Behavior')
+GROUP_NAME_UNIT_POLICY = _('Repository Content Behavior')
 
 
 class OptionsBundle(object):

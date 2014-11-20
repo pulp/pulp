@@ -6,6 +6,7 @@ Pulp Documentation
 
    user-guide/index
    dev-guide/index
+   dev-guide/contributing/bugs
 
 
 Indices and tables

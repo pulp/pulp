@@ -149,27 +149,27 @@ Search
 ------
 
 For more targeted results than the ``list`` command provides, you can use Pulp's
-:ref:`criteria` search feature to search repositories. For example, to find all
-RPM repositories that contain at least one content unit:
+:ref:`criteria` search feature to search repositories. For example, to find a specific
+RPM repository that has id 'zoo':
 
 ::
 
-  $ pulp-admin rpm repo search --gt 'content_unit_count=0'
-  +----------------------------------------------------------------------+
-                                Repositories
-  +----------------------------------------------------------------------+
+    pulp-admin rpm repo search --str-eq="id=zoo"
+    +----------------------------------------------------------------------+
+                                  Repositories
+    +----------------------------------------------------------------------+
 
-  Id:                 pulp
-  Display Name:       pulp
-  Description:        None
-  Content Unit Count: 39
-  Notes:
-
-  Id:                 repo1
-  Display Name:       repo1
-  Description:        None
-  Content Unit Count: 36
-  Notes:
+    Id:                  zoo
+    Display Name:        zoo-repo
+    Description:         None
+    Content Unit Counts:
+      Erratum:          4
+      Package Category: 1
+      Package Group:    2
+      Rpm:              32
+    Last Unit Added:     2014-11-14T13:02:47Z
+    Last Unit Removed:   None
+    Notes:
 
 
 Content Search

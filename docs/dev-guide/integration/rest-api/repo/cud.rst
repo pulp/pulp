@@ -205,7 +205,7 @@ The result field of the :ref:`task_report` will contain the database representat
 
  {
   "scratchpad": null,
-  "_ns": "gc_repo_importers",
+  "_ns": "repo_importers",
   "importer_type_id": "harness_importer",
   "last_sync": null,
   "repo_id": "harness_repo_1",
@@ -286,7 +286,7 @@ The details of the added distributor are returned from the call.
 
  {
   "scratchpad": null,
-  "_ns": "gc_repo_distributors",
+  "_ns": "repo_distributors",
   "last_publish": null,
   "auto_publish": false,
   "distributor_type_id": "harness_distributor",

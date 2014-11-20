@@ -26,10 +26,10 @@ class Repo(Model):
                  actual content of the repo
     @type notes: dict
 
-    @ivar content_unit_count: number of units associated with this repo. This is
+    @ivar content_unit_counts: number of units associated with this repo. This is
                               different than the number of associations, since a
                               unit may be associated multiple times.
-    @type content_unit_count: int
+    @type content_unit_counts: int
 
     @ivar metadata: arbitrary data that describes the contents of the repo;
                     the values may change as the contents of the repo change,

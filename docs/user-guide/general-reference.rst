@@ -149,7 +149,7 @@ The output of the usage text for that command is as follows::
   ignored if --filters= is specified. Any option may be specified multiple
   times. The value for each option should be a field name and value to match
   against, specified as "name=value". Example: $ pulp-admin repo search
-  --gt='content_unit_count=0'
+  --str-eq="id=<repo_id>"
 
   --str-eq - match where a named attribute equals a string value exactly.
   --int-eq - match where a named attribute equals an int value exactly.
