@@ -1,3 +1,6 @@
+
+.. _DevSetup:
+
 Developer Setup
 ===============
 
