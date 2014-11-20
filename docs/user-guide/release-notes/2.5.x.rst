@@ -13,7 +13,7 @@ New Features
 - A new selinux policy that confines the pulp_workers, pulp_celerybeat, and
   pulp_resource_manager
 
-- Pulp 2.5.0 includes `pulp_docker`, an optional plugin to manage Docker
+- Pulp 2.5.0 works with `pulp_docker`, an optional plugin to manage Docker
   repositories. In Pulp 2.5.0 this optional plugin is considered "tech preview"
   and did not undergo the same level of testing as other plugins. Please
   refer to the
@@ -27,37 +27,29 @@ New Features
 
 .. _configure MongoDB to perform SSL: http://docs.mongodb.org/v2.4/tutorial/configure-ssl/#configure-mongod-and-mongos-for-ssl
 
+- When the `pulp_workers` service is stopped, it will now cancel tasks that the
+  workers are processing instead of waiting for those tasks to finish.
+
 Deprecation
 -----------
 
-- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will
+- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0. This attribute will
   be removed in a future release.
 
 - Many API calls return an attribute named `_ns`. This attribute will be removed in a future
   release and should not be used.
 
-Client Changes
---------------
-
-Agent Changes
--------------
-
 Bugs
 ----
 
-Known Issues
-------------
+You can see the complete list of bugs that were
+`fixed in Pulp 2.5.0 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.5.0>`_.
 
 .. _2.4.x_upgrade_to_2.5.0:
 
 Upgrade Instructions for 2.4.x --> 2.5.0
 -----------------------------------------
 
-Rest API Changes
-----------------
+For all systems that have Pulp software installed, perform a system update::
 
-Binding API Changes
--------------------
-
-Plugin API Changes
-------------------
+    $ sudo yum update
