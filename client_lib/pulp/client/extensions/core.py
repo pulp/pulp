@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Defines Pulp additions to the okaara base classes. Classes in this module
 are not intended to be instantiated by extensions but rather provided to them.
@@ -31,7 +18,6 @@ from okaara.prompt import Prompt, WIDTH_TERMINAL
 from pulp.common.util import encode_unicode
 from pulp.client.extensions.extensions import PulpCliSection
 
-# -- constants ----------------------------------------------------------------
 
 # Values used for tags in each of the rendering calls; these should be used
 # in unit tests to verify the correct write call was made
@@ -62,18 +48,16 @@ BAR_PERCENTAGE = .66
 # the keys in a document in the render_document_* methods check here for a last
 # ditch effort to look right.
 CAPITALIZE_WORD_EXCEPTIONS = {
-    'Ca' : 'CA',
-    'Ssl' : 'SSL',
-    'Url' : 'URL',
+    'Ca': 'CA',
+    'Ssl': 'SSL',
+    'Url': 'URL',
 }
 
 # Shadow here so callers don't need to import okaara directly
 ABORT = okaara.prompt.ABORT
 
-# -- classes ------------------------------------------------------------------
 
 class PulpPrompt(Prompt):
-
     def __init__(self, input=sys.stdin, output=sys.stdout, enable_color=True,
                  wrap_width=80, record_tags=False):
         Prompt.__init__(self, input=input, output=output, enable_color=enable_color,
@@ -207,19 +191,20 @@ class PulpPrompt(Prompt):
         self.write(message, tag=tag)
         self.render_spacer()
 
-    def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0, step=2, omit_hidden=True):
+    def render_document(self, document, filters=None, order=None, spaces_between_cols=2, indent=0,
+                        step=2, omit_hidden=True):
         """
         Syntactic sugar method for rendering a single document. This call
         behaves in the same way as render_document_list() but the primary
         argument is a single document (or dict).
         """
-        self.render_document_list([document], filters=filters, order=order, spaces_between_cols=spaces_between_cols,
-                                            indent=indent, step=step, omit_hidden=omit_hidden)
+        self.render_document_list(
+            [document], filters=filters, order=order, spaces_between_cols=spaces_between_cols,
+            indent=indent, step=step, omit_hidden=omit_hidden
+        )
 
-    def render_document_list(self, items, filters=None, order=None,
-                             spaces_between_cols=1, indent=0, step=2,
-                             omit_hidden=True, header_func=None,
-                             num_separator_spaces=1):
+    def render_document_list(self, items, filters=None, order=None, spaces_between_cols=1, indent=0,
+                             step=2, omit_hidden=True, header_func=None, num_separator_spaces=1):
         """
         Prints a list of JSON documents retrieved from the REST bindings (more
         generally, will print any list of dicts). The data will be output as
@@ -327,8 +312,13 @@ class PulpPrompt(Prompt):
             ordered_formatted_keys.append((k, formatted_key))
 
         # Generate template using the formatted key values for proper length checking
-        max_key_length = reduce(lambda x, y: max(x, len(y)), [o[1] for o in ordered_formatted_keys], 0) + 1 # +1 for the : appended later
-        line_template = (' ' * indent) + '%-' + str(max_key_length) + 's' + (' ' * spaces_between_cols) + '%s'
+        # +1 for the : appended later
+        max_key_length = reduce(
+            lambda x, y: max(x, len(y)), [o[1] for o in ordered_formatted_keys], 0
+        ) + 1
+
+        line_template = (' ' * indent) + '%-' + str(max_key_length) + 's' + \
+                        (' ' * spaces_between_cols) + '%s'
 
         # Print each item
         for i in filtered_items:
@@ -350,7 +340,7 @@ class PulpPrompt(Prompt):
 
                 if isinstance(v, dict):
                     self.write(line_template % (formatted_k + ':', ''))
-                    self.render_document_list([v], indent=indent+step)
+                    self.render_document_list([v], indent=indent + step)
                     continue
 
                 # If the value is a list, pretty it up
@@ -358,7 +348,7 @@ class PulpPrompt(Prompt):
 
                     if len(v) > 0 and isinstance(v[0], dict):
                         self.write(line_template % (formatted_k + ':', ''))
-                        self.render_document_list(v, indent=indent+step)
+                        self.render_document_list(v, indent=indent + step)
                         continue
                     else:
                         try:
@@ -394,9 +384,9 @@ class PulpPrompt(Prompt):
 
         msg = ''
         for r in reasons:
-            msg += _('Resource:  %(t)s - %(i)s\n') % {'t' : r.resource_type,
-                                                      'i' : r.resource_id}
-            msg += _('Operation: %(o)s\n') % {'o' : r.operation}
+            msg += _('Resource:  %(t)s - %(i)s\n') % {'t': r.resource_type,
+                                                      'i': r.resource_id}
+            msg += _('Operation: %(o)s\n') % {'o': r.operation}
 
         self.write(msg, tag=TAG_REASONS)
 
@@ -407,7 +397,7 @@ class PulpPrompt(Prompt):
         by wrapping an iterator with its iterator() method prior to iterating
         over it.
 
-        If show_trailing_percentage is set to true, the perentage value will
+        If show_trailing_percentage is set to true, the percentage value will
         be appended at the end of the bar:
 
         [========================] 100%
@@ -456,9 +446,11 @@ class PulpPrompt(Prompt):
         :rtype: ThreadedSpinner
         """
 
-        spinner = ThreadedSpinner(self, refresh_seconds=.5,
-                                  in_progress_color=COLOR_IN_PROGRESS, completed_color=COLOR_COMPLETED,
-                                  spin_tag=TAG_THREADED_SPINNER)
+        spinner = ThreadedSpinner(
+            self, refresh_seconds=.5, in_progress_color=COLOR_IN_PROGRESS,
+            completed_color=COLOR_COMPLETED, spin_tag=TAG_THREADED_SPINNER
+        )
+
         return spinner
 
     def write(self, content, new_line=True, center=False, color=None, tag=None,
@@ -468,7 +460,6 @@ class PulpPrompt(Prompt):
 
 
 class PulpCli(Cli):
-
     def __init__(self, context):
         Cli.__init__(self, context.prompt)
         self.context = context
@@ -506,7 +497,6 @@ class PulpCli(Cli):
 
 
 class ClientContext:
-
     def __init__(self, server, config, logger, prompt, exception_handler, cli=None, shell=None):
         """
         This stuff is created in pulp.client.launcher

@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 """
 Functionality related to loading extensions from a set location. The client
@@ -25,9 +14,9 @@ import sys
 
 import pkg_resources
 
-_LOG = logging.getLogger(__name__)
 
-# -- constants ----------------------------------------------------------------
+_logger = logging.getLogger(__name__)
+
 
 # Names of the modules in each extension pack for initializing the pack
 _MODULE_CLI = 'pulp_cli'
@@ -41,20 +30,20 @@ _ENTRY_POINTS = 'entry points'
 # name of the entry point
 ENTRY_POINT_EXTENSIONS = 'pulp.extensions.%s'
 
-# -- exceptions ---------------------------------------------------------------
 
 class ExtensionLoaderException(Exception):
     """ Base class for all loading-related exceptions. """
     pass
 
-class InvalidExtensionsDirectory(ExtensionLoaderException):
 
+class InvalidExtensionsDirectory(ExtensionLoaderException):
     def __init__(self, dir):
         ExtensionLoaderException.__init__(self)
         self.dir = dir
 
     def __str__(self):
-        return _('Inaccessible or missing extensions directory [%(d)s]' % {'d' : self.dir})
+        return _('Inaccessible or missing extensions directory [%(d)s]' % {'d': self.dir})
+
 
 class LoadFailed(ExtensionLoaderException):
     """
@@ -62,12 +51,15 @@ class LoadFailed(ExtensionLoaderException):
     extensions will be listed in the exception, however the causes are logged
     rather than carried in this exception.
     """
+
     def __init__(self, failed_packs):
         ExtensionLoaderException.__init__(self)
         self.failed_packs = failed_packs
 
     def __str__(self):
-        return _('The following extension packs failed to load: [%s]' % ', '.join(self.failed_packs))
+        return _(
+            'The following extension packs failed to load: [%s]' % ', '.join(self.failed_packs))
+
 
 # Unit test marker exceptions
 class ImportFailed(ExtensionLoaderException):
@@ -75,11 +67,18 @@ class ImportFailed(ExtensionLoaderException):
         ExtensionLoaderException.__init__(self)
         self.pack_name = pack_name
 
-class NoInitFunction(ExtensionLoaderException): pass
-class InitError(ExtensionLoaderException): pass
-class InvalidExtensionConfig(ExtensionLoaderException): pass
 
-# -- loading ------------------------------------------------------------------
+class NoInitFunction(ExtensionLoaderException):
+    pass
+
+
+class InitError(ExtensionLoaderException):
+    pass
+
+
+class InvalidExtensionConfig(ExtensionLoaderException):
+    pass
+
 
 def load_extensions(extensions_dir, context, role):
     """
@@ -133,6 +132,7 @@ def load_extensions(extensions_dir, context, role):
     if len(error_packs) > 0:
         raise LoadFailed(error_packs)
 
+
 def _load_pack_modules(extensions_dir):
     """
     Loads the modules for each pack in the extensions directory, taking care
@@ -164,6 +164,7 @@ def _load_pack_modules(extensions_dir):
 
     return modules
 
+
 def _resolve_order(modules):
     """
     Determines the order in which the given modules should be initialized. The
@@ -183,7 +184,7 @@ def _resolve_order(modules):
     """
 
     # Split apart the modules by priority first
-    modules_by_priority = {} # key: priority, value: module
+    modules_by_priority = {}  # key: priority, value: module
 
     for m in modules:
         try:
@@ -199,12 +200,12 @@ def _resolve_order(modules):
     # Within each priority, sort each module alphabetically by name
     for priority in modules_by_priority.keys():
         priority_modules = modules_by_priority[priority].get(_MODULES, [])
-        priority_modules.sort(key=lambda x : x.__name__)
+        priority_modules.sort(key=lambda x: x.__name__)
 
     return modules_by_priority
 
-def _load_pack(extensions_dir, pack_module, context):
 
+def _load_pack(extensions_dir, pack_module, context):
     # Figure out which initialization module we're loading
     init_mod_name = None
     if context.cli is not None:
@@ -217,14 +218,15 @@ def _load_pack(extensions_dir, pack_module, context):
     # UI style and a failure to load the init module.
     init_mod_filename = os.path.join(extensions_dir, pack_module.__name__, init_mod_name + '.py')
     if not os.path.exists(init_mod_filename):
-        _LOG.debug(_('No plugin initialization module [%(m)s] found, skipping initialization' % {'m' : init_mod_filename}))
+        _logger.debug(_('No plugin initialization module [%(m)s] found, skipping '
+                        'initialization' % {'m': init_mod_filename}))
         return
 
     # Figure out the full package name for the module and import it.
     try:
         init_mod = __import__('%s.%s' % (pack_module.__name__, init_mod_name))
     except Exception, e:
-        _LOG.exception(_('Could not load initialization module [%(m)s]' % {'m' : init_mod_name}))
+        _logger.exception(_('Could not load initialization module [%(m)s]' % {'m': init_mod_name}))
         raise ImportFailed(pack_module.__name__), None, sys.exc_info()[2]
 
     # Get a handle on the initialize function
@@ -232,7 +234,8 @@ def _load_pack(extensions_dir, pack_module, context):
         ui_init_module = getattr(init_mod, init_mod_name)
         init_func = getattr(ui_init_module, 'initialize')
     except AttributeError, e:
-        _LOG.exception(_('Module [%(m)s] does not define the required initialize function' % {'m' : init_mod_name}))
+        _logger.exception(_('Module [%(m)s] does not define the required '
+                            'initialize function' % {'m': init_mod_name}))
         raise NoInitFunction(), None, sys.exc_info()[2]
 
     # Invoke the module's initialization, passing a copy of the context so
@@ -243,5 +246,5 @@ def _load_pack(extensions_dir, pack_module, context):
     try:
         init_func(context_copy)
     except Exception, e:
-        _LOG.exception(_('Module [%(m)s] could not be initialized' % {'m' : init_mod_name}))
+        _logger.exception(_('Module [%(m)s] could not be initialized' % {'m': init_mod_name}))
         raise InitError(), None, sys.exc_info()[2]
