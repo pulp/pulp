@@ -7,7 +7,7 @@ from unittest import TestCase
 
 from mock import patch, Mock
 
-from pulp.client.admin.config import read_config, SCHEMA, DEFAULT
+from pulp.client.admin.config import read_config, validate_overrides, SCHEMA, DEFAULT
 
 
 class TestConfig(TestCase):
@@ -78,6 +78,15 @@ class TestConfig(TestCase):
         self.assertEqual(cfg, fake_config())
 
     @patch('pulp.client.admin.config.Config')
+    @patch('pulp.client.admin.config.validate_overrides')
+    def test_read_calls_validate_overrides(self, mock_validate_overrides, fake_config):
+
+        # test
+        cfg = read_config()
+
+        mock_validate_overrides.assert_called_once()
+
+    @patch('pulp.client.admin.config.Config')
     def test_read_no_validation(self, fake_config):
         paths = ['path_A', 'path_B']
 
@@ -114,69 +123,35 @@ class TestConfig(TestCase):
         fake_config().validate.assert_called_with(SCHEMA)
         self.assertEqual(cfg, fake_config())
 
-    @patch('os.listdir')
-    @patch('os.path.expanduser')
+    @patch('pulp.client.admin.config.os.stat')
     @patch('pulp.client.admin.config.Config')
-    def test_validate_overrides_when_has_password(self,
-                                                  fake_config,
-                                                  fake_expanduser,
-                                                  fake_listdir):
-        # we are trying to fake Config.has_option return True
-        # so it means config file has password
-        fake_instance = fake_config.return_value
+    def test_validate_overrides_when_has_password(self, mock_config, mock_os_stat):
+        # st_mode is the file permissions component of stat output
+        # st_mode = 33279 emulates a 777 permission
+        mock_os_stat.return_value.st_mode = 33279
+        mock_config.return_value.has_option.return_value = True
+        self.assertRaises(RuntimeError, validate_overrides, '/tmp/admin.conf')
+        mock_os_stat.assert_called_once_with('/tmp/admin.conf')
+        mock_config.return_value.has_option.assert_called_once_with('auth', 'password')
 
-        def has_option(*args):
-            return True
-
-        fake_instance.has_option = has_option
-
-        fn = tempfile.NamedTemporaryFile()
-        fake_expanduser.return_value = fn.name
-
-        os.chmod(fn.name, 0777)
-        fake_listdir.return_value = ['A', 'B', 'C']
-        self.assertRaises(RuntimeError, read_config)
-
-        #validation
-        paths = [fn.name]
-
-        # Config is only called from within
-        # pulp.client.admin.config.validate_overrides
-        # not not from read_config as it would have exited
-        # after throwing exception when config has password
-        # and file is world readable
-        fake_config.assert_called_with(*paths)
-        self.assertFalse(fake_config().validate.called)
-
-    @patch('os.listdir')
-    @patch('os.path.expanduser')
+    @patch('pulp.client.admin.config.os.stat')
     @patch('pulp.client.admin.config.Config')
-    def test_validate_overrides_when_does_not_have_password(self,
-                                                            fake_config,
-                                                            fake_expanduser,
-                                                            fake_listdir):
-        # we are trying to fake Config.has_option return False
-        # so it means config file does not have password
-        fake_instance = fake_config.return_value
+    def test_validate_overrides_when_has_password_good_permissions(self, mock_config, mock_os_stat):
+        # st_mode is the file permissions component of stat output
+        # st_mode = 33216 emulates a 700 permission
+        mock_os_stat.return_value.st_mode = 33216
+        mock_config.return_value.has_option.return_value = True
+        validate_overrides('/tmp/admin.conf')
+        mock_config.assert_called_once_with('/tmp/admin.conf')
 
-        def has_option(*args): return False
-        fake_instance.has_option = has_option
-
-        fn = tempfile.NamedTemporaryFile()
-        fake_expanduser.return_value = fn.name
-
-        os.chmod(fn.name, 0777)
-        fake_listdir.return_value = ['A', 'B', 'C']
-        cfg = read_config()
-
-        #validation
-        paths = [
-            '/etc/pulp/admin/admin.conf',
-            '/etc/pulp/admin/conf.d/A',
-            '/etc/pulp/admin/conf.d/B',
-            '/etc/pulp/admin/conf.d/C',
-            fn.name,
-        ]
-        fake_config.assert_called_with(*paths)
-        fake_config().validate.assert_called_with(SCHEMA)
-        self.assertEqual(cfg, fake_config())
+    @patch('pulp.client.admin.config.os.stat')
+    @patch('pulp.client.admin.config.Config')
+    def test_validate_overrides_when_does_not_have_password(self, mock_config, mock_os_stat):
+        # st_mode is the file permissions component of stat output
+        # st_mode = 33279 emulates a 777 permission
+        mock_os_stat.return_value.st_mode = 33279
+        mock_config.return_value.has_option.return_value = False
+        try:
+            validate_overrides('/tmp/admin.conf')
+        except Exception as error:
+            self.fail("validate_overrides should not raise an Exception. Raised %s" % error)

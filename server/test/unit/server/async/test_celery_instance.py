@@ -66,18 +66,31 @@ def fake_get(new_config, section, key):
     Fake version of the get() method from pulp's config object. This is useful
     so we can have concrete values to test for.
     """
-    if new_config.get(key):
-        return new_config.get(key)
+    if section in new_config.keys() and new_config[section].get(key, False):
+        return new_config[section].get(key)
     else:
         return _default_values[section][key]
 
 
-CONFIG = {
-    'name': 'database_name',
-    'seeds': 'host1:27017,host2:27017',
-    'username': 'someguy',
-    'password': 'letmein',
-}
+def _get_database_test_config():
+    """
+    Returns a configuration that contains a definition for the 'database' section of the config.
+
+    This is a method so that every copy returned is independent since the caller usually modifies
+    it some.
+
+    :return: A dict containing configuration values for the 'database' section.
+    :rtype dict
+    """
+    config = {
+        'database': {
+            'name': 'database_name',
+            'seeds': 'host1:27017,host2:27017',
+            'username': 'someguy',
+            'password': 'letmein',
+            }
+    }
+    return config
 
 
 class TestCeleryInstanceSSLConfig(unittest.TestCase):
@@ -85,54 +98,55 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
     Assert that the BROKER_USE_SSL structure has the expected configuration in it.
     """
 
-    def test_SSL_not_enabled(self):
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean')
+    def test_configure_SSL_when_SSL_disabled(self, mock_getboolean):
         """
-        Make sure that the Celery config does not have BROKER_USE_SSL set if SSL is not enabled.
+        Make sure that the Celery config has BROKER_USE_SSL set to False if SSL is disabled.
         """
+        mock_getboolean.return_value = False
+        celery_instance.configure_SSL()
         self.assertFalse(celery_instance.celery.conf['BROKER_USE_SSL'])
 
-    def test_SSL_enabled(self):
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean')
+    def test_configure_SSL_when_SSL_enabled(self, mock_getboolean, mock_celery):
         """
         Make sure that the Celery config has BROKER_USE_SSL properly formed if SSL enabled.
         """
+        mock_getboolean.return_value = True
         mock_cacert = mock.Mock()
         mock_keyfile = mock.Mock()
         mock_certfile = mock.Mock()
+
         CONFIG_OVERRIDE = {
-            'cacert': mock_cacert,
-            'keyfile': mock_keyfile,
-            'certfile': mock_certfile,
-            'cert_reqs': ssl.CERT_REQUIRED,
-            'broker_url': 'qpid://guest@localhost/',
-            'celery_require_ssl': 'true',
+            'tasks': {
+                'cacert': mock_cacert,
+                'keyfile': mock_keyfile,
+                'certfile': mock_certfile,
+                'cert_reqs': ssl.CERT_REQUIRED,
+                }
         }
+
         EXPECTED_BROKER_USE_SSL = {
             'ca_certs': mock_cacert,
             'keyfile': mock_keyfile,
             'certfile': mock_certfile,
             'cert_reqs': ssl.CERT_REQUIRED,
         }
+
         custom_fake_get = partial(fake_get, CONFIG_OVERRIDE)
+
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
-            reload(celery_instance)
-            ACTUAL_BROKER_USE_SSL = celery_instance.celery.conf['BROKER_USE_SSL']
-            self.assertEqual(set(EXPECTED_BROKER_USE_SSL.keys()), set(ACTUAL_BROKER_USE_SSL.keys()))
-            for key in EXPECTED_BROKER_USE_SSL.keys():
-                self.assertEqual(EXPECTED_BROKER_USE_SSL[key], ACTUAL_BROKER_USE_SSL[key])
-
-    def tearDown(self):
-        """
-        Reload the celery_instance module after each test is run.
-
-        Tests in this class set options that are important at import time for the celery_instance
-        module.  This reloads the module back to its correct defaults after each test.
-        """
-        reload(celery_instance)
+            celery_instance.configure_SSL()
+            mock_celery.conf.update.assert_called_once_with(BROKER_USE_SSL=EXPECTED_BROKER_USE_SSL)
 
 
 class TestMongoBackendConfig(unittest.TestCase):
 
-    def test_celery_conf_updated(self):
+    def test_celery_cong_updated(self):
+        """
+        Assert the celery_config is updated with the necessary settings.
+        """
         self.assertEqual(celery_instance.celery.conf['CELERY_RESULT_BACKEND'], 'mongodb')
         self.assertTrue(
             isinstance(celery_instance.celery.conf['CELERY_MONGODB_BACKEND_SETTINGS'], dict))
@@ -144,7 +158,10 @@ class TestMongoBackendConfig(unittest.TestCase):
 
     @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
     def test_create_config(self):
-        custom_fake_get = partial(fake_get, CONFIG)
+        """
+        Assert that the mongo config is created correctly with correct settings.
+        """
+        custom_fake_get = partial(fake_get, _get_database_test_config())
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
 
@@ -156,8 +173,11 @@ class TestMongoBackendConfig(unittest.TestCase):
 
     @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
     def test_create_config_one_seed(self):
-        config = CONFIG.copy()
-        config['seeds'] = config['seeds'].split(',')[0]
+        """
+        Assert that port and host are set on the mongo config with only one host:port specified.
+        """
+        config = _get_database_test_config()
+        config['database']['seeds'] = config['database']['seeds'].split(',')[0]
         custom_fake_get = partial(fake_get, config)
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
@@ -167,8 +187,11 @@ class TestMongoBackendConfig(unittest.TestCase):
 
     @mock.patch('pulp.server.async.celery_instance.config.has_option', new=lambda x, y: True)
     def test_create_config_no_port(self):
-        config = CONFIG.copy()
-        config['seeds'] = 'host1'
+        """
+        Assert a seed that does not have a port does not set the port on the mongo config.
+        """
+        config = _get_database_test_config()
+        config['database']['seeds'] = 'host1'
         custom_fake_get = partial(fake_get, config)
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
@@ -176,54 +199,60 @@ class TestMongoBackendConfig(unittest.TestCase):
             self.assertEqual(result['host'], 'host1')
             self.assertTrue('port' not in result)
 
-    @mock.patch('pulp.server.config.config.has_option',
+    @mock.patch('pulp.server.async.celery_instance.config.has_option',
                 new=lambda x, y: False if y == 'password' else True)
     def test_no_password(self):
-        custom_fake_get = partial(fake_get, CONFIG)
+        """
+        Assert both user and password are missing from the mongo config if password is missing.
+        """
+        custom_fake_get = partial(fake_get, _get_database_test_config())
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
 
             self.assertTrue('user' not in result)
             self.assertTrue('password' not in result)
 
-    @mock.patch('pulp.server.config.config.has_option',
+    @mock.patch('pulp.server.async.celery_instance.config.has_option',
                 new=lambda x, y: False if y == 'username' else True)
     def test_no_user(self):
-        custom_fake_get = partial(fake_get, CONFIG)
+        """
+        Assert both user and password are missing mongo config if username is missing.
+        """
+        custom_fake_get = partial(fake_get, _get_database_test_config())
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
 
             self.assertTrue('user' not in result)
             self.assertTrue('password' not in result)
 
-    @mock.patch('pulp.server.config.config.getboolean', return_value=True)
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean', return_value=True)
     def test_ssl_ca_path(self, getboolean):
         """
         Assert correct behavior when a ca_path is provided.
         """
-        config = {'ca_path': '/some/ca.pem'}
+        config = {'database': {'ca_path': '/some/ca.pem'}}
         custom_fake_get = partial(fake_get, config)
 
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
 
-            self.assertEqual(result['ssl_ca_certs'], config['ca_path'])
+            self.assertEqual(result['ssl_ca_certs'], config['database']['ca_path'])
 
-    @mock.patch('pulp.server.config.config.getboolean', return_value=True)
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean', return_value=True)
     def test_ssl_client_cert_and_key(self, getboolean):
         """
         Assert correct behavior when a client cert and key are provided.
         """
-        config = {'ssl_keyfile': '/some/file.key', 'ssl_certfile': '/some/file.crt'}
+        config = {'database': {'ssl_keyfile': '/some/file.key', 'ssl_certfile': '/some/file.crt'}}
         custom_fake_get = partial(fake_get, config)
 
         with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
             result = celery_instance.create_mongo_config()
 
-            self.assertEqual(result['ssl_keyfile'], config['ssl_keyfile'])
-            self.assertEqual(result['ssl_certfile'], config['ssl_certfile'])
+            self.assertEqual(result['ssl_keyfile'], config['database']['ssl_keyfile'])
+            self.assertEqual(result['ssl_certfile'], config['database']['ssl_certfile'])
 
-    @mock.patch('pulp.server.config.config.getboolean',
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean',
                 new=lambda x, y: False if y == 'ssl' else True)
     def test_ssl_false(self):
         """
@@ -234,7 +263,7 @@ class TestMongoBackendConfig(unittest.TestCase):
         for s in ('ssl', 'ssl_keyfile', 'ssl_certfile', 'ssl_cert_reqs', 'ssl_ca_certs'):
             self.assertTrue(s not in result)
 
-    @mock.patch('pulp.server.config.config.getboolean', return_value=True)
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean', return_value=True)
     def test_verify_ssl_true(self, getboolean):
         """
         Assert correct behavior when verify_ssl is True.
@@ -244,7 +273,7 @@ class TestMongoBackendConfig(unittest.TestCase):
         self.assertEqual(result['ssl'], True)
         self.assertEqual(result['ssl_cert_reqs'], ssl.CERT_REQUIRED)
 
-    @mock.patch('pulp.server.config.config.getboolean',
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean',
                 new=lambda x, y: False if y == 'verify_ssl' else True)
     def test_verify_ssl_false(self):
         """
