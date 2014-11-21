@@ -76,11 +76,19 @@ celery.conf.update(CELERY_RESULT_BACKEND='mongodb')
 celery.conf.update(CELERY_MONGODB_BACKEND_SETTINGS=create_mongo_config())
 celery.conf.update(CELERY_WORKER_DIRECT=True)
 
-if config.getboolean('tasks', 'celery_require_ssl'):
-    BROKER_USE_SSL = {
-        'ca_certs': config.get('tasks', 'cacert'),
-        'keyfile': config.get('tasks', 'keyfile'),
-        'certfile': config.get('tasks', 'certfile'),
-        'cert_reqs': ssl.CERT_REQUIRED,
-    }
-    celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
+
+def configure_SSL():
+    """
+    Configures the celery object with BROKER_USE_SSL options
+    """
+    if config.getboolean('tasks', 'celery_require_ssl'):
+        BROKER_USE_SSL = {
+            'ca_certs': config.get('tasks', 'cacert'),
+            'keyfile': config.get('tasks', 'keyfile'),
+            'certfile': config.get('tasks', 'certfile'),
+            'cert_reqs': ssl.CERT_REQUIRED,
+        }
+        celery.conf.update(BROKER_USE_SSL=BROKER_USE_SSL)
+
+
+configure_SSL()
