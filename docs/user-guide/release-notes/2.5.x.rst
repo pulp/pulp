@@ -53,3 +53,15 @@ Upgrade Instructions for 2.4.x --> 2.5.0
 For all systems that have Pulp software installed, perform a system update::
 
     $ sudo yum update
+
+Thank You
+---------
+
+Thank you to all of Pulp's contributors, especially these new ones!
+
+Irina Gulina
+Peter Gustafsson
+Petter Hassberg
+Dennis Kliban
+Christoffer Kylvåg
+Austin Macdonald
