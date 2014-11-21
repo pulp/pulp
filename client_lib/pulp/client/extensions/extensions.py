@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Classes used in the writing of Pulp client extensions.
 """
@@ -18,10 +5,9 @@ Classes used in the writing of Pulp client extensions.
 from gettext import gettext as _
 import os
 
-from okaara.cli import Section, Command, Option, Flag, OptionGroup, OptionValidationFailed, CommandUsage
-from okaara.cli import UnknownArgsParser # shadow here so extensions can import it from this module
+from okaara.cli import (Section, Command, Option, Flag, OptionGroup,
+                        OptionValidationFailed, CommandUsage)
 
-# -- cli components -----------------------------------------------------------
 
 class PulpCliSection(Section):
 
@@ -122,7 +108,7 @@ class PulpCliCommand(Command):
         :param allow_multiple: if true, the value of this option when parsed
                will be a list of values in the order in which the user entered them
         :type  allow_multiple: bool
-        
+
         :param default: The default value for optional options
         :type  default: object
 
@@ -138,7 +124,8 @@ class PulpCliCommand(Command):
         :rtype:  PulpCliOption
         """
         option = PulpCliOption(name, description, required=required, allow_multiple=allow_multiple,
-                               aliases=aliases, default=default, validate_func=validate_func, parse_func=parse_func)
+                               aliases=aliases, default=default, validate_func=validate_func,
+                               parse_func=parse_func)
         self.add_option(option)
         return option
 
@@ -204,10 +191,10 @@ class PulpCliCommand(Command):
         # as not fulfilling the required contract. Like the comment above, I'll
         # refactor Okaara to make this easier to override in a subclass so we
         # can remove the bulk of this method from being copied. jdob, Sep 4, 2012
-        missing_required = [o for o in self.all_options()\
-                            if o.required and (not kwarg_dict.has_key(o.name) or
-                                               kwarg_dict[o.name] is None or
-                                               kwarg_dict[o.name] == '')]
+        missing_required = [
+            o for o in self.all_options() if o.required and (not kwarg_dict.has_key(o.name)
+                                                             or kwarg_dict[o.name] is None
+                                                             or kwarg_dict[o.name] == '')]
         if len(missing_required) > 0:
             raise CommandUsage(missing_required)
 
@@ -224,7 +211,7 @@ class PulpCliCommand(Command):
         return self.method(*arg_list, **clean_kwargs)
 
     def print_validation_error(self, prompt, option, exception):
-        msg = _('Validation failed for argument [%(name)s]') % {'name' : option.name}
+        msg = _('Validation failed for argument [%(name)s]') % {'name': option.name}
         try:
             msg += (': %s' % exception.args[0])
         except (AttributeError, IndexError):

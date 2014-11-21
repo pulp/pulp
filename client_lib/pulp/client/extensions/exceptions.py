@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Centralized logic for handling the series of expected exceptions coming from
 server operations (i.e. the 400 series of HTTP status codes). The handling
@@ -26,12 +13,13 @@ react to it in the extension itself.
 """
 
 from _socket import gaierror
-from gettext import gettext as _
 import logging
-from M2Crypto import X509
-from M2Crypto.SSL.Checker import WrongHost
 import os
 from socket import error as socket_error
+from gettext import gettext as _
+
+from M2Crypto import X509
+from M2Crypto.SSL.Checker import WrongHost
 
 from pulp.bindings.exceptions import *
 from pulp.client.arg_utils import InvalidConfig
@@ -49,7 +37,6 @@ CODE_INVALID_CONFIG = os.EX_DATAERR
 CODE_WRONG_HOST = os.EX_DATAERR
 CODE_UNKNOWN_HOST = os.EX_CONFIG
 CODE_SOCKET_ERROR = os.EX_CONFIG
-
 
 _logger = logging.getLogger(__name__)
 
@@ -84,20 +71,20 @@ class ExceptionHandler:
 
         # Determine which method to call based on exception type
         mappings = (
-            (BadRequestException,               self.handle_bad_request),
-            (NotFoundException,                 self.handle_not_found),
-            (ConflictException,                 self.handle_conflict),
-            (ConnectionException,               self.handle_connection_error),
-            (PermissionsException,              self.handle_permission),
-            (InvalidConfig,                     self.handle_invalid_config),
-            (WrongHost,                         self.handle_wrong_host),
-            (gaierror,                          self.handle_unknown_host),
-            (socket_error,                      self.handle_socket_error),
-            (PulpServerException,               self.handle_server_error),
+            (BadRequestException, self.handle_bad_request),
+            (NotFoundException, self.handle_not_found),
+            (ConflictException, self.handle_conflict),
+            (ConnectionException, self.handle_connection_error),
+            (PermissionsException, self.handle_permission),
+            (InvalidConfig, self.handle_invalid_config),
+            (WrongHost, self.handle_wrong_host),
+            (gaierror, self.handle_unknown_host),
+            (socket_error, self.handle_socket_error),
+            (PulpServerException, self.handle_server_error),
             (ClientCertificateExpiredException, self.handle_expired_client_cert),
-            (CertificateVerificationException,  self.handle_ssl_validation_error),
-            (MissingCAPathException,            self.handle_missing_ca_path_exception),
-            (ApacheServerException,             self.handle_apache_error),
+            (CertificateVerificationException, self.handle_ssl_validation_error),
+            (MissingCAPathException, self.handle_missing_ca_path_exception),
+            (ApacheServerException, self.handle_apache_error),
         )
 
         handle_func = self.handle_unexpected
@@ -123,21 +110,20 @@ class ExceptionHandler:
         # The following keys may be present to further classify the exception:
         # property_names - values for these properties were invalid
         # missing_property_names - required properties that were not specified
-
         if 'property_names' in e.extra_data:
             msg = _('The values for the following properties were invalid: %(p)s')
-            msg = msg % {'p' : ', '.join(e.extra_data['property_names'])}
+            msg = msg % {'p': ', '.join(e.extra_data['property_names'])}
         elif 'missing_property_names' in e.extra_data:
             msg = _('The following properties are required but were not provided: %(p)s')
-            msg = msg % {'p' : ', '.join(e.extra_data['missing_property_names'])}
+            msg = msg % {'p': ', '.join(e.extra_data['missing_property_names'])}
         else:
             msg = _('The server indicated one or more values were incorrect. The server '
-                  'provided the following error message:')
+                    'provided the following error message:')
             self.prompt.render_failure_message(msg)
 
             self.prompt.render_failure_message('   %s' % e.error_message)
             msg = _('More information can be found in the client log file %(l)s.')
-            msg = msg % {'l' : self._log_filename()}
+            msg = msg % {'l': self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_BAD_REQUEST
@@ -181,7 +167,7 @@ class ExceptionHandler:
 
         if 'resource_id' in e.extra_data:
             msg = _('A resource with the ID "%(i)s" already exists.')
-            msg = msg % {'i' : e.extra_data['resource_id']}
+            msg = msg % {'i': e.extra_data['resource_id']}
         elif 'reasons' in e.extra_data:
             msg = _('The requested operation conflicts with one or more operations '
                     'already queued for the resource. The following operations on the '
@@ -189,14 +175,14 @@ class ExceptionHandler:
             msg = msg
 
             for r in e.extra_data['reasons']:
-                msg += _('Resource:  %(t)s - %(i)s\n') % {'t' : r['resource_type'],
-                                                       'i' : r['resource_id']}
-                msg += _('Operation: %(o)s') % {'o' : r['operation']}
+                msg += _('Resource:  %(t)s - %(i)s\n') % {'t': r['resource_type'],
+                                                          'i': r['resource_id']}
+                msg += _('Operation: %(o)s') % {'o': r['operation']}
         else:
             msg = _('The requested operation could not execute due to an unexpected '
                     'conflict on the server. More information can be found in the '
                     'client log file %(l)s.')
-            msg = msg % {'l' : self._log_filename()}
+            msg = msg % {'l': self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_CONFLICT
@@ -211,7 +197,6 @@ class ExceptionHandler:
 
         # This is a very vague error condition; the best we can do is rely on
         # the exception dump to the log file
-
         msg = _('An internal error occurred on the Pulp server:\n\n%(e)s')
         msg = msg % {'e': str(e)}
 
@@ -229,7 +214,7 @@ class ExceptionHandler:
 
         msg = _('An error occurred attempting to contact the server. More information '
                 'can be found in the client log file %(l)s.')
-        msg = msg % {'l' : self._log_filename()}
+        msg = msg % {'l': self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_CONNECTION_EXCEPTION
@@ -279,8 +264,8 @@ class ExceptionHandler:
                 'client configuration file.')
 
         data = {
-            'expected' : e.expectedHost,
-            'actual' : e.actualHost,
+            'expected': e.expectedHost,
+            'actual': e.actualHost,
         }
 
         msg = msg % data
@@ -300,7 +285,7 @@ class ExceptionHandler:
 
         msg = _('Unable to find host [%(server)s]. Check the client '
                 'configuration to ensure the server hostname is correct.')
-        data = {'server' : self.config['server']['host']}
+        data = {'server': self.config['server']['host']}
         msg = msg % data
 
         self.prompt.render_failure_message(msg)
@@ -320,14 +305,15 @@ class ExceptionHandler:
         # specifically and be generic about everything else.
 
         if len(e.args) > 0 and e[0] == 111:
-            msg = _('The connection was refused when attempting to contact the server [%(server)s]. '
-                    'Check the client configuration to ensure the server hostname is correct.')
-            data = {'server' : self.config['server']['host']}
+            msg = _(
+                'The connection was refused when attempting to contact the server [%(server)s]. '
+                'Check the client configuration to ensure the server hostname is correct.')
+            data = {'server': self.config['server']['host']}
             msg = msg % data
         else:
             msg = _('An error occurred attempting to contact the server. More information '
                     'can be found in the client log file %(l)s.')
-            msg = msg % {'l' : self._log_filename()}
+            msg = msg % {'l': self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_SOCKET_ERROR
@@ -346,7 +332,7 @@ class ExceptionHandler:
 
         if expiration_date is not None:
             desc = _('The session certificate expired on %(e)s.')
-            desc = desc % {'e' : expiration_date}
+            desc = desc % {'e': expiration_date}
         else:
             desc = _('The session certificate is expired.')
 
@@ -426,7 +412,7 @@ class ExceptionHandler:
 
         msg = _('An unexpected error has occurred. More information '
                 'can be found in the client log file %(l)s.')
-        msg = msg % {'l' : self._log_filename()}
+        msg = msg % {'l': self._log_filename()}
 
         self.prompt.render_failure_message(msg)
         return CODE_UNEXPECTED
@@ -447,12 +433,12 @@ class ExceptionHandler:
         data:      %(d)s
         """
 
-        data = {'h' : e.href,
-                'm' : e.http_request_method,
-                's' : e.http_status,
-                'e' : e.error_message,
-                't' : e.traceback,
-                'd' : e.extra_data}
+        data = {'h': e.href,
+                'm': e.http_request_method,
+                's': e.http_status,
+                'e': e.error_message,
+                't': e.traceback,
+                'd': e.extra_data}
 
         _logger.error(template % data)
 
