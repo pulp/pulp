@@ -6,7 +6,7 @@
 
 Name: pulp-nodes
 Version: 2.6.0
-Release: 0.19.rc%{?dist}
+Release: 0.1.alpha%{?dist}
 Summary: Support for pulp nodes
 Group: Development/Languages
 License: GPLv2
@@ -235,6 +235,13 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
+* Fri Nov 21 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.1.alpha
+- 1161205 - Adds comments to conf files about value of defaults
+  (bmbouter@gmail.com)
+- 1135589 - move PRIMARY_ID definition (cduryee@redhat.com)
+- 1142304 - remove extraneous errors during unit test runs (cduryee@redhat.com)
+- 1095483 - fix message to not refer to pulp.log (cduryee@redhat.com)
+
 * Mon Nov 17 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.19.rc
 - Pulp rebuild
 
