@@ -2,12 +2,18 @@ import base64
 import locale
 import logging
 import os
+import requests
+import subprocess
 import urllib
 try:
     import oauth2 as oauth
 except ImportError:
     # python-oauth2 isn't available on RHEL 5.
     oauth = None
+try:
+    import kerberos as krb
+except ImportError:
+    krb = None
 
 from types import NoneType
 from M2Crypto import httpslib, m2, SSL
@@ -229,6 +235,29 @@ class PulpConnection(object):
             path = '?'.join((path, queries))
         return path
 
+    def has_kerberos_ticket(self):
+        """
+        Verify if the user has a valid Kerberos ticket.
+
+        :rtype: boolean
+        """
+        return True if subprocess.call(['klist', '-s']) == 0 else False
+
+    def is_kerberos_server(self):
+        """
+        Verify if the server requests a Kerberos authentication.
+        To do that it checks that the headers contain the 'negotiate' field
+
+        :return:    True if the server requires Kerberos, False otherwise
+        :rtype:     boolean
+        """
+        r = requests.get("https://" + self.host + self.path_prefix, verify=self.verify_ssl)
+        auth_fields = {}
+        for field in r.headers.get("www-authenticate", "").split(","):
+            kind, __, details = field.strip().partition(" ")
+            auth_fields[kind.lower()] = details.strip()
+        return auth_fields.get('negotiate') == ''
+
 
 # -- wrapper classes ----------------------------------------------------------
 
@@ -289,11 +318,18 @@ class HTTPSServerWrapper(object):
                 raise exceptions.MissingCAPathException(self.pulp_connection.ca_path)
         ssl_context.set_session_timeout(self.pulp_connection.timeout)
 
-        if self.pulp_connection.username and self.pulp_connection.password:
+        if krb is not None and self.pulp_connection.has_kerberos_ticket() and self.pulp_connection.is_kerberos_server():
+            #Proceed to Kerberos authentication
+            __, krb_context = krb.authGSSClientInit("HTTP@%s" % self.pulp_connection.host)
+            krb.authGSSClientStep(krb_context, "")
+            negotiate_details = krb.authGSSClientResponse(krb_context)
+            headers['Authorization'] = "Negotiate " + negotiate_details
+        elif self.pulp_connection.username and self.pulp_connection.password:
             raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
             encoded = base64.encodestring(raw)[:-1]
             headers['Authorization'] = 'Basic ' + encoded
-        elif self.pulp_connection.cert_filename:
+
+        if self.pulp_connection.cert_filename:
             ssl_context.load_cert(self.pulp_connection.cert_filename)
 
         # oauth configuration. This block is only True if oauth is not None, so it won't run on RHEL

@@ -42,7 +42,11 @@ DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/' : [READ]}
 def check_preauthenticated():
     # Support web server level authentication of users
     username = http.request_info("REMOTE_USER")
+
     if username is not None:
+        # Strip the realm in case of Kerberos authentication
+        if '@' in username:
+            username = username.split("@")[0]
         # Omitting the password = assume preauthenticated
         userid = factory.authentication_manager().check_username_password(username)
         if userid is None:
