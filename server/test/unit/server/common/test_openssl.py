@@ -81,11 +81,13 @@ class TestCertificate(unittest.TestCase):
 
         fake_filenames = [cert_filename, ca_filename]
         fake_files = []
+
         def fake_NamedTemporaryFile(mode, dir, delete):
             fake_file = mock.MagicMock()
             fake_file.name = fake_filenames.pop(0)
             fake_files.append(fake_file)
             return fake_file
+
         NamedTemporaryFile.side_effect = fake_NamedTemporaryFile
 
         mkdtemp.return_value = a_tempdir
@@ -94,6 +96,7 @@ class TestCertificate(unittest.TestCase):
         # the signature check).
         check_call_side_effects = [None, subprocess.CalledProcessError(mock.MagicMock(),
                                                                        mock.MagicMock())]
+
         def fake_check_call(*args, **kwargs):
             """
             Does nothing the first time it is called, and then raises CalledProcessError the second
@@ -102,6 +105,7 @@ class TestCertificate(unittest.TestCase):
             what_to_do = check_call_side_effects.pop(0)
             if what_to_do:
                 raise what_to_do
+
         # This will allow us to simulate the expiration check failing
         check_call.side_effect = fake_check_call
 
@@ -161,11 +165,13 @@ class TestCertificate(unittest.TestCase):
 
         fake_filenames = [cert_filename, ca_filename]
         fake_files = []
+
         def fake_NamedTemporaryFile(mode, dir, delete):
             fake_file = mock.MagicMock()
             fake_file.name = fake_filenames.pop(0)
             fake_files.append(fake_file)
             return fake_file
+
         NamedTemporaryFile.side_effect = fake_NamedTemporaryFile
 
         mkdtemp.return_value = a_tempdir

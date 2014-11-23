@@ -1,7 +1,6 @@
 """
 OpenSSL wrapper.
 """
-import os
 import shutil
 import subprocess
 import tempfile
