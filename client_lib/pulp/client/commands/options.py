@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains CLI framework option and flag instances for options that are used
 across multiple command areas. Examples include specifying a repository ID or
@@ -27,7 +14,6 @@ from gettext import gettext as _
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliFlag
 from pulp.client import parsers, validators
 
-# -- option descriptions ------------------------------------------------------
 
 # General Resource
 DESC_ID = _('unique identifier; only alphanumeric, -, and _ allowed')
@@ -43,8 +29,6 @@ DESC_ALL = _('match all records. If other filters are specified, they will be '
              'applied. This option is only useful when you need to explicitly '
              'request that no filters be applied.')
 
-# -- common options -----------------------------------------------------------
-
 # General Resource
 OPTION_NAME = PulpCliOption('--display-name', DESC_NAME, required=False)
 OPTION_DESCRIPTION = PulpCliOption('--description', DESC_DESCRIPTION, required=False)
@@ -52,8 +36,11 @@ OPTION_NOTES = PulpCliOption('--note', DESC_NOTE, required=False,
                              allow_multiple=True, parse_func=parsers.parse_notes)
 
 # IDs
-OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID_ALLOWING_DOTS, required=True, validate_func=validators.id_validator_allow_dots)
-OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True, validate_func=validators.id_validator)
-OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID_ALLOWING_DOTS, required=True, validate_func=validators.id_validator_allow_dots)
+OPTION_REPO_ID = PulpCliOption('--repo-id', DESC_ID_ALLOWING_DOTS, required=True,
+                               validate_func=validators.id_validator_allow_dots)
+OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True,
+                                validate_func=validators.id_validator)
+OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID_ALLOWING_DOTS, required=True,
+                                   validate_func=validators.id_validator_allow_dots)
 
 FLAG_ALL = PulpCliFlag('--all', DESC_ALL)
