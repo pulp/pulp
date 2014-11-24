@@ -242,29 +242,8 @@ Pulp nodes consumer client extensions.
 - 1142304 - remove extraneous errors during unit test runs (cduryee@redhat.com)
 - 1095483 - fix message to not refer to pulp.log (cduryee@redhat.com)
 
-* Mon Nov 17 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.19.rc
-- Pulp rebuild
-
-* Mon Nov 10 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.18.rc
-- Pulp rebuild
-
-* Thu Nov 06 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.17.rc
-- Pulp rebuild
-
-* Mon Nov 03 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.16.rc
-- Pulp rebuild
-
-* Fri Oct 31 2014 Austin Macdonald <amacdona@redhat.com> 2.5.0-0.15.rc
+* Fri Nov 21 2014 Austin Macdonald <asmacdo@gmail.com> 2.5.0-1
 - 1150297 - Update versions from 2.4.x to 2.5.0. (rbarlow@redhat.com)
-
-* Thu Oct 16 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
-- Pulp rebuild
-
-* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 2.4.2-1
-- Pulp rebuild
-
-* Thu Sep 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.1-1
-- Pulp rebuild
 
 * Thu Jul 31 2014 Randy Barlow <rbarlow@redhat.com> 2.4.0-1
 - 1125030 - Handle both styles of certificate stores. (rbarlow@redhat.com)

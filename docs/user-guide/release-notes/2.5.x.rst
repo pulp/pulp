@@ -59,9 +59,9 @@ Thank You
 
 Thank you to all of Pulp's contributors, especially these new ones!
 
-Irina Gulina
-Peter Gustafsson
-Petter Hassberg
-Dennis Kliban
-Christoffer Kylvåg
-Austin Macdonald
+- Irina Gulina
+- Peter Gustafsson
+- Petter Hassberg
+- Dennis Kliban
+- Christoffer Kylvåg
+- Austin Macdonald
