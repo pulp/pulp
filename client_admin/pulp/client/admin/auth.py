@@ -109,11 +109,19 @@ class UserSection(PulpCliSection):
             prompt_msg = "Enter password for user [%s] : " % login
             verify_msg = "Re-enter password for user [%s]: " % login
             unmatch_msg = "Passwords do not match"
-            password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg), _(unmatch_msg))
+
+        while True:
+            password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg),
+                                                           _(unmatch_msg))
             if password is self.context.prompt.ABORT:
                 self.context.prompt.render_spacer()
                 self.context.prompt.write(_('Create user cancelled'))
                 return os.EX_NOUSER
+            if password:
+                break
+            else:
+                self.context.prompt.render_spacer()
+                self.prompt.render_failure_message(_('Password cannot be emtpy'))
 
         name = kwargs['name'] or login
 
