@@ -1,14 +1,3 @@
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains classes related to listing, creating, and deleting schedules on the
 Pulp server. All classes in this module are agnostic of the resource and operation
@@ -35,7 +24,6 @@ from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
 from pulp.client.validators import interval_iso6801_validator
 
-# -- constants ----------------------------------------------------------------
 
 # Command configuration
 NAME_LIST = 'list'
@@ -87,9 +75,9 @@ FLAG_DETAILS = PulpCliFlag('--details', DESC_DETAILS)
 DESC_QUIET = _('only output the next time without verbiage around it')
 FLAG_QUIET = PulpCliFlag('--quiet', DESC_QUIET, aliases=['-q'])
 
-LOG = logging.getLogger(__name__)
 
-# -- reusable scheduling classes ----------------------------------------------
+_logger = logging.getLogger(__name__)
+
 
 class ListScheduleCommand(PulpCliCommand):
     """
@@ -149,13 +137,13 @@ class CreateScheduleCommand(PulpCliCommand):
     def run(self, **kwargs):
         schedule = kwargs[OPT_SCHEDULE.keyword]
         failure_threshold = kwargs[OPT_FAILURE_THRESHOLD.keyword]
-        enabled = True # we could ask but it just added clutter to the CLI, so default to true
+        enabled = True  # we could ask but it just added clutter to the CLI, so default to true
 
         try:
             self.strategy.create_schedule(schedule, failure_threshold, enabled, kwargs)
             self.context.prompt.render_success_message(_('Schedule successfully created'))
         except ValueError, e:
-            LOG.exception(e)
+            _logger.exception(e)
             self.context.prompt.render_failure_message(_('One or more values were invalid:'))
             self.context.prompt.render_failure_message(e[0])
 
@@ -233,18 +221,19 @@ class NextRunCommand(PulpCliCommand):
         schedules = self.strategy.retrieve_schedules(kwargs).response_body
 
         if len(schedules) == 0:
-            self.context.prompt.render_paragraph(_('There are no schedules defined for this operation.'))
+            self.context.prompt.render_paragraph(
+                _('There are no schedules defined for this operation.'))
             return
 
-        sorted_schedules = sorted(schedules, key=lambda x : x['next_run'])
+        sorted_schedules = sorted(schedules, key=lambda x: x['next_run'])
         next_schedule = sorted_schedules[0]
 
         if kwargs[FLAG_QUIET.keyword]:
             msg = next_schedule['next_run']
         else:
             msg_data = {
-                'next_run' : next_schedule['next_run'],
-                'schedule' : next_schedule['schedule'],
+                'next_run': next_schedule['next_run'],
+                'schedule': next_schedule['schedule'],
             }
             template = _('The next scheduled run is at %(next_run)s driven by the '
                          'schedule %(schedule)s')
@@ -252,7 +241,6 @@ class NextRunCommand(PulpCliCommand):
 
         self.context.prompt.render_paragraph(msg)
 
-# -- strategy classes ---------------------------------------------------------
 
 class ScheduleStrategy(object):
     """
@@ -317,7 +305,7 @@ class ScheduleStrategy(object):
 
     def retrieve_schedules(self, kwargs):
         """
-        Returns a list of all schedules for the approprate resource.
+        Returns a list of all schedules for the appropriate resource.
 
         @param kwargs: all keyword args passed in by the user, retrieved from the framework
         @type  kwargs: dict
@@ -351,12 +339,13 @@ class RepoScheduleStrategy(ScheduleStrategy):
 
     Please see ScheduleStrategy for the method documentation.
     """
+
     def __init__(self, api, type_id):
         """
         This __init__ method merely stores the api and type_id on self. The api argument should be
         a binding to a PulpAPI that has the following methods: add_schedule, delete_schedule,
-        list_schedules, and update_schedules. Currently, only the SyncAPI and PublishAPI classes offer these
-        method. The type_id should be an importer's or a distributor's type ID.
+        list_schedules, and update_schedules. Currently, only the SyncAPI and PublishAPI classes
+        offer these methods. The type_id should be an importer's or a distributor's type ID.
 
         :param api:     The PulpAPI binding class that this strategy class should wrap.
         :type  api:     pulp.bindings.base.PulpAPI
@@ -375,7 +364,7 @@ class RepoScheduleStrategy(ScheduleStrategy):
         override_config = {}
 
         return self.api.add_schedule(repo_id, self.type_id, schedule, override_config,
-                                      failure_threshold, enabled)
+                                     failure_threshold, enabled)
 
     def delete_schedule(self, schedule_id, kwargs):
         repo_id = kwargs[OPTION_REPO_ID.keyword]

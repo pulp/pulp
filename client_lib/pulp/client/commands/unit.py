@@ -1,20 +1,9 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2012-2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from gettext import gettext as _
+import sys
 
 from okaara.cli import CommandUsage
-import sys
 
 from pulp.client.extensions.core import COLOR_FAILURE
 from pulp.common import util
@@ -154,7 +143,7 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
             # Display the successfully processed units
             self.prompt.write(success_string)
             if len(units_successful) == 0:
-                    self.prompt.write(_('  None'), tag="none")
+                self.prompt.write(_('  None'), tag="none")
             elif unit_threshold_reached:
                 self._summary(self.prompt.write, units_successful)
             else:
@@ -197,7 +186,7 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
         units_by_type = {}
         map(lambda u: units_by_type.setdefault(u['type_id'], []).append(u['unit_key']), units)
 
-        # Each unit is formatted to accomodate its unit key and displayed
+        # Each unit is formatted to accommodate its unit key and displayed
         sorted_type_ids = sorted(units_by_type.keys())
         for type_id in sorted_type_ids:
             unit_list = units_by_type[type_id]

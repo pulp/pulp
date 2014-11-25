@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains base classes for commands that poll the server for asynchronous tasks.
 """
@@ -20,7 +7,6 @@ from gettext import gettext as _
 
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag
 from pulp.bindings.responses import Task
-
 
 # Returned from the poll command if one or more of the tasks in the given list
 # was rejected
@@ -69,11 +55,13 @@ class PollingCommand(PulpCliCommand):
 
         self.poll_frequency_in_seconds = poll_frequency_in_seconds
         if poll_frequency_in_seconds is None:
-            self.poll_frequency_in_seconds = float(self.context.config['output']['poll_frequency_in_seconds'])
+            self.poll_frequency_in_seconds = float(
+                self.context.config['output']['poll_frequency_in_seconds']
+            )
 
         self.add_flag(FLAG_BACKGROUND)
 
-        #list of tasks we already know about
+        # list of tasks we already know about
         self.known_tasks = set()
 
     def poll(self, task_list, user_input):
@@ -136,7 +124,6 @@ class PollingCommand(PulpCliCommand):
                 if len(task_list) > 1:
                     self.task_header(task)
 
-
                 # Look for new tasks that we need to start polling for
                 task_list.extend(self._get_tasks_to_poll(task))
 
@@ -182,7 +169,7 @@ class PollingCommand(PulpCliCommand):
             for item in list(task):
                 result_list.extend(self._get_tasks_to_poll(item))
         elif isinstance(task, Task):
-            #This isn't an list of tasks but that's ok, we will see if it is an individual task
+            # This isn't an list of tasks but that's ok, we will see if it is an individual task
             if task.task_id and task.task_id not in self.known_tasks:
                 self.known_tasks.add(task.task_id)
                 result_list.append(task)
@@ -229,7 +216,8 @@ class PollingCommand(PulpCliCommand):
             task = response.response_body
 
         # One final call to update the progress with the end state. It's possible the run state
-        # was never hit in the loop above, so we check for first_run again for the missing blank space.
+        # was never hit in the loop above, so we check for first_run again for the missing blank
+        # space.
         if first_run:
             self.prompt.render_spacer(1)
 
@@ -251,7 +239,7 @@ class PollingCommand(PulpCliCommand):
         :type  task: pulp.bindings.responses.Task
         """
         template = _('-- Task Tags: %(tags)s ----')
-        msg = template % {'tags' : ', '.join(task.tags)}
+        msg = template % {'tags': ', '.join(task.tags)}
         self.prompt.render_paragraph(msg, tag='header')
 
     def waiting(self, task, spinner):
