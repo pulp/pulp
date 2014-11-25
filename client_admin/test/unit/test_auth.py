@@ -11,8 +11,7 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import os
-import sys
+import unittest
 
 import mock
 
@@ -55,29 +54,91 @@ class TestUserSearch(base_builtins.PulpClientTests):
         self.assertRaises(ValueError, self.user_section.search, x=2)
 
 
-class TestAuthUser(base_builtins.PulpClientTests):
+class TestAuthUser(unittest.TestCase):
 
-    USER_LOGIN = 'test-login'
-    PASSWORD = 'test-password'
-    NAME = 'test-name'
+    def test__prompt_password_given(self):
+        """
+        Test that when a password is given by the CLI, it is used correctly.
+        """
+        # Test that if a password is given by the CLI, this is the password
+        mock_context = mock.MagicMock()
+        mock_context.prompt.prompt_password.return_value = "prompt_password"
+        self.user_section = auth.UserSection(mock_context)
 
-    @mock.patch('pulp.bindings.auth.UserAPI.update')
-    def test_update(self, mock_binding):
-        # Setup
-        section = auth.UserSection(self.context)
-        options = {
-            'login' : self.USER_LOGIN,
-            'name' : self.NAME,
-            'password' : self.PASSWORD,
-        }
-        # Test
-        section.update(**options)
-        # Verify
-        passed = dict(
-            password=self.PASSWORD,
-            name=self.NAME)
+        password = self.user_section._prompt_password("mock_login", "cli_password")
+        self.assertEqual(password, "cli_password")
 
-        mock_binding.assert_called_with(self.USER_LOGIN, passed)
+    def test__prompt_password_not_given(self):
+        """
+        Test that if a password is not given, the user is prompted for a password.
+        """
+        mock_context = mock.MagicMock()
+        mock_context.prompt.prompt_password.return_value = "prompt_password"
+        self.user_section = auth.UserSection(mock_context)
+
+        password = self.user_section._prompt_password("mock_login")
+        self.assertEqual(password, "prompt_password")
+
+    def test__prompt_password_does_not_allow_empty_strings(self):
+        """
+        Test that if the password given by the user is an empty string, that the failure message is
+        rendered and the user will be reprompted.
+        """
+
+        def get_pwd(*args):
+            """
+            Make sure that the loop does not break until there is a password.
+            """
+            if mock_context.prompt.prompt_password.call_count < 3:
+                return ''
+            else:
+                return 'called_three_times'
+
+        mock_context = mock.MagicMock()
+        mock_context.prompt.prompt_password.side_effect = get_pwd
+        self.user_section = auth.UserSection(mock_context)
+
+        password = self.user_section._prompt_password('mock_user')
+        self.assertEqual(password, 'called_three_times')
+        self.assertEqual(3, mock_context.prompt.prompt_password.call_count)
+
+    def test_create_user_with_kwargs(self):
+        mock_context = mock.MagicMock()
+        self.user_section = auth.UserSection(mock_context)
+
+        self.user_section.create(login='mock_login', password='mock_password')
+        mock_context.server.user.create.assert_called_once_with(
+            'mock_login', 'mock_password', 'mock_login'
+        )
+
+    def test_create_user_no_password_kwarg(self):
+        mock_context = mock.MagicMock()
+        mock_context.prompt.prompt_password.return_value = 'user_entered_password'
+        self.user_section = auth.UserSection(mock_context)
+
+        self.user_section.create(login='mock_login')
+        mock_context.server.user.create.assert_called_once_with(
+            'mock_login', 'user_entered_password', 'mock_login'
+        )
+
+    def test_update_user_with_kwargs(self):
+        mock_context = mock.MagicMock()
+        self.user_section = auth.UserSection(mock_context)
+
+        self.user_section.update(login='mock_login', password='mock_password')
+        mock_context.server.user.update.assert_called_once_with(
+            'mock_login', {'password': 'mock_password'}
+        )
+
+    def test_update_user_with_no_password_kwarg(self):
+        mock_context = mock.MagicMock()
+        mock_context.prompt.prompt_password.return_value = 'user_entered_password'
+        self.user_section = auth.UserSection(mock_context)
+
+        self.user_section.update(login='mock_login', p=True)
+        mock_context.server.user.update.assert_called_once_with(
+            'mock_login', {'p': True, 'password': 'user_entered_password'}
+        )
 
 
 class TestAuthRole(base_builtins.PulpClientTests):
