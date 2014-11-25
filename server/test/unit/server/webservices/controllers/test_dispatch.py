@@ -1,7 +1,6 @@
 """
 This module contains tests for the pulp.server.webservices.dispatch module.
 """
-from datetime import datetime
 import json
 import uuid
 
@@ -14,7 +13,6 @@ from pulp.devel.unit.util import compare_dict
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers import dispatch as dispatch_controller
@@ -260,7 +258,7 @@ class SearchTaskCollectionTests(PulpWebservicesTests):
         processed_tasks = json.loads(processed_tasks_json)
         compare_dict(updated_task, processed_tasks[0])
 
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.READ)
 
     @mock.patch('pulp.server.webservices.controllers.dispatch.SearchTaskCollection.'
@@ -275,5 +273,5 @@ class SearchTaskCollectionTests(PulpWebservicesTests):
         processed_tasks = json.loads(processed_tasks_json)
         compare_dict(updated_task, processed_tasks[0])
 
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.READ)
