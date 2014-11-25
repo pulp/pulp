@@ -117,3 +117,33 @@ class TestId(unittest.TestCase):
         # Multiple input
         self.assertRaises(ValueError, validators.id_validator, ['**invalid**', '!#$%'])
         self.assertRaises(ValueError, validators.id_validator, ['valid', '**invalid**'])
+
+
+class TestIdAllowDots(unittest.TestCase):
+
+    def test_valid_ids_allow_dots(self):
+
+        # Single input
+        validators.id_validator_allow_dots('test123')
+        validators.id_validator_allow_dots('test.123')
+        validators.id_validator_allow_dots('test_123-')
+        validators.id_validator_allow_dots('test._123-')
+        validators.id_validator_allow_dots('TesT-0')
+        validators.id_validator_allow_dots('TesT.-0')
+        validators.id_validator_allow_dots('-_-_-')
+        validators.id_validator_allow_dots('-._.-._.-')
+
+        # Multiple input
+        validators.id_validator_allow_dots(['test123', 'TesT-0', 'test.123'])
+
+    def test_invalid_ids_allow_dots(self):
+
+        # Single input
+        self.assertRaises(ValueError, validators.id_validator_allow_dots, '**invalid**')
+        self.assertRaises(ValueError, validators.id_validator_allow_dots, '**inval.id**')
+        self.assertRaises(ValueError, validators.id_validator_allow_dots, 'invalid-@')
+        self.assertRaises(ValueError, validators.id_validator_allow_dots, '-_-_- ')
+
+        # Multiple input
+        self.assertRaises(ValueError, validators.id_validator_allow_dots, ['**invalid**', '!#$%'])
+        self.assertRaises(ValueError, validators.id_validator_allow_dots, ['valid', '**invalid**'])
