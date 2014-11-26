@@ -17,12 +17,12 @@ All pulp-admin commands accept username and password to capture authentication c
       -h, --help            show this help message and exit
       -u USERNAME, --username=USERNAME
                             username for the Pulp server; if used will bypass the
-                            stored certificate and override config file values and
-                            the default
+                            stored certificate and override a username specified
+                            in ~/.pulp/admin.conf
       -p PASSWORD, --password=PASSWORD
                             password for the Pulp server; must be used with
-                            --username. if used will bypass the stored certificate
-                            and override config file values and the default
+                            --username. If used will bypass the stored certificate
+                            and override a password specified in ~/.pulp/admin.conf
       --debug               enables debug logging
       --config=CONFIG       absolute path to the configuration file
       --map                 prints a map of the CLI sections and commands
@@ -51,10 +51,9 @@ is more secure because it cannot be shown by listing the system processes.
     +----------------------------------------------------------------------+
 
 
-pulp-admin finds username and password credentials in the following order.
+pulp-admin searches for a username and password to use in the following order:
     - credentials specified from the command line.
-    - credentials set in user's ``~/.pulp/admin.conf``.
-    - default credentials used by Pulp.
+    - credentials set in the user's ``~/.pulp/admin.conf``.
 
 Pulp Server installation comes with one default user created with admin level privileges.
 Username and password for this user can be configured in ``/etc/pulp/server.conf`` at the time
@@ -65,7 +64,7 @@ running a pulp-admin command.
 
 ::
 
-    $ pulp-admin -u admin repo list
+    $ pulp-admin repo list
     Enter password:
     +----------------------------------------------------------------------+
                                   Repositories

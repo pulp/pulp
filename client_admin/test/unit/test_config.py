@@ -1,11 +1,6 @@
-
-import os
-import os.path
-import tempfile
-
 from unittest import TestCase
 
-from mock import patch, Mock
+from mock import call, Mock, patch
 
 from pulp.client.admin.config import read_config, validate_overrides, SCHEMA, DEFAULT
 
@@ -131,7 +126,7 @@ class TestConfig(TestCase):
         mock_os_stat.return_value.st_mode = 33279
         mock_config.return_value.has_option.return_value = True
         self.assertRaises(RuntimeError, validate_overrides, '/tmp/admin.conf')
-        mock_os_stat.assert_called_once_with('/tmp/admin.conf')
+        mock_os_stat.assert_has_calls([call('/tmp/admin.conf')])
         mock_config.return_value.has_option.assert_called_once_with('auth', 'password')
 
     @patch('pulp.client.admin.config.os.stat')
