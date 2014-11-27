@@ -1,14 +1,3 @@
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import socket
 
@@ -59,12 +48,12 @@ SCHEMA = (
             ('ca_path', REQUIRED, ANY),
             ('upload_chunk_size', REQUIRED, NUMBER),
         )
-    ),
+     ),
     ('client', REQUIRED,
         (
             ('role', REQUIRED, r'admin'),
         )
-    ),
+     ),
     ('filesystem', REQUIRED,
         (
             ('extensions_dir', REQUIRED, ANY),
@@ -72,13 +61,13 @@ SCHEMA = (
             ('id_cert_filename', REQUIRED, ANY),
             ('upload_working_dir', REQUIRED, ANY),
         )
-    ),
+     ),
     ('logging', REQUIRED,
         (
             ('filename', REQUIRED, ANY),
             ('call_log_filename', OPTIONAL, ANY)
         )
-    ),
+     ),
     ('output', REQUIRED,
         (
             ('poll_frequency_in_seconds', REQUIRED, NUMBER),
@@ -86,13 +75,13 @@ SCHEMA = (
             ('wrap_to_terminal', REQUIRED, BOOL),
             ('wrap_width', REQUIRED, NUMBER)
         )
-    ),
+     ),
     ('auth', REQUIRED,
         (
             ('username', OPTIONAL, ANY),
             ('password', OPTIONAL, ANY),
         )
-    ),
+     ),
 )
 
 

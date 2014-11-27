@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import copy
 from gettext import gettext as _
 
@@ -19,7 +6,6 @@ from okaara.cli import CommandUsage
 from pulp.client import parsers
 from pulp.client.extensions.extensions import PulpCliSection, PulpCliCommand, PulpCliOption
 
-# -- framework hook -----------------------------------------------------------
 
 def initialize(context):
     context.cli.add_section(EventSection(context))
@@ -41,8 +27,9 @@ class GenericSection(PulpCliSection):
         m = _('one of "repo.sync.start", "repo.sync.finish", '
               '"repo.publish.start", "repo.publish.finish". May be '
               'specified multiple times. To match all types, use value "*"')
-        self.event_types_option = PulpCliOption('--event-type', m,
-            required=True, allow_multiple=True)
+        self.event_types_option = PulpCliOption(
+            '--event-type', m, required=True, allow_multiple=True
+        )
 
     @staticmethod
     def _copy_flip_required(option):
@@ -72,7 +59,7 @@ class GenericSection(PulpCliSection):
         """
         try:
             self.context.server.event_listener.create(notifier_type, config,
-                event_types)
+                                                      event_types)
         except TypeError:
             raise CommandUsage
         self.context.prompt.render_success_message('Event listener successfully created')
@@ -114,7 +101,7 @@ class ListenerSection(GenericSection):
         @type  context: pulp.client.extensions.core.ClientContext
         """
         super(ListenerSection, self).__init__(context, 'listener',
-            _('manage server-side event listeners'))
+                                              _('manage server-side event listeners'))
         self.add_subsection(EmailSection(context))
         self.add_subsection(RestApiSection(context))
         self.add_subsection(AMQPSection(context))
@@ -152,7 +139,7 @@ class RestApiSection(GenericSection):
         @type  context: pulp.client.extensions.core.ClientContext
         """
         super(RestApiSection, self).__init__(context, 'http',
-            _('manage http listeners'))
+                                             _('manage http listeners'))
 
         m = _('full URL to invoke to send the event info')
         url_option = PulpCliOption('--url', m, required=True)
@@ -166,7 +153,7 @@ class RestApiSection(GenericSection):
         password_option = PulpCliOption('--password', m, required=False)
 
         create_command = PulpCliCommand('create', _('create a listener'),
-            self.create)
+                                        self.create)
         create_command.add_option(self.event_types_option)
         create_command.add_option(url_option)
         create_command.add_option(username_option)
@@ -174,7 +161,7 @@ class RestApiSection(GenericSection):
         self.add_command(create_command)
 
         update_command = PulpCliCommand('update', _('update a listener'),
-            self.update)
+                                        self.update)
         update_command.add_option(self.id_option)
         update_command.add_option(self._copy_flip_required(self.event_types_option))
         update_command.add_option(self._copy_flip_required(url_option))
@@ -224,14 +211,14 @@ class RestApiSection(GenericSection):
 class AMQPSection(GenericSection):
     def __init__(self, context):
         super(AMQPSection, self).__init__(context, 'amqp',
-            _('manage amqp listeners'))
+                                          _('manage amqp listeners'))
 
         m = _('optional name of an exchange that overrides the setting from '
               'server.conf')
         self.exchange_option = PulpCliOption('--exchange', m, required=False)
 
         create_command = PulpCliCommand('create', _('create a listener'),
-            self.create)
+                                        self.create)
         create_command.add_option(self.event_types_option)
         create_command.add_option(self.exchange_option)
         self.add_command(create_command)
@@ -282,7 +269,7 @@ class EmailSection(GenericSection):
         @type  context: pulp.client.extensions.core.ClientContext
         """
         super(EmailSection, self).__init__(context, 'email',
-            _('manage email listeners'))
+                                           _('manage email listeners'))
 
         m = _("text of the email's subject")
         subject_option = PulpCliOption('--subject', m, required=True)
@@ -290,10 +277,10 @@ class EmailSection(GenericSection):
         m = _('this is a comma separated list of email addresses that should '
               'receive these notifications. Do not include spaces.')
         addresses_option = PulpCliOption('--addresses', m, required=True,
-            parse_func=parsers.csv)
+                                         parse_func=parsers.csv)
 
         create_command = PulpCliCommand('create', _('create a listener'),
-            self.create)
+                                        self.create)
         create_command.add_option(self.event_types_option)
         create_command.add_option(subject_option)
         create_command.add_option(addresses_option)
