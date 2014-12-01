@@ -121,6 +121,7 @@ List
 This command lists all repositories in Pulp, regardless of their content type. To
 list and search repositories only of a particular type, go to that type's area of
 the CLI, such as ``pulp-admin rpm repo list``.
+(For more detailed output use '--details' option).
 
 ::
 
@@ -143,6 +144,48 @@ the CLI, such as ``pulp-admin rpm repo list``.
   Display Name:       repo2
   Description:        None
   Content Unit Count: 0
+
+
+Also there is possibility to list information with and without details about one specific repo.
+
+::
+
+    pulp-admin repo list --repo-id iso-test
+    +----------------------------------------------------------------------+
+                                  Repositories
+    +----------------------------------------------------------------------+
+
+    Id:                   iso-test
+    Display Name:         iso-test
+    Description:          None
+    Content Unit Counts:
+
+
+    pulp-admin repo list --repo-id iso-test --details
+    +----------------------------------------------------------------------+
+                                  Repositories
+    +----------------------------------------------------------------------+
+
+    Id:                   iso-test
+    Display Name:         iso-test
+    Description:          None
+    Content Unit Counts:
+    Notes:
+    Importers:
+      Config: 
+      Id:           iso_importer
+      Importer Type Id: iso_importer
+      Last Sync:        None
+      Repo Id:          iso-test
+      Scheduled Syncs:
+    Distributors:
+      Auto Publish:        True
+      Config:
+      Distributor Type Id: iso_distributor
+      Id:                  iso_distributor
+      Last Publish:        None
+      Repo Id:             iso-test
+      Scheduled Publishes:
 
 
 Search
