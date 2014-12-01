@@ -50,6 +50,30 @@ class VerificationException(ValueError):
     pass
 
 
+def sanitize_checksum_type(checksum_type):
+    """ 
+    This function will always return the given checksum_type in lower case, unless it is sha, in
+    which case it will return "sha1". SHA and SHA-1 are the same algorithm, and so we prefer to use
+    "sha1", since it is a more specific name. For some unit types (such as RPM), this can cause
+    conflicts inside of Pulp when repos or uploads use a mix of sha and sha1. See
+    https://bugzilla.redhat.com/show_bug.cgi?id=1165355
+
+    :param checksum_type: The checksum type we are sanitizing
+    :type  checksum_type: basestring
+    :return:              A sanitized checksum type, converting "sha" to "sha1", otherwise returning
+                          the given checksum_type in lowercase.
+    :rtype:               basestring
+    """
+    # In our unit tests, there are examples of checksum_type being None. Since None doesn't have
+    # string-like operations we cannot continue, so we should return.
+    if checksum_type is None:
+        return checksum_type
+
+    if checksum_type.lower() == "sha":
+        return "sha1"
+    return checksum_type.lower()
+
+
 def verify_size(file_object, expected_size):
     """
     Returns whether or not the size of the contents of the given file-like object match
