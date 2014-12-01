@@ -1,14 +1,4 @@
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from gettext import gettext as _
 import os
 import socket
 
@@ -41,10 +31,6 @@ DEFAULT = {
         'enable_color': 'true',
         'wrap_to_terminal': 'false',
         'wrap_width': '80',
-    },
-    'auth': {
-        'username': 'admin',
-        'password': 'admin',
     },
 }
 
@@ -87,12 +73,6 @@ SCHEMA = (
             ('wrap_width', REQUIRED, NUMBER)
         )
     ),
-    ('auth', REQUIRED,
-        (
-            ('username', OPTIONAL, ANY),
-            ('password', OPTIONAL, ANY),
-        )
-    ),
 )
 
 
@@ -122,21 +102,23 @@ def read_config(paths=None, validate=True):
     return config
 
 
-def validate_overrides(overrides):
+def validate_overrides(path):
     """
-    Check if file ~/.pulp/admin.conf is private to owner,
-    if it provides user password
+    Raise RuntimeError if the file at 'path' provides a password and is not private to owner.
 
-    :param overrides: User's admin.conf
-    :param overrides: basestring
-    :raises: RuntimeError If file is not private
+    :param path: Full path to the file to check. Assumed the file exists.
+    :type path: basestring
+
+    :raises: RuntimeError if file is not private and contains a password
     """
     valid_private_perms = [400, 600, 700]
-    file_perm = int(oct(os.stat(overrides).st_mode & 0777))
+    file_perm = int(oct(os.stat(path).st_mode & 0777))
 
-    cfg = Config(overrides)
+    cfg = Config(path)
     if cfg.has_option("auth", "password"):
         if file_perm not in valid_private_perms:
-            raise RuntimeError("File %s has incorrect permissions: %d, "
-                               "It should be one of %s."
-                               % (overrides, file_perm, valid_private_perms))
+            runtime_dict = {'path': path, 'file_perm': file_perm,
+                            'valid_private_perms': valid_private_perms}
+            raise RuntimeError(_(
+                "File %(path)s contains a password and has incorrect permissions: %(file_perm)d, "
+                "It should be one of %(valid_private_perms)s.") % runtime_dict)

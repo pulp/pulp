@@ -40,11 +40,11 @@ def main(config, exception_handler_class=ExceptionHandler):
     parser.disable_interspersed_args()
     parser.add_option('-u', '--username', dest='username', action='store', default=None,
                       help=_('username for the Pulp server; if used will bypass the stored '
-                             'certificate and override config file values and the default'))
+                             'certificate and override a username specified in ~/.pulp/admin.conf'))
     parser.add_option('-p', '--password', dest='password', action='store', default=None,
                       help=_('password for the Pulp server; must be used with --username. '
-                             'if used will bypass the stored certificate and override config '
-                             'file values and the default'))
+                             'if used will bypass the stored certificate and override a password '
+                             'specified in ~/.pulp/admin.conf'))
     parser.add_option('--debug', dest='debug', action='store_true', default=False,
                       help=_('enables debug logging'))
     parser.add_option('--config', dest='config', default=None,
@@ -67,10 +67,14 @@ def main(config, exception_handler_class=ExceptionHandler):
     username = options.username
     password = options.password
 
-    # get username/password from config ~/.pulp/admin.conf if available
     if not username and not password:
-        username = config['auth']['username']
-        password = config['auth']['password']
+        # Try to get username/password from config if not explicitly set. username and password are
+        # not included by default so we need to catch KeyError Exceptions.
+        try:
+            username = config['auth']['username']
+            password = config['auth']['password']
+        except KeyError:
+            pass
 
     if username and not password:
         prompt_msg = 'Enter password: '
