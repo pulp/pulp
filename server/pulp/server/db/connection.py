@@ -6,7 +6,7 @@ import ssl
 import time
 from gettext import gettext as _
 
-import pymongo
+import mongoengine
 from pymongo.collection import Collection
 from pymongo.errors import AutoReconnect
 from pymongo.son_manipulator import NamespaceInjector
@@ -71,15 +71,15 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             connection_kwargs['ssl_cert_reqs'] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
             connection_kwargs['ssl_ca_certs'] = config.config.get('database', 'ca_path')
 
-        _logger.debug("Attempting Database connection with seeds = %s" % seeds)
-        _logger.debug('Connection Arguments: %s' % connection_kwargs)
+        _logger.debug(_('Attempting Database connection with seeds = %s') % seeds)
+        _logger.debug(_('Connection Arguments: %s') % connection_kwargs)
 
         # Wait until the Mongo database is available
         mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
         while True:
             try:
-                _CONNECTION = pymongo.MongoClient(seeds, **connection_kwargs)
-            except pymongo.errors.ConnectionFailure as e:
+                _CONNECTION = mongoengine.connect(seeds, **connection_kwargs)
+            except mongoengine.connection.ConnectionError as e:
                 next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
                 msg = _(
                     "Could not connect to MongoDB at %(url)s:\n%(e)s\n... Waiting "
@@ -89,12 +89,6 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
                 break
             time.sleep(next_delay)
 
-        # Decorate the methods that actually send messages to the db over the
-        # network. These are the methods that call start_request, and the
-        # decorator causes them call an corresponding end_request
-        _CONNECTION._send_message = _end_request_decorator(_CONNECTION._send_message)
-        _CONNECTION._send_message_with_response = _end_request_decorator(_CONNECTION._send_message_with_response)
-
         _DATABASE = getattr(_CONNECTION, name)
 
         # If username & password have been specified in the database config,
@@ -102,17 +96,17 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         username = config.config.get('database', 'username')
         password = config.config.get('database', 'password')
         if username and password:
-            _logger.debug('Database authentication enabled, attempting username/password'
-                       ' authentication.')
+            _logger.debug(_('Database authentication enabled, attempting username/password'
+                            ' authentication.'))
             _DATABASE.authenticate(username, password)
         elif (username and not password) or (password and not username):
-            raise Exception("The server config specified username/password authentication but "
-                            "is missing either the username or the password")
+            raise Exception(_("The server config specified username/password authentication but "
+                            "is missing either the username or the password"))
 
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
         # Query the collection names to ensure that we are authenticated properly
-        _logger.debug("Querying the database to validate the connection.")
+        _logger.debug(_('Querying the database to validate the connection.'))
         _DATABASE.collection_names()
 
         db_version = _CONNECTION.server_info()['version']
@@ -124,15 +118,17 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting version %s") %
                                (MONGO_MINIMUM_VERSION, db_version))
 
-        _logger.debug("Database connection established with: seeds = %s, name = %s" % (seeds, name))
+        _logger.debug(
+            _("Database connection established with: seeds = %(seeds)s, name = %(name)s") %
+            {'seeds': seeds, 'name': name}
+        )
 
     except Exception, e:
-        _logger.critical('Database initialization failed: %s' % str(e))
+        _logger.critical(_('Database initialization failed: %s') % str(e))
         _CONNECTION = None
         _DATABASE = None
         raise
 
-# -- collection wrapper class --------------------------------------------------
 
 class PulpCollectionFailure(PulpException):
     """
@@ -144,6 +140,7 @@ def retry_decorator(full_name=None):
     """
     Collection instance method decorator providing retry support for pymongo
     AutoReconnect exceptions
+
     :param full_name: the full name of the database collection
     :type  full_name: str
     """
@@ -166,22 +163,6 @@ def retry_decorator(full_name=None):
         return retry
 
     return _decorator
-
-
-def _end_request_decorator(method):
-    """
-    Collection instance method decorator to automatically return the query
-    socket to the connection pool once finished
-    """
-
-    @wraps(method)
-    def _with_end_request(*args, **kwargs):
-        try:
-            return method(*args, **kwargs)
-        finally:
-            _CONNECTION.end_request()
-
-    return _with_end_request
 
 
 class PulpCollection(Collection):
@@ -232,7 +213,9 @@ class PulpCollection(Collection):
 
         return cursor
 
+
 # -- public --------------------------------------------------------------------
+
 
 def get_collection(name, create=False):
     """
