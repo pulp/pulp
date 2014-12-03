@@ -47,7 +47,7 @@ echo "setting up repos"
 # repo setup
 pushd /etc/yum.repos.d
 sudo wget -q https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
-sudo yum-config-manager --enable pulp-2.5-testing > /dev/null
+sudo yum-config-manager --enable pulp-2.6-testing > /dev/null
 popd
 
 # install rpms, then remove pulp*
@@ -58,9 +58,9 @@ sudo yum remove -y pulp-\* python-pulp\*
 sudo yum install -y python-setuptools redhat-lsb mongodb mongodb-server \
                     qpid-cpp-server qpid-cpp-server-store python-qpid-qmf \
                     git python-pip python-nose python-mock python-paste
-sudo yum-config-manager --disable pulp-2.5-testing > /dev/null
+sudo yum-config-manager --disable pulp-2.6-testing > /dev/null
 
-echo "installing newer kombu (temporary step until 2.5.1 is in testing repo)"
+echo "installing newer kombu (temporary step until 2.6.0 is in testing repo)"
 sudo rpm -Uvh http://koji.katello.org/packages/python-kombu/3.0.15/13.pulp.fc20/noarch/python-kombu-3.0.15-13.pulp.fc20.noarch.rpm
 
 pushd ~

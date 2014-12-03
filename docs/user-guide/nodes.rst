@@ -455,7 +455,7 @@ On the Pulp server to be used as the child node:
 
 ::
 
- $ pulp-consumer -u admin register --consumer-id child-1
+ $ pulp-consumer register --consumer-id child-1
 
 7. Activate the node.
 

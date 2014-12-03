@@ -2,63 +2,6 @@
 Pulp 2.5 Release Notes
 =========================
 
-Pulp 2.5.1
-===========
-
-New Features
-------------
-
-- Pulp no longer requires additional configuration of Qpid after installation.
-  It now works with the ANONYMOUS authentication mechanism. Users can still use a
-  username/password however if they set up a SASL database as described in the
-  installation document.
-- Pulp now supports `RabbitMQ`_ as its task message broker. See the inline comments in
-  ``/etc/pulp/server.conf`` for instruction on configuring Pulp to use RabbitMQ.
-
-.. _RabbitMQ: https://www.rabbitmq.com/
-
-
-Rest API Changes
-----------------
-
-* A new `Task Report` attribute named `worker_name` is introduced that holds the name of the worker
-  a task is associated with. Previously the worker name was stored in a `Task Report` attribute
-  named `queue`. The `queue` attribute now correctly records the queue a task is put in. The
-  `queue` attribute is deprecated and will be removed from the `Task Report` in Pulp 3.0.0.
-
-* The URL for the content catalog entries ``/v2/content/catalog/<source-id>`` is missing
-  the trailing '/' and has been deprecated. Support for the URL ``/v2/content/catalog/<source-id>/``
-  has been added.
-
-.. _2.5.0_upgrade_to_2.5.1:
-
-Upgrade Instructions for 2.5.0 --> 2.5.1
------------------------------------------
-
-Prior to upgrading, all tasks must be stopped. One way to accomplish this is to stop all
-`pulp_workers`, `pulp_celerybeat`, and `pulp_resource_manager` processes and then list the current
-tasks using:
-
-::
-
-    pulp-admin tasks list
-
-Any task that is in the "Running" or "Waiting" state should be canceled by its <uuid> using:
-
-::
-
-    pulp-admin tasks cancel --task-id <uuid>
-
-After all tasks have been canceled upgrade the packages using:
-
-::
-
-    sudo yum update
-
-After yum completes you should restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
-`pulp_resource_manager`.
-
-
 Pulp 2.5.0
 ===========
 
@@ -67,14 +10,14 @@ New Features
 
 - pulp-admin now has a bash tab completion script.
 
-- A new selinux policy that confines the pulp_workers, pulp_celerybeat, and
-  pulp_resource_manager
+- A new selinux policy is introduced which confines the `pulp_workers`, `pulp_celerybeat`, and
+  `pulp_resource_manager` processes.
 
-- Pulp 2.5.0 includes `pulp_docker`, an optional plugin to manage Docker
+- Pulp 2.5.0 works with `pulp_docker`, an optional plugin to manage Docker
   repositories. In Pulp 2.5.0 this optional plugin is considered "tech preview"
   and did not undergo the same level of testing as other plugins. Please
   refer to the
-  `pulp_docker documentation <https://github.com/pulp/pulp_docker/tree/master/docs/user-guide>`_
+  `pulp_docker documentation <http://pulp-docker.readthedocs.org/en/latest/>`_
   for usage information.
 
 - Pulp now supports SSL on its connection to MongoDB. It is strongly recommended that you
@@ -84,37 +27,41 @@ New Features
 
 .. _configure MongoDB to perform SSL: http://docs.mongodb.org/v2.4/tutorial/configure-ssl/#configure-mongod-and-mongos-for-ssl
 
+- When the `pulp_workers` service is stopped, it will now cancel tasks that the
+  workers are processing instead of waiting for those tasks to finish.
+
 Deprecation
 -----------
 
-- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0.  This attribute will
+- The `task_type` attribute of a `Task Report` is deprecated with Pulp 2.5.0. This attribute will
   be removed in a future release.
 
 - Many API calls return an attribute named `_ns`. This attribute will be removed in a future
   release and should not be used.
 
-Client Changes
---------------
-
-Agent Changes
--------------
-
 Bugs
 ----
 
-Known Issues
-------------
+You can see the complete list of bugs that were
+`fixed in Pulp 2.5.0 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.5.0>`_.
 
 .. _2.4.x_upgrade_to_2.5.0:
 
 Upgrade Instructions for 2.4.x --> 2.5.0
 -----------------------------------------
 
-Rest API Changes
-----------------
+For all systems that have Pulp software installed, perform a system update::
 
-Binding API Changes
--------------------
+    $ sudo yum update
 
-Plugin API Changes
-------------------
+Thank You
+---------
+
+Thank you to all of Pulp's contributors, especially these new ones!
+
+- Irina Gulina
+- Peter Gustafsson
+- Petter Hassberg
+- Dennis Kliban
+- Christoffer Kylvåg
+- Austin Macdonald

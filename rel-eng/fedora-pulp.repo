@@ -47,3 +47,19 @@ baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.5/fedora-$relea
 enabled=0
 skip_if_unavailable=1
 gpgcheck=0
+
+# Version 2.6 Beta Builds
+[pulp-2.6-beta]
+name=Pulp 2.6 Beta Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/beta/2.6/fedora-$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
+
+# Version 2.6 Testing Builds
+[pulp-2.6-testing]
+name=Pulp 2.6 Testing Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.6/fedora-$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0

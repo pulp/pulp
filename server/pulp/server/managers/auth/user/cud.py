@@ -30,7 +30,7 @@ from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 
 
-_USER_LOGIN_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_USER_LOGIN_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen, period
 
 
 class UserManager(object):

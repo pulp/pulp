@@ -1,0 +1,129 @@
+=========================
+Pulp 2.6 Release Notes
+=========================
+
+Pulp 2.6.0
+===========
+
+New Features
+------------
+
+- Pulp now supports `RabbitMQ`_ as its task message broker. See the inline comments in
+  ``/etc/pulp/server.conf`` for instruction on configuring Pulp to use RabbitMQ.
+
+- Pulp now allows user credentials to be read from user's ``~/.pulp/admin.conf``.
+  This should allow pulp-admin to be automated more easily and more securely.
+  Please see our :ref:`Authentication` documentation for details.
+
+- Pulp no longer requires additional configuration of Qpid after installation.
+  It now works with the ANONYMOUS authentication mechanism. Users can still use a
+  username/password however if they set up a SASL database as described in the
+  installation document.
+
+.. _RabbitMQ: https://www.rabbitmq.com/
+
+Deprecation
+-----------
+
+ * The ``cancel_publish_repo`` method provided by the ``Distributor`` base plugin class is
+   deprecated and will be removed in a future release. Read more about the
+   :ref:`plugin cancellation changes <plugin_cancel_now_exits_behavior_change>`.
+
+ * The ``cancel_publish_group`` method provided by the ``GroupDistributor`` base plugin class is
+   deprecated and will be removed in a future release. Read more about the
+   :ref:`plugin cancellation changes <plugin_cancel_now_exits_behavior_change>`.
+
+ * The ``cancel_sync_repo`` method provided by the ``Importer`` base plugin class is deprecated and
+   will be removed in a future release. Read more about the
+   :ref:`plugin cancellation changes <plugin_cancel_now_exits_behavior_change>`.
+
+.. _2.5.x_upgrade_to_2.6.0:
+
+Upgrade Instructions for 2.5.x --> 2.6.0
+-----------------------------------------
+
+Prior to upgrading, all tasks must be stopped. One way to accomplish this is to stop all
+`pulp_workers`, `pulp_celerybeat`, and `pulp_resource_manager` processes and then list the current
+tasks using:
+
+::
+
+    pulp-admin tasks list
+
+Any task that is in the "Running" or "Waiting" state should be canceled by its <uuid> using:
+
+::
+
+    pulp-admin tasks cancel --task-id <uuid>
+
+After all tasks have been canceled upgrade the packages using:
+
+::
+
+    sudo yum update
+
+After yum completes you should restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
+`pulp_resource_manager`.
+
+Bugs
+----
+You can see the complete list of bugs that were
+:fixedbugs:`fixed in Pulp 2.6.0 <2.6.0>`.
+
+Known Issues
+------------
+
+Client Changes
+--------------
+
+Agent Changes
+-------------
+
+Rest API Changes
+----------------
+
+* A new `Task Report` attribute named `worker_name` is introduced that holds the name of the worker
+  a task is associated with. Previously the worker name was stored in a `Task Report` attribute
+  named `queue`. The `queue` attribute now correctly records the queue a task is put in. The
+  `queue` attribute is deprecated and will be removed from the `Task Report` in Pulp 3.0.0.
+
+* The URL for the content catalog entries ``/v2/content/catalog/<source-id>`` is missing
+  the trailing '/' and has been deprecated. Support for the URL ``/v2/content/catalog/<source-id>/``
+  has been added.
+
+* A new API call is added to search profile attributes for all consumer profiles using the
+  Search API.``/pulp/api/v2/consumers/profile/search/``. With this API call all the unit profiles
+  can be retrieved at one time instead of querying each consumer through
+  ``/v2/consumers/<consumer_id>/profiles/``. It is also possible to query for a single package
+  across all consumers.
+
+Binding API Changes
+-------------------
+
+Plugin API Changes
+------------------
+
+.. _plugin_cancel_now_exits_behavior_change:
+
+**Plugin Cancellation Changes**
+
+    Cancel now exits immediately by default. The ``cancel_publish_repo``, ``cancel_publish_group``,
+    and ``cancel_sync_repo`` methods provided by the ``Distributor``, ``GroupDistributor``, and
+    ``Importer`` base plugin classes now provide a behavior that exits immediately by default.
+    Previously these methods raised a NotImplementedError() which required plugin authors to
+    provide an implementation for these methods. These methods will be removed in a future version
+    of Pulp, and all plugins will be required to adopt the exit-immediately behavior.
+
+    A cancel can occur at any time, which mean that in a future version of Pulp any part of plugin
+    code can have its execution interrupted at any time. For this reason, the following
+    recommendations should be adopted by plugin authors going forward in preparation for this
+    future change:
+
+     * Group together multiple database calls that need to occur together for database consistency.
+
+     * Do not use subprocess. If your plugin code process gets cancelled it could leave orphaned
+       processes.
+
+     * Assume that plugin code which is supposed to run later may not run.
+
+     * Assume that the previous executions of plugin code may not have run to completion.

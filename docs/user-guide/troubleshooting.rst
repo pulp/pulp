@@ -193,7 +193,7 @@ availability issue.
 Tasks are accepted but never run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Starting with Pulp 2.5.1, any pulp-admin or API action that creates a Pulp Task will be accepted
+Starting with Pulp 2.6.0, any pulp-admin or API action that creates a Pulp Task will be accepted
 without error as long as the webserver is running. Once those tasks are accepted, they wait to be
 executed through a coordination between the non-webserver components: ``pulp_celerybeat``,
 ``pulp_resource_manager``, and ``pulp_workers``. If your tasks are being accepted but not running,
