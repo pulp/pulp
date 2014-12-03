@@ -23,7 +23,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
     """
     def clean(self):
         super(TaskStatusManagerTests, self).clean()
-        TaskStatus.get_collection().remove(safe=True)
+        TaskStatus.objects().delete()
 
     def get_random_uuid(self):
         return str(uuid.uuid4())
@@ -39,7 +39,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
         created = TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
 
-        task_statuses = list(TaskStatus.get_collection().find())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(1, len(task_statuses))
 
         task_status = task_statuses[0]
@@ -61,7 +61,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
         TaskStatusManager.create_task_status(task_id)
 
-        task_statuses = list(TaskStatus.get_collection().find())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(1, len(task_statuses))
         self.assertEqual(task_id, task_statuses[0]['task_id'])
         self.assertEqual(None, task_statuses[0]['worker_name'])
@@ -120,7 +120,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
         TaskStatusManager.delete_task_status(task_id)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatusManager.find_all()
         self.assertEqual(0, len(task_statuses))
 
     def test_delete_not_existing_task_status(self):
@@ -184,30 +184,31 @@ class TaskStatusManagerTests(base.PulpServerTests):
         TaskStatusManager.find_by_criteria(criteria)
         mock_query.assert_called_once_with(criteria)
 
+    def test_set_accepted(self):
+        task_id = self.get_random_uuid()
+        TaskStatusManager.create_task_status(task_id, state=constants.CALL_WAITING_STATE)
 
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_accepted(self, get_collection):
-        task_id = 'test'
-        collection = mock.Mock()
-        get_collection.return_value = collection
-
-        # test
         TaskStatusManager.set_task_accepted(task_id)
-
-        # validation
-        select = {
-            'task_id': task_id,
-            'state': constants.CALL_WAITING_STATE
-        }
-        update = {
-            '$set': {'state': constants.CALL_ACCEPTED_STATE}
-        }
-
-        collection.update.assert_called_once_with(select, update, safe=True)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertTrue(task_status['state'], constants.CALL_ACCEPTED_STATE)
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_started(self, get_collection, mock_date):
+    def _test_set_started(self, mock_date):
+        task_id = self.get_random_uuid()
+        TaskStatusManager.create_task_status(task_id)
+
+        task_status = mock.Mock()
+        mock_date.return_value = dateutils.format_iso8601_datetime(datetime.now())
+
+        TaskStatusManager.set_task_started(task_id)
+        task_status.assert_called_with('foo')
+
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertTrue(task_status.state, constants.CALL_ERROR_STATE)
+        self.assertTrue(task_status.finish_time, finished)
+        self.assertTrue(task_status.traceback, traceback)
+
+
         task_id = 'test'
         now = '1234'
         mock_date.return_value = now
@@ -241,11 +242,12 @@ class TaskStatusManagerTests(base.PulpServerTests):
             ])
 
     @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_started_with_timestamp(self, get_collection):
-        task_id = 'test'
+    def _test_set_started_with_timestamp(self, get_collection):
+        task_id = self.get_random_uuid()
         timestamp = '1234'
         collection = mock.Mock()
         get_collection.return_value = collection
+        TaskStatusManager.create_task_status(task_id)
 
         # test
         TaskStatusManager.set_task_started(task_id, timestamp=timestamp)
@@ -273,105 +275,57 @@ class TaskStatusManagerTests(base.PulpServerTests):
             ])
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_succeeded(self, get_collection, mock_date):
-        task_id = 'test'
-        result = 'done'
-        now = '1234'
+    def test_set_succeeded(self, mock_date):
+        task_id = self.get_random_uuid()
+        TaskStatusManager.create_task_status(task_id)
 
+        result = 'done'
+        now = '2014-11-21 05:21:38.829678'
         mock_date.return_value = now
-        collection = mock.Mock()
-        get_collection.return_value = collection
 
-        # test
         TaskStatusManager.set_task_succeeded(task_id, result)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
+        self.assertTrue(task_status['finish_time'], now)
+        self.assertTrue(task_status['result'], result)
 
-        # validation
-        select = {
-            'task_id': task_id
-        }
-        update = {
-            '$set': {
-                'finish_time': now,
-                'state': constants.CALL_FINISHED_STATE,
-                'result': result
-            }
-        }
-        collection.update.assert_called_once_with(select, update, safe=True)
+    def test_set_succeeded_with_timestamp(self):
+        task_id = self.get_random_uuid()
+        TaskStatusManager.create_task_status(task_id)
 
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_succeeded_with_timestamp(self, get_collection):
-        task_id = 'test'
         result = 'done'
-        timestamp = '1234'
+        now = '2014-11-21 05:21:38.829678'
 
-        collection = mock.Mock()
-        get_collection.return_value = collection
-
-        # test
-        TaskStatusManager.set_task_succeeded(task_id, result=result, timestamp=timestamp)
-
-        # validation
-        select = {
-            'task_id': task_id
-        }
-        update = {
-            '$set': {
-                'finish_time': timestamp,
-                'state': constants.CALL_FINISHED_STATE,
-                'result': result
-            }
-        }
-        collection.update.assert_called_once_with(select, update, safe=True)
+        TaskStatusManager.set_task_succeeded(task_id, result, timestamp=now)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
+        self.assertTrue(task_status['finish_time'], now)
+        self.assertTrue(task_status['result'], result)
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_failed(self, get_collection, mock_date):
-        task_id = 'test'
+    def test_set_failed(self, mock_date):
+        task_id = self.get_random_uuid()
+        TaskStatusManager.create_task_status(task_id)
+
         traceback = 'abcdef'
-        now = '1234'
+        finished = '2014-11-21 05:21:38.829678'
+        mock_date.return_value = finished
 
-        mock_date.return_value = now
-        collection = mock.Mock()
-        get_collection.return_value = collection
+        TaskStatusManager.set_task_failed(task_id, traceback)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
+        self.assertTrue(task_status['finish_time'], finished)
+        self.assertTrue(task_status['traceback'], traceback)
 
-        # test
-        TaskStatusManager.set_task_failed(task_id, traceback=traceback)
+    def test_set_failed_with_timestamp(self):
+        task_id = self.get_random_uuid()
+        TaskStatusManager.create_task_status(task_id)
 
-        # validation
-        select = {
-            'task_id': task_id
-        }
-        update = {
-            '$set': {
-                'finish_time': now,
-                'state': constants.CALL_ERROR_STATE,
-                'traceback': traceback
-            }
-        }
-        collection.update.assert_called_once_with(select, update, safe=True)
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatus.get_collection')
-    def test_set_failed_with_timestamp(self, get_collection):
-        task_id = 'test'
         traceback = 'abcdef'
-        timestamp = '1234'
+        finished = '2014-11-21 05:21:38.829678'
 
-        collection = mock.Mock()
-        get_collection.return_value = collection
-
-        # test
-        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=timestamp)
-
-        # validation
-        select = {
-            'task_id': task_id
-        }
-        update = {
-            '$set': {
-                'finish_time': timestamp,
-                'state': constants.CALL_ERROR_STATE,
-                'traceback': traceback
-            }
-        }
-        collection.update.assert_called_once_with(select, update, safe=True)
+        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=finished)
+        task_status = TaskStatusManager.find_by_task_id(task_id)
+        self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
+        self.assertTrue(task_status['finish_time'], finished)
+        self.assertTrue(task_status['traceback'], traceback)

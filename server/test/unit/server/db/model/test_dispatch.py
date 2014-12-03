@@ -14,6 +14,7 @@
 Tests for the pulp.server.db.model.dispatch module.
 """
 from datetime import datetime, timedelta
+from uuid import uuid4
 import pickle
 import time
 import unittest
@@ -46,16 +47,18 @@ class TestTaskStatus(unittest.TestCase):
         """
         Test the __init__() method.
         """
-        task_id = 'a_task_id'
+        task_id = str(uuid4())
         worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
-        error = 'some_error'
+        error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
         task_type = 'some.task'
         start_time = datetime.now()
         finish_time = start_time + timedelta(minutes=5)
+        start_time = dateutils.format_iso8601_datetime(start_time)
+        finish_time = dateutils.format_iso8601_datetime(finish_time)
         result = None
 
         ts = TaskStatus(
@@ -81,7 +84,7 @@ class TestTaskStatus(unittest.TestCase):
         """
         Test the __init__() method with default values
         """
-        task_id = 'a_task_id'
+        task_id = str(uuid4())
 
         ts = TaskStatus(task_id)
 
@@ -99,20 +102,22 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts.task_type, None)
         self.assertEqual(ts.exception, None)
 
-    def save_insert_defaults(self):
+    def test_save_insert_defaults(self):
         """
         Test the save method with default arguments when the object is not already in the database.
         """
-        task_id = 'a_task_id'
+        task_id = str(uuid4())
         worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
-        error = 'some_error'
+        error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
         task_type = 'some.task'
         start_time = datetime.now()
         finish_time = start_time + timedelta(minutes=5)
+        start_time = dateutils.format_iso8601_datetime(start_time)
+        finish_time = dateutils.format_iso8601_datetime(finish_time)
         result = None
         ts = TaskStatus(
             task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
@@ -122,7 +127,7 @@ class TestTaskStatus(unittest.TestCase):
         # This should cause ts to be in the database
         ts.save()
 
-        ts = TaskStatus.get_collection().find()
+        ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
         self.assertEqual(len(ts), 1)
         ts = ts[0]
@@ -142,21 +147,23 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts['traceback'], None)
         self.assertEqual(ts['exception'], None)
 
-    def save_insert_with_set_on_insert(self):
+    def test_save_insert_with_set_on_insert(self):
         """
         Test the save method with set on insert arguments when the object is not already in the
         database.
         """
-        task_id = 'a_task_id'
+        task_id = str(uuid4())
         worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
-        error = 'some_error'
+        error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
         task_type = 'some.task'
         start_time = datetime.now()
         finish_time = start_time + timedelta(minutes=5)
+        start_time = dateutils.format_iso8601_datetime(start_time)
+        finish_time = dateutils.format_iso8601_datetime(finish_time)
         result = None
         ts = TaskStatus(
             task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
@@ -166,7 +173,7 @@ class TestTaskStatus(unittest.TestCase):
         # This should cause ts to be in the database
         ts.save(fields_to_set_on_insert=['state', 'start_time'])
 
-        ts = TaskStatus.get_collection().find()
+        ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
         self.assertEqual(len(ts), 1)
         ts = ts[0]
@@ -186,20 +193,22 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts['traceback'], None)
         self.assertEqual(ts['exception'], None)
 
-    def save_update_defaults(self):
+    def test_save_update_defaults(self):
         """
         Test the save method with default arguments when the object is already in the database.
         """
-        task_id = 'a_task_id'
+        task_id = str(uuid4())
         worker_name = 'worker_name'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
-        error = 'some_error'
+        error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
         task_type = 'some.task'
         start_time = datetime.now()
         finish_time = start_time + timedelta(minutes=5)
+        start_time = dateutils.format_iso8601_datetime(start_time)
+        finish_time = dateutils.format_iso8601_datetime(finish_time)
         result = None
         ts = TaskStatus(
             task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
@@ -214,7 +223,7 @@ class TestTaskStatus(unittest.TestCase):
         # This should update ts in the database
         ts.save()
 
-        ts = TaskStatus.get_collection().find()
+        ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
         self.assertEqual(len(ts), 1)
         ts = ts[0]
@@ -235,21 +244,23 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts['traceback'], None)
         self.assertEqual(ts['exception'], None)
 
-    def save_update_with_set_on_insert(self):
+    def test_save_update_with_set_on_insert(self):
         """
         Test the save method with set on insert arguments when the object is already in the
         database.
         """
-        task_id = 'a_task_id'
+        task_id = str(uuid4())
         worker_name = 'worker_name'
         tags = ['tag_1', 'tag_2']
         state = 'a state'
         spawned_tasks = ['foo']
-        error = 'some_error'
+        error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
         task_type = 'some.task'
-        start_time = datetime.now()
+        old_start_time = start_time = datetime.now()
         finish_time = start_time + timedelta(minutes=5)
+        start_time = dateutils.format_iso8601_datetime(start_time)
+        finish_time = dateutils.format_iso8601_datetime(finish_time)
         result = None
         ts = TaskStatus(
             task_id, worker_name, tags, state, spawned_tasks=spawned_tasks, error=error,
@@ -259,7 +270,8 @@ class TestTaskStatus(unittest.TestCase):
         ts.save()
         new_worker_name = 'a different_worker'
         new_state = 'some_other_state'
-        new_start_time = start_time + timedelta(minutes=10)
+        new_start_time = old_start_time + timedelta(minutes=10)
+        new_start_time = dateutils.format_iso8601_datetime(new_start_time)
         ts.worker_name = new_worker_name
         ts.state = new_state
         ts.start_time = new_start_time
@@ -268,14 +280,14 @@ class TestTaskStatus(unittest.TestCase):
         # or start_time
         ts.save(fields_to_set_on_insert=['state', 'start_time'])
 
-        ts = TaskStatus.get_collection().find()
+        ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
         self.assertEqual(len(ts), 1)
         ts = ts[0]
         # Make sure all the attributes are correct
         self.assertEqual(ts['task_id'], task_id)
         # Queue should have been updated
-        self.assertEqual(ts['worker_name'], worker_name)
+        self.assertEqual(ts['worker_name'], new_worker_name)
         self.assertEqual(ts['tags'], tags)
         # state should not have been updated
         self.assertEqual(ts['state'], state)

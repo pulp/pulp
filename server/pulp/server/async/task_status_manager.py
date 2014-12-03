@@ -1,5 +1,10 @@
 from datetime import datetime
+from mongoengine import NotUniqueError, ValidationError
 from pymongo.errors import DuplicateKeyError
+
+import logging
+logger = logging.getLogger(__name__)
+
 
 from pulp.common import constants, dateutils
 from pulp.server.db.model.dispatch import TaskStatus
@@ -25,33 +30,24 @@ class TaskStatusManager(object):
         :type  tags:              list of basestrings or None
         :param state:             state of callable in its lifecycle
         :type  state:             basestring
-        :return:                  task status document
-        :rtype:                   dict
+        :return:                  TaskStatus instance
+        :rtype:                   pulp.server.db.model.dispatch.TaskStatus
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue:      if any of the fields are unacceptable
         """
-        invalid_values = []
-        if task_id is None:
-            invalid_values.append('task_id')
-        if worker_name is not None and not isinstance(worker_name, basestring):
-            invalid_values.append('worker_name')
-        if tags is not None and not isinstance(tags, list):
-            invalid_values.append('tags')
-        if state is not None and not isinstance(state, basestring):
-            invalid_values.append('state')
-        if invalid_values:
-            raise InvalidValue(invalid_values)
-
         if not state:
             state = constants.CALL_WAITING_STATE
 
         task_status = TaskStatus(task_id=task_id, worker_name=worker_name, tags=tags, state=state)
         try:
-            TaskStatus.get_collection().save(task_status, safe=True)
-        except DuplicateKeyError:
+            task_status.save()
+        except NotUniqueError:
             raise DuplicateResource(task_id)
+        except ValidationError, v:
+            raise InvalidValue(v.to_dict().keys())
 
-        created = TaskStatus.get_collection().find_one({'task_id': task_id})
+        created = TaskStatus.objects(task_id=task_id).first()
+        created = created.as_dict() if created else None
         return created
 
     @staticmethod
@@ -61,17 +57,10 @@ class TaskStatusManager(object):
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
         """
-        collection = TaskStatus.get_collection()
-
-        select = {
-            'task_id': task_id,
-            'state': constants.CALL_WAITING_STATE
-        }
-        update = {
-            '$set': {'state': constants.CALL_ACCEPTED_STATE}
-        }
-
-        collection.update(select, update, safe=True)
+        task_status = TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).first()
+        if task_status is None:
+            raise MissingResource(task_id)
+        task_status.update(set__state=constants.CALL_ACCEPTED_STATE)
 
     @staticmethod
     def set_task_started(task_id, timestamp=None):
@@ -82,32 +71,23 @@ class TaskStatusManager(object):
         :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
         :type timestamp: str
         """
-        collection = TaskStatus.get_collection()
-
         if not timestamp:
             now = datetime.now(dateutils.utc_tz())
             started = dateutils.format_iso8601_datetime(now)
         else:
             started = timestamp
 
-        select = {
-            'task_id': task_id
-        }
-        update = {
-            '$set': {'start_time': started}
-        }
+        task_status = TaskStatus.objects(task_id=task_id).first()
+        if task_status is None:
+            raise MissingResource(task_id)
+        task_status.update(set__start_time=started)
 
-        collection.update(select, update, safe=True)
-
-        select = {
-            'task_id': task_id,
-            'state': {'$in': [constants.CALL_WAITING_STATE, constants.CALL_ACCEPTED_STATE]}
-        }
-        update = {
-            '$set': {'state': constants.CALL_RUNNING_STATE}
-        }
-
-        collection.update(select, update, safe=True)
+        task_status = TaskStatus.objects(task_id=task_id,
+                                         state__in=[constants.CALL_WAITING_STATE,
+                                                    constants.CALL_ACCEPTED_STATE]).first()
+        if task_status is None:
+            raise MissingResource(task_id)
+        task_status.update(set__state=constants.CALL_RUNNING_STATE)
 
     @staticmethod
     def set_task_succeeded(task_id, result=None, timestamp=None):
@@ -120,23 +100,18 @@ class TaskStatusManager(object):
         :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
         :type timestamp: str
         """
-        collection = TaskStatus.get_collection()
-
         if not timestamp:
             now = datetime.now(dateutils.utc_tz())
             finished = dateutils.format_iso8601_datetime(now)
         else:
             finished = timestamp
 
-        update = {
-            '$set': {
-                'finish_time': finished,
-                'state': constants.CALL_FINISHED_STATE,
-                'result': result
-            }
-        }
-
-        collection.update({'task_id': task_id}, update, safe=True)
+        task_status = TaskStatus.objects(task_id=task_id).first()
+        if task_status is None:
+            raise MissingResource(task_id)
+        task_status.update(set__finish_time=finished,
+                           set__state=constants.CALL_FINISHED_STATE,
+                           set__result=result)
 
     @staticmethod
     def set_task_failed(task_id, traceback=None, timestamp=None):
@@ -149,23 +124,18 @@ class TaskStatusManager(object):
         :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
         :type timestamp: str
         """
-        collection = TaskStatus.get_collection()
-
         if not timestamp:
             now = datetime.now(dateutils.utc_tz())
             finished = dateutils.format_iso8601_datetime(now)
         else:
             finished = timestamp
 
-        update = {
-            '$set': {
-                'finish_time': finished,
-                'state': constants.CALL_ERROR_STATE,
-                'traceback': traceback
-            }
-        }
-
-        collection.update({'task_id': task_id}, update, safe=True)
+        task_status = TaskStatus.objects(task_id=task_id).first()
+        if task_status is None:
+            raise MissingResource(task_id)
+        task_status.update(set__finish_time=finished,
+                           set__state=constants.CALL_ERROR_STATE,
+                           set__traceback=traceback)
 
     @staticmethod
     def update_task_status(task_id, delta):
@@ -191,7 +161,7 @@ class TaskStatusManager(object):
         :raise MissingResource: if there is no task status corresponding to the given task_id
         """
 
-        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
+        task_status = TaskStatus.objects(task_id=task_id).first()
         if task_status is None:
             raise MissingResource(task_id)
 
@@ -200,9 +170,12 @@ class TaskStatusManager(object):
         for key, value in delta.items():
             if key in updatable_attributes:
                 task_status[key] = value
+        logger.info("%s\n" % task_status.traceback)
 
-        TaskStatus.get_collection().save(task_status, safe=True)
-        return task_status
+        task_status.save()
+        updated = TaskStatus.objects(task_id=task_id).first()
+        updated = updated.as_dict() if updated else None
+        return updated
 
     @staticmethod
     def delete_task_status(task_id):
@@ -214,22 +187,21 @@ class TaskStatusManager(object):
         :raise MissingResource: if the given task status does not exist
         :raise InvalidValue: if task_id is invalid
         """
-        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
+        task_status = TaskStatus.objects(task_id=task_id).first()
         if task_status is None:
             raise MissingResource(task_id)
 
-        TaskStatus.get_collection().remove({'task_id': task_id}, safe=True)
+        task_status.delete()
 
     @staticmethod
     def find_all():
         """
         Returns serialized versions of all task statuses in the database.
 
-        :return: pymongo cursor for the list of serialized task statuses
-        :rtype:  pymongo.cursor.Cursor
+        :return: mongoengine QuerySet for the list of TaskStatus objects
+        :rtype:  mongoengine.queryset.QuerySet
         """
-        all_task_statuses = TaskStatus.get_collection().find()
-        return all_task_statuses
+        return TaskStatus.objects()
 
     @staticmethod
     def find_by_task_id(task_id):
@@ -240,7 +212,8 @@ class TaskStatusManager(object):
         :return: serialized task status
         :rtype:  dict or None
         """
-        task_status = TaskStatus.get_collection().find_one({'task_id': task_id})
+        task_status = TaskStatus.objects(task_id=task_id).first()
+        task_status = task_status.as_dict() if task_status else None
         return task_status
 
     @staticmethod
