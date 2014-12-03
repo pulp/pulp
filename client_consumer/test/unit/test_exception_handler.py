@@ -30,11 +30,10 @@ class ConsumerExceptionHandlerTests(base.PulpClientTests):
         # Test
         response_body = {'auth_error_code': 'authentication_failed'}
         e = exceptions.PermissionsException(response_body)
+        e.error_message = "I've made a huge mistake."
         code = self.handler.handle_permission(e)
 
         # Verify
         self.assertEqual(code, exceptions.CODE_PERMISSIONS_EXCEPTION)
-        self.assertTrue('Authentication' in self.recorder.lines[0])
+        self.assertTrue("I've made a huge mistake.\n" == self.recorder.lines[0])
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
-        self.assertTrue('A valid' in self.recorder.lines[2]) # skip blank line
-        self.assertEqual(TAG_PARAGRAPH, self.prompt.get_write_tags()[1])
