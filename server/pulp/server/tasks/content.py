@@ -83,18 +83,12 @@ class ContentSourcesRefreshStep(Step):
         if item:
             self.progress_description = item.descriptor['name']
             e = threading.Event()
+            self.progress_details = self.progress_description
             report = item.refresh(e)[0]
-            self.details.append(report.dict())
-            self.progress_details = self.details
             if not report.succeeded:
                 raise PulpCodedTaskException(error_code=error_codes.PLP0031, id=report.source_id,
                                              url=report.url)
 
-    def initialize(self):
-        self.details = []
-
-    def finalize(self):
-        self.progress_details = self.details
 
     def _get_total(self):
         return len(self.sources)

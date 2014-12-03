@@ -305,13 +305,13 @@ class Step(object):
         if self.children:
             child_reports = []
             for step in self.children:
-                child_reports.append(step.get_progress_report())
+                child_reports.extend(step.get_progress_report())
             report[reporting_constants.PROGRESS_SUB_STEPS_KEY] = child_reports
             # Root object is just a list of reports, this should be the object at some point
             if self.parent is None:
                 return child_reports
 
-        return report
+        return [report]
 
     def _record_failure(self, e=None, tb=None):
         """
