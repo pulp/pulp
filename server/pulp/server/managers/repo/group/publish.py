@@ -1,27 +1,13 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from gettext import gettext as _
 import logging
 import sys
-import datetime
 
 from celery import task
 
 from pulp.common import dateutils
-from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.conduits.repo_publish import RepoGroupPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import PublishReport
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroupPublishResult, RepoGroupDistributor
@@ -51,7 +37,8 @@ class RepoGroupPublishManager(object):
         distributor_manager = manager_factory.repo_group_distributor_manager()
         distributor = distributor_manager.get_distributor(group_id, distributor_id)
         distributor_type_id = distributor['distributor_type_id']
-        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(distributor_type_id)
+        distributor_instance, plugin_config = plugin_api.get_group_distributor_by_id(
+            distributor_type_id)
 
         group_query_manager = manager_factory.repo_group_query_manager()
 
@@ -87,14 +74,15 @@ class RepoGroupPublishManager(object):
             publish_end_timestamp = _now_timestamp()
 
             # Reload the distributor in case the scratchpad is changed by the plugin
-            distributor = distributor_coll.find_one({'id' : distributor_id, 'repo_group_id' : group_id})
+            distributor = distributor_coll.find_one(
+                {'id': distributor_id, 'repo_group_id': group_id})
             distributor['last_publish'] = publish_end_timestamp
             distributor_coll.save(distributor)
 
             # Add a publish history entry for the run
-            result = RepoGroupPublishResult.error_result(group_id, distributor_id,
-                     distributor['distributor_type_id'], publish_start_timestamp,
-                     publish_end_timestamp, e, sys.exc_info()[2])
+            result = RepoGroupPublishResult.error_result(
+                group_id, distributor_id, distributor['distributor_type_id'],
+                publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
             publish_result_coll.save(result, safe=True)
 
             raise
@@ -102,7 +90,7 @@ class RepoGroupPublishManager(object):
         publish_end_timestamp = _now_timestamp()
 
         # Reload the distributor in case the scratchpad is changed by the plugin
-        distributor = distributor_coll.find_one({'id' : distributor_id, 'repo_group_id' : group_id})
+        distributor = distributor_coll.find_one({'id': distributor_id, 'repo_group_id': group_id})
         distributor['last_publish'] = publish_end_timestamp
         distributor_coll.save(distributor)
 
@@ -111,22 +99,22 @@ class RepoGroupPublishManager(object):
             summary = report.summary
             details = report.details
             if report.success_flag:
-                result = RepoGroupPublishResult.expected_result(group_id, distributor_id,
-                         distributor['distributor_type_id'], publish_start_timestamp,
-                         publish_end_timestamp, summary, details)
+                result = RepoGroupPublishResult.expected_result(
+                    group_id, distributor_id, distributor['distributor_type_id'],
+                    publish_start_timestamp, publish_end_timestamp, summary, details)
             else:
-                result = RepoGroupPublishResult.failed_result(group_id, distributor_id,
-                         distributor['distributor_type_id'], publish_start_timestamp,
-                         publish_end_timestamp, summary, details)
+                result = RepoGroupPublishResult.failed_result(
+                    group_id, distributor_id, distributor['distributor_type_id'],
+                    publish_start_timestamp, publish_end_timestamp, summary, details)
         else:
             msg = _('Plugin type [%(t)s] did not return a valid publish report')
             msg = msg % {'t': distributor['distributor_type_id']}
             logger.warn(msg)
 
             summary = details = _('Unknown')
-            result = RepoGroupPublishResult.expected_result(group_id, distributor_id,
-                     distributor['distributor_type_id'], publish_start_timestamp,
-                     publish_end_timestamp, summary, details)
+            result = RepoGroupPublishResult.expected_result(
+                group_id, distributor_id, distributor['distributor_type_id'],
+                publish_start_timestamp, publish_end_timestamp, summary, details)
 
         publish_result_coll.save(result, safe=True)
         return result
@@ -146,7 +134,8 @@ class RepoGroupPublishManager(object):
         @return: timestamp of the last publish or None
         @rtype:  datetime.datetime
         """
-        distributor = manager_factory.repo_group_distributor_manager().get_distributor(group_id, distributor_id)
+        distributor = manager_factory.repo_group_distributor_manager().get_distributor(
+            group_id, distributor_id)
 
         date = distributor['last_publish']
 
