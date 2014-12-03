@@ -1,10 +1,5 @@
 from datetime import datetime
 from mongoengine import NotUniqueError, ValidationError
-from pymongo.errors import DuplicateKeyError
-
-import logging
-logger = logging.getLogger(__name__)
-
 
 from pulp.common import constants, dateutils
 from pulp.server.db.model.dispatch import TaskStatus
@@ -30,8 +25,8 @@ class TaskStatusManager(object):
         :type  tags:              list of basestrings or None
         :param state:             state of callable in its lifecycle
         :type  state:             basestring
-        :return:                  TaskStatus instance
-        :rtype:                   pulp.server.db.model.dispatch.TaskStatus
+        :return:                  TaskStatus document
+        :rtype:                   dict
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue:      if any of the fields are unacceptable
         """
@@ -170,7 +165,6 @@ class TaskStatusManager(object):
         for key, value in delta.items():
             if key in updatable_attributes:
                 task_status[key] = value
-        logger.info("%s\n" % task_status.traceback)
 
         task_status.save()
         updated = TaskStatus.objects(task_id=task_id).first()
@@ -185,7 +179,6 @@ class TaskStatusManager(object):
         :param task_id: identity of the task this status corresponds to
         :type  task_id: basestring
         :raise MissingResource: if the given task status does not exist
-        :raise InvalidValue: if task_id is invalid
         """
         task_status = TaskStatus.objects(task_id=task_id).first()
         if task_status is None:

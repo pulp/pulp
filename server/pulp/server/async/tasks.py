@@ -9,7 +9,6 @@ from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
 from celery.signals import worker_init
-from mongoengine import *
 
 from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
@@ -251,12 +250,6 @@ class ReservedTaskMixin(object):
         tags = kwargs.get('tags', [])
 
         # Create a new task status with the task id and tags.
-        # query = {'task_id': inner_task_id}
-        # update = {'$set': {'task_type': task_name,
-        #                    'tags': tags},
-        #           '$setOnInsert': {'state': constants.CALL_WAITING_STATE}}
-        # TaskStatus.get_collection().update(query, update, upsert=True)
-
         task_status = TaskStatus(task_id=inner_task_id, task_type=task_name,
                                  state=constants.CALL_WAITING_STATE, tags=tags)
         # To avoid the race condition where __call__ method below is called before
@@ -298,12 +291,6 @@ class Task(CeleryTask, ReservedTaskMixin):
         async_result.tags = tags
 
         # Create a new task status with the task id and tags.
-        # query = {'task_id': async_result.id}
-        # update = {'$set': {'task_type': self.name,
-        #                    'worker_name': routing_key,
-        #                    'tags': tags},
-        #           '$setOnInsert': {'state': constants.CALL_WAITING_STATE}}
-        # TaskStatus.get_collection().update(query, update, upsert=True)
         task_status = TaskStatus(
             task_id=async_result.id, task_type=self.name,
             state=constants.CALL_WAITING_STATE, worker_name=routing_key, tags=tags)

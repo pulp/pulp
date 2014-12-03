@@ -183,8 +183,8 @@ class EventTests(base.PulpServerTests):
     def test_event_instantiation(self, mock_find, mock_current_task):
         mock_current_task.request.id = 'fake_id'
         fake_task_status = TaskStatus('fake_id')
-        fake_task_status = fake_task_status._data
-        mock_find.return_value = dict(fake_task_status)
+        fake_task_status = fake_task_status.as_dict()
+        mock_find.return_value = fake_task_status
 
         event_type = 'test_type'
         payload = 'test_payload'
@@ -195,18 +195,18 @@ class EventTests(base.PulpServerTests):
             self.fail(e.message)
 
         mock_find.assert_called_once_with('fake_id')
-        self.assertEqual(dict(fake_task_status), event.call_report)
+        self.assertEqual(fake_task_status, event.call_report)
 
     @mock.patch('celery.current_task')
     @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.find_by_task_id')
     def test_data_call(self, mock_find, mock_current_task):
         mock_current_task.request.id = 'fake_id'
         fake_task_status = TaskStatus('fake_id')
-        fake_task_status = fake_task_status._data
-        mock_find.return_value = dict(fake_task_status)
+        fake_task_status = fake_task_status.as_dict()
+        mock_find.return_value = fake_task_status
         data = {'event_type': 'test_type',
                 'payload': 'test_payload',
-                'call_report': dict(fake_task_status)}
+                'call_report': fake_task_status}
 
         event = event_data.Event(data['event_type'], data['payload'])
 
