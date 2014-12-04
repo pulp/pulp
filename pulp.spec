@@ -640,6 +640,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+
 * Fri Nov 21 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.1.alpha
 - 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
 - 1116825 - Adding a non-existent user to a role now returns HTTP 400 instead
@@ -694,7 +698,6 @@ exit 0
 - 1095483 - fix message to not refer to pulp.log (cduryee@redhat.com)
 - 1133939 - tab completion for short options (igulina@redhat.com)
 
-* Mon Nov 17 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.19.rc
 * Fri Nov 21 2014 Austin Macdonald <asmacdo@gmail.com> 2.5.0-1
 - 1129488 - Adjusts mongoDB auto-reconnect to never stop attempting
   (bmbouter@gmail.com)
