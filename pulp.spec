@@ -28,8 +28,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.5.0
-Release: 1%{?dist}
+Version: 2.5.1
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,10 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Dec 04 2014 Chris Duryee <cduryee@redhat.com> 2.5.1-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1129828 - split stack traces into separate log records. (jortel@redhat.com)
+
 * Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
 - 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
 - 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
