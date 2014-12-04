@@ -45,12 +45,12 @@ SCHEMA = (
             ('ca_path', REQUIRED, ANY),
             ('upload_chunk_size', REQUIRED, NUMBER),
         )
-    ),
+     ),
     ('client', REQUIRED,
         (
             ('role', REQUIRED, r'admin'),
         )
-    ),
+     ),
     ('filesystem', REQUIRED,
         (
             ('extensions_dir', REQUIRED, ANY),
@@ -58,13 +58,13 @@ SCHEMA = (
             ('id_cert_filename', REQUIRED, ANY),
             ('upload_working_dir', REQUIRED, ANY),
         )
-    ),
+     ),
     ('logging', REQUIRED,
         (
             ('filename', REQUIRED, ANY),
             ('call_log_filename', OPTIONAL, ANY)
         )
-    ),
+     ),
     ('output', REQUIRED,
         (
             ('poll_frequency_in_seconds', REQUIRED, NUMBER),
@@ -72,7 +72,7 @@ SCHEMA = (
             ('wrap_to_terminal', REQUIRED, BOOL),
             ('wrap_width', REQUIRED, NUMBER)
         )
-    ),
+     ),
 )
 
 
