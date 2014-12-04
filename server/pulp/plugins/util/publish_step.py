@@ -310,6 +310,8 @@ class Step(object):
             # Root object is just a list of reports, this should be the object at some point
             if self.parent is None:
                 return child_reports
+        if self.parent is None:
+            return [report]
 
         return report
 
