@@ -296,19 +296,17 @@ def verify_group_resources(group_id, repo_id, distributor_id):
 
     return missing_resources
 
-# web.py application -----------------------------------------------------------
 
-_URLS = ('/$', ConsumerGroupCollection,
-         '/search/$', ConsumerGroupSearch, # resource search
-         '/([^/]+)/$', ConsumerGroupResource,
+_URLS = (
+    '/$', ConsumerGroupCollection,
+    '/search/$', ConsumerGroupSearch,  # resource search
+    '/([^/]+)/$', ConsumerGroupResource,
 
-        '/([^/]+)/bindings/$', ConsumerGroupBindings,
-        '/([^/]+)/bindings/([^/]+)/([^/]+)/$', ConsumerGroupBinding,
+    '/([^/]+)/bindings/$', ConsumerGroupBindings,
+    '/([^/]+)/bindings/([^/]+)/([^/]+)/$', ConsumerGroupBinding,
 
-         '/([^/]+)/actions/associate/$', ConsumerGroupAssociateAction,
-         '/([^/]+)/actions/unassociate/$', ConsumerGroupUnassociateAction,
-         '/([^/]+)/actions/content/(install|update|uninstall)/$',
-            ConsumerGroupContentAction,
-        )
+    '/([^/]+)/actions/associate/$', ConsumerGroupAssociateAction,
+    '/([^/]+)/actions/unassociate/$', ConsumerGroupUnassociateAction,
+    '/([^/]+)/actions/content/(install|update|uninstall)/$', ConsumerGroupContentAction)
 
 application = web.application(_URLS, globals())
