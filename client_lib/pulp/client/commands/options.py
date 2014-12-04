@@ -42,5 +42,6 @@ OPTION_GROUP_ID = PulpCliOption('--group-id', DESC_ID, required=True,
                                 validate_func=validators.id_validator)
 OPTION_CONSUMER_ID = PulpCliOption('--consumer-id', DESC_ID_ALLOWING_DOTS, required=True,
                                    validate_func=validators.id_validator_allow_dots)
-
+OPTION_CONTENT_SOURCE_ID = PulpCliOption('--source-id', DESC_ID, aliases=['-s'], required=False,
+                                         validate_func=validators.id_validator)
 FLAG_ALL = PulpCliFlag('--all', DESC_ALL)

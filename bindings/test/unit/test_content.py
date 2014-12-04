@@ -117,6 +117,25 @@ class TestContentSources(unittest.TestCase):
         connection.GET.assert_called_once_with(path)
         self.assertEqual(body, connection.GET.return_value)
 
+    def test_refresh(self):
+        source_id = 'test-id'
+        connection = mock.Mock()
+        api = ContentSourceAPI(connection)
+
+        body = api.refresh(source_id)
+        path = '%s%s/action/refresh/' % (ContentSourceAPI.BASE_URL, source_id)
+        connection.POST.assert_called_once_with(path)
+        self.assertEqual(body, connection.POST.return_value)
+
+    def test_refresh_all(self):
+        connection = mock.Mock()
+        api = ContentSourceAPI(connection)
+
+        body = api.refresh_all()
+        path = '%saction/refresh/' % ContentSourceAPI.BASE_URL
+        connection.POST.assert_called_once_with(path)
+        self.assertEqual(body, connection.POST.return_value)
+
 
 class TestCatalog(unittest.TestCase):
 

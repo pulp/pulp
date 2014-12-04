@@ -108,5 +108,37 @@ sources as follows::
   $ pulp-admin content catalog delete -s content-world
   Successfully deleted [10] catalog entries.
 
+The pulp-admin client can be used to refresh content catalog using all content sources::
+
+  $ pulp-admin content sources refresh
+  +----------------------------------------------------------------------+
+                          Refresh Content Sources
+  +----------------------------------------------------------------------+
+
+  This command may be exited via ctrl+c without affecting the request.
 
 
+  Refreshing content sources
+  [==================================================] 100%
+  2 of 2 items
+  ... completed
+
+
+  Task Succeeded
+
+The pulp-admin client can be used to refresh content catalog using a specific content source::
+
+  $ pulp-admin content sources refresh --source-id content-zoo
+  +----------------------------------------------------------------------+
+                          Refresh Content Sources
+  +----------------------------------------------------------------------+
+
+  This command may be exited via ctrl+c without affecting the request.
+
+
+  Refreshing content sources
+  [|]
+  ... completed
+
+
+  Task Succeeded
