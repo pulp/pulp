@@ -52,10 +52,8 @@ class TaskStatusManager(object):
         :param task_id: The identity of the task to be updated.
         :type  task_id: basestring
         """
-        task_status = TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).first()
-        if task_status is None:
-            raise MissingResource(task_id)
-        task_status.update(set__state=constants.CALL_ACCEPTED_STATE)
+        TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).\
+            update_one(set__state=constants.CALL_ACCEPTED_STATE)
 
     @staticmethod
     def set_task_started(task_id, timestamp=None):
@@ -72,17 +70,11 @@ class TaskStatusManager(object):
         else:
             started = timestamp
 
-        task_status = TaskStatus.objects(task_id=task_id).first()
-        if task_status is None:
-            raise MissingResource(task_id)
-        task_status.update(set__start_time=started)
+        TaskStatus.objects(task_id=task_id).update_one(set__start_time=started)
 
-        task_status = TaskStatus.objects(task_id=task_id,
-                                         state__in=[constants.CALL_WAITING_STATE,
-                                                    constants.CALL_ACCEPTED_STATE]).first()
-        if task_status is None:
-            raise MissingResource(task_id)
-        task_status.update(set__state=constants.CALL_RUNNING_STATE)
+        TaskStatus.objects(task_id=task_id,
+                           state__in=[constants.CALL_WAITING_STATE, constants.CALL_ACCEPTED_STATE]).\
+            update_one(set__state=constants.CALL_RUNNING_STATE)
 
     @staticmethod
     def set_task_succeeded(task_id, result=None, timestamp=None):
