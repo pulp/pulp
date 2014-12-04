@@ -28,8 +28,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.4.3
-Release: 1%{?dist}
+Version: 2.4.4
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -592,6 +592,15 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+- 1021579 - document unexpected behavior in unassociate api
+  (cduryee@redhat.com)
+- 1081534 - Added /v2 and trailing / to the permissions docs
+  (dkliban@redhat.com)
+- 1111261 - document single event listener retrieval (bcourt@redhat.com)
+
 * Mon Oct 20 2014 Randy Barlow <rbarlow@redhat.com> 2.4.3-1
 - 1153054 - pulp.bindings refuse to do SSLv3. (rbarlow@redhat.com)
 
