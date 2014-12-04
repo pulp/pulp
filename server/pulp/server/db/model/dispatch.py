@@ -24,7 +24,7 @@ from celery.utils.timeutils import timedelta_seconds
 from mongoengine import DictField, Document, DynamicField, ListField, StringField
 import isodate
 
-from pulp.common import dateutils
+from pulp.common import dateutils, constants
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.connection import get_collection
 from pulp.server.db.model.base import Model
@@ -542,7 +542,7 @@ class TaskStatus(Document, ReaperMixin):
     task_id = StringField(unique=True, required=True)
     worker_name = StringField()
     tags = ListField(StringField())
-    state = StringField()
+    state = StringField(choices=constants.CALL_STATES)
     error = DictField(default=None)
     spawned_tasks = ListField(StringField())
     progress_report = DictField()

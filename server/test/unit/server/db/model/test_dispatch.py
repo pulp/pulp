@@ -22,9 +22,10 @@ import unittest
 import bson
 import celery
 from celery.schedules import schedule as CelerySchedule
+from mongoengine import ValidationError
 import mock
 
-from pulp.common import dateutils
+from pulp.common import dateutils, constants
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.dispatch import TaskStatus, ScheduledCall, ScheduleEntry
 from pulp.server.managers.factory import initialize
@@ -50,7 +51,7 @@ class TestTaskStatus(unittest.TestCase):
         task_id = str(uuid4())
         worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
-        state = 'a state'
+        state = constants.CALL_ACCEPTED_STATE
         spawned_tasks = ['foo']
         error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
@@ -102,6 +103,128 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts.task_type, None)
         self.assertEqual(ts.exception, None)
 
+    def test_task_id_validation(self):
+        # Valid task_id
+        valid_task_id = str(uuid4())
+        TaskStatus(valid_task_id).save()
+
+        # Invalid task_id
+        invalid_task_ids = [4, {}, None, uuid4(), ('a', 'b'), object(), []]
+        for invalid_task_id in invalid_task_ids:
+            self.assertRaises(ValidationError, TaskStatus(invalid_task_id).save)
+
+    def test_task_id_required(self):
+        self.assertRaises(ValidationError, TaskStatus().save)
+        self.assertRaises(ValidationError, TaskStatus(worker_name='worker_name').save)
+
+    def test_worker_name_validation(self):
+        # Valid worker_name
+        task_id = str(uuid4())
+        valid_worker_name = 'worker_name'
+        TaskStatus(task_id=task_id, worker_name=valid_worker_name).save()
+
+        # Invalid worker_name
+        invalid_worker_names = [4, {}, uuid4(), ('a', 'b'), object(), []]
+        for invalid_worker_name in invalid_worker_names:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          worker_name=invalid_worker_name).save)
+
+    def test_tags_validation(self):
+        # Valid tags
+        task_id = str(uuid4())
+        valid_tags = ['tag1', 'tag2']
+        TaskStatus(task_id=task_id, tags=valid_tags).save()
+
+        # Invalid tags
+        invalid_tags = [4, {}, uuid4(), object(), 'tags', [1, 2]]
+        for invalid_tag in invalid_tags:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          tags=invalid_tag).save)
+
+    def test_state_validation(self):
+        # Valid state
+        valid_states = constants.CALL_STATES
+        for valid_state in valid_states:
+            TaskStatus(task_id=str(uuid4()), state=valid_state).save()
+
+        # Invalid state
+        invalid_states = [4, {}, uuid4(), object(), 'invalid_state', []]
+        for invalid_state in invalid_states:
+            self.assertRaises(ValidationError, TaskStatus(task_id=str(uuid4()),
+                                                          state=invalid_state).save)
+
+    def test_error_validation(self):
+        # Valid error
+        task_id = str(uuid4())
+        valid_error = {'error': 'some error'}
+        TaskStatus(task_id=task_id, error=valid_error).save()
+
+        # Invalid error
+        invalid_errors = [4, uuid4(), object(), 'tags', [1, 2]]
+        for invalid_error in invalid_errors:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          error=invalid_error).save)
+
+    def test_spawned_tasks_validation(self):
+        # Valid spawned_tasks
+        task_id = str(uuid4())
+        valid_spawned_tasks = ['spawned1', 'spawned2']
+        TaskStatus(task_id=task_id, spawned_tasks=valid_spawned_tasks).save()
+
+        # Invalid spawned_tasks
+        invalid_spawned_tasks = [4, uuid4(), object(), 'tags', [1, 2], {}]
+        for invalid_spawned_task in invalid_spawned_tasks:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          spawned_tasks=invalid_spawned_task).save)
+
+    def test_progress_report_validation(self):
+        # Valid progress_report
+        task_id = str(uuid4())
+        valid_progress_report = {'progress': 'going good'}
+        TaskStatus(task_id=task_id, progress_report=valid_progress_report).save()
+
+        # Invalid progress_report
+        invalid_progress_reports = [4, uuid4(), object(), 'tags', [1, 2], ()]
+        for invalid_progress_report in invalid_progress_reports:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          progress_report=invalid_progress_report).save)
+
+    def test_task_type_validation(self):
+        # Valid task_type
+        task_id = str(uuid4())
+        valid_task_type = 'task_type'
+        TaskStatus(task_id=task_id, task_type=valid_task_type).save()
+
+        # Invalid task_type
+        invalid_task_types = [4, {}, uuid4(), ('a', 'b'), object(), []]
+        for invalid_task_type in invalid_task_types:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          task_type=invalid_task_type).save)
+
+    def test_start_time_validation(self):
+        # Valid start_time
+        task_id = str(uuid4())
+        valid_start_time = dateutils.format_iso8601_datetime(datetime.now())
+        TaskStatus(task_id=task_id, start_time=valid_start_time).save()
+
+        # Invalid start_time
+        invalid_start_times = [4, {}, uuid4(), ('a', 'b'), object(), [], datetime.now()]
+        for invalid_start_time in invalid_start_times:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          task_type=invalid_start_time).save)
+
+    def test_finish_time_validation(self):
+        # Valid finish_time
+        task_id = str(uuid4())
+        valid_finish_time = dateutils.format_iso8601_datetime(datetime.now())
+        TaskStatus(task_id=task_id, finish_time=valid_finish_time).save()
+
+        # Invalid finish_time
+        invalid_finish_times = [4, {}, uuid4(), ('a', 'b'), object(), [], datetime.now()]
+        for invalid_finish_time in invalid_finish_times:
+            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
+                                                          task_type=invalid_finish_time).save)
+
     def test_save_insert_defaults(self):
         """
         Test the save method with default arguments when the object is not already in the database.
@@ -109,7 +232,7 @@ class TestTaskStatus(unittest.TestCase):
         task_id = str(uuid4())
         worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
-        state = 'a state'
+        state = constants.CALL_RUNNING_STATE
         spawned_tasks = ['foo']
         error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
@@ -155,7 +278,7 @@ class TestTaskStatus(unittest.TestCase):
         task_id = str(uuid4())
         worker_name = 'some_worker'
         tags = ['tag_1', 'tag_2']
-        state = 'a state'
+        state = constants.CALL_RUNNING_STATE
         spawned_tasks = ['foo']
         error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
@@ -200,7 +323,7 @@ class TestTaskStatus(unittest.TestCase):
         task_id = str(uuid4())
         worker_name = 'worker_name'
         tags = ['tag_1', 'tag_2']
-        state = 'a state'
+        state = constants.CALL_ACCEPTED_STATE
         spawned_tasks = ['foo']
         error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
@@ -217,7 +340,7 @@ class TestTaskStatus(unittest.TestCase):
         # Let's go ahead and insert the object
         ts.save()
         # Now let's alter it a bit, and make sure the alteration makes it to the DB correctly.
-        new_state = 'some_altered_state_of_consciousness'
+        new_state = constants.CALL_RUNNING_STATE
         ts.state = new_state
 
         # This should update ts in the database
@@ -252,7 +375,7 @@ class TestTaskStatus(unittest.TestCase):
         task_id = str(uuid4())
         worker_name = 'worker_name'
         tags = ['tag_1', 'tag_2']
-        state = 'a state'
+        state = constants.CALL_ACCEPTED_STATE
         spawned_tasks = ['foo']
         error = {'error': 'some_error'}
         progress_report = {'what do we want?': 'progress!', 'when do we want it?': 'now!'}
@@ -269,7 +392,7 @@ class TestTaskStatus(unittest.TestCase):
         # Put the object in the database, and then change some of it settings.
         ts.save()
         new_worker_name = 'a different_worker'
-        new_state = 'some_other_state'
+        new_state = constants.CALL_SUSPENDED_STATE
         new_start_time = old_start_time + timedelta(minutes=10)
         new_start_time = dateutils.format_iso8601_datetime(new_start_time)
         ts.worker_name = new_worker_name
