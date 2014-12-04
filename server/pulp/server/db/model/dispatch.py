@@ -26,7 +26,7 @@ import isodate
 
 from pulp.common import dateutils, constants
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.db.connection import get_collection
+from pulp.server.db.connection import get_collection, PulpCollection
 from pulp.server.db.model.base import Model
 from pulp.server.db.model.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
@@ -564,10 +564,10 @@ class TaskStatus(Document, ReaperMixin):
         """
         Get the document collection for this data model.
         :return: the associated document collection
-        :rtype: pymongo.collection.Collection instance or None
+        :rtype: pulp.server.db.connection.PulpCollection instance
         """
-        collection_name = cls._get_collection_name()
-        cls._collection = get_collection(collection_name)
+        if not cls._collection or not isinstance(cls._collection, PulpCollection):
+            cls._collection = get_collection(cls._get_collection_name())
         return cls._collection
 
     def as_dict(self):

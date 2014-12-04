@@ -247,3 +247,29 @@ class TaskStatusManagerTests(base.PulpServerTests):
         self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)
+
+    @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
+    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
+    def test_set_started(self, mock_objects, mock_date):
+        test_date = '2014-11-21 05:21:38.829678'
+        mock_date.return_value = test_date
+        test_objects = mock.Mock()
+        mock_objects.return_value = test_objects
+        call = mock._Call()
+
+        TaskStatusManager.set_task_started(task_id='test-task-id')
+
+        self.assertEqual(test_objects.update_one.call_args_list, [call(set__start_time='2014-11-21 05:21:38.829678'),
+                                                                  call(set__state='running')])
+
+    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
+    def test_set_started_with_timestamp(self, mock_objects):
+        test_date = '2014-11-21 05:21:38.829678'
+        test_objects = mock.Mock()
+        mock_objects.return_value = test_objects
+        call = mock._Call()
+
+        TaskStatusManager.set_task_started(task_id='test-task-id', timestamp=test_date)
+
+        self.assertEqual(test_objects.update_one.call_args_list, [call(set__start_time='2014-11-21 05:21:38.829678'),
+                                                                  call(set__state='running')])
