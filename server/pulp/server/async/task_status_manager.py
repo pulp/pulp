@@ -93,12 +93,9 @@ class TaskStatusManager(object):
         else:
             finished = timestamp
 
-        task_status = TaskStatus.objects(task_id=task_id).first()
-        if task_status is None:
-            raise MissingResource(task_id)
-        task_status.update(set__finish_time=finished,
-                           set__state=constants.CALL_FINISHED_STATE,
-                           set__result=result)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__result=result)
 
     @staticmethod
     def set_task_failed(task_id, traceback=None, timestamp=None):
@@ -117,12 +114,9 @@ class TaskStatusManager(object):
         else:
             finished = timestamp
 
-        task_status = TaskStatus.objects(task_id=task_id).first()
-        if task_status is None:
-            raise MissingResource(task_id)
-        task_status.update(set__finish_time=finished,
-                           set__state=constants.CALL_ERROR_STATE,
-                           set__traceback=traceback)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__traceback=traceback)
 
     @staticmethod
     def update_task_status(task_id, delta):
