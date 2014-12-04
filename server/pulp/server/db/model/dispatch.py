@@ -21,7 +21,7 @@ from bson import ObjectId
 from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
-from mongoengine import *
+from mongoengine import DictField, Document, DynamicField, ListField, StringField
 import isodate
 
 from pulp.common import dateutils
