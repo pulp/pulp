@@ -604,6 +604,15 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+- 1021579 - document unexpected behavior in unassociate api
+  (cduryee@redhat.com)
+- 1081534 - Added /v2 and trailing / to the permissions docs
+  (dkliban@redhat.com)
+- 1111261 - document single event listener retrieval (bcourt@redhat.com)
+
 * Fri Nov 21 2014 Austin Macdonald <asmacdo@gmail.com> 2.5.0-1
 - 1129488 - Adjusts mongoDB auto-reconnect to never stop attempting
   (bmbouter@gmail.com)
