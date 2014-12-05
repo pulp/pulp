@@ -1,25 +1,13 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import mock
+
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.db.model.dispatch import ScheduledCall
-
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers.factory import initialize
-from pulp.server.managers.schedule.consumer import ConsumerScheduleManager, UNIT_INSTALL_ACTION, UNIT_UPDATE_ACTION, ACTIONS_TO_TASKS
+from pulp.server.managers.schedule.consumer import (ConsumerScheduleManager, UNIT_INSTALL_ACTION,
+                                                    UNIT_UPDATE_ACTION, ACTIONS_TO_TASKS)
 
 
 initialize()
@@ -84,8 +72,8 @@ class TestCreate(unittest.TestCase):
     def test_validation(self, mock_validate):
         mock_validate.side_effect = MissingResource
 
-        self.assertRaises(MissingResource, self.manager.create_schedule, UNIT_INSTALL_ACTION, 'consumer1',
-                          self.units, {}, 'PT1H')
+        self.assertRaises(MissingResource, self.manager.create_schedule, UNIT_INSTALL_ACTION,
+                          'consumer1', self.units, {}, 'PT1H')
 
         mock_validate.assert_called_once_with('consumer1')
 
@@ -99,14 +87,13 @@ class TestCreate(unittest.TestCase):
 
     @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.get_consumer')
     def test_validate_schedule(self, mock_get_consumer):
-        self.assertRaises(InvalidValue, self.manager.create_schedule, UNIT_INSTALL_ACTION, 'consumer1',
-                          self.units, {}, 'not a valid schedule')
+        self.assertRaises(InvalidValue, self.manager.create_schedule, UNIT_INSTALL_ACTION,
+                          'consumer1', self.units, {}, 'not a valid schedule')
 
     @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.get_consumer')
     def test_validate_units(self, mock_get_consumer):
-        self.assertRaises(MissingResource, self.manager.create_schedule, UNIT_INSTALL_ACTION, 'consumer1',
-                          [], {}, 'PT1M')
-
+        self.assertRaises(MissingResource, self.manager.create_schedule, UNIT_INSTALL_ACTION,
+                          'consumer1', [], {}, 'PT1M')
 
     @mock.patch.object(ScheduledCall, 'save')
     @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.get_consumer')
