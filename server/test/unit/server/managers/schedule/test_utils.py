@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import time
 import unittest
 
@@ -42,7 +29,8 @@ class TestGet(unittest.TestCase):
         self.assertEqual(len(mock_query.call_args[0]), 1)
         criteria = mock_query.call_args[0][0]
         self.assertTrue(isinstance(criteria, Criteria))
-        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1), ObjectId(self.schedule_id2)]}})
+        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1),
+                         ObjectId(self.schedule_id2)]}})
 
         # three instances of ScheduledCall should be returned
         self.assertEqual(len(ret), 3)
@@ -64,7 +52,7 @@ class TestGet(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get([])
+        utils.get([])
 
         mock_get_collection.assert_called_once_with()
 
@@ -106,7 +94,7 @@ class TestGetByResource(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get_by_resource('resource1')
+        utils.get_by_resource('resource1')
 
         mock_get_collection.assert_called_once_with()
 
@@ -148,7 +136,7 @@ class TestGetUpdatedSince(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get_updated_since(time.time())
+        utils.get_updated_since(time.time())
 
         mock_get_collection.assert_called_once_with()
 
@@ -187,7 +175,7 @@ class TestGetEnabled(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get_enabled()
+        utils.get_enabled()
 
         mock_get_collection.assert_called_once_with()
 
@@ -212,7 +200,7 @@ class TestDelete(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.delete(self.schedule_id)
+        utils.delete(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
 
@@ -286,7 +274,7 @@ class TestUpdate(unittest.TestCase):
         """
         mock_get_collection.return_value.find_and_modify.return_value = SCHEDULES[0]
 
-        ret = utils.update(self.schedule_id, {'enabled': True})
+        utils.update(self.schedule_id, {'enabled': True})
 
         mock_get_collection.assert_called_once_with()
 
@@ -300,7 +288,8 @@ class TestUpdate(unittest.TestCase):
         mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = None
 
-        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id, {'enabled': True})
+        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id,
+                          {'enabled': True})
         self.assertEqual(mock_find.call_count, 1)
 
     def test_invalid_schedule_id(self):
@@ -329,7 +318,7 @@ class TestResetFailureCount(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.reset_failure_count(self.schedule_id)
+        utils.reset_failure_count(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
 
@@ -433,13 +422,21 @@ SCHEDULES = [
         u'last_run_at': u'2013-12-17T00:35:53Z',
         u'last_updated': 1387218569.811224,
         u'next_run': u'2013-12-17T00:36:53Z',
-        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\n" +
+                      u"ObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1" +
+                      u"\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\n" +
+                      u"p10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\n" +
+                      u"Vadmin\np16\nsVpassword\np17\n" +
+                      u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\n" +
+                      u"p19\nV5220ab06e19a0010e1690589\np20\ns.",
         u'remaining_runs': None,
         u'resource': u'pulp:distributor:demo:puppet_distributor',
-        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\n" +
+                     u"c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\n" +
+                     u"sS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\n" +
+                     u"I0\ntp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
-        u'total_run_count': 1087,
-        },
+        u'total_run_count': 1087},
     {
         u'_id': u'529f4bd93de3a31d0ec77339',
         u'args': [u'demo2', u'puppet_distributor'],
@@ -452,13 +449,21 @@ SCHEDULES = [
         u'last_run_at': u'2013-12-17T00:35:53Z',
         u'last_updated': 1387218500.598727,
         u'next_run': u'2013-12-17T00:36:53Z',
-        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\n" +
+                      u"ObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1" +
+                      u"\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\n" +
+                      u"p10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\n" +
+                      u"Vadmin\np16\nsVpassword\np17\n" +
+                      u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\n" +
+                      u"p19\nV5220ab06e19a0010e1690589\np20\ns.",
         u'remaining_runs': None,
         u'resource': u'pulp:distributor:demo:puppet_distributor',
-        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\n" +
+                     u"c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\n" +
+                     u"sS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\n" +
+                     u"I0\ntp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
-        u'total_run_count': 1087,
-        },
+        u'total_run_count': 1087},
     {
         u'_id': u'529f4bd93de3a31d0ec77340',
         u'args': [u'demo3', u'puppet_distributor'],
@@ -471,10 +476,19 @@ SCHEDULES = [
         u'last_run_at': u'2013-12-17T00:35:53Z',
         u'last_updated': 1387218501.598727,
         u'next_run': u'2013-12-17T00:36:53Z',
-        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId" +
+                      u"\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00" +
+                      u"\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n" +
+                      u"(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\n" +
+                      u"Vadmin\np16\nsVpassword\np17\n" +
+                      u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\n" +
+                      u"p19\nV5220ab06e19a0010e1690589\np20\ns.",
         u'remaining_runs': 0,
         u'resource': u'pulp:distributor:demo:puppet_distributor',
-        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\n" +
+                     u"c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\n" +
+                     u"sS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\n" +
+                     u"I0\ntp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
         u'total_run_count': 1087,
     },
