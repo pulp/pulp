@@ -25,7 +25,7 @@ class TaskStatusManager(object):
         :type  tags:              list of basestrings or None
         :param state:             state of callable in its lifecycle
         :type  state:             basestring
-        :return:                  TaskStatus document
+        :return:                  TaskStatus
         :rtype:                   dict
         :raise DuplicateResource: if there is already a task status entry with the requested task id
         :raise InvalidValue:      if any of the fields are unacceptable
@@ -41,9 +41,7 @@ class TaskStatusManager(object):
         except ValidationError, v:
             raise InvalidValue(v.to_dict().keys())
 
-        created = TaskStatus.objects(task_id=task_id).first()
-        created = created.as_dict() if created else None
-        return created
+        return task_status.as_dict()
 
     @staticmethod
     def set_task_accepted(task_id):
@@ -171,16 +169,6 @@ class TaskStatusManager(object):
             raise MissingResource(task_id)
 
         task_status.delete()
-
-    @staticmethod
-    def find_all():
-        """
-        Returns serialized versions of all task statuses in the database.
-
-        :return: mongoengine QuerySet for the list of TaskStatus objects
-        :rtype:  mongoengine.queryset.QuerySet
-        """
-        return TaskStatus.objects()
 
     @staticmethod
     def find_by_task_id(task_id):

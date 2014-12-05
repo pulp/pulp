@@ -541,7 +541,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
 
         task.apply_async(*args, **kwargs)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
@@ -577,7 +577,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
 
         task.apply_async(*args, **kwargs)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
@@ -595,7 +595,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
 
         task.apply_async(*args, **kwargs)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
