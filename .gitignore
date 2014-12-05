@@ -24,3 +24,6 @@ tags
 
 # Sublime
 .codeintel
+
+# Don't include the Django settings file
+server/pulp/server/webservices/settings.py
