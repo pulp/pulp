@@ -111,30 +111,6 @@ class TaskStatusManagerTests(base.PulpServerTests):
         else:
             self.fail('Invalid attributes did not cause create to raise an exception')
 
-    def test_delete_task_status(self):
-        """
-        Test delete_task_status() under normal circumstances.
-        """
-        task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id)
-
-        TaskStatusManager.delete_task_status(task_id)
-
-        task_statuses = TaskStatusManager.find_all()
-        self.assertEqual(0, len(task_statuses))
-
-    def test_delete_not_existing_task_status(self):
-        """
-        Tests that deleting a task status that doesn't exist raises the appropriate error.
-        """
-        task_id = self.get_random_uuid()
-        try:
-            TaskStatusManager.delete_task_status(task_id)
-        except exceptions.MissingResource, e:
-            self.assertTrue(task_id == e.resources['resource_id'])
-        else:
-            self.fail('Exception expected')
-
     def test_update_task_status(self):
         """
         Tests the successful operation of update_task_status().

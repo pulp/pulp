@@ -156,21 +156,6 @@ class TaskStatusManager(object):
         return updated
 
     @staticmethod
-    def delete_task_status(task_id):
-        """
-        Deletes the task status with given task id.
-
-        :param task_id: identity of the task this status corresponds to
-        :type  task_id: basestring
-        :raise MissingResource: if the given task status does not exist
-        """
-        task_status = TaskStatus.objects(task_id=task_id).first()
-        if task_status is None:
-            raise MissingResource(task_id)
-
-        task_status.delete()
-
-    @staticmethod
     def find_by_task_id(task_id):
         """
         Returns a serialized version the status of given task, if it exists.

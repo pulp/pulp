@@ -508,9 +508,10 @@ class ArchivedCall(Model, ReaperMixin):
 
 class TaskStatus(Document, ReaperMixin):
     """
-    Represents current state of a task.
-    This inherits from mongoengine.Document and defines schema for the objects in task_status collection.
-    The documents in this collection may be reaped, so it inherits from ReaperMixin.
+    Represents a task.
+    This inherits from mongoengine.Document and defines the schema for the documents
+    in task_status collection. The documents in this collection may be reaped,
+    so it inherits from ReaperMixin.
 
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
