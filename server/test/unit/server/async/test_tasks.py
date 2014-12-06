@@ -390,7 +390,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], retval)
         self.assertFalse(new_task_status['finish_time'] is None)
@@ -417,7 +417,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], 'bar')
         self.assertEqual(new_task_status['error']['description'], 'error-foo')
@@ -442,7 +442,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], 'bar')
         self.assertFalse(new_task_status['finish_time'] is None)
@@ -464,7 +464,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], None)
         self.assertFalse(new_task_status['finish_time'] is None)
@@ -485,7 +485,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         # This should not update the task status to finished, since this task was canceled.
         task.on_success(retval, task_id, args, kwargs)
 
-        updated_task_status = TaskStatusManager.find_by_task_id(task_id)
+        updated_task_status = TaskStatus.objects(task_id=task_id).first()
         # Make sure the task is still canceled.
         self.assertEqual(updated_task_status['state'], CALL_CANCELED_STATE)
         self.assertEqual(updated_task_status['result'], retval)
@@ -522,7 +522,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         task = tasks.Task()
         task.on_failure(exc, task_id, args, kwargs, einfo)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'error')
         self.assertFalse(new_task_status['finish_time'] is None)
         # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
@@ -614,7 +614,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         task = tasks.Task()
         task.apply_async(*args, **kwargs)
 
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], 'canceled')
         self.assertEqual(task_status['start_time'], None)
 
@@ -667,7 +667,7 @@ class TestCancel(PulpServerTests):
         log_msg = logger.info.mock_calls[0][1][0]
         self.assertTrue(task_id in log_msg)
         self.assertTrue('Task canceled' in log_msg)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
@@ -681,7 +681,7 @@ class TestCancel(PulpServerTests):
         TaskStatusManager.create_task_status(task_id, 'test_worker', state=CALL_FINISHED_STATE)
 
         tasks.cancel(task_id)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
@@ -695,7 +695,7 @@ class TestCancel(PulpServerTests):
         TaskStatusManager.create_task_status(task_id, 'test_worker', state=CALL_CANCELED_STATE)
 
         tasks.cancel(task_id)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
 

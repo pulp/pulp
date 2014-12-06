@@ -53,7 +53,7 @@ class TestTaskResource(PulpWebservicesTests):
         task_id = '1234abcd'
         TaskStatusManager.create_task_status(task_id, state=constants.CALL_FINISHED_STATE)
         self.task_resource.DELETE(task_id)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], constants.CALL_FINISHED_STATE)
 
     def test_DELETE_non_existing_celery_task(self):

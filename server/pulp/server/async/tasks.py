@@ -306,7 +306,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         for task state tracking of Pulp tasks.
         """
         # Check task status and skip running the task if task state is 'canceled'.
-        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        task_status = TaskStatus.objects(task_id=self.request.id).first()
         if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
             logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
@@ -318,11 +318,9 @@ class Task(CeleryTask, ReservedTaskMixin):
             start_time = dateutils.format_iso8601_datetime(now)
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
-            TaskStatus.get_collection().update(
-                {'task_id': self.request.id},
-                {'$set': {'state': constants.CALL_RUNNING_STATE,
-                          'start_time': start_time}},
-                upsert=True)
+            TaskStatus.objects(task_id=self.request.id).update_one(set__state=constants.CALL_RUNNING_STATE,
+                                                                   set__start_time=start_time,
+                                                                   upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
         return super(Task, self).__call__(*args, **kwargs)
@@ -345,7 +343,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             finish_time = dateutils.format_iso8601_datetime(now)
             delta = {'finish_time': finish_time,
                      'result': retval}
-            task_status = TaskStatusManager.find_by_task_id(task_id)
+            task_status = TaskStatus.objects(task_id=task_id).first()
             # Only set the state to finished if it's not already in a complete state. This is
             # important for when the task has been canceled, so we don't move the task from canceled
             # to finished.
@@ -406,7 +404,7 @@ def cancel(task_id):
     :raises MissingResource: if a task with given task_id does not exist
     :raises PulpCodedException: if given task is already in a complete state
     """
-    task_status = TaskStatusManager.find_by_task_id(task_id)
+    task_status = TaskStatus.objects(task_id=task_id).first()
     if task_status is None:
         raise MissingResource(task_id)
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
@@ -415,9 +413,8 @@ def cancel(task_id):
         logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
     controller.revoke(task_id, terminate=True)
-    TaskStatus.get_collection().find_and_modify(
-        {'task_id': task_id, 'state': {'$nin': constants.CALL_COMPLETE_STATES}},
-        {'$set': {'state': constants.CALL_CANCELED_STATE}})
+    TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES).\
+        update_one(set__state=constants.CALL_CANCELED_STATE)
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)

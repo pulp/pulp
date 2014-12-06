@@ -18,6 +18,7 @@ Contains DTOs to describe events.
 import celery
 
 from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.dispatch import TaskStatus
 
 # -- constants ----------------------------------------------------------------
 
@@ -44,7 +45,9 @@ class Event(object):
         self.payload = payload
         try:
             task_id = celery.current_task.request.id
-            self.call_report = TaskStatusManager.find_by_task_id(task_id)
+            self.call_report = TaskStatus.objects(task_id=task_id).first()
+            if self.call_report:
+                self.call_report = self.call_report.as_dict()
         except AttributeError:
             self.call_report = None
 

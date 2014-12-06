@@ -156,19 +156,6 @@ class TaskStatusManager(object):
         return updated
 
     @staticmethod
-    def find_by_task_id(task_id):
-        """
-        Returns a serialized version the status of given task, if it exists.
-        If a task status cannot be found with the given task_id, None is returned.
-
-        :return: serialized task status
-        :rtype:  dict or None
-        """
-        task_status = TaskStatus.objects(task_id=task_id).first()
-        task_status = task_status.as_dict() if task_status else None
-        return task_status
-
-    @staticmethod
     def find_by_criteria(criteria):
         """
         Return a list of task statuses that match the provided criteria.

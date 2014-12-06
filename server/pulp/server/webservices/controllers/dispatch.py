@@ -7,6 +7,7 @@ from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth.authorization import READ
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
@@ -89,10 +90,11 @@ class TaskResource(JSONController):
 
     @auth_required(authorization.READ)
     def GET(self, task_id):
-        task = TaskStatusManager.find_by_task_id(task_id)
+        task = TaskStatus.objects(task_id=task_id).first()
         if task is None:
             raise MissingResource(task_id)
         else:
+            task = task.as_dict()
             link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
             task.update(link)
             task.update(serialization.dispatch.spawned_tasks(task))
