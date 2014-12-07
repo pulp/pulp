@@ -1,6 +1,4 @@
 import datetime
-import os
-import shutil
 import signal
 
 import mock
@@ -80,7 +78,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        sync_config = {'bruce': 'hulk', 'tony': 'ironman'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
@@ -88,14 +86,15 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.sync_manager.sync('repo-1', sync_config_override=None)
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id': 'repo-1',
+                                                                'id': 'mock-importer'})
 
-        #   Database
+        # Database
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
-        #   Call into the Importer
+        # Call into the Importer
         sync_args = mock_plugins.MOCK_IMPORTER.sync_repo.call_args[0]
 
         self.assertEqual(repo['id'], sync_args[0].id)
@@ -104,8 +103,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertEqual(sync_config, sync_args[2].repo_plugin_config)
         self.assertEqual({}, sync_args[2].override_config)
 
-        #   History Entry
-        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
+        # History Entry
+        history = list(RepoSyncResult.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(1, len(history))
         self.assertEqual('repo-1', history[0]['repo_id'])
         self.assertEqual(RepoSyncResult.RESULT_SUCCESS, history[0]['result'])
@@ -131,17 +130,18 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
     def test_sync_with_graceful_fail(self):
         # Setup
-        sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
+        sync_config = {'bruce': 'hulk', 'tony': 'ironman'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
 
-        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = SyncReport(False, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
+        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = SyncReport(
+            False, 10, 5, 1, 'Summary of the sync', 'Details of the sync')
 
         # Test
         self.assertRaises(PulpExecutionException, self.sync_manager.sync, 'repo-1')
 
         # Verify
-        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
+        history = list(RepoSyncResult.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(1, len(history))
         self.assertEqual('repo-1', history[0]['repo_id'])
         self.assertEqual(RepoSyncResult.RESULT_FAILED, history[0]['result'])
@@ -159,17 +159,18 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        importer_config = {'thor' : 'thor'}
+        importer_config = {'thor': 'thor'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', importer_config)
 
         # Test
-        sync_config_override = {'clint' : 'hawkeye'}
+        sync_config_override = {'clint': 'hawkeye'}
         self.sync_manager.sync('repo-1', sync_config_override=sync_config_override)
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'repo-1', 'id' : 'mock-importer'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id': 'repo-1',
+                                                                'id': 'mock-importer'})
 
         #   Database
         self.assertTrue(repo_importer['last_sync'] is not None)
@@ -201,7 +202,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        self.repo_manager.create_repo('importer-less') # don't set importer
+        self.repo_manager.create_repo('importer-less')  # don't set importer
 
         # Test
         self.assertRaises(repo_sync_manager.PulpExecutionException, self.sync_manager.sync,
@@ -251,7 +252,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        class FakePluginException(Exception): pass
+        class FakePluginException(Exception):
+            pass
 
         error_msg = 'Error test'
         mock_plugins.MOCK_IMPORTER.sync_repo.side_effect = FakePluginException(error_msg)
@@ -262,16 +264,15 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Test
         self.assertRaises(Exception, self.sync_manager.sync, 'gonna-bail')
 
-        # Verify
-
         # Database
-        repo_importer = RepoImporter.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'mock-importer'})
+        repo_importer = RepoImporter.get_collection().find_one({'repo_id': 'gonna-bail',
+                                                                'id': 'mock-importer'})
 
         self.assertTrue(repo_importer['last_sync'] is not None)
         self.assertTrue(assert_last_sync_time(repo_importer['last_sync']))
 
-        #    History Entry
-        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'gonna-bail'}))
+        # History Entry
+        history = list(RepoSyncResult.get_collection().find({'repo_id': 'gonna-bail'}))
         self.assertEqual(1, len(history))
         self.assertEqual('gonna-bail', history[0]['repo_id'])
         self.assertEqual(RepoSyncResult.RESULT_ERROR, history[0]['result'])
@@ -312,26 +313,6 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertEqual('repo', MockRepoPublishManager.repo_id)
         self.assertEqual({}, MockRepoPublishManager.base_progress_report)
 
-    def _test_sync_with_auto_publish_error(self):
-        """
-        Tests that the autodistribute exception is propagated when one or more auto publish calls fail.
-        """
-
-        # Setup
-        manager_factory.register_manager(manager_factory.TYPE_REPO_PUBLISH, MockRepoPublishManager)
-        MockRepoPublishManager.raise_error = True
-
-        self.repo_manager.create_repo('doa')
-        self.importer_manager.set_importer('doa', 'mock-importer', {})
-
-        # Test
-        try:
-            self.sync_manager.sync('doa')
-            self.fail('Expected exception not thrown')
-        except repo_publish_manager.PulpExecutionException, e:
-            #self.assertTrue('doa' in e)
-            pass
-
     def test_sync_no_plugin_report(self):
         """
         Tests synchronizing against a sloppy plugin that doesn't return a sync report.
@@ -340,16 +321,14 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Setup
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', {})
-
-        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None # sloppy plugin
+        # Don't return a sync report
+        mock_plugins.MOCK_IMPORTER.sync_repo.return_value = None
 
         # Test
         self.sync_manager.sync('repo-1')
 
-        # Verify
-
-        #   History Entry
-        history = list(RepoSyncResult.get_collection().find({'repo_id' : 'repo-1'}))
+        # History Entry
+        history = list(RepoSyncResult.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(1, len(history))
         self.assertEqual('repo-1', history[0]['repo_id'])
         self.assertEqual(RepoSyncResult.RESULT_ERROR, history[0]['result'])
@@ -462,7 +441,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
             RepoSyncResult.get_collection().save(r, safe=True)
 
         # Test sort by descending start date
-        entries = self.sync_manager.sync_history(repo_id='test_sort', sort=constants.SORT_DESCENDING)
+        entries = self.sync_manager.sync_history(repo_id='test_sort',
+                                                 sort=constants.SORT_DESCENDING)
         self.assertEqual(5, len(entries))
         # Verify that each entry has a later completed date than the next one
         for i in range(0, 4):
@@ -478,7 +458,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
             add_result('test_sort', i)
 
         # Verify an InvalidValue exception is raised if an incorrect sort option is given
-        self.assertRaises(InvalidValue, self.sync_manager.sync_history, repo_id='test_sort', sort='rand')
+        self.assertRaises(InvalidValue, self.sync_manager.sync_history, repo_id='test_sort',
+                          sort='rand')
 
     def test_sync_history_start_date(self):
         """
@@ -561,26 +542,6 @@ class RepoSyncManagerTests(base.PulpServerTests):
         except repo_sync_manager.MissingResource, e:
             self.assertTrue('endermen' == e.resources['resource_id'])
 
-    def test_get_repo_storage_directory(self):
-        """
-        Tests a repo storage directory can be retrieved and is created in the process.
-        """
-
-        # Setup
-        temp_dir = '/tmp/test-repo-storage-dir'
-
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
-
-        repo_sync_manager.REPO_STORAGE_DIR = temp_dir
-
-        # Test
-        dir = self.sync_manager.get_repo_storage_directory('test-repo')
-
-        # Verify
-        self.assertEqual(dir, temp_dir + '/test-repo')
-        self.assertTrue(os.path.exists(dir))
-
 
 class TestDoSync(base.PulpServerTests):
     """
@@ -610,7 +571,7 @@ class TestDoSync(base.PulpServerTests):
         decorator before it is run.
         """
         def sync_repo(self, *args, **kwargs):
-            """ 
+            """
             This method will be attached to the importer_instance, and will allow us to assert
             that the register_sigterm_handler is called before the sync_repo is called. We can tell
             because inside here the SIGTERM handler has been altered.
@@ -623,8 +584,7 @@ class TestDoSync(base.PulpServerTests):
             signal_handler(signal.SIGTERM, None)
             self.assertEqual(importer_instance.cancel_sync_repo.call_count, 1)
 
-        sync_config = {'foo' : 'bar'}
-        importer_id = 'dist-1'
+        sync_config = {'foo': 'bar'}
         repo_id = 'repo-1'
         repo = self.repo_manager.create_repo(repo_id)
         self.importer_manager.set_importer(repo_id, 'mock-importer', sync_config)
@@ -641,7 +601,7 @@ class TestDoSync(base.PulpServerTests):
                                                    transfer_repo, conduit, call_config)
 
         register_sigterm_handler.assert_called_once_with(sync_repo,
-                                                importer_instance.cancel_sync_repo)
+                                                         importer_instance.cancel_sync_repo)
         # Make sure the TERM handler is set back to normal
         self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
 
