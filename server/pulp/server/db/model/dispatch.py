@@ -543,7 +543,7 @@ class TaskStatus(Document, ReaperMixin):
     task_id = StringField(unique=True, required=True)
     worker_name = StringField()
     tags = ListField(StringField())
-    state = StringField(choices=constants.CALL_STATES)
+    state = StringField(choices=constants.CALL_STATES, default=constants.CALL_WAITING_STATE)
     error = DictField(default=None)
     spawned_tasks = ListField(StringField())
     progress_report = DictField()

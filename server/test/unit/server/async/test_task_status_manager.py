@@ -5,6 +5,7 @@ This module contains tests for the pulp.server.async.task_status_manager module.
 import uuid
 
 from datetime import datetime
+from mongoengine import NotUniqueError, ValidationError
 
 import mock
 
@@ -30,14 +31,14 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_create_task_status(self):
         """
-        Tests that create_task_status() with valid data is successful.
+        Tests that TaskStatus creation with valid data is successful.
         """
         task_id = self.get_random_uuid()
         worker_name = 'a_worker_name'
         tags = ['test-tag1', 'test-tag2']
         state = 'waiting'
 
-        created = TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
+        created = TaskStatus(task_id, worker_name, tags, state).save()
 
         task_statuses = TaskStatus.objects()
         self.assertEqual(1, len(task_statuses))
@@ -54,12 +55,12 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_create_task_status_defaults(self):
         """
-        Tests create_task_status() with minimal information, to ensure that defaults are handled
+        Tests TaskStatus creation with minimal information, to ensure that defaults are handled
         properly.
         """
         task_id = self.get_random_uuid()
 
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
 
         task_statuses = TaskStatus.objects()
         self.assertEqual(1, len(task_statuses))
@@ -70,32 +71,32 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_create_task_status_invalid_task_id(self):
         """
-        Test that calling create_task_status() with an invalid task id raises the correct error.
+        Test that TaskStatus creation with an invalid task id raises the correct error.
         """
         try:
-            TaskStatusManager.create_task_status(None)
-        except exceptions.InvalidValue, e:
-            self.assertTrue(e.property_names[0], 'task_id')
+            TaskStatus(None).save()
+        except ValidationError, e:
+            self.assertTrue('task_id' in e.message)
         else:
             self.fail('Invalid ID did not raise an exception')
 
     def test_create_task_status_duplicate_task_id(self):
         """
-        Tests create_task_status() with a duplicate task id.
+        Tests TaskStatus creation with a duplicate task id.
         """
         task_id = self.get_random_uuid()
 
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
         try:
-            TaskStatusManager.create_task_status(task_id)
-        except exceptions.DuplicateResource, e:
-            self.assertTrue(task_id in e)
+            TaskStatus(task_id).save()
+        except NotUniqueError, e:
+            self.assertTrue(task_id in e.message)
         else:
             self.fail('Task status with a duplicate task id did not raise an exception')
 
     def test_create_task_status_invalid_attributes(self):
         """
-        Tests that calling create_task_status() with invalid attributes
+        Tests that TaskStatus creation with invalid attributes
         results in an error
         """
         task_id = self.get_random_uuid()
@@ -103,11 +104,11 @@ class TaskStatusManagerTests(base.PulpServerTests):
         tags = 'not a list'
         state = 1
         try:
-            TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
-        except exceptions.InvalidValue, e:
-            self.assertTrue('tags' in e.data_dict()['property_names'])
-            self.assertTrue('state' in e.data_dict()['property_names'])
-            self.assertTrue('worker_name' in e.data_dict()['property_names'])
+            TaskStatus(task_id, worker_name, tags, state).save()
+        except ValidationError, e:
+            self.assertTrue('tags' in e.message)
+            self.assertTrue('state' in e.message)
+            self.assertTrue('worker_name' in e.message)
         else:
             self.fail('Invalid attributes did not cause create to raise an exception')
 
@@ -119,7 +120,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         worker_name = 'special_worker_name'
         tags = ['test-tag1', 'test-tag2']
         state = 'waiting'
-        TaskStatusManager.create_task_status(task_id, worker_name, tags, state)
+        TaskStatus(task_id, worker_name, tags, state).save()
         now = datetime.now(dateutils.utc_tz())
         start_time = dateutils.format_iso8601_datetime(now)
         delta = {'start_time': start_time,
@@ -162,7 +163,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_set_accepted(self):
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id, state=constants.CALL_WAITING_STATE)
+        TaskStatus(task_id, state=constants.CALL_WAITING_STATE).save()
 
         TaskStatusManager.set_task_accepted(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
@@ -171,7 +172,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
     def test_set_succeeded(self, mock_date):
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
 
         result = 'done'
         now = '2014-11-21 05:21:38.829678'
@@ -185,7 +186,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_set_succeeded_with_timestamp(self):
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
 
         result = 'done'
         now = '2014-11-21 05:21:38.829678'
@@ -199,7 +200,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
     def test_set_failed(self, mock_date):
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
 
         traceback = 'abcdef'
         finished = '2014-11-21 05:21:38.829678'
@@ -213,7 +214,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_set_failed_with_timestamp(self):
         task_id = self.get_random_uuid()
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
 
         traceback = 'abcdef'
         finished = '2014-11-21 05:21:38.829678'

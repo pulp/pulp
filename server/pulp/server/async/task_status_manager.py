@@ -13,37 +13,6 @@ class TaskStatusManager(object):
     """
 
     @staticmethod
-    def create_task_status(task_id, worker_name=None, tags=None, state=None):
-        """
-        Creates a new task status for given task_id.
-
-        :param task_id:           identity of the task this status corresponds to
-        :type  task_id:           basestring
-        :param worker_name:       The name of the worker that the Task is in
-        :type  worker_name:       basestring
-        :param tags:              custom tags on the task
-        :type  tags:              list of basestrings or None
-        :param state:             state of callable in its lifecycle
-        :type  state:             basestring
-        :return:                  TaskStatus
-        :rtype:                   dict
-        :raise DuplicateResource: if there is already a task status entry with the requested task id
-        :raise InvalidValue:      if any of the fields are unacceptable
-        """
-        if not state:
-            state = constants.CALL_WAITING_STATE
-
-        task_status = TaskStatus(task_id=task_id, worker_name=worker_name, tags=tags, state=state)
-        try:
-            task_status.save()
-        except NotUniqueError:
-            raise DuplicateResource(task_id)
-        except ValidationError, v:
-            raise InvalidValue(v.to_dict().keys())
-
-        return task_status.as_dict()
-
-    @staticmethod
     def set_task_accepted(task_id):
         """
         Update a task's state to reflect that it has been accepted.

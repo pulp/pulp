@@ -384,7 +384,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -411,7 +411,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -436,7 +436,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -458,7 +458,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
@@ -480,7 +480,7 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
-        TaskStatusManager.create_task_status(task_id, state=CALL_CANCELED_STATE)
+        TaskStatus(task_id, state=CALL_CANCELED_STATE).save()
         task = tasks.Task()
 
         # This should not update the task status to finished, since this task was canceled.
@@ -515,7 +515,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         einfo = EInfo()
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
@@ -609,7 +609,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
-        TaskStatusManager.create_task_status(task_id, 'test-worker', state=CALL_CANCELED_STATE)
+        TaskStatus(task_id, 'test-worker', state=CALL_CANCELED_STATE).save()
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
         task = tasks.Task()
@@ -660,7 +660,7 @@ class TestCancel(PulpServerTests):
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
     def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
@@ -679,7 +679,7 @@ class TestCancel(PulpServerTests):
         to the task state.
         """
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, 'test_worker', state=CALL_FINISHED_STATE)
+        TaskStatus(task_id, 'test_worker', state=CALL_FINISHED_STATE).save()
 
         tasks.cancel(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
@@ -693,7 +693,7 @@ class TestCancel(PulpServerTests):
         to the task state.
         """
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, 'test_worker', state=CALL_CANCELED_STATE)
+        TaskStatus(task_id, 'test_worker', state=CALL_CANCELED_STATE).save()
 
         tasks.cancel(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()

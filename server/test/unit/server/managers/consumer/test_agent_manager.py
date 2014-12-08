@@ -50,7 +50,7 @@ class TestAgentManager(TestCase):
         mock_agent.unregistered.assert_called_with(mock_context.return_value)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
-    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.db.model.dispatch.TaskStatus')
     @patch('pulp.server.managers.consumer.agent.AgentManager._bindings')
     @patch('pulp.server.managers.consumer.agent.managers')
     @patch('pulp.server.managers.consumer.agent.Context')
@@ -61,7 +61,7 @@ class TestAgentManager(TestCase):
         mock_context = mocks[1]
         mock_factory = mocks[2]
         mock_bindings = mocks[3]
-        mock_task_status_manager = mocks[4]
+        mock_task_status = mocks[4]
         mock_uuid = mocks[5]
 
         consumer = {'id': '1234'}
@@ -80,7 +80,7 @@ class TestAgentManager(TestCase):
 
         task_id = '2345'
         mock_task = {'task_id': task_id}
-        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
+        mock_task_status.save = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -116,7 +116,7 @@ class TestAgentManager(TestCase):
             distributor_id=distributor_id)
 
         self.assertEqual(task, mock_task)
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        mock_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
         mock_agent.bind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.BIND, task_id)

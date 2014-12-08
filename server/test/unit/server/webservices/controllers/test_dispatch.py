@@ -40,7 +40,7 @@ class TestTaskResource(PulpWebservicesTests):
         coordinator is aware of. This should cause a revoke call to Celery's Controller.
         """
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
 
         self.task_resource.DELETE(task_id)
 
@@ -51,7 +51,7 @@ class TestTaskResource(PulpWebservicesTests):
         Test the DELETE() method does not change the state of a task that is already complete
         """
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, state=constants.CALL_FINISHED_STATE)
+        TaskStatus(task_id, state=constants.CALL_FINISHED_STATE).save()
         self.task_resource.DELETE(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], constants.CALL_FINISHED_STATE)
@@ -72,9 +72,9 @@ class TestTaskResource(PulpWebservicesTests):
         task_id = '1234abcd'
         spawned_task_id = 'spawned_task'
         spawned_by_spawned_task_id = 'spawned_by_spawned_task'
-        TaskStatusManager.create_task_status(task_id)
-        TaskStatusManager.create_task_status(spawned_task_id)
-        TaskStatusManager.create_task_status(spawned_by_spawned_task_id)
+        TaskStatus(task_id).save()
+        TaskStatus(spawned_task_id).save()
+        TaskStatus(spawned_by_spawned_task_id).save()
         TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
         TaskStatusManager.update_task_status(spawned_task_id,
                                              delta={'spawned_tasks': [spawned_by_spawned_task_id]})
@@ -85,7 +85,7 @@ class TestTaskResource(PulpWebservicesTests):
 
     def test_GET_has_correct_queue_attribute(self):
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, worker_name='worker1')
+        TaskStatus(task_id, worker_name='worker1').save()
 
         result = self.task_resource.GET(task_id)
 
@@ -95,7 +95,7 @@ class TestTaskResource(PulpWebservicesTests):
 
     def test_GET_has_correct_worker_name_attribute(self):
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, worker_name='worker1')
+        TaskStatus(task_id, worker_name='worker1').save()
 
         result = self.task_resource.GET(task_id)
 
@@ -105,7 +105,7 @@ class TestTaskResource(PulpWebservicesTests):
 
     def test_GET_has_correct_task_id_attribute(self):
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, worker_name='worker1')
+        TaskStatus(task_id, worker_name='worker1').save()
 
         result = self.task_resource.GET(task_id)
 
@@ -132,8 +132,8 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state2 = 'running'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, worker_1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, worker_2, tags, state2)
+        TaskStatus(task_id1, worker_1, tags, state1).save()
+        TaskStatus(task_id2, worker_2, tags, state2).save()
         status, body = self.get('/v2/tasks/')
 
         # Validate
@@ -172,9 +172,9 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state3 = 'running'
         tags3 = ['random']
 
-        TaskStatusManager.create_task_status(task_id1, worker_1, tags1, state1)
-        TaskStatusManager.create_task_status(task_id2, worker_2, tags2, state2)
-        TaskStatusManager.create_task_status(task_id3, worker_3, tags3, state3)
+        TaskStatus(task_id1, worker_1, tags1, state1).save()
+        TaskStatus(task_id2, worker_2, tags2, state2).save()
+        TaskStatus(task_id3, worker_3, tags3, state3).save()
 
         # Validate for tags
         status, body = self.get('/v2/tasks/?tag=random&tag=tags')
@@ -210,8 +210,8 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state2 = 'running'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, worker_1, tags, state1)
-        TaskStatusManager.create_task_status(task_id2, worker_2, tags, state2)
+        TaskStatus(task_id1, worker_1, tags, state1).save()
+        TaskStatus(task_id2, worker_2, tags, state2).save()
         status, body = self.get('/v2/tasks/%s/' % task_id2)
 
         # Validate
@@ -231,7 +231,7 @@ class TestTaskCollection(base.PulpWebserviceTests):
         state1 = 'waiting'
         tags = ['random', 'tags']
 
-        TaskStatusManager.create_task_status(task_id1, worker_1, tags, state1)
+        TaskStatus(task_id1, worker_1, tags, state1).save()
         non_existing_task_id = str(uuid.uuid4())
         status, body = self.get('/v2/tasks/%s/' % non_existing_task_id)
 
