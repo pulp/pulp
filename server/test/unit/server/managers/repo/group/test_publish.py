@@ -21,7 +21,8 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         self.group_manager.create_repo_group(self.group_id)
 
         self.distributor_id = 'publish-dist'
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id=self.distributor_id)
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id=self.distributor_id)
 
     def tearDown(self):
         super(RepoGroupPublishManagerTests, self).tearDown()
@@ -38,11 +39,13 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         # Setup
         summary = 'summary'
         details = 'details'
-        mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = PublishReport(True, summary, details)
+        mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = PublishReport(
+            True, summary, details)
 
         # Test
-        override_config = {'o' : 'o'}
-        self.publish_manager.publish(self.group_id, self.distributor_id, publish_config_override=override_config)
+        override_config = {'o': 'o'}
+        self.publish_manager.publish(self.group_id, self.distributor_id,
+                                     publish_config_override=override_config)
 
         # Verify
 
@@ -87,7 +90,8 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.side_effect = Exception()
 
         # Test
-        self.assertRaises(Exception, self.publish_manager.publish, self.group_id, self.distributor_id)
+        self.assertRaises(Exception, self.publish_manager.publish, self.group_id,
+                          self.distributor_id)
 
         # Verify
         history_entries = list(RepoGroupPublishResult.get_collection().find())
@@ -106,7 +110,8 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         # Setup
         summary = 'summary'
         details = 'details'
-        mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = PublishReport(False, summary, details)
+        mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = PublishReport(
+            False, summary, details)
 
         # Test
         self.publish_manager.publish(self.group_id, self.distributor_id)
