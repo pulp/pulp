@@ -567,8 +567,7 @@ class TaskStatus(Document, ReaperMixin):
         :return: the associated document collection
         :rtype: pulp.server.db.connection.PulpCollection instance
         """
-        if not cls._collection or not isinstance(cls._collection, PulpCollection):
-            cls._collection = get_collection(cls._get_collection_name())
+        cls._collection = get_collection(cls._get_collection_name())
         return cls._collection
 
     def as_dict(self):
@@ -580,12 +579,11 @@ class TaskStatus(Document, ReaperMixin):
         """
         return self._data
 
-    def save(self, fields_to_set_on_insert=None):
+    def save_with_set_on_insert(self, fields_to_set_on_insert):
         """
-        Save the current state of the TaskStatus to the database, using an upsert operation. If
-        fields_to_set_on_insert is provided as a list of field names, the upsert operation will only
-        set those fields if this becomes an insert operation, otherwise those fields will be
-        ignored. This also validates the fields according to the schema above.
+        Save the current state of the TaskStatus to the database, using an upsert operation.
+        The upsert operation will only set those fields if this becomes an insert operation, otherwise
+        those fields will be ignored. This also validates the fields according to the schema above.
 
         :param fields_to_set_on_insert: A list of field names that should be updated with Mongo's
                                         $setOnInsert operator.
@@ -596,24 +594,19 @@ class TaskStatus(Document, ReaperMixin):
             super(TaskStatus, self).save()
             return
 
-        # This overrides superclass' save method, so we need to call validate() explicitly.
+        # This will be used in place of superclass' save method, so we need to call validate() explicitly.
         self.validate()
 
         stuff_to_update = dict(copy.deepcopy(self._data))
 
         # Let's pop the $setOnInsert attributes out of the copy of self so that we can pass the
         # remaining attributes to the $set operator in the query below.
-        fields_to_set_on_insert = fields_to_set_on_insert or []
         set_on_insert = {}
         for field in fields_to_set_on_insert:
             set_on_insert[field] = stuff_to_update.pop(field)
         task_id = stuff_to_update.pop('task_id')
 
-        update = {'$set': stuff_to_update}
-        if set_on_insert:
-            update['$setOnInsert'] = set_on_insert
-        TaskStatus.get_collection().update(
-            {'task_id': task_id},
-            update,
-            upsert=True)
+        update = {'$set': stuff_to_update,
+                  '$setOnInsert': set_on_insert}
+        TaskStatus.get_collection().update({'task_id': task_id}, update, upsert=True)
 

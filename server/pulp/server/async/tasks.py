@@ -255,7 +255,7 @@ class ReservedTaskMixin(object):
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
 
         _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
                                          queue=RESOURCE_MANAGER_QUEUE)
@@ -297,7 +297,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
         return async_result
 
     def __call__(self, *args, **kwargs):
