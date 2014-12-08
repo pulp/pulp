@@ -294,7 +294,7 @@ class TestTaskStatus(unittest.TestCase):
             finish_time=finish_time, result=result)
 
         # This should cause ts to be in the database
-        ts.save(fields_to_set_on_insert=['state', 'start_time'])
+        ts.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
 
         ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
@@ -401,7 +401,7 @@ class TestTaskStatus(unittest.TestCase):
 
         # This should update the worker_name on ts in the database, but should not update the state
         # or start_time
-        ts.save(fields_to_set_on_insert=['state', 'start_time'])
+        ts.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
 
         ts = TaskStatus.objects()
         # There should only be one TaskStatus in the db
