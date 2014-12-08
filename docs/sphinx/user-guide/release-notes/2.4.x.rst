@@ -2,6 +2,34 @@
 Pulp 2.4 Release Notes
 ======================
 
+Pulp 2.4.4
+==========
+
+This is a minor bugfix release that contains a small patch to support the fix for
+`#1165355 <https://bugzilla.redhat.com/show_bug.cgi?id=1165355>`_.
+
+To upgrade, shut down all Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl stop $s; done;
+
+Next, update the packages::
+
+    $ sudo yum update
+
+Next, run ``pulp-manage-db``::
+
+    $ sudo -u apache pulp-manage-db
+
+And lastly, restart the Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl start $s; done;
+
+
+.. note::
+
+   If you are using Upstart instead of systemd, you should use service $s {stop,start} in the lines
+   above.
+
 Pulp 2.4.3
 ==========
 
