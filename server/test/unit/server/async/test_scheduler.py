@@ -271,6 +271,16 @@ class TestSchedulerTick(unittest.TestCase):
 
         mock_trim.assert_called_once_with()
 
+    @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
+    @mock.patch('celery.beat.Scheduler.tick')
+    @mock.patch('pulp.server.async.scheduler.worker_watcher.handle_worker_heartbeat')
+    def test_calls_handle_heartbeat(self, mock_heartbeat, mock_tick):
+        sched_instance = scheduler.Scheduler()
+
+        sched_instance.tick()
+
+        mock_heartbeat.assert_called_once()
+
 
 class TestSchedulerSetupSchedule(unittest.TestCase):
 
