@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for operations surrounding the creation,
 removal, and metadata update on a repository. This does not include importer
@@ -27,8 +14,8 @@ import sys
 from celery import task
 import pymongo
 
-from pulp.common import tags
 from pulp.common import dateutils
+from pulp.common import tags
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter, RepoContentUnit,
                                              RepoSyncResult, RepoPublishResult)
@@ -39,11 +26,11 @@ import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
 
-_REPO_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
-_DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX # for now, use the same constraints
+_REPO_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
+_DISTRIBUTOR_ID_REGEX = _REPO_ID_REGEX  # for now, use the same constraints
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoManager(object):
@@ -73,7 +60,7 @@ class RepoManager(object):
         :raise InvalidValue: if any of the fields are unacceptable
         """
 
-        existing_repo = Repo.get_collection().find_one({'id' : repo_id})
+        existing_repo = Repo.get_collection().find_one({'id': repo_id})
         if existing_repo is not None:
             raise DuplicateResource(repo_id)
 
@@ -91,7 +78,7 @@ class RepoManager(object):
         Repo.get_collection().save(create_me, safe=True)
 
         # Retrieve the repo to return the SON object
-        created = Repo.get_collection().find_one({'id' : repo_id})
+        created = Repo.get_collection().find_one({'id': repo_id})
 
         return created
 
@@ -156,11 +143,11 @@ class RepoManager(object):
             try:
                 importer_manager.set_importer(repo_id, importer_type_id,
                                               importer_repo_plugin_config)
-            except Exception, e:
-                logger.exception(
+            except Exception:
+                _logger.exception(
                     'Exception adding importer to repo [%s]; the repo will be deleted' % repo_id)
                 RepoManager.delete_repo(repo_id)
-                raise e, None, sys.exc_info()[2]
+                raise
 
         # Regardless of how many distributors are successfully added, or if an
         # importer was added, we only need a single call to delete_repo in the
@@ -185,10 +172,11 @@ class RepoManager(object):
 
                 distributor_manager.add_distributor(repo_id, type_id, plugin_config, auto_publish,
                                                     distributor_id)
-            except Exception, e:
-                logger.exception('Exception adding distributor to repo [%s]; the repo will be deleted' % repo_id)
+            except Exception:
+                _logger.exception('Exception adding distributor to repo [%s]; the repo will be '
+                                  'deleted' % repo_id)
                 RepoManager.delete_repo(repo_id)
-                raise e, None, sys.exc_info()[2]
+                raise
 
         return repo
 
@@ -207,7 +195,7 @@ class RepoManager(object):
         """
 
         # Validation
-        found = Repo.get_collection().find_one({'id' : repo_id})
+        found = Repo.get_collection().find_one({'id': repo_id})
         if found is None:
             raise MissingResource(repo_id)
 
@@ -217,30 +205,30 @@ class RepoManager(object):
         # an exception describing the incompleteness of the delete. The exception
         # arguments are captured as the second element in the tuple, but the user
         # will have to look at the server logs for more information.
-        error_tuples = [] # tuple of failed step and exception arguments
+        error_tuples = []  # tuple of failed step and exception arguments
 
         importer_manager = manager_factory.repo_importer_manager()
         distributor_manager = manager_factory.repo_distributor_manager()
 
         # Inform the importer
         importer_coll = RepoImporter.get_collection()
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        repo_importer = importer_coll.find_one({'repo_id': repo_id})
         if repo_importer is not None:
             try:
                 importer_manager.remove_importer(repo_id)
             except Exception, e:
-                logger.exception('Error received removing importer [%s] from repo [%s]' % (
+                _logger.exception('Error received removing importer [%s] from repo [%s]' % (
                     repo_importer['importer_type_id'], repo_id))
                 error_tuples.append(e)
 
         # Inform all distributors
         distributor_coll = RepoDistributor.get_collection()
-        repo_distributors = list(distributor_coll.find({'repo_id' : repo_id}))
+        repo_distributors = list(distributor_coll.find({'repo_id': repo_id}))
         for repo_distributor in repo_distributors:
             try:
                 distributor_manager.remove_distributor(repo_id, repo_distributor['id'])
             except Exception, e:
-                logger.exception('Error received removing distributor [%s] from repo [%s]' % (
+                _logger.exception('Error received removing distributor [%s] from repo [%s]' % (
                     repo_distributor['id'], repo_id))
                 error_tuples.append(e)
 
@@ -250,30 +238,30 @@ class RepoManager(object):
             try:
                 shutil.rmtree(repo_working_dir)
             except Exception, e:
-                logger.exception('Error while deleting repo working dir [%s] for repo [%s]' % (
+                _logger.exception('Error while deleting repo working dir [%s] for repo [%s]' % (
                     repo_working_dir, repo_id))
                 error_tuples.append(e)
 
         # Database Updates
         try:
-            Repo.get_collection().remove({'id' : repo_id}, safe=True)
+            Repo.get_collection().remove({'id': repo_id}, safe=True)
 
-            # Remove all importers and distributors from the repo
+            # Remove all importers and distributors from the repo.
             # This is likely already done by the calls to other methods in
-            #   this manager, but in case those failed we still want to attempt
-            #   to keep the database clean
-            RepoDistributor.get_collection().remove({'repo_id' : repo_id}, safe=True)
-            RepoImporter.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            # this manager, but in case those failed we still want to attempt
+            # to keep the database clean.
+            RepoDistributor.get_collection().remove({'repo_id': repo_id}, safe=True)
+            RepoImporter.get_collection().remove({'repo_id': repo_id}, safe=True)
 
-            RepoSyncResult.get_collection().remove({'repo_id' : repo_id}, safe=True)
-            RepoPublishResult.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            RepoSyncResult.get_collection().remove({'repo_id': repo_id}, safe=True)
+            RepoPublishResult.get_collection().remove({'repo_id': repo_id}, safe=True)
 
             # Remove all associations from the repo
-            RepoContentUnit.get_collection().remove({'repo_id' : repo_id}, safe=True)
+            RepoContentUnit.get_collection().remove({'repo_id': repo_id}, safe=True)
         except Exception, e:
             msg = _('Error updating one or more database collections while removing repo [%(r)s]')
             msg = msg % {'r': repo_id}
-            logger.exception(msg)
+            _logger.exception(msg)
             error_tuples.append(e)
 
         # remove the repo from any groups it was a member of
@@ -306,7 +294,7 @@ class RepoManager(object):
 
         repo_coll = Repo.get_collection()
 
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
@@ -358,8 +346,8 @@ class RepoManager(object):
         :param delta: amount by which to change the total count
         :type  delta: int
         """
-        spec = {'id' : repo_id}
-        operation = {'$inc' : {'content_unit_counts.%s' % unit_type_id: delta}}
+        spec = {'id': repo_id}
+        operation = {'$inc': {'content_unit_counts.%s' % unit_type_id: delta}}
         repo_coll = Repo.get_collection()
 
         if delta:
@@ -470,7 +458,7 @@ class RepoManager(object):
                 task_tags = [
                     tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                     tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE,
-                                 dist_id),
+                                      dist_id),
                     tags.action_tag(tags.ACTION_UPDATE_DISTRIBUTOR)
                 ]
                 async_result = repository.distributor_update.apply_async_with_reservation(
@@ -491,7 +479,7 @@ class RepoManager(object):
         """
 
         repo_coll = Repo.get_collection()
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
 
         if repo is None:
             raise MissingResource(repo_id)
@@ -563,18 +551,19 @@ class RepoManager(object):
         if not repo_ids:
             repo_ids = [repo['id'] for repo in repo_collection.find(fields=['id'])]
 
-        logger.info('regenerating content unit counts for %d repositories' % len(repo_ids))
+        _logger.info('regenerating content unit counts for %d repositories' % len(repo_ids))
 
         for repo_id in repo_ids:
-            logger.debug('regenerating content unit count for repository "%s"' % repo_id)
+            _logger.debug('regenerating content unit count for repository "%s"' % repo_id)
             counts = {}
-            cursor = association_collection.find({'repo_id':repo_id})
+            cursor = association_collection.find({'repo_id': repo_id})
             type_ids = cursor.distinct('unit_type_id')
             cursor.close()
             for type_id in type_ids:
                 spec = {'repo_id': repo_id, 'unit_type_id': type_id}
                 counts[type_id] = association_collection.find(spec).count()
-            repo_collection.update({'id': repo_id}, {'$set':{'content_unit_counts': counts}}, safe=True)
+            repo_collection.update({'id': repo_id}, {'$set': {'content_unit_counts': counts}},
+                                   safe=True)
 
 
 create_and_configure_repo = task(RepoManager.create_and_configure_repo, base=Task)
