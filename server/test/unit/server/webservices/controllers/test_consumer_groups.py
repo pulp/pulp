@@ -1,16 +1,3 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
 from .... import base
@@ -18,12 +5,13 @@ from pulp.devel import mock_plugins
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.auth import authorization
-from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup, Bind
+from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import OperationPostponed
 from pulp.server.managers import factory as managers
 from pulp.server.webservices.controllers import consumer_groups
+
 
 GROUP_ID = 'group_1'
 CONSUMER_IDS = ('test_1', 'test_2', 'test_3')
@@ -76,7 +64,7 @@ class ConsumerGroupAssociationTests(base.PulpWebserviceTests):
         self.assertEqual(call_args[1], mock_from_client.return_value)
         self.assertEqual(mock_from_client.call_args[0][0],
                          {'filters': {'id': {'$in': ['consumer1']}}})
-        
+
 
 class ContentTest(PulpWebservicesTests):
 
@@ -135,7 +123,7 @@ class BindTestNoWSGI(PulpWebservicesTests):
         self.assertRaises(OperationPostponed, bindings.POST, 'consumer-group-id')
         mock_bind_task.apply_async.assert_called_once()
 
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.CREATE)
 
     @mock.patch('pulp.server.managers.factory.repo_distributor_manager')
@@ -150,7 +138,7 @@ class BindTestNoWSGI(PulpWebservicesTests):
                           'dist-id')
         mock_unbind_task.apply_async.assert_called_once()
 
-        #validate the permissions
+        # validate the permissions
         self.validate_auth(authorization.DELETE)
 
 
