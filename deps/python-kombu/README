@@ -2,11 +2,5 @@ Team owner: bbouters
 
 Celery 3.1.11 requires kombu>=3.0.15,<4.0, which is not in Fedora <= 20, or EPEL <= 7.
 
-Pulp would like to use the Qpid transport through a PR celery/kombu#335 that
-has been submitted upstream, but not yet merged.  This patch is introduced
-through the spec file, and can be removed once:
-
-1.  celery/kombu#335 is merged upstream.
-2.  celery/kombu#335 is included in a Kombu release
-3.  This dependency is updated to the release containing celery/kombu#335.
+Pulp would like to use the Qpid transport which is available in upstream kombu>=3.0.24
 
