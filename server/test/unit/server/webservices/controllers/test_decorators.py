@@ -27,7 +27,8 @@ class TestAuthenticationMethods(base.PulpWebserviceTests):
 
         # Test
         self.assertRaises(PulpCodedAuthenticationException, decorators.password_authentication)
-        mock_auth_manager.return_value.check_username_password.assert_called_once_with('notauser', 'notapass')
+        mock_auth_manager.return_value.check_username_password.assert_called_once_with('notauser',
+                                                                                       'notapass')
 
     @mock.patch('pulp.server.webservices.http.ssl_client_cert', autospec=True, return_value='cert')
     @mock.patch('pulp.server.webservices.http.http_authorization', autospec=True, return_value=None)
@@ -44,7 +45,8 @@ class TestAuthenticationMethods(base.PulpWebserviceTests):
 
     @mock.patch('pulp.server.webservices.http.request_url', autospec=True, return_value='url')
     @mock.patch('pulp.server.webservices.http.ssl_client_cert', autospec=True, return_value='cert')
-    @mock.patch('pulp.server.webservices.http.http_authorization', autospec=True, return_value='notnone')
+    @mock.patch('pulp.server.webservices.http.http_authorization', autospec=True,
+                return_value='notnone')
     @mock.patch('pulp.server.webservices.http.request_info', autospec=True, return_value='notnone')
     @mock.patch('pulp.server.managers.factory.authentication_manager', autospec=True)
     def test_oauth_auth_failed(self, mock_auth_manager, *unused_mocks):
@@ -54,5 +56,5 @@ class TestAuthenticationMethods(base.PulpWebserviceTests):
         mock_auth_manager.return_value.check_oauth.return_value = (None, None)
 
         self.assertRaises(PulpCodedAuthenticationException, decorators.oauth_authentication)
-        mock_auth_manager.return_value.check_oauth.assert_called_once_with('notnone', 'notnone', 'url',
-                                                                           'notnone', 'notnone')
+        mock_auth_manager.return_value.check_oauth.assert_called_once_with(
+            'notnone', 'notnone', 'url', 'notnone', 'notnone')

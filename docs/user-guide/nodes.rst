@@ -129,9 +129,9 @@ To install *Nodes* child support, follow the instructions below.
    Do not use the key or secret given in the above example. It is important that you use unique and
    secret values for these configuration items.
 
-3. Edit ``/etc/pulp/nodes.conf`` and set the parent OAuth *key* and *secret* to match values found
-   in ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match
-   a user with administration privileges on the parent node.
+3. Edit ``/etc/pulp/nodes.conf`` on the child node and set the parent OAuth *key* and *secret* to
+   match values found in ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated
+   as needed to match a user with administration privileges on the parent node.
 
 ::
 
@@ -455,7 +455,7 @@ On the Pulp server to be used as the child node:
 
 ::
 
- $ pulp-consumer -u admin register --consumer-id child-1
+ $ pulp-consumer register --consumer-id child-1
 
 7. Activate the node.
 

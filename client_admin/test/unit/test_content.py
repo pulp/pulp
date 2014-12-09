@@ -1,9 +1,15 @@
 from unittest import TestCase
 
-from mock import Mock, patch
+from mock import Mock, patch, MagicMock
 
-from pulp.client.admin.content import (initialize, MainSection, SourcesSection,
-    ListCommand, CatalogDeleteCommand)
+from pulp.bindings import responses
+
+from pulp.client.admin.content import (initialize, MainSection, SourcesSection, ListCommand,
+                                       CatalogDeleteCommand, RefreshContentSourcesCommand)
+from pulp.common.plugins import reporting_constants
+from pulp.client.commands import options
+from pulp.client.commands.repo.status import PublishStepStatusRenderer
+from pulp.devel.unit import base
 
 
 class TestInitialization(TestCase):
@@ -37,17 +43,19 @@ class TestMainSection(TestCase):
 
 class TestSourcesSection(TestCase):
 
+    @patch('pulp.client.admin.content.RefreshContentSourcesCommand')
     @patch('pulp.client.admin.content.ListCommand')
     @patch('pulp.client.admin.content.SourcesSection.add_command')
-    def test_init(self, add_command, list_command):
-        context = Mock()
+    def test_init(self, add_command, list_command, refresh_command):
+        context = Mock(config={'output': {'poll_frequency_in_seconds': 1}})
 
         # test
         SourcesSection(context)
 
-        # validation
+        # validationfrom pulp.common.plugins import reporting_constants
+
         list_command.assert_called_once_with(context)
-        add_command.assert_called_once_with(list_command.return_value)
+        add_command.assert_has_calls(list_command.return_value, refresh_command)
 
 
 class TestCatalogSection(TestCase):
@@ -55,7 +63,7 @@ class TestCatalogSection(TestCase):
     @patch('pulp.client.admin.content.CatalogSection')
     @patch('pulp.client.admin.content.MainSection.add_subsection')
     def test_init(self, add_subsection, catalog_section):
-        context = Mock()
+        context = Mock(config={'output': {'poll_frequency_in_seconds': 1}})
 
         # test
         MainSection(context)
@@ -115,3 +123,62 @@ class TestCatalogDeleteCommand(TestCase):
         msg = 'No catalog entries matched.'
         context.server.content_catalog.delete.assert_called_once_with(source_id)
         context.prompt.render_success_message.assert_called_once_with(msg)
+
+
+class TestRefreshContentSourcesCommand(base.PulpClientTests):
+    def setUp(self):
+        super(TestRefreshContentSourcesCommand, self).setUp()
+        self.context = MagicMock(config={'output': {'poll_frequency_in_seconds': 1}})
+        self.prompt = Mock()
+        self.context.prompt = self.prompt
+        self.renderer = PublishStepStatusRenderer(self.context)
+        self.command = RefreshContentSourcesCommand(self.context, self.renderer)
+        step_details = {'source_id': '1',
+                        'succeeded': None,
+                        'url': 'mock-url',
+                        'added_count': '2',
+                        'deleted_count': '0',
+                        'errors': []
+                        }
+        self.step = {
+            reporting_constants.PROGRESS_STEP_TYPE_KEY: u'foo_step',
+            reporting_constants.PROGRESS_STEP_UUID: u'abcde',
+            reporting_constants.PROGRESS_DESCRIPTION_KEY: u'foo description',
+            reporting_constants.PROGRESS_DETAILS_KEY: [step_details],
+            reporting_constants.PROGRESS_STATE_KEY: reporting_constants.STATE_NOT_STARTED,
+            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 1,
+            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 0,
+            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: []
+        }
+
+    @patch('pulp.client.commands.polling.PollingCommand.poll')
+    def test_run_one(self, mock_poll):
+        """
+        Test run() when there are no refresh content source tasks on the server.
+        """
+        content_source_id = 'test-content'
+        data = {options.OPTION_CONTENT_SOURCE_ID.keyword: content_source_id}
+        # No tasks are running
+        self.command.run(**data)
+        self.assertEqual(1, mock_poll.call_count)
+
+    @patch('pulp.client.commands.polling.PollingCommand.poll')
+    def test_run_all(self, mock_poll):
+        """
+        Test run() when there are no refresh content source tasks on the server.
+        """
+        data = {options.OPTION_CONTENT_SOURCE_ID.keyword: None}
+        # No tasks are running
+        self.command.run(**data)
+        self.assertEqual(1, mock_poll.call_count)
+
+    def test_progress(self):
+        """
+        Test the progress() method with a progress_report.
+        """
+        task = responses.Task({'progress_report': {'Refresh Content Sources': self.step}})
+        spinner = MagicMock()
+        self.renderer.display_report = MagicMock()
+        self.command.progress(task, spinner)
+
+        self.renderer.display_report.assert_called_once_with({'Refresh Content Sources': self.step})

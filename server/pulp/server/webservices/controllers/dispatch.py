@@ -4,7 +4,6 @@ import web
 
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.auth.authorization import READ
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.resources import Worker
@@ -36,7 +35,7 @@ class SearchTaskCollection(SearchController):
     def __init__(self):
         super(SearchTaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
 
-    @auth_required(READ)
+    @auth_required(authorization.READ)
     def GET(self):
         """
         Searches based on a Criteria object. Pass in each Criteria field as a
@@ -52,7 +51,7 @@ class SearchTaskCollection(SearchController):
         serialized_tasks = [task_serializer(task) for task in raw_tasks]
         return self.ok(serialized_tasks)
 
-    @auth_required(READ)
+    @auth_required(authorization.READ)
     def POST(self):
         """
         Searches based on a Criteria object. Requires a posted parameter
@@ -75,7 +74,7 @@ class TaskCollection(JSONController):
         criteria_filters = {}
         tags = filters.get('tag', [])
         if tags:
-            criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
+            criteria_filters['tags'] = {'$all': filters.get('tag', [])}
         criteria = Criteria.from_client_input({'filters': criteria_filters})
         serialized_task_statuses = []
         for task in TaskStatusManager.find_by_criteria(criteria):

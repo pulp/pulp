@@ -720,7 +720,6 @@ class TestRequestQueue(TestCase):
         canceled.is_set.return_value = True
         self.assertFalse(queue._run)
 
-
     @patch('pulp.server.content.sources.container.Thread', new=Mock())
     @patch('pulp.server.content.sources.container.Queue')
     def test_put(self, fake_queue):
@@ -919,7 +918,6 @@ class TestNectarFeed(TestCase):
 
         # validation
         self.assertEqual(feed.queue, queue)
-
 
     @patch('pulp.server.content.sources.container.DownloadRequest')
     def test_iter(self, fake_request):

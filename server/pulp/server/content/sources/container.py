@@ -1,26 +1,15 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-from Queue import Queue, Empty, Full
-from threading import Thread, RLock
 from collections import namedtuple
 from logging import getLogger
+from threading import Thread, RLock
+from Queue import Queue, Empty, Full
 
 from nectar.listener import DownloadEventListener
-from nectar.request import DownloadRequest
 from nectar.report import DownloadReport as NectarDownloadReport
+from nectar.request import DownloadRequest
 
-from pulp.server.managers import factory as managers
 from pulp.server.content.sources.model import ContentSource, PrimarySource, \
     DownloadReport, DownloadDetails, RefreshReport
+from pulp.server.managers import factory as managers
 
 
 log = getLogger(__name__)
@@ -166,7 +155,6 @@ class NectarListener(DownloadEventListener):
         :type report: nectar.report.DownloadReport
         """
         if self.batch.is_canceled:
-            # canceled
             return
         request = report.data
         listener = self.batch.listener
@@ -185,7 +173,6 @@ class NectarListener(DownloadEventListener):
         """
         self.total_succeeded += 1
         if self.batch.is_canceled:
-            # canceled
             return
         request = report.data
         request.downloaded = True
@@ -207,7 +194,6 @@ class NectarListener(DownloadEventListener):
         """
         self.total_failed += 1
         if self.batch.is_canceled:
-            # canceled
             return
         request = report.data
         request.errors.append(report.error_msg)
@@ -297,7 +283,7 @@ class Batch(object):
         :rtype: bool.
         """
         return self.canceled.is_set()
-    
+
     def dispatch(self, request):
         """
         Dispatch the specified request to the queue associated with the
@@ -333,7 +319,7 @@ class Batch(object):
                 return self.queues[source.id]
             except KeyError:
                 return self._add_queue(source)
-            
+
     def _add_queue(self, source):
         """
         Create a request queue for the specified content source and add
@@ -365,10 +351,8 @@ class Batch(object):
         report.total_sources = len(self.sources)
 
         try:
-            
             for request in self.requests:
                 if self.is_canceled:
-                    # canceled
                     break
                 request.find_sources(self.primary, self.sources)
                 self.dispatch(request)
@@ -392,9 +376,7 @@ class Batch(object):
         return report
 
 
-#
 # The object handled by the RequestQueue put() and get().
-#
 Item = namedtuple('Item', ['request', 'url'])
 
 

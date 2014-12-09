@@ -8,7 +8,7 @@ functionality provided by Pulp.
 
 ::
 
- $ sudo pulp-consumer -u admin register --consumer-id my-consumer
+ $ sudo pulp-consumer register --consumer-id my-consumer
  Enter password:
  Consumer [my-consumer] successfully registered
 
@@ -30,7 +30,7 @@ the registration request.
 
 ::
 
- $ sudo pulp-consumer -u admin register --consumer-id my-consumer
+ $ sudo pulp-consumer register --consumer-id my-consumer
  Enter password:
  Consumer [my-consumer] successfully registered
 

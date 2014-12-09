@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2011-2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 This module is to contain the helper functions used by the test runners in pulp, pulp_rpm, &
 pulp_puppet
@@ -43,6 +31,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
     parser.add_argument('--with-xunit', action='store_true')
     parser.add_argument('--enable-coverage', action='store_true', default=False)
     parser.add_argument('--with-xcoverage', action='store_true')
+    parser.add_argument('--cover-min-percentage', type=int, nargs=1)
     parser.add_argument('--xcoverage-file')
     parser.add_argument('-x', '--failfast', action='store_true')
     parser.add_argument('-v', '--verbose', action='store_true')
@@ -61,6 +50,9 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
 
         if arguments.xcoverage_file:
             args.extend(['--xcoverage-file', arguments.xcoverage_file])
+
+        if arguments.cover_min_percentage:
+            args.extend(['--cover-min-percentage', str(arguments.cover_min_percentage[0])])
 
         args.extend(['--cover-html',
                      '--cover-erase',

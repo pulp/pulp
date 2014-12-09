@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import logging
 from gettext import gettext as _
 
@@ -21,7 +9,6 @@ _logger = logging.getLogger(__name__)
 
 
 class AdminExceptionHandler(ExceptionHandler):
-
     def handle_expired_client_cert(self, e):
         """
         Handles the exception raised when the client certificate has expired.
@@ -49,10 +36,10 @@ class AdminExceptionHandler(ExceptionHandler):
         _logger.error(e)
 
         handlers = {
-            auth_utils.CODE_FAILED : self._handle_authentication_failed,
-            auth_utils.CODE_PERMISSION : self._handle_permission_error,
-            auth_utils.CODE_INVALID_SSL_CERT : self._handle_authentication_failed,
-            auth_utils.CODE_USER_PASS : self._handle_invalid_username,
+            auth_utils.CODE_FAILED: self._handle_authentication_failed,
+            auth_utils.CODE_PERMISSION: self._handle_permission_error,
+            auth_utils.CODE_INVALID_SSL_CERT: self._handle_authentication_failed,
+            auth_utils.CODE_USER_PASS: self._handle_invalid_username,
         }
 
         error_code = auth_utils.get_error_code(e.extra_data)

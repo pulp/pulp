@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.6.0
-Release: 0.19.rc%{?dist}
+Release: 0.1.alpha%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -266,6 +266,7 @@ Requires: python-celery >= 3.1.0
 Requires: python-celery < 3.2.0
 Requires: python-krbV
 Requires: python-pymongo >= 2.5.2
+Requires: python-mongoengine >= 0.7.10
 Requires: python-setuptools
 Requires: python-webpy
 Requires: python-okaara >= 1.0.32
@@ -504,7 +505,6 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
-%doc %{_mandir}/man1/pulp-admin.1*
 %endif # End of pulp_admin if block
 
 
@@ -641,21 +641,73 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Mon Nov 17 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.19.rc
+* Thu Dec 04 2014 Chris Duryee <cduryee@redhat.com> 2.5.1-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1129828 - split stack traces into separate log records. (jortel@redhat.com)
+
+* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+
+* Fri Nov 21 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.1.alpha
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+- 1116825 - Adding a non-existent user to a role now returns HTTP 400 instead
+  of 404. (jcline@redhat.com)
+- 1004623 - References to old collection names and content_unit_count needs to
+  be updated (ipanova@redhat.com)
+- 1021970 - Add an example how to retrieve permissions for a particular
+  resource. (ipanova@redhat.com)
+- 1128226 - Adjusting 'Repository Content Behavior' section name
+  (ipanova@redhat.com)
+- 1161205 - Adds comments to conf files about value of defaults
+  (bmbouter@gmail.com)
+- 1021579 - document unexpected behavior in unassociate api
+  (cduryee@redhat.com)
+- 1081534 - Added /v2 and trailing / to the permissions docs
+  (dkliban@redhat.com)
+- 1165271 - Adds 2.5.0 deprecation release note about _ns attribute
+  (bmbouter@gmail.com)
+- 1111261 - document single event listener retrieval (bcourt@redhat.com)
+- 1161690 - Add release note for RabbitMQ support. (rbarlow@redhat.com)
+- 1132663 - pulp-manage-db now has a --dry-run flag. (jcline@redhat.com)
+- 721314 - add man pages for pulp-admin and pulp-consumer (cduryee@redhat.com)
+- 1159067 - Read user cred from config (vijaykumar.jain@nomura.com)
+- 1148928 - 404 is returned when publishing a nonexistent repo group
+  (asmacdo@gmail.com)
+- 1079511 - better relative url collision prevention (asmacdo@gmail.com)
+- 1155513 - Search for package in all consumers (contact@andreagiardini.com)
+- 1146294 - do not require pulp.bindings.server to access DEFAULT_CA_PATH
+  (cduryee@redhat.com)
+- 1121102 - support unordered agent replies. (jortel@redhat.com)
+- 1160794 - update python-requests to 2.4.3 (cduryee@redhat.com)
+- 1145734 - more correct error message when apache fails (asmacdo@gmail.com)
+- 1127817 - return a 404 for consumer history request if consumer id does not
+  exist (asmacdo@gmail.com)
+- 1135589 - move PRIMARY_ID definition (cduryee@redhat.com)
+- 1145723 - log startup message in Celery logs (cduryee@redhat.com)
+- 1148919 - remove traceback from log if user enters incorrect password
+  (asmacdo@gmail.com)
+- 1148796 - pulp-admin tab completion follows plugin structure
+  (igulina@redhat.com)
+- 1132458 - cont - test now works outside of terminal (asmacdo@gmail.com)
+- 1120671 - missing operation from reaper and monthly tasks
+  (dkliban@redhat.com)
+- 1129828 - split stack traces into separate log records. (jortel@redhat.com)
+- 1142304 - remove extraneous errors during unit test runs (cduryee@redhat.com)
+- 1139703 - update pickled schedule on schedule updates (cduryee@redhat.com)
+- 1142376 - use valid default certificate pack path (cduryee@redhat.com)
+- 1136504 - added tab completion for file paths (igulina@redhat.com)
+- 1124589 - python-kombu does not work with Qpid unless the user adjusts
+  qpidd.conf (cduryee@redhat.com)
+- 1133953 - check Mongo version during startup (cduryee@redhat.com)
+- 1095483 - fix message to not refer to pulp.log (cduryee@redhat.com)
+- 1133939 - tab completion for short options (igulina@redhat.com)
+
+* Fri Nov 21 2014 Austin Macdonald <asmacdo@gmail.com> 2.5.0-1
 - 1129488 - Adjusts mongoDB auto-reconnect to never stop attempting
   (bmbouter@gmail.com)
-
-* Mon Nov 10 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.18.rc
-- Pulp rebuild
-
-* Thu Nov 06 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.17.rc
 - 1160796 - Allow TCP connections to all hosts and ports (bmbouter@gmail.com)
 - 1111228 - Fix API doc typo. (rbarlow@redhat.com)
-
-* Mon Nov 03 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.16.rc
-- Pulp rebuild
-
-* Fri Oct 31 2014 Austin Macdonald <amacdona@redhat.com> 2.5.0-0.15.rc
 - 1153344 - verify_ssl default to true. (rbarlow@redhat.com)
 - 1153344 - Support Mongo SSL on the result backend. (rbarlow@redhat.com)
 - 1153344 - Allow Mongo connections over SSL. (rbarlow@redhat.com)

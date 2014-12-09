@@ -108,11 +108,20 @@ parser.add_argument("--distributions", choices=DIST_LIST, nargs='+',
                     help="If specified, only build for the specified distributions.")
 parser.add_argument("--tito-tag", help="The specific tito tag that should be built.  "
                                        "If not specified the latest will be used.")
+parser.add_argument("--build-master", action="store_true", default=False,
+                    help="If you really want to build master, use this flag.")
 
 opts = parser.parse_args()
 
 pulp_version = opts.version
 build_stream = opts.stream
+
+branch = subprocess.check_output(['/usr/bin/git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+if branch == 'master\n' and not opts.build_master and not opts.scratch:
+    print 'Aborting build: you currently have master checked out.'
+    print 'Use the --build-master flag if you really want this, or check out the correct branch.'
+    sys.exit(1)
+
 
 if build_stream == 'stable':
     build_tag = "pulp-%s" % pulp_version

@@ -101,7 +101,6 @@ def check_config_files():
             raise RuntimeError('Cannot find configuration file: %s' % config_file)
         if not os.access(config_file, os.R_OK):
             raise RuntimeError('Cannot read configuration file: %s' % config_file)
-    return 'Yeah!'
 
 
 def load_configuration():
