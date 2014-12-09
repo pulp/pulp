@@ -259,7 +259,8 @@ class RepoGroupManager(object):
         """
         group_collection = validate_existing_repo_group(group_id)
         set_doc = dict(('notes.' + k, v) for k, v in notes.items())
-        group_collection.update({'id': group_id}, {'$set': set_doc}, safe=True)
+        if set_doc:
+            group_collection.update({'id': group_id}, {'$set': set_doc}, safe=True)
 
     def remove_notes(self, group_id, keys):
         """
