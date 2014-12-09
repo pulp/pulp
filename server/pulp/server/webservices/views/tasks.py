@@ -1,9 +1,8 @@
 from django.http import HttpResponse
+from django.views.generic import View
 
-from pulp.server.webservices.views.base import PulpView
 
-
-class TasksView(PulpView):
+class TasksView(View):
 
     def get(self, request, *args, **kwargs):
         return HttpResponse("""{
