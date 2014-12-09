@@ -1,5 +1,7 @@
 Team owner: rbarlow
 
-kombu 3.0.15 requires amqp>=1.4.5,<2.0, which is not available in EPEL <= 7, or Fedora <= 20.
+kombu 3.0.24 requires amqp>=1.4.6,<2.0, which is not available in EPEL <= 7, or Fedora <= 20.
 
-This requirement may not actually be necessary once proton and qpid are used with celery.
+This requirement may not actually be necessary if amqp becomes available on the necessary platforms [0].
+
+[0]: https://apps.fedoraproject.org/packages/python-amqp/overview/
