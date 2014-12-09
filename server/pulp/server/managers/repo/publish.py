@@ -1,23 +1,8 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for performing repository publish
 operations. All classes and functions in this module run synchronously; any
 need to execute syncs asynchronously must be handled at a higher layer.
 """
-
-import datetime
 import isodate
 import logging
 import sys
@@ -28,7 +13,6 @@ from celery import task
 
 from pulp.common import dateutils, constants
 from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
@@ -39,7 +23,7 @@ from pulp.server.managers.repo import _common as common_utils
 from pulp.server.async.tasks import register_sigterm_handler, Task
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoPublishManager(object):
@@ -71,11 +55,11 @@ class RepoPublishManager(object):
         distributor_coll = RepoDistributor.get_collection()
 
         # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
-        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
             raise MissingResource(repository=repo_id, distributor=distributor_id)
 
@@ -129,7 +113,7 @@ class RepoPublishManager(object):
 
             # Reload the distributor in case the scratchpad is set by the plugin
             repo_distributor = distributor_coll.find_one(
-                {'repo_id' : repo_id, 'id' : distributor_id})
+                {'repo_id': repo_id, 'id': distributor_id})
             repo_distributor['last_publish'] = publish_end_timestamp
             distributor_coll.save(repo_distributor, safe=True)
 
@@ -139,14 +123,14 @@ class RepoPublishManager(object):
                 publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
             publish_result_coll.save(result, safe=True)
 
-            logger.exception(
+            _logger.exception(
                 _('Exception caught from plugin during publish for repo [%(r)s]' % {'r': repo_id}))
             raise
 
         publish_end_timestamp = _now_timestamp()
 
         # Reload the distributor in case the scratchpad is set by the plugin
-        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         repo_distributor['last_publish'] = _now_timestamp()
         distributor_coll.save(repo_distributor, safe=True)
 
@@ -155,20 +139,20 @@ class RepoPublishManager(object):
             summary = publish_report.summary
             details = publish_report.details
             if publish_report.success_flag:
-                logger.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
-                           repo_id, distributor_id))
+                _logger.debug('publish succeeded for repo [%s] with distributor ID [%s]' % (
+                              repo_id, distributor_id))
                 result_code = RepoPublishResult.RESULT_SUCCESS
             else:
-                logger.info('publish failed for repo [%s] with distributor ID [%s]' % (
-                           repo_id, distributor_id))
-                logger.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
-                           repo_id, distributor_id, summary))
+                _logger.info('publish failed for repo [%s] with distributor ID [%s]' % (
+                             repo_id, distributor_id))
+                _logger.debug('summary for repo [%s] with distributor ID [%s]: %s' % (
+                              repo_id, distributor_id, summary))
                 result_code = RepoPublishResult.RESULT_FAILED
         else:
             msg = _('Plugin type [%(type)s] on repo [%(repo)s] did not return a valid publish '
                     'report')
             msg = msg % {'type': repo_distributor['distributor_type_id'], 'repo': repo_id}
-            logger.warn(msg)
+            _logger.warn(msg)
 
             summary = details = _('Unknown')
             result_code = RepoPublishResult.RESULT_SUCCESS
@@ -209,15 +193,16 @@ class RepoPublishManager(object):
 
         # Call publish on each matching distributor, keeping a running track
         # of failed calls
-        error_runs = [] # contains tuple of dist_id and error string
+        error_runs = []  # contains tuple of dist_id and error string
         for dist in auto_distributors:
             dist_id = dist['id']
             try:
                 self.publish(repo_id, dist_id, None)
             except Exception:
-                logger.exception('Exception on auto distribute call for repo [%s] distributor [%s]' % (repo_id, dist_id))
+                _logger.exception('Exception on auto distribute call for repo [%s] distributor [%s]'
+                                  % (repo_id, dist_id))
                 error_string = traceback.format_exc()
-                error_runs.append( (dist_id, error_string) )
+                error_runs.append((dist_id, error_string))
 
         if len(error_runs) > 0:
             raise PulpExecutionException()
@@ -242,7 +227,7 @@ class RepoPublishManager(object):
 
         # Validation
         coll = RepoDistributor.get_collection()
-        repo_distributor = coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = coll.find_one({'repo_id': repo_id, 'id': distributor_id})
 
         if repo_distributor is None:
             raise MissingResource(repo_id)
@@ -266,24 +251,23 @@ class RepoPublishManager(object):
         :type  repo_id:         str
         :param distributor_id:  identifies the distributor to retrieve history for
         :type  distributor_id:  str
-        :param limit:           if specified, the query will only return up to this amount of entries;
-                                default is to return the entire publish history
+        :param limit:           If specified, the query will only return up to this amount of
+                                entries. The default is to return the entire publish history.
         :type  limit:           int
-        :param sort:            Indicates the sort direction of the results, which are sorted by start date. Options
-                                are "ascending" and "descending". Descending is the default.
+        :param sort:            Indicates the sort direction of the results, which are sorted by
+                                start date. Options are "ascending" and "descending". Descending is
+                                the default.
         :type  sort: str
-        :param start_date:      if specified, no events prior to this date will be returned. Expected to be an
-                                iso8601 datetime string.
+        :param start_date:      if specified, no events prior to this date will be returned.
+                                Expected to be an iso8601 datetime string.
         :type  start_date:      str
-        :param end_date:        if specified, no events after this date will be returned. Expected to be an
-                                iso8601 datetime string.
+        :param end_date:        if specified, no events after this date will be returned. Expected
+                                to be an iso8601 datetime string.
         :type  end_date:        str
-
-        :return: list of publish history result instances
-        :rtype:  list
-
+        :return:                list of publish history result instances
+        :rtype:                 list
         :raise MissingResource: if repo_id does not reference a valid repo
-        :raise InvalidValue: if one or more of the options have invalid values
+        :raise InvalidValue:    if one or more of the options have invalid values
         """
 
         # Validation
@@ -349,7 +333,7 @@ class RepoPublishManager(object):
         publishing.
         """
         dist_coll = RepoDistributor.get_collection()
-        auto_distributors = list(dist_coll.find({'repo_id' : repo_id, 'auto_publish' : True}))
+        auto_distributors = list(dist_coll.find({'repo_id': repo_id, 'auto_publish': True}))
         return auto_distributors
 
 

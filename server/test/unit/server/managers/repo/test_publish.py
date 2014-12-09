@@ -6,8 +6,8 @@ import mock
 from .... import base
 from pulp.common import dateutils, constants
 from pulp.devel import mock_plugins
-from pulp.plugins.model import PublishReport
 from pulp.plugins.loader.exceptions import PluginNotFound
+from pulp.plugins.model import PublishReport
 from pulp.server.async import tasks
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
 from pulp.server.exceptions import InvalidValue, MissingResource
@@ -46,7 +46,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        publish_config = {'foo' : 'bar'}
+        publish_config = {'foo': 'bar'}
         self.repo_manager.create_repo('repo-1')
         self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config,
                                                  False, distributor_id='dist-1')
@@ -59,13 +59,13 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Verify
 
         #   Database
-        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' :'repo-1',
-                                                                      'id' :'dist-1'})
+        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id': 'repo-1',
+                                                                      'id': 'dist-1'})
         self.assertTrue(repo_distributor['last_publish'] is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
 
         #   History
-        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
+        entries = list(RepoPublishResult.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(1, len(entries))
         self.assertEqual('repo-1', entries[0]['repo_id'])
         self.assertEqual('dist-1', entries[0]['distributor_id'])
@@ -101,17 +101,19 @@ class RepoSyncManagerTests(base.PulpServerTests):
         Tests a publish call that indicates a graceful failure.
         """
         # Setup
-        publish_config = {'foo' : 'bar'}
+        publish_config = {'foo': 'bar'}
         self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', publish_config,
+                                                 False, distributor_id='dist-1')
 
-        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(False, 'Summary of the publish', 'Details of the publish')
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = PublishReport(
+            False, 'Summary of the publish', 'Details of the publish')
 
         # Test
         report = self.publish_manager.publish('repo-1', 'dist-1', None)
 
         # Verify
-        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'repo-1'}))
+        entries = list(RepoPublishResult.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(1, len(entries))
 
         for check_me in entries[0], report:
@@ -136,12 +138,13 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        distributor_config = {'key-1' : 'orig-1', 'key-2' : 'orig-2'}
+        distributor_config = {'key-1': 'orig-1', 'key-2': 'orig-2'}
         self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', distributor_config, False, 'dist-2')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', distributor_config,
+                                                 False, 'dist-2')
 
         # Test
-        publish_overrides = {'key-1' : 'new-1', 'key-3' : 'new-3'}
+        publish_overrides = {'key-1': 'new-1', 'key-3': 'new-3'}
         self.publish_manager.publish('repo-1', 'dist-2', publish_overrides)
 
         # Verify call into mock
@@ -188,7 +191,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, False,
+                                                 distributor_id='dist-1')
 
         #   Simulate bouncing the server and removing the distributor plugin
         mock_plugins.DISTRIBUTOR_MAPPINGS.pop('mock-distributor')
@@ -204,7 +208,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, False, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, False,
+                                                 distributor_id='dist-1')
 
         RepoDistributor.get_collection().remove()
 
@@ -224,13 +229,15 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = Exception()
 
         self.repo_manager.create_repo('gonna-bail')
-        self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', {}, False, distributor_id='bad-dist')
+        self.distributor_manager.add_distributor('gonna-bail', 'mock-distributor', {}, False,
+                                                 distributor_id='bad-dist')
 
         self.assertRaises(Exception, self.publish_manager.publish,
                           'gonna-bail', 'bad-dist')
 
         # Verify
-        repo_distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'gonna-bail', 'id' : 'bad-dist'})
+        repo_distributor = RepoDistributor.get_collection().find_one(
+            {'repo_id': 'gonna-bail', 'id': 'bad-dist'})
 
         self.assertTrue(repo_distributor is not None)
         self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
@@ -261,7 +268,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Setup
         self.repo_manager.create_repo('publish-me')
         self.distributor_manager.add_distributor('publish-me', 'mock-distributor', {}, True, 'auto')
-        self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, False, 'manual')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, False,
+                                                 'manual')
 
         # Test
         self.publish_manager.auto_publish_for_repo('publish-me')
@@ -275,9 +283,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
         Tests that calling auto publish on a repo that doesn't exist or one that
         doesn't have any distributors assigned will not error.
         """
-
-        # Test
-        self.publish_manager.auto_publish_for_repo('non-existent') # should not error
+        # This should not raise an Exception
+        self.publish_manager.auto_publish_for_repo('non-existent')
 
     def test_auto_publish_with_error(self):
         """
@@ -289,21 +296,17 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = Exception()
 
         self.repo_manager.create_repo('publish-me')
-        self.distributor_manager.add_distributor('publish-me', 'mock-distributor', {}, True, 'auto-1')
-        self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, True, 'auto-2')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor', {}, True,
+                                                 'auto-1')
+        self.distributor_manager.add_distributor('publish-me', 'mock-distributor-2', {}, True,
+                                                 'auto-2')
 
         # Test
         try:
             self.publish_manager.auto_publish_for_repo('publish-me')
             self.fail('Expected exception was not raised')
-        except publish_manager.PulpExecutionException, e:
+        except publish_manager.PulpExecutionException:
             pass
-            # FIXME needs custom exception
-            #self.assertTrue('publish-me' in e)
-            # Commenting these out for now until exception object is flushed out
-            #self.assertEqual(1, len(e.dist_traceback_tuples))
-            #self.assertEqual('auto-1', e.dist_traceback_tuples[0][0])
-            #self.assertTrue(e.dist_traceback_tuples[0][1] is not None)
 
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
@@ -337,7 +340,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         RepoDistributor.get_collection().save(dist)
 
         # Test
-        last = self.publish_manager.last_publish('repo-1', 'dist-1') # should not error
+        last = self.publish_manager.last_publish('repo-1', 'dist-1')  # should not error
 
         # Verify
         self.assertTrue(last is None)
@@ -362,15 +365,16 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('sloppy')
-        self.distributor_manager.add_distributor('sloppy', 'mock-distributor', {}, True, distributor_id='slop')
+        self.distributor_manager.add_distributor('sloppy', 'mock-distributor', {}, True,
+                                                 distributor_id='slop')
 
-        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = None # lame plugin
+        mock_plugins.MOCK_DISTRIBUTOR.publish_repo.return_value = None
 
         # Test
         self.publish_manager.publish('sloppy', 'slop')
 
         # Verify
-        entries = list(RepoPublishResult.get_collection().find({'repo_id' : 'sloppy'}))
+        entries = list(RepoPublishResult.get_collection().find({'repo_id': 'sloppy'}))
         self.assertEqual(1, len(entries))
         self.assertEqual('Unknown', entries[0]['summary'])
         self.assertEqual('Unknown', entries[0]['details'])
@@ -382,7 +386,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('foo')
-        self.distributor_manager.add_distributor('foo', 'mock-distributor', {}, True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('foo', 'mock-distributor', {}, True,
+                                                 distributor_id='dist-1')
         for i in range(1, 9):
             add_result('foo', 'dist-1', i)
 
@@ -403,7 +408,8 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('dragon')
-        self.distributor_manager.add_distributor('dragon', 'mock-distributor', {}, True, distributor_id='fire')
+        self.distributor_manager.add_distributor('dragon', 'mock-distributor', {}, True,
+                                                 distributor_id='fire')
         for i in range(0, 10):
             add_result('dragon', 'fire', i)
 
@@ -444,9 +450,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Create some consecutive publish entries
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 10, 2):
-            r = RepoPublishResult.expected_result('test_sort', 'test_dist', 'bar', date_string % str(i),
-                                                  date_string % str(i + 1), 'test-summary',
-                                                  'test-details', RepoPublishResult.RESULT_SUCCESS)
+            r = RepoPublishResult.expected_result(
+                'test_sort', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
         # Test that returned entries are in ascending order by time
@@ -470,9 +476,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Create some consecutive publish entries
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 10, 2):
-            r = RepoPublishResult.expected_result('test_sort', 'test_dist', 'bar', date_string % str(i),
-                                                  date_string % str(i + 1), 'test-summary',
-                                                  'test-details',RepoPublishResult.RESULT_SUCCESS)
+            r = RepoPublishResult.expected_result(
+                'test_sort', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
         # Test that returned entries are in descending order by time
@@ -488,15 +494,13 @@ class RepoSyncManagerTests(base.PulpServerTests):
         """
         Tests that publish_history checks the sort parameter for invalid values
         """
-
-         # Setup
         self.repo_manager.create_repo('test_sort')
         self.distributor_manager.add_distributor('test_sort', 'mock-distributor', {}, True,
                                                  distributor_id='test_dist')
 
         # Test that an exception is raised if sort gets an invalid value
-        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_sort', 'test_dist',
-                          sort='random')
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_sort',
+                          'test_dist', sort='random')
 
     def test_publish_history_start_date(self):
 
@@ -507,9 +511,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Create three consecutive publish entries
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 6, 2):
-            r = RepoPublishResult.expected_result('test_date', 'test_dist', 'bar', date_string % str(i),
-                                                  date_string % str(i + 1), 'test-summary',
-                                                  'test-details', RepoPublishResult.RESULT_SUCCESS)
+            r = RepoPublishResult.expected_result(
+                'test_date', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
         # Verify
@@ -533,14 +537,15 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Create three consecutive publish entries
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 6, 2):
-            r = RepoPublishResult.expected_result('test_date', 'test_dist', 'bar', date_string % str(i),
-                                                  date_string % str(i + 1), 'test-summary',
-                                                  'test-details', RepoPublishResult.RESULT_SUCCESS)
+            r = RepoPublishResult.expected_result(
+                'test_date', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
         # Verify that all entries retrieved have dates prior to the given end date
         end_date = '2013-06-01T12:00:03Z'
-        end_entries = self.publish_manager.publish_history('test_date', 'test_dist', end_date=end_date)
+        end_entries = self.publish_manager.publish_history('test_date', 'test_dist',
+                                                           end_date=end_date)
         # Confirm the dates of the retrieved entries are earlier than or equal to the requested date
         self.assertEqual(2, len(end_entries))
         for entries in end_entries:
@@ -558,24 +563,22 @@ class RepoSyncManagerTests(base.PulpServerTests):
             add_result('test_date', 'test_dist', i)
 
         # Verify exceptions are raised when malformed dates are given
-        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_date', 'test_dist',
-                          start_date='2013-56-01T12:00:02Z')
-        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_date', 'test_dist',
-                          end_date='2013-56-01T12:00:02Z')
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_date',
+                          'test_dist', start_date='2013-56-01T12:00:02Z')
+        self.assertRaises(InvalidValue, self.publish_manager.publish_history, 'test_date',
+                          'test_dist', end_date='2013-56-01T12:00:02Z')
 
     def test_publish_history_missing_repo(self):
         """
         Tests the correct error is raised when getting history for a repo that doesn't exist.
         """
-
-        # Test
-        self.assertRaises(publish_manager.MissingResource, self.publish_manager.publish_history, 'missing', 'irrelevant')
-
-    # -- utility tests --------------------------------------------------------
+        self.assertRaises(publish_manager.MissingResource, self.publish_manager.publish_history,
+                          'missing', 'irrelevant')
 
     def _test_auto_distributors(self):
         """
-        Tests that the query for distributors on a repo that are configured for automatic distribution is correct.
+        Tests that the query for distributors on a repo that are configured for automatic
+        distribution is correct.
         """
 
         # Setup
@@ -644,7 +647,7 @@ class TestDoPublish(base.PulpServerTests):
             signal_handler(signal.SIGTERM, None)
             self.assertEqual(distributor_instance.cancel_publish_repo.call_count, 1)
 
-        publish_config = {'foo' : 'bar'}
+        publish_config = {'foo': 'bar'}
         distributor_id = 'dist-1'
         repo_id = 'repo-1'
         repo = self.repo_manager.create_repo(repo_id)
@@ -663,8 +666,8 @@ class TestDoPublish(base.PulpServerTests):
         publish_manager.RepoPublishManager._do_publish(repo, distributor_id, distributor_instance,
                                                        transfer_repo, conduit, call_config)
 
-        register_sigterm_handler.assert_called_once_with(publish_repo,
-                                                distributor_instance.cancel_publish_repo)
+        register_sigterm_handler.assert_called_once_with(
+            publish_repo, distributor_instance.cancel_publish_repo)
         # Make sure the TERM handler is set back to normal
         self.assertEqual(signal.getsignal(signal.SIGTERM), starting_term_handler)
 
@@ -681,5 +684,8 @@ def assert_last_sync_time(time_in_iso):
 def add_result(repo_id, dist_id, offset):
     started = dateutils.now_utc_datetime_with_tzinfo()
     completed = started + datetime.timedelta(days=offset)
-    r = RepoPublishResult.expected_result(repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started), dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
+    r = RepoPublishResult.expected_result(
+        repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started),
+        dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details',
+        RepoPublishResult.RESULT_SUCCESS)
     RepoPublishResult.get_collection().insert(r, safe=True)
