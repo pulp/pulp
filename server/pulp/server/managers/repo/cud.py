@@ -521,7 +521,8 @@ class RepoManager(object):
     def update_repo_scratchpad(self, repo_id, scratchpad):
         """
         Update the repository scratchpad with the specified key-value pairs.
-        New keys are added, existing keys are overwritten.
+        New keys are added, existing keys are overwritten.  If the scratchpad
+        dictionary is empty then this is a no-op.
 
         :param repo_id: A repository ID
         :type repo_id: str
@@ -531,6 +532,12 @@ class RepoManager(object):
 
         :raise MissingResource: if there is no repo with repo_id
         """
+        # If no properties are set then no update should be performed
+        # we have to perform this check as newer versions of mongo
+        # will fail if the $set operation is fed an empty dictionary
+        if not scratchpad:
+            return
+
         properties = {}
         for k, v in scratchpad.items():
             key = 'scratchpad.%s' % k
