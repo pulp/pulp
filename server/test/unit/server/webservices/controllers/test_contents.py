@@ -27,7 +27,7 @@ class ContentsTest(base.PulpWebserviceTests):
         """
         # Setup
         path = '/v2/content/actions/delete_orphans/'
-        post_body = '[{"content_type_id": "rpm", ' +\
+        post_body = '[{"content_type_id": "rpm", ' \
                     '"unit_id": "d692be5f-f585-4e6d-b816-0285ffecd847"}]'
         # Test
         status, body = self.post(path, post_body)
@@ -103,7 +103,7 @@ class ContentSourcesTests(base.PulpWebserviceTests):
         status, body = self.post(url)
         # validation
         self.assertEqual(status, 202)
-        self.assertIsNotNone(body.get('spawned_tasks', None))
+        self.assertNotEquals(body.get('spawned_tasks', None), None)
 
 
 class ContentSourceResourceTests(base.PulpWebserviceTests):
@@ -150,10 +150,10 @@ class ContentSourceResourceTests(base.PulpWebserviceTests):
 
         # validation
         self.assertEqual(status, 202)
-        self.assertIsNotNone(body.get('spawned_tasks', None))
+        self.assertNotEquals(body.get('spawned_tasks', None), None)
 
     @patch('pulp.server.content.sources.model.ContentSource.load_all')
-    def test_post_bad_request(self, mock_load):
+    def test_post_create_bad_request(self, mock_load):
         sources = {
             'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
             'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
@@ -170,7 +170,7 @@ class ContentSourceResourceTests(base.PulpWebserviceTests):
         self.assertEqual(status, 400)
 
     @patch('pulp.server.content.sources.model.ContentSource.load_all')
-    def test_post_404(self, mock_load):
+    def test_post_refresh_bad_request(self, mock_load):
         sources = {
             'A': Mock(id='A', dict=Mock(return_value={'A': 1})),
             'B': Mock(id='B', dict=Mock(return_value={'B': 2})),
