@@ -130,6 +130,9 @@ Documentation for python-amqp
 
 
 %changelog
+* Tue Dec 09 2014 Brian Bouterse 1.4.6-1
+- Upgrade python-amqp to 1.4.6 (bbouters@redhat.com)
+
 * Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 1.4.5-1
 - Update to python-amqp-1.4.5. (rbarlow@redhat.com)
 
