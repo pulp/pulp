@@ -572,7 +572,9 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(scratchpad['C'], 3)
         self.assertEqual(scratchpad['D'], 40)
         # missing resource
-        self.assertRaises(exceptions.MissingResource, self.manager.update_repo_scratchpad, 'foo', {})
+        self.assertRaises(exceptions.MissingResource,
+                          self.manager.update_repo_scratchpad,
+                          'foo', {'foo': 'bar'})
 
 
     def test_update_unit_count_missing_repo(self):
