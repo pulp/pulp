@@ -11,7 +11,7 @@
 %global srcname amqp
 
 Name:           python-%{srcname}
-Version:        1.4.5
+Version:        1.4.6
 Release:        1%{?dist}
 Summary:        Low-level AMQP client for Python (fork of amqplib)
 
