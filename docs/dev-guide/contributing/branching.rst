@@ -9,7 +9,13 @@ Pulp uses a version scheme x.y.z. Pulp's branching strategy is designed for
 bugfix development for older "x.y" release streams without interfering with
 development or contribution of new features to a future, unreleased "x" or
 "x.y" release. This strategy encourages a clear separation of bugfixes and
-features as encouraged by `Semantic Versioning` <http://semver.org/>`_.
+features as encouraged by `Semantic Versioning <http://semver.org/>`_.
+
+.. note::
+
+   Pulp's branching model is inspired by the strategy described by Vincent Driessen in
+   `this article <http://nvie.com/posts/a-successful-git-branching-model/>`_, but is not
+   identical to it.
 
 
 master
