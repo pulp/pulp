@@ -318,11 +318,9 @@ class Task(CeleryTask, ReservedTaskMixin):
             start_time = dateutils.format_iso8601_datetime(now)
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
-            TaskStatus.get_collection().update(
-                {'task_id': self.request.id},
-                {'$set': {'state': constants.CALL_RUNNING_STATE,
-                          'start_time': start_time}},
-                upsert=True)
+            TaskStatus.objects(task_id=self.request.id).update_one(set__state=constants.CALL_RUNNING_STATE,
+                                                                   set__start_time=start_time,
+                                                                   upsert=True)
         # Run the actual task
         logger.debug("Running task : [%s]" % self.request.id)
         return super(Task, self).__call__(*args, **kwargs)
@@ -415,9 +413,8 @@ def cancel(task_id):
         logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
     controller.revoke(task_id, terminate=True)
-    TaskStatus.get_collection().find_and_modify(
-        {'task_id': task_id, 'state': {'$nin': constants.CALL_COMPLETE_STATES}},
-        {'$set': {'state': constants.CALL_CANCELED_STATE}})
+    TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES).\
+        update_one(set__state=constants.CALL_CANCELED_STATE)
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
     logger.info(msg)

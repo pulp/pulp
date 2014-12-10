@@ -560,16 +560,6 @@ class TaskStatus(Document, ReaperMixin):
             'indexes': ['-task_id', '-tags', '-state'],
             'allow_inheritance': False}
 
-    @classmethod
-    def get_collection(cls):
-        """
-        Get the document collection for this data model.
-        :return: the associated document collection
-        :rtype: pulp.server.db.connection.PulpCollection instance
-        """
-        cls._collection = get_collection(cls._get_collection_name())
-        return cls._collection
-
     def as_dict(self):
         """
         Represent this object as a dictionary, which is useful for serialization.
@@ -584,6 +574,11 @@ class TaskStatus(Document, ReaperMixin):
         Save the current state of the TaskStatus to the database, using an upsert operation.
         The upsert operation will only set those fields if this becomes an insert operation, otherwise
         those fields will be ignored. This also validates the fields according to the schema above.
+
+        This is required because the current mongoengine version we are using does not support
+        upsert with set_on_insert through mongoengine queries. Once we update to the version
+        which supports this, this method can be deleted and it's usages can be replaced
+        with mongoengine upsert queries.
 
         :param fields_to_set_on_insert: A list of field names that should be updated with Mongo's
                                         $setOnInsert operator.
@@ -608,5 +603,5 @@ class TaskStatus(Document, ReaperMixin):
 
         update = {'$set': stuff_to_update,
                   '$setOnInsert': set_on_insert}
-        TaskStatus.get_collection().update({'task_id': task_id}, update, upsert=True)
+        TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
 

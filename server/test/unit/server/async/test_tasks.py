@@ -650,11 +650,11 @@ class TestCancel(PulpServerTests):
     """
     def setUp(self):
         PulpServerTests.setUp(self)
-        TaskStatus.get_collection().remove()
+        TaskStatus.objects().delete()
 
     def tearDown(self):
         PulpServerTests.tearDown(self)
-        TaskStatus.get_collection().remove()
+        TaskStatus.objects().delete()
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)

@@ -156,7 +156,7 @@ class PulpWebserviceTests(PulpServerTests):
     def tearDown(self):
         super(PulpWebserviceTests, self).tearDown()
         User.get_collection().remove(safe=True)
-        TaskStatus.get_collection().remove(safe=True)
+        TaskStatus.objects().delete()
 
     def get(self, uri, params=None, additional_headers=None):
         return self._do_request('get', uri, params, additional_headers, serialize_json=False)
@@ -270,4 +270,4 @@ class ResourceReservationTests(PulpServerTests):
     def tearDown(self):
         Worker.get_collection().remove()
         ReservedResource.get_collection().remove()
-        TaskStatus.get_collection().remove()
+        TaskStatus.objects().delete()
