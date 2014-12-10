@@ -123,6 +123,7 @@ def _initialize_pulp():
     # If we got this far, it was successful, so flip the flag
     _IS_INITIALIZED = True
 
+
 def wsgi_application():
     """
     Application factory to create, configure, and return a WSGI application
