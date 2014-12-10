@@ -1,28 +1,15 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import itertools
 from unittest import TestCase
+import itertools
 
 from mock import patch, Mock, ANY
 
 from pulp.common import tags
-from pulp.server.db.model.consumer import Bind
-from pulp.server.managers.consumer.agent import AgentManager, Units
-from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
-from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
+from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
+from pulp.server.db.model.consumer import Bind
+from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
+from pulp.server.managers.consumer.agent import AgentManager, Units
 
 
 class TestAgentManager(TestCase):
@@ -116,7 +103,8 @@ class TestAgentManager(TestCase):
             distributor_id=distributor_id)
 
         self.assertEqual(task, mock_task)
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent',
+                                                                       tags=task_tags)
         mock_agent.bind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.BIND, task_id)
@@ -185,7 +173,8 @@ class TestAgentManager(TestCase):
             distributor_id=distributor_id)
 
         self.assertEqual(task, mock_task)
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent',
+                                                                       tags=task_tags)
         mock_agent.unbind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.UNBIND, task_id)
@@ -243,7 +232,8 @@ class TestAgentManager(TestCase):
         self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent',
+                                                                       tags=task_tags)
         mock_profiler.install_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.install.assert_called_with(mock_context.return_value, [unit], options)
 
@@ -300,7 +290,8 @@ class TestAgentManager(TestCase):
         self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent',
+                                                                       tags=task_tags)
         mock_profiler.update_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.update.assert_called_with(mock_context.return_value, [unit], options)
 
@@ -357,7 +348,8 @@ class TestAgentManager(TestCase):
         self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent',
+                                                                       tags=task_tags)
         mock_profiler.uninstall_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.uninstall.assert_called_with(mock_context.return_value, [unit], options)
 
