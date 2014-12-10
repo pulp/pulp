@@ -9,7 +9,7 @@ that certain other methods will exist.
 import logging
 
 from pulp.common import error_codes
-from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE
+from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE, EXECUTE, OPERATION_NAMES
 from pulp.server.config import config
 from pulp.server.compat import wraps
 from pulp.server.exceptions import PulpCodedAuthenticationException
@@ -171,12 +171,11 @@ def auth_required(operation=None, super_user_only=False):
                 raise PulpCodedAuthenticationException(error_code=error_codes.PLP0025)
 
             # Check Authorization
-
             principal_manager = factory.principal_manager()
             user_query_manager = factory.user_query_manager()
-
             if super_user_only and not user_query_manager.is_superuser(userid):
-                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0029, user=userid)
+                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
+                                                       operation=OPERATION_NAMES[operation])
             # if the operation is None, don't check authorization
             elif operation is not None:
                 if is_consumer:
@@ -185,13 +184,15 @@ def auth_required(operation=None, super_user_only=False):
                         principal_manager.set_principal()
                     else:
                         raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                               user=userid, operation=operation)
+                                                               user=userid,
+                                                               operation=OPERATION_NAMES[operation])
                 elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
                     user = user_query_manager.find_by_login(userid)
                     principal_manager.set_principal(user)
                 else:
                     raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                           user=userid, operation=operation)
+                                                           user=userid,
+                                                           operation=OPERATION_NAMES[operation])
 
             # Authentication and authorization succeeded. Call method and then clear principal.
             value = method(self, *args, **kwargs)
