@@ -36,7 +36,7 @@ allow celery_t self:unix_dgram_socket { create connect };
 #
 
 allow celery_t self:process { setsched };
-allow celery_t tmp_t:dir { write remove_name create add_name rmdir };
+allow celery_t tmp_t:dir { write remove_name create add_name rmdir setattr };
 allow celery_t tmp_t:file { rename create unlink setattr write read getattr open lock };
 
 ifndef(`distro_rhel6', `
