@@ -4,7 +4,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'bdiikqf8e^(bxp&ftt5r6!g7s5adqul=hm&0a959uremna_ncz'
+SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -22,7 +22,6 @@ INSTALLED_APPS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.http.ConditionalGetMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
 )
 
 ROOT_URLCONF = 'pulp.server.webservices.urls'
