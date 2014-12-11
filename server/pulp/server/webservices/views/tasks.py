@@ -1,29 +1,12 @@
 from django.http import HttpResponse
 from django.views.generic import View
 
+from pulp.server.auth import authorization
+from pulp.server.webservices.controllers.decorators import auth_required
+
 
 class TasksView(View):
 
+    @auth_required(authorization.READ)
     def get(self, request, *args, **kwargs):
-        return HttpResponse("""{
-    "glossary": {
-        "title": "example glossary",
-		"GlossDiv": {
-            "title": "S",
-			"GlossList": {
-                "GlossEntry": {
-                    "ID": "SGML",
-					"SortAs": "SGML",
-					"GlossTerm": "Standard Generalized Markup Language",
-					"Acronym": "SGML",
-					"Abbrev": "ISO 8879:1986",
-					"GlossDef": {
-                        "para": "A meta-markup language, used to create markup languages such as DocBook.",
-						"GlossSeeAlso": ["GML", "XML"]
-                    },
-					"GlossSee": "markup"
-                }
-            }
-        }
-    }
-}""", content_type="application/json")
+        return HttpResponse("""{"foo": "bar"}""", content_type="application/json")

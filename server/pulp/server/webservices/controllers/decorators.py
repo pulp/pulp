@@ -27,11 +27,12 @@ from pulp.server.exceptions import PulpCodedAuthenticationException
 from pulp.server.managers import factory
 from pulp.server.webservices import http
 
+
 # -- constants ----------------------------------------------------------------
 
 _LOG = logging.getLogger(__name__)
 
-DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/' : [READ]}
+DEFAULT_CONSUMER_PERMISSIONS = {'/v2/repositories/': [READ]}
 
 
 # -- supported authentication methods -----------------------------------------
@@ -103,7 +104,6 @@ def oauth_authentication():
     _LOG.debug("User authenticated with Oauth: %s" % userid)
     return userid, is_consumer
 
-# -- consumer authorization checking -----------------------------------------
 
 def is_consumer_authorized(resource, consumerid, operation):
     """
@@ -133,7 +133,6 @@ def is_consumer_authorized(resource, consumerid, operation):
         parts = parts[:-1]
     return False
 
-# -- decorator ---------------------------------------------------------------
 
 def auth_required(operation=None, super_user_only=False):
     """
@@ -160,7 +159,7 @@ def auth_required(operation=None, super_user_only=False):
         @wraps(method)
         def _auth_decorator(self, *args, **kwargs):
 
-            # Check Authentication 
+            # Check Authentication
 
             # Run through each registered and enabled auth function
             is_consumer = False
