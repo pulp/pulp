@@ -312,15 +312,25 @@ class RepoImporters(JSONController):
 
     @auth_required(CREATE)
     def POST(self, repo_id):
+        """
+        Associate an importer with a repository.
 
-        # Params (validation will occur in the manager)
+        This will validate that the repository exists and that there is an importer with the
+        importer_type_id given. However, the importer configuration validation only checks the
+        provided values against a standard set of importer configuration keys. The importer
+        specific validation is called on association, so any type specific configuration will
+        be validated later. This means the spawned task could fail with a validation error.
+
+        :param repo_id: the repository to associate the importer with
+        :type  repo_id: str
+        """
         params = self.params()
         importer_type = params.get('importer_type_id', None)
-        importer_config = params.get('importer_config', None)
+        config = params.get('importer_config', None)
 
-        if importer_type is None:
-            _logger.error('Missing importer type adding importer to repository [%s]' % repo_id)
-            raise exceptions.MissingValue(['importer_type'])
+        # This call will raise the appropriate exception
+        importer_manager = manager_factory.repo_importer_manager()
+        importer_manager.validate_importer_config(repo_id, importer_type, config)
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
         # Note: If the plugin raises an exception during initialization, let it
@@ -330,7 +340,7 @@ class RepoImporters(JSONController):
                      tags.action_tag('add_importer')]
         async_result = set_importer.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, importer_type],
-            {'repo_plugin_config': importer_config}, tags=task_tags)
+            {'repo_plugin_config': config}, tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
