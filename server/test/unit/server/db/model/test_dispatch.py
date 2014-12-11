@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright ©2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 Tests for the pulp.server.db.model.dispatch module.
 """
@@ -18,9 +6,9 @@ import pickle
 import time
 import unittest
 
+from celery.schedules import schedule as CelerySchedule
 import bson
 import celery
-from celery.schedules import schedule as CelerySchedule
 import mock
 
 from pulp.common import dateutils
@@ -655,8 +643,10 @@ class TestScheduledCallCalculateNextRun(unittest.TestCase):
         """
         Test calculating the next run when the interval is a Duration object and uses months
         """
-        last_runs = ('2015-01-01T10:00Z', '2015-02-01T10:00Z', '2015-03-01T10:00Z', '2015-04-01T10:00Z')
-        expected_next_runs = ('2015-02-01T10:00Z', '2015-03-01T10:00Z', '2015-04-01T10:00Z', '2015-05-01T10:00Z')
+        last_runs = ('2015-01-01T10:00Z', '2015-02-01T10:00Z', '2015-03-01T10:00Z',
+                     '2015-04-01T10:00Z')
+        expected_next_runs = ('2015-02-01T10:00Z', '2015-03-01T10:00Z', '2015-04-01T10:00Z',
+                              '2015-05-01T10:00Z')
         times = (
             1422784799.0,  # Just before 2015-02-01T10:00Z UTC
             1425203999.0,  # Just before 2015-03-01T10:00Z UTC
@@ -678,8 +668,10 @@ class TestScheduledCallCalculateNextRun(unittest.TestCase):
         """
         Test calculating the next run when the interval is a Duration object and uses years
         """
-        last_runs = ('2015-01-01T10:00Z', '2016-01-01T10:00Z', '2017-01-01T10:00Z', '2018-01-01T10:00Z')
-        expected_next_runs = ('2016-01-01T10:00Z', '2017-01-01T10:00Z', '2018-01-01T10:00Z', '2019-01-01T10:00Z')
+        last_runs = ('2015-01-01T10:00Z', '2016-01-01T10:00Z', '2017-01-01T10:00Z',
+                     '2018-01-01T10:00Z')
+        expected_next_runs = ('2016-01-01T10:00Z', '2017-01-01T10:00Z', '2018-01-01T10:00Z',
+                              '2019-01-01T10:00Z')
         times = (
             1451642000.0,  # Just before 2016-01-01T10:00Z UTC
             1483264000.0,  # Just before 2017-01-01T10:00Z UTC
@@ -824,10 +816,17 @@ SCHEDULE = {
     u'kwargs': {u'overrides': {}},
     u'last_run_at': u'2013-12-17T00:35:53Z',
     u'last_updated': 1387218569.811224,
-    u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+    u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\n"
+                  u"c__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i"
+                  u"\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\n"
+                  u"p12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\n"
+                  u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\n"
+                  u"V5220ab06e19a0010e1690589\np20\ns.",
     u'remaining_runs': None,
     u'resource': u'pulp:distributor:demo:puppet_distributor',
-    u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+    u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\n"
+                 u"object\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\n"
+                 u"NsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
     u'task': u'pulp.server.tasks.repository.publish',
     u'total_run_count': 1087,
 }
