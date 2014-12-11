@@ -132,3 +132,17 @@ class TestDjangoTasksUrls(unittest.TestCase):
         url = '/v2/tasks/'
         url_name = 'tasks'
         assert_url_match(url, url_name)
+
+
+class TestDjangoLoginUrls(unittest.TestCase):
+    """
+    Tests for root_actions urls.
+    """
+
+    def test_match_login_view(self):
+        """
+        Test url match for login.
+        """
+        url = '/v2/actions/login/'
+        url_name = 'login_view'
+        assert_url_match(url, url_name)
