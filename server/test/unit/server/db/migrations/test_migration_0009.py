@@ -34,23 +34,38 @@ PULP_CONF.readfp(StringIO(TEST_CONF))
 
 class TestMigration(TestCase):
 
-    @patch(MIGRATION + '.BrokerAgent')
-    @patch(MIGRATION + '.Connection')
+    def setUp(self):
+        # Remove dependencies on qpidtoollibs and qpid.messaging
+        self.migration = MigrationModule(MIGRATION)._module
+        if self.migration.QPIDTOOLLIBS_AVAILABLE:
+            self.broker = self.migration.BrokerAgent
+        if self.migration.QPID_MESSAGING_AVAILABLE:
+            self.connection = self.migration.Connection
+
+        self.qpidtoollibs = self.migration.QPIDTOOLLIBS_AVAILABLE
+        self.qpid_messaging = self.migration.QPID_MESSAGING_AVAILABLE
+        self.migration.QPIDTOOLLIBS_AVAILABLE = True
+        self.migration.QPID_MESSAGING_AVAILABLE = True
+        self.migration.BrokerAgent = Mock()
+        self.migration.Connection = Mock()
+
+    def tearDown(self):
+        self.migration.QPIDTOOLLIBS_AVAILABLE = self.qpidtoollibs
+        self.migration.QPID_MESSAGING_AVAILABLE = self.qpid_messaging
+        if self.migration.QPIDTOOLLIBS_AVAILABLE:
+            self.migration.BrokerAgent = self.broker
+        if self.migration.QPID_MESSAGING_AVAILABLE:
+            self.migration.Connection = self.connection
+
     @patch(MIGRATION + '._migrate_reply_queue')
     @patch(MIGRATION + '._migrate_agent_queues')
     @patch(MIGRATION + '.pulp_conf', PULP_CONF)
-    def test_migrate(self,
-                     fake_migrate_agent_queues,
-                     fake_migrate_reply_queue,
-                     fake_connection,
-                     fake_broker):
-
+    def test_migrate(self, fake_migrate_agent_queues, fake_migrate_reply_queue):
         # test
-        migration = MigrationModule(MIGRATION)._module
-        migration.migrate()
+        self.migration.migrate()
 
         # validation
-        fake_connection.assert_called_with(
+        self.migration.Connection.assert_called_with(
             host='myhost',
             port=1234,
             transport='tcp',
@@ -58,33 +73,26 @@ class TestMigration(TestCase):
             ssl_certfile='TEST-CERTIFICATE',
             ssl_skip_hostname_check=True)
 
-        fake_connection().attach.assert_called_with()
-        fake_broker.assert_called_with(fake_connection())
-        fake_migrate_reply_queue.assert_called_with(fake_broker())
-        fake_migrate_agent_queues.assert_called_with(fake_broker())
-        fake_connection().detach.assert_called_with()
+        self.migration.Connection().attach.assert_called_with()
+        self.migration.BrokerAgent.assert_called_with(self.migration.Connection())
+        fake_migrate_reply_queue.assert_called_with(self.migration.BrokerAgent())
+        fake_migrate_agent_queues.assert_called_with(self.migration.BrokerAgent())
+        self.migration.Connection().detach.assert_called_with()
 
-    @patch(MIGRATION + '.BrokerAgent')
-    @patch(MIGRATION + '.Connection')
     @patch(MIGRATION + '._migrate_reply_queue')
     @patch(MIGRATION + '._migrate_agent_queues')
     @patch(MIGRATION + '.pulp_conf')
-    def test_migrate_not_qpid(self,
-                              fake_conf,
-                              fake_migrate_agent_queues,
-                              fake_migrate_reply_queue,
-                              fake_connection,
-                              fake_broker):
+    def test_migrate_not_qpid(self, fake_conf, fake_migrate_agent_queues,
+                              fake_migrate_reply_queue,):
 
         fake_conf.get.return_value = 'not-qpid'
 
         # test
-        migration = MigrationModule(MIGRATION)._module
-        migration.migrate()
+        self.migration.migrate()
 
         # validation
-        self.assertFalse(fake_connection.called)
-        self.assertFalse(fake_broker.called)
+        self.assertFalse(self.migration.Connection.called)
+        self.assertFalse(self.migration.BrokerAgent.called)
         self.assertFalse(fake_migrate_reply_queue.called)
         self.assertFalse(fake_migrate_agent_queues.called)
 
@@ -94,8 +102,7 @@ class TestMigration(TestCase):
         fake_broker = Mock()
 
         # test
-        migration = MigrationModule(MIGRATION)._module
-        migration._migrate_agent_queues(fake_broker)
+        self.migration._migrate_agent_queues(fake_broker)
 
         # validation
         fake_add_agent_queues.assert_called_with(fake_broker)
@@ -110,8 +117,7 @@ class TestMigration(TestCase):
         fake_broker.getQueue.side_effect = [None, None]
 
         # test
-        migration = MigrationModule(MIGRATION)._module
-        migration._add_agent_queues(fake_broker)
+        self.migration._add_agent_queues(fake_broker)
 
         fake_broker.getQueue.assert_any('pulp.agent.dog')
         fake_broker.getQueue.assert_any('pulp.agent.cat')
@@ -127,8 +133,7 @@ class TestMigration(TestCase):
         fake_broker.getQueue.side_effect = [None, Mock()]
 
         # test
-        migration = MigrationModule(MIGRATION)._module
-        migration._add_agent_queues(fake_broker)
+        self.migration._add_agent_queues(fake_broker)
 
         fake_broker.getQueue.assert_any('pulp.agent.dog')
         fake_broker.getQueue.assert_any('pulp.agent.cat')
