@@ -1,5 +1,4 @@
 import base64
-import krbV
 import locale
 import logging
 import os
@@ -12,6 +11,7 @@ except ImportError:
     oauth = None
 try:
     import kerberos as krb
+    import krbV
 except ImportError:
     krb = None
 
@@ -241,7 +241,6 @@ class PulpConnection(object):
 
         :rtype: boolean
         """
-        #return True if subprocess.call(['klist', '-s']) == 0 else False
         ctx = krbV.default_context()
         cc = ctx.default_ccache()
         try:
@@ -311,14 +310,15 @@ class HTTPSServerWrapper(object):
                 raise exceptions.MissingCAPathException(self.pulp_connection.ca_path)
         ssl_context.set_session_timeout(self.pulp_connection.timeout)
 
+        original_headers = headers
         for auth_type in ['Kerberos', 'Certificate', 'OAuth', 'Basic']:
+            headers = original_headers
             if auth_type is 'Kerberos':
                 if krb is not None and self.pulp_connection.has_kerberos_ticket():
                     __, krb_context = krb.authGSSClientInit("HTTP@%s" % self.pulp_connection.host)
                     krb.authGSSClientStep(krb_context, "")
                     negotiate_details = krb.authGSSClientResponse(krb_context)
                     headers['Authorization'] = "Negotiate " + negotiate_details
-                    #If auth succeeds -> break
                 else:
                     continue
             if auth_type is 'Certificate':
@@ -357,7 +357,7 @@ class HTTPSServerWrapper(object):
             connection = httpslib.HTTPSConnection(
                 self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
             try:
-                # Request against the server
+                # Request to the server
                 connection.request(method, url, body=body, headers=headers)
                 response = connection.getresponse()
             except SSL.SSLError, err:
@@ -369,9 +369,9 @@ class HTTPSServerWrapper(object):
                     raise exceptions.CertificateVerificationException()
                 else:
                     raise exceptions.ConnectionException(None, str(err), None)
-            if response.status is not httpslib.responses[401]:
+                
+            if response.status != 401:
                 break
-            
 
         # Attempt to deserialize the body (should pass unless the server is busted)
         response_body = response.read()
