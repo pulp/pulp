@@ -1,38 +1,20 @@
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains agent management classes
 """
 
-import sys
-from logging import getLogger
 from uuid import uuid4
+import sys
 
-from pulp.common import constants
 from pulp.common import tags
 from pulp.plugins.conduits.profiler import ProfilerConduit
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
-from pulp.server.agent import PulpAgent
+from pulp.server.agent import Context, PulpAgent
+from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
-from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.agent import Context
-
-
-logger = getLogger(__name__)
 
 
 class AgentManager(object):
