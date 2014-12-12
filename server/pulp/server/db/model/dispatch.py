@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011-2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from datetime import datetime
 import calendar
 import copy
@@ -30,7 +18,7 @@ from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.managers import factory
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class CallResource(Model):
@@ -343,10 +331,11 @@ class ScheduledCall(Model):
         # An interval could be an isodate.Duration or a datetime.timedelta
         interval = self.as_schedule_entry().schedule.run_every
         if isinstance(interval, isodate.Duration):
-            # Determine how long (in seconds) to wait between the last run and the next one. This changes
-            # depending on the current time because a duration can be a month or a year.
+            # Determine how long (in seconds) to wait between the last run and the next one. This
+            # changes depending on the current time because a duration can be a month or a year.
             if self.last_run_at is not None:
-                last_run_dt = dateutils.to_utc_datetime(dateutils.parse_iso8601_datetime(str(self.last_run_at)))
+                last_run_dt = dateutils.to_utc_datetime(
+                    dateutils.parse_iso8601_datetime(str(self.last_run_at)))
                 run_every_s = timedelta_seconds(interval.totimedelta(start=last_run_dt))
             else:
                 run_every_s = timedelta_seconds(interval.totimedelta(start=first_run_dt))
@@ -436,7 +425,7 @@ class ScheduleEntry(beat.ScheduleEntry):
         if self._scheduled_call.remaining_runs:
             self._scheduled_call.remaining_runs -= 1
         if self._scheduled_call.remaining_runs == 0:
-            logger.info('disabling schedule with 0 remaining runs: %s' % self._scheduled_call.id)
+            _logger.info('disabling schedule with 0 remaining runs: %s' % self._scheduled_call.id)
             self._scheduled_call.enabled = False
         self._scheduled_call.save()
         return self._scheduled_call.as_schedule_entry()
@@ -464,23 +453,23 @@ class ScheduleEntry(beat.ScheduleEntry):
 
         # if the first run is in the future, don't run it now
         if since_first_s < 0:
-            logger.debug('not running task %s: first run is in the future' % self.name)
+            _logger.debug('not running task %s: first run is in the future' % self.name)
             return False, -since_first_s
         # if it hasn't run before, run it now
         if not (self.total_run_count and self.last_run_at):
-            logger.debug('running task %s: it has never run before' % self.name)
+            _logger.debug('running task %s: it has never run before' % self.name)
             return True, remaining_s
 
         last_run_s = calendar.timegm(self.last_run_at.utctimetuple())
 
         # is this hasn't run since the most recent scheduled run, then run now
         if last_run_s < last_scheduled_run_s:
-            logger.debug('running task %s: it has been %d seconds since last run' % (
-                         self.name, now_s - last_run_s))
+            _logger.debug('running task %s: it has been %d seconds since last run' % (
+                          self.name, now_s - last_run_s))
             return True, remaining_s
         else:
-            logger.debug('not running task %s: %d seconds remaining' % (
-                         self.name, remaining_s))
+            _logger.debug('not running task %s: %d seconds remaining' % (
+                          self.name, remaining_s))
             return False, remaining_s
 
 
