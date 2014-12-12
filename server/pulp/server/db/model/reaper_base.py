@@ -24,7 +24,14 @@ class ReaperMixin(object):
         # Generate an ObjectId that we can use to know which objects to remove
         expired_object_id = _create_expired_object_id(age)
         # Remove all objects older than the timestamp encoded into the generated ObjectId
-        collection = cls.get_collection()
+        try:
+            collection = cls.get_collection()
+        except AttributeError:
+            # This is a temporary fix to make the models migrated to mongoengine
+            # work with ReaperMixin. Once all the models are migrated, we will remove this
+            # and just use mongoengine queryset to delete old documents.
+            collection = cls._get_collection()
+
         collection.remove({'_id': {'$lte': expired_object_id}})
 
 
