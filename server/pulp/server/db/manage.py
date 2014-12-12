@@ -1,22 +1,12 @@
-# Copyright (c) 2010-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module's main() function becomes the pulp-manage-db.py script.
 """
 from gettext import gettext as _
 from optparse import OptionParser
 import logging
-import traceback
 import os
 import sys
+import traceback
 
 from pulp.plugins.loader.api import load_content_types
 from pulp.server import logs
@@ -27,7 +17,7 @@ from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 from pulp.server.managers.auth.user.cud import UserManager
 
 
-logger = None
+_logger = None
 
 
 class DataError(Exception):
@@ -53,7 +43,8 @@ def parse_args():
                       default=False,
                       help=_('Run migration, but do not update version'))
     parser.add_option('--dry-run', action='store_true', dest='dry_run', default=False,
-                      help=_('Perform a dry run with no changes made. Returns 1 if there are migrations to apply.'))
+                      help=_('Perform a dry run with no changes made. Returns 1 if there are '
+                             'migrations to apply.'))
     options, args = parser.parse_args()
     if args:
         parser.error(_('Unknown arguments: %s') % ', '.join(args))
@@ -79,14 +70,14 @@ def migrate_database(options):
             message = _('Migration package %(p)s is up to date at version %(v)s')
             message = message % {'p': migration_package.name,
                                  'v': migration_package.latest_available_version}
-            logger.info(message)
+            _logger.info(message)
             continue
 
         try:
             for migration in migration_package.unapplied_migrations:
                 message = _('Applying %(p)s version %(v)s')
                 message = message % {'p': migration_package.name, 'v': migration.version}
-                logger.info(message)
+                _logger.info(message)
                 if options.dry_run:
                     unperformed_migrations = True
                     message = _('Would have applied migration to %(p)s version %(v)s')
@@ -99,12 +90,13 @@ def migrate_database(options):
                     message = _('Migration to %(p)s version %(v)s complete.')
                     message = message % {'p': migration_package.name,
                                          'v': migration_package.current_version}
-                logger.info(message)
-        except Exception, e:
+                _logger.info(message)
+        except Exception:
             # Log the error and what migration failed before allowing main() to handle the exception
-            error_message = _('Applying migration %(m)s failed.\n\nHalting migrations due to a migration failure.')
+            error_message = _('Applying migration %(m)s failed.\n\nHalting migrations due to a '
+                              'migration failure.')
             error_message = error_message % {'m': migration.name}
-            logger.critical(error_message)
+            _logger.critical(error_message)
             raise
 
     if options.dry_run and unperformed_migrations:
@@ -126,12 +118,12 @@ def main():
     except UnperformedMigrationException:
         return 1
     except DataError, e:
-        logger.critical(str(e))
-        logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
+        _logger.critical(str(e))
+        _logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_DATAERR
     except Exception, e:
-        logger.critical(str(e))
-        logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
+        _logger.critical(str(e))
+        _logger.critical(''.join(traceback.format_exception(*sys.exc_info())))
         return os.EX_SOFTWARE
 
 
@@ -145,18 +137,19 @@ def _auto_manage_db(options):
     unperformed_migrations = False
 
     message = _('Loading content types.')
-    logger.info(message)
+    _logger.info(message)
     # Note that if dry_run is False, None is always returned
     old_content_types = load_content_types(dry_run=options.dry_run)
     if old_content_types:
         for content_type in old_content_types:
-            message = _('Would have created or updated the following type definition: ' + content_type.id)
-            logger.info(message)
+            message = _(
+                'Would have created or updated the following type definition: ' + content_type.id)
+            _logger.info(message)
     message = _('Content types loaded.')
-    logger.info(message)
+    _logger.info(message)
 
     message = _('Ensuring the admin role and user are in place.')
-    logger.info(message)
+    _logger.info(message)
     # Due to the silliness of the factory, we have to initialize it because the UserManager and
     # RoleManager are going to try to use it.
     factory.initialize()
@@ -165,7 +158,7 @@ def _auto_manage_db(options):
         if not role_manager.get_role(SUPER_USER_ROLE):
             unperformed_migrations = True
             message = _('Would have created the admin role.')
-            logger.info(message)
+            _logger.info(message)
     else:
         role_manager.ensure_super_user_role()
 
@@ -174,17 +167,17 @@ def _auto_manage_db(options):
         if not user_manager.get_admins():
             unperformed_migrations = True
             message = _('Would have created the default admin user.')
-            logger.info(message)
+            _logger.info(message)
     else:
         user_manager.ensure_admin()
     message = _('Admin role and user are in place.')
-    logger.info(message)
+    _logger.info(message)
 
     message = _('Beginning database migrations.')
-    logger.info(message)
+    _logger.info(message)
     migrate_database(options)
     message = _('Database migrations complete.')
-    logger.info(message)
+    _logger.info(message)
 
     if unperformed_migrations:
         return 1
@@ -194,11 +187,11 @@ def _auto_manage_db(options):
 
 def _start_logging():
     """
-    Call into Pulp to get the logging started, and set up the logger to be used in this module.
+    Call into Pulp to get the logging started, and set up the _logger to be used in this module.
     """
-    global logger
+    global _logger
     logs.start_logging()
-    logger = logging.getLogger(__name__)
+    _logger = logging.getLogger(__name__)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.INFO)
-    logger.root.addHandler(console_handler)
+    _logger.root.addHandler(console_handler)
