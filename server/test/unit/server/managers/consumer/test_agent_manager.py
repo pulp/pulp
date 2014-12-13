@@ -18,6 +18,7 @@ from mock import patch, Mock, ANY
 
 from pulp.common import tags
 from pulp.server.db.model.consumer import Bind
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.managers.consumer.agent import AgentManager, Units
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
@@ -26,6 +27,10 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 
 
 class TestAgentManager(TestCase):
+
+    def tearDown(self):
+        super(TestAgentManager, self).tearDown()
+        TaskStatus.objects().delete()
 
     @patch('pulp.server.managers.consumer.agent.managers')
     @patch('pulp.server.managers.consumer.agent.Context')
@@ -79,7 +84,7 @@ class TestAgentManager(TestCase):
         mock_bindings.return_value = agent_bindings
 
         task_id = '2345'
-        mock_task = {'task_id': task_id}
+        mock_task = TaskStatus(task_id=task_id)
         mock_task_status.save = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
@@ -115,14 +120,15 @@ class TestAgentManager(TestCase):
             repo_id=repo_id,
             distributor_id=distributor_id)
 
-        self.assertEqual(task, mock_task)
-        mock_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        self.assertEqual(task['task_id'], mock_task['task_id'])
+        self.assertEqual(task['worker_name'], 'agent')
+        self.assertEqual(task['tags'], task_tags)
         mock_agent.bind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.BIND, task_id)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
-    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.db.model.dispatch.TaskStatus')
     @patch('pulp.server.managers.consumer.agent.AgentManager._unbindings')
     @patch('pulp.server.managers.consumer.agent.managers')
     @patch('pulp.server.managers.consumer.agent.Context')
@@ -132,7 +138,7 @@ class TestAgentManager(TestCase):
         mock_context = mocks[1]
         mock_factory = mocks[2]
         mock_unbindings = mocks[3]
-        mock_task_status_manager = mocks[4]
+        mock_task_status = mocks[4]
         mock_uuid = mocks[5]
 
         consumer = {'id': '1234'}
@@ -151,8 +157,8 @@ class TestAgentManager(TestCase):
         mock_unbindings.return_value = agent_bindings
 
         task_id = '2345'
-        mock_task = {'task_id': task_id}
-        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
+        mock_task = TaskStatus(task_id=task_id)
+        mock_task_status.save = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -184,14 +190,15 @@ class TestAgentManager(TestCase):
             repo_id=repo_id,
             distributor_id=distributor_id)
 
-        self.assertEqual(task, mock_task)
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        self.assertEqual(task['task_id'], task_id)
+        self.assertEqual(task['worker_name'], 'agent')
+        self.assertEqual(task['tags'], task_tags)
         mock_agent.unbind.assert_called_with(mock_context.return_value, agent_bindings, options)
         mock_bind_manager.action_pending.assert_called_with(
             consumer['id'], repo_id, distributor_id, Bind.Action.UNBIND, task_id)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
-    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.db.model.dispatch.TaskStatus')
     @patch('pulp.server.managers.consumer.agent.AgentManager._profiled_consumer')
     @patch('pulp.server.managers.consumer.agent.AgentManager._profiler')
     @patch('pulp.server.managers.consumer.agent.managers')
@@ -203,7 +210,7 @@ class TestAgentManager(TestCase):
         mock_factory = mocks[2]
         mock_get_profiler = mocks[3]
         mock_get_profiled_consumer = mocks[4]
-        mock_task_status_manager = mocks[5]
+        mock_task_status = mocks[5]
         mock_uuid = mocks[6]
 
         unit = {'type_id': 'xyz', 'unit_key': {}}
@@ -220,8 +227,8 @@ class TestAgentManager(TestCase):
         mock_get_profiler.return_value = (mock_profiler, {})
 
         task_id = '2345'
-        mock_task = {'task_id': task_id}
-        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
+        mock_task = TaskStatus(task_id=task_id)
+        mock_task_status.save = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -240,15 +247,16 @@ class TestAgentManager(TestCase):
             tags.action_tag(tags.ACTION_AGENT_UNIT_INSTALL)
         ]
 
-        self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        self.assertEqual(task['task_id'], task_id)
+        self.assertEqual(task['worker_name'], 'agent')
+        self.assertEqual(task['tags'], task_tags)
         mock_profiler.install_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.install.assert_called_with(mock_context.return_value, [unit], options)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
-    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.db.model.dispatch.TaskStatus')
     @patch('pulp.server.managers.consumer.agent.AgentManager._profiled_consumer')
     @patch('pulp.server.managers.consumer.agent.AgentManager._profiler')
     @patch('pulp.server.managers.consumer.agent.managers')
@@ -260,7 +268,7 @@ class TestAgentManager(TestCase):
         mock_factory = mocks[2]
         mock_get_profiler = mocks[3]
         mock_get_profiled_consumer = mocks[4]
-        mock_task_status_manager = mocks[5]
+        mock_task_status = mocks[5]
         mock_uuid = mocks[6]
 
         unit = {'type_id': 'xyz', 'unit_key': {}}
@@ -277,8 +285,8 @@ class TestAgentManager(TestCase):
         mock_get_profiler.return_value = (mock_profiler, {})
 
         task_id = '2345'
-        mock_task = {'task_id': task_id}
-        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
+        mock_task = TaskStatus(task_id=task_id)
+        mock_task_status.save = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -297,15 +305,16 @@ class TestAgentManager(TestCase):
             tags.action_tag(tags.ACTION_AGENT_UNIT_UPDATE)
         ]
 
-        self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        self.assertEqual(task['task_id'], task_id)
+        self.assertEqual(task['worker_name'], 'agent')
+        self.assertEqual(task['tags'], task_tags)
         mock_profiler.update_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.update.assert_called_with(mock_context.return_value, [unit], options)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
-    @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
+    @patch('pulp.server.db.model.dispatch.TaskStatus')
     @patch('pulp.server.managers.consumer.agent.AgentManager._profiled_consumer')
     @patch('pulp.server.managers.consumer.agent.AgentManager._profiler')
     @patch('pulp.server.managers.consumer.agent.managers')
@@ -317,7 +326,7 @@ class TestAgentManager(TestCase):
         mock_factory = mocks[2]
         mock_get_profiler = mocks[3]
         mock_get_profiled_consumer = mocks[4]
-        mock_task_status_manager = mocks[5]
+        mock_task_status = mocks[5]
         mock_uuid = mocks[6]
 
         unit = {'type_id': 'xyz', 'unit_key': {}}
@@ -334,8 +343,8 @@ class TestAgentManager(TestCase):
         mock_get_profiler.return_value = (mock_profiler, {})
 
         task_id = '2345'
-        mock_task = {'task_id': task_id}
-        mock_task_status_manager.create_task_status = Mock(return_value=mock_task)
+        mock_task = TaskStatus(task_id=task_id)
+        mock_task_status.save = Mock(return_value=mock_task)
 
         mock_context.return_value = {}
 
@@ -354,10 +363,11 @@ class TestAgentManager(TestCase):
             tags.action_tag(tags.ACTION_AGENT_UNIT_UNINSTALL)
         ]
 
-        self.assertEqual(task, mock_task)
         mock_consumer_manager.get_consumer.assert_called_with(consumer['id'])
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
-        mock_task_status_manager.create_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
+        self.assertEqual(task['task_id'], task_id)
+        self.assertEqual(task['worker_name'], 'agent')
+        self.assertEqual(task['tags'], task_tags)
         mock_profiler.uninstall_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.uninstall.assert_called_with(mock_context.return_value, [unit], options)
 

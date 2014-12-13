@@ -560,6 +560,11 @@ class TaskStatus(Document, ReaperMixin):
             'indexes': ['-task_id', '-tags', '-state'],
             'allow_inheritance': False}
 
+    @classmethod
+    def get_collection(cls):
+        cls._collection = get_collection('task_status')
+        return cls._collection
+
     def as_dict(self):
         """
         Represent this object as a dictionary, which is useful for serialization.
@@ -605,3 +610,75 @@ class TaskStatus(Document, ReaperMixin):
                   '$setOnInsert': set_on_insert}
         TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
 
+    @staticmethod
+    def set_task_accepted(task_id):
+        """
+        Update a task's state to reflect that it has been accepted.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        """
+        TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).\
+            update_one(set__state=constants.CALL_ACCEPTED_STATE)
+
+    @staticmethod
+    def set_task_started(task_id, timestamp=None):
+        """
+        Update a task's state to reflect that it has started running.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
+        :type timestamp: str
+        """
+        if not timestamp:
+            now = datetime.now(dateutils.utc_tz())
+            started = dateutils.format_iso8601_datetime(now)
+        else:
+            started = timestamp
+
+        TaskStatus.objects(task_id=task_id).update_one(set__start_time=started)
+
+        TaskStatus.objects(task_id=task_id,
+                           state__in=[constants.CALL_WAITING_STATE, constants.CALL_ACCEPTED_STATE]).\
+            update_one(set__state=constants.CALL_RUNNING_STATE)
+
+    @staticmethod
+    def set_task_succeeded(task_id, result=None, timestamp=None):
+        """
+        Update a task's state to reflect that it has succeeded.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        :param result: The optional value returned by the task execution.
+        :type result: anything
+        :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
+        :type timestamp: str
+        """
+        if not timestamp:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
+        else:
+            finished = timestamp
+
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__result=result)
+
+    @staticmethod
+    def set_task_failed(task_id, traceback=None, timestamp=None):
+        """
+        Update a task's state to reflect that it has succeeded.
+        :param task_id: The identity of the task to be updated.
+        :type  task_id: basestring
+        :ivar traceback: A string representation of the traceback resulting from the task execution.
+        :type traceback: basestring
+        :param timestamp: The (optional) ISO-8601 finished timestamp (UTC).
+        :type timestamp: str
+        """
+        if not timestamp:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
+        else:
+            finished = timestamp
+
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__traceback=traceback)

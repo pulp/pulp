@@ -165,7 +165,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         TaskStatus(task_id, state=constants.CALL_WAITING_STATE).save()
 
-        TaskStatusManager.set_task_accepted(task_id)
+        TaskStatus.set_task_accepted(task_id)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_ACCEPTED_STATE)
 
@@ -178,7 +178,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         now = '2014-11-21 05:21:38.829678'
         mock_date.return_value = now
 
-        TaskStatusManager.set_task_succeeded(task_id, result)
+        TaskStatus.set_task_succeeded(task_id, result)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
         self.assertTrue(task_status['finish_time'], now)
@@ -191,7 +191,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         result = 'done'
         now = '2014-11-21 05:21:38.829678'
 
-        TaskStatusManager.set_task_succeeded(task_id, result, timestamp=now)
+        TaskStatus.set_task_succeeded(task_id, result, timestamp=now)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
         self.assertTrue(task_status['finish_time'], now)
@@ -206,7 +206,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         finished = '2014-11-21 05:21:38.829678'
         mock_date.return_value = finished
 
-        TaskStatusManager.set_task_failed(task_id, traceback)
+        TaskStatus.set_task_failed(task_id, traceback)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
         self.assertTrue(task_status['finish_time'], finished)
@@ -219,7 +219,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         traceback = 'abcdef'
         finished = '2014-11-21 05:21:38.829678'
 
-        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=finished)
+        TaskStatus.set_task_failed(task_id, traceback=traceback, timestamp=finished)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
         self.assertTrue(task_status['finish_time'], finished)
@@ -234,7 +234,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         mock_objects.return_value = test_objects
         call = mock._Call()
 
-        TaskStatusManager.set_task_started(task_id='test-task-id')
+        TaskStatus.set_task_started(task_id='test-task-id')
 
         self.assertEqual(test_objects.update_one.call_args_list, [call(set__start_time='2014-11-21 05:21:38.829678'),
                                                                   call(set__state='running')])
@@ -246,7 +246,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         mock_objects.return_value = test_objects
         call = mock._Call()
 
-        TaskStatusManager.set_task_started(task_id='test-task-id', timestamp=test_date)
+        TaskStatus.set_task_started(task_id='test-task-id', timestamp=test_date)
 
         self.assertEqual(test_objects.update_one.call_args_list, [call(set__start_time='2014-11-21 05:21:38.829678'),
                                                                   call(set__state='running')])

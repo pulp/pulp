@@ -1,10 +1,11 @@
 from logging import getLogger
 from gettext import gettext as _
 
-from pulp.server.config import config
-from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.managers import factory as managers
 from pulp.server.agent.auth import Authenticator
+from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.config import config
+from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.managers import factory as managers
 
 from gofer.messaging import Broker
 from gofer.messaging import Queue
@@ -136,7 +137,7 @@ class ReplyHandler(Listener):
         log.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
         call_context = dict(reply.any)
         task_id = call_context['task_id']
-        TaskStatusManager.set_task_accepted(task_id)
+        TaskStatus.set_task_accepted(task_id)
 
     def started(self, reply):
         """
@@ -148,7 +149,7 @@ class ReplyHandler(Listener):
         log.debug(_('Task RMI (started): %(r)s'), {'r': reply})
         call_context = dict(reply.any)
         task_id = call_context['task_id']
-        TaskStatusManager.set_task_started(task_id, timestamp=reply.timestamp)
+        TaskStatus.set_task_started(task_id, timestamp=reply.timestamp)
 
     def rejected(self, reply):
         """
@@ -163,7 +164,7 @@ class ReplyHandler(Listener):
         action = call_context.get('action')
         task_id = call_context['task_id']
 
-        TaskStatusManager.set_task_failed(task_id, timestamp=reply.timestamp)
+        TaskStatus.set_task_failed(task_id, timestamp=reply.timestamp)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
@@ -186,7 +187,7 @@ class ReplyHandler(Listener):
         task_id = call_context['task_id']
         result = dict(reply.retval)
 
-        TaskStatusManager.set_task_succeeded(task_id, result=result, timestamp=reply.timestamp)
+        TaskStatus.set_task_succeeded(task_id, result=result, timestamp=reply.timestamp)
 
         if action == 'bind':
             if result['succeeded']:
@@ -215,7 +216,7 @@ class ReplyHandler(Listener):
         task_id = call_context['task_id']
         traceback = reply.xstate['trace']
 
-        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=reply.timestamp)
+        TaskStatus.set_task_failed(task_id, traceback=traceback, timestamp=reply.timestamp)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
