@@ -9,7 +9,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pymongo import DESCENDING
+from mongoengine.queryset import QuerySet
+from pymongo import DESCENDING, ASCENDING
 
 from pulp.server.compat import ObjectId
 from pulp.server.db.connection import get_collection
@@ -123,3 +124,46 @@ class Model(dict):
         if not cls._collection:
             cls._collection = cls._get_collection_from_db()
         return cls._collection
+
+
+class CriteriaQuerySet(QuerySet):
+    """
+    This class defines a custom QuerySet to support searching by Criteria object
+    which is a Pulp custom query object.
+
+    This can be set to the 'queryset_class' attribute of the 'meta' directory
+    in the model classes inherited from mongoengine.Document. See TaskStatus model
+    for reference.
+    """
+
+    def find_by_criteria(self, criteria):
+        """
+        Run a query with a Pulp custom query object
+        :param criteria: Criteria object specifying the query to run
+        :type  criteria: pulp.server.db.model.criteria.Criteria
+        :return: mongoengine queryset object
+        :rtype:  mongoengine.queryset.QuerySet
+        """
+        if criteria.spec is not None:
+            self.filter(**criteria.spec)
+
+        if criteria.fields is not None:
+            self.only(*criteria.fields)
+
+        sort_list = []
+        if criteria.sort is not None:
+            for (sort_by, order) in criteria.sort:
+                if order == ASCENDING:
+                    sort_list.append("+" + sort_by)
+                else:
+                    sort_list.append("-" + sort_by)
+            if sort_list:
+                self.order_by(*sort_list)
+
+        if criteria.skip is not None:
+            self.skip(criteria.skip)
+
+        if criteria.limit is not None:
+            self.limit(criteria.limit)
+
+        return self

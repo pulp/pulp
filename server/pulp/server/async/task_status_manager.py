@@ -176,7 +176,7 @@ class TaskStatusManager(object):
         :param criteria:    A Criteria object representing a search you want
                             to perform
         :type  criteria:    pulp.server.db.model.criteria.Criteria
-        :return:    pymongo cursor for the TaskStatus instances satisfying the query
-        :rtype:     pymongo.cursor.Cursor
+        :return:    mongoengine queryset object
+        :rtype:     mongoengine.queryset.QuerySet
         """
-        return TaskStatus.get_collection().query(criteria)
+        return TaskStatus.objects.find_by_criteria(criteria)

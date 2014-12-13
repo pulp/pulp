@@ -27,7 +27,7 @@ import isodate
 from pulp.common import dateutils, constants
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.connection import get_collection, PulpCollection
-from pulp.server.db.model.base import Model
+from pulp.server.db.model.base import Model, CriteriaQuerySet
 from pulp.server.db.model.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.managers import factory
@@ -558,7 +558,8 @@ class TaskStatus(Document, ReaperMixin):
 
     meta = {'collection': 'task_status',
             'indexes': ['-task_id', '-tags', '-state'],
-            'allow_inheritance': False}
+            'allow_inheritance': False,
+            'queryset_class': CriteriaQuerySet}
 
     def as_dict(self):
         """

@@ -5,6 +5,7 @@ This module contains tests for the pulp.server.async.task_status_manager module.
 import uuid
 
 from datetime import datetime
+from pymongo import DESCENDING
 
 import mock
 
@@ -154,11 +155,31 @@ class TaskStatusManagerTests(base.PulpServerTests):
         else:
             self.fail('Exception expected')
 
-    @mock.patch('pulp.server.db.connection.PulpCollection.query')
-    def _test_find_by_criteria(self, mock_query):
+    @mock.patch('pulp.server.db.model.base.CriteriaQuerySet.find_by_criteria')
+    def test_find_by_criteria(self, mock_find_by_criteria):
         criteria = Criteria()
         TaskStatusManager.find_by_criteria(criteria)
-        mock_query.assert_called_once_with(criteria)
+        mock_find_by_criteria.assert_called_once_with(criteria)
+
+    def test_find_by_criteria_with_result(self):
+        tags = ['test', 'tags']
+        TaskStatusManager.create_task_status(task_id='1', tags=tags)
+        TaskStatusManager.create_task_status(task_id='2', tags=tags)
+
+        result = 'done'
+        TaskStatusManager.create_task_status(task_id='3', tags=tags)
+        TaskStatusManager.set_task_succeeded(task_id='3', result=result)
+
+        filters = {'tags': tags, 'task_id': {'$in': ['1', '3']}}
+        fields = ['task_id', 'tags', 'result']
+        limit = 1
+        sort = (('task_id', DESCENDING), )
+        criteria = Criteria(filters=filters, fields=fields, limit=limit, sort=sort)
+        query_set = TaskStatusManager.find_by_criteria(criteria)
+        self.assertEqual(len(query_set), 1)
+        self.assertEqual(query_set[0].task_id, '3')
+        self.assertEqual(query_set[0].result, result)
+        self.assertEqual(query_set[0].state, None)
 
     def test_set_accepted(self):
         task_id = self.get_random_uuid()
