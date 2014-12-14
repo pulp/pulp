@@ -2,7 +2,6 @@ from logging import getLogger
 from gettext import gettext as _
 
 from pulp.server.agent.auth import Authenticator
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.config import config
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.managers import factory as managers
@@ -234,5 +233,4 @@ class ReplyHandler(Listener):
         """
         call_context = dict(reply.any)
         task_id = call_context['task_id']
-        delta = {'progress_report': reply.details}
-        TaskStatusManager.update_task_status(task_id, delta)
+        TaskStatus.objects(task_id=task_id).update_one(set__progress_report=reply.details)

@@ -3,7 +3,6 @@ from datetime import datetime
 import web
 
 from pulp.server.async import tasks
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth.authorization import READ, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus

@@ -117,19 +117,21 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_started.assert_called_with(task_id, timestamp=reply.timestamp)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_progress_reported(self, mock_update_task_status):
+    @patch('pulp.server.async.task_status_manager.TaskStatus.objects')
+    def test_progress_reported(self, mock_task_status_objects):
         task_id = 'task_1'
         call_context = {'task_id': task_id}
         progress_report = {'step': 'step-1'}
+        test_task_documents = Mock()
+        mock_task_status_objects.return_value = test_task_documents
         document = Document(routing=['A', 'B'], any=call_context, details=progress_report)
         reply = Progress(document)
         handler = self.reply_handler()
         handler.progress(reply)
 
         # validate task updated
-        delta = {'progress_report': progress_report}
-        mock_update_task_status.assert_called_with(task_id, delta)
+        mock_task_status_objects.assert_called_with(task_id=task_id)
+        test_task_documents.update_one.assert_called_with(set__progress_report=progress_report)
 
     @patch('pulp.server.db.model.dispatch.TaskStatus.set_task_failed')
     def test_agent_raised_exception(self, mock_task_failed):

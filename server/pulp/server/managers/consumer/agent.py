@@ -29,7 +29,6 @@ from pulp.server.db.model.consumer import Bind
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.agent import Context
 
 

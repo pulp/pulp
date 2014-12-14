@@ -11,7 +11,6 @@ from .... import base
 from pulp.common import constants
 from pulp.devel.unit.server.base import PulpWebservicesTests
 from pulp.devel.unit.util import compare_dict
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
@@ -75,9 +74,9 @@ class TestTaskResource(PulpWebservicesTests):
         TaskStatus(task_id).save()
         TaskStatus(spawned_task_id).save()
         TaskStatus(spawned_by_spawned_task_id).save()
-        TaskStatusManager.update_task_status(task_id, delta={'spawned_tasks': [spawned_task_id]})
-        TaskStatusManager.update_task_status(spawned_task_id,
-                                             delta={'spawned_tasks': [spawned_by_spawned_task_id]})
+        TaskStatus.objects(task_id=task_id).update_one(set__spawned_tasks=[spawned_task_id])
+        TaskStatus.objects(task_id=spawned_task_id).update_one(
+            set__spawned_tasks=[spawned_by_spawned_task_id])
         self.task_resource.DELETE(task_id)
 
         self.assertEqual(revoke.call_count, 1)

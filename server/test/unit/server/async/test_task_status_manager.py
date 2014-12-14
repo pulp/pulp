@@ -13,18 +13,17 @@ import mock
 from ... import base
 
 from pulp.common import constants, dateutils
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server import exceptions
 
 
-class TaskStatusManagerTests(base.PulpServerTests):
+class TaskStatusTests(base.PulpServerTests):
     """
-    Test the TaskStatusManager class.
+    Test the TaskStatus class functions.
     """
     def clean(self):
-        super(TaskStatusManagerTests, self).clean()
+        super(TaskStatusTests, self).clean()
         TaskStatus.objects().delete()
 
     def get_random_uuid(self):
@@ -113,9 +112,9 @@ class TaskStatusManagerTests(base.PulpServerTests):
         else:
             self.fail('Invalid attributes did not cause create to raise an exception')
 
-    def test_update_task_status(self):
+    def test_task_status_update(self):
         """
-        Tests the successful operation of update_task_status().
+        Tests the successful operation of task status update.
         """
         task_id = self.get_random_uuid()
         worker_name = 'special_worker_name'
@@ -126,10 +125,11 @@ class TaskStatusManagerTests(base.PulpServerTests):
         start_time = dateutils.format_iso8601_datetime(now)
         delta = {'start_time': start_time,
                  'state': 'running',
-                 'disregard': 'ignored',
                  'progress_report': {'report-id': 'my-progress'}}
 
-        updated = TaskStatusManager.update_task_status(task_id, delta)
+        TaskStatus.objects(task_id=task_id).update_one(set__start_time=delta['start_time'],
+                                                       set__state=delta['state'],
+                                                       set__progress_report=delta['progress_report'])
 
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['start_time'], delta['start_time'])
@@ -138,23 +138,6 @@ class TaskStatusManagerTests(base.PulpServerTests):
         self.assertEqual(task_status['state'], delta['state'])
         self.assertEqual(task_status['progress_report'], delta['progress_report'])
         self.assertEqual(task_status['worker_name'], worker_name)
-        self.assertEqual(updated['start_time'], delta['start_time'])
-        self.assertEqual(updated['state'], delta['state'])
-        self.assertEqual(updated['progress_report'], delta['progress_report'])
-        self.assertTrue('disregard' not in updated)
-        self.assertTrue('disregard' not in task_status)
-
-    def test_update_missing_task_status(self):
-        """
-        Tests updating a task status that doesn't exist raises the appropriate exception.
-        """
-        task_id = self.get_random_uuid()
-        try:
-            TaskStatusManager.update_task_status(task_id, {})
-        except exceptions.MissingResource, e:
-            self.assertTrue(task_id == e.resources['resource_id'])
-        else:
-            self.fail('Exception expected')
 
     @mock.patch('pulp.server.db.model.base.CriteriaQuerySet.find_by_criteria')
     def test_find_by_criteria(self, mock_find_by_criteria):
