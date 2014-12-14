@@ -48,7 +48,6 @@ class TaskStatusManager(object):
 
         task_status.save()
         updated = TaskStatus.objects(task_id=task_id).first()
-        updated = updated.as_dict() if updated else None
         return updated
 
     @staticmethod

@@ -196,7 +196,7 @@ class EventTests(base.PulpServerTests):
         except Exception, e:
             self.fail(e.message)
 
-        self.assertEqual(fake_task_status.as_dict(), event.call_report)
+        self.assertEqual(fake_task_status, event.call_report)
 
     @mock.patch('celery.current_task')
     def test_data_call(self, mock_current_task):
@@ -205,7 +205,7 @@ class EventTests(base.PulpServerTests):
         fake_task_status.save()
         data = {'event_type': 'test_type',
                 'payload': 'test_payload',
-                'call_report': fake_task_status.as_dict()}
+                'call_report': fake_task_status}
 
         event = event_data.Event(data['event_type'], data['payload'])
 

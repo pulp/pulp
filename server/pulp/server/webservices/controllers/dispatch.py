@@ -4,8 +4,7 @@ import web
 
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.auth.authorization import READ
-from pulp.server.auth import authorization
+from pulp.server.auth.authorization import READ, DELETE
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
@@ -25,6 +24,7 @@ def task_serializer(task):
     :return: the same task modified for use by the API
     :rtype: dict
     """
+    task = serialization.dispatch.task_status(task)
     task.update(serialization.dispatch.spawned_tasks(task))
     task.update(serialization.dispatch.task_result_href(task))
     return task
@@ -69,7 +69,8 @@ class SearchTaskCollection(SearchController):
 
 
 class TaskCollection(JSONController):
-    @auth_required(authorization.READ)
+
+    @auth_required(READ)
     def GET(self):
         valid_filters = ['tag']
         filters = self.filters(valid_filters)
@@ -78,32 +79,26 @@ class TaskCollection(JSONController):
         if tags:
             criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
         criteria = Criteria.from_client_input({'filters': criteria_filters})
-        serialized_task_statuses = []
-        for task in TaskStatusManager.find_by_criteria(criteria):
-            task.update(serialization.dispatch.spawned_tasks(task))
-            task.update(serialization.dispatch.task_result_href(task))
-            serialized_task_statuses.append(task)
+        raw_tasks = TaskStatusManager.find_by_criteria(criteria)
+        serialized_task_statuses = [task_serializer(task) for task in raw_tasks]
         return self.ok(serialized_task_statuses)
 
 
 class TaskResource(JSONController):
 
-    @auth_required(authorization.READ)
+    @auth_required(READ)
     def GET(self, task_id):
         task = TaskStatus.objects(task_id=task_id).first()
         if task is None:
             raise MissingResource(task_id)
         else:
-            task = task.as_dict()
-            link = serialization.link.link_obj('/pulp/api/v2/tasks/%s/' % task_id)
-            task.update(link)
-            task.update(serialization.dispatch.spawned_tasks(task))
-            if 'worker_name' in task:
-                queue_name = Worker(task['worker_name'], datetime.now()).queue_name
-                task.update({'queue': queue_name})
-            return self.ok(task)
+            task_dict = task_serializer(task)
+            if 'worker_name' in task_dict:
+                queue_name = Worker(task_dict['worker_name'], datetime.now()).queue_name
+                task_dict.update({'queue': queue_name})
+            return self.ok(task_dict)
 
-    @auth_required(authorization.DELETE)
+    @auth_required(DELETE)
     def DELETE(self, task_id):
         """
         Cancel the task that is represented by the given task_id, unless it is already in a

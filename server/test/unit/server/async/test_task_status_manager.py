@@ -164,12 +164,12 @@ class TaskStatusManagerTests(base.PulpServerTests):
 
     def test_find_by_criteria_with_result(self):
         tags = ['test', 'tags']
-        TaskStatusManager.create_task_status(task_id='1', tags=tags)
-        TaskStatusManager.create_task_status(task_id='2', tags=tags)
+        TaskStatus(task_id='1', tags=tags).save()
+        TaskStatus(task_id='2', tags=tags).save()
 
         result = 'done'
-        TaskStatusManager.create_task_status(task_id='3', tags=tags)
-        TaskStatusManager.set_task_succeeded(task_id='3', result=result)
+        TaskStatus(task_id='3', tags=tags).save()
+        TaskStatus.set_task_succeeded(task_id='3', result=result)
 
         filters = {'tags': tags, 'task_id': {'$in': ['1', '3']}}
         fields = ['task_id', 'tags', 'result']
@@ -180,7 +180,8 @@ class TaskStatusManagerTests(base.PulpServerTests):
         self.assertEqual(len(query_set), 1)
         self.assertEqual(query_set[0].task_id, '3')
         self.assertEqual(query_set[0].result, result)
-        self.assertEqual(query_set[0].state, None)
+        task_state_default = constants.CALL_WAITING_STATE
+        self.assertEqual(query_set[0].state, task_state_default)
 
     def test_set_accepted(self):
         task_id = self.get_random_uuid()

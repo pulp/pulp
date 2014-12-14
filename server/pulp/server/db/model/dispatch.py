@@ -566,15 +566,6 @@ class TaskStatus(Document, ReaperMixin):
         cls._collection = get_collection('task_status')
         return cls._collection
 
-    def as_dict(self):
-        """
-        Represent this object as a dictionary, which is useful for serialization.
-
-        :return:    dictionary of public keys and values
-        :rtype:     dict
-        """
-        return self._data
-
     def save_with_set_on_insert(self, fields_to_set_on_insert):
         """
         Save the current state of the TaskStatus to the database, using an upsert operation.

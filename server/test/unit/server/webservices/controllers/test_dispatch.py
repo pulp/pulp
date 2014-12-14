@@ -245,8 +245,7 @@ class TestTaskCollection(base.PulpWebserviceTests):
 class SearchTaskCollectionTests(PulpWebservicesTests):
 
     def get_task(self):
-        return {u'task_id': u'foo',
-                u'spawned_tasks': [u'bar', u'baz']}
+        return TaskStatus(task_id='foo', spawned_tasks=['bar', 'baz'])
 
     @mock.patch('pulp.server.webservices.controllers.dispatch.SearchTaskCollection.'
                 '_get_query_results_from_get', autospec=True)
