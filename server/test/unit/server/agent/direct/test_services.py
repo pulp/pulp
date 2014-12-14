@@ -117,7 +117,7 @@ class TestReplyHandler(TestCase):
         # validate task updated
         mock_task_started.assert_called_with(task_id, timestamp=reply.timestamp)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatus.objects')
+    @patch('pulp.server.db.model.dispatch.TaskStatus.objects')
     def test_progress_reported(self, mock_task_status_objects):
         task_id = 'task_1'
         call_context = {'task_id': task_id}
