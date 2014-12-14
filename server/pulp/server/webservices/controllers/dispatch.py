@@ -35,7 +35,7 @@ class SearchTaskCollection(SearchController):
     Allows authorized API users to search our Task collection.
     """
     def __init__(self):
-        super(SearchTaskCollection, self).__init__(TaskStatusManager.find_by_criteria)
+        super(SearchTaskCollection, self).__init__(TaskStatus.objects.find_by_criteria)
 
     @auth_required(READ)
     def GET(self):
@@ -79,7 +79,7 @@ class TaskCollection(JSONController):
         if tags:
             criteria_filters['tags'] = {'$all':  filters.get('tag', [])}
         criteria = Criteria.from_client_input({'filters': criteria_filters})
-        raw_tasks = TaskStatusManager.find_by_criteria(criteria)
+        raw_tasks = TaskStatus.objects.find_by_criteria(criteria)
         serialized_task_statuses = [task_serializer(task) for task in raw_tasks]
         return self.ok(serialized_task_statuses)
 

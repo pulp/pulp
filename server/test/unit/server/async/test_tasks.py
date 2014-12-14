@@ -18,7 +18,6 @@ from pulp.common.tags import action_tag
 from pulp.devel.unit.util import compare_dict
 from pulp.server.exceptions import PulpException
 from pulp.server.async import tasks
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker, ReservedResource
 from pulp.server.db.reaper import queue_reap_expired_documents
@@ -147,8 +146,8 @@ class TestDeleteWorker(ResourceReservationTests):
         self.patch_f = mock.patch('pulp.server.async.tasks.Worker', autospec=True)
         self.mock_worker = self.patch_f.start()
 
-        self.patch_g = mock.patch('pulp.server.async.tasks.TaskStatusManager', autospec=True)
-        self.mock_task_status_manager = self.patch_g.start()
+        self.patch_g = mock.patch('pulp.server.async.tasks.TaskStatus', autospec=True)
+        self.mock_task_status = self.patch_g.start()
 
         self.patch_h = mock.patch('pulp.server.async.tasks.Criteria', autospec=True)
         self.mock_criteria = self.patch_h.start()
@@ -224,11 +223,11 @@ class TestDeleteWorker(ResourceReservationTests):
     def test_cancels_all_found_task_status_objects(self):
         mock_task_id_a = mock.Mock()
         mock_task_id_b = mock.Mock()
-        self.mock_task_status_manager.find_by_criteria.return_value = [{'task_id': mock_task_id_a},
+        self.mock_task_status.objects.find_by_criteria.return_value = [{'task_id': mock_task_id_a},
                                                                        {'task_id': mock_task_id_b}]
         tasks._delete_worker('worker1')
 
-        find_by_criteria = self.mock_task_status_manager.find_by_criteria
+        find_by_criteria = self.mock_task_status.objects.find_by_criteria
         find_by_criteria.assert_called_once_with(self.mock_criteria.return_value)
 
         self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a), mock.call(mock_task_id_b)])

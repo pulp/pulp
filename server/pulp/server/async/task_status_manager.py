@@ -49,16 +49,3 @@ class TaskStatusManager(object):
         task_status.save()
         updated = TaskStatus.objects(task_id=task_id).first()
         return updated
-
-    @staticmethod
-    def find_by_criteria(criteria):
-        """
-        Return a list of task statuses that match the provided criteria.
-
-        :param criteria:    A Criteria object representing a search you want
-                            to perform
-        :type  criteria:    pulp.server.db.model.criteria.Criteria
-        :return:    mongoengine queryset object
-        :rtype:     mongoengine.queryset.QuerySet
-        """
-        return TaskStatus.objects.find_by_criteria(criteria)

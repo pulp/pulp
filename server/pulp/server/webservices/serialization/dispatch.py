@@ -67,8 +67,9 @@ def task_status(task):
     :rtype:  dict
     """
     task_dict = {}
-    attributes = ['task_id', 'worker_name', 'tags', 'state', 'error', 'spawned_tasks', 'progress_report',
-                  'task_type', 'start_time', 'finish_time', 'result', 'exception', 'traceback']
+    attributes = ['id', 'task_id', 'worker_name', 'tags', 'state', 'error', 'spawned_tasks',
+                  'progress_report', 'task_type', 'start_time', 'finish_time', 'result',
+                  'exception', 'traceback']
 
     for attribute in attributes:
         task_dict[attribute] = task[attribute]

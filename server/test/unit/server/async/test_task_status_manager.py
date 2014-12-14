@@ -159,7 +159,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
     @mock.patch('pulp.server.db.model.base.CriteriaQuerySet.find_by_criteria')
     def test_find_by_criteria(self, mock_find_by_criteria):
         criteria = Criteria()
-        TaskStatusManager.find_by_criteria(criteria)
+        TaskStatus.objects.find_by_criteria(criteria)
         mock_find_by_criteria.assert_called_once_with(criteria)
 
     def test_find_by_criteria_with_result(self):
@@ -176,7 +176,7 @@ class TaskStatusManagerTests(base.PulpServerTests):
         limit = 1
         sort = (('task_id', DESCENDING), )
         criteria = Criteria(filters=filters, fields=fields, limit=limit, sort=sort)
-        query_set = TaskStatusManager.find_by_criteria(criteria)
+        query_set = TaskStatus.objects.find_by_criteria(criteria)
         self.assertEqual(len(query_set), 1)
         self.assertEqual(query_set[0].task_id, '3')
         self.assertEqual(query_set[0].result, result)

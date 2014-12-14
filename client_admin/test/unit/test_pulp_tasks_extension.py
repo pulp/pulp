@@ -41,10 +41,9 @@ EXAMPLE_CALL_REPORT = {
     'state': 'waiting',
     'result': None,
     'error': None,
-    '_id': {
+    'id': {
         '$oid': '5390931b81a97875924cc0d1'
-    },
-    'id': '5390931b3de3a3290f57e32f'
+    }
 }
 
 
