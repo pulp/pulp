@@ -218,7 +218,10 @@ def uri_path():
     Return the current URI path
     @return: full current URI path
     """
-    return web.http.url(web.ctx.path)
+    if _is_django():
+        return unicode(_get_wsgi_environ()['REQUEST_URI'])
+    else:
+        return web.http.url(web.ctx.path)
 
 
 def extend_uri_path(suffix, prefix=None):
