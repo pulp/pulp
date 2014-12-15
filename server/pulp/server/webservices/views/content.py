@@ -4,15 +4,17 @@ import json
 from django.http import HttpResponse, HttpResponseNotFound
 from django.views.generic import View
 
+from pulp.server.auth import authorization
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
+from pulp.server.webservices.controllers.decorators import auth_required
 
 
 class ContentUnitResourceView(View):
 
-    # @auth_required(authorization.READ)
+    @auth_required(authorization.READ)
     def get(self, request, type_id, unit_id, *args, **kwargs):
         """
         Return information about a content unit.
