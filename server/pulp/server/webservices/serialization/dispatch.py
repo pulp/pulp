@@ -55,3 +55,23 @@ def spawned_tasks(task):
             spawned_tasks.append(link)
     return {'spawned_tasks': spawned_tasks}
 
+
+def task_status(task):
+    """
+    Return serialized version of given TaskStatus document.
+
+    :param task_status: Task status document object
+    :type  task_status: pulp.server.db.model.dispatch.TaskStatus
+
+    :return: serialized task status
+    :rtype:  dict
+    """
+    task_dict = {}
+    attributes = ['id', 'task_id', 'worker_name', 'tags', 'state', 'error', 'spawned_tasks',
+                  'progress_report', 'task_type', 'start_time', 'finish_time', 'result',
+                  'exception', 'traceback']
+
+    for attribute in attributes:
+        task_dict[attribute] = task[attribute]
+    return task_dict
+

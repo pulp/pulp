@@ -48,7 +48,7 @@ class TaskSearchAPITests(unittest.TestCase):
                           u'tags': [u'pulp:repository:%s' % repo_id, u'pulp:action:sync'],
                           u'start_time': 1393098484,
                           u'queue': u'reserved_resource_worker-3@tangerine.rdu.redhat.com',
-                          u'state': u'running', u'_id': {u'$oid': u'5308fef46b565fd6740199ae'}}]
+                          u'state': u'running', u'id': {u'$oid': u'5308fef46b565fd6740199ae'}}]
         mock_search.return_value = response_body
 
         results = tasks.TaskSearchAPI(connection).search(**search_criteria)
@@ -108,10 +108,9 @@ TASKS = [
         'state': 'finished',
         'result': None,
         'error': None,
-        '_id': {
+        'id': {
             '$oid': '5390931b81a97875924cc0d1'
-        },
-        'id': '5390931b3de3a3290f57e32f'
+        }
     },
     {
         'exception': None,
@@ -132,10 +131,9 @@ TASKS = [
         'state': 'finished',
         'result': None,
         'error': None,
-        '_id': {
+        'id': {
             '$oid': '5390932681a97875924cc0d3'
-        },
-        'id': '539093263de3a32911ddf3fc'
+        }
     },
     {
         'exception': None,
@@ -156,9 +154,8 @@ TASKS = [
         'state': 'finished',
         'result': None,
         'error': None,
-        '_id': {
+        'id': {
             '$oid': '5390932181a97875924cc0d2'
-        },
-        'id': '539093213de3a32910d49038'
+        }
     },
 ]

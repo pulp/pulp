@@ -18,8 +18,8 @@ import logging
 import web
 
 # Pulp
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.auth.authorization import UPDATE
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 
@@ -43,11 +43,11 @@ class Reply(JSONController):
         task_id = body['any']
         if body['status'] == 200:
             result = body['reply']
-            TaskStatusManager.set_task_succeeded(task_id, result)
+            TaskStatus.set_task_succeeded(task_id, result)
         else:
             raised = body['exception']
             traceback = raised['xstate']['trace']
-            TaskStatusManager.set_task_failed(task_id, traceback)
+            TaskStatus.set_task_failed(task_id, traceback)
         return self.ok({})
 
 # -- web.py application -------------------------------------------------------

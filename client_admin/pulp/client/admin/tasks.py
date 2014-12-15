@@ -240,10 +240,12 @@ class BaseTasksSection(PulpCliSection):
         """
         raise NotImplementedError()
 
+
 class AllTasksSection(BaseTasksSection):
     def retrieve_tasks(self, **kwargs):
         response = self.context.server.tasks.get_all_tasks()
         return response
+
 
 class RepoTasksSection(BaseTasksSection):
     def __init__(self, context, name, description):

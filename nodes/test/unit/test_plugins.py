@@ -577,7 +577,6 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -623,7 +622,6 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
     def test_import_cached_manifest_matched(self, mock_fetch, *unused):
@@ -669,7 +667,6 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
         self.assertFalse(mock_fetch.called)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     def test_import_cached_manifest_missing_units(self, *unused):
         # Setup
@@ -711,7 +708,6 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     def test_import_cached_manifest_units_invalid(self, *unused):
         # Setup
@@ -755,7 +751,6 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -800,7 +795,6 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -851,7 +845,6 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)

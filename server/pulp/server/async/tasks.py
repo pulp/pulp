@@ -13,7 +13,6 @@ from celery.signals import worker_init
 from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
@@ -117,7 +116,7 @@ def _delete_worker(name, normal_shutdown=False):
 
     # Cancel all of the tasks that were assigned to this worker's queue
     worker = Worker.from_bson({'_id': name})
-    for task in TaskStatusManager.find_by_criteria(
+    for task in TaskStatus.objects.find_by_criteria(
             Criteria(
                 filters={'worker_name': worker.name,
                          'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
@@ -306,7 +305,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         for task state tracking of Pulp tasks.
         """
         # Check task status and skip running the task if task state is 'canceled'.
-        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        task_status = TaskStatus.objects(task_id=self.request.id).first()
         if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
             logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
@@ -341,18 +340,19 @@ class Task(CeleryTask, ReservedTaskMixin):
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            delta = {'finish_time': finish_time,
-                     'result': retval}
-            task_status = TaskStatusManager.find_by_task_id(task_id)
+            task_status = TaskStatus.objects(task_id=task_id).first()
+            task_status['finish_time'] = finish_time
+            task_status['result'] = retval
+
             # Only set the state to finished if it's not already in a complete state. This is
             # important for when the task has been canceled, so we don't move the task from canceled
             # to finished.
             if task_status['state'] not in constants.CALL_COMPLETE_STATES:
-                delta['state'] = constants.CALL_FINISHED_STATE
+                task_status['state'] = constants.CALL_FINISHED_STATE
             if isinstance(retval, TaskResult):
-                delta['result'] = retval.return_value
+                task_status['result'] = retval.return_value
                 if retval.error:
-                    delta['error'] = retval.error.to_dict()
+                    task_status['error'] = retval.error.to_dict()
                 if retval.spawned_tasks:
                     task_list = []
                     for spawned_task in retval.spawned_tasks:
@@ -360,12 +360,12 @@ class Task(CeleryTask, ReservedTaskMixin):
                             task_list.append(spawned_task.task_id)
                         elif isinstance(spawned_task, dict):
                             task_list.append(spawned_task['task_id'])
-                    delta['spawned_tasks'] = task_list
+                    task_status['spawned_tasks'] = task_list
             if isinstance(retval, AsyncResult):
-                delta['spawned_tasks'] = [retval.task_id, ]
-                delta['result'] = None
+                task_status['spawned_tasks'] = [retval.task_id, ]
+                task_status['result'] = None
 
-            TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+            task_status.save()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
@@ -383,14 +383,15 @@ class Task(CeleryTask, ReservedTaskMixin):
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            delta = {'state': constants.CALL_ERROR_STATE,
-                     'finish_time': finish_time,
-                     'traceback': einfo.traceback}
+            task_status = TaskStatus.objects(task_id=task_id).first()
+            task_status['state'] = constants.CALL_ERROR_STATE
+            task_status['finish_time'] = finish_time
+            task_status['traceback'] = einfo.traceback
             if not isinstance(exc, PulpException):
                 exc = PulpException(str(exc))
-            delta['error'] = exc.to_dict()
+            task_status['error'] = exc.to_dict()
 
-            TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+            task_status.save()
 
 
 def cancel(task_id):
@@ -404,7 +405,7 @@ def cancel(task_id):
     :raises MissingResource: if a task with given task_id does not exist
     :raises PulpCodedException: if given task is already in a complete state
     """
-    task_status = TaskStatusManager.find_by_task_id(task_id)
+    task_status = TaskStatus.objects(task_id=task_id).first()
     if task_status is None:
         raise MissingResource(task_id)
     if task_status['state'] in constants.CALL_COMPLETE_STATES:

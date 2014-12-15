@@ -20,8 +20,8 @@ from pymongo.errors import DuplicateKeyError
 import pulp.plugins.conduits._common as common_utils
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.async.tasks import get_current_task_id
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
@@ -601,8 +601,7 @@ class StatusMixin(object):
 
         try:
             self.progress_report[self.report_id] = status
-            delta = {'progress_report': self.progress_report}
-            TaskStatusManager.update_task_status(self.task_id, delta)
+            TaskStatus.objects(task_id=self.task_id).update_one(set__progress_report=self.progress_report)
         except Exception, e:
             logger.exception('Exception from server setting progress for report [%s]' % self.report_id)
             try:

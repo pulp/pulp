@@ -624,13 +624,15 @@ class StatusMixinTests(unittest.TestCase):
     def setUp(self):
         manager_factory.initialize()
 
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
     @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
-    def test_set_progress(self, mock_get_task_id, mock_update):
+    def test_set_progress(self, mock_get_task_id, mock_task_status_objects):
         # Setup
         self.report_id = 'test-report'
         task_id = 'test-id'
         mock_get_task_id.return_value = task_id
+        test_task_documents = mock.Mock()
+        mock_task_status_objects.return_value = test_task_documents
         self.mixin = mixins.StatusMixin(self.report_id, mixins.ImporterConduitException)
 
         # Test
@@ -638,19 +640,14 @@ class StatusMixinTests(unittest.TestCase):
         self.mixin.set_progress(status)
 
         # Verify
-        expected_report = {
-            self.report_id : status,
-        }
+        mock_task_status_objects.assert_called_with(task_id=task_id)
+        self.assertEqual(1, test_task_documents.update_one.call_count)
+        test_task_documents.update_one.assert_called_with(
+            set__progress_report={'test-report': 'status'})
 
-        self.assertEqual(1, mock_update.call_count)
-        delta = {'progress_report': expected_report}
-        call_args = mock_update.call_args[0]
-        self.assertEqual(call_args[0], task_id)
-        self.assertEqual(call_args[1], delta)
-
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
     @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
-    def test_set_progress_no_task(self, mock_get_task_id, mock_update):
+    def test_set_progress_no_task(self, mock_get_task_id, mock_task_status_objects):
         # Setup
         mock_get_task_id.return_value = None
         self.mixin = mixins.StatusMixin('', mixins.ImporterConduitException)
@@ -660,9 +657,9 @@ class StatusMixinTests(unittest.TestCase):
         self.mixin.set_progress(status)
 
         # Verify
-        self.assertFalse(mock_update.called)
+        self.assertFalse(mock_task_status_objects.called)
 
-    @mock.patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
+    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
     def test_set_progress_with_exception(self, mock_call):
         # Setup
         self.report_id = 'test-report'

@@ -26,9 +26,9 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent import PulpAgent
 from pulp.server.db.model.consumer import Bind
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.agent import Context
 
 
@@ -79,7 +79,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag(tags.ACTION_AGENT_BIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -131,7 +131,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag(tags.ACTION_AGENT_UNBIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()
@@ -179,7 +179,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_INSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()
@@ -223,7 +223,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_UPDATE)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()
@@ -267,7 +267,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_UNINSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()

@@ -92,7 +92,7 @@ class TestTaskStatus(unittest.TestCase):
         self.assertEqual(ts.task_id, task_id)
         self.assertEqual(ts.worker_name, None)
         self.assertEqual(ts.tags, [])
-        self.assertEqual(ts.state, None)
+        self.assertEqual(ts.state, constants.CALL_WAITING_STATE)
         self.assertEqual(ts.result, None)
         self.assertEqual(ts.traceback, None)
         self.assertEqual(ts.start_time, None)
