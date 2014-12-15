@@ -17,6 +17,8 @@ import sys
 import traceback
 from gettext import gettext as _
 
+from django.http.response import HttpResponse, HttpResponseServerError
+
 from pulp.server.compat import json, http_responses
 from pulp.server.exceptions import PulpException
 from pulp.server.webservices import serialization
@@ -68,3 +70,29 @@ class ExceptionHandlerMiddleware(object):
             status_str = '%d %s' % (status, http_responses[status])
             start_response(status_str, [(k, v) for k, v in self.headers.items()])
             return [serialized_response]
+
+
+class DjangoExceptionHandlerMiddleware(object):
+
+    def process_exception(self, request, exception):
+        if isinstance(exception, PulpException):
+            status = exception.http_status_code
+            response = serialization.error.http_error_obj(status, str(exception))
+            response.update(exception.data_dict())
+            response['error'] = exception.to_dict()
+            logger.info(str(exception))
+            response_obj = HttpResponse(json.dumps(response), status=status,
+                                        content_type="application/json")
+        else:
+            status = httplib.INTERNAL_SERVER_ERROR
+            response = serialization.error.http_error_obj(status, str(exception))
+            msg = _('Unhandled Exception')
+            logger.error(msg)
+            logger.exception(str(exception))
+            e_type, e_value, trace = sys.exc_info()
+            response['exception'] = traceback.format_exception_only(e_type, e_value)
+            response['traceback'] = traceback.format_tb(trace)
+            response_obj = HttpResponseServerError(json.dumps(response),
+                                                   content_type="application/json")
+        response_obj['Content-Encoding'] = 'utf-8'
+        return response_obj
