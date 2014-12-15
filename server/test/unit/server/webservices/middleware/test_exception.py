@@ -6,8 +6,8 @@ import unittest
 import mock
 
 from pulp.common import error_codes
-from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.exceptions import PulpCodedAuthenticationException
+from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 
 
 class TestExceptionHandlerMiddleware(unittest.TestCase):
@@ -27,7 +27,8 @@ class TestExceptionHandlerMiddleware(unittest.TestCase):
         self.mock_app.assert_called_once_with('arg1', 'arg2')
 
     @mock.patch('json.dumps', autospec=True)
-    @mock.patch('pulp.server.webservices.serialization.error.http_error_obj', autospec=True, return_value={})
+    @mock.patch('pulp.server.webservices.serialization.error.http_error_obj', autospec=True,
+                return_value={})
     def test_pulp_exception_no_debug(self, mock_error_obj, mock_dumps):
         """
         Tests that when the debug flag is False, Pulp exceptions result in logging to info
@@ -40,19 +41,21 @@ class TestExceptionHandlerMiddleware(unittest.TestCase):
         self.handler('environ', mock.Mock())
         # Assert the http_error_obj is called with the exception's http status code
         self.assertEquals(1, mock_error_obj.call_count)
-        self.assertEquals(self.mock_app.side_effect.http_status_code, mock_error_obj.call_args[0][0])
+        self.assertEquals(self.mock_app.side_effect.http_status_code,
+                          mock_error_obj.call_args[0][0])
         # Assert that the response has the expected keys and values
         response = mock_dumps.call_args[0][0]
         self.assertEquals(response['error'], self.mock_app.side_effect.to_dict())
         self.assertFalse('exception' in response)
         self.assertFalse('traceback' in response)
 
-
     @mock.patch('traceback.format_tb', autospec=True)
     @mock.patch('traceback.format_exception_only', autospec=True)
     @mock.patch('json.dumps', autospec=True)
-    @mock.patch('pulp.server.webservices.serialization.error.http_error_obj', autospec=True, return_value={})
-    def test_pulp_exception_with_debug(self, mock_error_obj, mock_dumps, mock_format_exception, mock_format_tb):
+    @mock.patch('pulp.server.webservices.serialization.error.http_error_obj', autospec=True,
+                return_value={})
+    def test_pulp_exception_with_debug(self, mock_error_obj, mock_dumps, mock_format_exception,
+                                       mock_format_tb):
         """
         Tests that when the debug flag is True, Pulp exceptions result logging the exception
         and including the exception and traceback in the response.
@@ -66,8 +69,8 @@ class TestExceptionHandlerMiddleware(unittest.TestCase):
         # Test
         handler('environ', mock.Mock())
         # Assert the http_error_obj is called with the exception's status code
-        self.assertEquals(1, mock_error_obj.call_count)
-        self.assertEquals(self.mock_app.side_effect.http_status_code, mock_error_obj.call_args[0][0])
+        self.assertEqual(1, mock_error_obj.call_count)
+        self.assertEqual(self.mock_app.side_effect.http_status_code, mock_error_obj.call_args[0][0])
         # Assert that the response has the expected keys and values
         response = mock_dumps.call_args[0][0]
         self.assertEquals(response['exception'], 'Formatted exception')
@@ -76,8 +79,10 @@ class TestExceptionHandlerMiddleware(unittest.TestCase):
     @mock.patch('traceback.format_tb', autospec=True)
     @mock.patch('traceback.format_exception_only', autospec=True)
     @mock.patch('json.dumps', autospec=True)
-    @mock.patch('pulp.server.webservices.serialization.error.http_error_obj', autospec=True, return_value={})
-    def test_unhandled_exception(self, mock_error_obj, mock_dumps, mock_format_exception, mock_format_tb):
+    @mock.patch('pulp.server.webservices.serialization.error.http_error_obj', autospec=True,
+                return_value={})
+    def test_unhandled_exception(self, mock_error_obj, mock_dumps, mock_format_exception,
+                                 mock_format_tb):
         """
         Tests that non-Pulp exceptions result in logging the exception and including the
         exception and traceback in the response.

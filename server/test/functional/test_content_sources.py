@@ -1,24 +1,11 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import os
-import shutil
-
 from uuid import uuid4
 from tempfile import mkdtemp
 from threading import Event
 from unittest import TestCase
+import os
+import shutil
 
 from mock import patch, Mock
-
 from nectar.config import DownloaderConfig
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
@@ -508,7 +495,8 @@ class TestRefreshing(ContainerTest):
                 self.assertEqual(args[1], source.descriptor)
                 self.assertEqual(args[2], url)
 
-    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(FakeCataloger(ValueError), {}))
+    @patch('pulp.plugins.loader.api.get_cataloger_by_id', return_value=(FakeCataloger(ValueError),
+           {}))
     def test_refresh_failure(self, mock_plugin):
         container = ContentContainer(path=self.tmp_dir)
         event = Event()

@@ -1,34 +1,18 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011-2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for performing repository sync
 operations. All classes and functions in this module run synchronously; any
 need to execute syncs asynchronously must be handled at a higher layer.
 """
-
-import datetime
+from gettext import gettext as _
 import isodate
 import logging
 import os
 import sys
-from gettext import gettext as _
 
 from celery import task
 
 from pulp.common import dateutils, constants
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
@@ -40,7 +24,7 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoSyncManager(object):
@@ -79,7 +63,7 @@ class RepoSyncManager(object):
         repo_coll = Repo.get_collection()
 
         # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
@@ -142,7 +126,7 @@ class RepoSyncManager(object):
         importer_coll = RepoImporter.get_collection()
         sync_result_coll = RepoSyncResult.get_collection()
         repo_id = repo['id']
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        repo_importer = importer_coll.find_one({'repo_id': repo_id})
 
         # Perform the sync
         sync_start_timestamp = _now_timestamp()
@@ -163,8 +147,8 @@ class RepoSyncManager(object):
                 repo_id, repo_importer['id'], repo_importer['importer_type_id'],
                 sync_start_timestamp, sync_end_timestamp, e, sys.exc_info()[2])
 
-            logger.exception(
-                _('Exception caught from plugin during sync for repo [%(r)s]' % {'r' : repo_id}))
+            _logger.exception(
+                _('Exception caught from plugin during sync for repo [%(r)s]' % {'r': repo_id}))
             raise
 
         else:
@@ -191,11 +175,11 @@ class RepoSyncManager(object):
             else:
                 msg = _('Plugin type [%s] on repo [%s] did not return a valid sync report')
                 msg = msg % (repo_importer['importer_type_id'], repo_id)
-                logger.warn(msg)
+                _logger.warn(msg)
 
-                added_count = updated_count = removed_count = -1 # None?
+                added_count = updated_count = removed_count = -1  # None?
                 summary = details = msg
-                result_code = RepoSyncResult.RESULT_ERROR # RESULT_UNKNOWN?
+                result_code = RepoSyncResult.RESULT_ERROR  # RESULT_UNKNOWN?
 
             result = RepoSyncResult.expected_result(
                 repo_id, repo_importer['id'], repo_importer['importer_type_id'],
@@ -217,26 +201,25 @@ class RepoSyncManager(object):
         Returns sync history entries for the given repo, sorted from most recent
         to oldest. If there are no entries, an empty list is returned.
 
-        :param repo_id:     identifies the repo
-        :type  repo_id:     str
-        :param limit:       if specified, the query will only return up to this amount of
-                            entries; default is to return the entire sync history
-        :type  limit:       int
-        :param sort:        Indicates the sort direction of the results, which are sorted by start date. Options
-                            are "ascending" and "descending". Descending is the default.
-        :type  sort:        str
-        :param start_date:  if specified, no events prior to this date will be returned. Expected to be an
-                            iso8601 datetime string.
-        :type  start_date:  str
-        :param end_date:    if specified, no events after this date will be returned. Expected to be an
-                            iso8601 datetime string.
-        :type end_date:     str
-
-        :return: list of sync history result instances
-        :rtype:  list
-
+        :param repo_id:         identifies the repo
+        :type  repo_id:         str
+        :param limit:           if specified, the query will only return up to this amount of
+                                entries; default is to return the entire sync history
+        :type  limit:           int
+        :param sort:            Indicates the sort direction of the results, which are sorted by
+                                start date. Options are "ascending" and "descending". Descending is
+                                the default.
+        :type  sort:            str
+        :param start_date:      if specified, no events prior to this date will be returned.
+                                Expected to be an iso8601 datetime string.
+        :type  start_date:      str
+        :param end_date:        if specified, no events after this date will be returned. Expected
+                                to be an iso8601 datetime string.
+        :type end_date:         str
+        :return:                list of sync history result instances
+        :rtype:                 list
         :raise MissingResource: if repo_id does not reference a valid repo
-        :raise InvalidValue: if one or more options are invalid
+        :raise InvalidValue:    if one or more options are invalid
         """
 
         # Validation
@@ -293,25 +276,6 @@ class RepoSyncManager(object):
             cursor.limit(limit)
 
         return list(cursor)
-
-    def get_repo_storage_directory(self, repo_id):
-        """
-        Returns the directory in which repositories can be stored as they are
-        synchronized. The directory will be created if it does not exist.
-
-        @param repo_id: identifies the repo
-        @type  repo_id: str
-
-        @return: full path to the directory in which an importer can store the
-                 given repository as it is synchronized
-        @rtype:  str
-        """
-
-        dir = os.path.join(REPO_STORAGE_DIR, repo_id)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
-
-        return dir
 
 
 sync = task(RepoSyncManager.sync, base=Task)

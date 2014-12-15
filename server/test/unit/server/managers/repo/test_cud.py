@@ -7,7 +7,6 @@ import datetime
 import mock
 
 from .... import base
-from pulp.common import error_codes
 from pulp.common.util import encode_unicode
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
@@ -67,7 +66,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(repo_col.update.call_count, 1)
         repo_col.update.assert_called_once_with(
             {'id': 'repo1'},
-            {'$set': {'content_unit_counts': {'rpm':6, 'srpm': 6}}},
+            {'$set': {'content_unit_counts': {'rpm': 6, 'srpm': 6}}},
             safe=True
         )
 
@@ -97,7 +96,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         id = 'repo_1'
         name = 'Repository 1'
         description = 'Test Repository 1'
-        notes = {'note1' : 'value1'}
+        notes = {'note1': 'value1'}
 
         # Test
         created = self.manager.create_repo(id, name, description, notes)
@@ -188,35 +187,36 @@ class RepoManagerTests(base.ResourceReservationTests):
         repo_id = 'full'
         display_name = 'Full'
         description = 'Full Test'
-        notes = {'n' : 'n'}
+        notes = {'n': 'n'}
         importer_type_id = 'mock-importer'
-        importer_repo_plugin_config = {'i' : 'i'}
+        importer_repo_plugin_config = {'i': 'i'}
         distributors = [
-            dict(distributor_type_id='mock-distributor', distributor_config={'d' : 'd'},
+            dict(distributor_type_id='mock-distributor', distributor_config={'d': 'd'},
                  auto_publish=True, distributor_id='dist1'),
-            dict(distributor_type_id='mock-distributor', distributor_config={'d' : 'd'},
+            dict(distributor_type_id='mock-distributor', distributor_config={'d': 'd'},
                  auto_publish=True, distributor_id='dist2')
         ]
 
         # Test
-        created = self.manager.create_and_configure_repo(repo_id, display_name, description,
-                  notes, importer_type_id, importer_repo_plugin_config, distributors)
+        created = self.manager.create_and_configure_repo(
+            repo_id, display_name, description, notes, importer_type_id,
+            importer_repo_plugin_config, distributors)
 
         # Verify
         self.assertEqual(created['id'], repo_id)
 
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
         self.assertEqual(repo['id'], repo_id)
         self.assertEqual(repo['display_name'], display_name)
         self.assertEqual(repo['description'], description)
         self.assertEqual(repo['notes'], notes)
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
+        importer = RepoImporter.get_collection().find_one({'repo_id': repo_id})
         self.assertEqual(importer['importer_type_id'], importer_type_id)
         self.assertEqual(importer['config'], importer_repo_plugin_config)
 
         for d in distributors:
-            distributor = RepoDistributor.get_collection().find_one({'id' : d['distributor_id']})
+            distributor = RepoDistributor.get_collection().find_one({'id': d['distributor_id']})
             self.assertEqual(distributor['repo_id'], repo_id)
             self.assertEqual(distributor['distributor_type_id'], d['distributor_type_id'])
             self.assertEqual(distributor['auto_publish'], d['auto_publish'])
@@ -231,10 +231,11 @@ class RepoManagerTests(base.ResourceReservationTests):
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = False, ''
 
         # Test
-        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo, 'repo-1', importer_type_id='mock-importer')
+        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo,
+                          'repo-1', importer_type_id='mock-importer')
 
         # Verify the repo was deleted
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
         self.assertTrue(repo is None)
 
         # Cleanup
@@ -251,10 +252,11 @@ class RepoManagerTests(base.ResourceReservationTests):
         # Test
         distributors = [dict(distributor_type='mock-distributor', distributor_config={},
                              auto_publish=True, distributor_id=None)]
-        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo, 'repo-1', distributor_list=distributors)
+        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo,
+                          'repo-1', distributor_list=distributors)
 
         # Verify the repo was deleted
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
         self.assertTrue(repo is None)
 
         # Cleanup
@@ -276,7 +278,7 @@ class RepoManagerTests(base.ResourceReservationTests):
             self.assertEqual(e.property_names[0], 'distributor_list')
 
         # Verify the repo was deleted
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
         self.assertTrue(repo is None)
 
     def test_create_and_configure_bad_distributor_in_list(self):
@@ -295,7 +297,7 @@ class RepoManagerTests(base.ResourceReservationTests):
             self.assertEqual(e.property_names[0], 'distributor_list')
 
         # Verify the repo was deleted
-        repo = Repo.get_collection().find_one({'id' : 'repo-1'})
+        repo = Repo.get_collection().find_one({'id': 'repo-1'})
         self.assertTrue(repo is None)
 
     def test_create_i18n(self):
@@ -306,7 +308,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.manager.create_repo('repo-i18n', display_name=i18n_text, description=i18n_text)
 
         # Verify
-        repo = Repo.get_collection().find_one({'id' : 'repo-i18n'})
+        repo = Repo.get_collection().find_one({'id': 'repo-i18n'})
         self.assertTrue(repo is not None)
         self.assertEqual(encode_unicode(repo['display_name']), i18n_text)
         self.assertEqual(encode_unicode(repo['description']), i18n_text)
@@ -317,14 +319,14 @@ class RepoManagerTests(base.ResourceReservationTests):
         """
 
         # Setup
-        id = 'doomed'
-        self.manager.create_repo(id)
+        repo_id = 'doomed'
+        self.manager.create_repo(repo_id)
 
         # Test
-        self.manager.delete_repo(id)
+        self.manager.delete_repo(repo_id)
 
         # Verify
-        repos = list(Repo.get_collection().find({'id' : id}))
+        repos = list(Repo.get_collection().find({'id': repo_id}))
         self.assertEqual(0, len(repos))
 
     def test_delete_repo_no_repo(self):
@@ -341,7 +343,8 @@ class RepoManagerTests(base.ResourceReservationTests):
 
     def test_delete_with_plugins(self):
         """
-        Tests that deleting a repo that has importers and distributors configured deletes them as well.
+        Tests that deleting a repo that has importers and distributors configured deletes them as
+        well.
         """
 
         # Setup
@@ -351,11 +354,13 @@ class RepoManagerTests(base.ResourceReservationTests):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         importer_manager.set_importer('doomed', 'mock-importer', {})
-        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True, distributor_id='dist-1')
-        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True, distributor_id='dist-2')
+        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True,
+                                            distributor_id='dist-1')
+        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True,
+                                            distributor_id='dist-2')
 
-        self.assertEqual(1, len(list(RepoImporter.get_collection().find({'repo_id' : 'doomed'}))))
-        self.assertEqual(2, len(list(RepoDistributor.get_collection().find({'repo_id' : 'doomed'}))))
+        self.assertEqual(1, len(list(RepoImporter.get_collection().find({'repo_id': 'doomed'}))))
+        self.assertEqual(2, len(list(RepoDistributor.get_collection().find({'repo_id': 'doomed'}))))
 
         # Test
         self.manager.delete_repo('doomed')
@@ -363,8 +368,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         # Verify
         self.assertEqual(0, len(list(Repo.get_collection().find())))
 
-        self.assertEqual(0, len(list(RepoImporter.get_collection().find({'repo_id' : 'doomed'}))))
-        self.assertEqual(0, len(list(RepoDistributor.get_collection().find({'repo_id' : 'doomed'}))))
+        self.assertEqual(0, len(list(RepoImporter.get_collection().find({'repo_id': 'doomed'}))))
+        self.assertEqual(0, len(list(RepoDistributor.get_collection().find({'repo_id': 'doomed'}))))
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
         self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.call_count)
@@ -384,7 +389,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         importer_manager.set_importer('doomed', 'mock-importer', {})
-        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True, distributor_id='dist-1')
+        distributor_manager.add_distributor('doomed', 'mock-distributor', {}, True,
+                                            distributor_id='dist-1')
 
         #    Setup both mocks to raise errors on removal
         mock_plugins.MOCK_IMPORTER.importer_removed.side_effect = Exception('Splat')
@@ -394,7 +400,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         try:
             self.manager.delete_repo('doomed')
             self.fail('No exception raised during repo delete')
-        except exceptions.PulpExecutionException, e:
+        except exceptions.PulpExecutionException:
             pass
 
         # Cleanup - need to manually clear the side effects
@@ -407,22 +413,23 @@ class RepoManagerTests(base.ResourceReservationTests):
         """
 
         # Setup
-        self.manager.create_repo('update-me', display_name='display_name_1', description='description_1', notes={'a' : 'a', 'b' : 'b', 'c' : 'c'})
+        self.manager.create_repo('update-me', display_name='display_name_1',
+                                 description='description_1', notes={'a': 'a', 'b': 'b', 'c': 'c'})
 
         delta = {
-            'display_name' : 'display_name_2',
-            'description'  : 'description_2',
-            'notes'        : {'b' : 'x', 'c' : None},
-            'disregard'    : 'ignored',
+            'display_name': 'display_name_2',
+            'description': 'description_2',
+            'notes': {'b': 'x', 'c': None},
+            'disregard': 'ignored',
         }
 
         # Test
         updated = self.manager.update_repo('update-me', delta)
 
         # Verify
-        expected_notes = {'a' : 'a', 'b' : 'x'}
+        expected_notes = {'a': 'a', 'b': 'x'}
 
-        repo = Repo.get_collection().find_one({'id' : 'update-me'})
+        repo = Repo.get_collection().find_one({'id': 'update-me'})
         self.assertEqual(repo['display_name'], delta['display_name'])
         self.assertEqual(repo['description'], delta['description'])
         self.assertEqual(repo['notes'], expected_notes)
@@ -466,8 +473,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         repo_delta = {'display_name': 'Updated'}
         new_importer_config = {'key-i1': 'updated-1', 'key-i2': 'new-1'}
         new_distributor_configs = {
-            'dist-1' : {'key-d1': 'updated-1'},
-        } # only update one of the two distributors
+            'dist-1': {'key-d1': 'updated-1'},
+        }  # only update one of the two distributors
 
         result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config,
                                                       new_distributor_configs)
@@ -488,7 +495,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(dist_1['config'], new_distributor_configs['dist-1'])
 
         dist_2 = distributor_manager.get_distributor('repo-1', 'dist-2')
-        self.assertEqual(dist_2['config'], {'key-d2' : 'orig-2'})
+        self.assertEqual(dist_2['config'], {'key-d2': 'orig-2'})
 
         # There should have been a spawned task for the new distributor config
         expected_task_id = dispatch.TaskStatus.objects(
@@ -507,7 +514,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         distributor_manager = manager_factory.repo_distributor_manager()
 
         importer_manager.set_importer('repo-1', 'mock-importer', {'key-i1': 'orig-1'})
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1' : 'orig-1'}, True, distributor_id='dist-1')
+        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1': 'orig-1'},
+                                            True, distributor_id='dist-1')
 
         # Test
         result = self.manager.update_repo_and_plugins('repo-1', None, None, None)
@@ -517,10 +525,10 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(repo['display_name'], 'Original')
 
         importer = importer_manager.get_importer('repo-1')
-        self.assertEqual(importer['config'], {'key-i1' : 'orig-1'})
+        self.assertEqual(importer['config'], {'key-i1': 'orig-1'})
 
         dist_1 = distributor_manager.get_distributor('repo-1', 'dist-1')
-        self.assertEqual(dist_1['config'], {'key-d1' : 'orig-1'})
+        self.assertEqual(dist_1['config'], {'key-d1': 'orig-1'})
 
     def test_get_set_scratchpad(self):
         """
@@ -536,7 +544,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual({}, value)
 
         # Test - set
-        new_value = {'i' : 'importer', 'd' : 'distributor'}
+        new_value = {'i': 'importer', 'd': 'distributor'}
         self.manager.set_repo_scratchpad(repo_id, new_value)
 
         value = self.manager.get_repo_scratchpad(repo_id)
@@ -573,12 +581,12 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(scratchpad['C'], 3)
         self.assertEqual(scratchpad['D'], 40)
         # missing resource
-        self.assertRaises(exceptions.MissingResource, self.manager.update_repo_scratchpad, 'foo', {})
-
+        self.assertRaises(exceptions.MissingResource, self.manager.update_repo_scratchpad, 'foo',
+                          {'foo': 'bar'})
 
     def test_update_unit_count_missing_repo(self):
         self.assertRaises(exceptions.PulpExecutionException,
-            self.manager.update_unit_count, 'foo','rpm', '2')
+                          self.manager.update_unit_count, 'foo', 'rpm', '2')
 
     @mock.patch.object(Repo, 'get_collection')
     def test_update_unit_count(self, mock_get_collection):
@@ -588,7 +596,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         ARGS = ('repo-123', 'rpm', 7)
 
         self.manager.update_unit_count(*ARGS)
-        mock_update.assert_called_once_with({'id': 'repo-123'}, {'$inc': {'content_unit_counts.rpm': 7}}, safe=True)
+        mock_update.assert_called_once_with({'id': 'repo-123'},
+                                            {'$inc': {'content_unit_counts.rpm': 7}}, safe=True)
 
     def test_update_unit_count_with_db(self):
         """
@@ -599,12 +608,12 @@ class RepoManagerTests(base.ResourceReservationTests):
         REPO_ID = 'repo-123'
         # create repo, verify count of 0
         self.manager.create_repo(REPO_ID)
-        repo = Repo.get_collection().find_one({'id' : REPO_ID})
+        repo = Repo.get_collection().find_one({'id': REPO_ID})
         self.assertEqual(repo['content_unit_counts'], {})
 
         # increase unit count, verify result
         self.manager.update_unit_count(REPO_ID, 'rpm', 3)
-        repo = Repo.get_collection().find_one({'id' : REPO_ID})
+        repo = Repo.get_collection().find_one({'id': REPO_ID})
         self.assertEqual(repo['content_unit_counts']['rpm'], 3)
 
     @mock.patch('pulp.server.managers.repo.cud.Repo.get_collection')

@@ -105,6 +105,26 @@ class ContentSourceAPI(PulpAPI):
         path = self.BASE_URL
         return self.server.GET(path)
 
+    def refresh(self, source_id):
+        """
+        Refresh a content source with id source_id
+        :param source_id: A content source ID.
+        :type source_id: str
+        :return: The response. The *body* lists a task id spawned to perform the refresh.
+        :rtype: pulp.bindings.responses.Response
+        """
+        path = "%s%s/action/refresh/" % (self.BASE_URL, source_id)
+        return self.server.POST(path)
+
+    def refresh_all(self):
+        """
+        Refresh all content sources
+        :return: The response. The *body* lists a task id spawned to perform the refresh.
+        :rtype: pulp.bindings.responses.Response
+        """
+        path = "%saction/refresh/" % self.BASE_URL
+        return self.server.POST(path)
+
 
 class ContentCatalogAPI(PulpAPI):
 

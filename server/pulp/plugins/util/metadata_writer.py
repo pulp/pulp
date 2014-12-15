@@ -326,7 +326,11 @@ class FastForwardXmlFileContext(XmlFileContext):
             expression = os.path.join(working_dir, expression)
             file_list = glob.glob(expression)
             if file_list:
-                self.existing_file = file_list[0]
+                # We only want to work on the latest one
+                stat_files = ((os.stat(path).st_mtime, path) for path in file_list)
+                sorted_files = sorted(stat_files, reverse=True)
+                working_dir, existing_file_name = os.path.split(sorted_files[0][1])
+                self.existing_file = existing_file_name
                 self.fast_forward = True
         elif not self.checksum_type and os.path.exists(self.metadata_file_path):
             self.existing_file = file_name
@@ -334,7 +338,7 @@ class FastForwardXmlFileContext(XmlFileContext):
 
         if self.fast_forward:
             # move the file so that we can still process it if the name is the same
-            if self.existing_file == file_name:
+            if self.existing_file:
                 new_file_name = 'original.%s' % self.existing_file
                 shutil.move(os.path.join(working_dir, self.existing_file),
                             os.path.join(working_dir, new_file_name))
@@ -356,6 +360,8 @@ class FastForwardXmlFileContext(XmlFileContext):
                     finally:
                         if gzip_handle:
                             gzip_handle.close()
+                # clean up the zipped file
+                os.unlink(self.existing_file)
                 self.existing_file = non_compressed_file
 
             self.original_file_handle = open(os.path.join(working_dir, self.existing_file), 'r')

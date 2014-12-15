@@ -243,7 +243,7 @@ class PluginStepTests(PluginBase):
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
-        compare_dict(report, target_report)
+        compare_dict(report[0], target_report)
 
     def test_get_progress_report_description(self):
         step = PluginStep('bar_step')
@@ -268,7 +268,7 @@ class PluginStepTests(PluginBase):
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
-        compare_dict(report, target_report)
+        compare_dict(report[0], target_report)
 
     def test_get_progress_report_summary(self):
         parent_step = PluginStep('parent_step')
@@ -503,7 +503,7 @@ class PublishStepTests(PublisherBase):
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
-        compare_dict(report, target_report)
+        compare_dict(report[0], target_report)
 
     def test_get_progress_report_description(self):
         step = PublishStep('bar_step')
@@ -529,7 +529,7 @@ class PublishStepTests(PublisherBase):
             reporting_constants.PROGRESS_STEP_UUID: step.uuid
         }
 
-        compare_dict(report, target_report)
+        compare_dict(report[0], target_report)
 
     def test_get_progress_report_summary(self):
         parent_step = PublishStep('parent_step')

@@ -10,8 +10,8 @@
 Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
-Version:        3.0.15
-Release:        13.pulp%{?dist}
+Version:        3.0.24
+Release:        1%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,8 +19,6 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
-Patch0:         qpid_transport.patch
-Patch1:         kombu-344.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -48,7 +46,7 @@ BuildRequires:  python-nose
 BuildRequires:  python-setuptools
 
 # required for tests:
-BuildRequires: python-amqp >= 1.4.5
+BuildRequires: python-amqp >= 1.4.6
 BuildRequires: python-mock
 BuildRequires: python-msgpack
 BuildRequires: python-qpid
@@ -59,14 +57,14 @@ BuildRequires: python-unittest2
 BuildRequires: PyYAML
 
 %if 0%{?with_python3}
-BuildRequires: python3-amqp >= 1.4.5
+BuildRequires: python3-amqp >= 1.4.6
 %endif
 
 # For documentation
 #BuildRequires:  pymongo python-sphinx
 #This causes tests error, needs fixing upstream. Incompatible with python > 2.7
 #BuildRequires:  python-couchdb
-Requires: python-amqp >= 1.4.5
+Requires: python-amqp >= 1.4.6
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
 %if 0%{?rhel} == 6
@@ -90,7 +88,7 @@ Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-amqp >= 1.4.5
+Requires:       python3-amqp >= 1.4.6
 
 %description -n python3-kombu
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
@@ -107,16 +105,6 @@ This subpackage is for python3
 
 %prep
 %setup -q -n %{srcname}-%{version}
-
-# Add Qpid broker support until the following PR is accepted upstream and
-# included in a release:
-# https://github.com/celery/kombu/pull/335
-%patch0 -p1
-# Some of the kombu tests didn't have a decorator to skip if Redis wasn't
-# installed. Keep this patch until the following PR is accepted upstream and
-# included in a release:
-# https://github.com/celery/kombu/pull/345
-%patch1 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -173,6 +161,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Thu Dec 11 2014 Brian Bouterse 3.0.24-1
+- Updates python-kombu to 3.0.24 (bbouters@redhat.com)
+
 * Fri Sep 19 2014 Chris Duryee <cduryee@redhat.com> 3.0.15-13.pulp
 - 1124589 - python-kombu does not work with Qpid unless the user adjusts
   qpidd.conf (cduryee@redhat.com)
