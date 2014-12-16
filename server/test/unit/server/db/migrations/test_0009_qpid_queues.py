@@ -1,17 +1,6 @@
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-from unittest import TestCase
 from ConfigParser import ConfigParser
 from StringIO import StringIO
+from unittest import TestCase
 
 from mock import patch, Mock, call
 
@@ -279,7 +268,8 @@ class TestDelQueueCatchQueueInUseException(TestCase):
             self.fail('An exception should have been raised, and was not.')
         except Exception as error:
             string_a = 'Consumers are still bound to the queue'
-            string_b = 'All consumers must be unregistered, upgraded, or off before you can continue'
+            string_b = ('All consumers must be unregistered, upgraded, or off before you can '
+                        'continue')
             if string_a not in error.message or string_b not in error.message:
                 self.fail("Migration 0009 does not handle a 'queue in use' exception")
 
@@ -288,4 +278,5 @@ class TestDelQueueCatchQueueInUseException(TestCase):
         mock_name = Mock()
         fake_broker.delQueue.side_effect = IOError()
         migration = MigrationModule(MIGRATION)._module
-        self.assertRaises(IOError, migration._del_queue_catch_queue_in_use_exception, fake_broker, mock_name)
+        self.assertRaises(IOError, migration._del_queue_catch_queue_in_use_exception, fake_broker,
+                          mock_name)
