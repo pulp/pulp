@@ -15,7 +15,6 @@ from ... import base
 from pulp.common import constants, dateutils
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server import exceptions
 
 
 class TaskStatusTests(base.PulpServerTests):
@@ -152,7 +151,9 @@ class TaskStatusTests(base.PulpServerTests):
 
         result = 'done'
         TaskStatus(task_id='3', tags=tags).save()
-        TaskStatus.set_task_succeeded(task_id='3', result=result)
+
+        TaskStatus.objects(task_id='3').update_one(set__state=constants.CALL_FINISHED_STATE,
+                                                   set__result=result)
 
         filters = {'tags': tags, 'task_id': {'$in': ['1', '3']}}
         fields = ['task_id', 'tags', 'result']
@@ -170,8 +171,9 @@ class TaskStatusTests(base.PulpServerTests):
         task_id = self.get_random_uuid()
         TaskStatus(task_id, state=constants.CALL_WAITING_STATE).save()
 
-        TaskStatus.set_task_accepted(task_id)
-        task_status = TaskStatus.objects(task_id=task_id).first()
+        TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).\
+            update_one(set__state=constants.CALL_ACCEPTED_STATE)
+        task_status = TaskStatus.objects.get(task_id=task_id)
         self.assertTrue(task_status['state'], constants.CALL_ACCEPTED_STATE)
 
     @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
@@ -183,7 +185,11 @@ class TaskStatusTests(base.PulpServerTests):
         now = '2014-11-21 05:21:38.829678'
         mock_date.return_value = now
 
-        TaskStatus.set_task_succeeded(task_id, result)
+        t = datetime.now(dateutils.utc_tz())
+        finished = dateutils.format_iso8601_datetime(t)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__result=result)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
         self.assertTrue(task_status['finish_time'], now)
@@ -196,7 +202,9 @@ class TaskStatusTests(base.PulpServerTests):
         result = 'done'
         now = '2014-11-21 05:21:38.829678'
 
-        TaskStatus.set_task_succeeded(task_id, result, timestamp=now)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=now,
+                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__result=result)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertTrue(task_status['state'], constants.CALL_FINISHED_STATE)
         self.assertTrue(task_status['finish_time'], now)
@@ -211,8 +219,10 @@ class TaskStatusTests(base.PulpServerTests):
         finished = '2014-11-21 05:21:38.829678'
         mock_date.return_value = finished
 
-        TaskStatus.set_task_failed(task_id, traceback)
-        task_status = TaskStatus.objects(task_id=task_id).first()
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__traceback=traceback)
+        task_status = TaskStatus.objects.get(task_id=task_id)
         self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)
@@ -224,34 +234,10 @@ class TaskStatusTests(base.PulpServerTests):
         traceback = 'abcdef'
         finished = '2014-11-21 05:21:38.829678'
 
-        TaskStatus.set_task_failed(task_id, traceback=traceback, timestamp=finished)
-        task_status = TaskStatus.objects(task_id=task_id).first()
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__traceback=traceback)
+        task_status = TaskStatus.objects.get(task_id=task_id)
         self.assertTrue(task_status['state'], constants.CALL_ERROR_STATE)
         self.assertTrue(task_status['finish_time'], finished)
         self.assertTrue(task_status['traceback'], traceback)
-
-    @mock.patch('pulp.common.dateutils.format_iso8601_datetime')
-    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
-    def test_set_started(self, mock_objects, mock_date):
-        test_date = '2014-11-21 05:21:38.829678'
-        mock_date.return_value = test_date
-        test_objects = mock.Mock()
-        mock_objects.return_value = test_objects
-        call = mock._Call()
-
-        TaskStatus.set_task_started(task_id='test-task-id')
-
-        self.assertEqual(test_objects.update_one.call_args_list, [call(set__start_time='2014-11-21 05:21:38.829678'),
-                                                                  call(set__state='running')])
-
-    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
-    def test_set_started_with_timestamp(self, mock_objects):
-        test_date = '2014-11-21 05:21:38.829678'
-        test_objects = mock.Mock()
-        mock_objects.return_value = test_objects
-        call = mock._Call()
-
-        TaskStatus.set_task_started(task_id='test-task-id', timestamp=test_date)
-
-        self.assertEqual(test_objects.update_one.call_args_list, [call(set__start_time='2014-11-21 05:21:38.829678'),
-                                                                  call(set__state='running')])

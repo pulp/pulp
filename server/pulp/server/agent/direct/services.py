@@ -1,6 +1,8 @@
+from datetime import datetime
 from logging import getLogger
 from gettext import gettext as _
 
+from pulp.common import constants, dateutils
 from pulp.server.agent.auth import Authenticator
 from pulp.server.config import config
 from pulp.server.db.model.dispatch import TaskStatus
@@ -136,7 +138,8 @@ class ReplyHandler(Listener):
         log.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
         call_context = dict(reply.any)
         task_id = call_context['task_id']
-        TaskStatus.set_task_accepted(task_id)
+        TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).\
+            update_one(set__state=constants.CALL_ACCEPTED_STATE)
 
     def started(self, reply):
         """
@@ -148,7 +151,14 @@ class ReplyHandler(Listener):
         log.debug(_('Task RMI (started): %(r)s'), {'r': reply})
         call_context = dict(reply.any)
         task_id = call_context['task_id']
-        TaskStatus.set_task_started(task_id, timestamp=reply.timestamp)
+        started = reply.timestamp
+        if not started:
+            now = datetime.now(dateutils.utc_tz())
+            started = dateutils.format_iso8601_datetime(now)
+        TaskStatus.objects(task_id=task_id).update_one(set__start_time=started)
+        TaskStatus.objects(task_id=task_id, state__in=[constants.CALL_WAITING_STATE,
+                                                       constants.CALL_ACCEPTED_STATE]).\
+            update_one(set__state=constants.CALL_RUNNING_STATE)
 
     def rejected(self, reply):
         """
@@ -162,8 +172,12 @@ class ReplyHandler(Listener):
         call_context = dict(reply.any)
         action = call_context.get('action')
         task_id = call_context['task_id']
-
-        TaskStatus.set_task_failed(task_id, timestamp=reply.timestamp)
+        finished = reply.timestamp
+        if not finished:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
@@ -185,9 +199,14 @@ class ReplyHandler(Listener):
         action = call_context.get('action')
         task_id = call_context['task_id']
         result = dict(reply.retval)
+        finished = reply.timestamp
+        if not finished:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
 
-        TaskStatus.set_task_succeeded(task_id, result=result, timestamp=reply.timestamp)
-
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__result=result)
         if action == 'bind':
             if result['succeeded']:
                 ReplyHandler._bind_succeeded(task_id, call_context)
@@ -214,8 +233,14 @@ class ReplyHandler(Listener):
         action = call_context.get('action')
         task_id = call_context['task_id']
         traceback = reply.xstate['trace']
+        finished = reply.timestamp
+        if not finished:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
 
-        TaskStatus.set_task_failed(task_id, traceback=traceback, timestamp=reply.timestamp)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__traceback=traceback)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
