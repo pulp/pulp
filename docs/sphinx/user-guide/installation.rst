@@ -87,6 +87,12 @@ Repositories
 
     $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm
 
+.. note::
+   EPEL requires users of RHEL 6.x to enable the ``optional`` repository,
+   and users of RHEL 7.x to additionally enable the ``extras`` repository.
+   Details are described
+   `here <https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F>`_.
+
 3. For RHEL 5 systems, subscribe to the following RHN channels:
 
  * MRG Messaging v. 1
