@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.1
-Release: 0.2.beta%{?dist}
+Release: 1%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,15 +604,11 @@ exit 0
 %endif # End selinux if block
 
 %changelog
-* Wed Dec 10 2014 Barnaby Court <bcourt@redhat.com> 2.5.1-0.2.beta
+* Tue Dec 16 2014 Barnaby Court <bcourt@redhat.com> 2.5.1-1
 - 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
   was not cleaning up after itself. (bcourt@redhat.com)
-
-* Thu Dec 04 2014 Chris Duryee <cduryee@redhat.com> 2.5.1-0.1.beta
 - 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
 - 1129828 - split stack traces into separate log records. (jortel@redhat.com)
-
-* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
 - 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
 - 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
 - 1021579 - document unexpected behavior in unassociate api
