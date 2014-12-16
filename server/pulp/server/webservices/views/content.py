@@ -14,10 +14,16 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 
 class ContentTypesView(View):
+
     @auth_required(authorization.READ)
     def get(self, request, *args, **kwargs):
         """
         List the available content types.
+
+        :param request: WSGI request object
+        :type  request: WSGIRequest
+        :return       : Serialized response containing a list of the content types
+        :rtype        : HttpResponse
         """
         collection = []
         cqm = factory.content_query_manager()
@@ -30,11 +36,20 @@ class ContentTypesView(View):
 
 
 class ContentTypeResourceView(View):
+
     @auth_required(authorization.READ)
     def get(self, request, type_id, *args, **kwargs):
         """
         Return information about a content type. Requires type_id to be
         passed as a keyword argument.
+
+        :param request: WSGI request object
+        :type  request: WSGIRequest
+        :type_id      : type of content unit
+        :type type_id : unicode
+        :return       : Serialized response containing information about the given content type or
+                        a HttpResponseNotFound response if the specified content type is not found.
+        :rtype        : HttpResponse or HttpResponseNotFound
         """
         cqm = factory.content_query_manager()
         content_type = cqm.get_content_type(type_id)
@@ -45,8 +60,6 @@ class ContentTypeResourceView(View):
             )
         resource = serialization.content.content_type_obj(content_type)
         links = {
-            # TODO(asmacdo) replace with reverse url lookup.
-            # Well, maybe not. i think these must be plugin api endpoints...
             'actions': {'_href': '/'.join([request.get_full_path().rstrip('/'), 'actions/'])},
             'content_units': {'_href': '/'.join([request.get_full_path().rstrip('/'), 'units/'])}
         }
@@ -56,10 +69,21 @@ class ContentTypeResourceView(View):
 
 
 class ContentUnitsCollectionView(View):
+
     @staticmethod
     def process_unit(unit, request):
+        """
+        Create a dictionary that contains a url with for a given id and any
+        children that the unit has.
+
+        :param unit   : metadata about a unit
+        :type  unit   : dictionary
+        :param request: WSGI request object
+        :type  request: WSGIRequest
+        :return       : serialized unit with url and children
+        :rtype        : dictionary
+        """
         unit = serialization.content.content_unit_obj(unit)
-        # TODO(asmacdo) replace with reverseurl lookup
         unit.update({'_href': '/'.join([request.get_full_path().rstrip('/'), unit['_id'] + '/'])})
         unit.update({'children': serialization.content.content_unit_child_link_objs(unit)})
         return unit
@@ -67,7 +91,15 @@ class ContentUnitsCollectionView(View):
     @auth_required(authorization.READ)
     def get(self, request, type_id, *args, **kwargs):
         """
-        List all the available content units.
+        List the available content units
+
+        :param request: WSGI request object
+        :type  request: WSGIRequest
+        :type_id      : type of content unit
+        :type type_id : unicode
+        :return       : Serialized response containing a list of the available content units of
+                        of type type_id
+        :rtype        : HttpResponse
         """
         cqm = factory.content_query_manager()
         units = cqm.find_by_criteria(type_id, Criteria())
