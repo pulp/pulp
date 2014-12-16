@@ -28,8 +28,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.5.0
-Release: 1%{?dist}
+Version: 2.5.1
+Release: 0.2.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -249,8 +249,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.3.0
-Requires: python-gofer-qpid >= 1.3.0
+Requires: python-gofer >= 1.3.0, python-gofer < 2.0
+Requires: python-gofer-qpid >= 1.3.0, python-gofer-qpid < 2.0
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -528,9 +528,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.3.0
-Requires: python-gofer-qpid >= 1.3.0
-Requires: gofer >= 1.3.0
+Requires: python-gofer >= 1.3.0, python-gofer < 2.0
+Requires: python-gofer-qpid >= 1.3.0, python-gofer-qpid < 2.0
+Requires: gofer >= 1.3.0, gofer < 2.0
 Requires: m2crypto
 
 %description agent
@@ -604,6 +604,23 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Wed Dec 10 2014 Barnaby Court <bcourt@redhat.com> 2.5.1-0.2.beta
+- 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
+  was not cleaning up after itself. (bcourt@redhat.com)
+
+* Thu Dec 04 2014 Chris Duryee <cduryee@redhat.com> 2.5.1-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1129828 - split stack traces into separate log records. (jortel@redhat.com)
+
+* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+- 1021579 - document unexpected behavior in unassociate api
+  (cduryee@redhat.com)
+- 1081534 - Added /v2 and trailing / to the permissions docs
+  (dkliban@redhat.com)
+- 1111261 - document single event listener retrieval (bcourt@redhat.com)
+
 * Fri Nov 21 2014 Austin Macdonald <asmacdo@gmail.com> 2.5.0-1
 - 1129488 - Adjusts mongoDB auto-reconnect to never stop attempting
   (bmbouter@gmail.com)
