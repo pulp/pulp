@@ -15,7 +15,7 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 class ContentTypesView(View):
 
-    @auth_required(authorization.READ)
+    # @auth_required(authorization.READ)
     def get(self, request, *args, **kwargs):
         """
         List the available content types.
