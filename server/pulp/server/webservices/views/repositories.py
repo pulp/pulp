@@ -1,5 +1,3 @@
-import json
-
 from django.views.generic import View
 
 from pulp.common import tags
@@ -14,13 +12,7 @@ class RepoSync(View):
 
     @auth_required(EXECUTE)
     def post(self, request, repo_id):
-
-        # Params
-        try:
-            params = json.loads(request.body)
-        except ValueError:
-            params = {}
-        overrides = params.get('override_config', None)
+        overrides = request.body_as_json.get('override_config', None)
 
         # Check for repo existence and let the missing resource bubble up
         manager_factory.repo_query_manager().get_repository(repo_id)
