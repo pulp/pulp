@@ -73,12 +73,11 @@ class TaskCollection(JSONController):
     def GET(self):
         valid_filters = ['tag']
         filters = self.filters(valid_filters)
-        criteria_filters = {}
         tags = filters.get('tag', [])
         if tags:
-            criteria_filters['tags'] = {'$all': filters.get('tag', [])}
-        criteria = Criteria.from_client_input({'filters': criteria_filters})
-        raw_tasks = TaskStatus.objects.find_by_criteria(criteria)
+            raw_tasks = TaskStatus.objects(tags__all=tags)
+        else:
+            raw_tasks = TaskStatus.objects()
         serialized_task_statuses = [task_serializer(task) for task in raw_tasks]
         return self.ok(serialized_task_statuses)
 

@@ -213,22 +213,12 @@ class TestDeleteWorker(ResourceReservationTests):
         tasks._delete_worker('worker1')
         self.mock_worker.from_bson.assert_called_once_with({'_id': 'worker1'})
 
-    def test_criteria_to_find_task_status_is_correct(self):
-        tasks._delete_worker('worker1')
-        expected_call = mock.call(
-            filters={'worker_name': self.mock_worker.from_bson.return_value.name,
-                     'state': {'$in': self.mock_constants.CALL_INCOMPLETE_STATES}})
-        self.assertEqual(self.mock_criteria.mock_calls[1], expected_call)
-
     def test_cancels_all_found_task_status_objects(self):
         mock_task_id_a = mock.Mock()
         mock_task_id_b = mock.Mock()
-        self.mock_task_status.objects.find_by_criteria.return_value = [{'task_id': mock_task_id_a},
-                                                                       {'task_id': mock_task_id_b}]
+        self.mock_task_status.objects.return_value = [{'task_id': mock_task_id_a},
+                                                      {'task_id': mock_task_id_b}]
         tasks._delete_worker('worker1')
-
-        find_by_criteria = self.mock_task_status.objects.find_by_criteria
-        find_by_criteria.assert_called_once_with(self.mock_criteria.return_value)
 
         self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a), mock.call(mock_task_id_b)])
 

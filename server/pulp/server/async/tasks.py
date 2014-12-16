@@ -116,11 +116,9 @@ def _delete_worker(name, normal_shutdown=False):
 
     # Cancel all of the tasks that were assigned to this worker's queue
     worker = Worker.from_bson({'_id': name})
-    for task in TaskStatus.objects.find_by_criteria(
-            Criteria(
-                filters={'worker_name': worker.name,
-                         'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
-        cancel(task['task_id'])
+    for task_status in TaskStatus.objects(worker_name=worker.name,
+                                          state__in=constants.CALL_INCOMPLETE_STATES):
+        cancel(task_status['task_id'])
 
 
 @task
@@ -340,7 +338,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            task_status = TaskStatus.objects(task_id=task_id).first()
+            task_status = TaskStatus.objects.get(task_id=task_id)
             task_status['finish_time'] = finish_time
             task_status['result'] = retval
 
@@ -383,7 +381,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            task_status = TaskStatus.objects(task_id=task_id).first()
+            task_status = TaskStatus.objects.get(task_id=task_id)
             task_status['state'] = constants.CALL_ERROR_STATE
             task_status['finish_time'] = finish_time
             task_status['traceback'] = einfo.traceback

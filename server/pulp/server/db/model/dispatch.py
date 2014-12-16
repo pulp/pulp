@@ -550,11 +550,6 @@ class TaskStatus(Document, ReaperMixin):
             'allow_inheritance': False,
             'queryset_class': CriteriaQuerySet}
 
-    @classmethod
-    def get_collection(cls):
-        cls._collection = get_collection('task_status')
-        return cls._collection
-
     def save_with_set_on_insert(self, fields_to_set_on_insert):
         """
         Save the current state of the TaskStatus to the database, using an upsert operation.
