@@ -297,3 +297,12 @@ Resource names should always start with ``/v2`` and end with a trailing ``/``.  
 following command will add a permission to ``test-user`` to create repositories::
 
     pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create 
+
+Pulp workers not starting due to Permission Denied Exception
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pulp workers attempt create working directory on startup. The path for working directories is
+defined by the `working_directory` config in `server` section of `/etc/pulp/server.conf`. The
+default value is `/var/cache/pulp`. Any user defined path needs to be owned by user and group
+`apache`. If running with SELinux in Enforcing mode, the path also needs to have
+`system_u:object_r:pulp_var_cache_t` security context. 

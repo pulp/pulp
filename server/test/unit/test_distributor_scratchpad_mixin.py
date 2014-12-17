@@ -35,7 +35,9 @@ class DistributorScratchpadMixinTests(base.PulpServerTests):
 
         Repo.get_collection().remove()
 
-    def setUp(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def setUp(self, mock_get_working_directory):
         super(DistributorScratchpadMixinTests, self).setUp()
         mock_plugins.install()
 

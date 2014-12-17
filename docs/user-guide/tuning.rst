@@ -162,6 +162,12 @@ The directories `/etc/pki/pulp` and `/var/lib/pulp` need to be shared across
 each server that hosts workers, as well as all httpd servers. This is typically
 done via NFS.
 
+Each worker has its own working directory. The default path is `/var/cache/pulp/`,
+however, it can be modified by editing the `working_directory` config value in
+`server` section of `/etc/pulp/server.conf`. The path needs to be owned by user
+and group `apache`. If running with SELinux in Enforcing mode, the path also needs
+to have `system_u:object_r:pulp_var_cache_t` security context.  
+
 Pulp and Mongo Database
 ^^^^^^^^^^^^^^^^^^^^^^^
 Pulp uses Mongo to manage repository information as well as content metadata.

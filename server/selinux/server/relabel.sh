@@ -8,6 +8,7 @@
 /sbin/restorecon -i -R /usr/bin/pulp-consumer
 /sbin/restorecon -i -R /var/lib/pulp
 /sbin/restorecon -i -R /var/log/pulp
+/sbin/restorecon -i -R /var/cache/pulp
 
 # Relabel the celery binary
 /sbin/restorecon -i -R /usr/bin/celery

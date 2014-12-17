@@ -45,7 +45,9 @@ class RepoSyncConduitTests(base.PulpServerTests):
         RepoContentUnit.get_collection().remove()
         Repo.get_collection().remove()
 
-    def setUp(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def setUp(self, mock_get_working_directory):
         super(RepoSyncConduitTests, self).setUp()
         mock_plugins.install()
         types_database.update_database([TYPE_1_DEF, TYPE_2_DEF])
@@ -74,7 +76,9 @@ class RepoSyncConduitTests(base.PulpServerTests):
         """
         str(self.conduit)
 
-    def test_get_remove_unit(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_get_remove_unit(self, mock_working_directory):
         """
         Tests retrieving units through the conduit and removing them.
         """
@@ -104,7 +108,9 @@ class RepoSyncConduitTests(base.PulpServerTests):
         db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
         self.assertTrue(db_unit is not None)
 
-    def test_build_reports(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_build_reports(self, mock_get_working_directory):
         """
         Tests that the conduit correctly inserts the count values into the report.
         """

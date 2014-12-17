@@ -71,8 +71,7 @@ class DependencyManager(object):
         # Package for the importer call
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], options)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(
-            repo_importer['importer_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = common_utils.get_working_directory()
 
         conduit = DependencyResolutionConduit(repo_id, repo_importer['id'])
 

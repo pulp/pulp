@@ -168,7 +168,7 @@ class RepoGroupManager(object):
             RepoGroupDistributorManager.remove_distributor(group_id, distributor['id'])
 
         # Delete the working directory for the group
-        working_dir = common_utils.repo_group_working_dir(group_id)
+        working_dir = common_utils.get_working_directory()
         if os.path.exists(working_dir):
             try:
                 shutil.rmtree(working_dir)

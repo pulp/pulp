@@ -85,8 +85,7 @@ class RepoSyncManager(object):
         call_config = PluginCallConfiguration(importer_config, repo_importer['config'],
                                               sync_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(
-            repo_importer['importer_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = common_utils.get_working_directory()
 
         # Fire an events around the call
         fire_manager = manager_factory.event_fire_manager()

@@ -110,7 +110,6 @@ class RepoImporterManager(object):
         # Let the importer plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
         # Remove old importer if one exists
         try:
@@ -169,7 +168,6 @@ class RepoImporterManager(object):
         # Let the importer plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
         result = importer_instance.validate_config(transfer_repo, call_config)
 
@@ -217,7 +215,6 @@ class RepoImporterManager(object):
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'])
 
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
         importer_instance.importer_removed(transfer_repo, call_config)
 
@@ -275,7 +272,7 @@ class RepoImporterManager(object):
         # Let the importer plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
+        transfer_repo.working_dir = common_utils.get_working_directory()
 
         try:
             result = importer_instance.validate_config(transfer_repo, call_config)

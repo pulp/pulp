@@ -214,8 +214,7 @@ class ContentUploadManager(object):
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'],
                                               override_config)
         transfer_repo = repo_common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = repo_common_utils.importer_working_dir(
-            repo_importer['importer_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = repo_common_utils.get_working_directory()
 
         file_path = ContentUploadManager._upload_file_path(upload_id)
 

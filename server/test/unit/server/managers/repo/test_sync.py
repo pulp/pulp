@@ -84,11 +84,14 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_sync_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
                                           kwargs=kwargs)
 
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.queue_publish')
     @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.auto_distributors')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_sync_started')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_sync_finished')
-    def test_sync(self, mock_finished, mock_started, mock_auto_distributors, mock_queue_publish):
+    def test_sync(self, mock_finished, mock_started, mock_auto_distributors, mock_queue_publish,
+                  mock_get_working_directory):
         """
         Tests sync under normal conditions where everything is configured
         correctly. No importer config is specified.
@@ -153,7 +156,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertTrue(isinstance(report, TaskResult))
         self.assertEqual(report.spawned_tasks, [{'task_id': 'abc123'}])
 
-    def test_sync_with_graceful_fail(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_sync_with_graceful_fail(self, mock_get_working_directory):
         # Setup
         sync_config = {'bruce': 'hulk', 'tony': 'ironman'}
         self.repo_manager.create_repo('repo-1')
@@ -178,7 +183,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.reset()
 
-    def test_sync_with_sync_config_override(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_sync_with_sync_config_override(self, mock_get_working_directory):
         """
         Tests a sync when passing in an individual config of override options.
         """
@@ -271,7 +278,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertRaises(repo_sync_manager.PulpExecutionException, self.sync_manager.sync,
                           'good-repo')
 
-    def test_sync_with_error(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_sync_with_error(self, mock_get_working_directory):
         """
         Tests a sync when the plugin raises an error.
         """
@@ -338,7 +347,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertEqual('repo', MockRepoPublishManager.repo_id)
         self.assertEqual({}, MockRepoPublishManager.base_progress_report)
 
-    def test_sync_no_plugin_report(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_sync_no_plugin_report(self, mock_get_working_directory):
         """
         Tests synchronizing against a sloppy plugin that doesn't return a sync report.
         """

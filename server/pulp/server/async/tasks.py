@@ -20,6 +20,7 @@ from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import ReservedResource, Worker
 from pulp.server.exceptions import NoWorkers
 from pulp.server.managers import resources
+from pulp.server.managers.repo import _common as common_utils
 
 
 controller = control.Control(app=celery)
@@ -120,6 +121,9 @@ def _delete_worker(name, normal_shutdown=False):
     for task_status in TaskStatus.objects(worker_name=worker.name,
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
+
+    # Delete working directory
+    common_utils.delete_worker_working_directory(name)
 
 
 @task
@@ -367,6 +371,7 @@ class Task(CeleryTask, ReservedTaskMixin):
                 task_status['result'] = None
 
             task_status.save()
+            common_utils.delete_working_directory()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
@@ -393,6 +398,7 @@ class Task(CeleryTask, ReservedTaskMixin):
             task_status['error'] = exc.to_dict()
 
             task_status.save()
+            common_utils.delete_working_directory()
 
 
 def cancel(task_id):
@@ -494,9 +500,10 @@ def cleanup_old_worker(*args, **kwargs):
 
     In those cases, any Pulp tasks that were running or waiting on this worker will show incorrect
     state. Any reserved_resource reservations associated with the previous worker will also be
-    removed along with the worker entry in the database itself. This is called early in the worker
-    start process, and later when its fully online pulp_celerybeat will discover the worker as
-    usual to allow new work to arrive at this worker.
+    removed along with the worker entry in the database itself. The working directory specified in
+    /etc/pulp/server.conf (/var/cache/pulp/<worker_name>) by default is removed and recreated. This
+    is called early in the worker start process, and later when its fully online pulp_celerybeat
+    will discover the worker as usual to allow new work to arrive at this worker.
 
     If there is no previous work to cleanup this method still runs, but has not effect on the
     database.
@@ -507,3 +514,5 @@ def cleanup_old_worker(*args, **kwargs):
     """
     name = kwargs['sender'].hostname
     _delete_worker(name, normal_shutdown=True)
+    # Recreate a new working directory for worker that is starting now
+    common_utils.create_worker_working_directory(name)

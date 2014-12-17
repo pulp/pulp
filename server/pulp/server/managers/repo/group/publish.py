@@ -52,8 +52,7 @@ class RepoGroupPublishManager(object):
         call_config = PluginCallConfiguration(plugin_config, distributor['config'],
                                               publish_config_override)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.group_distributor_working_dir(distributor_type_id,
-                                                                                group_id)
+        transfer_group.working_dir = common_utils.get_working_directory()
 
         # TODO: Add events for group publish start/complete
         RepoGroupPublishManager._do_publish(transfer_group, distributor_id, distributor_instance,

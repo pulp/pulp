@@ -39,7 +39,7 @@ class ConsumerTest(base.PulpWebserviceTests):
     DISTRIBUTOR_TYPE_ID = 'mock-distributor'
 
     def setUp(self):
-        base.PulpWebserviceTests.setUp(self)
+        super(ConsumerTest, self).setUp()
         Consumer.get_collection().remove(safe=True)
         Repo.get_collection().remove(safe=True)
         RepoDistributor.get_collection().remove(safe=True)
@@ -48,7 +48,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         mock_plugins.install()
 
     def tearDown(self):
-        base.PulpWebserviceTests.tearDown(self)
+        super(ConsumerTest, self).tearDown()
         Consumer.get_collection().remove(safe=True)
         Repo.get_collection().remove(safe=True)
         RepoDistributor.get_collection().remove(safe=True)
@@ -142,7 +142,9 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertEquals(bindings[0]['consumer_actions'], [])
 
-    def test_get_bindings_consumer_repo(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_get_bindings_consumer_repo(self, mock_get_working_directory):
         """
         Test that it is possible to retrieve all bindings for a specific consumer on
         to a specific repository
@@ -716,7 +718,9 @@ class BindTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
 
-    def test_get_bind(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_get_bind(self, mock_get_working_directory):
         # Setup
         self.populate()
         # Test
@@ -739,7 +743,9 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(body['_href'].count(self.REPO_ID), 1)
         self.assertEqual(body['_href'].count(self.DISTRIBUTOR_ID), 1)
 
-    def test_get_bind_by_consumer(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_get_bind_by_consumer(self, mock_get_working_directory):
         # Setup
         self.populate()
         # Test
@@ -762,7 +768,9 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
-    def test_get_bind_by_consumer_and_repo(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_get_bind_by_consumer_and_repo(self, mock_get_working_directory):
         # Setup
         self.populate()
         # Test

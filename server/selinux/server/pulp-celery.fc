@@ -1,2 +1,4 @@
 # Pulp uses Celery, and this applies the celery_exec_t context to the celery binary
 /usr/bin/celery -- gen_context(system_u:object_r:celery_exec_t,s0)
+# Pulp celery workers need to manage temporary files in /var/cache/pulp
+/var/cache/pulp(/.*)? gen_context(system_u:object_r:pulp_var_cache_t,s0)

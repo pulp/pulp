@@ -6,9 +6,7 @@ or distributor configuration.
 
 from gettext import gettext as _
 import logging
-import os
 import re
-import shutil
 import sys
 
 from celery import task
@@ -23,7 +21,6 @@ from pulp.server.exceptions import (DuplicateResource, InvalidValue, MissingReso
                                     PulpExecutionException)
 from pulp.server.tasks import repository
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._common as common_utils
 
 
 _REPO_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
@@ -230,16 +227,6 @@ class RepoManager(object):
             except Exception, e:
                 _logger.exception('Error received removing distributor [%s] from repo [%s]' % (
                     repo_distributor['id'], repo_id))
-                error_tuples.append(e)
-
-        # Delete the repository working directory
-        repo_working_dir = common_utils.repository_working_dir(repo_id, mkdir=False)
-        if os.path.exists(repo_working_dir):
-            try:
-                shutil.rmtree(repo_working_dir)
-            except Exception, e:
-                _logger.exception('Error while deleting repo working dir [%s] for repo [%s]' % (
-                    repo_working_dir, repo_id))
                 error_tuples.append(e)
 
         # Database Updates
