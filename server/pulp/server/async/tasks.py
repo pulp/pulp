@@ -9,6 +9,7 @@ from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
 from celery.signals import worker_init
+from mongoengine.queryset import DoesNotExist
 
 from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
@@ -303,7 +304,10 @@ class Task(CeleryTask, ReservedTaskMixin):
         for task state tracking of Pulp tasks.
         """
         # Check task status and skip running the task if task state is 'canceled'.
-        task_status = TaskStatus.objects(task_id=self.request.id).first()
+        try:
+            task_status = TaskStatus.objects.get(task_id=self.request.id)
+        except DoesNotExist:
+            task_status = None
         if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
             logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
@@ -403,8 +407,9 @@ def cancel(task_id):
     :raises MissingResource: if a task with given task_id does not exist
     :raises PulpCodedException: if given task is already in a complete state
     """
-    task_status = TaskStatus.objects(task_id=task_id).first()
-    if task_status is None:
+    try:
+        task_status = TaskStatus.objects.get(task_id=task_id)
+    except DoesNotExist:
         raise MissingResource(task_id)
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
         # If the task is already done, just stop

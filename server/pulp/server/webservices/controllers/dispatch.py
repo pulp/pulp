@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from mongoengine.queryset import DoesNotExist
 import web
 
 from pulp.server.async import tasks
@@ -86,15 +87,16 @@ class TaskResource(JSONController):
 
     @auth_required(READ)
     def GET(self, task_id):
-        task = TaskStatus.objects(task_id=task_id).first()
-        if task is None:
+        try:
+            task = TaskStatus.objects.get(task_id=task_id)
+        except DoesNotExist:
             raise MissingResource(task_id)
-        else:
-            task_dict = task_serializer(task)
-            if 'worker_name' in task_dict:
-                queue_name = Worker(task_dict['worker_name'], datetime.now()).queue_name
-                task_dict.update({'queue': queue_name})
-            return self.ok(task_dict)
+
+        task_dict = task_serializer(task)
+        if 'worker_name' in task_dict:
+            queue_name = Worker(task_dict['worker_name'], datetime.now()).queue_name
+            task_dict.update({'queue': queue_name})
+        return self.ok(task_dict)
 
     @auth_required(DELETE)
     def DELETE(self, task_id):
