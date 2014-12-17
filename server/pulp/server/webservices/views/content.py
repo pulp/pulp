@@ -15,7 +15,7 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 class ContentTypesView(View):
 
-    # @auth_required(authorization.READ)
+    @auth_required(authorization.READ)
     def get(self, request, *args, **kwargs):
         """
         List the available content types.
@@ -40,8 +40,7 @@ class ContentTypeResourceView(View):
     @auth_required(authorization.READ)
     def get(self, request, type_id, *args, **kwargs):
         """
-        Return information about a content type. Requires type_id to be
-        passed as a keyword argument.
+        Return information about a content type.
 
         :param request: WSGI request object
         :type  request: WSGIRequest
@@ -73,7 +72,7 @@ class ContentUnitsCollectionView(View):
     @staticmethod
     def process_unit(unit, request):
         """
-        Create a dictionary that contains a url with for a given id and any
+        Create and return dictionary that contains a url with for a given unit id and any
         children that the unit has.
 
         :param unit   : metadata about a unit
