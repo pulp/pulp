@@ -3,8 +3,9 @@ This module contains unit tests for pulp.server.db.migrations.0012_reserved_reso
 """
 import unittest
 
-from pulp.server.db.migrate.models import _import_all_the_way
 from mock import call, patch
+
+from pulp.server.db.migrate.models import _import_all_the_way
 
 
 migration = _import_all_the_way('pulp.server.db.migrations.0012_reserved_resources_schema_change')
@@ -16,10 +17,11 @@ class TestMigrate(unittest.TestCase):
     """
     @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change._migrate_task_status',
            side_effect=migration._migrate_task_status)
-    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change._migrate_reserved_resources',
-           side_effect=migration._migrate_reserved_resources)
-    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change.connection.get_collection',
-           autospec=True)
+    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change.'
+           '_migrate_reserved_resources', side_effect=migration._migrate_reserved_resources)
+    @patch(
+        'pulp.server.db.migrations.0012_reserved_resources_schema_change.connection.get_collection',
+        autospec=True)
     def test_calls_correct_functions(self, get_collection, _migrate_reserved_resources,
                                      _migrate_task_status):
         """
@@ -34,10 +36,11 @@ class TestMigrate(unittest.TestCase):
 
     @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change._migrate_task_status',
            side_effect=migration._migrate_task_status)
-    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change._migrate_reserved_resources',
-           side_effect=migration._migrate_reserved_resources)
-    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change.connection.get_collection',
-           autospec=True)
+    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change.'
+           '_migrate_reserved_resources', side_effect=migration._migrate_reserved_resources)
+    @patch(
+        'pulp.server.db.migrations.0012_reserved_resources_schema_change.connection.get_collection',
+        autospec=True)
     def test_migrate_task_status(self, get_collection, _migrate_reserved_resources,
                                  _migrate_task_status):
         """
@@ -50,10 +53,11 @@ class TestMigrate(unittest.TestCase):
 
     @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change._migrate_task_status',
            side_effect=migration._migrate_task_status)
-    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change._migrate_reserved_resources',
-           side_effect=migration._migrate_reserved_resources)
-    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change.connection.get_collection',
-           autospec=True)
+    @patch('pulp.server.db.migrations.0012_reserved_resources_schema_change.'
+           '_migrate_reserved_resources', side_effect=migration._migrate_reserved_resources)
+    @patch(
+        'pulp.server.db.migrations.0012_reserved_resources_schema_change.connection.get_collection',
+        autospec=True)
     def test_migrate_reserved_resources(self, get_collection, _migrate_reserved_resources,
                                         _migrate_task_status):
         """
