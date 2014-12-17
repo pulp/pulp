@@ -96,7 +96,7 @@ make man SPHINXBUILD=sphinx-1.0-build
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 19
 make man
 %endif
-popd docs
+popd
 
 %install
 rm -rf %{buildroot}
@@ -504,6 +504,7 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
+%doc %{_mandir}/man1/pulp-admin.1*
 %endif # End of pulp_admin if block
 
 
