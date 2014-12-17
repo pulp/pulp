@@ -6,7 +6,7 @@ import mock
 import uuid
 
 from ....base import ResourceReservationTests
-from pulp.server.db.model import base, resources
+from pulp.server.db.model import resources
 
 
 class TestWorker(ResourceReservationTests):

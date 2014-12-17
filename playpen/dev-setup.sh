@@ -60,9 +60,6 @@ sudo yum install -y python-setuptools redhat-lsb mongodb mongodb-server \
                     git python-pip python-nose python-mock python-paste
 sudo yum-config-manager --disable pulp-2.6-testing > /dev/null
 
-echo "installing newer kombu (temporary step until 2.6.0 is in testing repo)"
-sudo rpm -Uvh http://koji.katello.org/packages/python-kombu/3.0.15/13.pulp.fc20/noarch/python-kombu-3.0.15-13.pulp.fc20.noarch.rpm
-
 pushd ~
 for r in pulp pulp_rpm; do
   echo "checking out $r code"

@@ -62,17 +62,17 @@ DISTRIBUTION_INFO = {
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256'
     },
-    'fc19': {
-        ARCH: ['i686', 'x86_64'],
-        REPO_NAME: 'fedora-19',
-        DIST_KOJI_NAME: 'fedora19',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha256'
-    },
     'fc20': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-20',
         DIST_KOJI_NAME: 'fedora20',
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha256'
+    },
+    'fc21': {
+        ARCH: ['i686', 'x86_64'],
+        REPO_NAME: 'fedora-21',
+        DIST_KOJI_NAME: 'fedora21',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256'
     },

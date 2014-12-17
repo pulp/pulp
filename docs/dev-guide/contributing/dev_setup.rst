@@ -18,7 +18,7 @@ development instance.
   sudo access. If you are using a Fedora cloud image, the "fedora" user is
   sufficient.
 
-* As that user, ``curl https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh | bash``.
+* As that user, ``curl -O https://raw.githubusercontent.com/pulp/pulp/master/playpen/dev-setup.sh; bash dev-setup.sh``.
   Note that this installs RPMs and makes system modifications that you wouldn't
   want to apply on a VM that was not dedicated to Pulp development.
 

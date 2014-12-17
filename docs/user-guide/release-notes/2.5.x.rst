@@ -86,6 +86,12 @@ To upgrade, shut down all Pulp services::
 Next, update the packages::
 
     $ sudo yum update
+    
+Run the pulp-manage-db script as the apache user::
+
+    $ sudo -u apache pulp-manage-db
+    
+Restart the pulp services and apache
 
 Next, run ``pulp-manage-db``::
 

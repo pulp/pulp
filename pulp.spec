@@ -96,7 +96,7 @@ make man SPHINXBUILD=sphinx-1.0-build
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 19
 make man
 %endif
-popd docs
+popd
 
 %install
 rm -rf %{buildroot}
@@ -504,6 +504,7 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
+%doc %{_mandir}/man1/pulp-admin.1*
 %endif # End of pulp_admin if block
 
 
@@ -643,12 +644,8 @@ exit 0
 * Wed Dec 10 2014 Barnaby Court <bcourt@redhat.com> 2.5.1-0.2.beta
 - 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
   was not cleaning up after itself. (bcourt@redhat.com)
-
-* Thu Dec 04 2014 Chris Duryee <cduryee@redhat.com> 2.5.1-0.1.beta
 - 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
 - 1129828 - split stack traces into separate log records. (jortel@redhat.com)
-
-* Thu Dec 04 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.1.beta
 - 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
 - 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
 

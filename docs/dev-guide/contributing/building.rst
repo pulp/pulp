@@ -368,7 +368,7 @@ To tag::
 Follow the instructions given by tito on pushing the updated branch and tag. At
 this point tagging is complete and you need to create SRPMs to feed to Koji::
 
-   $ for r in el6 el7 fc19 fc20; do tito build --srpm --dist .$r; done
+   $ for r in el6 el7 fc20 fc21; do tito build --srpm --dist .$r; done
 
 This will create four SRPMs. Here is how to feed them into Koji::
 
