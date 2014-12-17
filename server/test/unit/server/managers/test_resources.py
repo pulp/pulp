@@ -10,7 +10,7 @@ import pymongo
 from ...base import ResourceReservationTests
 from pulp.server.exceptions import NoWorkers
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.resources import Worker, ReservedResource
+from pulp.server.db.model.resources import Worker
 from pulp.server.managers import resources
 
 
