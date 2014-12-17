@@ -32,7 +32,8 @@ class TestContentTypesView(unittest.TestCase):
         self.assertEqual(response._headers.get('content-type'),
                          ('Content-Type', 'application/json'))
 
-        content = json.loads(response.content)[0]
+        content = json.loads(response.content)
+        self.assertTrue(len(content), 1)
         expected_href = '/v2/content/types/rpm/'
-        self.assertEqual(expected_href, content['_href'])
-        self.assertEqual('rpm', content['content_type'])
+        self.assertEqual(expected_href, content[0]['_href'])
+        self.assertEqual('rpm', content[0]['content_type'])
