@@ -1,5 +1,4 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-%{!?ruby_sitelib: %global ruby_sitelib %(ruby -rrbconfig  -e 'puts Config::CONFIG["sitelibdir"]')}
 
 # Determine supported
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
@@ -7,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 1.4.0
+Version: 2.1.0
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -52,20 +51,6 @@ popd
 rm -rf %{buildroot}
 pushd src
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
-pushd ruby
-mkdir -p %{buildroot}/%{ruby_sitelib}/%{name}/rmi
-mkdir -p %{buildroot}/%{ruby_sitelib}/%{name}/messaging
-cp %{name}.rb %{buildroot}/%{ruby_sitelib}
-pushd %{name}
-cp *.rb %{buildroot}/%{ruby_sitelib}/%{name}
-pushd rmi
-cp *.rb %{buildroot}/%{ruby_sitelib}/%{name}/rmi
-popd
-pushd messaging
-cp *.rb %{buildroot}/%{ruby_sitelib}/%{name}/messaging
-popd
-popd
-popd
 popd
 
 mkdir -p %{buildroot}/usr/bin
@@ -159,16 +144,18 @@ Provides gofer python lib modules.
 %defattr(-,root,root,-)
 %{python_sitelib}/%{name}/*.py*
 %{python_sitelib}/%{name}/rmi/
-%{python_sitelib}/%{name}/messaging/
-%dir %{python_sitelib}/%{name}/transport/
-%{python_sitelib}/%{name}/transport/*.*
+%dir %{python_sitelib}/%{name}/messaging/
+%dir %{python_sitelib}/%{name}/messaging/adapter
+%{python_sitelib}/%{name}/messaging/*.py*
+%{python_sitelib}/%{name}/messaging/adapter/*.py*
+%{python_sitelib}/%{name}/devel/
 %doc LICENSE
 
 
-# --- python qpid transport --------------------------------------------------
+# --- python-qpid messaging adapter ------------------------------------------
 
 %package -n python-%{name}-qpid
-Summary: Gofer Qpid transport python package
+Summary: Gofer Qpid messaging adapter python package
 Group: Development/Languages
 BuildRequires: python
 Requires: python-%{name} >= %{version}
@@ -178,66 +165,44 @@ Requires: python-ssl
 %endif
 
 %description -n python-%{name}-qpid
-Provides the gofer qpid transport package.
+Provides the gofer qpid messaging adapter package.
 
 %files -n python-%{name}-qpid
-%{python_sitelib}/%{name}/transport/qpid
+%{python_sitelib}/%{name}/messaging/adapter/qpid
 %doc LICENSE
 
 
-# --- python-amqplib transport -----------------------------------------------
+# --- python-amqp messaging adapter ------------------------------------------
+
+%package -n python-%{name}-amqp
+Summary: Gofer amqp messaging adapter python package
+Group: Development/Languages
+BuildRequires: python
+Requires: python-%{name} >= %{version}
+Requires: python-amqp >= 1.4.5
+
+%description -n python-%{name}-amqp
+Provides the gofer amqp messaging adapter package.
+
+%files -n python-%{name}-amqp
+%{python_sitelib}/%{name}/messaging/adapter/amqp
+%doc LICENSE
+
+
+# --- python-amqplib messaging adapter ---------------------------------------
 
 %package -n python-%{name}-amqplib
-Summary: Gofer amqplib transport python package
+Summary: Gofer amqplib messaging adapter python package
 Group: Development/Languages
 BuildRequires: python
 Requires: python-%{name} >= %{version}
 Requires: python-amqplib >= 1.0.2
 
 %description -n python-%{name}-amqplib
-Provides the gofer amqplib transport package.
+Provides the gofer amqplib messaging adapter package.
 
 %files -n python-%{name}-amqplib
-%{python_sitelib}/%{name}/transport/amqplib
-%doc LICENSE
-
-
-# --- python-amqp transport -----------------------------------------------
-
-%package -n python-%{name}-amqp
-Summary: Gofer amqp transport python package
-Group: Development/Languages
-BuildRequires: python
-Requires: python-%{name} >= %{version}
-Requires: python-amqp >= 1.3
-
-%description -n python-%{name}-amqp
-Provides the gofer amqp transport package.
-
-%files -n python-%{name}-amqp
-%{python_sitelib}/%{name}/transport/amqp
-%doc LICENSE
-
-
-# --- ruby lib ---------------------------------------------------------------
-
-%package -n ruby-%{name}
-Summary: Gofer ruby lib modules
-Group: Development/Languages
-BuildRequires: ruby
-Requires: rubygems
-Requires: rubygem(json)
-Requires: rubygem(qpid) >= 0.16.0
-
-%description -n ruby-%{name}
-Provides gofer ruby lib modules.
-
-%files -n ruby-%{name}
-%defattr(-,root,root,-)
-%{ruby_sitelib}/%{name}.rb
-%{ruby_sitelib}/%{name}/*.rb
-%{ruby_sitelib}/%{name}/rmi/
-%{ruby_sitelib}/%{name}/messaging/
+%{python_sitelib}/%{name}/messaging/adapter/amqplib
 %doc LICENSE
 
 
@@ -304,6 +269,30 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Thu Dec 18 2014 Jeff Ortel <jortel@redhat.com> 2.1.0-1
+- Fix plugin loading from python path. (jortel@redhat.com)
+- Improved adapter model. (jortel@redhat.com)
+- Improved builtin plugin. (jortel@redhat.com)
+- Get rid of broadcast policy. (jortel@redhat.com)
+- Domains added. (jortel@redhat.com)
+- The messaging section no longer supported in agent.conf. (jortel@redhat.com)
+- Update pmon to retry on notification exception. (jortel@redhat.com)
+- Get rid of adapter descriptors. (jortel@redhat.com)
+- ModelError raised for all model operations. (jortel@redhat.com)
+- Plugin class properties. (jortel@redhat.com)
+- Improved test coverage.
+* Mon Nov 24 2014 Jeff Ortel <jortel@redhat.com> 2.0.0-1
+- The transport concept has been revised and renamed to messaging adapters.
+- The transport parameter and configuation deprecated.
+- The URL updated to specify the messaging adapter.
+- Messaging adapters have descriptors and are loaded much like plugins.
+- Better unit test coverage.
+- Performance improvements and bug fixes.
+
+* Thu Nov 20 2014 Jeff Ortel <jortel@redhat.com> 1.4.1-1
+- Remove ruby lib. (jortel@redhat.com)
+- Remove broken ruby dependency. (jortel@redhat.com)
+
 * Mon Nov 03 2014 Jeff Ortel <jortel@redhat.com> 1.4.0-1
 - Add reply timestamp. (jortel@redhat.com)
 - Fix synchronous policy using durable queue.
@@ -317,7 +306,6 @@ This plug-in provides RMI access to package (RPM) management.
 - Refactor: add transport Loader; transports loaded and cached when Transport
   is instantiated instead of package import. (jortel@redhat.com)
 - Support passing url=None in broker meta-class. (jortel@redhat.com)
-
 * Mon Jun 16 2014 Jeff Ortel <jortel@redhat.com> 1.3.0-1
 - Update man page to reference github. (jortel@redhat.com)
 - Replace --console option with --foreground and use in systemd unit.
