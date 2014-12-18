@@ -144,11 +144,12 @@ class CriteriaQuerySet(QuerySet):
         :return: mongoengine queryset object
         :rtype:  mongoengine.queryset.QuerySet
         """
+        query_set = self
         if criteria.spec is not None:
-            self.filter(**criteria.spec)
+            query_set = query_set.filter(**criteria.spec)
 
         if criteria.fields is not None:
-            self.only(*criteria.fields)
+            query_set = query_set.only(*criteria.fields)
 
         sort_list = []
         if criteria.sort is not None:
@@ -158,12 +159,12 @@ class CriteriaQuerySet(QuerySet):
                 else:
                     sort_list.append("-" + sort_by)
             if sort_list:
-                self.order_by(*sort_list)
+                query_set = query_set.order_by(*sort_list)
 
         if criteria.skip is not None:
-            self.skip(criteria.skip)
+            query_set = query_set.skip(criteria.skip)
 
         if criteria.limit is not None:
-            self.limit(criteria.limit)
+            query_set = query_set.limit(criteria.limit)
 
-        return self
+        return query_set

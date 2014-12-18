@@ -150,10 +150,8 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id='2', tags=tags).save()
 
         result = 'done'
-        TaskStatus(task_id='3', tags=tags).save()
-
-        TaskStatus.objects(task_id='3').update_one(set__state=constants.CALL_FINISHED_STATE,
-                                                   set__result=result)
+        TaskStatus(task_id='3', tags=tags, state=constants.CALL_FINISHED_STATE,
+                   result=result).save()
 
         filters = {'tags': tags, 'task_id': {'$in': ['1', '3']}}
         fields = ['task_id', 'tags', 'result']

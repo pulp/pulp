@@ -5,7 +5,6 @@ import web
 
 from pulp.server.async import tasks
 from pulp.server.auth.authorization import READ, DELETE
-from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource
