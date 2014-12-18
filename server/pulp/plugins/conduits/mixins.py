@@ -221,6 +221,33 @@ class SearchUnitsMixin(object):
             logger.exception('Exception from server requesting all units of type [%s]' % type_id)
             raise self.exception_class(e), None, sys.exc_info()[2]
 
+    def find_unit_by_unit_key(self, type_id, unit_key):
+        """
+        Finds a unit based on its unit key. If more than one unit comes back,
+        an exception will be raised.
+
+        @param type_id: indicates the type of units being retrieved
+        @type  type_id: str
+        @param unit_key: the unit key for the unit
+        @type  unit_key: dict
+
+        @return: a single unit
+        @rtype:  L{Unit}
+        """
+        content_query_manager = manager_factory.content_query_manager()
+        try:
+            # this call returns a unit or raises MissingResource
+            existing_unit = content_query_manager.get_content_unit_by_keys_dict(type_id, unit_key)
+            type_def = types_db.type_definition(type_id)
+            plugin_unit = common_utils.to_plugin_unit(existing_unit, type_def)
+            return plugin_unit
+        except MissingResource:
+            return None
+        except Exception, e:
+            logger.exception('Exception from server requesting unit of type [%s] with key [%s]'
+                             % (type_id, unit_key))
+            raise self.exception_class(e), None, sys.exc_info()[2]
+
 
 class ImporterScratchPadMixin(object):
 
