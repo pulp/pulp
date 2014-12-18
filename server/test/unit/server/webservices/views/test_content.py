@@ -1,6 +1,3 @@
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
-
 import json
 import unittest
 
