@@ -498,8 +498,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(dist_2['config'], {'key-d2': 'orig-2'})
 
         # There should have been a spawned task for the new distributor config
-        expected_task_id = dispatch.TaskStatus.objects(
-            {'tags': 'pulp:repository_distributor:dist-1'}).first()['task_id']
+        expected_task_id = dispatch.TaskStatus.objects.get(
+            tags='pulp:repository_distributor:dist-1')['task_id']
         self.assertEqual(result.spawned_tasks, [{'task_id': expected_task_id}])
 
     def test_update_repo_and_plugins_partial(self):
