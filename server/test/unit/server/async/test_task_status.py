@@ -146,7 +146,7 @@ class TaskStatusTests(base.PulpServerTests):
 
     def test_find_by_criteria_with_result(self):
         tags = ['test', 'tags']
-        TaskStatus(task_id='1', tags=tags).save()
+        TaskStatus(task_id='1').save()
         TaskStatus(task_id='2', tags=tags).save()
 
         result = 'done'
