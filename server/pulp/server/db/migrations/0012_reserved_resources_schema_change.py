@@ -4,8 +4,8 @@ stopped while a task is executing, the task_status and reserved_resources collec
 stale data. This migration updates all task_status documents with 'RUNNING' or 'WAITING' state to
 'CANCELED' state. This migration also deletes all documents in the reserved_resources collection.
 """
-from pulp.server.db import connection
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_INCOMPLETE_STATES
+from pulp.server.db import connection
 
 
 def migrate(*args, **kwargs):
@@ -27,7 +27,7 @@ def _migrate_task_status():
     """
     task_status = connection.get_collection('task_status')
     task_status.update({'state': {'$in': CALL_INCOMPLETE_STATES}},
-                       {'$set': {'state': CALL_CANCELED_STATE }}, multi=True)
+                       {'$set': {'state': CALL_CANCELED_STATE}}, multi=True)
 
 
 def _migrate_reserved_resources():
