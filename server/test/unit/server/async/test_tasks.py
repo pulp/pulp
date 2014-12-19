@@ -16,13 +16,12 @@ from pulp.common import dateutils
 from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
 from pulp.common.tags import action_tag
 from pulp.devel.unit.util import compare_dict
-from pulp.server.exceptions import PulpException
 from pulp.server.async import tasks
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker, ReservedResource
 from pulp.server.db.reaper import queue_reap_expired_documents
-from pulp.server.exceptions import NoWorkers
+from pulp.server.exceptions import NoWorkers, PulpException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
 
@@ -69,35 +68,35 @@ class TestQueueReservedTask(ResourceReservationTests):
 
     def test_creates_and_saves_reserved_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.mock_reserved_resource.assert_called_once_with('my_task_id', 'worker1',
                                                             'my_resource_id')
         self.mock_reserved_resource.return_value.save.assert_called_once_with()
 
     def test_dispatches_inner_task(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         apply_async = self.mock_celery.tasks['task_name'].apply_async
         apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1', task_id='my_task_id',
                                             exchange='C.dq')
 
     def test_dispatches__release_resource(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
                                                                         routing_key='worker1',
                                                                         exchange='C.dq')
 
     def test_get_worker_for_reservation_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.assertTrue(not self.mock_get_unreserved_worker.called)
         self.assertTrue(not self.mock_time.sleep.called)
 
     def test_get_unreserved_worker_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.side_effect = NoWorkers()
         self.mock_get_unreserved_worker.return_value = Worker('worker1', datetime.utcnow())
-        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1,2], {'a':2})
+        tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.assertTrue(not self.mock_time.sleep.called)
 
     def test_loops_and_sleeps_waiting_for_available_worker(self):
@@ -329,7 +328,7 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
 
         self.some_args = [1, 'b', 'iii']
         self.some_kwargs = {'1': 'for the money', '2': 'for the show', 'worker_name': WORKER_1,
-                            'exchange': 'C.dq', 'tags': ['tag1','tag2']}
+                            'exchange': 'C.dq', 'tags': ['tag1', 'tag2']}
 
         self.task_patch = mock.patch('pulp.server.async.tasks._queue_reserved_task', autospec=True)
         self.mock__queue_reserved_task = self.task_patch.start()
@@ -365,7 +364,7 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
     def test_task_status_created_and_saved(self):
         self.mock_task_status.assert_called_once_with(
             state=self.mock_constants.CALL_WAITING_STATE, task_type=self.task.name,
-            task_id=str( self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
+            task_id=str(self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
         save = self.mock_task_status.return_value.save
         save.assert_called_once_with(fields_to_set_on_insert=['state', 'start_time'])
 
@@ -555,7 +554,6 @@ class TestTaskApplyAsync(ResourceReservationTests):
         self.assertEqual(new_task_status['start_time'], None)
         self.assertEqual(new_task_status['finish_time'], None)
         self.assertEqual(new_task_status['result'], None)
-
 
     @mock.patch('celery.Task.apply_async')
     def test_calls_parent_apply_async(self, apply_async):
