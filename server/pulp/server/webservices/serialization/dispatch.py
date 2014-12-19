@@ -67,11 +67,15 @@ def task_status(task):
     :rtype:  dict
     """
     task_dict = {}
-    attributes = ['id', 'task_id', 'worker_name', 'tags', 'state', 'error', 'spawned_tasks',
+    attributes = ['task_id', 'worker_name', 'tags', 'state', 'error', 'spawned_tasks',
                   'progress_report', 'task_type', 'start_time', 'finish_time', 'result',
-                  'exception', 'traceback']
-
+                  'exception', 'traceback', '_ns']
     for attribute in attributes:
         task_dict[attribute] = task[attribute]
+
+    # This is to preserve backward compatibility for semantic versioning.
+    task_dict['_id'] = task['id']
+    task_dict['id'] = str(task['id'])
+
     return task_dict
 

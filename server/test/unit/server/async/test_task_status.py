@@ -5,7 +5,7 @@ This module contains tests for pulp.server.db.model.dispatch.TaskStatus model.
 import uuid
 
 from datetime import datetime
-from mongoengine import NotUniqueError, ValidationError
+from mongoengine import ValidationError
 from pymongo import DESCENDING
 
 import mock
@@ -88,7 +88,7 @@ class TaskStatusTests(base.PulpServerTests):
         TaskStatus(task_id).save()
         try:
             TaskStatus(task_id).save()
-        except NotUniqueError, e:
+        except Exception, e:
             self.assertTrue(task_id in e.message)
         else:
             self.fail('Task status with a duplicate task id did not raise an exception')

@@ -544,6 +544,9 @@ class TaskStatus(Document, ReaperMixin):
     exception = StringField()
     traceback = StringField()
 
+    # For backward compatibility
+    _ns = StringField(default='task_status')
+
     meta = {'collection': 'task_status',
             'indexes': ['-task_id', '-tags', '-state'],
             'allow_inheritance': False,
