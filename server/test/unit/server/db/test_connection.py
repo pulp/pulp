@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 from ConfigParser import NoOptionError
 import unittest
 
@@ -22,7 +20,6 @@ class TestDatabaseSeeds(unittest.TestCase):
 
     def test_seeds_default(self):
         self.assertEqual(config.config.get('database', 'seeds'), 'localhost:27017')
-
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_is_empty(self, mock_mongoengine):
