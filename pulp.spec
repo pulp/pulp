@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.2
-Release: 0.1%{?dist}
+Release: 0.0.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,11 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Dec 19 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.0.beta
+- 1166202 - documenting that EPEL requires RHEL "optional" and "extras" repos
+  (mhrivnak@redhat.com)
+- 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
+
 * Tue Dec 16 2014 Barnaby Court <bcourt@redhat.com> 2.5.1-1
 - 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
   was not cleaning up after itself. (bcourt@redhat.com)
