@@ -69,6 +69,7 @@ class RelatedRepository(Repository):
         Repository.__init__(self, id, display_name, description, notes)
         self.plugin_configs = plugin_configs
 
+
 class RepositoryGroup(object):
     """
     Contains repository group data and any additional data relevant for the
@@ -104,6 +105,7 @@ class RepositoryGroup(object):
     def __str__(self):
         return 'Repository Group [%s]' % self.id
 
+
 class RelatedRepositoryGroup(RepositoryGroup):
     """
     When validating a plugin configuration, instances of this class will
@@ -127,15 +129,11 @@ class Unit(object):
     may not exist in Pulp; this is meant simply as a way of linking together
     a number of pieces of data.
 
-    @ivar id: Pulp internal ID that refers to this unit; if the unit does not
-              yet exist in Pulp, this will be None
-    @type id: str
+    @ivar type_id: ID of the unit's type
+    @type type_id: str
 
     @ivar unit_key: natural key for the content unit
     @type unit_key: dict
-
-    @ivar type_id: ID of the unit's type
-    @type type_id: str
 
     @ivar metadata: mapping of key/value pairs describing the unit
     @type metadata: dict
@@ -160,8 +158,8 @@ class Unit(object):
         """
 
         d = {
-            'type_id' : self.type_id,
-            'unit_key' : self.unit_key,
+            'type_id': self.type_id,
+            'unit_key': self.unit_key,
             }
         return d
 
@@ -199,6 +197,7 @@ class AssociatedUnit(Unit):
         self.owner_type = owner_type
         self.owner_id = owner_id
 
+
 class SyncReport(object):
     """
     Returned to the Pulp server at the end of a sync call. This is used by the
@@ -229,6 +228,7 @@ class SyncReport(object):
         self.summary = summary
         self.details = details
 
+
 class PublishReport(object):
     """
     Returned to the Pulp server at the end of a publish call. This is used by the
@@ -252,6 +252,7 @@ class PublishReport(object):
         self.canceled_flag = False
         self.summary = summary
         self.details = details
+
 
 class Consumer:
     """
