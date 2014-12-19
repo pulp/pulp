@@ -87,6 +87,12 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Dec 19 2014 Chris Duryee <cduryee@redhat.com> 3.3.0.17-2
+- Remove test running from python-billiard (cduryee@redhat.com)
+- Build updates for Fedora 21. (cduryee@redhat.com)
+- Build for EL 7. (rbarlow@redhat.com)
+- add gcc to python-billiard BuildRequires (cduryee@redhat.com)
+
 * Mon Apr 21 2014 Randy Barlow <rbarlow@redhat.com> 3.3.0.17-1
 - Update to python-billiard-3.3.0.17. (rbarlow@redhat.com)
 
