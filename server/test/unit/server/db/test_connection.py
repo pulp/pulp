@@ -23,22 +23,33 @@ class TestDatabaseSeeds(unittest.TestCase):
     def test_seeds_default(self):
         self.assertEqual(config.config.get('database', 'seeds'), 'localhost:27017')
 
+
+    @patch('pulp.server.db.connection.mongoengine')
+    def test_seeds_is_empty(self, mock_mongoengine):
+        mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
+        connection.initialize(seeds='')
+        max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
+        database = config.config.get('database', 'name')
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size)
+
     @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_is_set_from_argument(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        connection.initialize(seeds='seeds_set_from_argument')
+        connection.initialize(seeds='firsthost:1234,secondhost:5678')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with('seeds_set_from_argument',
-                                                         max_pool_size=max_pool_size)
+        database = config.config.get('database', 'name')
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
+                                                         host='firsthost', port=1234)
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_from_config(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'seeds', 'other_value_for_seeds')
+        config.config.set('database', 'seeds', 'firsthost:1234,secondhost:5678')
         connection.initialize()
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with('other_value_for_seeds',
-                                                         max_pool_size=max_pool_size)
+        database = config.config.get('database', 'name')
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
+                                                         host='firsthost', port=1234)
 
 
 class TestDatabaseName(unittest.TestCase):
@@ -79,9 +90,10 @@ class TestDatabaseReplicaSet(unittest.TestCase):
         mock_replica_set = Mock()
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize(replica_set=mock_replica_set)
-        database = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
+        mock_mongoengine.connect.assert_called_once_with(database, host='localhost',
+                                                         max_pool_size=max_pool_size, port=27017,
                                                          replicaset=mock_replica_set)
 
     @patch('pulp.server.db.connection.mongoengine')
@@ -89,9 +101,10 @@ class TestDatabaseReplicaSet(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         config.config.set('database', 'replica_set', 'real_replica_set')
         connection.initialize()
-        database = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
+        mock_mongoengine.connect.assert_called_once_with(database, host='localhost',
+                                                         max_pool_size=max_pool_size, port=27017,
                                                          replicaset='real_replica_set')
 
 
@@ -106,23 +119,26 @@ class TestDatabaseMaxPoolSize(unittest.TestCase):
     def test_database_max_pool_size_default_is_10(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize()
-        database = config.config.get('database', 'seeds')
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=10)
+        database = config.config.get('database', 'name')
+        mock_mongoengine.connect.assert_called_once_with(database, host='localhost',
+                                                         max_pool_size=10, port=27017)
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_database_max_pool_size_uses_default(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize()
-        database = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size)
+        mock_mongoengine.connect.assert_called_once_with(database, host='localhost',
+                                                         max_pool_size=max_pool_size, port=27017)
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_database_max_pool_size(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize(max_pool_size=5)
-        database = config.config.get('database', 'seeds')
-        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=5)
+        database = config.config.get('database', 'name')
+        mock_mongoengine.connect.assert_called_once_with(database, host='localhost',
+                                                         max_pool_size=5, port=27017)
 
 
 class TestDatabase(unittest.TestCase):
@@ -178,9 +194,10 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         config.config.set('database', 'ssl', 'false')
         connection.initialize()
-        seeds = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
-        mock_mongoengine.connect.assert_called_once_with(seeds, max_pool_size=max_pool_size)
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
+                                                         host='localhost', port=27017)
 
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
@@ -189,13 +206,14 @@ class TestDatabaseSSL(unittest.TestCase):
         config.config.set('database', 'verify_ssl', 'true')
         config.config.set('database', 'ssl', 'true')
         connection.initialize()
-        seeds = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_REQUIRED
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(seeds, max_pool_size=max_pool_size,
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
                                                          ssl=True, ssl_cert_reqs=ssl_cert_reqs,
-                                                         ssl_ca_certs=ssl_ca_certs)
+                                                         ssl_ca_certs=ssl_ca_certs,
+                                                         host='localhost', port=27017)
 
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
@@ -204,13 +222,14 @@ class TestDatabaseSSL(unittest.TestCase):
         config.config.set('database', 'verify_ssl', 'false')
         config.config.set('database', 'ssl', 'true')
         connection.initialize()
-        seeds = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_NONE
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(seeds, max_pool_size=max_pool_size,
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
                                                          ssl=True, ssl_cert_reqs=ssl_cert_reqs,
-                                                         ssl_ca_certs=ssl_ca_certs)
+                                                         ssl_ca_certs=ssl_ca_certs,
+                                                         host='localhost', port=27017)
 
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
@@ -220,14 +239,15 @@ class TestDatabaseSSL(unittest.TestCase):
         config.config.set('database', 'verify_ssl', 'false')
         config.config.set('database', 'ssl', 'true')
         connection.initialize()
-        seeds = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_NONE
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(seeds, max_pool_size=max_pool_size,
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
                                                          ssl=True, ssl_cert_reqs=ssl_cert_reqs,
                                                          ssl_ca_certs=ssl_ca_certs,
-                                                         ssl_keyfile='keyfilepath')
+                                                         ssl_keyfile='keyfilepath',
+                                                         host='localhost', port=27017)
 
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
@@ -237,14 +257,15 @@ class TestDatabaseSSL(unittest.TestCase):
         config.config.set('database', 'verify_ssl', 'false')
         config.config.set('database', 'ssl', 'true')
         connection.initialize()
-        seeds = config.config.get('database', 'seeds')
+        database = config.config.get('database', 'name')
         max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
         ssl_cert_reqs = mock_ssl.CERT_NONE
         ssl_ca_certs = config.config.get('database', 'ca_path')
-        mock_mongoengine.connect.assert_called_once_with(seeds, max_pool_size=max_pool_size,
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
                                                          ssl=True, ssl_cert_reqs=ssl_cert_reqs,
                                                          ssl_ca_certs=ssl_ca_certs,
-                                                         ssl_certfile='certfilepath')
+                                                         ssl_certfile='certfilepath',
+                                                         host='localhost', port=27017)
 
 
 class TestDatabaseVersion(unittest.TestCase):
@@ -301,7 +322,9 @@ class TestDatabaseAuthentication(unittest.TestCase):
         config.config.set('database', 'username', 'admin')
         config.config.set('database', 'password', 'admin')
         connection.initialize()
-        self.assertTrue(connection._DATABASE.authenticate.called)
+        mock_mongoengine.connect.assert_called_once_with('pulp_unittest', username='admin',
+                                                         host='localhost', password='admin',
+                                                         max_pool_size=10, port=27017)
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_initialize_no_username_or_password(self, mock_mongoengine):
