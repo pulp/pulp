@@ -7,16 +7,9 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print (get_python_lib())")}
 %endif
 
-%if 0%{?fedora} || 0%{?rhel} >= 7
-%define billiard_tests 1
-%else
-# RHEL 6 doesn't have python-nose-cover3, which is required to run the tests
-%define billiard_tests 0
-%endif
-
 Name:           python-%{srcname}
 Version:        3.3.0.17
-Release:        1%{?dist}
+Release:        2%{?dist}
 # We need this to be 1 for Fedora systems, since the official Fedora billiards package is epoch 1. If we don't
 # that package will always be considered "newer" than ours, even when our version string is greater.
 Epoch:          1
@@ -33,10 +26,6 @@ BuildRequires:  python-setuptools
 BuildRequires:  python-mock
 BuildRequires:  python-unittest2
 BuildRequires:  python-nose
-
-%if %{billiard_tests}
-BuildRequires:  python-nose-cover3
-%endif
 
 %if 0%{?with_python3}
 BuildRequires:  python3-devel
@@ -81,17 +70,6 @@ pushd %{py3dir}
 %{__python3} setup.py install --skip-build --root %{buildroot}
 popd
 %endif # with_python3
-
-%if %{billiard_tests}
-%check
-%{__python} setup.py test
-
-%if 0%{?with_python3}
-pushd %{py3dir}
-%{__python3} setup.py test
-popd
-%endif # with_python3
-%endif # billiard_tests
 
 %files
 %doc CHANGES.txt LICENSE.txt README.rst
