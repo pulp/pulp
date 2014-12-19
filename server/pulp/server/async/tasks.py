@@ -117,11 +117,11 @@ def _delete_worker(name, normal_shutdown=False):
 
     # Cancel all of the tasks that were assigned to this worker's queue
     worker = Worker.from_bson({'_id': name})
-    for task in TaskStatusManager.find_by_criteria(
+    for _task in TaskStatusManager.find_by_criteria(
             Criteria(
                 filters={'worker_name': worker.name,
                          'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
-        cancel(task['task_id'])
+        cancel(_task['task_id'])
 
 
 @task
