@@ -24,7 +24,6 @@ class UploadsCollectionView(View):
         upload_manager = factory.content_upload_manager()
         upload_ids = upload_manager.list_upload_ids()
         return HttpResponse(json.dumps({'upload_ids': upload_ids}), content_type="application/json")
-    #
 
     @auth_required(authorization.CREATE)
     def post(self, request, *args, **kwargs):
@@ -34,7 +33,7 @@ class UploadsCollectionView(View):
 
         :param request: WSGI request object
         :type  request: WSGIRequest
-        :return       : Serialized response containing a url (unused) and a unique upload id
+        :return       : Serialized response containing a url to delete an upload and a unique id.
         :rtype        : HttpResponseRedirect
         """
         upload_manager = factory.content_upload_manager()
