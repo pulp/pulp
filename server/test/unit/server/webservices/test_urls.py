@@ -45,6 +45,18 @@ def assert_url_match(expected_url, url_name, *args, **kwargs):
                 )
 
 
+class TestDjangoContentUrls(unittest.TestCase):
+
+    def test_match_content_upload_segment_resource_view(self):
+        """
+        Test Url matching for content_upload_segment_resource.
+        """
+
+        url = '/v2/content/uploads/mock-upload-id/8/'
+        url_name = 'content_upload_segment_resource'
+        assert_url_match(url, url_name, upload_id='mock-upload-id', offset='8')
+
+
 class TestDjangoPluginsUrls(unittest.TestCase):
     """
     Test url matching for plugins urls.
