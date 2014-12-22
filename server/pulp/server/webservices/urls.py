@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url
 
-from pulp.server.webservices.views.content import UploadSegmentResourceView
+from pulp.server.webservices.views.content import OrphanCollectionView, UploadSegmentResourceView
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
@@ -15,6 +15,7 @@ from pulp.server.webservices.views.tasks import TasksView
 
 urlpatterns = patterns('',
     url(r'^v2/actions/login/$', LoginView.as_view(), name='login'),
+    url(r'^v2/content/orphans/$', OrphanCollectionView.as_view(), name='content_orphan_collection'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
         UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
     url(r'^v2/plugins/distributors/$', DistributorsView.as_view(), name='plugin_distributors'),
