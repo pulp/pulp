@@ -484,7 +484,7 @@ themselves outside of Pulp, which is why this setting should not be used.
 
 .. warning::
 
-   The Pulp team plans to deprecate the ``capath``, ``cakey``, and ``ssl_ca_certificate`` settings.
+   The Pulp team plans to deprecate the ``cacert``, ``cakey``, and ``ssl_ca_certificate`` settings.
    It is best to avoid altering these settings from their defaults, as described above. See
    `1123509`_ and `1165403`_.
 

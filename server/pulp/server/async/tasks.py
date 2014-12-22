@@ -121,7 +121,6 @@ def _delete_worker(name, normal_shutdown=False):
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
 
-
 @task
 def _release_resource(task_id):
     """

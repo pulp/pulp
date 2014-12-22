@@ -61,8 +61,7 @@ class BaseTasksSection(PulpCliSection):
 
         self.context.prompt.render_title('Tasks')
 
-        response = self.retrieve_tasks(**kwargs)
-        task_objects = response.response_body
+        task_objects = self.retrieve_tasks(**kwargs)
 
         # Easy out clause
         if len(task_objects) is 0:
@@ -72,7 +71,7 @@ class BaseTasksSection(PulpCliSection):
         # Parse each task object into a document to be displayed using the
         # prompt utilities
         task_documents = []
-        for task in response.response_body:
+        for task in task_objects:
             # Interpret task values
             state, start_time, finish_time, result = self.parse_state(task)
             actions, resources = self.parse_tags(task)
@@ -230,9 +229,16 @@ class BaseTasksSection(PulpCliSection):
 
 
 class AllTasksSection(BaseTasksSection):
+    FIELDS = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
+
     def retrieve_tasks(self, **kwargs):
-        response = self.context.server.tasks.get_all_tasks()
-        return response
+        """
+        :return:    list of pulp.bindings.responses.Task instances
+        :rtype:     list
+        """
+        tasks = self.context.server.tasks_search.search(fields=self.FIELDS)
+        return tasks
+
 
 
 class RepoTasksSection(BaseTasksSection):
@@ -243,6 +249,10 @@ class RepoTasksSection(BaseTasksSection):
                                         required=True)
 
     def retrieve_tasks(self, **kwargs):
+        """
+        :return:    list of pulp.bindings.responses.Task instances
+        :rtype:     list
+        """
         repo_id = kwargs['repo-id']
         response = self.context.server.tasks.get_repo_tasks(repo_id)
-        return response
+        return response.response_body

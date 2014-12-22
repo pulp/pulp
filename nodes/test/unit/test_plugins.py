@@ -19,6 +19,7 @@ import random
 import tarfile
 
 from copy import deepcopy
+from unittest import TestCase
 
 from mock import Mock, patch
 from base import WebTest
@@ -320,32 +321,88 @@ class AgentHandlerTest(PluginTestBase):
 # --- pulp plugin tests --------------------------------------------
 
 
-class TestProfiler(PluginTestBase):
+class TestProfiler(TestCase):
 
     def test_entry_point(self):
         _class, conf = profiler_entry_point()
         plugin = _class()
+        self.assertEqual(conf, {})
         self.assertTrue(isinstance(plugin, NodeProfiler))
 
+    @patch('pulp_node.profilers.nodes._')
+    def test_metadata(self, gettext):
+        self.assertEqual(
+            NodeProfiler.metadata(),
+            {
+                'id': constants.PROFILER_ID,
+                'display_name': gettext.return_value,
+                'types': [constants.NODE_SCOPE, constants.REPOSITORY_SCOPE]
+            })
+
+    @patch('__builtin__.open')
     @patch('pulp_node.profilers.nodes.read_config')
-    def test_update_units(self, mock_read_config):
-        # Setup
-        mock_read_config.return_value = self.node_configuration()
-        # Test
-        host = 'abc'
-        port = 443
-        units = [1, 2, 3]
+    @patch('pulp_node.profilers.nodes.pulp_conf')
+    def test_inject_parent_settings(self, _pulp_conf, _read_config, _open):
+        host = 'test-host'
+        cert_path = '/path/cert'
+
+        _pulp_conf.get.return_value = host
+        _read_config.return_value.main = Mock(node_certificate=cert_path)
+
+        fp = Mock()
+        fp.__enter__ = Mock(return_value=fp)
+        fp.__exit__ = Mock()
+        _open.return_value = fp
+
+        # test
         options = {}
-        p = NodeProfiler()
-        pulp_conf.set('server', 'server_name', host)
-        _units = p.update_units(None, units, options, None, None)
-        # Verify
-        self.assertTrue(constants.PARENT_SETTINGS in options)
+        NodeProfiler._inject_parent_settings(options)
+
+        # validation
+        _pulp_conf.get.assert_called_once_with('server', 'server_name')
+        _read_config.assert_called_once_with()
+        _open.assert_called_once_with(cert_path)
         settings = options[constants.PARENT_SETTINGS]
         self.assertEqual(settings[constants.HOST], host)
-        self.assertEqual(settings[constants.PORT], port)
-        self.assertEqual(settings[constants.NODE_CERTIFICATE], NODE_CERTIFICATE)
-        self.assertEqual(units, _units)
+        self.assertEqual(settings[constants.PORT], 443)
+        self.assertEqual(
+            settings[constants.NODE_CERTIFICATE],
+            _open.return_value.read.return_value)
+
+    @patch('pulp_node.profilers.nodes.managers')
+    def test_inject_strategy(self, managers):
+        consumer_id = 'test-consumer'
+        strategy = 'test-strategy'
+        notes = {constants.STRATEGY_NOTE_KEY: strategy}
+        manager = Mock()
+        manager.get_consumer.return_value = {'notes': notes}
+        managers.consumer_manager.return_value = manager
+
+        # test
+        options = {}
+        NodeProfiler._inject_strategy(consumer_id, options)
+
+        # validation
+        manager.get_consumer.assert_called_once_with(consumer_id)
+        self.assertEqual(options[constants.STRATEGY_KEYWORD], strategy)
+
+    def test_update_units(self):
+        consumer = Mock(id='123')
+        units = [1, 2, 3]
+        options = {}
+        config = Mock()
+        conduit = Mock()
+
+        # test
+        profiler = NodeProfiler()
+        profiler._inject_parent_settings = Mock()
+        profiler._inject_strategy = Mock()
+
+        # validation
+        _units = profiler.update_units(consumer, units, options, config, conduit)
+        profiler._inject_parent_settings.assert_called_once_with(options)
+        profiler._inject_strategy.assert_called_once_with(consumer.id, options)
+        self.assertEqual(_units, units)
 
 
 class TestDistributor(PluginTestBase):

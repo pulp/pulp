@@ -46,8 +46,25 @@ EXAMPLE_CALL_REPORT = {
     }
 }
 
+# "pulp-admin tasks list" requests only the fields it needs, and this is an
+# example response.
+EXAMPLE_LIST_REPORT = {
+    '_href': '/pulp/api/v2/tasks/b2308412-5149-424d-9b04-85a8d6e03067/',
+    'task_id': 'c54742d4-9f8b-11e1-9837-00508d977dff',
+    'tags': [
+        'pulp:repository:f16',
+        'pulp:action:sync'
+    ],
+    'finish_time': '2014-06-05T15:56:12Z',
+    '_ns': 'task_status',
+    'start_time': None,
+    'state': 'waiting',
+    '_id': {
+        '$oid': '5390931b81a97875924cc0d1'
+    },
+    'id': '5390931b3de3a3290f57e32f'
+}
 
-# -- tests --------------------------------------------------------------------
 
 class AllTasksTests(base_builtins.PulpClientTests):
 
@@ -68,7 +85,7 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
     def test_list(self):
         # Setup
-        self.server_mock.request.return_value = (200, [copy.copy(EXAMPLE_CALL_REPORT)])
+        self.server_mock.request.return_value = (200, [copy.copy(EXAMPLE_LIST_REPORT)])
 
         # Test
         self.all_tasks_section.list()
