@@ -7,7 +7,6 @@ import mock
 
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 from pulp.server.db.model import dispatch, resources
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.factory import initialize
@@ -150,7 +149,8 @@ class TestHandleSucceededTask(unittest.TestCase):
         scheduler.isinstance = mock.MagicMock(return_value=True)
         try:
             watcher = scheduler.FailureWatcher()
-            watcher._watches['task_1'] = watcher.WatchedTask(int(time.time()), 'some_schedule', False)
+            watcher._watches['task_1'] = watcher.WatchedTask(int(time.time()), 'some_schedule',
+                                                             False)
 
             watcher.handle_succeeded_task(self.event)
 
@@ -615,10 +615,19 @@ SCHEDULES = [
         u'last_run_at': u'2013-12-17T00:35:53Z',
         u'last_updated': 1387218569.811224,
         u'next_run': u'2013-12-17T00:36:53Z',
-        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\n"
+                      u"p3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10"
+                      u"\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\n"
+                      u"Vsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\n"
+                      u"sVpassword\np17\n"
+                      u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\n"
+                      u"p19\nV5220ab06e19a0010e1690589\np20\ns.",
         u'remaining_runs': None,
         u'resource': u'pulp:distributor:demo:puppet_distributor',
-        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\n"
+                     u"c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\n"
+                     u"sS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\n"
+                     u"tp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
         u'total_run_count': 1087,
     },
@@ -634,10 +643,19 @@ SCHEDULES = [
         u'last_run_at': u'2013-12-17T00:35:53Z',
         u'last_updated': 1387218500.598727,
         u'next_run': u'2013-12-17T00:36:53Z',
-        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\n"
+                      u"p3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00"
+                      u"\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\n"
+                      u"Vsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\n"
+                      u"sVpassword\np17\n"
+                      u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\n"
+                      u"p19\nV5220ab06e19a0010e1690589\np20\ns.",
         u'remaining_runs': None,
         u'resource': u'pulp:distributor:demo:puppet_distributor',
-        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\n"
+                     u"c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\n"
+                     u"sS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\n"
+                     u"tp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
         u'total_run_count': 1087,
     },
@@ -653,10 +671,19 @@ SCHEDULES = [
         u'last_run_at': u'2013-12-17T00:35:53Z',
         u'last_updated': 1387218501.598727,
         u'next_run': u'2013-12-17T00:36:53Z',
-        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\np3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\nVsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\nsVpassword\np17\nVV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\np19\nV5220ab06e19a0010e1690589\np20\ns.",
+        u'principal': u"(dp0\nV_id\np1\nccopy_reg\n_reconstructor\np2\n(cbson.objectid\nObjectId\n"
+                      u"p3\nc__builtin__\nobject\np4\nNtp5\nRp6\nS'R \\xab\\x06\\xe1\\x9a\\x00\\x10"
+                      u"\\xe1i\\x05\\x89'\np7\nbsVname\np8\nVadmin\np9\nsVroles\np10\n(lp11\n"
+                      u"Vsuper-users\np12\nasV_ns\np13\nVusers\np14\nsVlogin\np15\nVadmin\np16\n"
+                      u"sVpassword\np17\n"
+                      u"VV76Yol1XYgM=,S/G6o5UyMrn0xAwbQCqFcrXnfXTh84RWhunanCDkSCo=\np18\nsVid\n"
+                      u"p19\nV5220ab06e19a0010e1690589\np20\ns.",
         u'remaining_runs': 0,
         u'resource': u'pulp:distributor:demo:puppet_distributor',
-        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\nc__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\nsS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\ntp10\nRp11\nsb.",
+        u'schedule': u"ccopy_reg\n_reconstructor\np0\n(ccelery.schedules\nschedule\np1\n"
+                     u"c__builtin__\nobject\np2\nNtp3\nRp4\n(dp5\nS'relative'\np6\nI00\n"
+                     u"sS'nowfun'\np7\nNsS'run_every'\np8\ncdatetime\ntimedelta\np9\n(I0\nI60\nI0\n"
+                     u"tp10\nRp11\nsb.",
         u'task': u'pulp.server.tasks.repository.publish',
         u'total_run_count': 1087,
     },
