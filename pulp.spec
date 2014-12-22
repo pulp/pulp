@@ -641,6 +641,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.1.rc
+- Pulp rebuild
+
 * Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.3.beta
 - 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
 
