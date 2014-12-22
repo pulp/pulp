@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.4.4
-Release: 0.2.beta%{?dist}
+Release: 0.3.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -592,6 +592,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.3.beta
+- 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
+
 * Fri Dec 12 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.2.beta
 - Pulp rebuild
 
