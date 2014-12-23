@@ -78,7 +78,7 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
                                               fields=('_id', 'last_heartbeat'))
         mock_resources.filter_workers.assert_called_once(mock_criteria.return_value)
         mock_worker.assert_called_once_with(event_info['worker_name'],
-                                                     event_info['timestamp'])
+                                            event_info['timestamp'])
         mock_gettext.assert_called_once_with("New worker '%(worker_name)s' discovered")
         mock__logger.assert_called_once()
         mock_worker.return_value.save.assert_called_once_with()
