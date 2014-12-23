@@ -178,7 +178,7 @@ class RepoDistributorManager(object):
                 valid_config, message = result
         except Exception, e:
             logger.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
-            raise PulpDataException(e.args), None, sys.exc_info()[2]
+            raise e, None, sys.exc_info()[2]
 
         if not valid_config:
             raise PulpDataException(message)
