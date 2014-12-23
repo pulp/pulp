@@ -4,7 +4,7 @@ Pulp 2.5 Release Notes
 
 Pulp 2.5.1
 ==========
-This is a an importand bugfix release that contains the fix for
+This is a an important bugfix release that contains the fix for
 `#1165355 <https://bugzilla.redhat.com/show_bug.cgi?id=1165355>`_ and
 `#1171509 <https://bugzilla.redhat.com/show_bug.cgi?id=1171509>`_.  Additional bugs that were
 `fixed in Pulp 2.5.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.5.1>`_.
@@ -27,7 +27,7 @@ For each of your rpm repositories::
 
     $ pulp-admin rpm repo publish run --repo-id <repo-id>
 
-.. _upgrading from 2.4.x: 2.4.x_upgrade_to_2.5.x
+.. _upgrading from 2.4.x: 2.4.x_upgrade_to_2.5.x_
 
 Pulp 2.5.0
 ==========
