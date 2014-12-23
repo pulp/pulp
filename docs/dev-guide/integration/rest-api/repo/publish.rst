@@ -21,7 +21,7 @@ call always executes asynchronously and will return a :term:`call report`.
 
 * :response_code:`202, if the publish is set to be executed`
 
-| :return:`a` :ref:`call_report` representing the current state of they sync`
+| :return:`a` :ref:`call_report` representing the current state of the sync
 
 :sample_request:`_` ::
 
