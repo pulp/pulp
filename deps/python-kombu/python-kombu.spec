@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.24
-Release:        1%{?dist}
+Release:        2.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,6 +19,7 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
+Patch0:         1174361.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -161,6 +162,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 3.0.24-2.pulp
+- Adds fix for 1174361 to python-kombu and bumps release (bmbouter@gmail.com)
+- Build updates for Fedora 21. (cduryee@redhat.com)
+
 * Thu Dec 11 2014 Brian Bouterse 3.0.24-1
 - Updates python-kombu to 3.0.24 (bbouters@redhat.com)
 
