@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.6.0
-Release: 0.1.alpha%{?dist}
+Release: 0.2.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -641,6 +641,31 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.2.beta
+- 1174353 - improving performance of "pulp-admin tasks list"
+  (mhrivnak@redhat.com)
+- 1154790 - inject node strategy into the options. (jortel@redhat.com)
+- 1175512 - Fixes mongoengine database args to use correct database
+  (bmbouter@gmail.com)
+- 1166202 - documenting that EPEL requires RHEL "optional" and "extras" repos
+  (mhrivnak@redhat.com)
+- 1167908 - Migration for TaskStatus and Reserved Resources
+  (dkliban@redhat.com)
+- 1142325 - the unit tests no longer depend on qpidtoollibs.
+  (jcline@redhat.com)
+- 1150128 - The pulp-consumer tool now reports the error message for permission
+  exceptions. (jcline@redhat.com)
+- 1012091 - SELinux policy now allows setting directory attributes in /tmp
+  (dkliban@redhat.com)
+- 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
+  was not cleaning up after itself. (bcourt@redhat.com)
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1166703 - builder.py now checks to make sure master isn't checked out.
+  (jcline@redhat.com)
+- 1163451 - create ~/.pulp with correct perms, and warn when it has wrong perms
+  (mhrivnak@redhat.com)
+- 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
+
 * Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.1.rc
 - Pulp rebuild
 
