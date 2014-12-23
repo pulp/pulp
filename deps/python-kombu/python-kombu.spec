@@ -162,6 +162,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 3.0.24-2.pulp
+- Adds fix for 1174361 to python-kombu and bumps release (bmbouter@gmail.com)
+- Build updates for Fedora 21. (cduryee@redhat.com)
+
 * Thu Dec 11 2014 Brian Bouterse 3.0.24-1
 - Updates python-kombu to 3.0.24 (bbouters@redhat.com)
 
