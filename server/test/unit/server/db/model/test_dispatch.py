@@ -174,8 +174,9 @@ class TestTaskStatus(unittest.TestCase):
         # Invalid progress_report
         invalid_progress_reports = [4, uuid4(), object(), 'tags', [1, 2], ()]
         for invalid_progress_report in invalid_progress_reports:
-            self.assertRaises(ValidationError, TaskStatus(task_id=task_id,
-                                                          progress_report=invalid_progress_report).save)
+            self.assertRaises(
+                ValidationError,
+                TaskStatus(task_id=task_id, progress_report=invalid_progress_report).save)
 
     def test_task_type_validation(self):
         # Valid task_type
