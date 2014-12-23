@@ -4,15 +4,11 @@ import itertools
 from mock import patch, Mock, ANY
 
 from pulp.common import tags
-from pulp.server.db.model.consumer import Bind
-from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.managers.consumer.agent import AgentManager, Units
-from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
-from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.db.model.consumer import Bind
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers.consumer.agent import AgentManager, Units
 
