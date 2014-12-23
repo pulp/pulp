@@ -176,9 +176,8 @@ class PluginStepTests(PluginBase):
         step.parent.get_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_conduit())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units, mock_update):
+    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
         self.pluginstep.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_get_units.return_value = ['mock_unit']
         step = PluginStep('foo_step')
@@ -437,9 +436,8 @@ class PublishStepTests(PublisherBase):
         step.parent.get_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_conduit())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units, mock_update):
+    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_get_units.return_value = ['mock_unit']
         step = PublishStep('foo_step')
@@ -608,9 +606,7 @@ class UnitPublishStepTests(PublisherBase):
         if unit is 'cancel':
             self.publisher.cancel()
 
-
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_process_step_skip_units(self, mock_update):
+    def test_process_step_skip_units(self):
         self.publisher.config = PluginCallConfiguration(None, {'skip': ['FOO']})
         step = UnitPublishStep('foo_step', 'FOO')
         step.parent = self.publisher
@@ -618,8 +614,7 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(step.state, reporting_constants.STATE_SKIPPED)
 
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
-    def test_process_step_no_units(self, mock_update, mock_get_units):
+    def test_process_step_no_units(self, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 0}
         mock_method = Mock()
         mock_get_units.return_value = []
@@ -630,9 +625,8 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(step.state, reporting_constants.STATE_COMPLETE)
         self.assertFalse(mock_method.called)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_single_unit(self, mock_get_units, mock_update):
+    def test_process_step_single_unit(self, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_method = Mock()
         mock_get_units.return_value = ['mock_unit']
@@ -647,9 +641,8 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(step.total_units, 1)
         mock_method.assert_called_once_with('mock_unit')
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_single_unit_exception(self, mock_get_units, mock_update):
+    def test_process_step_single_unit_exception(self, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_method = Mock(side_effect=Exception())
         mock_get_units.return_value = ['mock_unit']
@@ -664,9 +657,8 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(step.total_units, 1)
         mock_method.assert_called_once_with('mock_unit')
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_cancelled_mid_unit_processing(self, mock_get_units, mock_update):
+    def test_process_step_cancelled_mid_unit_processing(self, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
         mock_get_units.return_value = ['cancel', 'bar_unit']
         step = UnitPublishStep('foo_step', 'FOO_TYPE')

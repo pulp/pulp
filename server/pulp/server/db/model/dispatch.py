@@ -9,11 +9,13 @@ from bson import ObjectId
 from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
+from mongoengine import DictField, Document, DynamicField, ListField, StringField
 import isodate
 
-from pulp.common import dateutils
+from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.db.model.base import Model
+from pulp.server.db.model.base import Model, CriteriaQuerySet
+from pulp.server.db.model.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.managers import factory
 
@@ -492,118 +494,96 @@ class ArchivedCall(Model, ReaperMixin):
         self.serialized_call_report = call_report.serialize()
 
 
-class TaskStatus(Model, ReaperMixin):
+class TaskStatus(Document, ReaperMixin):
     """
-    Represents current state of a task.
-    The documents in this collection may be reaped, so it inherits from ReaperMixin.
+    Represents a task.
+    This inherits from mongoengine.Document and defines the schema for the documents
+    in task_status collection. The documents in this collection may be reaped,
+    so it inherits from ReaperMixin.
 
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
-    :ivar task_type:   the fully qualified (package/method) type of the task
-    :type task_type:   basestring
+    :ivar worker_name: The name of the worker that the Task is in
+    :type worker_name: basestring
     :ivar tags:        custom tags on the task
     :type tags:        list
     :ivar state:       state of callable in its lifecycle
     :type state:       basestring
-    :ivar result:      return value of the callable, if any
-    :type result:      any
-    :ivar exception:   Deprecated. This is always None.
-    :type exception:   None
-    :ivar traceback:   Deprecated. This is always None.
-    :type traceback:   None
-    :ivar start_time:  time the task started executing
-    :type start_time:  datetime.datetime
-    :ivar finish_time: time the task completed
-    :type finish_time: datetime.datetime
-    :ivar worker_name: The name of the worker that the Task is in
-    :type worker_name: basestring
     :ivar error: Any errors or collections of errors that occurred while this task was running
     :type error: dict (created from a PulpException)
     :ivar spawned_tasks: List of tasks that were spawned during the running of this task
     :type spawned_tasks: list of str
     :ivar progress_report: A report containing information about task's progress
     :type progress_report: dict
+    :ivar task_type:   the fully qualified (package/method) type of the task
+    :type task_type:   basestring
+    :ivar start_time:  ISO8601 representation of the time the task started executing
+    :type start_time:  basestring
+    :ivar finish_time: ISO8601 representation of the time the task completed
+    :type finish_time: basestring
+    :ivar result:      return value of the callable, if any
+    :type result:      any
+    :ivar exception:   Deprecated. This is always None.
+    :type exception:   None
+    :ivar traceback:   Deprecated. This is always None.
+    :type traceback:   None
     """
+    task_id = StringField(unique=True, required=True)
+    worker_name = StringField()
+    tags = ListField(StringField())
+    state = StringField(choices=constants.CALL_STATES, default=constants.CALL_WAITING_STATE)
+    error = DictField(default=None)
+    spawned_tasks = ListField(StringField())
+    progress_report = DictField()
+    task_type = StringField()
+    start_time = ISO8601StringField()
+    finish_time = ISO8601StringField()
+    result = DynamicField()
 
-    collection_name = 'task_status'
-    unique_indices = ('task_id',)
-    search_indices = ('task_id', 'tags', 'state')
+    # These are deprecated, and will always be None
+    exception = StringField()
+    traceback = StringField()
 
-    def __init__(
-            self, task_id, worker_name=None, tags=None, state=None, error=None, spawned_tasks=None,
-            progress_report=None, task_type=None, start_time=None, finish_time=None, result=None):
+    # For backward compatibility
+    _ns = StringField(default='task_status')
+
+    meta = {'collection': 'task_status',
+            'indexes': ['-task_id', '-tags', '-state'],
+            'allow_inheritance': False,
+            'queryset_class': CriteriaQuerySet}
+
+    def save_with_set_on_insert(self, fields_to_set_on_insert):
         """
-        Initialize the TaskStatus based on the provided attributes. All parameters besides task_id
-        are optional.
+        Save the current state of the TaskStatus to the database, using an upsert operation.
+        The upsert operation will only set those fields if this becomes an insert operation, otherwise
+        those fields will be ignored. This also validates the fields according to the schema above.
 
-        :param task_id:         identity of the task this status corresponds to
-        :type  task_id:         basestring
-        :param worker_name:     The name of the worker that the Task is in
-        :type  worker_name:     basestring
-        :param tags:            custom tags on the task
-        :type  tags:            list
-        :param state:           state of callable in its lifecycle
-        :type  state:           basestring
-        :param error:           Any errors or collections of errors that occurred while this task
-                                was running
-        :type  error:           dict (created from a PulpException)
-        :param spawned_tasks:   List of tasks that were spawned during the running of this task
-        :type  spawned_tasks:   list of basestrings
-        :param progress_report: A report containing information about task's progress
-        :type  progress_report: dict
-        :param task_type:       the fully qualified (package/method) type of the task
-        :type  task_type:       basestring
-        :param start_time:      time the task started executing
-        :type  start_time:      datetime.datetime
-        :param finish_time:     time the task completed
-        :type  finish_time:     datetime.datetime
-        :param result:          return value of the callable, if any
-        :type  result:          any
-        """
-        super(TaskStatus, self).__init__()
-
-        self.task_id = task_id
-        self.task_type = task_type
-        self.state = state
-        self.worker_name = worker_name
-        self.tags = tags or []
-        self.start_time = start_time
-        self.finish_time = finish_time
-        self.spawned_tasks = spawned_tasks or []
-        self.progress_report = progress_report or {}
-        self.result = result
-        self.error = error
-        # These are deprecated, and will always be None
-        self.exception = None
-        self.traceback = None
-
-    def save(self, fields_to_set_on_insert=None):
-        """
-        Save the current state of the TaskStatus to the database, using an upsert operiation. If
-        fields_to_set_on_insert is provided as a list of field names, the upsert operation will only
-        set those fields if this becomes an insert operation, otherwise those fields will be
-        ignored.
+        This is required because the current mongoengine version we are using does not support
+        upsert with set_on_insert through mongoengine queries. Once we update to the version
+        which supports this, this method can be deleted and it's usages can be replaced
+        with mongoengine upsert queries.
 
         :param fields_to_set_on_insert: A list of field names that should be updated with Mongo's
                                         $setOnInsert operator.
         :type  fields_to_set_on_insert: list
         """
-        stuff_to_update = dict(copy.deepcopy(self))
+        # If fields_to_set_on_insert is None or empty, just call superclass' save method.
+        if not fields_to_set_on_insert:
+            super(TaskStatus, self).save()
+            return
+
+        # This will be used in place of superclass' save method, so we need to call validate() explicitly.
+        self.validate()
+
+        stuff_to_update = dict(copy.deepcopy(self._data))
 
         # Let's pop the $setOnInsert attributes out of the copy of self so that we can pass the
         # remaining attributes to the $set operator in the query below.
-        fields_to_set_on_insert = fields_to_set_on_insert or []
         set_on_insert = {}
         for field in fields_to_set_on_insert:
             set_on_insert[field] = stuff_to_update.pop(field)
         task_id = stuff_to_update.pop('task_id')
-        # MongoDB will be angry with us if we try to update the _id field
-        stuff_to_update.pop('_id')
 
-        update = {'$set': stuff_to_update}
-        if set_on_insert:
-            update['$setOnInsert'] = set_on_insert
-        self.get_collection().update(
-            {'task_id': task_id},
-            update,
-            upsert=True)
+        update = {'$set': stuff_to_update,
+                  '$setOnInsert': set_on_insert}
+        TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)

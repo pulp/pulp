@@ -17,7 +17,6 @@ from pulp.common.constants import CALL_CANCELED_STATE, CALL_FINISHED_STATE
 from pulp.common.tags import action_tag
 from pulp.devel.unit.util import compare_dict
 from pulp.server.async import tasks
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import Worker, ReservedResource
 from pulp.server.db.reaper import queue_reap_expired_documents
@@ -146,8 +145,8 @@ class TestDeleteWorker(ResourceReservationTests):
         self.patch_f = mock.patch('pulp.server.async.tasks.Worker', autospec=True)
         self.mock_worker = self.patch_f.start()
 
-        self.patch_g = mock.patch('pulp.server.async.tasks.TaskStatusManager', autospec=True)
-        self.mock_task_status_manager = self.patch_g.start()
+        self.patch_g = mock.patch('pulp.server.async.tasks.TaskStatus', autospec=True)
+        self.mock_task_status = self.patch_g.start()
 
         self.patch_h = mock.patch('pulp.server.async.tasks.Criteria', autospec=True)
         self.mock_criteria = self.patch_h.start()
@@ -213,22 +212,12 @@ class TestDeleteWorker(ResourceReservationTests):
         tasks._delete_worker('worker1')
         self.mock_worker.from_bson.assert_called_once_with({'_id': 'worker1'})
 
-    def test_criteria_to_find_task_status_is_correct(self):
-        tasks._delete_worker('worker1')
-        expected_call = mock.call(
-            filters={'worker_name': self.mock_worker.from_bson.return_value.name,
-                     'state': {'$in': self.mock_constants.CALL_INCOMPLETE_STATES}})
-        self.assertEqual(self.mock_criteria.mock_calls[1], expected_call)
-
     def test_cancels_all_found_task_status_objects(self):
         mock_task_id_a = mock.Mock()
         mock_task_id_b = mock.Mock()
-        self.mock_task_status_manager.find_by_criteria.return_value = [{'task_id': mock_task_id_a},
-                                                                       {'task_id': mock_task_id_b}]
+        self.mock_task_status.objects.return_value = [{'task_id': mock_task_id_a},
+                                                      {'task_id': mock_task_id_b}]
         tasks._delete_worker('worker1')
-
-        find_by_criteria = self.mock_task_status_manager.find_by_criteria
-        find_by_criteria.assert_called_once_with(self.mock_criteria.return_value)
 
         self.mock_cancel.assert_has_calls([mock.call(mock_task_id_a), mock.call(mock_task_id_b)])
 
@@ -365,8 +354,9 @@ class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
         self.mock_task_status.assert_called_once_with(
             state=self.mock_constants.CALL_WAITING_STATE, task_type=self.task.name,
             task_id=str(self.mock_uuid.uuid4.return_value), tags=self.some_kwargs['tags'])
-        save = self.mock_task_status.return_value.save
-        save.assert_called_once_with(fields_to_set_on_insert=['state', 'start_time'])
+        save_with_set_on_insert = self.mock_task_status.return_value.save_with_set_on_insert
+        save_with_set_on_insert.assert_called_once_with(
+            fields_to_set_on_insert=['state', 'start_time'])
 
     def test_inner_task_id_returned(self):
         self.assertEqual(self.result, str(self.mock_uuid.uuid4.return_value))
@@ -382,14 +372,14 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], retval)
         self.assertFalse(new_task_status['finish_time'] is None)
@@ -409,14 +399,14 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], 'bar')
         self.assertEqual(new_task_status['error']['description'], 'error-foo')
@@ -434,14 +424,14 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], 'bar')
         self.assertFalse(new_task_status['finish_time'] is None)
@@ -456,14 +446,14 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
 
         task = tasks.Task()
         task.on_success(retval, task_id, args, kwargs)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'finished')
         self.assertEqual(new_task_status['result'], None)
         self.assertFalse(new_task_status['finish_time'] is None)
@@ -478,13 +468,13 @@ class TestTaskOnSuccessHandler(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'1': 'for the money', 'tags': ['test_tags'], 'routing_key': WORKER_2}
         mock_request.called_directly = False
-        TaskStatusManager.create_task_status(task_id, state=CALL_CANCELED_STATE)
+        TaskStatus(task_id, state=CALL_CANCELED_STATE).save()
         task = tasks.Task()
 
         # This should not update the task status to finished, since this task was canceled.
         task.on_success(retval, task_id, args, kwargs)
 
-        updated_task_status = TaskStatusManager.find_by_task_id(task_id)
+        updated_task_status = TaskStatus.objects(task_id=task_id).first()
         # Make sure the task is still canceled.
         self.assertEqual(updated_task_status['state'], CALL_CANCELED_STATE)
         self.assertEqual(updated_task_status['result'], retval)
@@ -513,7 +503,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         einfo = EInfo()
         mock_request.called_directly = False
 
-        task_status = TaskStatusManager.create_task_status(task_id)
+        task_status = TaskStatus(task_id).save()
         self.assertEqual(task_status['state'], 'waiting')
         self.assertEqual(task_status['finish_time'], None)
         self.assertEqual(task_status['traceback'], None)
@@ -521,7 +511,7 @@ class TestTaskOnFailureHandler(ResourceReservationTests):
         task = tasks.Task()
         task.on_failure(exc, task_id, args, kwargs, einfo)
 
-        new_task_status = TaskStatusManager.find_by_task_id(task_id)
+        new_task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(new_task_status['state'], 'error')
         self.assertFalse(new_task_status['finish_time'] is None)
         # Make sure that parse_iso8601_datetime is able to parse the finish_time without errors
@@ -540,7 +530,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
 
         task.apply_async(*args, **kwargs)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
@@ -575,7 +565,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
 
         task.apply_async(*args, **kwargs)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
@@ -593,7 +583,7 @@ class TestTaskApplyAsync(ResourceReservationTests):
 
         task.apply_async(*args, **kwargs)
 
-        task_statuses = list(TaskStatusManager.find_all())
+        task_statuses = TaskStatus.objects()
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
@@ -606,13 +596,13 @@ class TestTaskApplyAsync(ResourceReservationTests):
         args = [1, 'b', 'iii']
         kwargs = {'a': 'for the money', 'tags': ['test_tags']}
         task_id = 'test_task_id'
-        TaskStatusManager.create_task_status(task_id, 'test-worker', state=CALL_CANCELED_STATE)
+        TaskStatus(task_id, 'test-worker', state=CALL_CANCELED_STATE).save()
         apply_async.return_value = celery.result.AsyncResult(task_id)
 
         task = tasks.Task()
         task.apply_async(*args, **kwargs)
 
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], 'canceled')
         self.assertEqual(task_status['start_time'], None)
 
@@ -647,17 +637,17 @@ class TestCancel(PulpServerTests):
     """
     def setUp(self):
         PulpServerTests.setUp(self)
-        TaskStatus.get_collection().remove()
+        TaskStatus.objects().delete()
 
     def tearDown(self):
         PulpServerTests.tearDown(self)
-        TaskStatus.get_collection().remove()
+        TaskStatus.objects().delete()
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
     @mock.patch('pulp.server.async.tasks.logger', autospec=True)
     def test_cancel_successful(self, logger, revoke):
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id)
+        TaskStatus(task_id).save()
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
@@ -665,7 +655,7 @@ class TestCancel(PulpServerTests):
         log_msg = logger.info.mock_calls[0][1][0]
         self.assertTrue(task_id in log_msg)
         self.assertTrue('Task canceled' in log_msg)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
@@ -676,10 +666,10 @@ class TestCancel(PulpServerTests):
         to the task state.
         """
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, 'test_worker', state=CALL_FINISHED_STATE)
+        TaskStatus(task_id, 'test_worker', state=CALL_FINISHED_STATE).save()
 
         tasks.cancel(task_id)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
@@ -690,10 +680,10 @@ class TestCancel(PulpServerTests):
         to the task state.
         """
         task_id = '1234abcd'
-        TaskStatusManager.create_task_status(task_id, 'test_worker', state=CALL_CANCELED_STATE)
+        TaskStatus(task_id, 'test_worker', state=CALL_CANCELED_STATE).save()
 
         tasks.cancel(task_id)
-        task_status = TaskStatusManager.find_by_task_id(task_id)
+        task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
 

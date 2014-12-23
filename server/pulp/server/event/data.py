@@ -16,8 +16,9 @@ Contains DTOs to describe events.
 """
 
 import celery
+from mongoengine.queryset import DoesNotExist
 
-from pulp.server.async.task_status_manager import TaskStatusManager
+from pulp.server.db.model.dispatch import TaskStatus
 
 # -- constants ----------------------------------------------------------------
 
@@ -37,6 +38,7 @@ ALL_EVENT_TYPES = (TYPE_REPO_PUBLISH_FINISHED, TYPE_REPO_PUBLISH_STARTED,
 
 # -- classes ------------------------------------------------------------------
 
+
 class Event(object):
 
     def __init__(self, event_type, payload):
@@ -44,8 +46,8 @@ class Event(object):
         self.payload = payload
         try:
             task_id = celery.current_task.request.id
-            self.call_report = TaskStatusManager.find_by_task_id(task_id)
-        except AttributeError:
+            self.call_report = TaskStatus.objects.get(task_id=task_id)
+        except (AttributeError, DoesNotExist):
             self.call_report = None
 
     def __str__(self):

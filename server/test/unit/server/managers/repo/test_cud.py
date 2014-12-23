@@ -42,6 +42,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
+        dispatch.TaskStatus.objects().delete()
 
     @mock.patch('pulp.server.db.model.repository.Repo.get_collection')
     @mock.patch('pulp.server.db.model.repository.RepoContentUnit.get_collection')
@@ -497,8 +498,8 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(dist_2['config'], {'key-d2': 'orig-2'})
 
         # There should have been a spawned task for the new distributor config
-        expected_task_id = dispatch.TaskStatus.get_collection().find_one(
-            {'tags': 'pulp:repository_distributor:dist-1'})['task_id']
+        expected_task_id = dispatch.TaskStatus.objects.get(
+            tags='pulp:repository_distributor:dist-1')['task_id']
         self.assertEqual(result.spawned_tasks, [{'task_id': expected_task_id}])
 
     def test_update_repo_and_plugins_partial(self):
