@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.server.logs module.
 """
@@ -17,12 +6,12 @@ from cStringIO import StringIO
 import ConfigParser
 import logging
 import os
+import Queue
 import sys
+import time
+import threading
 import traceback
 import unittest
-import Queue
-import threading
-import time
 
 import mock
 
@@ -146,7 +135,8 @@ class TestCompliantSysLogHandler(unittest.TestCase):
                 expected_messages = ['PID-TID-Please do not cut ', 'PID-TID-\xe2\x98\x83 in half.']
                 self.assertEqual(messages, expected_messages)
 
-            # 28 bytes would allow \xe2\x98 in the first string, but we don't want to kill the snowman
+            # 28 bytes would allow \xe2\x98 in the first string, but we don't want to kill the
+            # snowman
             with mock.patch('pulp.server.logs.CompliantSysLogHandler.MAX_MSG_LENGTH', 28):
                 messages = list(logs.CompliantSysLogHandler._cut_message(msg, 0, ""))
 
@@ -191,8 +181,8 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             expected_messages = ['PID-TID-This string is too long with the f', 'PID-TID-ormatter.']
             self.assertEqual(messages, expected_messages)
             # With 6 characters added by the formatter, we can only have 42 characters in the string
-            # now. Obviously this check is redundant given the one above, but it's easier for a human
-            # to know that 42 is the right answer, because it is the meaning of life.
+            # now. Obviously this check is redundant given the one above, but it's easier for a
+            # human to know that 42 is the right answer, because it is the meaning of life.
             self.assertEqual(len(expected_messages[0]), 42)
 
     def test__cut_message_with_empty_string(self):
@@ -298,8 +288,8 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             handler = logs.CompliantSysLogHandler('/dev/log',
                                                   facility=logs.CompliantSysLogHandler.LOG_DAEMON)
             handler.setFormatter(formatter)
-            # This message is 26 bytes, which will exceed the allowed length by one byte when combined
-            # with our format string. It will have to be split into two messages.
+            # This message is 26 bytes, which will exceed the allowed length by one byte when
+            # combined with our format string. It will have to be split into two messages.
             log_message = 'This %(message)s is very long.'
             log_args = ({'message': 'message'},)
             record = logging.LogRecord(
@@ -431,9 +421,9 @@ class TestCompliantSysLogHandler(unittest.TestCase):
             handler = logs.CompliantSysLogHandler('/dev/log',
                                                   facility=logs.CompliantSysLogHandler.LOG_DAEMON)
             handler.setFormatter(formatter)
-            # This message is 26 bytes before the newline, which will exceed the allowed length by one
-            # byte when combined with our format string. The newline will cause another split after the
-            # period. This message will have to be split into three messages.
+            # This message is 26 bytes before the newline, which will exceed the allowed length by
+            # one byte when combined with our format string. The newline will cause another split
+            # after the period. This message will have to be split into three messages.
             log_message = 'This %(message)s is very long.\nAnd it has a newline.'
             log_args = ({'message': 'message'},)
             record = logging.LogRecord(
@@ -454,9 +444,10 @@ class TestCompliantSysLogHandler(unittest.TestCase):
                 self.assertEqual(new_record.exc_info, None)
                 self.assertEqual(new_record.funcName, 'some_function')
             # Now let's make sure the messages were split correctly. They will not be formatted yet,
-            # but the first should have left exactly enough room for formatting, and the newline should
-            # have caused a third message.
-            expected_messages = ['PID-This message is very long', 'PID-.', 'PID-And it has a newline.']
+            # but the first should have left exactly enough room for formatting, and the newline
+            # should have caused a third message.
+            expected_messages = ['PID-This message is very long', 'PID-.',
+                                 'PID-And it has a newline.']
             messages = [mock_call[1][1].msg for mock_call in super_emit.mock_calls]
             self.assertEqual(messages, expected_messages)
 
@@ -569,8 +560,8 @@ class TestCompliantSysLogHandler(unittest.TestCase):
                 raise Exception('This is terrible.')
             except:
                 exc_info = sys.exc_info()
-            # Sadly, all over our code we log non-string objects. This is bad, but we don't have time
-            # to fix it right now, so we need to make sure our emitter handles this case.
+            # Sadly, all over our code we log non-string objects. This is bad, but we don't have
+            # time to fix it right now, so we need to make sure our emitter handles this case.
             log_message = 42
             log_args = tuple()
             record = logging.LogRecord(
@@ -679,6 +670,7 @@ class TestCompliantSysLogHandler(unittest.TestCase):
 
         # Ensure that dictionary was filled and each was checked
         self.assertTrue(check_same == 10)
+
 
 class TestStartLogging(unittest.TestCase):
     """

@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module defines and configures Pulp's logging system.
 """
@@ -115,7 +104,9 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
         :return: process id and the last 5 digits of thread id
         :rtype: string
         """
-        return "({pid}-{tid}) ".format(pid=str(os.getpid()), tid=str(threading.current_thread().ident)[-5:])
+        pid = str(os.getpid())
+        tid = str(threading.current_thread().ident)[-5:]
+        return "({pid}-{tid}) ".format(pid=pid, tid=tid)
 
     def emit(self, record):
         """
@@ -142,7 +133,8 @@ class CompliantSysLogHandler(logging.handlers.SysLogHandler):
             msg_id = ""
 
         for line in record.getMessage().split('\n'):
-            for message_chunk in CompliantSysLogHandler._cut_message(line, formatter_buffer, msg_id):
+            for message_chunk in CompliantSysLogHandler._cut_message(line, formatter_buffer,
+                                                                     msg_id):
                 # We need to use the attributes from record to generate a new record that has
                 # mostly the same attributes, but the shorter message. We need to set the args to
                 # the empty tuple so that breaking the message up doesn't mess up formatting. This
