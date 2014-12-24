@@ -554,8 +554,8 @@ class TaskStatus(Document, ReaperMixin):
 
     def save_with_set_on_insert(self, fields_to_set_on_insert):
         """
-        Save the current state of the TaskStatus to the database, using an upsert operation.
-        The upsert operation will only set those fields if this becomes an insert operation, otherwise
+        Save the current state of the TaskStatus to the database, using an upsert operation. The
+        upsert operation will only set those fields if this becomes an insert operation, otherwise
         those fields will be ignored. This also validates the fields according to the schema above.
 
         This is required because the current mongoengine version we are using does not support
@@ -572,7 +572,8 @@ class TaskStatus(Document, ReaperMixin):
             super(TaskStatus, self).save()
             return
 
-        # This will be used in place of superclass' save method, so we need to call validate() explicitly.
+        # This will be used in place of superclass' save method, so we need to call validate()
+        # explicitly.
         self.validate()
 
         stuff_to_update = dict(copy.deepcopy(self._data))
