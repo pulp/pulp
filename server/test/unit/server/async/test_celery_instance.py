@@ -87,8 +87,7 @@ def _get_database_test_config():
             'name': 'database_name',
             'seeds': 'host1:27017,host2:27017',
             'username': 'someguy',
-            'password': 'letmein',
-            }
+            'password': 'letmein'}
     }
     return config
 
@@ -123,8 +122,7 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
                 'cacert': mock_cacert,
                 'keyfile': mock_keyfile,
                 'certfile': mock_certfile,
-                'cert_reqs': ssl.CERT_REQUIRED,
-                }
+                'cert_reqs': ssl.CERT_REQUIRED}
         }
 
         EXPECTED_BROKER_USE_SSL = {
