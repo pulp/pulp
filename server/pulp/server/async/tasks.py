@@ -23,7 +23,7 @@ from pulp.server.managers import resources
 
 
 controller = control.Control(app=celery)
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @task(acks_late=True)
@@ -104,7 +104,7 @@ def _delete_worker(name, normal_shutdown=False):
     if normal_shutdown is False:
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': name}
-        logger.error(msg)
+        _logger.error(msg)
 
     # Delete the worker document
     worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
@@ -120,6 +120,7 @@ def _delete_worker(name, normal_shutdown=False):
     for task_status in TaskStatus.objects(worker_name=worker.name,
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
+
 
 @task
 def _release_resource(task_id):
@@ -308,7 +309,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         except DoesNotExist:
             task_status = None
         if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
-            logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+            _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
         # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Skip updating status for eagerly executed tasks, since we don't want to track
@@ -318,11 +319,10 @@ class Task(CeleryTask, ReservedTaskMixin):
             start_time = dateutils.format_iso8601_datetime(now)
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
-            TaskStatus.objects(task_id=self.request.id).update_one(set__state=constants.CALL_RUNNING_STATE,
-                                                                   set__start_time=start_time,
-                                                                   upsert=True)
+            TaskStatus.objects(task_id=self.request.id).update_one(
+                set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time, upsert=True)
         # Run the actual task
-        logger.debug("Running task : [%s]" % self.request.id)
+        _logger.debug("Running task : [%s]" % self.request.id)
         return super(Task, self).__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
@@ -337,7 +337,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param args:    Original arguments for the executed task.
         :param kwargs:  Original keyword arguments for the executed task.
         """
-        logger.debug("Task successful : [%s]" % task_id)
+        _logger.debug("Task successful : [%s]" % task_id)
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
@@ -380,7 +380,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
-        logger.debug("Task failed : [%s]" % task_id)
+        _logger.debug("Task failed : [%s]" % task_id)
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
@@ -413,14 +413,14 @@ def cancel(task_id):
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
         # If the task is already done, just stop
         msg = _('Task [%(task_id)s] already in a completed state: %(state)s')
-        logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
+        _logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
     controller.revoke(task_id, terminate=True)
     TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES).\
         update_one(set__state=constants.CALL_CANCELED_STATE)
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
-    logger.info(msg)
+    _logger.info(msg)
 
 
 def get_current_task_id():
