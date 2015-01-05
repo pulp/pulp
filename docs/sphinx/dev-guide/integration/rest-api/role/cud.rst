@@ -1,5 +1,8 @@
-Create, Update, and Delete
-==========================
+Create and Delete
+=================
+
+This page details role creation and deletion. Roles are not updated per-se;
+please see the :doc:`Permissions API <../permission/actions>` for more detail.
 
 Create a Role
 -------------
@@ -46,56 +49,6 @@ Create a new role. Role id must be unique across all roles.
   "permissions": {}
  }
 
-
-Update a Role
--------------
-
-The update role call is used to change the details of an existing role.
-
-| :method:`put`
-| :path:`/v2/roles/<role_id>/`
-| :permission:`update`
-| :param_list:`put` The body of the request is a JSON document with a root element
-  called ``delta``. The contents of delta are the values to update. Only changed
-  parameters need be specified. The following keys are allowed in the delta
-  object.
-
-* :param:`?display_name,string,user-friendly name for the role`
-* :param:`?description,string,user-friendly text describing the role`
-* :param:`?permissions,object, key-array pairs of resource to permissions`
-
-| :response_list:`_`
-
-* :response_code:`200,if the update was executed and successful`
-* :response_code:`404,if there is no role with the given id`
-* :response_code:`400,if one or more of the parameters is invalid`
-
-| :return:`database representation of the role including changes made by the update`
-
-:sample_request:`_` ::
-
-
- {
-  "delta": {
-    "display_name": "New Role Test",
-    "description": "New Demo Role",
-    "permissions": {"/v2/roles/": ["CREATE"]}
-  }
- }
-
-:sample_response:`200` ::
-
- {
-  "display_name": "New Role Test", 
-  "description": "New Demo Role", 
-  "_ns": "roles", 
-  "_href": "/pulp/api/v2/roles/role-test/", 
-  "_id": {
-    "$oid": "502cb2d7e5e710772d000049"
-  }, 
-  "id": "role-test", 
-  "permissions": {"/v2/roles/": ["CREATE"]}
- }
 
 Delete a Role
 -------------
