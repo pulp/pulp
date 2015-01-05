@@ -40,6 +40,7 @@ from pulp.server.managers.repo.sync import RepoSyncManager
 
 # -- test cases --------------------------------------------------------------
 
+
 class FactoryTests(unittest.TestCase):
 
     def clean(self):
@@ -61,7 +62,7 @@ class FactoryTests(unittest.TestCase):
         self.assertTrue(isinstance(factory.permission_query_manager(), PermissionQueryManager))
         self.assertTrue(isinstance(factory.role_manager(), RoleManager))
         self.assertTrue(isinstance(factory.role_query_manager(), RoleQueryManager))
-        self.assertTrue(isinstance(factory.user_manager(), UserManager))             
+        self.assertTrue(isinstance(factory.user_manager(), UserManager))
         self.assertTrue(isinstance(factory.user_query_manager(), UserQueryManager))
         self.assertTrue(isinstance(factory.repo_manager(), RepoManager))
         self.assertTrue(isinstance(factory.repo_unit_association_manager(), RepoUnitAssociationManager))
