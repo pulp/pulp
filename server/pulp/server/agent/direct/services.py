@@ -1,6 +1,9 @@
 from datetime import datetime
-from logging import getLogger
 from gettext import gettext as _
+from logging import getLogger
+
+from gofer.messaging import Broker, Queue
+from gofer.rmi.async import ReplyConsumer, Listener
 
 from pulp.common import constants, dateutils
 from pulp.server.agent.auth import Authenticator
@@ -8,12 +11,8 @@ from pulp.server.config import config
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.managers import factory as managers
 
-from gofer.messaging import Broker
-from gofer.messaging import Queue
-from gofer.rmi.async import ReplyConsumer, Listener
 
-
-log = getLogger(__name__)
+_logger = getLogger(__name__)
 
 
 class Services:
@@ -37,7 +36,7 @@ class Services:
         broker = Broker(url, transport=transport)
         broker.cacert = config.get('messaging', 'cacert')
         broker.clientcert = config.get('messaging', 'clientcert')
-        log.info(_('AMQP broker configured: %(b)s'), {'b': broker})
+        _logger.info(_('AMQP broker configured: %(b)s'), {'b': broker})
 
     @classmethod
     def start(cls):
@@ -46,7 +45,7 @@ class Services:
         # asynchronous reply
         cls.reply_handler = ReplyHandler(url, transport)
         cls.reply_handler.start()
-        log.info(_('AMQP reply handler started'))
+        _logger.info(_('AMQP reply handler started'))
 
 
 class ReplyHandler(Listener):
@@ -55,8 +54,6 @@ class ReplyHandler(Listener):
     :ivar consumer: The reply consumer.
     :type consumer: ReplyConsumer
     """
-
-    # --- action post-processing ---------------------------------------------
 
     @staticmethod
     def _bind_succeeded(action_id, call_context):
@@ -117,16 +114,15 @@ class ReplyHandler(Listener):
         :type transport: str
         """
         queue = Queue(Services.REPLY_QUEUE, transport=transport)
-        self.consumer = ReplyConsumer(queue, url=url, transport=transport, authenticator=Authenticator())
-
-    # --- agent replies ------------------------------------------------------
+        self.consumer = ReplyConsumer(queue, url=url, transport=transport,
+                                      authenticator=Authenticator())
 
     def start(self):
         """
         Start the reply handler (thread)
         """
         self.consumer.start(self)
-        log.info(_('Task reply handler, started.'))
+        _logger.info(_('Task reply handler, started.'))
 
     def accepted(self, reply):
         """
@@ -135,7 +131,7 @@ class ReplyHandler(Listener):
         :param reply: A status reply object.
         :type reply: gofer.rmi.async.Accepted
         """
-        log.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
+        _logger.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
         call_context = dict(reply.any)
         task_id = call_context['task_id']
         TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).\
@@ -148,7 +144,7 @@ class ReplyHandler(Listener):
         :param reply: A status reply object.
         :type reply: gofer.rmi.async.Started
         """
-        log.debug(_('Task RMI (started): %(r)s'), {'r': reply})
+        _logger.debug(_('Task RMI (started): %(r)s'), {'r': reply})
         call_context = dict(reply.any)
         task_id = call_context['task_id']
         started = reply.timestamp
@@ -167,7 +163,7 @@ class ReplyHandler(Listener):
         :param reply: A rejected reply object.
         :type reply: gofer.rmi.async.Rejected
         """
-        log.warn(_('Task RMI (rejected): %(r)s'), {'r': reply})
+        _logger.warn(_('Task RMI (rejected): %(r)s'), {'r': reply})
 
         call_context = dict(reply.any)
         action = call_context.get('action')
@@ -193,7 +189,7 @@ class ReplyHandler(Listener):
         :param reply: A successful reply object.
         :type reply: gofer.rmi.async.Succeeded
         """
-        log.info(_('Task RMI (succeeded): %(r)s'), {'r': reply})
+        _logger.info(_('Task RMI (succeeded): %(r)s'), {'r': reply})
 
         call_context = dict(reply.any)
         action = call_context.get('action')
@@ -227,7 +223,7 @@ class ReplyHandler(Listener):
         :param reply: A failure reply object.
         :type reply: gofer.rmi.async.Failed
         """
-        log.info(_('Task RMI (failed): %(r)s'), {'r': reply})
+        _logger.info(_('Task RMI (failed): %(r)s'), {'r': reply})
 
         call_context = dict(reply.any)
         action = call_context.get('action')
