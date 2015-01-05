@@ -3,7 +3,6 @@ import unittest
 import mock
 
 from pulp.server.async import worker_watcher
-from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 
 
 class TestParseAndLogEvent(unittest.TestCase):
