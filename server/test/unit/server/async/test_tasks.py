@@ -133,7 +133,7 @@ class TestDeleteWorker(ResourceReservationTests):
         self.patch_b = mock.patch('pulp.server.async.tasks.cancel', autospec=True)
         self.mock_cancel = self.patch_b.start()
 
-        self.patch_c = mock.patch('pulp.server.async.tasks.logger', autospec=True)
+        self.patch_c = mock.patch('pulp.server.async.tasks._logger', autospec=True)
         self.mock_logger = self.patch_c.start()
 
         self.patch_d = mock.patch('pulp.server.async.tasks._', autospec=True)
@@ -644,23 +644,23 @@ class TestCancel(PulpServerTests):
         TaskStatus.objects().delete()
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
-    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
-    def test_cancel_successful(self, logger, revoke):
+    @mock.patch('pulp.server.async.tasks._logger', autospec=True)
+    def test_cancel_successful(self, _logger, revoke):
         task_id = '1234abcd'
         TaskStatus(task_id).save()
         tasks.cancel(task_id)
 
         revoke.assert_called_once_with(task_id, terminate=True)
-        self.assertEqual(logger.info.call_count, 1)
-        log_msg = logger.info.mock_calls[0][1][0]
+        self.assertEqual(_logger.info.call_count, 1)
+        log_msg = _logger.info.mock_calls[0][1][0]
         self.assertTrue(task_id in log_msg)
         self.assertTrue('Task canceled' in log_msg)
         task_status = TaskStatus.objects(task_id=task_id).first()
         self.assertEqual(task_status['state'], CALL_CANCELED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
-    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
-    def test_cancel_after_task_finished(self, logger, revoke):
+    @mock.patch('pulp.server.async.tasks._logger', autospec=True)
+    def test_cancel_after_task_finished(self, _logger, revoke):
         """
         Test that canceling a task that is already finished results in no change
         to the task state.
@@ -673,7 +673,7 @@ class TestCancel(PulpServerTests):
         self.assertEqual(task_status['state'], CALL_FINISHED_STATE)
 
     @mock.patch('pulp.server.async.tasks.controller.revoke', autospec=True)
-    @mock.patch('pulp.server.async.tasks.logger', autospec=True)
+    @mock.patch('pulp.server.async.tasks._logger', autospec=True)
     def test_cancel_after_task_canceled(self, *unused_mocks):
         """
         Test that canceling a task that was already canceled results in no change
