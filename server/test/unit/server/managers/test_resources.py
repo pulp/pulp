@@ -173,3 +173,12 @@ class TestGetUnreservedWorker(ResourceReservationTests):
             pass
         else:
             self.fail("NoWorkers() Exception should have been raised.")
+
+    def test_is_worker(self):
+        self.assertTrue(resources._is_worker("a_worker@some.hostname"))
+
+    def test_is_not_worker_is_scheduler(self):
+        self.assertEquals(resources._is_worker("scheduler@some.hostname"), False)
+
+    def test_is_not_worker_is_resource_mgr(self):
+        self.assertEquals(resources._is_worker("resource_manager@some.hostname"), False)

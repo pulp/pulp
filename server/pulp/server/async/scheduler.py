@@ -3,11 +3,14 @@ from datetime import datetime, timedelta
 from gettext import gettext as _
 import itertools
 import logging
+import platform
 import threading
 import time
 
 from celery import beat
 from celery.result import AsyncResult
+
+from pulp.common.constants import SCHEDULER_WORKER_NAME
 
 from pulp.server.async.celery_instance import celery as app, RESOURCE_MANAGER_QUEUE
 from pulp.server.async.tasks import _delete_worker
@@ -310,13 +313,22 @@ class Scheduler(beat.Scheduler):
         Superclass runs a tick, that is one iteration of the scheduler. Executes
         all due tasks.
 
-        This method adds a call to trim the failure watcher.
+        This method adds a call to trim the failure watcher and updates the
+        last heartbeat time of the scheduler. We do not actually send a
+        heartbeat message since it would just get read again by this class.
 
         :return:    number of seconds before the next tick should run
         :rtype:     float
         """
         ret = super(Scheduler, self).tick()
         self._failure_watcher.trim()
+
+        # this is not an event that gets sent anywhere. We process it
+        # immediately.
+        scheduler_event = {'timestamp': time.time(),
+                           'type': 'scheduler-event',
+                           'hostname': ("%s@%s" % (SCHEDULER_WORKER_NAME, platform.node()))}
+        worker_watcher.handle_worker_heartbeat(scheduler_event)
         return ret
 
     def setup_schedule(self):
