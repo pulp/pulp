@@ -167,6 +167,9 @@ popd
 %endif # with_python3
 
 %changelog
+* Mon Jan 05 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-3.pulp
+- Conditionally require python-unittest2 >= 0.8.0 (cduryee@redhat.com)
+
 * Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 3.0.24-2.pulp
 - Adds fix for 1174361 to python-kombu and bumps release (bmbouter@gmail.com)
 - Build updates for Fedora 21. (cduryee@redhat.com)
