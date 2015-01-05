@@ -1,30 +1,35 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 """
 Unauthenticated status API so that other can make sure we're up (to no good).
 """
 
 import web
 
+import pulp.server.managers.status as status_manager
 from pulp.server.webservices.controllers.base import JSONController
 
 # status controller ------------------------------------------------------------
 
+
 class StatusController(JSONController):
 
     def GET(self):
-        status_data = {'api_version': '2'}
+        pulp_version = status_manager.get_version()
+        pulp_db_connection = status_manager.get_mongo_conn_status()
+        pulp_messaging_connection = status_manager.get_broker_conn_status()
+
+        # do not ask for the worker list unless we have a DB connection
+        if pulp_db_connection['connected']:
+            pulp_workers = [w for w in status_manager.get_workers()]
+        else:
+            pulp_workers = []
+
+        # 'api_version' is deprecated and can go away in 3.0, bz #1171763
+        status_data = {'api_version': '2',
+                       'versions': pulp_version,
+                       'database_connection': pulp_db_connection,
+                       'messaging_connection': pulp_messaging_connection,
+                       'known_workers': pulp_workers}
+
         return self.ok(status_data)
 
 # web.py application -----------------------------------------------------------

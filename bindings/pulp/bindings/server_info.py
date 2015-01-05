@@ -17,6 +17,7 @@ Handles calls to the server that query the plugin and type capabilities.
 
 from pulp.bindings.base import PulpAPI
 
+
 class ServerInfoAPI(PulpAPI):
     def __init__(self, pulp_connection):
         super(ServerInfoAPI, self).__init__(pulp_connection)
@@ -50,13 +51,4 @@ class ServerInfoAPI(PulpAPI):
         @return: Response
         """
         path = self.base_path + 'distributors/'
-        return self.server.GET(path)
-
-    def ping(self):
-        """
-        Retrieves basic status information from the server.
-
-        @return: Response
-        """
-        path = '/v2/services/status/'
         return self.server.GET(path)

@@ -20,6 +20,9 @@ New Features
   username/password however if they set up a SASL database as described in the
   installation document.
 
+- Additional status information is available via the status API.  More
+  information is available in the :ref:`status API document <getting_the_server_status>`.
+
 .. _RabbitMQ: https://www.rabbitmq.com/
 
 Deprecation
@@ -36,6 +39,10 @@ Deprecation
  * The ``cancel_sync_repo`` method provided by the ``Importer`` base plugin class is deprecated and
    will be removed in a future release. Read more about the
    :ref:`plugin cancellation changes <plugin_cancel_now_exits_behavior_change>`.
+
+ * The ``api_version`` field that is returned by the ``/status`` API is
+   deprecated and will be removed in a future release.
+
 
 .. _2.5.x_upgrade_to_2.6.0:
 

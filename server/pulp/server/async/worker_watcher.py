@@ -28,21 +28,6 @@ from pulp.server.managers import resources
 _logger = logging.getLogger(__name__)
 
 
-def _is_resource_manager(event):
-    """
-    Determine if this event is for a resource manager.
-
-    :param event: A celery event
-    :type event: dict
-    :return: True if this event is from a resource manager, False otherwise.
-    :rtype: bool
-    """
-    if re.match('^%s' % RESOURCE_MANAGER_QUEUE, event['hostname']):
-        return True
-    else:
-        return False
-
-
 def _parse_and_log_event(event):
     """
     Parse and return the event information we are interested in. Also log it.
@@ -84,19 +69,15 @@ def handle_worker_heartbeat(event):
     """
     Celery event handler for 'worker-heartbeat' events.
 
-    The event is first parsed and logged. If this event is from the resource manager, there is
-    no further processing to be done. Then the existing Worker objects are searched
-    for one to update. If an existing one is found, it is updated. Otherwise a new
-    Worker entry is created. Logging at the info and debug level is also done.
+    The event is first parsed and logged.  Then the existing Worker objects are
+    searched for one to update. If an existing one is found, it is updated.
+    Otherwise a new Worker entry is created. Logging at the info and debug
+    level is also done.
 
     :param event: A celery event to handle.
     :type event: dict
     """
     event_info = _parse_and_log_event(event)
-
-    # if this is the resource_manager do nothing
-    if _is_resource_manager(event):
-        return
 
     find_worker_criteria = Criteria(filters={'_id': event_info['worker_name']},
                                     fields=('_id', 'last_heartbeat'))
@@ -131,10 +112,6 @@ def handle_worker_offline(event):
     :type event: dict
     """
     event_info = _parse_and_log_event(event)
-
-    # if this is the resource_manager do nothing
-    if _is_resource_manager(event):
-        return
 
     msg = _("Worker '%(worker_name)s' shutdown") % event_info
     _logger.info(msg)
