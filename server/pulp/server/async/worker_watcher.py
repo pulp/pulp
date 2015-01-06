@@ -16,9 +16,7 @@ code between the event handlers.
 from datetime import datetime
 from gettext import gettext as _
 import logging
-import re
 
-from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 from pulp.server.async.tasks import _delete_worker
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.resources import Worker
