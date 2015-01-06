@@ -102,4 +102,3 @@ class TestContentSourcesConduit(TestCase):
     def test_str(self):
         conduit = ContentSourcesConduit('task-id-random')
         self.assertEqual(str(conduit), 'ContentSourcesConduit')
-

@@ -4,12 +4,14 @@ This module is to contain the helper functions used by the test runners in pulp,
 pulp_puppet
 """
 
+import copy
 import subprocess
 import sys
 import argparse
 
 
-def run_tests(packages, tests_all_platforms, tests_non_rhel5):
+def run_tests(packages, tests_all_platforms, tests_non_rhel5,
+              flake8_paths=None):
     """
     Method used by each of the pulp projects to execute their unit & coverage tests
     This method ensures that the arguments that are used by all of them are consistent.
@@ -22,7 +24,8 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
     :param tests_non_rhel5: List of test directories to inspect for tests that are run on
                             all platforms except rhel 5
     :type tests_non_rhel5: list of str
-
+    :param flake8_paths: paths that should be checked with flake8
+    :type flake8_paths: list of str
     :return: the exit code from nosetests 
     :rtype:  integer
     """
@@ -60,8 +63,19 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
                      ','.join(packages)])
 
     # don't run the server or plugins tests in RHEL5.
+    flake8_exit_code = 0
     if sys.version_info >= (2, 6):
+        # make sure we test everything
         args.extend(tests_non_rhel5)
+
+        # Check the files for coding conventions
+        if flake8_paths:
+            # Ignore E401: multiple imports on one line
+            flake8_command = ['flake8', '--max-line-length=100', '--ignore=E401',
+                              '--exclude=.ropeproject,docs,playpen,pulp-dev.py']
+            flake8_command.extend(flake8_paths)
+            flake8_exit_code = subprocess.call(flake8_command)
+
     else:
         args.extend(['-e', 'server'])
         args.extend(['-e', 'plugins'])
@@ -70,6 +84,8 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
 
     if arguments.failfast:
         args.extend(['-x'])
+        if flake8_exit_code:
+            return flake8_exit_code
     if arguments.verbose:
         args.extend(['-v'])
     if arguments.with_xunit:
@@ -78,4 +94,4 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
         args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
     # Call the test process, and return its exit code
-    return subprocess.call(args)
+    return subprocess.call(args) or flake8_exit_code

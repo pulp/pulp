@@ -11,8 +11,6 @@ from pulp.devel.test_runner import run_tests
 PROJECT_DIR = os.path.dirname(__file__)
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
-# Check for style
-config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
 # These paths should all pass PEP-8 checks
 paths_to_check = [
     'server/pulp/server/agent/',
@@ -21,10 +19,6 @@ paths_to_check = [
     'server/pulp/server/content/',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
-paths_to_check = [os.path.join(PROJECT_DIR, p) for p in paths_to_check]
-command = ['flake8', '--config', config_file]
-command.extend(paths_to_check)
-flake8_exit_code = subprocess.call(command)
 
 PACKAGES = [
     os.path.dirname(__file__),
@@ -51,6 +45,7 @@ TESTS_NON_RHEL5 = [
 dir_safe_all_platforms = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_ALL_PLATFORMS]
 dir_safe_non_rhel5 = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_NON_RHEL5]
 
-tests_exit_code = run_tests(PACKAGES, dir_safe_all_platforms, dir_safe_non_rhel5)
+tests_exit_code = run_tests(PACKAGES, dir_safe_all_platforms, dir_safe_non_rhel5,
+                            flake8_paths=paths_to_check)
 
-sys.exit(flake8_exit_code or tests_exit_code)
+sys.exit(tests_exit_code)
