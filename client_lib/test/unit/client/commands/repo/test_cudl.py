@@ -21,7 +21,7 @@ class CreateRepositoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure all of the expected options are there
         for o in [OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID]:
-            self.assertIn(o, self.command.options)
+            self.assertTrue(o in self.command.options)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)
@@ -80,7 +80,7 @@ class CreateAndConfigureRepositoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure all of the expected options are there
         for o in [OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID]:
-            self.assertIn(o, self.command.options)
+            self.assertTrue(o in self.command.options)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)
@@ -131,7 +131,7 @@ class DeleteRepositoryCommandTests(base.PulpClientTests):
         self.assertTrue(isinstance(self.command, PollingCommand))
 
         # Ensure all of the expected options are there
-        self.assertIn(OPTION_REPO_ID, self.command.options)
+        self.assertTrue(OPTION_REPO_ID in self.command.options)
 
         # Ensure the correct method is wired up
         self.assertEqual(self.command.method, self.command.run)
@@ -380,9 +380,9 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual('GET', self.server_mock.request.call_args[0][0])
 
         url = self.server_mock.request.call_args[0][1]
-        self.assertIn('/repositories/', url)
-        self.assertIn('importers=True', url)
-        self.assertIn('distributors=True', url)
+        self.assertTrue('/repositories/' in url)
+        self.assertTrue('importers=True' in url)
+        self.assertTrue('distributors=True' in  url)
 
         render_kwargs = mock_call.call_args[1]
         expected = ['id', 'display_name', 'description', 'content_unit_counts',
@@ -411,9 +411,9 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.assertEqual('GET', self.server_mock.request.call_args[0][0])
 
         url = self.server_mock.request.call_args[0][1]
-        self.assertIn('/repositories/zoo-repo/', url)
-        self.assertIn('importers=True', url)
-        self.assertIn('distributors=True', url)
+        self.assertTrue('/repositories/zoo-repo/' in url)
+        self.assertTrue('importers=True' in url)
+        self.assertTrue('distributors=True' in url)
 
         render_kwargs = mock_call.call_args[1]
         expected = ['id', 'display_name', 'description', 'content_unit_counts',
@@ -463,7 +463,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
         # Verify
         url = self.server_mock.request.call_args[0][1]
-        self.assertIn('/repositories/zoo-repo/', url)
+        self.assertTrue('/repositories/zoo-repo/' in  url)
         render_kwargs = mock_call.call_args[1]
         expected_filters = ['display_name', 'id']
 
