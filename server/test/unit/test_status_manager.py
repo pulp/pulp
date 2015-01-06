@@ -25,7 +25,7 @@ class StatusManagerTests(PulpServerTests):
                                                          {"last_heartbeat": "123456",
                                                           "name": "some_worker_2"}])
 
-    @patch('pulp.server.async.celery_instance.celery')
+    @patch('pulp.server.managers.status.celery')
     def test_get_broker_conn_status(self, mock_celery):
         mock_celery.connection = Mock()
 
@@ -35,11 +35,11 @@ class StatusManagerTests(PulpServerTests):
     def test_get_mongo_conn_status(self, mock_get_database):
         self.assertEquals(status_manager.get_mongo_conn_status(), {'connected': True})
 
-    @patch('pulp.server.async.celery_instance.celery.connection')
-    def test_get_broker_conn_status_exception(self, mock_celery_conn):
+    @patch('pulp.server.managers.status.celery')
+    def test_get_broker_conn_status_exception(self, mock_celery):
         mock_conn = Mock()
         mock_conn.connect.side_effect = Exception("boom!")
-        mock_celery_conn.return_value = mock_conn
+        mock_celery.connection.return_value = mock_conn
 
         self.assertEquals(status_manager.get_broker_conn_status(), {'connected': False})
 
