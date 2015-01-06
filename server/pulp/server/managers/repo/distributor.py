@@ -167,18 +167,14 @@ class RepoDistributorManager(object):
         transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
         config_conduit = RepoConfigConduit(distributor_type_id)
 
-        try:
-            result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
+        result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
 
-            # For backward compatibility with plugins that don't yet return the tuple
-            if isinstance(result, bool):
-                valid_config = result
-                message = None
-            else:
-                valid_config, message = result
-        except Exception, e:
-            logger.exception('Exception received from distributor [%s] while validating config' % distributor_type_id)
-            raise PulpDataException(e.args), None, sys.exc_info()[2]
+        # For backward compatibility with plugins that don't yet return the tuple
+        if isinstance(result, bool):
+            valid_config = result
+            message = None
+        else:
+            valid_config, message = result
 
         if not valid_config:
             raise PulpDataException(message)
