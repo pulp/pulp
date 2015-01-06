@@ -11,16 +11,19 @@ from pulp.devel.test_runner import run_tests
 PROJECT_DIR = os.path.dirname(__file__)
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
-# Check for style
-config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
-# These paths should all pass PEP-8 checks
-paths_to_check = [
-    'server/pulp/server/tasks/',
-    'server/test/unit/server/']
-paths_to_check = [os.path.join(PROJECT_DIR, p) for p in paths_to_check]
-command = ['flake8', '--config', config_file]
-command.extend(paths_to_check)
-flake8_exit_code = subprocess.call(command)
+# Check for style if we are not on rhel5
+if not sys.version_info >= (2, 6):
+    flake8_exit_code = 0
+else:
+    config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
+    # These paths should all pass PEP-8 checks
+    paths_to_check = [
+        'server/pulp/server/tasks/',
+        'server/test/unit/server/']
+    paths_to_check = [os.path.join(PROJECT_DIR, p) for p in paths_to_check]
+    command = ['flake8', '--config', config_file]
+    command.extend(paths_to_check)
+    flake8_exit_code = subprocess.call(command)
 
 PACKAGES = [
     os.path.dirname(__file__),
