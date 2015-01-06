@@ -15,6 +15,7 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
 # These paths should all pass PEP-8 checks
 paths_to_check = [
+    'server/pulp/server/async/',
     'server/pulp/server/content/sources',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
