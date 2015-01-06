@@ -1,14 +1,3 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Provides classes that implement unit synchronization strategies.
 Nodes importer plugins delegate synchronization to one of
@@ -23,7 +12,7 @@ from logging import getLogger
 
 from pulp.plugins.model import Unit, AssociatedUnit
 from pulp.server.config import config as pulp_conf
-from pulp.server.content.sources import ContentContainer
+from pulp.server.content.sources.container import ContentContainer
 
 from pulp_node import constants
 from pulp_node import pathlib
@@ -32,18 +21,13 @@ from pulp_node.manifest import Manifest, RemoteManifest
 from pulp_node.importers.inventory import UnitInventory
 from pulp_node.importers.download import ContentDownloadListener
 from pulp_node.error import (NodeError, GetChildUnitsError, GetParentUnitsError, AddUnitError,
-    DeleteUnitError, InvalidManifestError, CaughtException)
+                             DeleteUnitError, InvalidManifestError, CaughtException)
 
 
-log = getLogger(__name__)
+_log = getLogger(__name__)
 
-
-# --- i18n ------------------------------------------------------------------------------
 
 STRATEGY_UNSUPPORTED = _('Importer strategy "%(s)s" not supported')
-
-
-# --- request ---------------------------------------------------------------------------
 
 
 class Request(object):
@@ -131,7 +115,7 @@ class ImporterStrategy(object):
         except NodeError, ne:
             request.summary.errors.append(ne)
         except Exception, e:
-            log.exception(request.repo_id)
+            _log.exception(request.repo_id)
             request.summary.errors.append(CaughtException(e, request.repo_id))
 
     def _synchronize(self, request):
@@ -161,7 +145,7 @@ class ImporterStrategy(object):
             request.conduit.save_unit(new_unit)
             request.progress.unit_added(details=new_unit.storage_path)
         except Exception:
-            log.exception(unit['unit_id'])
+            _log.exception(unit['unit_id'])
             request.summary.errors.append(AddUnitError(request.repo_id))
 
     # --- protected ---------------------------------------------------------------------
@@ -181,7 +165,7 @@ class ImporterStrategy(object):
         except NodeError:
             raise
         except Exception:
-            log.exception(request.repo_id)
+            _log.exception(request.repo_id)
             raise GetChildUnitsError(request.repo_id)
 
         # fetch parent units
@@ -209,7 +193,7 @@ class ImporterStrategy(object):
         except NodeError:
             raise
         except Exception:
-            log.exception(request.repo_id)
+            _log.exception(request.repo_id)
             raise GetParentUnitsError(request.repo_id)
 
         # build the inventory
@@ -347,11 +331,8 @@ class ImporterStrategy(object):
                 _unit.id = unit['unit_id']
                 request.conduit.remove_unit(_unit)
             except Exception:
-                log.exception(unit['unit_id'])
+                _log.exception(unit['unit_id'])
                 request.summary.errors.append(DeleteUnitError(request.repo_id))
-
-
-# --- strategies ------------------------------------------------------------------------
 
 
 class Mirror(ImporterStrategy):
@@ -397,9 +378,6 @@ class Additive(ImporterStrategy):
         unit_inventory = self._unit_inventory(request)
         self._add_units(request, unit_inventory)
         self._update_units(request, unit_inventory)
-
-
-# --- factory ---------------------------------------------------------------------------
 
 
 STRATEGIES = {

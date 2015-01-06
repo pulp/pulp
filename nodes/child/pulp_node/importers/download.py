@@ -1,36 +1,16 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import tarfile
 
-from logging import getLogger
-
-from pulp.server.content.sources import Listener, Request
-
+from pulp.server.content.sources.container import Listener
+from pulp.server.content.sources.model import Request
 from pulp_node import constants
 from pulp_node import pathlib
 from pulp_node.error import UnitDownloadError
 
 
-log = getLogger(__name__)
-
-
-# --- constants --------------------------------------------------------------
-
 STORAGE_PATH = constants.STORAGE_PATH
 UNIT_REF = 'unit_ref'
 
-
-# --- utils -------------------------------------------------------------------
 
 def untar_dir(path, storage_path):
     """
@@ -51,8 +31,6 @@ def untar_dir(path, storage_path):
         if os.path.exists(path):
             os.unlink(path)
 
-
-# --- downloading ------------------------------------------------------------
 
 class ContentDownloadListener(Listener):
     """

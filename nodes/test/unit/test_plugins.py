@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import sys
 import tempfile
@@ -29,7 +16,8 @@ from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
-from pulp_node.distributors.http.distributor import NodesHttpDistributor, entry_point as dist_entry_point
+from pulp_node.distributors.http.distributor import (NodesHttpDistributor,
+                                                     entry_point as dist_entry_point)
 from pulp_node.importers.http.importer import NodesHttpImporter, entry_point as imp_entry_point
 from pulp_node.profilers.nodes import NodeProfiler, entry_point as profiler_entry_point
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
@@ -49,7 +37,7 @@ from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.common.plugins import importer_constants
 from pulp.common.config import Config
 from pulp.server.managers import factory as managers
-from pulp.server.content.sources import Request as DownloadRequest
+from pulp.server.content.sources.model import Request as DownloadRequest
 from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp_node.manifest import Manifest, RemoteManifest, MANIFEST_FILE_NAME, UNITS_FILE_NAME
@@ -77,8 +65,6 @@ REPO_DESCRIPTION = 'full of goodness'
 REPO_NOTES = {'the answer to everything': 42}
 REPO_SCRATCHPAD = {'a': 1, 'b': 2}
 
-# --- testing mock classes ---------------------------------------------------
-
 
 class Repository(object):
 
@@ -92,9 +78,9 @@ class FakeDistributor(object):
     @classmethod
     def metadata(cls):
         return {
-            'id' : FAKE_DISTRIBUTOR,
-            'display_name' : 'Fake Distributor',
-            'types' : ['node',]
+            'id': FAKE_DISTRIBUTOR,
+            'display_name': 'Fake Distributor',
+            'types': ['node']
         }
 
     def validate_config(self, *unused):
@@ -138,6 +124,7 @@ class BadDownloadRequest(DownloadRequest):
     def __init__(self, *args, **kwargs):
         DownloadRequest.__init__(self, *args, **kwargs)
         self.url = 'http:/NOWHERE/FAIL_ME_%f' % random.random()
+
 
 class AgentConduit(Conduit):
 
@@ -273,14 +260,11 @@ class PluginTestBase(WebTest):
 
     def dist_conf(self):
         return {
-            'protocol':'file',
-            'http':{'alias':self.alias},
-            'https':{'alias':self.alias},
-            'file':{'alias':self.alias},
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
         }
-
-
-# --- handler tests ------------------------------------------------
 
 
 class AgentHandlerTest(PluginTestBase):
