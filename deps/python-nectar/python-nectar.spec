@@ -16,7 +16,7 @@ BuildArch:      noarch
 BuildRequires:  python-setuptools
 
 Requires:       python-isodate >= 0.4.9
-Requires:       python-requests >= 2.2.1
+Requires:       python-requests >= 2.4.3
 
 %description
 Nectar is a download library that abstracts the workflow of making and tracking
