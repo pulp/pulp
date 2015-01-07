@@ -16,7 +16,7 @@ config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
 # These paths should all pass PEP-8 checks
 paths_to_check = [
     'server/pulp/server/async/',
-    'server/pulp/server/content/sources',
+    'server/pulp/server/content/',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
 paths_to_check = [os.path.join(PROJECT_DIR, p) for p in paths_to_check]
