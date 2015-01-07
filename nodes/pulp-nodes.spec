@@ -235,14 +235,7 @@ Pulp nodes consumer client extensions.
 
 
 %changelog
-<<<<<<< HEAD
 * Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.1.rc
-=======
-* Tue Jan 06 2015 Dennis Kliban <dkliban@redhat.com> 2.4.4-0.4.rc
-- Pulp rebuild
-
-* Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.3.beta
->>>>>>> 2.4-dev
 - Pulp rebuild
 
 * Fri Dec 19 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.0.beta
