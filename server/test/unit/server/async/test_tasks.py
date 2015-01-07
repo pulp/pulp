@@ -574,19 +574,19 @@ class TestTask(ResourceReservationTests):
         saved on the created TaskStatus object.
         """
         args = [1, 'b', 'iii']
-        kwargs = {'queue': 'worker.dq', 'tags': ['test_tags'], 'exchange': 'C.dq'}
+        kwargs = {'queue': 'worker-prod.dq', 'tags': ['test_tags'], 'exchange': 'C.dq'}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
         task = tasks.Task()
 
         task.apply_async(*args, **kwargs)
 
-        apply_async.assert_called_once_with(*args, queue='worker', exchange='C.dq')
+        apply_async.assert_called_once_with(*args, queue='worker-prod', exchange='C.dq')
 
         task_statuses = list(TaskStatusManager.find_all())
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'], 'worker.dq')
+        self.assertEqual(new_task_status['queue'], 'worker-prod.dq')
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 
@@ -598,19 +598,19 @@ class TestTask(ResourceReservationTests):
         unmodified queue name is saved on the created TaskStatus object.
         """
         args = [1, 'b', 'iii']
-        kwargs = {'queue': 'worker.dq', 'tags': ['test_tags'], 'exchange': 'foobar'}
+        kwargs = {'queue': 'worker-prod.dq', 'tags': ['test_tags'], 'exchange': 'foobar'}
         apply_async.return_value = celery.result.AsyncResult('test_task_id')
         task = tasks.Task()
 
         task.apply_async(*args, **kwargs)
 
-        apply_async.assert_called_once_with(*args, queue='worker.dq', exchange='foobar')
+        apply_async.assert_called_once_with(*args, queue='worker-prod.dq', exchange='foobar')
 
         task_statuses = list(TaskStatusManager.find_all())
         self.assertEqual(len(task_statuses), 1)
         new_task_status = task_statuses[0]
         self.assertEqual(new_task_status['task_id'], 'test_task_id')
-        self.assertEqual(new_task_status['queue'], 'worker.dq')
+        self.assertEqual(new_task_status['queue'], 'worker-prod.dq')
         self.assertEqual(new_task_status['tags'], kwargs['tags'])
         self.assertEqual(new_task_status['state'], 'waiting')
 

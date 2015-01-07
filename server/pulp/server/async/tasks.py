@@ -271,7 +271,8 @@ class Task(CeleryTask, ReservedTaskMixin):
         ### This is a temporary workaround for https://github.com/celery/celery/issues/2216 ###
         queue_name_to_save = queue
         if kwargs.get('exchange', None) == DEDICATED_QUEUE_EXCHANGE:
-            kwargs['queue'] = queue.rstrip('.dq')
+            # Strip off '.dq' from the end of the queue name
+            kwargs['queue'] = queue[:-3]
         #######################################################################################
 
         async_result = super(Task, self).apply_async(*args, **kwargs)
