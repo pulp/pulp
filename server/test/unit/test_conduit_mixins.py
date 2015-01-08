@@ -263,6 +263,40 @@ class SearchUnitsMixinTests(unittest.TestCase):
         self.assertRaises(mixins.ImporterConduitException, self.mixin.search_all_units,
                           't', 'fake-criteria')
 
+    @mock.patch('pulp.plugins.types.database.type_definition')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_by_keys_dict')
+    def test_find_unit_by_unit_key(self, mock_get_unit, mock_type_def):
+        # Setup
+        pulp_unit = {'id': 'fake-unit-id', 'another-unit-key-field': 'fake',
+                     'other_field': '1234'}
+        mock_get_unit.return_value = pulp_unit
+
+        mock_type_def.return_value = {
+            'id' : 'mock-type-def',
+            'unit_key' : ['id', 'another-unit-key-field']
+        }
+
+        # Test
+        unit = self.mixin.find_unit_by_unit_key('type-1', {'id': 'not-used-for-mock'})
+
+        # Verify
+        self.assertEqual(1, mock_get_unit.call_count)
+        self.assertEqual(unit.unit_key, {'id': 'fake-unit-id', 'another-unit-key-field': 'fake'})
+        self.assertEqual(unit.metadata, {'other_field': '1234'})
+
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_by_keys_dict')
+    def test_find_unit_by_unit_key_not_found(self, mock_get_unit):
+        # Setup
+        mock_get_unit.side_effect = MissingResource()
+
+        # Test
+        unit = self.mixin.find_unit_by_unit_key('type-1', {'id': 'not-used-for-mock'})
+
+        # Verify
+        self.assertEqual(unit, None)
+
 
 class ImporterScratchPadMixinTests(unittest.TestCase):
 
