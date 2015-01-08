@@ -132,7 +132,10 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+html_sidebars = {
+    '**index': ['globaltoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'],
+    '**[!index]': ['localtoc.html', 'relations.html', 'sourcelink.html', 'searchbox.html'],
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -171,21 +174,21 @@ htmlhelp_basename = 'PulpDocs'
 # -- Options for LaTeX output --------------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
 
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
 
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PulpDocs.tex', u'Pulp Documentation',
-   u'Pulp Team', 'manual'),
+    ('index', 'PulpDocs.tex', u'Pulp Documentation',
+     u'Pulp Team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -228,9 +231,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'PulpDocs', u'Pulp Documentation',
-   u'Pulp Team', 'PulpDocs', 'One line description of project.',
-   'Miscellaneous'),
+    ('index', 'PulpDocs', u'Pulp Documentation',
+     u'Pulp Team', 'PulpDocs', 'One line description of project.',
+     'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -257,10 +260,10 @@ intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
                        'rpm':    ("http://pulp-rpm.readthedocs.org/en/latest/", None)}
 
 extlinks = {'bz': ('https://bugzilla.redhat.com/show_bug.cgi?id=%s', 'RHBZ #'),
-            'fixedbugs': ('https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED'\
-                          '&bug_status=RELEASE_PENDING&bug_status=CLOSED&classificatio'\
-                          'n=Community&component=API%%2Fintegration&component=async%%2Ft'\
-                          'asks&component=consumers&component=documentation&component='\
-                          'nodes&component=rel-eng&component=user-experience&component'\
-                          '=z_other&list_id=2768089&product=Pulp&query_format=advanced'\
+            'fixedbugs': ('https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED'
+                          '&bug_status=RELEASE_PENDING&bug_status=CLOSED&classificatio'
+                          'n=Community&component=API%%2Fintegration&component=async%%2Ft'
+                          'asks&component=consumers&component=documentation&component='
+                          'nodes&component=rel-eng&component=user-experience&component'
+                          '=z_other&list_id=2768089&product=Pulp&query_format=advanced'
                           '&target_release=%s', None)}
