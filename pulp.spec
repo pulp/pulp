@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.5.2
-Release: 0.1.rc%{?dist}
+Release: 0.2.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Thu Jan 08 2015 Dennis Kliban <dkliban@redhat.com> 2.5.2-0.2.beta
+- 1171278 - additional helper method for finding units (cduryee@redhat.com)
+
 * Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.1.rc
 - Pulp rebuild
 
