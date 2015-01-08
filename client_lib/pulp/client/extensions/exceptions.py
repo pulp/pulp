@@ -110,7 +110,10 @@ class ExceptionHandler:
         # The following keys may be present to further classify the exception:
         # property_names - values for these properties were invalid
         # missing_property_names - required properties that were not specified
-        if 'property_names' in e.extra_data:
+        if 'error' in e.extra_data:
+            self._display_coded_error(e.extra_data.get('error'))
+            return CODE_BAD_REQUEST
+        elif 'property_names' in e.extra_data:
             msg = _('The values for the following properties were invalid: %(p)s')
             msg = msg % {'p': ', '.join(e.extra_data['property_names'])}
         elif 'missing_property_names' in e.extra_data:
@@ -127,6 +130,19 @@ class ExceptionHandler:
 
         self.prompt.render_failure_message(msg)
         return CODE_BAD_REQUEST
+
+    def _display_coded_error(self, e):
+        """
+        Recursively render a coded error and the errors contained by it.
+
+        :param e: error to display
+        :type  e: dictionary containing error information.
+        """
+        malformed_msg = _('Request error does not contain a description, '
+                          'please check client logs for more information.')
+        self.prompt.render_failure_message('%s' % (e.get('description', malformed_msg)))
+        for suberror in e.get('sub_errors', []):
+            self._display_coded_error(suberror)
 
     def handle_not_found(self, e):
         """
