@@ -17,6 +17,7 @@ config_file = os.path.join(PROJECT_DIR, 'flake8.cfg')
 paths_to_check = [
     'server/pulp/server/agent/',
     'server/pulp/server/async/',
+    'server/pulp/server/auth/',
     'server/pulp/server/content/',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
