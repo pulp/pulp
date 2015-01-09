@@ -150,12 +150,12 @@ def wsgi_application():
         logger.fatal('The Pulp server failed to start due to the following reasons:')
         logger.exception('  ' + e.message)
         logger.fatal('*************************************************************')
-        return
-    except:
+        raise e
+    except Exception as e:
         logger.fatal('*************************************************************')
         logger.exception('The Pulp server encountered an unexpected failure during initialization')
         logger.fatal('*************************************************************')
-        return
+        raise e
 
     logger.info('*************************************************************')
     logger.info('The Pulp server has been successfully initialized')
