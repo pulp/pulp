@@ -10,7 +10,8 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
-from pulp.server.agent import Context, PulpAgent
+from pulp.server.agent.context import Context
+from pulp.server.agent.direct.pulpagent import PulpAgent
 from pulp.server.db.model.consumer import Bind
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
