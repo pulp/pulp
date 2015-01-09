@@ -30,7 +30,7 @@ Once an apache authorization module is configured, pulp will read and trust the
     also disabled; OAuth will continue to work.
 
 Pulp's apache config file (``/etc/httpd/conf.d/pulp.conf``) contains an example
-of how to configure an apahce auth module. The examples below demonstrate two
+of how to configure an apache auth module. The examples below demonstrate two
 different approaches.
 
 LDAP Whole-API Example
