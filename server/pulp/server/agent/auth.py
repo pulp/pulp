@@ -84,7 +84,7 @@ class Authenticator(object):
         if not self.enabled:
             return
         try:
-            consumer_id = document.any['consumer_id']
+            consumer_id = document.data['consumer_id']
             key = self.get_key(consumer_id)
             if not key.verify(digest, signature):
                 raise ValidationFailed()

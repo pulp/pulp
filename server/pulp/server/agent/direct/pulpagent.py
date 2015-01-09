@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains (proxy) classes that represent the pulp agent.
 The purpose of the proxy is the insulate pulp from the implementation
@@ -79,12 +66,13 @@ class PulpAgent(object):
         :type task_id: str
         """
         criteria = {'match': {'task_id': task_id}}
+
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             authenticator=context.authenticator,
-            transport=context.transport,
-            async=True)
+            wait=0)
+
         admin = agent.Admin()
         admin.cancel(criteria=criteria)
 
@@ -106,12 +94,11 @@ class Consumer(object):
         :type context: pulp.server.agent.context.Context
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            async=True)
+            wait=0)
         consumer = agent.Consumer()
         consumer.unregistered()
 
@@ -129,13 +116,12 @@ class Consumer(object):
         :type options: dict
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            ctag=context.reply_queue,
-            any=context.details)
+            reply=context.reply_queue,
+            data=context.details)
         consumer = agent.Consumer()
         consumer.bind(bindings, options)
 
@@ -152,13 +138,12 @@ class Consumer(object):
         :type options: dict
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            ctag=context.reply_queue,
-            any=context.details)
+            reply=context.reply_queue,
+            data=context.details)
         consumer = agent.Consumer()
         consumer.unbind(bindings, options)
 
@@ -181,13 +166,12 @@ class Content(object):
         :type options: dict
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            ctag=context.reply_queue,
-            any=context.details)
+            reply=context.reply_queue,
+            data=context.details)
         content = agent.Content()
         content.install(units, options)
 
@@ -204,13 +188,12 @@ class Content(object):
         :type options: dict
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            ctag=context.reply_queue,
-            any=context.details)
+            reply=context.reply_queue,
+            data=context.details)
         content = agent.Content()
         content.update(units, options)
 
@@ -227,13 +210,12 @@ class Content(object):
         :type options: dict
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            ctag=context.reply_queue,
-            any=context.details)
+            reply=context.reply_queue,
+            data=context.details)
         content = agent.Content()
         content.uninstall(units, options)
 
@@ -251,10 +233,9 @@ class Profile(object):
         :type context: pulp.server.agent.context.Context
         """
         agent = Agent(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
-            authenticator=context.authenticator,
-            transport=context.transport)
+            authenticator=context.authenticator)
         profile = agent.Profile()
         profile.send()

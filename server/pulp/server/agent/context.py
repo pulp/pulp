@@ -11,10 +11,10 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.config import config as pulp_conf
+from gofer.messaging import Queue
 
 from pulp.server.agent.auth import Authenticator
-from pulp.server.agent.direct.services import Services
+from pulp.server.agent.direct.services import Services, ReplyHandler
 
 
 class Context(object):
@@ -29,9 +29,9 @@ class Context(object):
     some cases DB entity IDs so we can update the DB based on the result of the
     operation on the agent.
 
-    :ivar agent_id: The agent ID.
-        The agent id has the form: 'pulp.agent.<consumer_id>'.
-    :type agent_id: str
+    :ivar route: The AMQP route.
+        The route has the form: 'pulp.agent.<consumer_id>'.
+    :type route: str
     :ivar secret: The shared secret which is the DB consumer object's _id.
     :type secret: str
     :ivar url: The broker URL.
@@ -53,11 +53,12 @@ class Context(object):
             Primarily used to correlate asynchronous replies.
         :type details: dict
         """
-        self.agent_id = 'pulp.agent.%s' % consumer['id']
+        self.route = 'pulp.agent.%s' % consumer['id']
         self.secret = str(consumer['_id'])
-        self.url = pulp_conf.get('messaging', 'url')
-        self.transport = pulp_conf.get('messaging', 'transport')
+        self.url = Services.get_url()
         self.details = details
-        self.reply_queue = Services.REPLY_QUEUE
+        self.reply_queue = ReplyHandler.REPLY_QUEUE
         self.authenticator = Authenticator()
         self.authenticator.load()
+        queue = Queue(self.route)
+        queue.declare(self.url)
