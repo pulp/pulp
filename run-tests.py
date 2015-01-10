@@ -19,6 +19,8 @@ paths_to_check = [
     'server/pulp/server/async/',
     'server/pulp/server/auth/',
     'server/pulp/server/content/',
+    'server/pulp/server/itineraries/',
+    'server/pulp/server/maintenance/',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
 paths_to_check = [os.path.join(PROJECT_DIR, p) for p in paths_to_check]
