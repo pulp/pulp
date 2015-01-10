@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains knowledge about notifiers in the server as well as the ability to
 retrieve the appropriate method needed to handle an event.
@@ -22,12 +9,10 @@ plugin point for Pulp) but for current (Jun 21, 2012) needs this is fine.
 
 from pulp.server.event import amqp, http, mail
 
-# -- constants ----------------------------------------------------------------
 
 # Set in the reset() method
 NOTIFIER_FUNCTIONS = None
 
-# -- public -------------------------------------------------------------------
 
 def is_valid_notifier_type_id(type_id):
     """
@@ -38,6 +23,7 @@ def is_valid_notifier_type_id(type_id):
     @rtype:  bool
     """
     return type_id in NOTIFIER_FUNCTIONS
+
 
 def get_notifier_function(type_id):
     """
@@ -56,6 +42,7 @@ def get_notifier_function(type_id):
     """
     return NOTIFIER_FUNCTIONS[type_id]
 
+
 def reset():
     """
     Initializes the mappings between notifier ID and method to invoke. This
@@ -64,9 +51,9 @@ def reset():
     """
     global NOTIFIER_FUNCTIONS
     NOTIFIER_FUNCTIONS = {
-        http.TYPE_ID : http.handle_event,
-        mail.TYPE_ID : mail.handle_event,
-        amqp.TYPE_ID : amqp.handle_event,
+        http.TYPE_ID: http.handle_event,
+        mail.TYPE_ID: mail.handle_event,
+        amqp.TYPE_ID: amqp.handle_event,
     }
 
 # Perform the initial populating of the notifier functions on module load
