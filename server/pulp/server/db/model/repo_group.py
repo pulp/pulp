@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import traceback as traceback_module
 
 from pulp.server.db.model.base import Model
@@ -135,7 +122,8 @@ class RepoGroupPublishResult(Model, ReaperMixin):
         @type  details: any serializable
         """
 
-        r = cls(group_id, distributor_id, distributor_type_id, started, completed, cls.RESULT_SUCCESS)
+        r = cls(group_id, distributor_id, distributor_type_id, started, completed,
+                cls.RESULT_SUCCESS)
         r.summary = summary
         r.details = details
 
@@ -169,7 +157,8 @@ class RepoGroupPublishResult(Model, ReaperMixin):
         @type  details: any serializable
         """
 
-        r = cls(group_id, distributor_id, distributor_type_id, started, completed, cls.RESULT_FAILED)
+        r = cls(group_id, distributor_id, distributor_type_id, started, completed,
+                cls.RESULT_FAILED)
         r.summary = summary
         r.details = details
 

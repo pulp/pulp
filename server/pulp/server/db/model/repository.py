@@ -1,8 +1,8 @@
 import traceback as traceback_module
 
-import pulp.common.dateutils as dateutils
 from pulp.server.db.model.base import Model
 from pulp.server.db.model.reaper_base import ReaperMixin
+import pulp.common.dateutils as dateutils
 
 
 class Repo(Model):
@@ -94,7 +94,7 @@ class RepoImporter(Model):
     RESOURCE_TEMPLATE = 'pulp:importer:%s:%s'
 
     collection_name = 'repo_importers'
-    unique_indices = ( ('repo_id', 'id'), )
+    unique_indices = (('repo_id', 'id'),)
 
     def __init__(self, repo_id, id, importer_type_id, config):
         super(RepoImporter, self).__init__()
@@ -160,7 +160,7 @@ class RepoDistributor(Model):
     RESOURCE_TEMPLATE = 'pulp:distributor:%s:%s'
 
     collection_name = 'repo_distributors'
-    unique_indices = ( ('repo_id', 'id'), )
+    unique_indices = (('repo_id', 'id'),)
 
     def __init__(self, repo_id, id, distributor_type_id, config, auto_publish):
         super(RepoDistributor, self).__init__()
@@ -234,11 +234,11 @@ class RepoContentUnit(Model):
 
     # Make sure you understand how the order of these affects mongo before
     # modifying the following index
-    unique_indices = ( ('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'), )
-    search_indices = ( ('repo_id', 'unit_type_id', 'owner_type'),
-                       ('unit_type_id', 'created'),  # default sort order on get_units query, do not remove
-                       'unit_id',
-                     )
+    unique_indices = (('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'),)
+    search_indices = (('repo_id', 'unit_type_id', 'owner_type'),
+                      # default sort order on get_units query, do not remove
+                      ('unit_type_id', 'created'),
+                      'unit_id')
 
     OWNER_TYPE_IMPORTER = 'importer'
     OWNER_TYPE_USER = 'user'

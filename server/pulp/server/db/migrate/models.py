@@ -1,13 +1,3 @@
-# Copyright (c) 2010-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
 import logging
 import os
@@ -19,7 +9,8 @@ from pulp.common.compat import iter_modules
 from pulp.server.managers.migration_tracker import MigrationTrackerManager
 import pulp.server.db.migrations
 
-logger = logging.getLogger(__name__)
+
+_logger = logging.getLogger(__name__)
 
 
 MIGRATIONS_ENTRY_POINT = 'pulp.server.db.migrations'
@@ -155,7 +146,8 @@ class MigrationPackage(object):
         :type  update_current_version: bool
         """
         if update_current_version and migration.version != self.current_version + 1:
-            msg = _('Cannot apply migration %(name)s, because the next migration version is %(version)s.')
+            msg = _('Cannot apply migration %(name)s, because the next migration version is '
+                    '%(version)s.')
             msg = msg % {'name': migration.name, 'version': self.current_version + 1}
             raise Exception(msg)
         migration.migrate()
@@ -203,12 +195,12 @@ class MigrationPackage(object):
             except MigrationModule.MissingMigrate:
                 msg = _("The module %(m)s doesn't have a migrate function. It will be ignored.")
                 msg = msg % {'m': module_name}
-                logger.debug(msg)
+                _logger.debug(msg)
             except MigrationModule.MissingVersion:
-                msg = _("The module %(m)s doesn't conform to the migration package naming conventions. It "
-                        "will be ignored.")
+                msg = _("The module %(m)s doesn't conform to the migration package naming "
+                        "conventions. It will be ignored.")
                 msg = msg % {'m': module_name}
-                logger.debug(msg)
+                _logger.debug(msg)
         migration_modules.sort()
         # We should have migrations starting at version 1, which each module version being exactly
         # one larger than the migration preceeding it.
@@ -247,7 +239,7 @@ class MigrationPackage(object):
 
         :rtype: list
         """
-        return [migration for migration in self.migrations \
+        return [migration for migration in self.migrations
                 if migration.version > self.current_version]
 
     def __cmp__(self, other_package):
@@ -283,7 +275,7 @@ def check_package_versions():
         if package.current_version != package.latest_available_version:
             error_message = _("%(p)s hasn't been updated to the latest available migration.")
             error_message = error_message % {'p': package.name}
-            logger.error(error_message)
+            _logger.error(error_message)
             errors.append(error_message)
     if errors:
         error_message = _("There are unapplied migrations. Please run the database management "
@@ -307,7 +299,7 @@ def get_migration_packages():
             migration_package_module = entry_point.load()
             migration_packages.append(MigrationPackage(migration_package_module))
         except (MigrationPackage.DuplicateVersions, MigrationPackage.MissingVersion), e:
-            logger.error(str(e))
+            _logger.error(str(e))
     migration_packages.sort()
     return migration_packages
 
