@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
 import logging
 import re
@@ -18,9 +6,9 @@ import uuid
 
 from celery import task
 
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
+from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.exceptions import (InvalidValue, MissingResource, PulpDataException,
@@ -29,10 +17,10 @@ from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 
 
-_DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoGroupDistributorManager(object):
@@ -60,8 +48,8 @@ class RepoGroupDistributorManager(object):
 
         # Check for the distributor if we know the group exists
         spec = {
-            'repo_group_id' : repo_group_id,
-            'id' : distributor_id,
+            'repo_group_id': repo_group_id,
+            'id': distributor_id,
         }
         distributor = RepoGroupDistributor.get_collection().find_one(spec)
 
@@ -84,11 +72,11 @@ class RepoGroupDistributorManager(object):
 
         @raise MissingResource: if the group does not exist
         """
-        group = RepoGroup.get_collection().find_one({'id' : repo_group_id})
+        group = RepoGroup.get_collection().find_one({'id': repo_group_id})
         if group is None:
             raise MissingResource(repo_group=repo_group_id)
 
-        spec = {'repo_group_id' : repo_group_id}
+        spec = {'repo_group_id': repo_group_id}
         distributors = list(RepoGroupDistributor.get_collection().find(spec))
         return distributors
 
@@ -132,7 +120,7 @@ class RepoGroupDistributorManager(object):
         query_manager = manager_factory.repo_group_query_manager()
 
         # Validation
-        group = query_manager.get_group(repo_group_id) # will raise MissingResource
+        group = query_manager.get_group(repo_group_id)  # will raise MissingResource
 
         if not plugin_api.is_valid_group_distributor(distributor_type_id):
             raise InvalidValue(['distributor_type_id'])
@@ -172,7 +160,7 @@ class RepoGroupDistributorManager(object):
         except Exception, e:
             msg = _('Exception received from distributor [%(d)s] while validating config')
             msg = msg % {'d': distributor_type_id}
-            logger.exception(msg)
+            _logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         # Remove the old distributor if it exists
@@ -180,13 +168,13 @@ class RepoGroupDistributorManager(object):
             RepoGroupDistributorManager.remove_distributor(repo_group_id, distributor_id,
                                                            force=False)
         except MissingResource:
-            pass # if it didn't exist, no problem
+            pass  # if it didn't exist, no problem
 
         # Invoke the appopriate plugin lifecycle method
         try:
             distributor_instance.distributor_added(transfer_group, call_config)
         except Exception, e:
-            logger.exception(
+            _logger.exception(
                 'Error initializing distributor [%s] for group [%s]' % (
                     distributor_type_id, repo_group_id))
             raise PulpExecutionException(), None, sys.exc_info()[2]
@@ -235,8 +223,8 @@ class RepoGroupDistributorManager(object):
 
         try:
             distributor_instance.distributor_removed(transfer_group, call_config)
-        except Exception, e:
-            logger.exception('Exception cleaning up distributor [%s] on group [%s]' % (
+        except Exception:
+            _logger.exception('Exception cleaning up distributor [%s] on group [%s]' % (
                 distributor_id, repo_group_id))
 
             if not force:
@@ -294,7 +282,7 @@ class RepoGroupDistributorManager(object):
         except Exception, e:
             msg = _('Exception received from distributor [%(d)s] while validating config')
             msg = msg % {'d': distributor_type_id}
-            logger.exception(msg)
+            _logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         # If we got this far, the merged_config is valid

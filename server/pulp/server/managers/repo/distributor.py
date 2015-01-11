@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
 import logging
 import re
@@ -18,21 +6,21 @@ import uuid
 
 from celery import task
 
-from pulp.server.async.tasks import Task
-from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.async.tasks import Task
+from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
                                     PulpDataException)
-import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.schedule.repo import RepoPublishScheduleManager
+import pulp.server.managers.repo._common as common_utils
 
 
-_DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoDistributorManager(object):
@@ -55,7 +43,7 @@ class RepoDistributorManager(object):
         """
 
         distributor = RepoDistributor.get_collection().find_one(
-            {'repo_id' : repo_id, 'id' : distributor_id})
+            {'repo_id': repo_id, 'id': distributor_id})
 
         if distributor is None:
             raise MissingResource(distributor=distributor_id)
@@ -76,11 +64,11 @@ class RepoDistributorManager(object):
         @raise MissingResource: if the given repo doesn't exist
         """
 
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repository=repo_id)
 
-        distributors = list(RepoDistributor.get_collection().find({'repo_id' : repo_id}))
+        distributors = list(RepoDistributor.get_collection().find({'repo_id': repo_id}))
         return distributors
 
     @staticmethod
@@ -96,8 +84,8 @@ class RepoDistributorManager(object):
         @return: list of serialized distributors
         @rtype:  list of dict
         """
-        spec = {'repo_id' : {'$in' : repo_id_list}}
-        projection = {'scratchpad' : 0}
+        spec = {'repo_id': {'$in': repo_id_list}}
+        projection = {'scratchpad': 0}
         return list(RepoDistributor.get_collection().find(spec, projection))
 
     @staticmethod
@@ -136,7 +124,7 @@ class RepoDistributorManager(object):
         distributor_coll = RepoDistributor.get_collection()
 
         # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repository=repo_id)
 
@@ -164,7 +152,8 @@ class RepoDistributorManager(object):
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id,
+                                                                         repo_id)
         config_conduit = RepoConfigConduit(distributor_type_id)
 
         result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
@@ -183,17 +172,20 @@ class RepoDistributorManager(object):
         try:
             RepoDistributorManager.remove_distributor(repo_id, distributor_id)
         except MissingResource:
-            pass # if it didn't exist, no problem
+            pass  # if it didn't exist, no problem
 
         # Let the distributor plugin initialize the repository
         try:
             distributor_instance.distributor_added(transfer_repo, call_config)
         except Exception:
-            logger.exception('Error initializing distributor [%s] for repo [%s]' % (distributor_type_id, repo_id))
+            msg = _('Error initializing distributor [%(d)s] for repo [%(r)s]')
+            msg = msg % {'d': distributor_type_id, 'r': repo_id}
+            _logger.exception(msg)
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Database Update
-        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, clean_config, auto_publish)
+        distributor = RepoDistributor(repo_id, distributor_id, distributor_type_id, clean_config,
+                                      auto_publish)
         distributor_coll.save(distributor, safe=True)
 
         return distributor
@@ -217,11 +209,11 @@ class RepoDistributorManager(object):
         distributor_coll = RepoDistributor.get_collection()
 
         # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repository=repo_id)
 
-        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
             raise MissingResource(distributor=distributor_id)
 
@@ -274,11 +266,11 @@ class RepoDistributorManager(object):
         distributor_coll = RepoDistributor.get_collection()
 
         # Input Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repository=repo_id)
 
-        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
             raise MissingResource(distributor=distributor_id)
 
@@ -322,7 +314,7 @@ class RepoDistributorManager(object):
             msg = _('Exception raised from distributor [%(d)s] while validating config for repo '
                     '[%(r)s]')
             msg = msg % {'d': distributor_type_id, 'r': repo_id}
-            logger.exception(msg)
+            _logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
@@ -364,7 +356,7 @@ class RepoDistributorManager(object):
 
         # Input Validation
         repo_distributor = self.get_distributor(repo_id, distributor_id)
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
 
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
@@ -372,13 +364,17 @@ class RepoDistributorManager(object):
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id, repo_id)
+        transfer_repo.working_dir = common_utils.distributor_working_dir(distributor_type_id,
+                                                                         repo_id)
 
         try:
-            payload = distributor_instance.create_consumer_payload(transfer_repo, call_config, binding_config)
+            payload = distributor_instance.create_consumer_payload(transfer_repo, call_config,
+                                                                   binding_config)
             return payload
         except Exception:
-            logger.exception('Exception raised from distributor [%s] generating consumer payload' % distributor_id)
+            msg = _('Exception raised from distributor [%(d)s] generating consumer payload')
+            msg = msg % {'d': distributor_id}
+            _logger.exception(msg)
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
     def get_distributor_scratchpad(self, repo_id, distributor_id):
@@ -400,7 +396,7 @@ class RepoDistributorManager(object):
         distributor_coll = RepoDistributor.get_collection()
 
         # Validation
-        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
             return None
 
@@ -428,7 +424,7 @@ class RepoDistributorManager(object):
         distributor_coll = RepoDistributor.get_collection()
 
         # Validation
-        repo_distributor = distributor_coll.find_one({'repo_id' : repo_id, 'id' : distributor_id})
+        repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
             return
 
