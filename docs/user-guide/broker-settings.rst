@@ -227,9 +227,9 @@ Pulp Server <--> Pulp Consumer Agent and Pulp Server <--> Pulp Worker communicat
 work with RabbitMQ, although it does not receive the same amount of testing by Pulp developers.
 
 For a Pulp Server or Pulp Consumer Agent to use RabbitMQ, you'll need to install the
-``python-gofer-amqplib`` package on each Server or Consumer. This can be done by running:
+``python-gofer-amqp`` package on each Server or Consumer. This can be done by running:
 
-    ``sudo yum install python-gofer-amqplib``
+    ``sudo yum install python-gofer-amqp``
 
 Enable RabbitMQ support for Pulp Server <--> Pulp Consumer Agent communication by
 uncommenting and updating the ``transport`` setting in ``[messaging]`` to ``rabbitmq``. Below is an

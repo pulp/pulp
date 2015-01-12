@@ -85,9 +85,8 @@ DIR_CONSUMER_EXTENSIONS = '/usr/lib/pulp/consumer/extensions/'
 DIR_PLUGINS = '/usr/lib/pulp/plugins'
 
 LINKS = [
-    # Consumer Configuration
+    # agent configuration
     ('agent/etc/gofer/plugins/pulpplugin.conf', '/etc/gofer/plugins/pulpplugin.conf'),
-    ('agent/pulp/agent/gofer/pulpplugin.py', '/usr/lib/gofer/plugins/pulpplugin.py'),
 ]
 
 # We only support Python >= 2.6 for the server code
