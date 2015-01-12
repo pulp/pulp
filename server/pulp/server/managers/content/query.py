@@ -1,20 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import os
 from gettext import gettext as _
 from pprint import pformat
 import errno
+import os
 
 from pulp.plugins.types import database as content_types_db
 from pulp.plugins.util.misc import paginate
@@ -133,7 +120,7 @@ class ContentQueryManager(object):
                                                       model_fields)
         if not units:
             raise MissingResource(_('No content unit for keys: %(k)s') %
-                                      {'k': pformat(unit_keys_dict)})
+                                  {'k': pformat(unit_keys_dict)})
         return units[0]
 
     def get_content_unit_by_id(self, content_type, unit_id, model_fields=None):
@@ -158,7 +145,7 @@ class ContentQueryManager(object):
                                                model_fields)
         if not units:
             raise MissingResource(_('No content unit found for: %(i)s') %
-                                      {'i': unit_id})
+                                  {'i': unit_id})
         return units[0]
 
     def get_multiple_units_by_keys_dicts(self, content_type, unit_keys_dicts, model_fields=None):
@@ -290,7 +277,6 @@ class ContentQueryManager(object):
             os.makedirs(unit_dir)
         return unit_path
 
-# utility methods --------------------------------------------------------------
 
 def _flatten_keys(flat_keys, nested_keys):
     """
@@ -352,10 +338,12 @@ def _build_multi_keys_spec(content_type, unit_keys_dicts):
         keys_dict_set = set(keys_dict)
         extra_keys = keys_dict_set.difference(key_fields_set)
         if extra_keys:
-            keys_errors.append(extra_keys_msg % {'a': ','.join(extra_keys), 'b': ','.join(key_fields)})
+            keys_errors.append(extra_keys_msg % {'a': ','.join(extra_keys),
+                                                 'b': ','.join(key_fields)})
         missing_keys = key_fields_set.difference(keys_dict_set)
         if missing_keys:
-            keys_errors.append(missing_keys_msg % {'a': ','.join(missing_keys), 'b': ','.join(key_fields)})
+            keys_errors.append(missing_keys_msg % {'a': ','.join(missing_keys),
+                                                   'b': ','.join(key_fields)})
         if extra_keys or missing_keys:
             continue
         # validation passed, store the keys and values in the template
