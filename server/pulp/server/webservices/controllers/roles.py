@@ -35,9 +35,17 @@ class RolesCollection(JSONController):
         for role in roles:
             role['users'] = [u['login'] for u in
                              user_query_manager.find_users_belonging_to_role(role['id'])]
-            for resource, operations in role['permissions'].items():
-                role['permissions'][resource] = [permissions_manager.operation_value_to_name(o)
-                                                 for o in operations]
+
+            resource_permission = {}
+            # isolate schema change
+            if role['permissions']:
+                for item in role['permissions']:
+                    resource = item['resource']
+                    operations = item.get('permission', [])
+                    resource_permission[resource] = [permissions_manager.operation_value_to_name(o)
+                                                     for o in operations]
+
+            role['permissions'] = resource_permission
 
         for role in roles:
             role.update(serialization.link.child_link_obj(role['id']))
@@ -79,9 +87,15 @@ class RoleResource(JSONController):
         role['users'] = [u['login'] for u in
                          managers.user_query_manager().find_users_belonging_to_role(role['id'])]
         permissions_manager = managers.permission_manager()
-        for resource, operations in role['permissions'].items():
-            role['permissions'][resource] = [permissions_manager.operation_value_to_name(o)
+
+        # isolate schema change
+        resource_permission = {}
+        for item in role['permissions']:
+            resource = item['resource']
+            operations = item.get('permission', [])
+            resource_permission[resource] = [permissions_manager.operation_value_to_name(o)
                                              for o in operations]
+        role['permissions'] = resource_permission
 
         role.update(serialization.link.current_link_obj())
         return self.ok(role)

@@ -132,11 +132,13 @@ class RoleManager(object):
 
         # Remove respective roles from users
         users = factory.user_query_manager().find_users_belonging_to_role(role_id)
-        for resource, operations in role['permissions'].items():
+
+        for item in role['permissions']:
             for user in users:
                 other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
-                user_ops = _operations_not_granted_by_roles(resource, operations, other_roles)
-                factory.permission_manager().revoke(resource, user['login'], user_ops)
+                user_ops = _operations_not_granted_by_roles(item['resource'],
+                                                            item['permission'], other_roles)
+                factory.permission_manager().revoke(item['resource'], user['login'], user_ops)
 
         for user in users:
             user['roles'].remove(role_id)
@@ -163,8 +165,20 @@ class RoleManager(object):
         role = Role.get_collection().find_one({'id': role_id})
         if role is None:
             raise MissingResource(role_id)
+        if not role['permissions']:
+            role['permissions'] = []
 
-        current_ops = role['permissions'].setdefault(resource, [])
+        resource_permission = {}
+        current_ops = []
+        for item in role['permissions']:
+            if item['resource'] == resource:
+                resource_permission = item
+                current_ops = resource_permission['permission']
+
+        if not resource_permission:
+            resource_permission = dict(resource=resource, permission=current_ops)
+            role['permissions'].append(resource_permission)
+
         for o in operations:
             if o in current_ops:
                 continue
@@ -196,7 +210,13 @@ class RoleManager(object):
         if role is None:
             raise MissingResource(role_id)
 
-        current_ops = role['permissions'].get(resource, [])
+        resource_permission = {}
+        current_ops = []
+        for item in role['permissions']:
+            if item['resource'] == resource:
+                resource_permission = item
+                current_ops = resource_permission['permission']
+
         if not current_ops:
             return
         for o in operations:
@@ -214,7 +234,7 @@ class RoleManager(object):
 
         # in no more allowed operations, remove the resource
         if not current_ops:
-            del role['permissions'][resource]
+            role['permissions'].remove(resource_permission)
 
         Role.get_collection().save(role, safe=True)
 
@@ -244,8 +264,9 @@ class RoleManager(object):
         user['roles'].append(role_id)
         User.get_collection().save(user, safe=True)
 
-        for resource, operations in role['permissions'].items():
-            factory.permission_manager().grant(resource, login, operations)
+        for item in role['permissions']:
+            factory.permission_manager().grant(item['resource'], login,
+                                               item.get('permission', []))
 
     @staticmethod
     def remove_user_from_role(role_id, login):
@@ -279,12 +300,12 @@ class RoleManager(object):
         user['roles'].remove(role_id)
         User.get_collection().save(user, safe=True)
 
-        for resource, operations in role['permissions'].items():
+        for item in role['permissions']:
             other_roles = factory.role_query_manager().get_other_roles(role, user['roles'])
-            user_ops = _operations_not_granted_by_roles(resource,
-                                                        operations,
+            user_ops = _operations_not_granted_by_roles(item['resource'],
+                                                        item['permission'],
                                                         other_roles)
-            factory.permission_manager().revoke(resource, login, user_ops)
+            factory.permission_manager().revoke(item['resource'], login, user_ops)
 
     def ensure_super_user_role(self):
         """
@@ -294,7 +315,8 @@ class RoleManager(object):
         if role is None:
             role = self.create_role(SUPER_USER_ROLE, 'Super Users',
                                     'Role indicates users with admin privileges')
-            role['permissions'] = {'/': [CREATE, READ, UPDATE, DELETE, EXECUTE]}
+            role['permissions'] = [{'resource': '/',
+                                    'permissions': [CREATE, READ, UPDATE, DELETE, EXECUTE]}]
             Role.get_collection().save(role, safe=True)
 
     @staticmethod

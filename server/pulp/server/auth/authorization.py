@@ -45,7 +45,9 @@ def _operations_not_granted_by_roles(resource, operations, roles):
     """
     culled_ops = operations[:]
     for role in roles:
-        permissions = role['permissions']
+        permissions = {}
+        for item in role['permissions']:
+            permissions[item['resource']] = item['permission']
         if resource not in permissions:
             continue
         for operation in culled_ops[:]:
