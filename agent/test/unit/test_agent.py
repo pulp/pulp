@@ -96,10 +96,8 @@ class PluginTest(TestCase):
         mock_read.return_value = Config()
         plugin = __import__('pulp.agent.gofer.pulpplugin', {}, {}, ['pulpplugin'])
         reload(plugin)
-        plugin_cfg = Mock()
-        plugin_cfg.messaging = Mock()
+        plugin.descriptor = Mock()
         plugin.plugin = Mock()
-        plugin.plugin.cfg.return_value = plugin_cfg
         plugin.path_monitor = Mock()
         return plugin
 
@@ -205,6 +203,33 @@ class TestAuthentication(PluginTest):
         authenticator = self.plugin.Authenticator()
         self.assertRaises(
             ValidationFailed, authenticator.validate, document, message, key.sign(message))
+
+        # validation
+        mock_open.assert_called_with(key_path)
+        mock_fp.close.assert_called_with()
+
+    @patch('__builtin__.open')
+    def test_not_validated_returned(self, mock_open):
+        document = {}
+        message = 'hello'
+        key_path = '/etc/pki/pulp/consumer/server/rsa_pub.pem'
+        key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
+
+
+        test_conf = {'server': {'rsa_pub': key_path}}
+        self.plugin.pulp_conf.update(test_conf)
+
+        mock_fp = Mock()
+        mock_fp.read = Mock(return_value=RSA_PUB)
+        mock_open.return_value = mock_fp
+
+        # test
+
+        with patch('pulp.agent.gofer.pulpplugin.RSA') as rsa:
+            rsa.load_pub_key_bio.return_value.verify.return_value = False
+            authenticator = self.plugin.Authenticator()
+            self.assertRaises(
+                ValidationFailed, authenticator.validate, document, message, key.sign(message))
 
         # validation
         mock_open.assert_called_with(key_path)
@@ -459,8 +484,9 @@ class TestInitializer(PluginTest):
             },
             'messaging': {
                 'host': None,
-                'scheme': 'tcp',
+                'scheme': 'amqp',
                 'port': '5672',
+                'transport': 'qpid',
                 'cacert': 'test-ca',
                 'clientcert': None
             }
@@ -473,12 +499,11 @@ class TestInitializer(PluginTest):
 
         # validation
         mock_read.assert_called_with()
-        plugin_cfg = self.plugin.plugin.cfg()
         self.assertEqual(self.plugin.plugin.authenticator, authenticator)
-        self.assertEqual(plugin_cfg.messaging.uuid, agent_id)
-        self.assertEqual(plugin_cfg.messaging.url, 'tcp://pulp-host:5672')
-        self.assertEqual(plugin_cfg.messaging.cacert, 'test-ca')
-        self.assertEqual(plugin_cfg.messaging.clientcert, CERT_PATH)
+        self.assertEqual(self.plugin.plugin.cfg.messaging.uuid, agent_id)
+        self.assertEqual(self.plugin.plugin.cfg.messaging.url, 'qpid+amqp://pulp-host:5672')
+        self.assertEqual(self.plugin.plugin.cfg.messaging.cacert, 'test-ca')
+        self.assertEqual(self.plugin.plugin.cfg.messaging.clientcert, CERT_PATH)
 
 
 class TestRegistrationChanged(PluginTest):

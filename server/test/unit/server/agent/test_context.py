@@ -15,21 +15,15 @@ from mock import patch
 
 from pulp.server.agent.auth import Authenticator
 from pulp.server.agent.context import Context
-from pulp.server.agent.direct.services import Services
-
-
-pulp_conf = {
-    'messaging': {
-        'url': 'http://broker'
-    }
-}
+from pulp.server.agent.direct.services import Services, ReplyHandler
 
 
 class TestContext(TestCase):
 
-    @patch('pulp.server.agent.context.pulp_conf', pulp_conf)
+    @patch('pulp.server.agent.context.Queue')
+    @patch('pulp.server.agent.direct.services.Services.get_url')
     @patch('pulp.server.agent.context.Authenticator.load')
-    def test_context(self, mock_load):
+    def test_context(self, mock_load, get_url, queue):
         _id = 'test-db_id'
         consumer = {'_id': _id, 'id': 'test-consumer', 'certificate': 'XXX'}
         details = {'task_id': '3456'}
@@ -40,12 +34,15 @@ class TestContext(TestCase):
 
         # validation
 
-        agent_id = 'pulp.agent.%s' % consumer['id']
+        route = 'pulp.agent.%s' % consumer['id']
 
-        self.assertEqual(context.agent_id, agent_id)
-        self.assertEqual(context.url, pulp_conf.get('messaging', 'url'))
+        queue.assert_called_once_with(route)
+        queue.return_value.declare.assert_called_once_with(context.url)
+
+        self.assertEqual(context.route, route)
+        self.assertEqual(context.url, get_url.return_value)
         self.assertEqual(context.secret, _id)
         self.assertEqual(context.details, details)
-        self.assertEqual(context.reply_queue, Services.REPLY_QUEUE)
+        self.assertEqual(context.reply_queue, ReplyHandler.REPLY_QUEUE)
         self.assertTrue(isinstance(context.authenticator, Authenticator))
         self.assertTrue(mock_load.called)
