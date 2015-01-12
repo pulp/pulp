@@ -4,28 +4,50 @@ from mock import patch, Mock
 from gofer.messaging.model import Document
 from gofer.rmi.async import Accepted, Rejected, Started, Succeeded, Failed, Progress
 
-from pulp.server.config import config as pulp_conf
 from pulp.server.agent.direct.services import Services, ReplyHandler
+
+
+messaging = {
+    'url': 'atlantis',
+    'cacert': '/path/ca',
+    'clientcert': '/path/cert',
+    'transport': 'monkey'
+}
+
+conf = {
+    'messaging': messaging
+}
+
+
+class Config(object):
+
+    @staticmethod
+    def get(section, _property):
+        return conf[section][_property]
 
 
 class TestServices(TestCase):
 
     @patch('pulp.server.agent.direct.services.Broker')
-    def test_init(self, mock_broker):
+    @patch('pulp.server.agent.direct.services.Services.get_url')
+    @patch('pulp.server.agent.direct.services.config', Config)
+    def test_init(self, get_url, broker):
         Services.init()
-        url = pulp_conf.get('messaging', 'url')
-        transport = pulp_conf.get('messaging', 'transport')
-        ca_cert = pulp_conf.get('messaging', 'cacert')
-        client_cert = pulp_conf.get('messaging', 'clientcert')
-        mock_broker.assert_called_with(url, transport=transport)
-        broker = mock_broker()
-        self.assertEqual(broker.cacert, ca_cert)
-        self.assertEqual(broker.clientcert, client_cert)
+        broker.assert_called_with(get_url.return_value)
+        broker = broker.return_value
+        self.assertEqual(broker.ssl.ca_certificate, messaging['cacert'])
+        self.assertEqual(broker.ssl.client_certificate, messaging['clientcert'])
 
     @patch('pulp.server.agent.direct.services.ReplyHandler')
-    def test_start(self, mock_reply_handler):
+    def test_start(self, reply_handler):
         Services.start()
-        mock_reply_handler.start.assert_called()
+        reply_handler.start.assert_called()
+
+    @patch('pulp.server.agent.direct.services.config', Config)
+    def test_get_url(self):
+        url = messaging['url']
+        adapter = messaging['transport']
+        self.assertEqual('+'.join((adapter, url)), Services.get_url())
 
 
 class TestReplyHandler(TestCase):
@@ -33,18 +55,17 @@ class TestReplyHandler(TestCase):
     @patch('pulp.server.agent.direct.services.Queue', Mock())
     @patch('pulp.server.agent.direct.services.ReplyConsumer', Mock())
     def reply_handler(self):
-        return ReplyHandler('', '')
+        return ReplyHandler('')
 
     @patch('pulp.server.agent.direct.services.Authenticator')
     @patch('pulp.server.agent.direct.services.Queue')
     @patch('pulp.server.agent.direct.services.ReplyConsumer')
     def test_construction(self, mock_consumer, mock_queue, mock_auth):
         url = 'http://broker'
-        transport = pulp_conf.get('messaging', 'transport')
-        handler = ReplyHandler(url, transport)
-        mock_queue.assert_called_with(Services.REPLY_QUEUE, transport=transport)
+        handler = ReplyHandler(url)
+        mock_queue.assert_called_with(ReplyHandler.REPLY_QUEUE)
         mock_consumer.assert_called_with(
-            mock_queue(), url=url, transport=transport, authenticator=mock_auth())
+            mock_queue(), url=url, authenticator=mock_auth())
         self.assertEqual(handler.consumer, mock_consumer())
 
     def test_start(self):
@@ -66,7 +87,7 @@ class TestReplyHandler(TestCase):
             'distributor_id': dist_id
         }
         result = dict(retval=dispatch_report)
-        document = Document(routing=['A', 'B'], result=result, any=call_context)
+        document = Document(routing=['A', 'B'], result=result, data=call_context)
         reply = Succeeded(document)
         handler = self.reply_handler()
         handler.succeeded(reply)
@@ -81,7 +102,7 @@ class TestReplyHandler(TestCase):
         call_context = {
             'task_id': task_id
         }
-        document = Document(routing=['A', 'B'], any=call_context)
+        document = Document(routing=['A', 'B'], data=call_context)
         reply = Accepted(document)
         handler = self.reply_handler()
         handler.accepted(reply)
@@ -95,7 +116,7 @@ class TestReplyHandler(TestCase):
         call_context = {
             'task_id': task_id,
         }
-        document = Document(routing=['A', 'B'], any=call_context)
+        document = Document(routing=['A', 'B'], data=call_context)
         reply = Rejected(document)
         handler = self.reply_handler()
         handler.rejected(reply)
@@ -109,7 +130,7 @@ class TestReplyHandler(TestCase):
         call_context = {
             'task_id': task_id,
         }
-        document = Document(routing=['A', 'B'], any=call_context)
+        document = Document(routing=['A', 'B'], data=call_context)
         reply = Started(document)
         handler = self.reply_handler()
         handler.started(reply)
@@ -122,7 +143,7 @@ class TestReplyHandler(TestCase):
         task_id = 'task_1'
         call_context = {'task_id': task_id}
         progress_report = {'step': 'step-1'}
-        document = Document(routing=['A', 'B'], any=call_context, details=progress_report)
+        document = Document(routing=['A', 'B'], data=call_context, details=progress_report)
         reply = Progress(document)
         handler = self.reply_handler()
         handler.progress(reply)
@@ -151,7 +172,7 @@ class TestReplyHandler(TestCase):
             xstate={'trace': traceback},
             xargs=[]
         )
-        document = Document(routing=['A', 'B'], result=raised, any=call_context)
+        document = Document(routing=['A', 'B'], result=raised, data=call_context)
         reply = Failed(document)
         handler = self.reply_handler()
         handler.failed(reply)
@@ -251,7 +272,7 @@ class TestReplyHandler(TestCase):
         }
         dispatch_report = dict(succeeded=True)
         result = Document(retval=dispatch_report)
-        document = Document(routing=['A', 'B'], result=result, any=call_context)
+        document = Document(routing=['A', 'B'], result=result, data=call_context)
         reply = Succeeded(document)
         handler = self.reply_handler()
         handler.succeeded(reply)
@@ -278,7 +299,7 @@ class TestReplyHandler(TestCase):
         }
         dispatch_report = dict(succeeded=False)
         result = Document(retval=dispatch_report)
-        document = Document(routing=['A', 'B'], result=result, any=call_context)
+        document = Document(routing=['A', 'B'], result=result, data=call_context)
         reply = Succeeded(document)
         handler = self.reply_handler()
         handler.succeeded(reply)
@@ -305,7 +326,7 @@ class TestReplyHandler(TestCase):
         }
         dispatch_report = dict(succeeded=True)
         result = Document(retval=dispatch_report)
-        document = Document(routing=['A', 'B'], result=result, any=call_context)
+        document = Document(routing=['A', 'B'], result=result, data=call_context)
         reply = Succeeded(document)
         handler = self.reply_handler()
         handler.succeeded(reply)
@@ -332,7 +353,7 @@ class TestReplyHandler(TestCase):
         }
         dispatch_report = dict(succeeded=False)
         result = Document(retval=dispatch_report)
-        document = Document(routing=['A', 'B'], result=result, any=call_context)
+        document = Document(routing=['A', 'B'], result=result, data=call_context)
         reply = Succeeded(document)
         handler = self.reply_handler()
         handler.succeeded(reply)
@@ -365,7 +386,7 @@ class TestReplyHandler(TestCase):
             xstate={'trace': traceback},
             xargs=[]
         )
-        document = Document(routing=['A', 'B'], result=raised, any=call_context)
+        document = Document(routing=['A', 'B'], result=raised, data=call_context)
         reply = Failed(document)
         handler = self.reply_handler()
         handler.failed(reply)
@@ -389,7 +410,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        document = Document(routing=['A', 'B'], status='rejected', any=call_context)
+        document = Document(routing=['A', 'B'], status='rejected', data=call_context)
         reply = Rejected(document)
         handler = self.reply_handler()
         handler.rejected(reply)
@@ -421,7 +442,7 @@ class TestReplyHandler(TestCase):
             xstate={'trace': traceback},
             xargs=[]
         )
-        document = Document(routing=['A', 'B'], result=raised, any=call_context)
+        document = Document(routing=['A', 'B'], result=raised, data=call_context)
         reply = Failed(document)
         handler = self.reply_handler()
         handler.failed(reply)
@@ -445,7 +466,7 @@ class TestReplyHandler(TestCase):
             'repo_id': repo_id,
             'distributor_id': dist_id
         }
-        document = Document(routing=['A', 'B'], status='rejected', any=call_context)
+        document = Document(routing=['A', 'B'], status='rejected', data=call_context)
         reply = Rejected(document)
         handler = self.reply_handler()
         handler.rejected(reply)

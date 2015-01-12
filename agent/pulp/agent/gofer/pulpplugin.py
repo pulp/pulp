@@ -64,14 +64,13 @@ def setup_plugin():
     scheme = cfg.messaging.scheme
     host = cfg.messaging.host or cfg.server.host
     port = cfg.messaging.port
-    url = '%s://%s:%s' % (scheme, host, port)
-    plugin_conf = plugin.cfg()
-    plugin_conf.messaging.url = url
-    plugin_conf.messaging.uuid = get_agent_id()
-    plugin_conf.messaging.cacert = cfg.messaging.cacert
-    plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
+    adapter = cfg.messaging.transport
+    url = '%s+%s://%s:%s' % (adapter, scheme, host, port)
+    plugin.cfg.messaging.url = url
+    plugin.cfg.messaging.uuid = get_agent_id()
+    plugin.cfg.messaging.cacert = cfg.messaging.cacert
+    plugin.cfg.messaging.clientcert = cfg.messaging.clientcert or \
         os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-    plugin_conf.messaging.transport = cfg.messaging.transport
     plugin.authenticator = Authenticator()
     log.info('plugin configuration updated')
 
