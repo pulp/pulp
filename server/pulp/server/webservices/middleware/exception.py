@@ -17,7 +17,7 @@ import sys
 import traceback
 from gettext import gettext as _
 
-from django.http.response import HttpResponse, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseServerError
 
 from pulp.server.compat import json, http_responses
 from pulp.server.exceptions import PulpException
