@@ -14,8 +14,8 @@ try:
 except ImportError:
     QPIDTOOLLIBS_AVAILABLE = False
 
-from pulp.server.agent.direct.services import Services
 from pulp.server.config import config as pulp_conf
+from pulp.server.agent.direct.services import ReplyHandler
 from pulp.server.db.model.consumer import Consumer
 
 
@@ -77,7 +77,7 @@ def _migrate_reply_queue(broker):
     :param broker: A qpidtools broker.
     :type broker: BrokerAgent
     """
-    name = Services.REPLY_QUEUE
+    name = ReplyHandler.REPLY_QUEUE
     queue = broker.getQueue(name)
     if not queue:
         # nothing to migrate

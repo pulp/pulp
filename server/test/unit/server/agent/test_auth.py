@@ -122,7 +122,7 @@ class TestAuthentication(TestCase):
         message = 'hello'
         consumer_id = 'test-consumer_id'
         document = Mock()
-        document.any = {'consumer_id': consumer_id}
+        document.data = {'consumer_id': consumer_id}
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
 
         mock_get.return_value = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
@@ -137,7 +137,7 @@ class TestAuthentication(TestCase):
         message = 'hello'
         consumer_id = 'test-consumer_id'
         document = Mock()
-        document.any = {'consumer_id': consumer_id}
+        document.data = {'consumer_id': consumer_id}
         key = RSA.load_key_bio(BIO.MemoryBuffer(OTHER_KEY))
 
         mock_get.return_value = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
@@ -152,7 +152,7 @@ class TestAuthentication(TestCase):
         mock_get.return_value.verify = Mock(return_value=False)
         consumer_id = 'test-consumer_id'
         document = Mock()
-        document.any = {'consumer_id': consumer_id}
+        document.data = {'consumer_id': consumer_id}
 
         # test
 

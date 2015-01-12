@@ -124,7 +124,6 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
-mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
 mkdir -p %{buildroot}/%{_mandir}/man1
@@ -238,7 +237,6 @@ cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdi
 # Agent
 rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
-cp -R agent/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
@@ -280,8 +278,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.4.0
-Requires: python-gofer-qpid >= 1.4.0
+Requires: python-gofer >= 2.3
+Requires: python-gofer-qpid >= 2.3
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -583,9 +581,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.4.0
-Requires: python-gofer-qpid >= 1.4.0
-Requires: gofer >= 1.4.0
+Requires: python-gofer >= 2.3
+Requires: python-gofer-qpid >= 2.3
+Requires: gofer >= 2.3
 Requires: m2crypto
 
 %description agent
@@ -597,7 +595,6 @@ on a defined interval.
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
-%{_libdir}/gofer/plugins/pulpplugin.*
 %doc README LICENSE COPYRIGHT
 
 # --- Selinux ---------------------------------------------------------------------

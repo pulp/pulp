@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from mock import patch, Mock, call
 
-from pulp.server.agent.direct.services import Services
+from pulp.server.agent.direct.services import ReplyHandler
 from pulp.server.db.migrate.models import MigrationModule
 
 
@@ -152,10 +152,10 @@ class TestMigrateReplyQueue(TestCase):
         migration._migrate_reply_queue(fake_broker)
 
         # validation
-        fake_broker.getQueue.assert_called_once_with(Services.REPLY_QUEUE)
-        expected_call = call(fake_broker, Services.REPLY_QUEUE)
+        fake_broker.getQueue.assert_called_once_with(ReplyHandler.REPLY_QUEUE)
+        expected_call = call(fake_broker, ReplyHandler.REPLY_QUEUE)
         self.mock_del_queue_catch_queue_in_use_exc.assert_has_calls(expected_call)
-        fake_broker.addQueue.assert_called_once_with(Services.REPLY_QUEUE, durable=True)
+        fake_broker.addQueue.assert_called_once_with(ReplyHandler.REPLY_QUEUE, durable=True)
 
     def test_migrate_reply_queue_arguments_is_exclusive_deletes_and_add_reply_queue(self):
         fake_queue = Mock()
@@ -171,10 +171,10 @@ class TestMigrateReplyQueue(TestCase):
         migration._migrate_reply_queue(fake_broker)
 
         # validation
-        fake_broker.getQueue.assert_called_with(Services.REPLY_QUEUE)
-        expected_call = call(fake_broker, Services.REPLY_QUEUE)
+        fake_broker.getQueue.assert_called_with(ReplyHandler.REPLY_QUEUE)
+        expected_call = call(fake_broker, ReplyHandler.REPLY_QUEUE)
         self.mock_del_queue_catch_queue_in_use_exc.assert_has_calls(expected_call)
-        fake_broker.addQueue.assert_called_with(Services.REPLY_QUEUE, durable=True)
+        fake_broker.addQueue.assert_called_with(ReplyHandler.REPLY_QUEUE, durable=True)
 
     def test_migrate_reply_queue_not_exclusive_does_not_delete_or_add_reply_queue(self):
         fake_queue = Mock()
@@ -190,7 +190,7 @@ class TestMigrateReplyQueue(TestCase):
         migration._migrate_reply_queue(fake_broker)
 
         # validation
-        fake_broker.getQueue.assert_called_with(Services.REPLY_QUEUE)
+        fake_broker.getQueue.assert_called_with(ReplyHandler.REPLY_QUEUE)
         self.assertTrue(not self.mock_del_queue_catch_queue_in_use_exc.called)
         self.assertTrue(not fake_broker.addQueue.called)
 
@@ -203,7 +203,7 @@ class TestMigrateReplyQueue(TestCase):
         migration._migrate_reply_queue(fake_broker)
 
         # validation
-        fake_broker.getQueue.assert_called_with(Services.REPLY_QUEUE)
+        fake_broker.getQueue.assert_called_with(ReplyHandler.REPLY_QUEUE)
         self.assertTrue(not self.mock_del_queue_catch_queue_in_use_exc.called)
         self.assertTrue(not fake_broker.addQueue.called)
 
