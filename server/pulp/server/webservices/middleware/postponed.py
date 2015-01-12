@@ -14,7 +14,7 @@
 import logging
 
 from celery.result import AsyncResult
-from django.http.response import HttpResponse
+from django.http import HttpResponse
 
 from pulp.server.async.tasks import TaskResult
 from pulp.server.compat import json, json_util, http_responses
