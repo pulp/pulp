@@ -12,6 +12,8 @@ PROJECT_DIR = os.path.dirname(__file__)
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 
+os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
+
 PACKAGES = [
     os.path.dirname(__file__),
     'pulp',

@@ -290,6 +290,9 @@ Requires: genisoimage
 # RHEL6 ONLY
 %if 0%{?rhel} == 6
 Requires: nss >= 3.12.9
+Requires: Django14
+%else
+Requires: python-django >= 1.4.0
 %endif
 %if %{pulp_systemd} == 1
 Requires(post): systemd
