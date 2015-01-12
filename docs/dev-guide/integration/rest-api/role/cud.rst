@@ -1,6 +1,12 @@
 Create, Update, and Delete
 ==========================
 
+This page details role creation, updates and deletion.
+
+If you are updating a role for something besides its name and description, it
+is likely you want to update the permissions associated with the role instead.
+Please see the :doc:`Permissions API <../permission/actions>` for more detail.
+
 Create a Role
 -------------
 
@@ -62,13 +68,11 @@ The update role call is used to change the details of an existing role.
 
 * :param:`?display_name,string,user-friendly name for the role`
 * :param:`?description,string,user-friendly text describing the role`
-* :param:`?permissions,object, key-array pairs of resource to permissions`
 
 | :response_list:`_`
 
 * :response_code:`200,if the update was executed and successful`
 * :response_code:`404,if there is no role with the given id`
-* :response_code:`400,if one or more of the parameters is invalid`
 
 | :return:`database representation of the role including changes made by the update`
 
@@ -78,8 +82,7 @@ The update role call is used to change the details of an existing role.
  {
   "delta": {
     "display_name": "New Role Test",
-    "description": "New Demo Role",
-    "permissions": {"/v2/roles/": ["CREATE"]}
+    "description": "New Demo Role"
   }
  }
 
@@ -93,8 +96,7 @@ The update role call is used to change the details of an existing role.
   "_id": {
     "$oid": "502cb2d7e5e710772d000049"
   }, 
-  "id": "role-test", 
-  "permissions": {"/v2/roles/": ["CREATE"]}
+  "id": "role-test"
  }
 
 Delete a Role
