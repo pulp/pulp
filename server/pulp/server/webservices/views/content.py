@@ -9,8 +9,15 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 class DeleteOrphansActionView(View):
 
-    # @auth_required(authorization.DELETE)
+    @auth_required(authorization.DELETE)
     def post(self, request, *args, **kwargs):
+        """
+        Pass the appropriate tags and json object to delete_orphans_by_id.
+        Raises an OperationPostponed.
+
+        :param request: WSGI request object
+        :type  request: WSGIRequest
+        """
         orphans = request.body_as_json
         task_tags = [tags.action_tag('delete_orphans'),
                      tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]

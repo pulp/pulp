@@ -1,6 +1,3 @@
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
-
 import unittest
 
 from django.core.urlresolvers import resolve, Resolver404
@@ -9,6 +6,7 @@ from django.core.urlresolvers import resolve, Resolver404
 class TestDjangoUrls(unittest.TestCase):
 
     def test_match_delete_orphans_view(self):
+
         match = resolve('/v2/content/actions/delete_orphans/')
         self.assertEqual(match.url_name, 'delete_orphans')
 

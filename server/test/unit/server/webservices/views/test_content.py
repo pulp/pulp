@@ -1,6 +1,3 @@
-import os
-os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
-
 import unittest
 
 import mock
@@ -14,6 +11,11 @@ class TestDeleteOrphansActionView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.orphan_manager')
     @mock.patch('pulp.server.webservices.views.content.tags')
     def test_post_delete_orphans_action(self, mock_tags, mock_orphan_manager):
+        """
+        Delete orphans action view should pass the posted json object and the appropriate tags
+        to the delete_orphans_by_id function. This should be done asynchronously so it should raise
+        OperationPostpone.
+        """
         delete_orphans_view = DeleteOrphansActionView()
         request = mock.MagicMock()
         request.body_as_json = {'fake': 'json'}
