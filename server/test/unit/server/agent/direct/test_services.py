@@ -38,10 +38,12 @@ class TestServices(TestCase):
         self.assertEqual(broker.ssl.ca_certificate, messaging['cacert'])
         self.assertEqual(broker.ssl.client_certificate, messaging['clientcert'])
 
+    @patch('pulp.server.agent.direct.services.Services.get_url')
     @patch('pulp.server.agent.direct.services.ReplyHandler')
-    def test_start(self, reply_handler):
+    def test_start(self, reply_handler, get_url):
         Services.start()
-        reply_handler.start.assert_called()
+        reply_handler.assert_called_once_with(get_url.return_value)
+        reply_handler.return_value.start.assert_called_once_with()
 
     @patch('pulp.server.agent.direct.services.config', Config)
     def test_get_url(self):
@@ -64,6 +66,8 @@ class TestReplyHandler(TestCase):
         url = 'http://broker'
         handler = ReplyHandler(url)
         mock_queue.assert_called_with(ReplyHandler.REPLY_QUEUE)
+        mock_queue.return_value.declare.assert_called_with(url)
+        self.assertTrue(mock_queue.return_value.durable)
         mock_consumer.assert_called_with(
             mock_queue(), url=url, authenticator=mock_auth())
         self.assertEqual(handler.consumer, mock_consumer())
