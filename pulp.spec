@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.6.0
-Release: 0.2.beta%{?dist}
+Release: 0.3.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -638,6 +638,11 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Mon Jan 12 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.3.beta
+- 1066022 - update role doc to remove mentions of permissions
+  (cduryee@redhat.com)
+- 1171278 - additional helper method for finding units (cduryee@redhat.com)
+
 * Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.2.beta
 - 1174353 - improving performance of "pulp-admin tasks list"
   (mhrivnak@redhat.com)
