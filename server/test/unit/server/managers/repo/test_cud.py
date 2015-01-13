@@ -231,8 +231,9 @@ class RepoManagerTests(base.ResourceReservationTests):
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = False, ''
 
         # Test
-        self.assertRaises(exceptions.PulpDataException, self.manager.create_and_configure_repo,
-                          'repo-1', importer_type_id='mock-importer')
+        self.assertRaises(exceptions.PulpCodedValidationException,
+                          self.manager.create_and_configure_repo, 'repo-1',
+                          importer_type_id='mock-importer')
 
         # Verify the repo was deleted
         repo = Repo.get_collection().find_one({'id': 'repo-1'})

@@ -120,10 +120,8 @@ class RepoManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('real-repo')
 
         # Test
-        try:
-            self.importer_manager.set_importer('real-repo', 'fake-importer', None)
-        except exceptions.InvalidValue, e:
-            print(e) # for coverage
+        self.assertRaises(exceptions.PulpCodedValidationException,
+                          self.importer_manager.set_importer, 'real-repo', 'fake-importer', None)
 
     def test_set_importer_with_existing(self):
         """
@@ -181,16 +179,12 @@ class RepoManagerTests(base.PulpServerTests):
         """
 
         # Setup
-        mock_plugins.MOCK_IMPORTER.validate_config.side_effect = Exception()
+        mock_plugins.MOCK_IMPORTER.validate_config.side_effect = IOError()
         self.repo_manager.create_repo('bad_config')
 
         # Test
-        config = {}
-        try:
-            self.importer_manager.set_importer('bad_config', 'mock-importer', config)
-            self.fail('Exception expected for bad config')
-        except exceptions.PulpDataException:
-            pass
+        self.assertRaises(IOError, self.importer_manager.set_importer, 'bad_config',
+                          'mock-importer', {})
 
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = None
@@ -206,11 +200,8 @@ class RepoManagerTests(base.PulpServerTests):
 
         # Test
         config = {'elf' : 'legolas'}
-        try:
-            self.importer_manager.set_importer('bad_config', 'mock-importer', config)
-            self.fail('Exception expected for bad config')
-        except exceptions.PulpDataException, e:
-            self.assertEqual(e[0], 'Invalid stuff')
+        self.assertRaises(exceptions.PulpCodedValidationException,
+                          self.importer_manager.set_importer, 'bad_config', 'mock-importer', config)
 
     def test_set_importer_invalid_config_backward_compatibility(self):
         """
@@ -224,11 +215,49 @@ class RepoManagerTests(base.PulpServerTests):
 
         # Test
         config = {'elf' : 'legolas'}
-        try:
-            self.importer_manager.set_importer('bad_config', 'mock-importer', config)
-            self.fail('Exception expected for bad config')
-        except exceptions.PulpDataException:
-            pass
+        self.assertRaises(exceptions.PulpCodedValidationException,
+                          self.importer_manager.set_importer, 'bad_config', 'mock-importer', config)
+
+    @mock.patch('pulp.server.db.model.base.Model.get_collection')
+    def test_validate_importer_config_no_repo(self, mock_get_collection):
+        """
+        Test that the validator raises a MissingResource exception if the repository is missing
+        """
+        mock_collection = mock.Mock(return_value=None)
+        mock_collection.find_one.return_value = None
+        mock_get_collection.return_value = mock_collection
+
+        self.assertRaises(exceptions.MissingResource,
+                          self.importer_manager.validate_importer_config, 'repo', 'importer_id', {})
+        mock_collection.find_one.assert_called_once_with({'id': 'repo'})
+
+    @mock.patch('pulp.plugins.loader.api.is_valid_importer', return_value=False)
+    @mock.patch('pulp.server.db.model.base.Model.get_collection')
+    def test_validate_importer_config_no_importer(self, mock_get_collection,
+                                                  mock_importer_validator):
+        """
+        Test that the validator raises a PulpCodedValidationException if the importer doesn't exist
+        """
+        self.assertRaises(exceptions.PulpCodedValidationException,
+                          self.importer_manager.validate_importer_config, 'repo', 'importer_id', {})
+        mock_importer_validator.assert_called_once_with('importer_id')
+
+    @mock.patch('pulp.plugins.loader.api.is_valid_importer', return_value=True)
+    @mock.patch('pulp.server.db.model.base.Model.get_collection')
+    @mock.patch('pulp.plugins.loader.api.get_importer_by_id')
+    def test_validate_importer_config_invalid_config(self, mock_get_importer, *unused_mocks):
+        mock_importer = mock.Mock()
+        mock_importer.validate_config.return_value = (False, 'What are exceptions?')
+        mock_get_importer.return_value = (mock_importer, {})
+
+        self.assertRaises(exceptions.PulpCodedValidationException,
+                          self.importer_manager.validate_importer_config, 'repo', 'importer_id',
+                          {'sweep_it_up': None})
+
+        self.assertEqual(1, mock_importer.validate_config.call_count)
+        config = mock_importer.validate_config.call_args[0][1]
+        self.assertEqual({}, config.plugin_config)
+        self.assertEqual({}, config.repo_plugin_config)
 
     # -- remove ---------------------------------------------------------------
 
