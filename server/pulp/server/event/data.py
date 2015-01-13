@@ -1,26 +1,12 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains DTOs to describe events.
 """
 
-import celery
 from mongoengine.queryset import DoesNotExist
+import celery
 
 from pulp.server.db.model.dispatch import TaskStatus
 
-# -- constants ----------------------------------------------------------------
 
 # These types are used to form AMQP message topic names, so they must be
 # dot-delimited.
@@ -35,8 +21,6 @@ TYPE_REPO_SYNC_FINISHED = 'repo.sync.finish'
 # (feel free to change this if there's a simpler way)
 ALL_EVENT_TYPES = (TYPE_REPO_PUBLISH_FINISHED, TYPE_REPO_PUBLISH_STARTED,
                    TYPE_REPO_SYNC_FINISHED, TYPE_REPO_SYNC_STARTED,)
-
-# -- classes ------------------------------------------------------------------
 
 
 class Event(object):
@@ -63,4 +47,3 @@ class Event(object):
              'payload': self.payload,
              'call_report': self.call_report}
         return d
-
