@@ -4,20 +4,24 @@ Merging
 Pull Requests
 -------------
 
-You have some commits in a branch, and you're ready to merge. The Pulp Team makes
-use of pull requests for all but the most trivial contributions. Please have a
-look at our :doc:`Contribution checklist <index>`.
+You have some commits in a branch, and you're ready to merge. The Pulp Team
+makes use of pull requests for all contributions. Please have a look at our
+:doc:`Contribution checklist <index>`.
 
 On the GitHub page for the repo where your development branch lives, there will be
 a "Pull Request" button. Click it. From there you will choose the source and
 destination branches.
 
-If there is a bugzilla issue, please title the pull request "<bz_id> -
-Short Message". In the comment section below, please include a link to the
-issue. Use of GitHub's markdown for the link is prefered. Example:
-``[BZ-123456](http://link.tobug)`` Additionally, please also include a link to the
-pull request in the bugzilla comments.
+If there is a Bugzilla bug associated with the commit, please title the pull
+request "<bz_id> - Short Message". In the comment section below, please include
+a link to the issue. Use of GitHub's markdown for the link is prefered.
+Example: ``[BZ-123456](http://link.tobug)`` Additionally, please also include a
+link to the pull request in the bugzilla comments.
 
+If there is a Redmine issue associated with the commit, please add ``closes
+#<issue number>`` somewhere in the commit. This will set the issue to
+``MODIFIED`` upon merging. Additionally, you can add ``re #<issue number> <some
+message>`` which will add a comment to the issue upon merging.
 
 For details about using pull requests, see GitHub's
 `official documentation <https://help.github.com/articles/using-pull-requests>`_.
@@ -90,11 +94,62 @@ found here:
    make sure that all copies of those original commits get deleted. Did you push
    your branch to origin? Delete it and re-push after the rebase.
 
+.. note::
+   This is an atypical case, but if you are making commits to multiple
+   branches, please consider creating a base branch to merge from that is a common
+   ancestor of the branches you are merging to.  This will make for cleaner merges.
+
+   For example, if you need to merge to both ``2.5-testing`` and
+   ``2.6-testing``, you can run ``git merge-base origin/2.5-testing
+   origin/2.6-testing``. If you apply your fix on top of this branch before
+   creating a PR, it can reduce headaches later on.
+
+   Normally, fixes only need to land in one branch. This advice is only for
+   patches that need to land in multiple releases.
+
+
+.. _merging-your-changes:
+
+Merging your Changes
+--------------------
+
+After a PR is marked as "LGTM" (Looks Good To Me), you can then merge your
+changes. First, hit the "Merge pull request" button on your PR on the Github
+website.
+
+You will now need to merge your changes forward. Here are the rules for merging forward:
+
+- If your commit is on ``X.Y-release``, you want to merge ``X.Y-release`` into ``X.Y-testing``.
+- If your commit is on ``X.Y-testing``, you want to merge ``X.Y-testing`` into ``X.Y-dev``.
+- If your commit is on ``X.Y-dev``, you want to merge ``X.Y-dev`` to  the next
+  higher version's dev branch. This will typically be ``X.Y+1-dev``.
+- When you are done merging through the various dev branches, merge the highest
+  dev branch to ``master``.
+
+For example, if you commit to ``2.5-testing``, you would merge ``2.5-testing``
+into ``2.5-dev``, then ``2.5-dev`` into ``2.6-dev``, then ``2.6-dev`` into
+``master``. The trick here is that we never merge between testing or release
+branches; code only goes into dev branches and then through the dev
+branches into master.
+
+The following diagram that may be illustrative:
+
+.. image:: images/pulp-merging.png
+
+The arrows indiciate which direction the merges occur.
 
 .. _merging-to-multiple-releases:
 
+You will also want to set the "Target Release" field in the redmine issue.
+"Target Release" is available for Issues, Refactors, and Stories but not for
+Tasks. If you have a task that appears to need a target release, please
+consider using one of the other three issue types.
+
 Merging to Multiple Releases
 ----------------------------
+
+This advice applies to scenarios when you need to apply a fix to multiple
+releases. For example, you may need to fix something in both Pulp 2.5 and 2.6.
 
 The most important aspect of merging a change into multiple release branches is
 :ref:`choosing the right branch to start from <choosing-upstream-branch>`.
@@ -103,6 +158,15 @@ Once your work is complete, submit a pull request from your GitHub fork into the
 branch for the oldest release you intend to merge into. Once review and revision
 is complete, merge your branch from the pull request web page. Do not delete the
 branch yet.
+
+At this point, you will do a "typical" forward merge, as documented :ref:`above
+<merging-your-changes>`.
+
+You will then want to take your branch with the PR, and merge that to the next
+branch that needs it. For example, if you have a fix you want in 2.5 and 2.6,
+you'd merge to ``2.5-testing`` and merge forward as usual, then merge your PR
+branch to ``2.6-testing`` and merge that forward as well. This will land your
+fix in both places cleanly.
 
 For cases where there are few merge conflicts, merge your working branch manually
 into each successively newer release branch, and finally into master. Generally,

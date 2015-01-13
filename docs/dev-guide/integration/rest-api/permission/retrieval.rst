@@ -22,22 +22,22 @@ In this case the array will contain a single item.
 
 :sample_response:`200` ::
 
-[
- {
-    "_id": {
-        "$oid": "546a6ece6754762f1c34b1db"
-    },
-    "_ns": "permissions",
-    "id": "546a6ece6754762f1c34b1db",
-    "resource": "/v2/actions/login/",
-    "users": {
-        "admin": [
-            "READ",
-            "UPDATE"
-        ]
-    }
- }
-]
+  [
+   {
+      "_id": {
+          "$oid": "546a6ece6754762f1c34b1db"
+      },
+      "_ns": "permissions",
+      "id": "546a6ece6754762f1c34b1db",
+      "resource": "/v2/actions/login/",
+      "users": {
+          "admin": [
+              "READ",
+              "UPDATE"
+          ]
+      }
+   }
+  ]
 
 
 Retrieve Permissions for all resources
