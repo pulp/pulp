@@ -60,9 +60,9 @@ the latest dependencies according to the spec file.
 
 #. Install some additional dependencies for development::
    
-   $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server \
-          qpid-cpp-server qpid-cpp-server-store python-qpid-qmf python-nose \
-          python-mock python-paste python-pip
+        $ sudo yum install python-setuptools redhat-lsb mongodb mongodb-server \
+        qpid-cpp-server qpid-cpp-server-store python-qpid-qmf python-nose \
+        python-mock python-paste python-pip
 
 The only caveat to this approach is that these dependencies will need to be maintained after this
 initial setup. Leaving the testing builds repository enabled will cause them to be automatically
