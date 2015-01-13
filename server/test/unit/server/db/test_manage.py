@@ -597,7 +597,7 @@ class TestMigrationPackage(MigrationTest):
         mp = models.MigrationPackage(migration_packages.z)
         self.assertEqual(mp.name, 'unit.server.db.migration_packages.z')
 
-    @patch('pulp.server.db.migrate.models.logger.debug')
+    @patch('pulp.server.db.migrate.models._logger.debug')
     def test_nonconforming_modules(self, log_mock):
         # The z package has a module called doesnt_conform_to_naming_convention.py. This shouldn't
         # count as a migration module, but it also should not interfere with the existing migration
@@ -800,7 +800,7 @@ class TestMigrationUtils(MigrationTest):
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
-    @patch('pulp.server.db.migrate.models.logger.error')
+    @patch('pulp.server.db.migrate.models._logger.error')
     def test_get_migration_packages(self, log_mock):
         """
         Ensure that pulp.server.db.migrate.models.get_migration_packages functions correctly.
