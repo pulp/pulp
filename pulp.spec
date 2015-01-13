@@ -235,7 +235,6 @@ cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdi
 %endif
 
 # Agent
-rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
 
 # Ghost
@@ -594,6 +593,7 @@ on a defined interval.
 %files agent
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
+%{python_sitelib}/%{name}/agent/gofer/
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
 %doc README LICENSE COPYRIGHT
 
