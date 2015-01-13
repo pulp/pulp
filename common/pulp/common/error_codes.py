@@ -91,4 +91,7 @@ PLP1003 = Error("PLP1003", _("The value specified for the field %(field) must be
 PLP1004 = Error("PLP1004", _("An object of type %(type) already exists in the database with an id of %(object_id)"), ['type', 'object_id'])
 PLP1005 = Error("PLP1005", _("The checksum type %(checksum_type)s is unknown."), ['checksum_type'])
 PLP1006 = Error("PLP1006", _("The value specified for the field %(field) may not start with %(value)s."), ['field', 'value'])
-PLP1007 = Error("PLP1007", _("The relative path specified must not point outside of the parent directory:  %(path"), ['path'])
+PLP1007 = Error("PLP1007", _("The relative path specified must not point outside of the parent"
+                             " directory:  %(path)s"), ['path'])
+PLP1008 = Error("PLP1008", _("The importer type %(importer_type_id)s does not exist"),
+                ['importer_type_id'])
