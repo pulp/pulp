@@ -13,6 +13,6 @@ class DeleteOrphansActionView(View):
     def post(self, request, *args, **kwargs):
         orphans = request.body_as_json
         task_tags = [tags.action_tag('delete_orphans'),
-                tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
+                     tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = orphan_manager.delete_orphans_by_id.apply_async([orphans], tags=task_tags)
         raise OperationPostponed(async_task)
