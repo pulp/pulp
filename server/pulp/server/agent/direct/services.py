@@ -35,7 +35,7 @@ class Services(object):
 
     @staticmethod
     def start():
-        url = config.get('messaging', 'url')
+        url = Services.get_url()
         Services.reply_handler = ReplyHandler(url)
         Services.reply_handler.start()
         _logger.info(_('AMQP reply handler started'))
@@ -122,6 +122,8 @@ class ReplyHandler(Listener):
         :type url: str
         """
         queue = Queue(ReplyHandler.REPLY_QUEUE)
+        queue.durable = True
+        queue.declare(url)
         self.consumer = ReplyConsumer(queue, url=url, authenticator=Authenticator())
 
     def start(self):
