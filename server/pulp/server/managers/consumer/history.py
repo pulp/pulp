@@ -1,25 +1,11 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains manager class and exceptions for operations for recording and retrieving
 consumer history events.
 """
 
-import logging
 import datetime
-import pymongo
 import isodate
+import pymongo
 
 from pulp.common import dateutils
 from pulp.server import config
@@ -27,7 +13,6 @@ from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory as managers_factory
 
-# -- constants ----------------------------------------------------------------
 
 # Event Types
 TYPE_CONSUMER_REGISTERED = 'consumer_registered'
@@ -48,14 +33,10 @@ TYPES = (TYPE_CONSUMER_REGISTERED, TYPE_CONSUMER_UNREGISTERED, TYPE_REPO_BOUND,
 SORT_ASCENDING = 'ascending'
 SORT_DESCENDING = 'descending'
 SORT_DIRECTION = {
-    SORT_ASCENDING : pymongo.ASCENDING,
-    SORT_DESCENDING : pymongo.DESCENDING,
+    SORT_ASCENDING: pymongo.ASCENDING,
+    SORT_DESCENDING: pymongo.DESCENDING,
 }
 
-
-_LOG = logging.getLogger(__name__)
-
-# -- manager ------------------------------------------------------------------
 
 class ConsumerHistoryManager(object):
     """
@@ -74,7 +55,6 @@ class ConsumerHistoryManager(object):
         '''
         return managers_factory.principal_manager().get_principal()['login']
 
-
     def record_event(self, consumer_id, event_type, event_details=None):
         """
         @ivar consumer_id: identifies the consumer
@@ -90,7 +70,7 @@ class ConsumerHistoryManager(object):
         @raises InvalidValue: if any of the fields is unacceptable
         """
         # Check that consumer exists for all except registration event
-        existing_consumer = Consumer.get_collection().find_one({'id' : consumer_id})
+        existing_consumer = Consumer.get_collection().find_one({'id': consumer_id})
         if not existing_consumer and event_type != TYPE_CONSUMER_UNREGISTERED:
             raise MissingResource(consumer=consumer_id)
 
@@ -106,7 +86,6 @@ class ConsumerHistoryManager(object):
 
         event = ConsumerHistoryEvent(consumer_id, self._originator(), event_type, event_details)
         ConsumerHistoryEvent.get_collection().save(event, safe=True)
-
 
     def query(self, consumer_id=None, event_type=None, limit=None, sort='descending',
               start_date=None, end_date=None):
@@ -150,7 +129,7 @@ class ConsumerHistoryManager(object):
             invalid_values.append('limit')
 
         # Verify the sort direction is valid
-        if not sort in SORT_DIRECTION:
+        if sort not in SORT_DIRECTION:
             invalid_values.append('sort')
 
         # Verify that start_date and end_date is valid

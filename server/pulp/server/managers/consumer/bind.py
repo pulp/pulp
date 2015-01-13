@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains binding management classes
 """
@@ -27,7 +14,7 @@ from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 
 
-_LOG = getLogger(__name__)
+_logger = getLogger(__name__)
 
 
 class BindManager(object):
@@ -92,7 +79,7 @@ class BindManager(object):
         # fetch the inserted/updated bind
         bind = BindManager.get_bind(consumer_id, repo_id, distributor_id)
         # update history
-        details = {'repo_id':repo_id, 'distributor_id':distributor_id}
+        details = {'repo_id': repo_id, 'distributor_id': distributor_id}
         manager = factory.consumer_history_manager()
         manager.record_event(consumer_id, 'repo_bound', details)
         return bind
@@ -130,7 +117,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
         query['deleted'] = True
-        update = {'$set':{'deleted':False, 'consumer_actions':[]}}
+        update = {'$set': {'deleted': False, 'consumer_actions': []}}
         collection.update(query, update, safe=True)
 
     @staticmethod
@@ -164,8 +151,8 @@ class BindManager(object):
             return
         BindManager.mark_deleted(consumer_id, repo_id, distributor_id)
         details = {
-            'repo_id':repo_id,
-            'distributor_id':distributor_id
+            'repo_id': repo_id,
+            'distributor_id': distributor_id
         }
         manager = factory.consumer_history_manager()
         manager.record_event(consumer_id, 'repo_unbound', details)
@@ -204,11 +191,13 @@ class BindManager(object):
         bind = collection.find_one(bind_id)
         if bind is None:
             # If the binding doesn't exist, report which values are not present
-            missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id, distributor_id)
+            missing_values = BindManager._validate_consumer_repo(consumer_id, repo_id,
+                                                                 distributor_id)
             if missing_values:
                 raise MissingResource(**missing_values)
             else:
-                # In this case, every resource is present, but the consumer isn't bound to that repo/distributor
+                # In this case, every resource is present, but the consumer isn't bound to that
+                # repo/distributor
                 raise MissingResource(bind_id=bind_id)
         return bind
 
@@ -300,7 +289,7 @@ class BindManager(object):
         # update document
         collection = Bind.get_collection()
         query = BindManager.bind_id(consumer_id, repo_id, distributor_id)
-        collection.update(query, {'$set':{'deleted':True}}, safe=True)
+        collection.update(query, {'$set': {'deleted': True}}, safe=True)
 
     @staticmethod
     def delete(consumer_id, repo_id, distributor_id, force=False):
@@ -326,7 +315,7 @@ class BindManager(object):
             }
             pending = collection.find(query)
             if len(list(pending)):
-                raise Exception, 'outstanding actions, not deleted'
+                raise Exception('outstanding actions, not deleted')
         if not force:
             bind_id['deleted'] = True
         collection.remove(bind_id, safe=True)
@@ -354,7 +343,7 @@ class BindManager(object):
             timestamp=time(),
             action=action,
             status=Bind.Status.PENDING)
-        update = {'$push':{'consumer_actions':entry}}
+        update = {'$push': {'consumer_actions': entry}}
         collection.update(bind_id, update, safe=True)
 
     def action_succeeded(self, consumer_id, repo_id, distributor_id, action_id):
@@ -375,15 +364,13 @@ class BindManager(object):
         bind_id = self.bind_id(consumer_id, repo_id, distributor_id)
         action = self.find_action(action_id)
         if action is None:
-            _LOG.warn('action %s not found', action_id)
+            _logger.warn('action %s not found', action_id)
             return
         # delete the action
-        update = {'$pull':{'consumer_actions':{'id':action_id}}}
+        update = {'$pull': {'consumer_actions': {'id': action_id}}}
         collection.update(bind_id, update, safe=True)
         # purge all previous actions
-        update = {'$pull':
-            {'consumer_actions':{'timestamp':{'$lt':action['timestamp']}}}
-        }
+        update = {'$pull': {'consumer_actions': {'timestamp': {'$lt': action['timestamp']}}}}
         collection.update(bind_id, update, safe=True)
 
     def action_failed(self, consumer_id, repo_id, distributor_id, action_id):
@@ -401,7 +388,7 @@ class BindManager(object):
         collection = Bind.get_collection()
         query = self.bind_id(consumer_id, repo_id, distributor_id)
         query['consumer_actions.id'] = action_id
-        update = {'$set':{'consumer_actions.$.status':Bind.Status.FAILED}}
+        update = {'$set': {'consumer_actions.$.status': Bind.Status.FAILED}}
         collection.update(query, update, safe=True)
 
     def find_action(self, action_id):
@@ -412,7 +399,7 @@ class BindManager(object):
         @return: The action if found, else None
         """
         collection = Bind.get_collection()
-        query = {'consumer_actions.id':action_id}
+        query = {'consumer_actions.id': action_id}
         binding = collection.find_one(query)
         if binding is None:
             return

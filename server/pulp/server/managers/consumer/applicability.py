@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains content applicability management classes
 """
@@ -24,15 +11,15 @@ from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.profiler import Profiler
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind, RepoProfileApplicability, UnitProfile
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers
 from pulp.server.managers.consumer.query import ConsumerQueryManager
-from pulp.server.async.tasks import Task
 
 
-logger = getLogger(__name__)
+_logger = getLogger(__name__)
 
 
 class ApplicabilityRegenerationManager(object):
@@ -60,8 +47,9 @@ class ApplicabilityRegenerationManager(object):
         # when making any modifications to this code.
 
         # Get all unit profiles associated with given consumers
-        unit_profile_criteria = Criteria(filters={'consumer_id':{'$in':consumer_ids}},
-                                         fields=['consumer_id', 'profile_hash', 'content_type', 'id'])
+        unit_profile_criteria = Criteria(
+            filters={'consumer_id': {'$in': consumer_ids}},
+            fields=['consumer_id', 'profile_hash', 'content_type', 'id'])
         all_unit_profiles = consumer_profile_manager.find_by_criteria(unit_profile_criteria)
 
         # Create a consumer-profile map with consumer id as the key and list of tuples
@@ -85,7 +73,7 @@ class ApplicabilityRegenerationManager(object):
                 profile_hash_profile_id_map[profile_hash] = profile_id
 
         # Get all repos bound to given consumers
-        bind_criteria = Criteria(filters={'consumer_id': {'$in':consumer_ids}},
+        bind_criteria = Criteria(filters={'consumer_id': {'$in': consumer_ids}},
                                  fields=['repo_id', 'consumer_id'])
         all_repo_bindings = bind_manager.find_by_criteria(bind_criteria)
 
@@ -149,11 +137,9 @@ class ApplicabilityRegenerationManager(object):
                     continue
 
                 # Regenerate applicability data for given unit_profile and repo id
-                ApplicabilityRegenerationManager.regenerate_applicability(profile_hash, 
-                                                                          unit_profile['content_type'],
-                                                                          unit_profile['id'],
-                                                                          repo_id,
-                                                                          existing_applicability)
+                ApplicabilityRegenerationManager.regenerate_applicability(
+                    profile_hash, unit_profile['content_type'], unit_profile['id'], repo_id,
+                    existing_applicability)
 
     @staticmethod
     def regenerate_applicability(profile_hash, content_type, profile_id,
@@ -209,8 +195,8 @@ class ApplicabilityRegenerationManager(object):
                                                                     call_config,
                                                                     profiler_conduit)
             except NotImplementedError:
-                logger.debug("Profiler for content type [%s] does not support applicability"
-                           % content_type)
+                msg = "Profiler for content type [%s] does not support applicability" % content_type
+                _logger.debug(msg)
                 return
 
             if existing_applicability:
@@ -227,9 +213,11 @@ class ApplicabilityRegenerationManager(object):
     @staticmethod
     def _get_existing_repo_content_types(repo_id):
         """
-        For the given repo_id, return a list of content_type_ids that have content units counts greater than 0.
+        For the given repo_id, return a list of content_type_ids that have content units counts
+        greater than 0.
 
-        :param repo_id: The repo_id for the repository that we wish to know the unit types contained therein
+        :param repo_id: The repo_id for the repository that we wish to know the unit types contained
+                        therein
         :type  repo_id: basestring
         :return:        A list of content type ids that have unit counts greater than 0
         :rtype:         list
@@ -342,7 +330,7 @@ class RepoProfileApplicabilityManager(object):
         """
         collection = RepoProfileApplicability.get_collection()
         mongo_applicabilities = collection.find(query_params)
-        applicabilities = [RepoProfileApplicability(**dict(applicability)) \
+        applicabilities = [RepoProfileApplicability(**dict(applicability))
                            for applicability in mongo_applicabilities]
         return applicabilities
 
@@ -628,7 +616,7 @@ def _get_consumer_applicability_map(applicability_map):
                     # sets, generate the union of those sets, and turn it back into a list
                     # so that we can report unique units.
                     consumer_applicability_map[consumers][content_type] = list(
-                        set(consumer_applicability_map[consumers][content_type]) | \
+                        set(consumer_applicability_map[consumers][content_type]) |
                         set(applicability))
                 else:
                     # This consumer set does not already have applicability data for this type, so
