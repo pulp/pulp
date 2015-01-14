@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for operations surrounding the creation,
 update, and deletion on a Pulp user.
@@ -30,7 +17,8 @@ from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import SUPER_USER_ROLE
 
 
-_USER_LOGIN_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen, period
+# letters, numbers, underscore, hyphen, period
+_USER_LOGIN_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')
 
 
 class UserManager(object):
@@ -156,7 +144,7 @@ class UserManager(object):
         User.get_collection().save(user, safe=True)
 
         # Retrieve the user to return the SON object
-        updated = User.get_collection().find_one({'login' : login})
+        updated = User.get_collection().find_one({'login': login})
         updated.pop('password')
 
         return updated
@@ -182,7 +170,7 @@ class UserManager(object):
         if found is None:
             raise MissingResource(login)
 
-        # Make sure user is not the last super user 
+        # Make sure user is not the last super user
         if factory.user_query_manager().is_last_super_user(login):
             raise PulpDataException(_("The last superuser [%s] cannot be deleted" % login))
 

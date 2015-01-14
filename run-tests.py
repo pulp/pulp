@@ -21,6 +21,7 @@ paths_to_check = [
     'server/pulp/server/db/',
     'server/pulp/server/event/',
     'server/pulp/server/maintenance/',
+    'server/pulp/server/managers/auth/',
     'server/pulp/server/managers/content/',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
