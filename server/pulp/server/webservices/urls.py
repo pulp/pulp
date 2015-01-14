@@ -1,5 +1,12 @@
 from django.conf.urls import patterns, url
 
+from pulp.server.webservices.views.consumer_groups import (ConsumerGroupView,
+                                                           ConsumerGroupAssociateActionView,
+                                                           ConsumerGroupBindingView,
+                                                           ConsumerGroupBindingsView,
+                                                           ConsumerGroupContentActionView,
+                                                           ConsumerGroupResourceView,
+                                                           ConsumerGroupUnassociateActionView)
 from pulp.server.webservices.views.content import UploadSegmentResourceView
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
@@ -15,6 +22,20 @@ from pulp.server.webservices.views.tasks import TasksView
 
 urlpatterns = patterns('',
     url(r'^v2/actions/login/$', LoginView.as_view(), name='login'),
+    url(r'^v2/consumer_groups/$', ConsumerGroupView.as_view(), name='consumer_group'),
+    url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/$',
+        ConsumerGroupResourceView.as_view(), name='consumer_group_resource'),
+    url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/actions/associate/$',
+        ConsumerGroupAssociateActionView.as_view(), name='consumer_group_associate'),
+    url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/actions/unassociate/$',
+        ConsumerGroupUnassociateActionView.as_view(), name='consumer_group_unassociate'),
+    url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/actions/content/(?P<action>[^/]+)/$',
+        ConsumerGroupContentActionView.as_view(), name='consumer_group_content'),
+    url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/bindings/$',
+        ConsumerGroupBindingsView.as_view(), name='consumer_group_bind'),
+    url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)' +
+        r'/bindings/(?P<repo_id>[^/]+)/(?P<distributor_id>[^/]+)/$',
+        ConsumerGroupBindingView.as_view(), name='consumer_group_unbind'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
         UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
     url(r'^v2/plugins/distributors/$', DistributorsView.as_view(), name='plugin_distributors'),

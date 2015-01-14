@@ -12,9 +12,9 @@ def assert_url_match(expected_url, url_name, *args, **kwargs):
         assert_url_match('/v2/tasks/example_arg/', 'tasks', task_argument='example_arg')
 
         :param expected_url: the url that should be generated given a url_name and args
-        :type  expected_url: string
+        :type  expected_url: str
         :param url_name    : name given to a url as defined in the urls.py
-        :type  url_name    : string
+        :type  url_name    : str
         :param args        : optional positional arguments to place into a url's parameters
                              as specified by urls.py
         :type  args        : tuple
@@ -173,3 +173,81 @@ class TestDjangoLoginUrls(unittest.TestCase):
         url = '/v2/actions/login/'
         url_name = 'login'
         assert_url_match(url, url_name)
+
+
+class TestDjangoConsumerGroupsUrls(unittest.TestCase):
+    """
+    Tests for consumer_groups urls
+    """
+    def test_match_consumer_group_view(self):
+        """
+        Test url matching for consumer_groups
+        """
+        url = '/v2/consumer_groups/'
+        url_name = 'consumer_group'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_group_resource_view(self):
+        """
+        Test url matching for single consumer_group
+        """
+        url = '/v2/consumer_groups/test-group/'
+        url_name = 'consumer_group_resource'
+        assert_url_match(url, url_name, consumer_group_id='test-group')
+
+    def test_match_consumer_group_associate_action_view(self):
+        """
+        Test url matching for consumer_groups association
+        """
+        url = '/v2/consumer_groups/test-group/actions/associate/'
+        url_name = 'consumer_group_associate'
+        assert_url_match(url, url_name, consumer_group_id='test-group')
+
+    def test_match_consumer_group_unassociate_action_view(self):
+        """
+        Test url matching for consumer_groups unassociation
+        """
+        url = '/v2/consumer_groups/test-group/actions/unassociate/'
+        url_name = 'consumer_group_unassociate'
+        assert_url_match(url, url_name, consumer_group_id='test-group')
+
+    def test_match_consumer_group_content_action_install_view(self):
+        """
+        Test url matching for consumer_groups content installation
+        """
+        url = '/v2/consumer_groups/test-group/actions/content/install/'
+        url_name = 'consumer_group_content'
+        assert_url_match(url, url_name, consumer_group_id='test-group', action='install')
+
+    def test_match_consumer_group_content_action_update_view(self):
+        """
+        Test url matching for consumer_groups content update
+        """
+        url = '/v2/consumer_groups/test-group/actions/content/update/'
+        url_name = 'consumer_group_content'
+        assert_url_match(url, url_name, consumer_group_id='test-group', action='update')
+
+    def test_match_consumer_group_content_action_uninstall_view(self):
+        """
+        Test url matching for consumer_groups content uninstall
+        """
+        url = '/v2/consumer_groups/test-group/actions/content/uninstall/'
+        url_name = 'consumer_group_content'
+        assert_url_match(url, url_name, consumer_group_id='test-group', action='uninstall')
+
+    def test_match_consumer_group_bindings_view(self):
+        """
+        Test url matching for consumer_groups bindings
+        """
+        url = '/v2/consumer_groups/test-group/bindings/'
+        url_name = 'consumer_group_bind'
+        assert_url_match(url, url_name, consumer_group_id='test-group')
+
+    def test_match_consumer_group_binding_view(self):
+        """
+        Test url matching for consumer_groups binding removal
+        """
+        url = '/v2/consumer_groups/test-group/bindings/repo1/dist1/'
+        url_name = 'consumer_group_unbind'
+        assert_url_match(url, url_name, consumer_group_id='test-group',
+                         repo_id='repo1', distributor_id='dist1')
