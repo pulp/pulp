@@ -792,7 +792,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Test
         status, body = self.delete('/v2/repositories/bad_pie/importers/dummy-importer/')
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     def test_delete_missing_importer(self, mock_get_worker_for_reservation):
@@ -805,7 +805,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Test
         status, body = self.delete('/v2/repositories/apple_pie/importers/dummy-importer/')
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
@@ -843,7 +843,7 @@ class RepoImporterTests(RepoPluginsTests):
         status, body = self.put('/v2/repositories/foo/importers/dummy-importer/',
                                 params={'importer_config': {}})
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     def test_update_missing_importer(self, mock_get_worker_for_reservation):
@@ -857,7 +857,7 @@ class RepoImporterTests(RepoPluginsTests):
         status, body = self.put('/v2/repositories/pie/importers/dummy-importer/',
                                 params={'importer_config': {}})
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     def test_update_bad_request(self):
         """
