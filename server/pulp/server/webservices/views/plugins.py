@@ -13,7 +13,28 @@ class DistributorResourceView(View):
 
 
 class DistributorsView(View):
-    pass
+    """
+    Views for all distributors.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request):
+        """
+        Return response containing a serialized list of dicts, one for each distributor.
+
+        :param request: WSGI Request object
+        :type  request: django.core.handlers.wsgi.WSGIRequest
+        :return       : Response containing a serialized list of dicts, one for each distributor
+        :rtype        : django.http.HttpResponse
+        """
+        manager = factory.plugin_manager()
+        all_distributors = manager.distributors()
+
+        for distributor in all_distributors:
+            distributor['_href'] = '/'.join([request.get_full_path().rstrip('/'),
+                                             distributor['id'], ''])
+
+        return generate_json_response(all_distributors)
 
 
 class ImporterResourceView(View):
