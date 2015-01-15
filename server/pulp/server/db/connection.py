@@ -8,7 +8,7 @@ from gettext import gettext as _
 
 import mongoengine
 from pymongo.collection import Collection
-from pymongo.errors import AutoReconnect
+from pymongo.errors import AutoReconnect, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector
 
 from pulp.server import config
@@ -108,7 +108,14 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
                 break
             time.sleep(next_delay)
 
-        _DATABASE = getattr(_CONNECTION, name)
+        try:
+            _DATABASE = mongoengine.connection.get_db()
+        except OperationFailure as error:
+            if error.code == 18:
+                msg = _('Authentication to MongoDB '
+                        'with username and password failed.')
+                raise RuntimeError(msg)
+
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
         # Query the collection names to ensure that we are authenticated properly
