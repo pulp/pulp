@@ -63,7 +63,15 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         pass
 
     def test_match_type_resource_view(self):
-        pass
+        """
+        Test the url matching for the TypeResourceView.
+        """
+        url = '/v2/plugins/types/type_id/'
+        url_name = 'plugin_type_resource'
+        assert_url_match(url, url_name, type_id='type_id')
+
+        url_with_symbol = '/v2/plugins/types/%21/'
+        assert_url_match(url_with_symbol, url_name, type_id='!')
 
     def test_match_types_view(self):
         """
