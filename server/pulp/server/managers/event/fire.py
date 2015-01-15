@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Handles the firing of events to any configured listeners. This module is
 responsible for defining what events look like. The specific fire methods for
@@ -21,20 +8,19 @@ in a consistent event format for that type.
 import logging
 
 from pulp.server.db.model.event import EventListener
-from pulp.server.event import notifiers
-from pulp.server.event import data as e
+from pulp.server.event import data as e, notifiers
 
-_LOG = logging.getLogger(__name__)
+
+_logger = logging.getLogger(__name__)
+
 
 class EventFireManager(object):
-
-    # -- specific event fire methods ------------------------------------------
 
     def fire_repo_sync_started(self, repo_id):
         """
         Fires an event indicating the given repository has started a sync.
         """
-        payload = {'repo_id' : repo_id}
+        payload = {'repo_id': repo_id}
         self._do_fire(e.Event(e.TYPE_REPO_SYNC_STARTED, payload))
 
     def fire_repo_sync_finished(self, sync_result):
@@ -66,8 +52,6 @@ class EventFireManager(object):
         publish_result.pop('_id', None)
         self._do_fire(e.Event(e.TYPE_REPO_PUBLISH_FINISHED, publish_result))
 
-    # -- private --------------------------------------------------------------
-
     def _do_fire(self, event):
         """
         Performs the actual act of firing an event to all appropriate
@@ -79,7 +63,7 @@ class EventFireManager(object):
         """
         # Determine which listeners should be notified
         listeners = list(EventListener.get_collection().find(
-            {'$or': ({'event_types' : event.event_type}, {'event_types' : '*'})}))
+            {'$or': ({'event_types': event.event_type}, {'event_types': '*'})}))
 
         # For each listener, retrieve the notifier and invoke it. Be sure that
         # an exception from a notifier is logged but does not interrupt the
@@ -91,4 +75,4 @@ class EventFireManager(object):
             try:
                 f(l['notifier_config'], event)
             except Exception:
-                _LOG.exception('Exception from notifier of type [%s]' % notifier_type_id)
+                _logger.exception('Exception from notifier of type [%s]' % notifier_type_id)
