@@ -4,7 +4,7 @@ from mock import patch
 
 from pulp.server.agent.auth import Authenticator
 from pulp.server.agent.context import Context
-from pulp.server.agent.direct.services import Services, ReplyHandler
+from pulp.server.agent.direct.services import ReplyHandler
 
 
 class TestContext(TestCase):

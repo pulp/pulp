@@ -4,6 +4,7 @@ from web.webapi import BadRequest
 import web
 
 from pulp.common import tags
+from pulp.server import constants
 from pulp.server.auth.authorization import CREATE, READ, UPDATE, DELETE
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.db.model.criteria import Criteria
@@ -194,7 +195,53 @@ class ContentUnitResource(JSONController):
         resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
         return self.ok(resource)
 
-# content uploads controller classes -------------------------------------------
+
+class ContentUnitUserMetadataResource(JSONController):
+    """
+    This Controller allows users to read and write the pulp_user_metadata field on a particular
+    content unit.
+    """
+    @auth_required(READ)
+    def GET(self, type_id, unit_id):
+        """
+        Return information about a content unit.
+
+        :param type_id: The Unit's type id.
+        :type  type_id: basestring
+        :param unit_id: The id of the unit that you wish to set the pulp_user_metadata field on
+        :type  unit_id: basestring
+        """
+        cqm = factory.content_query_manager()
+        try:
+            unit = cqm.get_content_unit_by_id(type_id, unit_id)
+        except MissingResource:
+            return self.not_found(_('No content unit resource: %(r)s') % {'r': unit_id})
+
+        resource = serialization.content.content_unit_obj(
+            unit[constants.PULP_USER_METADATA_FIELDNAME])
+
+        return self.ok(resource)
+
+    @auth_required(UPDATE)
+    def PUT(self, type_id, unit_id):
+        """
+        Set the pulp_user_metadata field on the existing unit.
+
+        :param type_id: The Unit's type id.
+        :type  type_id: basestring
+        :param unit_id: The id of the unit that you wish to set the pulp_user_metadata field on
+        :type  unit_id: basestring
+        """
+        cqm = factory.content_query_manager()
+        try:
+            cqm.get_content_unit_by_id(type_id, unit_id)
+        except MissingResource:
+            return self.not_found(_('No content unit resource: %(r)s') % {'r': unit_id})
+
+        cm = factory.content_manager()
+        delta = {constants.PULP_USER_METADATA_FIELDNAME: self.params()}
+        cm.update_content_unit(type_id, unit_id, delta)
+        return self.ok(None)
 
 
 class UploadsCollection(JSONController):
@@ -423,13 +470,12 @@ class ContentSourceResource(JSONController):
         raise OperationPostponed(task_result)
 
 
-# wsgi application -------------------------------------------------------------
-
 _URLS = ('/types/$', ContentTypesCollection,
          '/types/([^/]+)/$', ContentTypeResource,
          '/units/([^/]+)/$', ContentUnitsCollection,
          '/units/([^/]+)/search/$', ContentUnitsSearch,
          '/units/([^/]+)/([^/]+)/$', ContentUnitResource,
+         '/units/([^/]+)/([^/]+)/pulp_user_metadata/$', ContentUnitUserMetadataResource,
          '/uploads/$', UploadsCollection,
          '/uploads/([^/]+)/$', UploadResource,
          '/uploads/([^/]+)/([^/]+)/$', UploadSegmentResource,

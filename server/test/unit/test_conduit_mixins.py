@@ -1,23 +1,11 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
-import mock
 from pymongo.errors import DuplicateKeyError
+import mock
 
 from pulp.plugins.conduits import mixins
 from pulp.plugins.model import Unit, PublishReport
+from pulp.server import constants
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 
@@ -116,19 +104,6 @@ class RepoScratchpadReadMixinTests(unittest.TestCase):
     def test_get_repo_scratchpad(self, mock_call):
         # Setup
         mock_call.return_value = 'foo'
-        repo_id = 'fake-repo'
-
-        # Test
-        sp = self.mixin.get_repo_scratchpad(repo_id)
-
-        # Verify
-        self.assertEqual(sp, 'foo')
-        self.assertEqual(mock_call.call_args[0][0], repo_id)
-
-    @mock.patch('pulp.server.managers.repo.cud.RepoManager.get_repo_scratchpad')
-    def test_get_repo_scratchpad(self, mock_call):
-        # Setup
-        mock_call.return_value = 'foo'
         repo_id = 'bad-repo'
 
         # Test
@@ -148,17 +123,18 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         self.mixin = mixins.SingleRepoUnitsMixin(self.repo_id, mixins.DistributorConduitException)
 
     @mock.patch('pulp.plugins.types.database.all_type_definitions')
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.'
+                'RepoUnitAssociationQueryManager.get_units')
     def test_get_units(self, mock_query_call, mock_type_def_call):
         # Setup
         mock_query_call.return_value = [
-            {'unit_type_id' : 'type-1', 'metadata' : {'m' : 'm1', 'k1' : 'v1'}},
-            {'unit_type_id' : 'type-2', 'metadata' : {'m' : 'm1', 'k1' : 'v2'}},
+            {'unit_type_id': 'type-1', 'metadata': {'m': 'm1', 'k1': 'v1'}},
+            {'unit_type_id': 'type-2', 'metadata': {'m': 'm1', 'k1': 'v2'}},
         ]
 
         mock_type_def_call.return_value = [
-            {'id' : 'type-1', 'unit_key' : ['k1']},
-            {'id' : 'type-2', 'unit_key' : ['k1']},
+            {'id': 'type-1', 'unit_key': ['k1']},
+            {'id': 'type-2', 'unit_key': ['k1']},
         ]
 
         fake_criteria = 'fake-criteria'
@@ -172,7 +148,8 @@ class SingleRepoUnitsMixinTests(unittest.TestCase):
         self.assertEqual(mock_query_call.call_args[0][0], self.repo_id)
         self.assertEqual(mock_query_call.call_args[1]['criteria'], fake_criteria)
 
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.'
+                'RepoUnitAssociationQueryManager.get_units')
     def test_get_units_server_error(self, mock_query_call):
         # Setup
         mock_query_call.side_effect = Exception()
@@ -189,17 +166,18 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
         self.mixin = mixins.MultipleRepoUnitsMixin(mixins.ImporterConduitException)
 
     @mock.patch('pulp.plugins.types.database.all_type_definitions')
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.'
+                'RepoUnitAssociationQueryManager.get_units')
     def test_get_units(self, mock_query_call, mock_type_def_call):
         # Setup
         mock_query_call.return_value = [
-                {'unit_type_id' : 'type-1', 'metadata' : {'m' : 'm1', 'k1' : 'v1'}},
-                {'unit_type_id' : 'type-2', 'metadata' : {'m' : 'm1', 'k1' : 'v2'}},
+            {'unit_type_id': 'type-1', 'metadata': {'m': 'm1', 'k1': 'v1'}},
+            {'unit_type_id': 'type-2', 'metadata': {'m': 'm1', 'k1': 'v2'}},
         ]
 
         mock_type_def_call.return_value = [
-            {'id' : 'type-1', 'unit_key' : ['k1']},
-            {'id' : 'type-2', 'unit_key' : ['k1']},
+            {'id': 'type-1', 'unit_key': ['k1']},
+            {'id': 'type-2', 'unit_key': ['k1']},
         ]
 
         fake_criteria = 'fake-criteria'
@@ -214,7 +192,8 @@ class MultipleRepoUnitsMixinTests(unittest.TestCase):
         self.assertEqual(mock_query_call.call_args[0][0], repo_id)
         self.assertEqual(mock_query_call.call_args[1]['criteria'], fake_criteria)
 
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.get_units')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.'
+                'RepoUnitAssociationQueryManager.get_units')
     def test_get_units_server_error(self, mock_query_call):
         # Setup
         mock_query_call.side_effect = Exception()
@@ -235,13 +214,13 @@ class SearchUnitsMixinTests(unittest.TestCase):
     def test_search_all_units(self, mock_query_call, mock_type_def_call):
         # Setup
         mock_query_call.return_value = [
-            {'m' : 'm1', 'k1' : 'v1'},
-            {'m' : 'm1', 'k1' : 'v2'},
+            {'m': 'm1', 'k1': 'v1'},
+            {'m': 'm1', 'k1': 'v2'},
         ]
 
         mock_type_def_call.return_value = {
-            'id' : 'mock-type-def',
-            'unit_key' : ['k1']
+            'id': 'mock-type-def',
+            'unit_key': ['k1']
         }
 
         # Test
@@ -273,8 +252,8 @@ class SearchUnitsMixinTests(unittest.TestCase):
         mock_get_unit.return_value = pulp_unit
 
         mock_type_def.return_value = {
-            'id' : 'mock-type-def',
-            'unit_key' : ['id', 'another-unit-key-field']
+            'id': 'mock-type-def',
+            'unit_key': ['id', 'another-unit-key-field']
         }
 
         # Test
@@ -283,7 +262,8 @@ class SearchUnitsMixinTests(unittest.TestCase):
         # Verify
         self.assertEqual(1, mock_get_unit.call_count)
         self.assertEqual(unit.unit_key, {'id': 'fake-unit-id', 'another-unit-key-field': 'fake'})
-        self.assertEqual(unit.metadata, {'other_field': '1234'})
+        self.assertEqual(unit.metadata,
+                         {'other_field': '1234', constants.PULP_USER_METADATA_FIELDNAME: {}})
 
     @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
                 'get_content_unit_by_keys_dict')
@@ -459,40 +439,47 @@ class AddUnitMixinTests(unittest.TestCase):
         self.mixin = mixins.AddUnitMixin(self.repo_id, self.importer_id,
                                          self.association_owner_type, self.association_owner_id)
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'request_content_unit_file_path')
     def test_init_unit(self, mock_file_path_call):
         # Setup
         mock_file_path_call.return_value = '/tmp'
 
         # Test
-        path_unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
-        no_path_unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, None)
+        path_unit = self.mixin.init_unit('t', {'k': 'v'}, {'m': 'm1'}, '/bar')
+        no_path_unit = self.mixin.init_unit('t', {'k': 'v'}, {'m': 'm1'}, None)
 
         # Verify
         self.assertTrue(isinstance(path_unit, Unit))
         self.assertEqual(path_unit.type_id, 't')
-        self.assertEqual(path_unit.unit_key, {'k' : 'v'})
-        self.assertEqual(path_unit.metadata, {'m' : 'm1'})
+        self.assertEqual(path_unit.unit_key, {'k': 'v'})
+        self.assertEqual(path_unit.metadata,
+                         {'m': 'm1', constants.PULP_USER_METADATA_FIELDNAME: {}})
         self.assertEqual(path_unit.storage_path, '/tmp')
 
         self.assertEqual(no_path_unit.storage_path, None)
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'request_content_unit_file_path')
     def test_init_unit_server_error(self, mock_call):
         # Setup
         mock_call.side_effect = Exception()
 
         # Test
-        self.assertRaises(mixins.ImporterConduitException, self.mixin.init_unit, 't', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
+        self.assertRaises(mixins.ImporterConduitException, self.mixin.init_unit, 't', {'k': 'v'},
+                          {'m': 'm1'}, '/bar')
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_by_keys_dict')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_by_keys_dict')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.update_content_unit')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.add_content_unit')
-    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.associate_unit_by_id')
+    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.'
+                'associate_unit_by_id')
     def test_save_unit_new_unit(self, mock_associate, mock_add, mock_update, mock_get, mock_path):
         # Setup
-        unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
+        unit = self.mixin.init_unit('t', {'k': 'v'}, {'m': 'm1'}, '/bar')
         mock_get.side_effect = MissingResource()
         mock_add.return_value = 'new-unit-id'
 
@@ -508,11 +495,14 @@ class AddUnitMixinTests(unittest.TestCase):
         self.assertEqual(0, self.mixin._updated_count)
         self.assertEqual(saved.id, 'new-unit-id')
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_by_keys_dict')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_by_keys_dict')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.update_content_unit')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.add_content_unit')
-    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.associate_unit_by_id')
+    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.'
+                'associate_unit_by_id')
     def test_save_unit_new_unit_race_condition(self, mock_associate, mock_add, mock_update, mock_get, mock_path):
         """
         This simulates a case where the same unit gets added by another workflow
@@ -566,15 +556,19 @@ class AddUnitMixinTests(unittest.TestCase):
         self.assertEqual(0, self.mixin._updated_count)
         self.assertEqual(saved.id, 'new-unit-id')
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_by_keys_dict')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_by_keys_dict')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.update_content_unit')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.add_content_unit')
-    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.associate_unit_by_id')
-    def test_save_unit_updated_unit(self, mock_associate, mock_add, mock_update, mock_get, mock_path):
+    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.'
+                'associate_unit_by_id')
+    def test_save_unit_updated_unit(self, mock_associate, mock_add, mock_update, mock_get,
+                                    mock_path):
         # Setup
-        unit = self.mixin.init_unit('t', {'k' : 'v'}, {'m' : 'm1'}, '/bar')
-        mock_get.return_value = {'_id' : 'existing'}
+        unit = self.mixin.init_unit('t', {'k': 'v'}, {'m': 'm1'}, '/bar')
+        mock_get.return_value = {'_id': 'existing'}
 
         # Test
         saved = self.mixin.save_unit(unit)
@@ -588,11 +582,14 @@ class AddUnitMixinTests(unittest.TestCase):
         self.assertEqual(1, self.mixin._updated_count)
         self.assertEqual(saved.id, 'existing')
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.request_content_unit_file_path')
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_by_keys_dict')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'request_content_unit_file_path')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_by_keys_dict')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.update_content_unit')
     @mock.patch('pulp.server.managers.content.cud.ContentManager.add_content_unit')
-    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.associate_unit_by_id')
+    @mock.patch('pulp.server.managers.repo.unit_association.RepoUnitAssociationManager.'
+                'associate_unit_by_id')
     def test_save_unit_with_error(self, mock_associate, mock_add, mock_update, mock_get, mock_path):
         # Setup
         mock_get.side_effect = Exception()
@@ -603,9 +600,9 @@ class AddUnitMixinTests(unittest.TestCase):
     @mock.patch('pulp.server.managers.content.cud.ContentManager.link_referenced_content_units')
     def test_link_unit(self, mock_link):
         # Setup
-        from_unit = Unit('t1', {'k' : 'v1'}, {'m' : 'm'}, 'p')
+        from_unit = Unit('t1', {'k': 'v1'}, {'m': 'm'}, 'p')
         from_unit.id = 'from-unit'
-        to_unit = Unit('t2', {'k' : 'v2'}, {'m' : 'm'}, 'p')
+        to_unit = Unit('t2', {'k': 'v2'}, {'m': 'm'}, 'p')
         to_unit.id = 'to-unit'
 
         # Test
@@ -621,9 +618,9 @@ class AddUnitMixinTests(unittest.TestCase):
     @mock.patch('pulp.server.managers.content.cud.ContentManager.link_referenced_content_units')
     def test_link_unit_bidirectional(self, mock_link):
         # Setup
-        from_unit = Unit('t1', {'k' : 'v1'}, {'m' : 'm'}, 'p')
+        from_unit = Unit('t1', {'k': 'v1'}, {'m': 'm'}, 'p')
         from_unit.id = 'from-unit'
-        to_unit = Unit('t2', {'k' : 'v2'}, {'m' : 'm'}, 'p')
+        to_unit = Unit('t2', {'k': 'v2'}, {'m': 'm'}, 'p')
         to_unit.id = 'to-unit'
 
         # Test
@@ -738,4 +735,3 @@ class PublishReportMixinTests(unittest.TestCase):
         self.assertEqual(r.canceled_flag, True)
         self.assertEqual(r.summary, summary)
         self.assertEqual(r.details, details)
-
