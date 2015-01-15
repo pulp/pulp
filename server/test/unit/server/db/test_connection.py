@@ -23,7 +23,6 @@ class TestDatabaseSeeds(unittest.TestCase):
     def test_seeds_default(self):
         self.assertEqual(config.config.get('database', 'seeds'), 'localhost:27017')
 
-
     @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_is_empty(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
@@ -64,15 +63,20 @@ class TestDatabaseName(unittest.TestCase):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize()
         name = config.config.get('database', 'name')
-        expected_database = getattr(mock_mongoengine.connect.return_value, name)
-        self.assertEquals(connection._DATABASE, expected_database)
+        mock_mongoengine.connect.assert_called_once_with(name,
+                                                         host='localhost',
+                                                         max_pool_size=10,
+                                                         port=27017)
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_name_is_set_from_argument(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        connection.initialize(name='name_set_from_argument')
-        expected_database = getattr(mock_mongoengine.connect.return_value, 'name_set_from_argument')
-        self.assertEquals(connection._DATABASE, expected_database)
+        name = 'name_set_from_argument'
+        connection.initialize(name=name)
+        mock_mongoengine.connect.assert_called_once_with(name,
+                                                         host='localhost',
+                                                         max_pool_size=10,
+                                                         port=27017)
 
 
 class TestDatabaseReplicaSet(unittest.TestCase):
@@ -154,6 +158,14 @@ class TestDatabase(unittest.TestCase):
         connection.initialize()
         mock_mongoengine.connect.assert_called_once()
 
+    @patch('pulp.server.db.connection.mongoengine')
+    def test__DATABASE_is_returned_from_get_db_call(self, mock_mongoengine):
+        mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
+        connection.initialize()
+        expected_database = mock_mongoengine.connection.get_db.return_value
+        self.assertTrue(connection._DATABASE is expected_database)
+        mock_mongoengine.connection.get_db.assert_called_once_with()
+
     @patch('pulp.server.db.connection.NamespaceInjector')
     @patch('pulp.server.db.connection.mongoengine')
     def test__DATABASE_receives_namespace_injector(self, mock_mongoengine, mock_namespace_injector):
@@ -164,7 +176,7 @@ class TestDatabase(unittest.TestCase):
         mock_son_manipulator.assert_called_once_with(mock_namespace_injector.return_value)
 
     @patch('pulp.server.db.connection.mongoengine')
-    def test__DATABASE_collection_names_is_caled(self, mock_mongoengine):
+    def test__DATABASE_collection_names_is_called(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize()
         connection._DATABASE.collection_names.assert_called_once_with()
@@ -353,6 +365,17 @@ class TestDatabaseAuthentication(unittest.TestCase):
         config.config.set('database', 'username', '')
         config.config.set('database', 'password', 'foo')
         self.assertRaises(Exception, connection.initialize)
+
+    @patch('pulp.server.db.connection.OperationFailure', new=MongoEngineConnectionError)
+    @patch('pulp.server.db.connection.mongoengine')
+    def test_authentication_fails_with_RuntimeError(self, mock_mongoengine):
+        mock_mongoengine_instance = mock_mongoengine.connect.return_value
+        mock_mongoengine_instance.server_info.return_value = {"version":
+                                                              connection.MONGO_MINIMUM_VERSION}
+        exc = MongoEngineConnectionError()
+        exc.code = 18
+        mock_mongoengine.connection.get_db.side_effect = exc
+        self.assertRaises(RuntimeError, connection.initialize)
 
 
 class TestDatabaseRetryOnInitialConnectionSupport(unittest.TestCase):
