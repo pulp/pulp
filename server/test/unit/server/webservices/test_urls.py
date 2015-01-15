@@ -79,7 +79,12 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         assert_url_match(symbols_url, url_name, importer_id='!')
 
     def test_match_importers_view(self):
-        pass
+        """
+        Test the url matching for the Importers view
+        """
+        url = '/v2/plugins/importers/'
+        url_name = 'plugin_importers'
+        assert_url_match(url, url_name)
 
     def test_match_type_resource_view(self):
         """
