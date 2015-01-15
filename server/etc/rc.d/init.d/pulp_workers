@@ -235,17 +235,16 @@ write_log_message () {
     for i in "${CELERYD_NODES_ARRAY[@]}"
     do
       local log_file="`dirname $CELERYD_LOG_FILE`/${i}.log"
+      touch $log_file && chown $CELERYD_USER $log_file
       echo -n `date "+%Y-%m-%d %T"` >> $log_file
       echo " $1" >> $log_file
     done
   else
     local log_file="`dirname $CELERYD_LOG_FILE`/${CELERYD_NODES}.log"
+    touch $log_file && chown $CELERYD_USER $log_file
     echo -n `date "+%Y-%m-%d %T"` >> $log_file
     echo " $1" >> $log_file
   fi
-  # it is possible that we are the first to touch this file. If so, fix
-  # permissions.
-  chown $CELERYD_USER $log_file
 }
 
 start_workers () {
