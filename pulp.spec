@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.6.0
-Release: 0.4.beta%{?dist}
+Release: 0.5.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -638,6 +638,11 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.5.beta
+- 1174283 - bump python-requests to 2.4.3 (austin@dhcp129-50.rdu.redhat.com)
+- 1145723 - touch and chown log file before writing to it (cduryee@redhat.com)
+- 1182335 - Fixes username and password auth for mongoDB connection
+  (bmbouter@gmail.com)
 * Tue Jan 13 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.4.beta
 - Pulp rebuild
 
