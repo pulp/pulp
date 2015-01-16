@@ -2,12 +2,14 @@ import unittest
 
 import mock
 
+from .base import assert_auth_DELETE
 from pulp.server.exceptions import OperationPostponed
 from pulp.server.webservices.views.content import DeleteOrphansActionView
 
 
 class TestDeleteOrphansActionView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.orphan_manager')
     @mock.patch('pulp.server.webservices.views.content.tags')
     def test_post_delete_orphans_action(self, mock_tags, mock_orphan_manager):
