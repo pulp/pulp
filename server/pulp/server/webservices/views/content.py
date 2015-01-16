@@ -21,7 +21,7 @@ class OrphanResourceView(View):
 
         return HttpResponse(json.dumps(orphan_dict), content_type='application/json')
 
-    @auth_required(authorization.READ)
+    @auth_required(authorization.DELETE)
     def delete(self, request, content_type, unit_id, *args, **kwargs):
         unit_info = [{'content_type_id': content_type, 'unit_id': unit_id}]
         task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]

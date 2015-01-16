@@ -4,12 +4,14 @@ import unittest
 import mock
 from django.http import HttpResponse, HttpResponseNotFound
 
+from .base import assert_auth_DELETE, assert_auth_READ
 from pulp.server.exceptions import OperationPostponed
 from pulp.server.webservices.views.content import OrphanResourceView
 
 
 class TestOrphanResourceView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_orphan_resource(self, mock_factory):
         """
@@ -35,6 +37,7 @@ class TestOrphanResourceView(unittest.TestCase):
         expected_href = '/mock/path/'
         self.assertEqual(expected_href, content['_href'])
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.orphan')
     def test_delete_orphan_resource(self, mock_orphan):
         """
