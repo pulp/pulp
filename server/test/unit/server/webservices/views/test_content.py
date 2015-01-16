@@ -4,12 +4,14 @@ import unittest
 import mock
 from django.http import HttpResponse, HttpResponseNotFound
 
+from .base import assert_auth_READ
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices.views.content import ContentUnitResourceView
 
 
 class TestContentUnitResourceView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_unit_resource_view(self, mock_factory, mock_serializer):
@@ -37,6 +39,7 @@ class TestContentUnitResourceView(unittest.TestCase):
         self.assertTrue(isinstance(content, dict))
         self.assertEqual(content['children'], {'child': 1})
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_missing_content_unit_resource_view(self, mock_factory, mock_serializer):
