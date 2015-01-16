@@ -16,6 +16,7 @@ paths_to_check = [
     'server/pulp/plugins/file/',
     'server/pulp/plugins/loader/',
     'server/pulp/plugins/types/',
+    'server/pulp/plugins/util/',
     'server/pulp/server/agent/',
     'server/pulp/server/async/',
     'server/pulp/server/auth/',
