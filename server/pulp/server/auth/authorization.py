@@ -1,19 +1,9 @@
 # -*- coding: utf-8 -*-
 
-# Copyright © 2010-2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Utility functions to manage permissions and roles in pulp.
 """
+
 import logging
 
 _log = logging.getLogger(__name__)
@@ -34,12 +24,14 @@ def _operations_not_granted_by_roles(resource, operations, roles):
     """
     Filter a list of operations on a resource, removing the operations that
     are granted to the resource by any role in a given list of roles
+
     @type resource: str
     @param resource: pulp resource
     @type operations: list or tuple of int's
     @param operations: operations pertaining to the resource
     @type roles: list or tuple of L{pulp.server.db.model.Role} instances
     @param roles: list of roles
+
     @rtype: list of int's
     @return: list of operations on resource not granted by the roles
     """
@@ -52,3 +44,28 @@ def _operations_not_granted_by_roles(resource, operations, roles):
             if operation in permissions[resource]:
                 culled_ops.remove(operation)
     return culled_ops
+
+
+def _lookup_operation_name(operation_value):
+    """
+    Returns the human readable name for a given operation numerical value.
+
+    :param operation_value: The operation value
+    :type operation_value: int
+
+    :return: The human readable name as a string corresponding to the given
+             operation numerical value.
+    :raises: KeyError if operation_value does not have a corresponding name.
+    """
+    if operation_value == CREATE:
+        return 'CREATE'
+    if operation_value == READ:
+        return 'READ'
+    if operation_value == UPDATE:
+        return 'UPDATE'
+    if operation_value == DELETE:
+        return 'DELETE'
+    if operation_value == EXECUTE:
+        return 'EXECUTE'
+    msg_string = 'Could not find a valid name for authorization value %s'
+    raise KeyError(msg_string % operation_value)
