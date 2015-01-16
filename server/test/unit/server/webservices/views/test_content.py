@@ -4,11 +4,13 @@ import unittest
 import mock
 from django.http import HttpResponse, HttpResponseNotFound
 
+from .base import assert_auth_DELETE
 from pulp.server.webservices.views.content import CatalogResourceView
 
 
 class TestCatalogResourceView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_delete_catalog_resource(self, mock_factory):
         """

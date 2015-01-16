@@ -10,7 +10,7 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 class CatalogResourceView(View):
 
-    @auth_required(authorization.READ)
+    @auth_required(authorization.DELETE)
     def delete(self, request, source_id, *args, **kwargs):
         """
         Delete entries from the catlog by content source id
