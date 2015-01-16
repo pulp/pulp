@@ -3,7 +3,7 @@ import unittest
 from django.core.urlresolvers import resolve, Resolver404
 
 
-class TestDjangoUrls(unittest.TestCase):
+class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_delete_orphans_view(self):
 
@@ -25,3 +25,25 @@ class TestDjangoUrls(unittest.TestCase):
                 self.assertNotEqual(match.url_name, 'delete_orphans')
             except Resolver404:
                 self.assertTrue(True)
+
+
+class TestDjangoPluginsUrls(unittest.TestCase):
+
+    def test_match_distributor_resource_view(self):
+        pass
+
+    def test_match_distributors_view(self):
+        pass
+
+    def test_match_importer_resource_view(self):
+        pass
+
+    def test_match_importers_view(self):
+        pass
+
+    def test_match_type_resource_view(self):
+        pass
+
+    def test_match_types_view(self):
+        pass
+
