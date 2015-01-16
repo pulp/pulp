@@ -5,12 +5,14 @@ import mock
 from mock import call
 from django.http import HttpResponse, HttpResponseNotFound
 
+from .base import assert_auth_READ
 from pulp.server.webservices.views.content import (ContentTypesView, ContentTypeResourceView,
                                                    ContentUnitsCollectionView)
 
 
 class TestContentTypesView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_types_view(self, mock_factory):
         """
@@ -40,6 +42,7 @@ class TestContentTypesView(unittest.TestCase):
 
 class TestContentTypeResourceView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_type_resource_view(self, mock_factory, mock_serializer):
@@ -87,6 +90,7 @@ class TestContentUnitsCollectionView(unittest.TestCase):
     def test_process_unit(self):
         self.assertTrue(False)
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.ContentUnitsCollectionView.process_unit')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_units_collection_view(self, mock_factory, mock_process):
