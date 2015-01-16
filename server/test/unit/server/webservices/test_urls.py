@@ -3,7 +3,7 @@ import unittest
 from django.core.urlresolvers import resolve, Resolver404
 
 
-class TestDjangoUrls(unittest.TestCase):
+class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_content_types_view(self):
         match = resolve('/v2/content/types/')
@@ -98,3 +98,25 @@ class TestDjangoUrls(unittest.TestCase):
                 self.assertNotEqual(match.view_name, 'content_units_collection')
             except Resolver404:
                 self.assertTrue(True)
+
+
+class TestDjangoPluginsUrls(unittest.TestCase):
+
+    def test_match_distributor_resource_view(self):
+        pass
+
+    def test_match_distributors_view(self):
+        pass
+
+    def test_match_importer_resource_view(self):
+        pass
+
+    def test_match_importers_view(self):
+        pass
+
+    def test_match_type_resource_view(self):
+        pass
+
+    def test_match_types_view(self):
+        pass
+
