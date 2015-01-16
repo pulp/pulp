@@ -170,6 +170,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-4.pulp
+- 1182322 - handle case where PLAIN is used with saslwrapper
+  (cduryee@redhat.com)
+
 * Wed Jan 14 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-4.pulp
 - add a patch for RHBZ #1182322
 
