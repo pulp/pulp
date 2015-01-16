@@ -4,11 +4,13 @@ import unittest
 import mock
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 
+from .base import assert_auth_READ, assert_auth_CREATE
 from pulp.server.webservices.views.content import UploadsCollectionView
 
 
 class TestUploadsCollectionView(unittest.TestCase):
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_uploads_collection_view(self, mock_factory):
         """
@@ -33,6 +35,7 @@ class TestUploadsCollectionView(unittest.TestCase):
         self.assertTrue(isinstance(content, dict))
         self.assertEqual(content['upload_ids'], ['mock_id1', 'mock_id2'])
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_post_content_types_view(self, mock_factory):
         """
