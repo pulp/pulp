@@ -2,7 +2,7 @@
 
 Name:           python-nectar
 Version:        1.3.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
 Group:          Development/Tools
