@@ -4,8 +4,14 @@ from django.core.urlresolvers import resolve, Resolver404
 
 
 class TestDjangoContentUrls(unittest.TestCase):
+    """
+    Test the matching of the content urls
+    """
 
     def test_match_content_types_view(self):
+        """
+        Test the url matching of the /content/types/ endpoint.
+        """
         match = resolve('/v2/content/types/')
         self.assertEqual(match.view_name, 'content_types')
 
@@ -30,6 +36,9 @@ class TestDjangoContentUrls(unittest.TestCase):
                 self.assertTrue(True)
 
     def test_match_content_type_resource_view(self):
+        """
+        Test the url matching of the /content/types/<type_id>/ endpoint.
+        """
         base_url = '/v2/content/types/'
         should_match = [
             'words',
@@ -65,6 +74,9 @@ class TestDjangoContentUrls(unittest.TestCase):
                 self.assertTrue(True)
 
     def test_match_content_units_collectiom_view(self):
+        """
+        Test the url matching of the /content/units/<type_id>/ endpoint.
+        """
         base_url = '/v2/content/units/'
         should_match = [
             'words',
