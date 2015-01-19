@@ -12,7 +12,7 @@ from pulp.server.webservices.views.tasks import TasksView
 
 urlpatterns = patterns('',
     url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/$',
-        ContentUnitResourceView.as_view(), name='content_units_collection'),
+        ContentUnitResourceView.as_view(), name='content_unit_resource'),
     url(r'^v2/distributors/$', DistributorsView.as_view()),
     url(r'^v2/distributors/(?P<distributor_type_id>[^/]+)/$', DistributorResourceView.as_view()),
     url(r'^v2/plugins/importers/$', ImportersView.as_view()),
