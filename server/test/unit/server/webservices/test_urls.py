@@ -6,7 +6,9 @@ from django.core.urlresolvers import resolve, Resolver404
 class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_catalog_resource(self):
-
+        """
+        Test url matching for /v2/content/catalog/<source_id>/
+        """
         base_url = '/v2/content/catalog/'
         should_match = [
             'words',
@@ -29,16 +31,17 @@ class TestDjangoContentUrls(unittest.TestCase):
 
         for source_id in should_match:
             match = resolve(base_url + source_id + '/')
-            self.assertEqual(match.url_name, 'catalog_resource')
+            self.assertEqual(match.url_name, 'content_catalog_resource')
             self.assertEqual(match.kwargs['source_id'], source_id)
 
         for url in should_not_match:
-            # Urls should either raise a Resolver404 or match a url that is not catalog resource.
+            # Urls should either raise a Resolver404 or match a url that is not content
+            # catalog resource.
             try:
                 match = resolve(url)
-                self.assertNotEqual(match.view_name, 'catalog_resource')
+                self.assertNotEqual(match.view_name, 'content_catalog_resource')
             except Resolver404:
-                self.assertTrue(True):
+                self.assertTrue(True)
 
 
 class TestDjangoPluginsUrls(unittest.TestCase):

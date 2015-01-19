@@ -9,12 +9,17 @@ from pulp.server.webservices.views.content import CatalogResourceView
 
 
 class TestCatalogResourceView(unittest.TestCase):
+    """
+    Tests for the catalog resource view.
+    """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_delete_catalog_resource(self, mock_factory):
         """
-        Test the catalog resource view
+        Test that delete returns a serialized response containing a dict with the
+        appropriate information.
         """
         mock_manager = mock.MagicMock()
         mock_manager.purge.return_value = 82

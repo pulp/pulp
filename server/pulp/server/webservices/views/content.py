@@ -9,6 +9,9 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 
 class CatalogResourceView(View):
+    """
+    Views for the catalog by source_id.
+    """
 
     @auth_required(authorization.DELETE)
     def delete(self, request, source_id, *args, **kwargs):
