@@ -1059,11 +1059,10 @@ class GetLocalUnitsStep(PluginStep):
         units_we_already_had = set()
 
         # mongodb throws exceptions for too big queries, so we spilt it into multiple smaller ones
-        max_size = 50
-        for i in range(len(self.parent.available_units) / max_size + 1):
+        for page in misc.paginate(self.parent.available_units, 50):
             # for any unit that is already in pulp, save it into the repo
             for unit_dict in self.content_query_manager.get_multiple_units_by_keys_dicts(
-                    self.unit_type, self.parent.available_units[i*max_size:(i+1)*max_size-1], self.unit_key_fields):
+                    self.unit_type, page, self.unit_key_fields):
                 unit = self._dict_to_unit(unit_dict)
                 self.get_conduit().save_unit(unit)
                 units_we_already_had.add(unit)
