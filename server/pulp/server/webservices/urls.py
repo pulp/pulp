@@ -1,13 +1,16 @@
 from django.conf.urls import patterns, url
 
+from pulp.server.webservices.views.content import UploadsCollectionView
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
-from pulp.server.webservices.views.tasks import TasksView
 from pulp.server.webservices.views.repositories import RepoSync
+from pulp.server.webservices.views.tasks import TasksView
 
 
 urlpatterns = patterns('',
+    url(r'^v2/content/uploads/$', UploadsCollectionView.as_view(),
+        name='content_uploads'),
     url(r'^v2/distributors/$', DistributorsView.as_view()),
     url(r'^v2/distributors/(?P<distributor_type_id>[^/]+)/$', DistributorResourceView.as_view()),
     url(r'^v2/plugins/importers/$', ImportersView.as_view()),
