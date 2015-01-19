@@ -10,8 +10,12 @@ from pulp.server.webservices.views.content import OrphanTypeSubCollectionView
 
 
 class TestOrphanTypeSubCollectionView(unittest.TestCase):
+    """
+    Tests for views of orphans limited by type.
+    """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_orphan_type_subcollection(self, mock_factory):
         """
@@ -43,7 +47,8 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         self.assertEqual(expected_href % 'orphan1', content[0]['_href'])
         self.assertEqual(expected_href % 'orphan2', content[1]['_href'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_orphan_type_subcollection_with_empty_list(self, mock_factory):
         """
@@ -68,7 +73,8 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         self.assertTrue(isinstance(content, list))
         self.assertEqual(len(content), 0)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.orphan')
     def test_delete_orphan_type_subcollection(self, mock_orphan):
         """
@@ -77,7 +83,8 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         """
         request = mock.MagicMock()
         orphan_type_subcollection = OrphanTypeSubCollectionView()
-        self.assertRaises(OperationPostponed, orphan_type_subcollection.delete, request, 'mock_type')
+        self.assertRaises(OperationPostponed, orphan_type_subcollection.delete,
+                          request, 'mock_type')
 
         mock_orphan.delete_orphans_by_type.apply_async.assert_called_once_with(
             ('mock_type',), tags=['pulp:content_unit:orphans']

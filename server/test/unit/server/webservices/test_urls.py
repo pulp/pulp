@@ -6,6 +6,9 @@ from django.core.urlresolvers import resolve, Resolver404
 class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_orphan_type_subcollection_view(self):
+        """
+        Test url matching for /v2/content/orphans/<content_type>/
+        """
         base_url = '/v2/content/orphans/'
         should_match = [
             'words',
@@ -26,17 +29,17 @@ class TestDjangoContentUrls(unittest.TestCase):
             '/v2/content/units/rpm/',
         ]
 
-        for content_type_id in should_match:
-            match = resolve(base_url + content_type_id + '/')
-            self.assertEqual(match.view_name, 'orphan_type_subcollection')
-            self.assertEqual(match.kwargs['content_type_id'], content_type_id)
+        for content_type in should_match:
+            match = resolve(base_url + content_type + '/')
+            self.assertEqual(match.view_name, 'content_orphan_type_subcollection')
+            self.assertEqual(match.kwargs['content_type'], content_type)
 
         for url in should_not_match:
             # Urls should either raise a Resolver404 exception or match a url
-            # that is not orphan_type_subcollection 
+            # that is not content_orphan_type_subcollection
             try:
                 match = resolve(url)
-                self.assertNotEqual(match.view_name, 'orphan_type_subcollection')
+                self.assertNotEqual(match.view_name, 'content_orphan_type_subcollection')
             except Resolver404:
                 self.assertTrue(True)
 
