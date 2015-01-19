@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the definitions for all classes related to the distributor's API for
 interacting with the Pulp server during a repo publish.
@@ -19,17 +6,15 @@ interacting with the Pulp server during a repo publish.
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import (DistributorConduitException, RepoScratchPadMixin,
-    RepoScratchpadReadMixin, DistributorScratchPadMixin,
-    RepoGroupDistributorScratchPadMixin, StatusMixin,
+from pulp.plugins.conduits.mixins import (
+    DistributorConduitException, RepoScratchPadMixin, RepoScratchpadReadMixin,
+    DistributorScratchPadMixin, RepoGroupDistributorScratchPadMixin, StatusMixin,
     SingleRepoUnitsMixin, MultipleRepoUnitsMixin, PublishReportMixin)
 import pulp.server.managers.factory as manager_factory
 
-# -- constants ---------------------------------------------------------------
 
-_LOG = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-# -- classes -----------------------------------------------------------------
 
 class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, StatusMixin,
                          SingleRepoUnitsMixin, PublishReportMixin):
@@ -65,8 +50,6 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
     def __str__(self):
         return 'RepoPublishConduit for repository [%s]' % self.repo_id
 
-    # -- public ---------------------------------------------------------------
-
     def last_publish(self):
         """
         Returns the timestamp of the last time this repo was published,
@@ -81,7 +64,7 @@ class RepoPublishConduit(RepoScratchPadMixin, DistributorScratchPadMixin, Status
             last = repo_publish_manager.last_publish(self.repo_id, self.distributor_id)
             return last
         except Exception, e:
-            _LOG.exception('Error getting last publish time for repo [%s]' % self.repo_id)
+            _logger.exception('Error getting last publish time for repo [%s]' % self.repo_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
 
 
@@ -92,7 +75,8 @@ class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin,
     def __init__(self, group_id, distributor):
         distributor_id = distributor.get('id')
         RepoGroupDistributorScratchPadMixin.__init__(self, group_id, distributor_id)
-        StatusMixin.__init__(self, distributor.get('distributor_type_id'), DistributorConduitException)
+        StatusMixin.__init__(self, distributor.get('distributor_type_id'),
+                             DistributorConduitException)
         MultipleRepoUnitsMixin.__init__(self, DistributorConduitException)
         PublishReportMixin.__init__(self)
         RepoScratchpadReadMixin.__init__(self, DistributorConduitException)
@@ -117,5 +101,5 @@ class RepoGroupPublishConduit(RepoGroupDistributorScratchPadMixin, StatusMixin,
             last = manager.last_publish(self.group_id, self.distributor_id)
             return last
         except Exception, e:
-            _LOG.exception('Error getting last publish time for group [%s]' % self.group_id)
+            _logger.exception('Error getting last publish time for group [%s]' % self.group_id)
             raise DistributorConduitException(e), None, sys.exc_info()[2]
