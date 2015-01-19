@@ -51,7 +51,8 @@ repository.
      "metadata": {
        "_id": "4a928b95-7c4a-4d23-9df7-ac99978f361e",
        "version": "4.1",
-       "name": "bear"
+       "name": "bear",
+       "pulp_user_metadata": {}
      },
      "unit_type_id": "rpm",
      "owner_type": "importer",

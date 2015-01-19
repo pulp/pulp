@@ -3,6 +3,7 @@ This module contains transfer objects for encapsulating data passed into a
 plugin method call. Objects defined in this module will have extra information
 bundled in that is relevant to the plugin's state for the given entity.
 """
+from pulp.server import constants
 
 
 class Repository(object):
@@ -146,6 +147,12 @@ class Unit(object):
         self.type_id = type_id
         self.unit_key = unit_key
         self.metadata = metadata
+
+        # We want to ensure that all units have a pulp_user_metadata attribute in their metadata. If
+        # not supplied, we want to default it to the empty dictionary.
+        if constants.PULP_USER_METADATA_FIELDNAME not in self.metadata:
+            self.metadata[constants.PULP_USER_METADATA_FIELDNAME] = {}
+
         self.storage_path = storage_path
 
         self.id = None
@@ -157,11 +164,7 @@ class Unit(object):
         serializable format.
         """
 
-        d = {
-            'type_id': self.type_id,
-            'unit_key': self.unit_key,
-            }
-        return d
+        return {'type_id': self.type_id, 'unit_key': self.unit_key}
 
     def __eq__(self, other):
         return (self.unit_key == other.unit_key) and (self.type_id == other.type_id)

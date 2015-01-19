@@ -1,24 +1,51 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+"""
+This module contains tests for pulp.plugins.model.
+"""
 import functools
 import unittest
 
 from pulp.plugins.model import Unit, Repository
+from pulp.server import constants
 
 
 unit_key_factory = functools.partial(dict, a='foo', b='bar', c=3)
 unit_factory = functools.partial(Unit, 'my_type', unit_key_factory(), {}, '')
+
+
+class TestUnit(unittest.TestCase):
+    """
+    This class contains tests for the Unit class.
+    """
+    def test___init___adds_user_metadata(self):
+        """
+        Ensure that the __init__() method adds the pulp_user_metadata field if it is not present in
+        the supplied metadata.
+        """
+        type_id = 'some_type'
+        unit_key = {'some': 'key'}
+        metadata = {'some': 'metadata'}
+        storage_path = '/some/path'
+
+        u = Unit(type_id, unit_key, metadata, storage_path)
+
+        self.assertEqual(u.metadata,
+                         {'some': 'metadata', constants.PULP_USER_METADATA_FIELDNAME: {}})
+
+    def test___init___ignores_existing_user_metadata(self):
+        """
+        Ensure that __init__() leaves existing pulp_user_metadata fields alone if they are already
+        present in the supplied metadata.
+        """
+        type_id = 'some_type'
+        unit_key = {'some': 'key'}
+        metadata = {'some': 'metadata',
+                    constants.PULP_USER_METADATA_FIELDNAME: {'user': 'metadata'}}
+        storage_path = '/some/path'
+
+        u = Unit(type_id, unit_key, metadata, storage_path)
+
+        # The metadata should not have been altered
+        self.assertEqual(u.metadata, metadata)
 
 
 class TestUnitEquality(unittest.TestCase):
@@ -68,7 +95,7 @@ class TestUnitHash(unittest.TestCase):
     def test_metadata_not_in_hash(self):
         unit1 = unit_factory()
         unit2 = unit_factory()
-        unit2.metadata = {'a':'foo'}
+        unit2.metadata = {'a': 'foo'}
         self.assertEqual(hash(unit1), hash(unit2))
 
     def test_path_not_in_hash(self):

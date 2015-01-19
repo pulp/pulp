@@ -7,6 +7,7 @@ from mock import patch, Mock
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
+from pulp.server import constants, exceptions
 
 
 class ContentsTest(base.PulpWebserviceTests):
@@ -185,3 +186,84 @@ class ContentSourceResourceTests(base.PulpWebserviceTests):
 
         # validation
         self.assertEqual(status, 404)
+
+
+class TestContentUnitUserMetadataResource(base.PulpWebserviceTests):
+    """
+    This class contains tests for the ContentUnitUserMetadataResource controller class.
+    """
+    @patch('pulp.server.webservices.controllers.contents.factory.content_query_manager')
+    def test_GET_unit_found(self, content_query_manager):
+        """
+        Ensure that GET returns the correct info when the unit does exist.
+        """
+        unit = {'some': 'data', constants.PULP_USER_METADATA_FIELDNAME: {'user': 'data'}}
+
+        class MockCQM(object):
+            def get_content_unit_by_id(mock_self, type_id, unit_id):
+                self.assertEqual(type_id, 'some_type')
+                self.assertEqual(unit_id, 'some_unit_id')
+                return unit
+
+        content_query_manager.return_value = MockCQM()
+
+        status, body = self.get('/v2/content/units/some_type/some_unit_id/pulp_user_metadata/')
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body, {'user': 'data'})
+
+    @patch('pulp.server.webservices.controllers.contents.factory.content_query_manager')
+    def test_GET_unit_not_found(self, content_query_manager):
+        """
+        Ensure that GET returns 404 when the unit does not exist.
+        """
+        class MockCQM(object):
+            def get_content_unit_by_id(mock_self, type_id, unit_id):
+                self.assertEqual(type_id, 'some_type')
+                self.assertEqual(unit_id, 'some_unit_id')
+                raise exceptions.MissingResource
+
+        content_query_manager.return_value = MockCQM()
+
+        status, body = self.get('/v2/content/units/some_type/some_unit_id/pulp_user_metadata/')
+
+        self.assertEqual(status, 404)
+        self.assertEqual(body, 'No content unit resource: some_unit_id')
+
+    @patch('pulp.server.webservices.controllers.contents.factory.content_manager')
+    @patch('pulp.server.webservices.controllers.contents.factory.content_query_manager')
+    def test_PUT_unit_found(self, content_query_manager, content_manager):
+        """
+        Ensure that PUT properly updates the unit when it does exist.
+        """
+        status, body = self.put('/v2/content/units/some_type/some_unit_id/pulp_user_metadata/',
+                                {'different': 'data'})
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body, None)
+        # The unit should have been updated
+        content_manager.return_value.update_content_unit.assert_called_once_with(
+            'some_type', 'some_unit_id',
+            {constants.PULP_USER_METADATA_FIELDNAME: {'different': 'data'}})
+
+    @patch('pulp.server.webservices.controllers.contents.factory.content_manager')
+    @patch('pulp.server.webservices.controllers.contents.factory.content_query_manager')
+    def test_PUT_unit_not_found(self, content_query_manager, content_manager):
+        """
+        Ensure that PUT returns 404 when the unit does not exist.
+        """
+        class MockCQM(object):
+            def get_content_unit_by_id(mock_self, type_id, unit_id):
+                self.assertEqual(type_id, 'some_type')
+                self.assertEqual(unit_id, 'some_unit_id')
+                raise exceptions.MissingResource
+
+        content_query_manager.return_value = MockCQM()
+
+        status, body = self.put('/v2/content/units/some_type/some_unit_id/pulp_user_metadata/',
+                                {'different': 'data'})
+
+        self.assertEqual(status, 404)
+        self.assertEqual(body, 'No content unit resource: some_unit_id')
+        # The content_manager shouldn't have been used
+        self.assertEqual(content_manager.call_count, 0)
