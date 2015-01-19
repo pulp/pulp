@@ -74,6 +74,11 @@ pushd server
 %{__python} setup.py build
 popd
 
+#repoauth is built along with server
+pushd repoauth
+%{__python} setup.py build
+popd
+
 # SELinux Configuration
 cd server/selinux/server
 %if 0%{?rhel} >= 6
@@ -117,6 +122,7 @@ mkdir -p %{buildroot}/%{_sysconfdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer
 mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/server
+mkdir -p %{buildroot}/%{_sysconfdir}/pki/%{name}/content
 mkdir -p %{buildroot}/%{_sysconfdir}/rc.d/init.d
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer
@@ -153,7 +159,11 @@ pushd server
 %{__python} setup.py install -O1 --skip-build --root %{buildroot}
 popd
 
-# These directories are specific to the server
+# repoauth is built alongside server
+pushd repoauth
+%{__python} setup.py install -O1 --skip-build --root %{buildroot}
+popd
+
 mkdir -p %{buildroot}/srv
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/content/sources/conf.d
 mkdir -p %{buildroot}/%{_sysconfdir}/%{name}/server
@@ -195,7 +205,7 @@ mkdir -p %{buildroot}/%{_usr}/lib/systemd/system/
 cp server/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
 %endif
 
-# Pulp Web Services
+# Pulp Web Services (this picks up both wsgi files)
 cp -R server/srv %{buildroot}
 
 # Web Content
@@ -272,6 +282,7 @@ Requires: python-isodate >= 0.5.0-1.pulp
 Requires: python-BeautifulSoup
 Requires: python-qpid
 Requires: python-nectar >= 1.1.6
+Requires: python-rhsm >= 1.8.0
 Requires: httpd
 Requires: mod_ssl
 Requires: openssl
@@ -344,9 +355,10 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 # - apache:apache
 %defattr(-,apache,apache,-)
-%{_var}/lib/%{name}/
 %dir %{_var}/log/%{name}
+%{_var}/lib/%{name}/
 %{_var}/www/pub
+%{_sysconfdir}/pki/pulp/content/
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE COPYRIGHT
@@ -657,6 +669,24 @@ exit 0
 %{_datadir}/selinux/devel/include/%{moduletype}/pulp-celery.if
 
 %endif # End selinux if block
+
+%if %{pulp_server}
+%package -n python-pulp-repoauth
+Summary: Cert-based repo authentication for Pulp
+Group: Development/Languages
+Requires: python-%{name}-common = %{pulp_version}
+Requires: %{name}-server = %{pulp_version}
+
+%description -n python-pulp-repoauth
+Cert-based repo authentication for Pulp
+
+%files -n python-pulp-repoauth
+%defattr(-,root,root,-)
+%config(noreplace) %{_sysconfdir}/pulp/repo_auth.conf
+/srv/%{name}/repo_auth.wsgi
+%{python_sitelib}/%{name}/repoauth/
+%{python_sitelib}/pulp_repoauth*.egg-info
+%endif # End pulp_server if block for repoauth
 
 %changelog
 * Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.5.beta

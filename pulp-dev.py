@@ -94,6 +94,7 @@ if sys.version_info >= (2, 6):
     LINKS.extend([
         # Server Web Configuration
         ('server/srv/pulp/webservices.wsgi', '/srv/pulp/webservices.wsgi'),
+        ('server/srv/pulp/repo_auth.wsgi', '/srv/pulp/repo_auth.wsgi'),
 
         # Pulp Nodes
         ('/var/lib/pulp/nodes/published', '/var/www/pulp/nodes'),
@@ -189,6 +190,8 @@ def get_paths_to_copy():
         {'source': 'client_consumer/etc/pulp/consumer/consumer.conf',
          'destination': '/etc/pulp/consumer/consumer.conf', 'owner': 'root', 'group': 'root',
          'mode': '644', 'overwrite': False},
+        {'source': 'server/etc/pulp/repo_auth.conf', 'destination': '/etc/pulp/repo_auth.conf',
+         'owner': 'root', 'group': 'root', 'mode': '644', 'overwrite': False},
     ]
     # We don't support server or pulp-admin code on EL 5.
     if LSB_VERSION >= 6.0:
