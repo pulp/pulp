@@ -8,8 +8,12 @@ from pulp.server.webservices.views.content import DeleteOrphansActionView
 
 
 class TestDeleteOrphansActionView(unittest.TestCase):
+    """
+    Tests for the Delete Orphans Action view
+    """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth', new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.orphan_manager')
     @mock.patch('pulp.server.webservices.views.content.tags')
     def test_post_delete_orphans_action(self, mock_tags, mock_orphan_manager):

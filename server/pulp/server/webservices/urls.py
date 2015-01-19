@@ -10,7 +10,7 @@ from pulp.server.webservices.views.tasks import TasksView
 
 urlpatterns = patterns('',
     url(r'^v2/content/actions/delete_orphans/$', DeleteOrphansActionView.as_view(),
-        name='delete_orphans'),
+        name='content_actions_delete_orphans'),
     url(r'^v2/distributors/$', DistributorsView.as_view()),
     url(r'^v2/distributors/(?P<distributor_type_id>[^/]+)/$', DistributorResourceView.as_view()),
     url(r'^v2/plugins/importers/$', ImportersView.as_view()),

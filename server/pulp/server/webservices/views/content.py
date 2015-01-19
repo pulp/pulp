@@ -8,6 +8,11 @@ from pulp.server.webservices.controllers.decorators import auth_required
 
 
 class DeleteOrphansActionView(View):
+    """
+    Deprecated in 2.4, please use the more restful OrphanResource delete instead
+
+    Delete all orphans.
+    """
 
     @auth_required(authorization.DELETE)
     def post(self, request, *args, **kwargs):
@@ -17,6 +22,7 @@ class DeleteOrphansActionView(View):
 
         :param request: WSGI request object
         :type  request: WSGIRequest
+        :raises       : OperationPostponed
         """
         orphans = request.body_as_json
         task_tags = [tags.action_tag('delete_orphans'),

@@ -6,9 +6,11 @@ from django.core.urlresolvers import resolve, Resolver404
 class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_delete_orphans_view(self):
-
+        """
+        Test url matching for /content/actions/delete_orphans/
+        """
         match = resolve('/v2/content/actions/delete_orphans/')
-        self.assertEqual(match.url_name, 'delete_orphans')
+        self.assertEqual(match.url_name, 'content_actions_delete_orphans')
 
         should_not_match = [
             '/v2/content/actions/',
@@ -19,10 +21,10 @@ class TestDjangoContentUrls(unittest.TestCase):
 
         for url in should_not_match:
             # Urls should either raise a Resolver404 exception or match a url
-            # that is not delete_orphans
+            # that is not content_actions_delete_orphans
             try:
                 match = resolve(url)
-                self.assertNotEqual(match.url_name, 'delete_orphans')
+                self.assertNotEqual(match.url_name, 'content_actions_delete_orphans')
             except Resolver404:
                 self.assertTrue(True)
 
