@@ -6,6 +6,9 @@ from django.core.urlresolvers import resolve, Resolver404
 class TestDjangoContentUrls(unittest.TestCase):
 
     def test_match_content_upload_resource_view(self):
+        """
+        Test url matching for content upload resource view.
+        """
         base_url = '/v2/content/uploads/'
         should_match = [
             'words',
@@ -33,7 +36,7 @@ class TestDjangoContentUrls(unittest.TestCase):
 
         for url in should_not_match:
             # Urls should either raise a Resolver404 exception or match a url
-            # that is not content_upllaod_resource_
+            # that is not content_upload_resource.
             try:
                 match = resolve(url)
                 self.assertNotEqual(match.view_name, 'content_upload_resource')
