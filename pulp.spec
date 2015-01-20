@@ -28,8 +28,8 @@
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
-Version: 2.5.2
-Release: 1%{?dist}
+Version: 2.5.3
+Release: 0.1.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -604,6 +604,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Jan 20 2015 Barnaby Court <bcourt@redhat.com> 2.5.3-0.1.beta
+- Pulp rebuild
+
 * Thu Jan 15 2015 Dennis Kliban <dkliban@redhat.com> 2.5.2-1
 - 1171278 - additional helper method for finding units (cduryee@redhat.com)
 - 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
