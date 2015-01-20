@@ -2,6 +2,11 @@
 Pulp 2.5 Release Notes
 ======================
 
+Pulp 2.5.2
+==========
+This release fixes `#1179463 <https://bugzilla.redhat.com/show_bug.cgi?id=1179463>`_.
+
+
 Pulp 2.5.1
 ==========
 This is a an important bugfix release that contains the fix for
