@@ -1,35 +1,18 @@
-# Copyright (c) 2011-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 import logging
 import os
 from gettext import gettext as _
 
-from pulp.plugins.distributor import Distributor, GroupDistributor
-from pulp.plugins.importer import Importer, GroupImporter
 from pulp.plugins.loader import exceptions as loader_exceptions
 from pulp.plugins.loader import loading
 from pulp.plugins.loader.manager import PluginManager
-from pulp.plugins.profiler import Profiler
-from pulp.plugins.cataloger import Cataloger
 from pulp.plugins.types import database, parser
 from pulp.plugins.types.model import TypeDescriptor
 
-_logger = logging.getLogger('db')
+
+_logger = logging.getLogger(__name__)
 
 # implicit singleton instance of PluginManager
-
 _MANAGER = None
-
-# constants --------------------------------------------------------------------
 
 # entry point names
 ENTRY_POINT_EXTENSIONS = 'pulp.extensions'
@@ -41,11 +24,8 @@ ENTRY_POINT_PROFILERS = 'pulp.profilers'
 ENTRY_POINT_CATALOGERS = 'pulp.catalogers'
 
 # plugin locations
-
 _PLUGINS_ROOT = '/usr/lib/pulp/plugins'
 _TYPES_DIR = _PLUGINS_ROOT + '/types'
-
-# state management -------------------------------------------------------------
 
 
 def initialize(validate=True):
@@ -439,7 +419,8 @@ def _check_content_definitions(descriptors):
     :param descriptors: A list of content descriptors
     :type  descriptors: list of TypeDescriptor
 
-    :return: A list of content types that would have been created or updated by _load_type_definitions
+    :return: A list of content types that would have been created or updated by
+             _load_type_definitions
     :rtype:  list of TypeDefinition
     """
     definitions = parser.parse(descriptors)
