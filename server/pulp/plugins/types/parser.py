@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Responsible for parsing and validating type descriptors.
 """
@@ -26,16 +13,14 @@ import re
 
 from pulp.plugins.types import model
 
-# -- constants ---------------------------------------------------------------
 
 REQUIRED_DEFINITION_FIELDS = ['id', 'display_name', 'description', 'unit_key']
 OPTIONAL_DEFINITION_FIELDS = ['search_indexes', 'referenced_types']
 
-TYPE_ID_REGEX = re.compile(r'^[_A-Za-z]+$') # letters and underscore
+TYPE_ID_REGEX = re.compile(r'^[_A-Za-z]+$')  # letters and underscore
 
-LOG = logging.getLogger('db')
+_logger = logging.getLogger(__name__)
 
-# -- syntax exceptions -------------------------------------------------------
 
 class SyntaxException(Exception):
     """
@@ -61,7 +46,9 @@ class SyntaxException(Exception):
         return [d.filename for d in self.descriptors]
 
     def __str__(self):
-        return 'Exception [%s] for files [%s]' % (self.__class__.__name__, ', '.join(self.error_filenames()))
+        return 'Exception [%s] for files [%s]' % (self.__class__.__name__,
+                                                  ', '.join(self.error_filenames()))
+
 
 class Unparsable(SyntaxException):
     """
@@ -69,11 +56,13 @@ class Unparsable(SyntaxException):
     """
     pass
 
+
 class MissingRoot(SyntaxException):
     """
     A descriptor does not contain the necessary root element.
     """
     pass
+
 
 class InvalidAttribute(SyntaxException):
     """
@@ -81,13 +70,13 @@ class InvalidAttribute(SyntaxException):
     """
     pass
 
+
 class MissingAttribute(SyntaxException):
     """
     A type definition is missing a required attribute.
     """
     pass
 
-# -- semantics exceptions ----------------------------------------------------
 
 class SemanticsException(Exception):
     """
@@ -95,6 +84,7 @@ class SemanticsException(Exception):
     for the caller to identify/react to any semantics error.
     """
     pass
+
 
 class InvalidTypeId(SemanticsException):
     """
@@ -104,6 +94,7 @@ class InvalidTypeId(SemanticsException):
     def __init__(self, offending_type_ids):
         SemanticsException.__init__(self)
         self.type_ids = offending_type_ids
+
 
 class DuplicateType(SemanticsException):
     """
@@ -115,6 +106,7 @@ class DuplicateType(SemanticsException):
         SemanticsException.__init__(self)
         self.type_ids = duplicate_type_ids
 
+
 class UndefinedReferencedIds(SemanticsException):
     """
     One or more referenced type definitions reference types that are not defined.
@@ -124,7 +116,6 @@ class UndefinedReferencedIds(SemanticsException):
         SemanticsException.__init__(self)
         self.missing_referenced_ids = missing_referenced_ids
 
-# -- public api --------------------------------------------------------------
 
 def parse(descriptors):
     """
@@ -142,15 +133,15 @@ def parse(descriptors):
     """
 
     all_filenames = [d.filename for d in descriptors]
-    LOG.info('Loading type descriptors [%s]' % ', '.join(all_filenames))
+    _logger.info('Loading type descriptors [%s]' % ', '.join(all_filenames))
 
-    LOG.info('Parsing type descriptors')
+    _logger.info('Parsing type descriptors')
     _parse_descriptors(descriptors)
 
-    LOG.info('Validating type descriptor syntactic integrity')
+    _logger.info('Validating type descriptor syntactic integrity')
     _validate_syntax(descriptors)
 
-    LOG.info('Validating type descriptor semantic integrity')
+    _logger.info('Validating type descriptor semantic integrity')
     _validate_semantics(descriptors)
 
     # If we got this far without an exception, the types are valid and can
@@ -159,7 +150,6 @@ def parse(descriptors):
 
     return type_definitions
 
-# -- parsing and validation --------------------------------------------------
 
 def _parse_descriptors(descriptors):
     """
@@ -175,11 +165,12 @@ def _parse_descriptors(descriptors):
         try:
             parse_me.parsed = json.loads(parse_me.contents)
         except Exception:
-            LOG.exception('Error parsing descriptor [%s]' % parse_me.filename)
+            _logger.exception('Error parsing descriptor [%s]' % parse_me.filename)
             error_descriptors.append(parse_me)
 
     if len(error_descriptors) > 0:
         raise Unparsable(error_descriptors)
+
 
 def _validate_syntax(descriptors):
     """
@@ -194,7 +185,7 @@ def _validate_syntax(descriptors):
     """
 
     # Verify each descriptor has the correct root element
-    error_descriptors = [d for d in descriptors if not 'types' in d.parsed]
+    error_descriptors = [d for d in descriptors if 'types' not in d.parsed]
 
     if len(error_descriptors) > 0:
         raise MissingRoot(error_descriptors)
@@ -209,13 +200,17 @@ def _validate_syntax(descriptors):
             # Make sure there are no foreign elements in each definition
             for key in type_definition.keys():
                 if key not in REQUIRED_DEFINITION_FIELDS and key not in OPTIONAL_DEFINITION_FIELDS:
-                    LOG.error('Unexpected key [%s] from descriptor [%s] in type definition [%s]' % (key, d.filename, ', '.join(type_definition.keys())))
+                    msg = 'Unexpected key [%s] from descriptor [%s] in type definition [%s]'
+                    msg = msg % (key, d.filename, ', '.join(type_definition.keys()))
+                    _logger.error(msg)
                     invalid_attribute_descriptors.append(d)
 
             # Make sure all required fields are present
             for key in REQUIRED_DEFINITION_FIELDS:
                 if key not in type_definition:
-                    LOG.error('Missing required key [%s] from descriptor [%s] in type definition [%s]' % (key, d.filename, ', '.join(type_definition.keys())))
+                    msg = 'Missing required key [%s] from descriptor [%s] in type definition [%s]'
+                    msg = msg % (key, d.filename, ', '.join(type_definition.keys()))
+                    _logger.error(msg)
                     missing_attribute_descriptors.append(d)
 
     if len(invalid_attribute_descriptors) > 0:
@@ -223,6 +218,7 @@ def _validate_syntax(descriptors):
 
     if len(missing_attribute_descriptors) > 0:
         raise MissingAttribute(missing_attribute_descriptors)
+
 
 def _validate_semantics(descriptors):
     """
@@ -251,7 +247,7 @@ def _validate_semantics(descriptors):
     for id in unique_ids:
         all_copy.remove(id)
 
-    if len(all_copy) > 0: # remaining IDs were duplicated
+    if len(all_copy) > 0:  # remaining IDs were duplicated
         raise DuplicateType(all_copy)
 
     # Ensure referenced referenced types are defined as types on their own
@@ -260,6 +256,7 @@ def _validate_semantics(descriptors):
 
     if len(undefined_referenced_ids) > 0:
         raise UndefinedReferencedIds(undefined_referenced_ids)
+
 
 def _instantiate_type_definitions(descriptors):
     """
@@ -289,7 +286,6 @@ def _instantiate_type_definitions(descriptors):
 
     return all_types
 
-# -- utility -----------------------------------------------------------------
 
 def _all_types(descriptors):
     """

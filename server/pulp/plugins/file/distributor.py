@@ -1,32 +1,19 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import os
-import logging
 from gettext import gettext as _
+import csv
 import errno
+import logging
+import os
 import shutil
 import traceback
-import csv
 
-from pulp.common.plugins.progress import ProgressReport
 from pulp.common.plugins.distributor_constants import MANIFEST_FILENAME
+from pulp.common.plugins.progress import ProgressReport
 from pulp.plugins.distributor import Distributor
 
 
 BUILD_DIRNAME = 'build'
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class FileDistributor(Distributor):
@@ -80,7 +67,7 @@ class FileDistributor(Distributor):
         :rtype:                 pulp.plugins.model.PublishReport
         """
         progress_report = FilePublishProgressReport(publish_conduit)
-        logger.info(_('Beginning publish for repository <%(repo)s>') % {'repo': repo.id})
+        _logger.info(_('Beginning publish for repository <%(repo)s>') % {'repo': repo.id})
 
         try:
             progress_report.state = progress_report.STATE_IN_PROGRESS
@@ -101,7 +88,7 @@ class FileDistributor(Distributor):
                     self._symlink_unit(build_dir, unit, links_to_create)
                     self.publish_metadata_for_unit(unit)
             finally:
-                #Finalize the processing
+                # Finalize the processing
                 self.finalize_metadata()
 
             # Let's unpublish, and then republish
@@ -223,7 +210,7 @@ class FileDistributor(Distributor):
         :type  target_paths: list of L{str}
         """
         for target_path in target_paths:
-            #symlink_filename = os.path.join(build_dir, unit.unit_key['name'])
+            # symlink_filename = os.path.join(build_dir, unit.unit_key['name'])
             symlink_filename = os.path.join(build_dir, target_path)
             if os.path.exists(symlink_filename) or os.path.islink(symlink_filename):
                 # There's already something there with the desired symlink filename. Let's try and
