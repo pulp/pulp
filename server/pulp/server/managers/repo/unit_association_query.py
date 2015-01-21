@@ -581,4 +581,3 @@ class RepoUnitAssociationQueryManager(object):
                 association = association.copy()
                 association['metadata'] = unit
                 yield association
-

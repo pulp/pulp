@@ -1,16 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
+from gettext import gettext as _
 import logging
 import os
 import shutil
@@ -29,7 +17,7 @@ from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoGroupManager(object):
@@ -110,12 +98,12 @@ class RepoGroupManager(object):
                 distributor_id = distributor.get(distributor_constants.DISTRIBUTOR_ID_KEY)
                 RepoGroupDistributorManager.add_distributor(group_id, type_id, plugin_config,
                                                             distributor_id)
-            except Exception, e:
+            except Exception:
                 # If an exception occurs, pass it on after cleaning up the repository group
-                logger.exception('Exception adding distributor to repo group [%s]; the group will'
-                               ' be deleted' % group_id)
+                _logger.exception('Exception adding distributor to repo group [%s]; the group will'
+                                  ' be deleted' % group_id)
                 RepoGroupManager.delete_repo_group(group_id)
-                raise e, None, sys.exc_info()[2]
+                raise
 
         return repo_group
 
@@ -158,8 +146,7 @@ class RepoGroupManager(object):
                     unset_dict[newkey] = value
 
             if unset_dict:
-                collection.update({'id': group_id}, {'$unset': unset_dict},
-                    safe=True)
+                collection.update({'id': group_id}, {'$unset': unset_dict}, safe=True)
 
         if updates:
             collection.update({'id': group_id}, {'$set': updates}, safe=True)
@@ -186,7 +173,9 @@ class RepoGroupManager(object):
             try:
                 shutil.rmtree(working_dir)
             except Exception:
-                logger.exception('Error while deleting working dir [%s] for repo group [%s]' % (working_dir, group_id))
+                msg = _('Error while deleting working dir [%(d)s] for repo group [%(g)s]')
+                msg = msg % {'d': working_dir, 'g': group_id}
+                _logger.exception(msg)
                 raise
 
         # Delete from the database
@@ -244,8 +233,6 @@ class RepoGroupManager(object):
         if not repo_ids:
             return
         group_collection.update({'id': group_id},
-                                # for some reason, pymongo 1.9 doesn't like this
-                                #{'$pull': {'repo_ids': {'$in': repo_ids}}},
                                 {'$pullAll': {'repo_ids': repo_ids}},
                                 safe=True)
 

@@ -23,6 +23,7 @@ paths_to_check = [
     'server/pulp/server/maintenance/',
     'server/pulp/server/managers/content/',
     'server/pulp/server/managers/consumer/',
+    'server/pulp/server/managers/repo/',
     'server/pulp/server/tasks/',
     'server/test/unit/server/']
 
