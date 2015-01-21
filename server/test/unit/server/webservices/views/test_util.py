@@ -1,9 +1,11 @@
 import json
+import mock
 import unittest
 
 from django.http import HttpResponse, HttpResponseNotFound
 
-from pulp.server.webservices.views import utils
+from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
+from pulp.server.webservices.views import util
 
 
 class TestWebservicesUtils(unittest.TestCase):
@@ -11,12 +13,12 @@ class TestWebservicesUtils(unittest.TestCase):
     Test webservices utilities.
     """
 
-    def test_generate_django_response_default_params(self):
+    def test_generate_json_response_default_params(self):
         """
         Make sure that the response is correct under normal conditions.
         """
-        test_content = """{'foo': 'bar'}"""
-        response = utils.generate_django_response(HttpResponse, test_content)
+        test_content = {'foo': 'bar'}
+        response = util.generate_json_response(HttpResponse, test_content)
         self.assertTrue(isinstance(response, HttpResponse))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response._headers.get('content-type'),
@@ -24,17 +26,17 @@ class TestWebservicesUtils(unittest.TestCase):
         response_content = json.loads(response.content)
         self.assertEqual(response_content, test_content)
 
-    def test_generate_django_response_not_found(self):
+    def test_generate_json_response_not_found(self):
         """
         Test that response is correct for non-base HttpResponses
         """
-        response = utils.generate_django_response(HttpResponseNotFound)
+        response = util.generate_json_response(HttpResponseNotFound)
         self.assertTrue(isinstance(response, HttpResponse))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response._headers.get('content-type'),
                          ('Content-Type', 'application/json'))
 
-    def test_generate_django_response_invalid_response_class(self):
+    def test_generate_json_response_invalid_response_class(self):
         """
         generate_django_response should raise a TypeError for any responses that are not a
         Django HttpResponse object.
@@ -43,4 +45,13 @@ class TestWebservicesUtils(unittest.TestCase):
         class FakeResponse():
             pass
 
-        self.assertRaises(TypeError, utils.generate_django_response, FakeResponse)
+        self.assertRaises(TypeError, util.generate_json_response, FakeResponse)
+
+    @mock.patch('pulp.server.webservices.views.util.json')
+    def test_generate_json_response_with_pulp_encoder(self, mock_json):
+        """
+        Ensure that the shortcut function uses the specified encoder.
+        """
+        test_content = {'foo': 'bar'}
+        util.generate_json_response_with_pulp_encoder(HttpResponse, test_content)
+        mock_json.dumps.assert_called_once_with(test_content, default=pulp_json_encoder)
