@@ -24,7 +24,7 @@ from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.managers.schedule import utils
 
 
-initialize()
+initialize(name='pulp_unittest')
 
 
 class TestGet(unittest.TestCase):
