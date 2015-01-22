@@ -10,4 +10,4 @@ class TasksView(View):
 
     @auth_required(authorization.READ)
     def get(self, request, *args, **kwargs):
-        return generate_json_response(HttpResponse, {"foo": "bar"})
+        return generate_json_response(({foo": "bar"})

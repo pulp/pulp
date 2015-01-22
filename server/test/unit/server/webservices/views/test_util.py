@@ -18,7 +18,7 @@ class TestWebservicesUtils(unittest.TestCase):
         Make sure that the response is correct under normal conditions.
         """
         test_content = {'foo': 'bar'}
-        response = util.generate_json_response(HttpResponse, test_content)
+        response = util.generate_json_response(test_content)
         self.assertTrue(isinstance(response, HttpResponse))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response._headers.get('content-type'),
@@ -32,6 +32,7 @@ class TestWebservicesUtils(unittest.TestCase):
         """
         response = util.generate_json_response(HttpResponseNotFound)
         self.assertTrue(isinstance(response, HttpResponse))
+        self.assertTrue(isinstance(response, HttpResponseNotFound))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response._headers.get('content-type'),
                          ('Content-Type', 'application/json'))
@@ -53,5 +54,5 @@ class TestWebservicesUtils(unittest.TestCase):
         Ensure that the shortcut function uses the specified encoder.
         """
         test_content = {'foo': 'bar'}
-        util.generate_json_response_with_pulp_encoder(HttpResponse, test_content)
+        util.generate_json_response_with_pulp_encoder(test_content)
         mock_json.dumps.assert_called_once_with(test_content, default=pulp_json_encoder)
