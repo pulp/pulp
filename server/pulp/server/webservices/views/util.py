@@ -27,11 +27,12 @@ def generate_json_response(content=None, response_class=HttpResponse, default=No
     json_obj = json.dumps(content, default=default)
     return response_class(json_obj, content_type=content_type)
 
+
 """
 Shortcut function to generate a json response using the in house json_encoder.
 
 This function is equivalent to:
-`generate_json_response(content, default=pulp_json_encoder)`
+generate_json_response(content, default=pulp_json_encoder)
 """
 generate_json_response_with_pulp_encoder = functools.partial(
     generate_json_response,
