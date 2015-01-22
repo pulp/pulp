@@ -241,7 +241,6 @@ def dispatch_sync_with_auto_publish(repo_id, task_id, overrides=None):
     """
 
     task_tags = managers.repo_sync_manager().get_sync_task_tags(repo_id)
+    kwargs = {'inner_task_id':task_id, 'tags': task_tags}
     sync_with_auto_publish.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id,
-                                                        [repo_id, overrides],
-                                                        {'inner_task_id':task_id,
-                                                         'tags': task_tags})
+                                                        [repo_id, overrides], **kwargs)
