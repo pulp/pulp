@@ -322,9 +322,9 @@ Pulp provides replication, access, and accounting for software repositories.
 %if %{pulp_systemd} == 0
 # Install the init scripts
 %defattr(755,root,root,-)
-%config %{_initddir}/pulp_celerybeat
-%config %{_initddir}/pulp_workers
-%config %{_initddir}/pulp_resource_manager
+%{_initddir}/pulp_celerybeat
+%{_initddir}/pulp_workers
+%{_initddir}/pulp_resource_manager
 %else
 # Install the systemd unit files
 %defattr(-,root,root,-)
