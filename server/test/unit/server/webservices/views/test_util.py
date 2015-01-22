@@ -31,7 +31,6 @@ class TestWebservicesUtils(unittest.TestCase):
         Test that response is correct for non-base HttpResponses
         """
         response = util.generate_json_response(HttpResponseNotFound)
-        self.assertTrue(isinstance(response, HttpResponse))
         self.assertTrue(isinstance(response, HttpResponseNotFound))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response._headers.get('content-type'),
@@ -39,8 +38,7 @@ class TestWebservicesUtils(unittest.TestCase):
 
     def test_generate_json_response_invalid_response_class(self):
         """
-        generate_django_response should raise a TypeError for any responses that are not a
-        Django HttpResponse object.
+        Test that an invalid response_class raises a TypeError.
         """
 
         class FakeResponse():
