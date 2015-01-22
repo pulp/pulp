@@ -6,6 +6,7 @@ import logging
 import platform
 import threading
 import time
+import uuid
 
 from celery import beat
 from celery.result import AsyncResult
@@ -422,6 +423,9 @@ class Scheduler(beat.Scheduler):
         :type kwargs:       dict
         :return:
         """
+
+        if entry == 'dispatch_sync_with_auto_publish':
+            inner_task_id = str(uuid.uuid4())
         result = super(Scheduler, self).apply_async(entry, publisher, **kwargs)
         if isinstance(entry, ScheduleEntry) and entry._scheduled_call.failure_threshold:
             has_failure = bool(entry._scheduled_call.consecutive_failures)

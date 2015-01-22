@@ -26,7 +26,7 @@ from gettext import gettext as _
 
 from celery import task
 
-from pulp.common import dateutils, constants
+from pulp.common import dateutils, constants, tags
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
@@ -116,6 +116,21 @@ class RepoSyncManager(object):
 
         # auto publish call has been moved to a dependent call in a multiple
         # call execution through the coordinator
+
+    @staticmethod
+    def get_sync_task_tags(repo_id):
+        """
+        This method returns tags used for dispatching sync_with_auto_publish task
+
+        :param repo_id: id of the repository to sync
+        :type repo_id: str
+        :return: List of tags describing a sync on repo_id
+        :rtype: list
+        """
+
+        task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
+                     tags.action_tag('sync')]
+        return task_tags
 
     @staticmethod
     def _get_importer_instance_and_config(repo_id):

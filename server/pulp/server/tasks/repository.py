@@ -12,6 +12,7 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
+import uuid
 
 import celery
 
@@ -222,3 +223,25 @@ def sync_with_auto_publish(repo_id, overrides=None):
     result.spawned_tasks = spawned_tasks
 
     return result
+
+@celery.task
+def dispatch_sync_with_auto_publish(repo_id, task_id, overrides=None):
+    """
+    This task is used to dispatch a sync with auto publish by celerybeat. Celerybeat uses send_task
+    to dispatch tasks, however, the sync_with_auto_publish task needs to be dispatched using
+    apply_async_with_reservation so that the resource it uses can be properly locked during
+    the sync.
+
+    :param repo_id: id of the repository to sync
+    :type repo_id: str
+    :param task_id: Id to assign to the task dispatched with reservation
+    :type task_id: str
+    :param overrides: dictionary of configuration overrides for this sync
+    :type overrides: dict or None
+    """
+
+    task_tags = managers.repo_sync_manager().get_sync_task_tags(repo_id)
+    sync_with_auto_publish.apply_async_with_reservation(RESOURCE_REPOSITORY_TYPE, repo_id,
+                                                        [repo_id, overrides],
+                                                        {'inner_task_id':task_id,
+                                                         'tags': task_tags})
