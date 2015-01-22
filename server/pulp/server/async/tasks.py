@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 @task(acks_late=True)
-def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
+def _queue_reserved_task(name, inner_task_id, resource_id, inner_args, inner_kwargs):
     """
     A task that encapsulates another task to be dispatched later. This task being encapsulated is
     called the "inner" task, and a task name, UUID, and accepts a list of positional args
@@ -70,16 +70,16 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
         # No worker is ready for this work, so we need to wait
         time.sleep(0.25)
 
-    ReservedResource(task_id, worker['name'], resource_id).save()
+    ReservedResource(inner_task_id, worker['name'], resource_id).save()
 
     inner_kwargs['routing_key'] = worker.name
     inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
-    inner_kwargs['task_id'] = task_id
+    inner_kwargs['task_id'] = inner_task_id
 
     try:
         celery.tasks[name].apply_async(*inner_args, **inner_kwargs)
     finally:
-        _release_resource.apply_async((task_id, ), routing_key=worker.name,
+        _release_resource.apply_async((inner_task_id, ), routing_key=worker.name,
                                       exchange=DEDICATED_QUEUE_EXCHANGE)
 
 
@@ -239,13 +239,15 @@ class ReservedTaskMixin(object):
         :param tags:          A list of tags (strings) to place onto the task, used for searching
                               for tasks by tag
         :type  tags:          list
+        :param inner_task_id: Optional keyword argument used to assign the inner task an id
+        :type inner_task_id:  basestring
         :return:              An AsyncResult instance as returned by Celery's apply_async
         :rtype:               celery.result.AsyncResult
         """
         # Form a resource_id for reservation by combining given resource type and id. This way,
         # two different resources having the same id will not block each other.
         resource_id = ":".join((resource_type, resource_id))
-        inner_task_id = str(uuid.uuid4())
+        inner_task_id = kwargs.pop('inner_task_id', str(uuid.uuid4()))
         task_name = self.name
         tags = kwargs.get('tags', [])
 
