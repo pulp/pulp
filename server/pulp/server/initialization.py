@@ -2,13 +2,9 @@
 
 from gettext import gettext as _
 import logging
-import sys
-
-# It is important that we initialize the DB connection early
-from pulp.server.db import connection as db_connection
-db_connection.initialize()
 
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.db import connection as db_connection
 from pulp.server.managers import factory as manager_factory
 
 
@@ -27,6 +23,8 @@ def initialize():
     global _IS_INITIALIZED
     if _IS_INITIALIZED:
         return
+
+    db_connection.initialize()
 
     # This is here temporarily, so that we can run the monkey patches for qpid and stuff
     import kombu.transport.qpid
