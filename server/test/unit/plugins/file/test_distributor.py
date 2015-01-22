@@ -1,24 +1,11 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import unittest
+from os import readlink
+import copy
+import csv
 import errno
+import os
 import shutil
 import tempfile
-import os
-from os import readlink
-import csv
-import copy
+import unittest
 
 from mock import Mock, MagicMock, patch
 
@@ -82,7 +69,7 @@ class FileDistributorTest(unittest.TestCase):
         self.assertTrue(distributor.get_hosting_locations.called)
         self.assertTrue(distributor.post_repo_publish.called)
 
-         # The publish_conduit should have had two set_progress calls. One to start the IN_PROGRESS
+        # The publish_conduit should have had two set_progress calls. One to start the IN_PROGRESS
         # state, and the second to mark it as complete
         self.assertEqual(self.publish_conduit.set_progress.call_count, 2)
         self.assertEqual(self.publish_conduit.set_progress.mock_calls[0][1][0]['state'],
@@ -151,7 +138,7 @@ class FileDistributorTest(unittest.TestCase):
         # test if the link was created
         self.assertTrue(os.path.islink(target_file))
 
-        #publish a new repo with a different unit in it
+        # publish a new repo with a different unit in it
         cloned_unit = copy.deepcopy(self.unit)
         cloned_unit.unit_key['name'] = 'foo.rpm'
         new_conduit = get_publish_conduit(existing_units=[cloned_unit, ])
@@ -294,5 +281,3 @@ class FileDistributorTest(unittest.TestCase):
         self.assertTrue(os.path.islink(original_link))
         created_link = readlink(original_link)
         self.assertNotEqual(old_target, created_link)
-
-
