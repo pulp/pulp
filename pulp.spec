@@ -55,7 +55,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %setup -q
 
 %build
-for directory in agent bindings client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common devel
 do
     pushd $directory
     %{__python} setup.py build
@@ -100,7 +100,7 @@ popd
 
 %install
 rm -rf %{buildroot}
-for directory in agent bindings client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common devel
 do
     pushd $directory
     %{__python} setup.py install -O1 --skip-build --root %{buildroot}
@@ -401,6 +401,24 @@ A collection of components that are common between the pulp server and client.
 %{python_sitelib}/%{name}/__init__.*
 %{python_sitelib}/%{name}/common/
 %{python_sitelib}/pulp_common*.egg-info
+%doc README LICENSE COPYRIGHT
+
+
+# ---- Devel ------------------------------------------------------------------
+
+%package -n python-pulp-devel
+Summary: Pulp devel python packages
+Group: Development/Languages
+
+%description -n python-pulp-devel
+A collection of tools used for developing & testing Pulp plugins
+
+%files -n python-pulp-devel
+%defattr(-,root,root,-)
+%dir %{python_sitelib}/%{name}
+%{python_sitelib}/%{name}/__init__.*
+%{python_sitelib}/%{name}/devel/
+%{python_sitelib}/pulp_devel*.egg-info
 %doc README LICENSE COPYRIGHT
 
 

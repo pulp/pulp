@@ -4,7 +4,9 @@ This module contains tests for the pulp.client.extensions.exceptions module.
 from _socket import gaierror
 import os
 from socket import error as socket_error
+
 from M2Crypto.SSL.Checker import WrongHost
+import mock
 
 import pulp.bindings.exceptions as exceptions
 from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
@@ -140,6 +142,45 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(code, handler.CODE_BAD_REQUEST)
         self.assertTrue('not provided' in self.recorder.lines[0])
         self.assertTrue('foo' in self.recorder.lines[0])
+
+    def test_bad_request_with_error(self):
+        """
+        Tests the errors classification of bad request exceptions.
+        """
+        self.exception_handler._display_coded_error = mock.MagicMock()
+        e = exceptions.BadRequestException({'error': {'description': 'test_error'}})
+
+        code = self.exception_handler.handle_bad_request(e)
+
+        self.assertEqual(code, handler.CODE_BAD_REQUEST)
+        self.exception_handler._display_coded_error.assert_called_once_with(
+            {'description': 'test_error'}
+        )
+
+    def test__display_coded_error_single_error(self):
+        """
+        Test that render_failure_message is called when a coded error is passed in.
+        """
+        self.prompt.render_failure_message = mock.MagicMock()
+        e = exceptions.BadRequestException({'error': {'description': 'test_error'}})
+
+        self.exception_handler._display_coded_error(e.extra_data.get('error'))
+
+        self.prompt.render_failure_message.assert_called_once_with('test_error')
+
+    def test__display_coded_error_recursive_errors(self):
+        """
+        Test that sub errors will be rendered.
+        """
+        self.prompt.render_failure_message = mock.MagicMock()
+        inner_e = {'description': 'inner_error'}
+        outer_e = {'description': 'outer_error', 'sub_errors': [inner_e]}
+
+        self.exception_handler._display_coded_error(outer_e)
+
+        self.prompt.render_failure_message.has_calls(
+            mock.call('outer_error'), mock.call('inner_error')
+        )
 
     def test_bad_request_other(self):
         """

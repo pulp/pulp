@@ -209,3 +209,11 @@ class TestRepositorySync(PulpCeleryTaskTests):
         result = repository.sync_with_auto_publish('foo', 'bar')
         self.assertTrue(isinstance(result, TaskResult))
         self.assertEquals(result.spawned_tasks, ['fish', ])
+
+    @patch('pulp.server.tasks.repository.managers')
+    @patch('pulp.server.tasks.repository.sync_with_auto_publish.apply_async_with_reservation')
+    def test_dispatch_sync_with_auto_publish(self, mock_apply_async_with_reservation,
+                                             mock_managers):
+        mock_managers.repo_sync_manager.return_value.sync.return_value = 'baz'
+        repository.dispatch_sync_with_auto_publish.__call__('mock_repo_id', 'mock_task_id')
+        self.assertTrue(mock_apply_async_with_reservation.called)

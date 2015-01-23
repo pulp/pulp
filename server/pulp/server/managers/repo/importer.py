@@ -15,13 +15,14 @@ import logging
 import sys
 
 from celery import task
+from pulp.common import error_codes
 
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
-                                    PulpDataException)
+from pulp.server.exceptions import (MissingResource, PulpExecutionException,
+                                    PulpDataException, PulpCodedValidationException)
 import pulp.server.managers.repo._common as common_utils
 from pulp.server.managers.schedule.repo import RepoSyncScheduleManager
 
@@ -104,18 +105,11 @@ class RepoImporterManager(object):
         :raise InvalidImporterConfiguration: if the importer cannot be initialized for the given
                                              repo
         """
-
+        RepoImporterManager.validate_importer_config(repo_id, importer_type_id, repo_plugin_config)
         repo_coll = Repo.get_collection()
         importer_coll = RepoImporter.get_collection()
 
-        # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
-        if repo is None:
-            raise MissingResource(repo_id)
-
-        if not plugin_api.is_valid_importer(importer_type_id):
-            raise InvalidValue(['importer_type_id'])
-
+        repo = repo_coll.find_one({'id': repo_id})
         importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
@@ -129,24 +123,6 @@ class RepoImporterManager(object):
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
-
-        try:
-            result = importer_instance.validate_config(transfer_repo, call_config)
-
-            # For backward compatibility with plugins that don't yet return the tuple
-            if isinstance(result, bool):
-                valid_config = result
-                message = None
-            else:
-                valid_config, message = result
-
-        except Exception, e:
-            logger.exception(
-                'Exception received from importer [%s] while validating config' % importer_type_id)
-            raise PulpDataException(e.args), None, sys.exc_info()[2]
-
-        if not valid_config:
-            raise PulpDataException(message)
 
         # Remove old importer if one exists
         try:
@@ -169,6 +145,55 @@ class RepoImporterManager(object):
         importer_coll.save(importer, safe=True)
 
         return importer
+
+    @staticmethod
+    def validate_importer_config(repo_id, importer_type_id, importer_config):
+        """
+        Validate an importer configuration. This validates that the repository and importer type
+        exist as these are both required to validate the configuration.
+
+        :param repo_id:             identifies the repo
+        :type  repo_id:             str
+        :param importer_type_id:    identifies the type of importer being added;
+                                    must correspond to an importer loaded at server startup
+        :type  importer_type_id:    str
+        :param importer_config:     configuration values for the importer; may be None
+        :type  importer_config:     dict
+        """
+        repo_coll = Repo.get_collection()
+        repo = repo_coll.find_one({'id': repo_id})
+        if repo is None:
+            raise MissingResource(repo_id)
+
+        if not plugin_api.is_valid_importer(importer_type_id):
+            raise PulpCodedValidationException(error_code=error_codes.PLP1008,
+                                               importer_type_id=importer_type_id)
+
+        importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
+
+        # Convention is that a value of None means unset. Remove any keys that
+        # are explicitly set to None so the plugin will default them.
+        if importer_config is not None:
+            clean_config = dict([(k, v) for k, v in importer_config.items() if v is not None])
+        else:
+            clean_config = None
+
+        # Let the importer plugin verify the configuration
+        call_config = PluginCallConfiguration(plugin_config, clean_config)
+        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
+
+        result = importer_instance.validate_config(transfer_repo, call_config)
+
+        # For backward compatibility with plugins that don't yet return the tuple
+        if isinstance(result, bool):
+            valid_config = result
+            message = None
+        else:
+            valid_config, message = result
+
+        if not valid_config:
+            raise PulpCodedValidationException(validation_errors=message)
 
     @staticmethod
     def remove_importer(repo_id):

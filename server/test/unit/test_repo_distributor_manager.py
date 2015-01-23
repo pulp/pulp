@@ -237,7 +237,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         try:
             self.distributor_manager.add_distributor('rohan', 'mock-distributor', {}, True)
             self.fail('Exception expected')
-        except exceptions.PulpDataException:
+        except Exception, e:
             pass
 
         # Cleanup

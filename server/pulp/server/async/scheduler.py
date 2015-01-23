@@ -6,6 +6,7 @@ import logging
 import platform
 import threading
 import time
+import uuid
 
 from celery import beat
 from celery.result import AsyncResult
@@ -422,7 +423,19 @@ class Scheduler(beat.Scheduler):
         :type kwargs:       dict
         :return:
         """
-        result = super(Scheduler, self).apply_async(entry, publisher, **kwargs)
+        if entry.task == 'pulp.server.tasks.repository.dispatch_sync_with_auto_publish':
+            task_id = str(uuid.uuid4())
+            # The apply_async method from the base class saves the ScheduleEntry object to the
+            # the database.  The first time the task_id will not be present, but on all subsequent
+            # run, the previous task_id needs to be replaced with a new one.
+            if len(entry.args) > 1:
+                entry.args[1] = task_id
+            else:
+                entry.args.append(task_id)
+            super(Scheduler, self).apply_async(entry, publisher, **kwargs)
+            result = AsyncResult(task_id)
+        else:
+            result = super(Scheduler, self).apply_async(entry, publisher, **kwargs)
         if isinstance(entry, ScheduleEntry) and entry._scheduled_call.failure_threshold:
             has_failure = bool(entry._scheduled_call.consecutive_failures)
             self._failure_watcher.add(result.id, entry.name, has_failure)
