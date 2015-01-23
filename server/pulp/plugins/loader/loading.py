@@ -1,8 +1,8 @@
+from gettext import gettext as _
 import logging
 import os
 import re
 import sys
-from gettext import gettext as _
 
 import pkg_resources
 
@@ -179,7 +179,7 @@ def get_plugin_types(plugin_class):
     _logger.debug('Getting types for plugin class: %s' % plugin_class.__name__)
     types = get_plugin_metadata_field(plugin_class, 'types')
     if types is None:
-        msg =  _('Cannot load plugin: %(p)s does not define any types')
+        msg = _('Cannot load plugin: %(p)s does not define any types')
         _logger.error(msg % {'p': plugin_class.__name__})
         return None
     if isinstance(types, basestring):
@@ -201,7 +201,6 @@ def get_plugin_metadata_field(plugin_class, field, default=None):
     value = metadata.get(field, default)
     return value
 
-# general utility methods ------------------------------------------------------
 
 def add_path_to_sys_path(path):
     """
@@ -222,4 +221,3 @@ def read_content(file_name):
     contents = handle.read()
     handle.close()
     return contents
-
