@@ -13,10 +13,12 @@
 
 import os
 
+from threading import Thread
 from unittest import TestCase
 
 from mock import patch, Mock
 from M2Crypto import RSA, BIO
+
 from gofer.messaging.auth import ValidationFailed
 
 from pulp.common.config import Config
@@ -88,6 +90,10 @@ e1VQJiUwXnMkTSO7cQIDAQAB
 """
 
 
+class NotFoundException(Exception):
+    pass
+
+
 class PluginTest(TestCase):
 
     @staticmethod
@@ -99,10 +105,109 @@ class PluginTest(TestCase):
         plugin.descriptor = Mock()
         plugin.plugin = Mock()
         plugin.path_monitor = Mock()
+        plugin.registered = True
         return plugin
 
     def setUp(self):
         self.plugin = PluginTest.load_plugin()
+
+
+class TestValidateRegistration(PluginTest):
+
+    @patch('pulp.agent.gofer.pulpplugin.PulpBindings')
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_registered(self, bundle, bindings):
+        uid = 'Z28'
+        consumer_id = 'test-id'
+        consumer = Mock()
+        consumer.consumer.return_value = Mock(response_body={'_id': {'$oid': uid}})
+        bindings.return_value.consumer = consumer
+        bundle.return_value.cn.return_value = consumer_id
+        bundle.return_value.uid.return_value = uid
+
+        # test
+        self.plugin.registered = 123
+        self.plugin.validate_registration()
+
+        # validation
+        bindings.assert_called_once_with()
+        consumer.consumer.assert_called_once_with(consumer_id)
+        self.assertEqual(self.plugin.registered, True)
+
+    @patch('pulp.agent.gofer.pulpplugin.PulpBindings')
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_registration_not_matched(self, bundle, bindings):
+        uid = 'Z28'
+        consumer_id = 'test-id'
+        consumer = Mock()
+        consumer.consumer.return_value = Mock(response_body={'_id': {'$oid': 'K5'}})
+        bindings.return_value.consumer = consumer
+        bundle.return_value.cn.return_value = consumer_id
+        bundle.return_value.uid.return_value = uid
+
+        # test
+        self.plugin.registered = 123
+        self.plugin.validate_registration()
+
+        # validation
+        bindings.assert_called_once_with()
+        consumer.consumer.assert_called_once_with(consumer_id)
+        self.assertEqual(self.plugin.registered, False)
+
+    @patch('pulp.agent.gofer.pulpplugin.PulpBindings')
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    @patch('pulp.agent.gofer.pulpplugin.NotFoundException', NotFoundException)
+    def test_not_registered(self, bundle, bindings):
+        consumer_id = 'test-id'
+        consumer = Mock()
+        consumer.consumer.side_effect = NotFoundException
+        bindings.return_value.consumer = consumer
+        bundle.return_value.cn.return_value = consumer_id
+
+        # test
+        self.plugin.registered = 123
+        self.plugin.validate_registration()
+
+        # validation
+        bindings.assert_called_once_with()
+        consumer.consumer.assert_called_once_with(consumer_id)
+        self.assertEqual(self.plugin.registered, False)
+
+    @patch('pulp.agent.gofer.pulpplugin.PulpBindings')
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    @patch('pulp.agent.gofer.pulpplugin.NotFoundException', NotFoundException)
+    def test_not_registered_no_bundle(self, bundle, bindings):
+        consumer = Mock()
+        consumer.consumer.side_effect = NotFoundException
+        bindings.return_value.consumer = consumer
+        bundle.return_value.valid.return_value = False
+
+        # test
+        self.plugin.registered = 123
+        self.plugin.validate_registration()
+
+        # validation
+        self.assertFalse(bindings.called)
+        self.assertFalse(consumer.consumer.called)
+        self.assertEqual(self.plugin.registered, False)
+
+    @patch('pulp.agent.gofer.pulpplugin.PulpBindings')
+    @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
+    def test_call_failed(self, bundle, bindings):
+        consumer_id = 'test-id'
+        consumer = Mock()
+        consumer.consumer.side_effect = ValueError
+        bindings.return_value.consumer = consumer
+        bundle.return_value.cn.return_value = consumer_id
+
+        # test
+        self.plugin.registered = 123
+        self.assertRaises(ValueError, self.plugin.validate_registration)
+
+        # validation
+        bindings.assert_called_once_with()
+        consumer.consumer.assert_called_once_with(consumer_id)
+        self.assertEqual(self.plugin.registered, False)
 
 
 class TestSecret(PluginTest):
@@ -331,12 +436,16 @@ class TestBindings(PluginTest):
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
+
         self.plugin.pulp_conf.update(test_conf)
 
         bindings = self.plugin.PulpBindings()
 
-        mock_conn.assert_called_with('test-host', 443, cert_filename=CERT_PATH,
-                                     verify_ssl=True, ca_path='/some/path/')
+        mock_conn.assert_called_with(
+            host='test-host',
+            port=443,
+            cert_filename=CERT_PATH,
+            verify_ssl=True, ca_path='/some/path/')
         mock_bindings.assert_called_with(bindings, mock_conn())
 
 
@@ -444,31 +553,33 @@ class TestGetAgentId(PluginTest):
         self.assertEqual(agent_id, None)
 
 
-class TestInitializer(PluginTest):
+class TestInitialization(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.setup_plugin')
-    def test_init_plugin(self, mock_setup):
+    @patch('pulp.agent.gofer.pulpplugin.Attach')
+    def test_init_plugin(self, mock_attach):
         test_conf = {
             'filesystem': {
                 'id_cert_dir': TEST_ID_CERT_DIR,
                 'id_cert_filename': TEST_ID_CERT_FILE
             }
         }
+
         self.plugin.pulp_conf.update(test_conf)
 
         # test
         self.plugin.init_plugin()
 
         # validation
-        mock_setup.assert_called_with()
+        mock_attach.assert_called_with()
+        mock_attach.return_value.start.assert_called_with()
         self.plugin.path_monitor.add.assert_called_with(
-            os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.registration_changed)
+            os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.certificate_changed)
         self.plugin.path_monitor.start.assert_called_with()
 
     @patch('pulp.agent.gofer.pulpplugin.read_config')
     @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
     @patch('pulp.agent.gofer.pulpplugin.Authenticator')
-    def test_setup_plugin(self, mock_auth, mock_get_agent_id, mock_read):
+    def test_update_settings(self, mock_auth, mock_get_agent_id, mock_read):
         agent_id = 'pulp.agent.test-id'
         authenticator = Mock()
         mock_get_agent_id.return_value = agent_id
@@ -494,8 +605,7 @@ class TestInitializer(PluginTest):
         mock_read.return_value = test_conf
 
         # test
-        self.plugin.setup_plugin()
-
+        self.plugin.update_settings()
 
         # validation
         mock_read.assert_called_with()
@@ -506,61 +616,39 @@ class TestInitializer(PluginTest):
         self.assertEqual(self.plugin.plugin.cfg.messaging.clientcert, CERT_PATH)
 
 
-class TestRegistrationChanged(PluginTest):
+class TestCertificateChanged(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.setup_plugin')
-    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
-    def test_registered(self, mock_get_agent_id, mock_setup_plugin):
+    @patch('pulp.agent.gofer.pulpplugin.Attach')
+    def test_called(self, mock_attach):
         path = 'test-path'
-        agent_id = 'pulp.agent.test-id'
-        mock_get_agent_id.return_value = agent_id
 
         # test
-        self.plugin.registration_changed(path)
+        self.plugin.certificate_changed(path)
 
         # validation
-        mock_get_agent_id.assert_called_with()
-        mock_setup_plugin.assert_called_with()
-        self.plugin.plugin.attach.assert_called_with()
-
-    @patch('pulp.agent.gofer.pulpplugin.setup_plugin')
-    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
-    def test_unregistered(self, mock_get_agent_id, mock_setup_plugin):
-        path = 'test-path'
-        mock_get_agent_id.return_value = None
-
-        # test
-        self.plugin.registration_changed(path)
-
-        # validation
-        plugin_cfg = self.plugin.plugin.cfg()
-        mock_get_agent_id.assert_called_with()
-        self.assertFalse(mock_setup_plugin.called)
-        self.plugin.plugin.detach.assert_called_with()
+        mock_attach.assert_called_with()
+        mock_attach = mock_attach.return_value
+        mock_attach.start.assert_called_with()
+        mock_attach.join.assert_called_with()
 
 
 class TestProfileAction(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
     @patch('pulp.agent.gofer.pulpplugin.Profile.send')
-    def test_send_profile_when_registered(self, mock_send, mock_get_agent_id):
-        mock_get_agent_id.return_value = 'test-id'
-        # test
+    def test_send_profile_when_registered(self, mock_send):
+        # test.
         self.plugin.update_profile()
 
         # validation
-        mock_get_agent_id.assert_called_with()
         mock_send.assert_called_with()
 
-    @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
     @patch('pulp.agent.gofer.pulpplugin.Profile.send')
-    def test_nosend_profile_when_not_registered(self, mock_send, mock_get_agent_id):
-        mock_get_agent_id.return_value = None
+    def test_nosend_profile_when_not_registered(self, mock_send):
         # test
+        self.plugin.registered = False
         self.plugin.update_profile()
 
         # validation
-        mock_get_agent_id.assert_called_with()
         self.assertFalse(mock_send.called)
 
 
@@ -709,3 +797,54 @@ class TestProfile(PluginTest):
         # validation
         mock_dispatcher().profile.assert_called_with(mock_conduit())
         mock_bindings().profile.send.assert_called_once_with(TEST_CN, 'BB', 5678)
+
+
+class TestAttach(PluginTest):
+
+    def test_init(self):
+        attach = self.plugin.Attach()
+        self.assertTrue(isinstance(attach, Thread))
+        self.assertTrue(attach.daemon)
+
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_run(self, validate, update_settings):
+
+        # test
+        attach = self.plugin.Attach()
+        attach.run()
+
+        # validation
+        validate.assert_called_with()
+        update_settings.assert_called_with()
+        self.plugin.plugin.attach.assert_called_with()
+
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_run_not_registered(self, validate, update_settings):
+        self.plugin.registered = False
+
+        # test
+        attach = self.plugin.Attach()
+        attach.run()
+
+        # validation
+        validate.assert_called_with()
+        self.assertFalse(update_settings.called)
+        self.plugin.plugin.detach.assert_called_with()
+
+    @patch('pulp.agent.gofer.pulpplugin.sleep')
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_run_validate_failed(self, validate, update_settings, sleep):
+        validate.side_effect = [ValueError, None]
+
+        # test
+        attach = self.plugin.Attach()
+        attach.run()
+
+        # validation
+        validate.assert_called_with()
+        sleep.assert_called_once_with(60)
+        update_settings.assert_called_with()
+        self.plugin.plugin.attach.assert_called_with()
