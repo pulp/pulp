@@ -6,7 +6,7 @@ import signal
 import mock
 
 from .... import base
-from pulp.common import dateutils, constants
+from pulp.common import dateutils, constants, tags
 from pulp.devel import mock_plugins
 from pulp.plugins.model import SyncReport
 from pulp.server.async import tasks
@@ -580,6 +580,15 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Verify
         self.assertEqual(dir, temp_dir + '/test-repo')
         self.assertTrue(os.path.exists(dir))
+
+    def test_get_sync_tags(self):
+        """
+        Test that we get correct tags for a repo sync
+        """
+        sync_tags = self.sync_manager.get_sync_task_tags('repo_id')
+        expected_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, 'repo_id'),
+                     tags.action_tag('sync')]
+        self.assertEqual(sync_tags, expected_tags)
 
 
 class TestDoSync(base.PulpServerTests):

@@ -487,6 +487,29 @@ class TestSchedulerApplyAsync(unittest.TestCase):
         # make sure the entry was added, because it has a failure threshold
         self.assertEqual(len(sched_instance._failure_watcher), 1)
 
+    @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
+    @mock.patch('celery.beat.Scheduler.apply_async')
+    def test_dispatch_sync_with_auto_publish(self, mock_apply_async, mock_setup_schedule):
+        sched_instance = scheduler.Scheduler()
+        mock_entry = mock.MagicMock()
+        mock_entry.task = 'pulp.server.tasks.repository.dispatch_sync_with_auto_publish'
+        mock_entry.args = ['mock_repo_id']
+        ret = sched_instance.apply_async(mock_entry)
+        self.assertEqual(len(mock_entry.args), 2)
+
+    @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch.object(scheduler.Scheduler, 'setup_schedule')
+    @mock.patch('celery.beat.Scheduler.apply_async')
+    def test_dispatch_sync_with_auto_publish_again(self, mock_apply_async, mock_setup_schedule):
+        sched_instance = scheduler.Scheduler()
+        mock_entry = mock.MagicMock()
+        mock_entry.task = 'pulp.server.tasks.repository.dispatch_sync_with_auto_publish'
+        mock_entry.args = ['mock_repo_id', 'mock_task_id']
+        ret = sched_instance.apply_async(mock_entry)
+        self.assertEqual(len(mock_entry.args), 2)
+        self.assertIsNot(mock_entry.args[1], 'mock_task_id')
+
 
 class TestEventMonitorRun(unittest.TestCase):
     class SleepException(Exception):
