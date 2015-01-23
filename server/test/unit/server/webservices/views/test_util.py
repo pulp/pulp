@@ -30,7 +30,7 @@ class TestWebservicesUtils(unittest.TestCase):
         """
         Test that response is correct for non-base HttpResponses
         """
-        response = util.generate_json_response(HttpResponseNotFound)
+        response = util.generate_json_response(None, HttpResponseNotFound)
         self.assertTrue(isinstance(response, HttpResponseNotFound))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response._headers.get('content-type'),
