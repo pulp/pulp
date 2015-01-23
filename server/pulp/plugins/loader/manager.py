@@ -1,27 +1,13 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
-import copy
-import logging
 from gettext import gettext as _
 from pprint import pformat
+import copy
+import logging
 
 from pulp.plugins.loader import exceptions as loader_exceptions
 
 
-_LOG = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-# manager class ----------------------------------------------------------------
 
 class PluginManager(object):
     """
@@ -37,7 +23,6 @@ class PluginManager(object):
         self.profilers = _PluginMap()
         self.catalogers = _PluginMap()
 
-# plugin management class ------------------------------------------------------
 
 class _PluginMap(object):
     """
@@ -60,7 +45,7 @@ class _PluginMap(object):
         @type types: list or tuple
         """
         if not cfg.get('enabled', True):
-            _LOG.info(_('Skipping plugin %(p)s: not enabled') % {'p': id})
+            _logger.info(_('Skipping plugin %(p)s: not enabled') % {'p': id})
             return
         if self.has_plugin(id):
             msg = _('Plugin with same id already exists: %(n)s')
@@ -70,9 +55,9 @@ class _PluginMap(object):
         for type_ in types:
             plugin_ids = self.types.setdefault(type_, [])
             plugin_ids.append(id)
-        _LOG.info(_('Loaded plugin %(p)s for types: %(t)s') %
-                  {'p': id, 't': ','.join(types)})
-        _LOG.debug('class: %s; config: %s' % (cls.__name__, pformat(cfg)))
+        _logger.info(_('Loaded plugin %(p)s for types: %(t)s') %
+                     {'p': id, 't': ','.join(types)})
+        _logger.debug('class: %s; config: %s' % (cls.__name__, pformat(cfg)))
 
     def get_plugin_by_id(self, id):
         """
@@ -130,4 +115,3 @@ class _PluginMap(object):
             if id not in ids:
                 continue
             ids.remove(id)
-
