@@ -17,7 +17,34 @@ class DistributorsView(View):
 
 
 class ImporterResourceView(View):
-    pass
+    """
+    Views for an individual importer.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request, importer_id):
+        """
+        Return a response containing serialized data for the specified importer.
+
+        :param request : WSGI request object
+        :type  request : django.core.handlers.wsgi.WSGIRequest
+        :param importer_id : name of importer to return information for
+        :type  importer_id : string
+
+        :return : Response containing serialized data for specified importer
+        :rtype  : django.http.HttpResponse
+
+        :raises : MissingResource if importer_id cannot be found
+        """
+        manager = factory.plugin_manager()
+        all_importers = manager.importers()
+
+        for importer in all_importers:
+            if importer['id'] == importer_id:
+                importer['_href'] = request.get_full_path()
+                return generate_json_response(importer)
+
+        raise MissingResource(importer_type_id=importer_id)
 
 
 class ImportersView(View):
@@ -64,8 +91,8 @@ class TypesView(View):
 
         :param request: WSGI Request obect
         :type  request: django.core.handlers.wsgi.WSGIRequest
-        :return       : Serialized list of objects representing all available content types
-        :rtype        : HttpResponse
+        :return       : Response containing serialized list data for all available content types
+        :rtype        : django.http.HttpResponse
         """
         manager = factory.plugin_manager()
         type_defs = manager.types()

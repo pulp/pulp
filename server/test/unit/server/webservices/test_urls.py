@@ -57,7 +57,16 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         pass
 
     def test_match_importer_resource_view(self):
-        pass
+        """
+        Test the url matching for plugin_importer_resource
+        """
+        url = '/v2/plugins/importers/mock_importer_id/'
+        url_name = 'plugin_importer_resource'
+        assert_url_match(url, url_name, importer_id='mock_importer_id')
+
+        symbols_url = '/v2/plugins/importers/%21/'
+        url_name = 'plugin_importer_resource'
+        assert_url_match(symbols_url, url_name, importer_id='!')
 
     def test_match_importers_view(self):
         pass
