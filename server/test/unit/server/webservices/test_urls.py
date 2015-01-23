@@ -46,6 +46,9 @@ def assert_url_match(expected_url, url_name, *args, **kwargs):
 
 
 class TestDjangoPluginsUrls(unittest.TestCase):
+    """
+    Test url matching for plugins urls.
+    """
 
     def test_match_distributor_resource_view(self):
         pass
@@ -63,7 +66,12 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         pass
 
     def test_match_types_view(self):
-        pass
+        """
+        Test url matching for plugin_types.
+        """
+        url = '/v2/plugins/types/'
+        url_name = 'plugin_types'
+        assert_url_match(url, url_name)
 
 
 class TestDjangoRepoGroupsUrls(unittest.TestCase):
