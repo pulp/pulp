@@ -21,8 +21,13 @@ from pulp.client.commands.options import OPTION_CONSUMER_ID
 from pulp.client.commands.polling import PollingCommand
 from pulp.devel.unit import base
 from pulp.devel.unit.task_simulator import TaskSimulator
-from pulp.server.compat import json
 
+try:
+    import json as _json
+except ImportError:
+    import simplejson as _json
+
+json = _json
 
 class InstantiationTests(unittest.TestCase):
 
