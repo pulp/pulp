@@ -7,7 +7,7 @@
 
 Name: gofer
 Version: 2.4.0
-Release: 1%{?dist}
+Release: 2%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
 License: LGPLv2
@@ -159,7 +159,7 @@ Summary: Gofer Qpid messaging adapter python package
 Group: Development/Languages
 BuildRequires: python
 Requires: python-%{name} >= %{version}
-Requires: python-qpid >= 0.21
+Requires: python-qpid >= 0.18
 Requires: python-qpid-qmf >= 0.21
 %if 0%{?rhel} && 0%{?rhel} < 6
 Requires: python-ssl
