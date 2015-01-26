@@ -9,7 +9,33 @@ from pulp.server.webservices.views.util import (generate_json_response,
 
 
 class DistributorResourceView(View):
-    pass
+    """
+    Views for a single distributor.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request, distributor_id):
+        """
+        Return a response contaning serialized data for the specified distributor.
+
+        :param request       : WSGI request object
+        :type  request       : django.core.handlers.wsgi.WSGIRequest
+        :param distributor_id: id of distributor to match
+        :type  distributor_id: string
+        :return              : Response containing serialized data for the specified distributor
+        :rtype               : django.http.HttpResponse
+
+        :raises              : MissingResource if distributor_id is not found
+        """
+        manager = factory.plugin_manager()
+        all_distributors = manager.distributors()
+
+        for distributor in all_distributors:
+            if distributor['id'] == distributor_id:
+                distributor['_href'] = request.get_full_path()
+                return generate_json_response(distributor)
+
+        raise MissingResource(distributor_type_id=distributor_id)
 
 
 class DistributorsView(View):

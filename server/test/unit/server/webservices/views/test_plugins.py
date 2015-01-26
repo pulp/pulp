@@ -10,8 +10,56 @@ from pulp.server.webservices.views.plugins import (DistributorResourceView, Dist
 
 
 class TestDistributorResourceView(unittest.TestCase):
-    pass
+    """
+    Tests for views for a single distributor.
+    """
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.plugins.factory')
+    def test_get_distributor_resource_with_existing_distributor(self, mock_factory, mock_serial):
+        """
+        Distributor Resource should generate a json response from the distributor data.
+        """
+        mock_manager = mock.MagicMock()
+        mock_manager.distributors.return_value = [{'id': 'mock_distributor_1'},
+                                                  {'id': 'mock_distributor_2'}]
+        mock_factory.plugin_manager.return_value = mock_manager
+        request = mock.MagicMock()
+        request.get_full_path.return_value = '/mock/path/'
+
+        distributor_resource = DistributorResourceView()
+        response = distributor_resource.get(request, 'mock_distributor_2')
+
+        expected_content = {'id': 'mock_distributor_2', '_href': '/mock/path/'}
+        mock_serial.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_serial.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.plugins.factory')
+    def test_get_distributor_resource_with_nonexistent_distributor(self, mock_factory):
+        """
+        Distributor Resource should raise a MissingResource if distributor does not exist.
+        """
+        mock_manager = mock.MagicMock()
+        mock_manager.distributors.return_value = [{'id': 'mock_distriburor_1'},
+                                                  {'id': 'mock_distributor_2'}]
+        mock_factory.plugin_manager.return_value = mock_manager
+        request = mock.MagicMock()
+
+        distributor_resource = DistributorResourceView()
+        try:
+            distributor_resource.get(request, 'nonexistent_distributor')
+        except MissingResource, response:
+            pass
+        else:
+            raise AssertionError("MissingResource should be raised with nonexistent_distributor")
+
+        self.assertEqual(response.http_status_code, 404)
+        self.assertEqual(response.error_data['resources'],
+                         {'distributor_type_id': 'nonexistent_distributor'})
 
 class TestDistributorsView(unittest.TestCase):
     """
