@@ -11,15 +11,20 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from mock import patch, ANY
+import unittest
 
+from mock import patch, ANY
 
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.devel.unit import util
 from pulp.devel.unit.base import PulpCeleryTaskTests
 from pulp.server.async.tasks import TaskResult
 from pulp.server.exceptions import PulpException, error_codes
+from pulp.server.managers import factory
 from pulp.server.tasks import repository
+
+
+factory.initialize()
 
 
 class TestDelete(PulpCeleryTaskTests):
@@ -173,39 +178,20 @@ class TestDistributorUpdate(PulpCeleryTaskTests):
 
 
 class TestRepositoryPublish(PulpCeleryTaskTests):
-
-    @patch('pulp.server.tasks.repository.publish_task.apply_async_with_reservation')
-    def test_publish(self, mock_publish_task):
-        repo_id = 'foo'
-        distributor_id = 'bar'
-        overrides = 'baz'
-        repository.publish(repo_id, distributor_id, overrides)
-        kwargs = {
-            'repo_id': repo_id,
-            'distributor_id': distributor_id,
-            'publish_config_override': overrides
-        }
-        tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('publish')]
-        mock_publish_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
-                                             kwargs=kwargs)
+    @patch('pulp.server.managers.repo.publish.RepoPublishManager.queue_publish')
+    def test_pass_through_to_manager(self, mock_queue_publish):
+        result = repository.publish('foo', 'dist1', {})
+        # make sure the args get passed through
+        mock_queue_publish.assert_called_once_with('foo', 'dist1', {})
+        # make sure the return value is passed through
+        self.assertTrue(result is mock_queue_publish.return_value)
 
 
-class TestRepositorySync(PulpCeleryTaskTests):
-
-    @patch('pulp.server.tasks.repository.managers')
-    def test_sync_alone(self, mock_managers):
-        mock_managers.repo_sync_manager.return_value.sync.return_value = 'baz'
-        result = repository.sync_with_auto_publish('foo', 'bar')
-        self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.return_value, 'baz')
-
-    @patch('pulp.server.tasks.repository.publish_task.apply_async_with_reservation')
-    @patch('pulp.server.tasks.repository.managers')
-    def test_sync_with_publish(self, mock_managers, mock_publish):
-        mock_managers.repo_sync_manager.return_value.sync.return_value = 'baz'
-        mock_managers.repo_publish_manager.return_value.auto_distributors.return_value = \
-            [{'id': 'flux'}]
-        mock_publish.return_value = 'fish'
-        result = repository.sync_with_auto_publish('foo', 'bar')
-        self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(result.spawned_tasks, ['fish', ])
+class TestRepositorySync(unittest.TestCase):
+    @patch('pulp.server.managers.repo.sync.RepoSyncManager.queue_sync_with_auto_publish')
+    def test_pass_through_to_manager(self, mock_queue_sync):
+        result = repository.sync_with_auto_publish('foo', {})
+        # make sure the args get passed through
+        mock_queue_sync.assert_called_once_with('foo', {})
+        # make sure the return value is passed through
+        self.assertTrue(result is mock_queue_sync.return_value)
