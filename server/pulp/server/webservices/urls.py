@@ -1,19 +1,22 @@
 from django.conf.urls import patterns, url
 
+from pulp.server.webservices.views.content import UploadSegmentResourceView
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
-from pulp.server.webservices.views.root_actions import LoginView
 from pulp.server.webservices.views.repositories import RepoSync
 from pulp.server.webservices.views.repo_groups import (
     RepoGroupAssociateView, RepoGroupDistributorResource, RepoGroupDistributorsView,
     RepoGroupPublishView, RepoGroupResourceView, RepoGroupsView, RepoGroupUnassociateView
 )
+from pulp.server.webservices.views.root_actions import LoginView
 from pulp.server.webservices.views.tasks import TasksView
 
 
 urlpatterns = patterns('',
     url(r'^v2/actions/login/$', LoginView.as_view(), name='login'),
+    url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
+        UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
     url(r'^v2/plugins/distributors/$', DistributorsView.as_view(), name='plugin_distributors'),
     url(r'^v2/plugins/distributors/(?P<distributor_id>[^/]+)/$', DistributorResourceView.as_view(),
         name='plugin_distributor_resource'),
