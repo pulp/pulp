@@ -59,3 +59,29 @@ def touch(path):
 
     file_handle = open(path, 'w')
     file_handle.close()
+
+
+class SideEffect(object):
+    """
+    Side effect for older version of mock.
+    """
+
+    def __init__(self, *values):
+        """
+        Side effect values.
+
+        Example:
+          mock = Mock(side_effect=SideEffect(ValueError, None)
+
+        :param values: List of values
+        :type values: list
+        """
+        self.values = iter(values)
+
+    def __call__(self):
+        value = self.values.next()
+        if callable(value):
+            value = value()
+        if isinstance(value, Exception):
+            raise value
+        return value
