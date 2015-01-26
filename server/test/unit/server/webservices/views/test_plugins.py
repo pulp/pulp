@@ -142,7 +142,31 @@ class TestImporterResourceView(unittest.TestCase):
 
 
 class TestImportersView(unittest.TestCase):
-    pass
+    """
+    Tests for views for all importers.
+    """
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                 new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.plugins.factory')
+    def test_get_importers_view(self, mock_factory, mock_serializer):
+        """
+        Importers views should return a list of dicts that represent each importer object
+        """
+        mock_manager = mock.MagicMock()
+        mock_manager.importers.return_value = [{'id': 'mock_importer_1'}, {'id': 'mock_importer_2'}]
+        mock_factory.plugin_manager.return_value = mock_manager
+        request = mock.MagicMock()
+        request.get_full_path.return_value = '/mock/path/'
+
+        importers_view = ImportersView()
+        response = importers_view.get(request)
+
+        expected_content = [{'id': 'mock_importer_1', '_href': '/mock/path/mock_importer_1/'},
+                            {'id': 'mock_importer_2', '_href': '/mock/path/mock_importer_2/'}]
+        mock_serializer.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_serializer.return_value)
 
 
 class TestTypeResourceView(unittest.TestCase):

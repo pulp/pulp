@@ -95,7 +95,27 @@ class ImporterResourceView(View):
 
 
 class ImportersView(View):
-    pass
+    """
+    Views for all importers.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request):
+        """
+        Return a response containing a serialized list of importers present in the server.
+
+        :param request: WSGI request object
+        :type  request: django.core.handlers.wsgi.WSGIRequest
+        :return       : Response containing a serialized list of dicts containing importer data
+        :rtype        : django.http.HttpResponse
+        """
+        manager = factory.plugin_manager()
+        all_importers = manager.importers()
+
+        for importer in all_importers:
+            importer['_href'] = '/'.join([request.get_full_path().rstrip('/'), importer['id'], ''])
+
+        return generate_json_response(all_importers)
 
 
 class TypeResourceView(View):
