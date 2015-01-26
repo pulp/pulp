@@ -2,9 +2,65 @@ import unittest
 
 import mock
 
-from .base import assert_auth_UPDATE
-from pulp.server.exceptions import InvalidValue
-from pulp.server.webservices.views.content import UploadSegmentResourceView
+from .base import assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
+from pulp.server.exceptions import InvalidValue, OperationPostponed
+from pulp.server.webservices.views.content import OrphanCollectionView, UploadSegmentResourceView
+
+
+class TestOrphanCollectionView(unittest.TestCase):
+    """
+    Tests for views for all orphaned content.
+    """
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    def test_get_orphan_collection_view(self, mock_factory, mock_serializer):
+        """
+        Orphan collection should create a response from a dict of orphan dicts.
+        """
+        mock_orphans = {
+            'orphan1': 1,
+            'orphan2': 2,
+        }
+        mock_orphan_manager = mock.MagicMock()
+        mock_orphan_manager.orphans_summary.return_value = mock_orphans
+        mock_factory.content_orphan_manager.return_value = mock_orphan_manager
+        request = mock.MagicMock()
+        request.get_full_path.return_value = '/mock/path/'
+
+        orphan_collection = OrphanCollectionView()
+        response = orphan_collection.get(request)
+
+        expected_content = {
+            'orphan1': {
+                'count': 1,
+                '_href': '/mock/path/orphan1/',
+            },
+            'orphan2': {
+                'count': 2,
+                '_href': '/mock/path/orphan2/',
+            },
+        }
+        mock_serializer.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_serializer.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.content.orphan')
+    def test_delete_orphan_collection_view(self, mock_orphan):
+        """
+        Test that delete orphan collection view calls the appopriate function
+        with the correct arguments.
+        """
+        request = mock.MagicMock()
+        orphan_collection = OrphanCollectionView()
+        self.assertRaises(OperationPostponed, orphan_collection.delete, request)
+
+        mock_orphan.delete_all_orphans.apply_async.assert_called_once_with(
+            tags=['pulp:content_unit:orphans']
+        )
 
 
 class TestUploadSegmentResourceView(unittest.TestCase):

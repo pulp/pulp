@@ -56,6 +56,15 @@ class TestDjangoContentUrls(unittest.TestCase):
         url_name = 'content_upload_segment_resource'
         assert_url_match(url, url_name, upload_id='mock-upload-id', offset='8')
 
+    def test_match_content_orphan_collection_view(self):
+        """
+        Test url matching for content_orphan_collection_view.
+        """
+
+        url = '/v2/content/orphans/'
+        url_name = 'content_orphan_collection'
+        assert_url_match(url, url_name)
+
 
 class TestDjangoPluginsUrls(unittest.TestCase):
     """
@@ -173,3 +182,4 @@ class TestDjangoLoginUrls(unittest.TestCase):
         url = '/v2/actions/login/'
         url_name = 'login'
         assert_url_match(url, url_name)
+
