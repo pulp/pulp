@@ -1,19 +1,7 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
-from pulp.plugins.conduits.profiler import ProfilerConduit
+from .... import base
+from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugins
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
@@ -29,20 +17,18 @@ from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.consumer.profile import ProfileManager
 from pulp.server.managers.repo.cud import RepoManager
-import base
-from pulp.devel import mock_plugins
 
 
 class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
     CONSUMER_IDS = ['consumer-1', 'consumer-2']
-    FILTER = {'id':{'$in':CONSUMER_IDS}}
-    SORT = [{'id':1}]
+    FILTER = {'id': {'$in': CONSUMER_IDS}}
+    SORT = [{'id': 1}]
     CONSUMER_CRITERIA = Criteria(filters=FILTER, sort=SORT).as_dict()
-    PROFILE1 = [{'name':'zsh', 'version':'1.0'}, {'name':'ksh', 'version':'1.0'}]
-    PROFILE2 = [{'name':'zsh', 'version':'2.0'}, {'name':'ksh', 'version':'2.0'}]
-    REPO_IDS = ['repo-1','repo-2']
-    REPO_CRITERIA = Criteria(filters={'id':{'$in':REPO_IDS}}, sort=[{'id':1}])
+    PROFILE1 = [{'name': 'zsh', 'version': '1.0'}, {'name': 'ksh', 'version': '1.0'}]
+    PROFILE2 = [{'name': 'zsh', 'version': '2.0'}, {'name': 'ksh', 'version': '2.0'}]
+    REPO_IDS = ['repo-1', 'repo-2']
+    REPO_CRITERIA = Criteria(filters={'id': {'$in': REPO_IDS}}, sort=[{'id': 1}])
     YUM_DISTRIBUTOR_ID = 'yum_distributor'
 
     def setUp(self):
@@ -58,14 +44,14 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
         yum_profiler, cfg = plugins.get_profiler_by_type('rpm')
         yum_profiler.calculate_applicable_units = \
-            mock.Mock(side_effect=lambda p,r,c,x:
+            mock.Mock(side_effect=lambda p, r, c, x:
                       {'rpm': ['rpm-1', 'rpm-2'],
                        'erratum': ['errata-1', 'errata-2']})
 
-        yum_profiler.metadata = mock.Mock(return_value={'types':['rpm', 'erratum']})
+        yum_profiler.metadata = mock.Mock(return_value={'types': ['rpm', 'erratum']})
 
         ApplicabilityRegenerationManager._get_existing_repo_content_types = mock.Mock(
-            return_value=['rpm','erratum'])
+            return_value=['rpm', 'erratum'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
@@ -101,11 +87,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         # Create repos and add distributor
         for repo_id in self.REPO_IDS:
             repo_manager.create_repo(repo_id)
-            distributor_manager.add_distributor(
-                                                repo_id,
-                                                'mock-distributor',
-                                                {},
-                                                True,
+            distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True,
                                                 self.YUM_DISTRIBUTOR_ID)
 
     def populate_bindings(self):
@@ -296,7 +278,7 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         applicability_manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         # Update the consumer profile
         profile_manager = factory.consumer_profile_manager()
-        profile_manager.update(self.CONSUMER_IDS[0], 'rpm', {'name':'zsh', 'version':'1.0'})
+        profile_manager.update(self.CONSUMER_IDS[0], 'rpm', {'name': 'zsh', 'version': '1.0'})
         # Request applicability regeneration for the repo and assert that no exception is raised
         applicability_manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
 
@@ -368,7 +350,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         a_2 = RepoProfileApplicability.objects.create(
             profile_hash='hash_2', repo_id='repo_1', profile='profile',
             applicability='applicability')
-        a_3 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_hash='hash_1', repo_id='repo_2', profile='profile',
             applicability='applicability')
 
@@ -400,13 +382,13 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         Test the get() method.
         """
         # Let's create three objects, and get one of them
-        a_1 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_hash='hash_1', repo_id='repo_1', profile='profile',
             applicability='applicability')
         a_2 = RepoProfileApplicability.objects.create(
             profile_hash='hash_2', repo_id='repo_1', profile='profile',
             applicability='applicability')
-        a_3 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_hash='hash_1', repo_id='repo_2', profile='profile',
             applicability='applicability')
 
@@ -426,13 +408,13 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         Test the get() method, when it matches more than one object.
         """
         # Let's create three objects, and get all of them
-        a_1 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_hash='hash_1', repo_id='repo_1', profile='profile',
             applicability='applicability')
-        a_2 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_hash='hash_2', repo_id='repo_1', profile='profile',
             applicability='applicability')
-        a_3 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_hash='hash_1', repo_id='repo_2', profile='profile',
             applicability='applicability')
 
@@ -459,10 +441,10 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         rpa_1 = RepoProfileApplicability.objects.create(profile_1.profile_hash, repo['id'],
                                                         profile_1.profile, 'applicability_data')
         # This one should be removed, because it references a profile_hash that doesn't exist
-        rpa_2 = RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
-                                                        profile_1.profile, 'applicability_data')
+        RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
+                                                profile_1.profile, 'applicability_data')
         # This one should be removed, because it references a repo_id that doesn't exist
-        rpa_3 = RepoProfileApplicability.objects.create(
+        RepoProfileApplicability.objects.create(
             profile_1.profile_hash, 'repo_doesnt_exist', profile_1.profile, 'applicability_data_2')
         # This one should also remain
         rpa_4 = RepoProfileApplicability.objects.create(profile_2.profile_hash, repo['id'],
@@ -490,8 +472,8 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
                                                         profile.profile, 'applicability_data')
         # This one should be removed, because it references a profile_hash that doesn't exist
-        rpa_2 = RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
-                                                        profile.profile, 'applicability_data')
+        RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
+                                                profile.profile, 'applicability_data')
         # There should be two rpas
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
 
@@ -514,8 +496,8 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
                                                         profile.profile, 'applicability_data')
         # This one should be removed, because it references a repo_id that doesn't exist
-        rpa_2 = RepoProfileApplicability.objects.create(profile.profile_hash, 'repo_doesnt_exist',
-                                                        profile.profile, 'applicability_data_2')
+        RepoProfileApplicability.objects.create(profile.profile_hash, 'repo_doesnt_exist',
+                                                profile.profile, 'applicability_data_2')
         # There should be two rpas
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
 
@@ -1122,11 +1104,11 @@ class TestAddConsumersToApplicabilityMap(base.PulpServerTests,
 
         expected_applicability_map = {
             ('hash_1', 'repo_1'): {'consumers': ['consumer_1'],
-                                        'applicability': ['a_1']},
+                                   'applicability': ['a_1']},
             ('hash_2', 'repo_1'): {'consumers': ['consumer_1', 'consumer_2'],
-                                        'applicability': ['a_2']},
+                                   'applicability': ['a_2']},
             ('hash_2', 'repo_2'): {'consumers': ['consumer_2'],
-                                        'applicability': ['a_3']},
+                                   'applicability': ['a_3']},
             ('hash_5', 'repo_3'): {'consumers': [], 'applicability': ['a_4']},
         }
         self.assert_equal_ignoring_list_order(applicability_map,
@@ -1186,7 +1168,7 @@ class TestAddProfilesToConsumerMapAndGetHashes(
         self.assertEqual(set(consumer_map.keys()), set(['consumer_1', 'consumer_2']))
         self.assertEqual(len(consumer_map['consumer_1']['profiles']), 2)
         self.assertEqual(len(consumer_map['consumer_2']['profiles']), 1)
-        self.assertEqual(set([p['profile_hash'] \
+        self.assertEqual(set([p['profile_hash']
                               for p in consumer_map['consumer_1']['profiles']]),
                          set([profile_map['consumer_1'][0]['hash'],
                               profile_map['consumer_1'][1]['hash']]))
@@ -1364,8 +1346,7 @@ class TestGetApplicabilityMap(base.PulpServerTests):
                                                     a['profile'], a['applicability'])
 
         # Leave hash_3 out of the query, so we can make sure it doesn't get returned
-        a_map = _get_applicability_map(['hash_1', 'hash_2'],
-                                                            ['type_1'])
+        a_map = _get_applicability_map(['hash_1', 'hash_2'], ['type_1'])
 
         expected_a_map = {
             ('hash_1', 'repo_1'): {'applicability': {'type_1': 'a_1'}, 'consumers': []},
