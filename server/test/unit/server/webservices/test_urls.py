@@ -154,5 +154,5 @@ class TestDjangoLoginUrls(unittest.TestCase):
         Test url match for login.
         """
         url = '/v2/actions/login/'
-        url_name = 'login_view'
+        url_name = 'login'
         assert_url_match(url, url_name)
