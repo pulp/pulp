@@ -7,7 +7,7 @@
 
 Name: gofer
 Version: 2.4.0
-Release: 2%{?dist}
+Release: 3%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
 License: LGPLv2
@@ -160,7 +160,7 @@ Group: Development/Languages
 BuildRequires: python
 Requires: python-%{name} >= %{version}
 Requires: python-qpid >= 0.18
-Requires: python-qpid-qmf >= 0.21
+Requires: python-qpid-qmf >= 0.18
 %if 0%{?rhel} && 0%{?rhel} < 6
 Requires: python-ssl
 %endif
@@ -252,6 +252,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Jan 26 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-3
+- downgrade requires python-qpid-qmf to match EL5. (jortel@redhat.com)
+
 * Mon Jan 26 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-2
 - downgrade requires python-qpid >= 0.18 to match EL5. (jortel@redhat.com)
 - Remove fc21 from gofer builds (cduryee@redhat.com)
