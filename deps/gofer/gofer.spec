@@ -252,6 +252,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Jan 26 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-3
+- downgrade requires python-qpid-qmf to match EL5. (jortel@redhat.com)
+
 * Mon Jan 26 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-2
 - downgrade requires python-qpid >= 0.18 to match EL5. (jortel@redhat.com)
 - Remove fc21 from gofer builds (cduryee@redhat.com)
