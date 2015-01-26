@@ -54,7 +54,12 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         pass
 
     def test_match_distributors_view(self):
-        pass
+        """
+        Test the url matching for the Distributors view.
+        """
+        url = '/v2/plugins/distributors/'
+        url_name = 'plugin_distributors'
+        assert_url_match(url, url_name)
 
     def test_match_importer_resource_view(self):
         """

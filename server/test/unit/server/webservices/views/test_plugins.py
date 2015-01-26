@@ -14,7 +14,32 @@ class TestDistributorResourceView(unittest.TestCase):
 
 
 class TestDistributorsView(unittest.TestCase):
-    pass
+    """
+    Tests for views for all distributors.
+    """
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.plugins.factory')
+    def test_get_distributors_view(self, mock_factory, mock_serializer):
+        """
+        DistributorsView should create a response from a list of distributor dicts.
+        """
+        mock_manager = mock.MagicMock()
+        mock_manager.distributors.return_value = [{'id': 'mock_distributor_1'},
+                                                  {'id': 'mock_distributor_2'}]
+        mock_factory.plugin_manager.return_value = mock_manager
+        request = mock.MagicMock()
+        request.get_full_path.return_value = '/mock/path'
+
+        distributors_view = DistributorsView()
+        response = distributors_view.get(request)
+
+        expected_content = [{'id': 'mock_distributor_1', '_href': '/mock/path/mock_distributor_1/'},
+                            {'id': 'mock_distributor_2', '_href': '/mock/path/mock_distributor_2/'}]
+
+        mock_serializer.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_serializer.return_value)
 
 
 class TestImporterResourceView(unittest.TestCase):
