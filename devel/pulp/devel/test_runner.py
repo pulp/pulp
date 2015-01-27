@@ -86,4 +86,4 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5):
         args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
     # Call the test process, and return its exit code
-    return subprocess.call(args)
+    sys.exit(subprocess.call(args))
