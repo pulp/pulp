@@ -22,6 +22,7 @@ from M2Crypto import RSA, BIO
 from gofer.messaging.auth import ValidationFailed
 
 from pulp.common.config import Config
+from pulp.devel.unit.util import SideEffect
 
 TEST_HOST = 'test-host'
 TEST_PORT = '443'
@@ -329,12 +330,16 @@ class TestAuthentication(PluginTest):
         mock_open.return_value = mock_fp
 
         # test
-
-        with patch('pulp.agent.gofer.pulpplugin.RSA') as rsa:
+        try:
+            patcher = patch('pulp.agent.gofer.pulpplugin.RSA')
+            rsa = patcher.start()
             rsa.load_pub_key_bio.return_value.verify.return_value = False
             authenticator = self.plugin.Authenticator()
             self.assertRaises(
                 ValidationFailed, authenticator.validate, document, message, key.sign(message))
+        finally:
+            if patcher:
+                patcher.stop()
 
         # validation
         mock_open.assert_called_with(key_path)
@@ -804,7 +809,6 @@ class TestAttach(PluginTest):
     def test_init(self):
         attach = self.plugin.Attach()
         self.assertTrue(isinstance(attach, Thread))
-        self.assertTrue(attach.daemon)
 
     @patch('pulp.agent.gofer.pulpplugin.update_settings')
     @patch('pulp.agent.gofer.pulpplugin.validate_registration')
@@ -837,7 +841,7 @@ class TestAttach(PluginTest):
     @patch('pulp.agent.gofer.pulpplugin.update_settings')
     @patch('pulp.agent.gofer.pulpplugin.validate_registration')
     def test_run_validate_failed(self, validate, update_settings, sleep):
-        validate.side_effect = [ValueError, None]
+        validate.side_effect = SideEffect(ValueError, None)
 
         # test
         attach = self.plugin.Attach()
