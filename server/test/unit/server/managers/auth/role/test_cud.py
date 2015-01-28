@@ -1,20 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import random
 import string
 
-import base
+from ..... import base
 from pulp.server.auth import authorization
 from pulp.server.db.model.auth import Role
 from pulp.server.exceptions import PulpDataException, InvalidValue, MissingResource
@@ -98,12 +85,12 @@ class RoleManagerTests(base.PulpServerTests):
         self.assertNotEqual(role.get('permissions'), delta['permissions'])
 
     def test_add_user(self):
-        u = self._create_user()
+        user = self._create_user()
         r = self._create_role()
-        self.role_manager.add_user_to_role(r['id'], u['login'])
+        self.role_manager.add_user_to_role(r['id'], user['login'])
         user_names = [
             u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
-        self.assertTrue(u['login'] in user_names)
+        self.assertTrue(user['login'] in user_names)
 
     def test_add_user_no_role(self):
         """
@@ -122,13 +109,13 @@ class RoleManagerTests(base.PulpServerTests):
                           'not_a_user')
 
     def test_remove_user(self):
-        u = self._create_user()
+        user = self._create_user()
         r = self._create_role()
-        self.role_manager.add_user_to_role(r['id'], u['login'])
-        self.role_manager.remove_user_from_role(r['id'], u['login'])
+        self.role_manager.add_user_to_role(r['id'], user['login'])
+        self.role_manager.remove_user_from_role(r['id'], user['login'])
         user_names = [
             u['login'] for u in self.user_query_manager.find_users_belonging_to_role(r['id'])]
-        self.assertFalse(u['login'] in user_names)
+        self.assertFalse(user['login'] in user_names)
 
     # test built in roles
     def test_super_users(self):
