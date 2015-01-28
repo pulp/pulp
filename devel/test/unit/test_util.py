@@ -95,3 +95,16 @@ class TestTouch(unittest.TestCase):
         filename = os.path.join(self.working_dir, 'subdir', "foo.txt")
         util.touch(filename)
         self.assertTrue(os.path.exists(filename))
+
+
+class TestSideEffect(unittest.TestCase):
+    def test_side_effect(self):
+        side_effect = util.SideEffect(None, ValueError, Exception('foo'), 'apple')
+        # test with an empty value
+        self.assertEquals(None, side_effect())
+        # Test with an exception that has not been instantiated
+        self.assertRaises(ValueError, side_effect)
+        # Test with an instantiated exception
+        self.assertRaises(Exception, side_effect)
+        # Test with a string value
+        self.assertEquals('apple', side_effect())
