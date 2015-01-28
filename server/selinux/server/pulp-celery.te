@@ -51,6 +51,9 @@ ifndef(`distro_rhel6', `
 allow celery_t pulp_cert_t:dir { getattr search };
 allow celery_t pulp_cert_t:file { read write getattr open };
 
+# custom SSL certificates reading
+miscfiles_read_generic_certs(celery_t)
+
 ######################################
 
 allow celery_t var_run_t:file { write getattr read create unlink open };
