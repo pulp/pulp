@@ -6,6 +6,7 @@ from django.http import HttpResponseNotFound, HttpResponseRedirect
 from django.views.generic import View
 
 from pulp.common import tags
+from pulp.server import constants
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
@@ -320,6 +321,62 @@ class ContentUnitsCollectionView(View):
             all_processed_units.append(unit)
 
         return generate_json_response_with_pulp_encoder(all_processed_units)
+
+
+class ContentUnitUserMetadataResourceView(View):
+    """
+    This View allows users to read and write the pulp_user_metadata field on a particular
+    content unit.
+    """
+    @auth_required(authorization.READ)
+    def get(self, request, type_id, unit_id):
+        """
+        Return user metadata for a content unit.
+
+        :param type_id: The Unit's type id.
+        :type  type_id: basestring
+        :param unit_id: The id of the unit that you wish to set the pulp_user_metadata field on
+        :type  unit_id: basestring
+
+        :return: response containing pulp user metadata field
+        :rtype: django.http.HttpResponse or HttpResponseNotFound
+        """
+        cqm = factory.content_query_manager()
+        try:
+            unit = cqm.get_content_unit_by_id(type_id, unit_id)
+        except MissingResource:
+            msg = _('No content unit resource: %(r)s') % {'r': unit_id}
+            return generate_json_response(msg, HttpResponseNotFound)
+
+        resource = serialization.content.content_unit_obj(
+            unit[constants.PULP_USER_METADATA_FIELDNAME])
+        return generate_json_response(resource)
+
+    @auth_required(authorization.UPDATE)
+    def put(self, request, type_id, unit_id):
+        """
+        Set the pulp_user_metadata field on a content unit.
+
+        :param type_id: The Unit's type id.
+        :type  type_id: basestring
+        :param unit_id: The id of the unit that you wish to set the pulp_user_metadata field on
+        :type  unit_id: basestring
+
+        :return: response containing pulp user metadata_field
+        :rtype: django.http.HttpResponse or HttpResponseNotFound
+        """
+        params = request.body_as_json
+        cqm = factory.content_query_manager()
+        try:
+            cqm.get_content_unit_by_id(type_id, unit_id)
+        except MissingResource:
+            msg = _('No content unit resource: %(r)s') % {'r': unit_id}
+            return generate_json_response(msg, HttpResponseNotFound)
+
+        cm = factory.content_manager()
+        delta = {constants.PULP_USER_METADATA_FIELDNAME: params}
+        cm.update_content_unit(type_id, unit_id, delta)
+        return generate_json_response(None)
 
 
 class UploadsCollectionView(View):

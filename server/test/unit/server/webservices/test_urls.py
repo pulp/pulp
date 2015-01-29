@@ -98,6 +98,14 @@ class TestDjangoContentUrls(unittest.TestCase):
         url_name = 'content_unit_resource'
         assert_url_match(url, url_name, type_id='mock-type', unit_id='mock-unit')
 
+    def test_match_content_unit_user_metadata_resource(self):
+        """
+        Test url matching for content_unit_user_metadata_resourece.
+        """
+        url = '/v2/content/units/mock-type/mock-unit/pulp_user_metadata/'
+        url_name = 'content_unit_user_metadata_resource'
+        assert_url_match(url, url_name, type_id='mock-type', unit_id='mock-unit')
+
     def test_match_content_upload_resource(self):
         """
         Test url matching for content_upload_resource.

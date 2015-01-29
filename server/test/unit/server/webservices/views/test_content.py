@@ -6,12 +6,13 @@ import unittest
 from django.http import HttpResponseNotFound, HttpResponseRedirect
 
 from .base import assert_auth_DELETE, assert_auth_READ, assert_auth_CREATE, assert_auth_UPDATE
+from pulp.server import constants
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.webservices.views.content import (
     CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
-    ContentUnitsCollectionView, DeleteOrphansActionView, OrphanCollectionView,
-    OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView, UploadsCollectionView,
-    UploadSegmentResourceView
+    ContentUnitsCollectionView, ContentUnitUserMetadataResourceView, DeleteOrphansActionView,
+    OrphanCollectionView, OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView,
+    UploadsCollectionView, UploadSegmentResourceView
 )
 
 
@@ -410,6 +411,90 @@ class TestContentUnitsCollectionView(unittest.TestCase):
                             {'_id': 'unit_2', '_href': '/mock/path/unit_2/', 'children': 'child'}]
         mock_serializer.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_serializer.return_value)
+
+
+class TestContentUnitUserMetadataResourceView(unittest.TestCase):
+    """
+    Tests for ContentUnitUserMetadataResourceView.
+    """
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.content.serialization')
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    def test_get_content_unit_user_metadata_resource(self, mock_factory, mock_resp, mock_serial):
+        """
+        View should return a response contains user metadata
+        """
+        mock_unit = {constants.PULP_USER_METADATA_FIELDNAME: 'mock_metadata'}
+        mock_cqm = mock_factory.content_query_manager()
+        mock_cqm.get_content_unit_by_id.return_value = mock_unit
+        mock_serial.content.content_unit_obj.return_value = 'mock_serial_metadata'
+        request = mock.MagicMock()
+
+        metadata_resource = ContentUnitUserMetadataResourceView()
+        response = metadata_resource.get(request, 'mock_type', 'mock_unit')
+
+        mock_serial.content.content_unit_obj.assert_called_once_with('mock_metadata')
+        expected_content = 'mock_serial_metadata'
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    def test_get_content_unit_user_metadata_resource_no_unit(self, mock_factory, mock_resp):
+        """
+        View should return a response not found and a helpful message when unit is not found.
+        """
+        request = mock.MagicMock()
+        mock_cqm = mock_factory.content_query_manager()
+        mock_cqm.get_content_unit_by_id.side_effect = MissingResource()
+
+        metadata_resource = ContentUnitUserMetadataResourceView()
+        response = metadata_resource.get(request, 'mock_type', 'mock_unit')
+
+        msg = _('No content unit resource: mock_unit')
+        mock_resp.assert_called_once_with(msg, HttpResponseNotFound)
+        self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    def test_put_content_unit_user_metadata_resource(self, mock_factory, mock_resp):
+        request = mock.MagicMock()
+        request.body_as_json = 'mock_data'
+        mock_cm = mock_factory.content_manager()
+
+        metadata_resource = ContentUnitUserMetadataResourceView()
+        response = metadata_resource.put(request, 'mock_type', 'mock_unit')
+
+        mock_delta = {constants.PULP_USER_METADATA_FIELDNAME: 'mock_data'}
+        mock_cm.update_content_unit.assert_called_once_with('mock_type', 'mock_unit', mock_delta)
+        mock_resp.assert_called_with(None)
+        self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    def test_put_content_unit_user_metadata_resource_no_unit(self, mock_factory, mock_resp):
+        """
+        View should return a response not found and a helpful message when unit is not found.
+        """
+        request = mock.MagicMock()
+        mock_cqm = mock_factory.content_query_manager()
+        mock_cqm.get_content_unit_by_id.side_effect = MissingResource()
+
+        metadata_resource = ContentUnitUserMetadataResourceView()
+        response = metadata_resource.put(request, 'mock_type', 'mock_unit')
+
+        msg = _('No content unit resource: mock_unit')
+        mock_resp.assert_called_once_with(msg, HttpResponseNotFound)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestUploadsCollectionView(unittest.TestCase):
