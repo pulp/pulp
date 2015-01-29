@@ -19,6 +19,7 @@ Agent request flow:
 from logging import getLogger
 
 from gofer.proxy import Agent
+from gofer.messaging import Queue, NotFound
 
 
 log = getLogger(__name__)
@@ -75,6 +76,23 @@ class PulpAgent(object):
 
         admin = agent.Admin()
         admin.cancel(criteria=criteria)
+
+    @staticmethod
+    def delete_queue(url, name):
+        """
+        Purge and delete the agent queue.
+        :param url: The broker URL.
+        :type url: str
+        :param name: The queue name.
+        :type name: str
+        """
+        try:
+            queue = Queue(name)
+            queue.purge(url)
+            queue.delete(url)
+        except NotFound:
+            # queue may not exist
+            pass
 
 
 # --- Agent Capabilities -----------------------------------------------------

@@ -19,6 +19,7 @@ from mock import patch, Mock, ANY
 from pulp.common import tags
 from pulp.server.db.model.consumer import Bind
 from pulp.server.managers.consumer.agent import AgentManager, Units
+from pulp.server.managers.consumer.agent import QUEUE_DELETE_DELAY, delete_queue
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.plugins.loader import exceptions as plugin_exceptions
@@ -27,27 +28,33 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 
 class TestAgentManager(TestCase):
 
+    @patch('pulp.server.managers.consumer.agent.delete_queue')
     @patch('pulp.server.managers.consumer.agent.managers')
     @patch('pulp.server.managers.consumer.agent.Context')
     @patch('pulp.server.agent.direct.pulpagent.Consumer')
-    def test_unregistered(self, mock_agent, mock_context, mock_factory):
-        consumer = {'id': 'xyz'}
+    def test_unregistered(self, mock_agent, mock_context, mock_factory, mock_delete_queue):
+        url = 'test-url'
+        queue = 'test-queue'
+        consumer_id = 'abc'
+        consumer = {'id': consumer_id}
         mock_consumer_manager = Mock()
         mock_consumer_manager.get_consumer = Mock(return_value=consumer)
         mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
 
-        mock_context.return_value = {}
+        mock_context.return_value = Mock(url=url, route=queue)
 
         # test manager
 
         agent_manager = AgentManager()
-        consumer_id = 'abc'
+
         agent_manager.unregistered(consumer_id)
 
         # validations
 
         mock_context.assert_called_with(consumer)
         mock_agent.unregistered.assert_called_with(mock_context.return_value)
+        mock_delete_queue.apply_async.assert_called_once_with(
+            args=[url, queue, consumer_id], countdown=QUEUE_DELETE_DELAY)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
     @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
@@ -535,6 +542,71 @@ class TestAgentManager(TestCase):
         for binding, agent_binding in itertools.izip(bindings, agent_bindings):
             self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
             self.assertEqual(None, agent_binding['type_id'])
+
+    @patch('pulp.server.managers.consumer.agent.managers.consumer_manager')
+    @patch('pulp.server.managers.consumer.agent.PulpAgent')
+    def test_delete_queue(self, agent, consumer_manager):
+        url = 'test-url'
+        queue = 'test-queue'
+        consumer_id = 'test-consumer'
+        consumer_manager.return_value.get_consumer.side_effect = MissingResource
+
+        # test
+        AgentManager.delete_queue(url, queue, consumer_id)
+
+        # validation
+        consumer_manager.assert_called_once_with()
+        consumer_manager = consumer_manager.return_value
+        consumer_manager.get_consumer.assert_called_once_with(consumer_id)
+        agent.assert_called_once_with()
+        agent = agent.return_value
+        agent.delete_queue.assert_called_once_with(url, queue)
+
+    @patch('pulp.server.managers.consumer.agent.managers.consumer_manager')
+    @patch('pulp.server.managers.consumer.agent.PulpAgent')
+    def test_delete_queue_still_registered(self, agent, consumer_manager):
+        url = 'test-url'
+        queue = 'test-queue'
+        consumer_id = 'test-consumer'
+
+        # test
+        AgentManager.delete_queue(url, queue, consumer_id)
+
+        # validation
+        consumer_manager.assert_called_once_with()
+        consumer_manager = consumer_manager.return_value
+        consumer_manager.get_consumer.assert_called_once_with(consumer_id)
+        self.assertFalse(agent.called)
+
+
+class TestDeleteQueue(TestCase):
+
+    @patch('pulp.server.managers.consumer.agent.AgentManager.delete_queue')
+    def test_succeeded(self, delete):
+        url = 'test-url'
+        queue = 'test-queue'
+        consumer_id = 'test-consumer'
+
+        # test
+        delete_queue(url, queue, consumer_id)
+
+        # validation
+        delete.assert_called_once_with(url, queue, consumer_id)
+
+    @patch('pulp.server.managers.consumer.agent.AgentManager.delete_queue')
+    def test_failed(self, delete):
+        url = 'test-url'
+        queue = 'test-queue'
+        consumer_id = 'test-consumer'
+        delete.side_effect = ValueError
+
+        # test
+        delete_queue.retry = Mock()
+        delete_queue(url, queue, consumer_id)
+
+        # validation
+        delete.assert_called_once_with(url, queue, consumer_id)
+        delete_queue.retry.assert_called_once_with(countdown=QUEUE_DELETE_DELAY)
 
 
 class TestUnits(TestCase):
