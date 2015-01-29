@@ -25,7 +25,7 @@ class TestOrphanCollectionView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.reverse')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_orphan_collection_view(self, mock_factory, mock_serializer, mock_reverse):
+    def test_get_orphan_collection_view(self, mock_factory, mock_resp, mock_reverse):
         """
         Orphan collection should create a response from a dict of orphan dicts.
         """
@@ -52,8 +52,8 @@ class TestOrphanCollectionView(unittest.TestCase):
                 '_href': '/mock/path/',
             },
         }
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_DELETE())
@@ -81,7 +81,7 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.reverse')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_orphan_type_subcollection(self, mock_factory, mock_serializer, mock_reverse):
+    def test_get_orphan_type_subcollection(self, mock_factory, mock_resp, mock_reverse):
         """
         OrphanTypeSubCollection should return a response from a list of dicts, one for each orphan.
         """
@@ -99,14 +99,14 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         expected_content = [{'_id': 'orphan1', '_href': '/mock/path/'},
                             {'_id': 'orphan2', '_href': '/mock/path/'}]
 
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_orphan_type_subcollection_with_empty_list(self, mock_factory, mock_serializer):
+    def test_get_orphan_type_subcollection_with_empty_list(self, mock_factory, mock_resp):
         """
         View should return a response with an empty list when there are no orphans of the type.
         """
@@ -119,8 +119,8 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         response = orphan_type_subcollection.get(request, 'mock_type')
 
         expected_content = []
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_DELETE())
@@ -149,7 +149,7 @@ class TestOrphanResourceView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_orphan_resource(self, mock_factory, mock_serializer):
+    def test_get_orphan_resource(self, mock_factory, mock_resp):
         """
         Test get OrphanResourceView, which should return a dict describing an orphan.
         """
@@ -164,8 +164,8 @@ class TestOrphanResourceView(unittest.TestCase):
 
         expected_content = {'_id': 'orphan', '_href': '/mock/path/'}
 
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_DELETE())
@@ -221,7 +221,7 @@ class TestCatalogResourceView(unittest.TestCase):
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_delete_catalog_resource(self, mock_factory, mock_serializer):
+    def test_delete_catalog_resource(self, mock_factory, mock_resp):
         """
         Test that delete returns a serialized response containing a dict with the
         appropriate information.
@@ -236,8 +236,8 @@ class TestCatalogResourceView(unittest.TestCase):
         response = catalog_resource_view.delete(request, 'mock_id')
 
         expected_content = {'deleted': 82}
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestContentTypeResourceView(unittest.TestCase):
@@ -251,7 +251,7 @@ class TestContentTypeResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_type_resource_view_valid_content_type(self, mock_factory,
-                                                               mock_serialization, mock_serializer):
+                                                               mock_serialization, mock_resp):
         """
         View should return a response containing a serialized dict for the given contentent type.
         """
@@ -268,8 +268,8 @@ class TestContentTypeResourceView(unittest.TestCase):
         expected_content = {'actions': {'_href': '/mock/path/actions/'},
                             'content_units': {'_href': '/mock/path/units/'}}
 
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -277,7 +277,7 @@ class TestContentTypeResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_type_resource_view_invalid_type(self, mock_factory,
-                                                         mock_serialization, mock_serializer):
+                                                         mock_serialization, mock_resp):
         """
         View should return a response that contains a message about the missing content.
         """
@@ -290,8 +290,8 @@ class TestContentTypeResourceView(unittest.TestCase):
         response = content_type_resource_view.get(request, 'invalid_type')
 
         msg = _('No content type resource: invalid_type')
-        mock_serializer.assert_called_once_with(msg, response_class=HttpResponseNotFound)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(msg, response_class=HttpResponseNotFound)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestContentTypesView(unittest.TestCase):
@@ -303,7 +303,7 @@ class TestContentTypesView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_types_view(self, mock_factory, mock_serializer):
+    def test_get_content_types_view(self, mock_factory, mock_resp):
         """
         View should return a response that contains a list of dicts, one for each content type.
         """
@@ -317,8 +317,8 @@ class TestContentTypesView(unittest.TestCase):
 
         expected_content = [{'_href': '/v2/content/types/rpm/', 'content_type': 'rpm'},
                             {'_href': '/v2/content/types/other/', 'content_type': 'other'}]
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestContentUnitResourceView(unittest.TestCase):
@@ -332,7 +332,7 @@ class TestContentUnitResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_unit_resource_view(self, mock_factory, mock_serialization,
-                                            mock_serializer):
+                                            mock_resp):
         """
         Test ContentUnitResourceView when the requested unit is found.
         """
@@ -349,14 +349,14 @@ class TestContentUnitResourceView(unittest.TestCase):
         response = content_unit_resource_view.get(request, 'mock_type', 'mock_unit')
 
         expected_content = {'children': {'child': 1}}
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_unit_resource_view_missing_content(self, mock_factory, mock_serializer):
+    def test_get_content_unit_resource_view_missing_content(self, mock_factory, mock_resp):
         """
         Test ContentUnitResourceView when the requested unit is not found.
         """
@@ -369,8 +369,8 @@ class TestContentUnitResourceView(unittest.TestCase):
         response = content_unit_resource_view.get(request, 'mock_type', 'mock_unit')
 
         msg = _('No content unit resource: mock_unit')
-        mock_serializer.assert_called_once_with(msg, response_class=HttpResponseNotFound)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(msg, response_class=HttpResponseNotFound)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestContentUnitsCollectionView(unittest.TestCase):
@@ -383,7 +383,7 @@ class TestContentUnitsCollectionView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_units_collection_view(self, mock_factory, mock_serializer,
+    def test_get_content_units_collection_view(self, mock_factory, mock_resp,
                                                mock_serialization):
         """
         View should return a response that contains a list of dicts, one for each content unit.
@@ -408,8 +408,8 @@ class TestContentUnitsCollectionView(unittest.TestCase):
 
         expected_content = [{'_id': 'unit_1', '_href': '/mock/path/unit_1/', 'children': 'child'},
                             {'_id': 'unit_2', '_href': '/mock/path/unit_2/', 'children': 'child'}]
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestUploadsCollectionView(unittest.TestCase):
@@ -421,7 +421,7 @@ class TestUploadsCollectionView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_uploads_collection_view(self, mock_factory, mock_serializer):
+    def test_get_uploads_collection_view(self, mock_factory, mock_resp):
         """
         View should return an response that contains a serialized dict with a list of upload_ids.
         """
@@ -434,8 +434,8 @@ class TestUploadsCollectionView(unittest.TestCase):
         response = content_types_view.get(request)
 
         expected_content = {'upload_ids': ['mock_upload_1', 'mock_upload_2']}
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -477,7 +477,7 @@ class TestUploadSegmentResourceView(unittest.TestCase):
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_put_upload_segment_resource(self, mock_factory, mock_serializer):
+    def test_put_upload_segment_resource(self, mock_factory, mock_resp):
         """
         Test the UploadSegmentResourceView under normal conditions
         """
@@ -490,8 +490,8 @@ class TestUploadSegmentResourceView(unittest.TestCase):
         response = upload_segment_resource.put(request, 'mock_id', 4)
 
         mock_upload_manager.save_data.assert_called_once_with('mock_id', 4, 'upload these bits')
-        mock_serializer.assert_called_once_with(None)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(None)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_UPDATE())
@@ -519,7 +519,7 @@ class TestUploadResourceView(unittest.TestCase):
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_delete_upload_resource_view(self, mock_factory, mock_serializer):
+    def test_delete_upload_resource_view(self, mock_factory, mock_resp):
         """
         View should delete an upload and return a response containing None.
         """
@@ -530,6 +530,6 @@ class TestUploadResourceView(unittest.TestCase):
         upload_resource_view = UploadResourceView()
         response = upload_resource_view.delete(request, 'mock_unit')
 
-        mock_serializer.assert_called_once_with(None)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(None)
+        self.assertTrue(response is mock_resp.return_value)
         mock_upload_manager.delete_upload.assert_called_once_with('mock_unit')
