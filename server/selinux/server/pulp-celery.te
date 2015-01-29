@@ -52,7 +52,11 @@ allow celery_t pulp_cert_t:dir { getattr search };
 allow celery_t pulp_cert_t:file { read write getattr open };
 
 # custom SSL certificates reading
-miscfiles_read_generic_certs(celery_t)
+ifdef(`distro_rhel6', `
+    miscfiles_read_certs(celery_t)
+',`
+    miscfiles_read_generic_certs(celery_t)
+')
 
 ######################################
 
