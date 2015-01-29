@@ -62,17 +62,17 @@ DISTRIBUTION_INFO = {
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256'
     },
-    'fc19': {
-        ARCH: ['i686', 'x86_64'],
-        REPO_NAME: 'fedora-19',
-        DIST_KOJI_NAME: 'fedora19',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha256'
-    },
     'fc20': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-20',
         DIST_KOJI_NAME: 'fedora20',
+        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        REPO_CHECKSUM_TYPE: 'sha256'
+    },
+    'fc21': {
+        ARCH: ['i686', 'x86_64'],
+        REPO_NAME: 'fedora-21',
+        DIST_KOJI_NAME: 'fedora21',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256'
     },
@@ -108,11 +108,26 @@ parser.add_argument("--distributions", choices=DIST_LIST, nargs='+',
                     help="If specified, only build for the specified distributions.")
 parser.add_argument("--tito-tag", help="The specific tito tag that should be built.  "
                                        "If not specified the latest will be used.")
+parser.add_argument("--build-master", action="store_true", default=False,
+                    help="If you really want to build master, use this flag.")
+parser.add_argument("--rpmsig", help="The rpm signature hash to use when downloading RPMs. This is"
+                                     " only used in conjunction with --disable-build.")
 
 opts = parser.parse_args()
 
+if opts.rpmsig and not opts.disable_build:
+    print "--rpmsig is only used with --disable-build."
+    sys.exit(1)
+
 pulp_version = opts.version
 build_stream = opts.stream
+
+branch = subprocess.check_output(['/usr/bin/git', 'rev-parse', '--abbrev-ref', 'HEAD'])
+if branch == 'master\n' and not opts.build_master and not opts.scratch:
+    print 'Aborting build: you currently have master checked out.'
+    print 'Use the --build-master flag if you really want this, or check out the correct branch.'
+    sys.exit(1)
+
 
 if build_stream == 'stable':
     build_tag = "pulp-%s" % pulp_version
@@ -281,11 +296,20 @@ def download_rpms_from_tag(tag, output_directory):
     os.chdir(output_directory)
     for package in rpms[1]:
         koji_dir = "/packages/%(name)s/%(version)s/%(release)s/" % package
+        # append the signature to download URL if needed
+        if opts.rpmsig:
+            koji_dir = koji_dir + "data/signed/%s/" % opts.rpmsig
         data_dir = "/packages/%(name)s/%(version)s/%(release)s/data" % package
         koji_url = "http://koji.katello.org"
         location_on_koji = "%s%s" % (koji_url, koji_dir)
-        command = "wget -r -np -nH --cut-dirs=4 -R index.htm*  %s -X %s" % \
-                  (location_on_koji, data_dir)
+        # the wget commands are slightly different depending on if we are
+        # downloading signed RPMs or not.
+        if opts.rpmsig:
+            command = "wget -r -np -nH --cut-dirs=7 -R index.htm*  %s" % \
+                      (location_on_koji)
+        else:
+            command = "wget -r -np -nH --cut-dirs=4 -R index.htm*  %s -X %s" % \
+                      (location_on_koji, data_dir)
         subprocess.check_call(command, shell=True)
 
 

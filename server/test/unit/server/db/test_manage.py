@@ -1,13 +1,3 @@
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 Test the pulp.server.db.manage module.
 """
@@ -200,8 +190,9 @@ class TestManageDB(MigrationTest):
         self.assertEqual(error_code, os.EX_DATAERR)
 
         # There should have been a critical log about the Exception
-        expected_messages = ('The database for migration package unit.server.db.migration_packages.platform is at ',
-                             'version 9999999, which is larger than the latest version available, 1.')
+        expected_messages = ('The database for migration package unit.server.db.migration_packages.'
+                             'platform is at version 9999999, which is larger than the latest '
+                             'version available, 1.')
         critical_messages = ''.join([mock_call[1][0] for mock_call in logger.critical.mock_calls])
         for msg in expected_messages:
             self.assertTrue(msg in critical_messages)
@@ -272,7 +263,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
-    @patch('pulp.server.db.manage.logger')
+    @patch('pulp.server.db.manage._logger')
     @patch('pulp.server.db.manage._start_logging')
     def test_migrate_with_new_packages(self, start_logging_mock, logger_mock, mocked_stdout,
                                        mocked_stderr):
@@ -425,7 +416,6 @@ class TestManageDB(MigrationTest):
         for package in models.get_migration_packages():
             self.assertEqual(package.current_version, 0)
 
-
     @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
     @patch('pulp.server.db.manage.UserManager.ensure_admin')
     @patch('pulp.server.db.manage.logging.getLogger')
@@ -436,7 +426,7 @@ class TestManageDB(MigrationTest):
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--dry-run"])
     @patch('logging.config.fileConfig')
-    def test_admin_creation_dry_run(self,  mock_file_config, mocked_apply_migration, getLogger,
+    def test_admin_creation_dry_run(self, mock_file_config, mocked_apply_migration, getLogger,
                                     mock_ensure_admin, mock_ensure_super_role):
         logger = MagicMock()
         getLogger.return_value = logger
@@ -457,7 +447,8 @@ class TestManageDB(MigrationTest):
            migration_packages.platform)
     @patch('pulp.server.db.manage.parse_args', autospec=True)
     @patch('logging.config.fileConfig')
-    def test_dry_run_no_changes(self, mock_file_config, mock_parse_args, mocked_apply_migration, mock_entry, getLogger):
+    def test_dry_run_no_changes(self, mock_file_config, mock_parse_args, mocked_apply_migration,
+                                mock_entry, getLogger):
         logger = MagicMock()
         getLogger.return_value = logger
         mock_args = Namespace(dry_run=True, test=False)
@@ -606,7 +597,7 @@ class TestMigrationPackage(MigrationTest):
         mp = models.MigrationPackage(migration_packages.z)
         self.assertEqual(mp.name, 'unit.server.db.migration_packages.z')
 
-    @patch('pulp.server.db.migrate.models.logger.debug')
+    @patch('pulp.server.db.migrate.models._logger.debug')
     def test_nonconforming_modules(self, log_mock):
         # The z package has a module called doesnt_conform_to_naming_convention.py. This shouldn't
         # count as a migration module, but it also should not interfere with the existing migration
@@ -809,7 +800,7 @@ class TestMigrationUtils(MigrationTest):
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
-    @patch('pulp.server.db.migrate.models.logger.error')
+    @patch('pulp.server.db.migrate.models._logger.error')
     def test_get_migration_packages(self, log_mock):
         """
         Ensure that pulp.server.db.migrate.models.get_migration_packages functions correctly.

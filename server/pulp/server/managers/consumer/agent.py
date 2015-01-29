@@ -1,38 +1,21 @@
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains agent management classes
 """
 
-import sys
-from logging import getLogger
 from uuid import uuid4
+import sys
 
-from pulp.common import constants
 from pulp.common import tags
 from pulp.plugins.conduits.profiler import ProfilerConduit
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.loader import exceptions as plugin_exceptions
+from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
-from pulp.server.agent import PulpAgent
+from pulp.server.agent.context import Context
+from pulp.server.agent.direct.pulpagent import PulpAgent
 from pulp.server.db.model.consumer import Bind
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
-from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.agent import Context
-
-
-logger = getLogger(__name__)
 
 
 class AgentManager(object):
@@ -79,7 +62,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag(tags.ACTION_AGENT_BIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         consumer_manager = managers.consumer_manager()
@@ -131,7 +114,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag(tags.ACTION_AGENT_UNBIND)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()
@@ -179,7 +162,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_INSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()
@@ -223,7 +206,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_UPDATE)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()
@@ -267,7 +250,7 @@ class AgentManager(object):
             tags.resource_tag(tags.RESOURCE_CONSUMER_TYPE, consumer_id),
             tags.action_tag(tags.ACTION_AGENT_UNIT_UNINSTALL)
         ]
-        task = TaskStatusManager.create_task_status(task_id, 'agent', tags=task_tags)
+        task = TaskStatus(task_id, 'agent', tags=task_tags).save()
 
         # agent request
         manager = managers.consumer_manager()

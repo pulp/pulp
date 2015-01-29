@@ -97,26 +97,19 @@ class UserSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the user information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
-        
+
         # Search Command
         self.add_command(CriteriaCommand(self.search, include_search=True))
 
     def create(self, **kwargs):
         login = kwargs['login']
-        if kwargs['password']:
+        password = ''
+        if kwargs.get('password'):
             password = kwargs['password']
         else:
-            # Hidden, interactive prompt for the password if not specified
-            prompt_msg = "Enter password for user [%s] : " % login
-            verify_msg = "Re-enter password for user [%s]: " % login
-            unmatch_msg = "Passwords do not match"
-            password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg), _(unmatch_msg))
-            if password is self.context.prompt.ABORT:
-                self.context.prompt.render_spacer()
-                self.context.prompt.write(_('Create user cancelled'))
-                return os.EX_NOUSER
+            password = self._prompt_password(login, password)
 
-        name = kwargs['name'] or login
+        name = kwargs.get('name') or login
 
         # Call the server
         self.context.server.user.create(login, password, name)
@@ -125,25 +118,46 @@ class UserSection(PulpCliSection):
     def update(self, **kwargs):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
-        login = delta.pop('login') # not needed in the delta
-        if not delta.has_key('password'):
+        login = delta.pop('login')  # not needed in the delta
+        if 'password' not in delta:
             if kwargs['p'] is True:
-                # Hidden, interactive prompt for the password
-                prompt_msg = "Enter new password for user [%s] : " % login
-                verify_msg = "Re-enter new password for user [%s]: " % login
-                unmatch_msg = "Passwords do not match"
-                password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg), _(unmatch_msg))
-                if password is self.context.prompt.ABORT:
-                    self.context.prompt.render_spacer()
-                    self.context.prompt.write(_('Update user cancelled'))
-                    return os.EX_NOUSER
-                delta['password'] = password
+                delta['password'] = self._prompt_password(login)
 
         try:
             self.context.server.user.update(kwargs['login'], delta)
             self.prompt.render_success_message('User [%s] successfully updated' % kwargs['login'])
         except NotFoundException:
             self.prompt.write('User [%s] does not exist on the server' % kwargs['login'], tag='not-found')
+
+    def _prompt_password(self, login, password=''):
+        """
+        Robustly prompt the user for a new password, ensure that it is not
+        empty, and ensure that the passwords match.
+
+        :param  login:    username associated with password being set
+        :type   login:    string
+        :param  password: optional password set in command. Prompt user if this
+                          is not specified.
+        :type   password: string
+        :return password: validated password that will used
+        :rtype          : string
+        """
+
+        prompt_msg = "Enter password for user [%s] : " % login
+        verify_msg = "Re-enter password for user [%s]: " % login
+        unmatch_msg = "Passwords do not match"
+
+        while not password:
+            password = self.context.prompt.prompt_password(_(prompt_msg), _(verify_msg),
+                                                           _(unmatch_msg))
+            if password is self.context.prompt.ABORT:
+                self.context.prompt.render_spacer()
+                self.context.prompt.write(_('Create user cancelled'))
+                return os.EX_NOUSER
+            if not password:
+                self.context.prompt.render_spacer()
+                self.prompt.render_failure_message(_('Password cannot be empty'))
+        return password
 
     def delete(self, **kwargs):
         login = kwargs['login']
@@ -217,7 +231,7 @@ class RoleSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the role information is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; if specified, only the given fields will displayed', required=False))
         self.add_command(list_command)
-        
+
     def create(self, **kwargs):
         role_id = kwargs['role-id']
         display_name = None
@@ -230,7 +244,7 @@ class RoleSection(PulpCliSection):
         # Call the server
         self.context.server.role.create(role_id, display_name, description)
         self.prompt.render_success_message('Role [%s] successfully created' % role_id)
-        
+
     def update(self, **kwargs):
         role_id = kwargs['role-id']
 
@@ -239,7 +253,7 @@ class RoleSection(PulpCliSection):
             delta['display_name'] = kwargs['display-name']
         if 'description' in kwargs:
             delta['description'] = kwargs['description']
-            
+
         # Call the server
         self.context.server.role.update(role_id, delta)
         self.prompt.render_success_message('Role [%s] successfully updated' % role_id)
@@ -273,31 +287,31 @@ class RoleSection(PulpCliSection):
 
         for r in role_list:
             self.prompt.render_document(r, filters=filters, order=order)
-            
+
 class RoleUserSection(PulpCliSection):
 
     def __init__(self, context):
         PulpCliSection.__init__(self, 'user', _('add/remove user from the role'))
-        
+
         self.context = context
         self.prompt = context.prompt # for easier access
-        
+
         # Common Options
         id_option = PulpCliOption('--role-id', 'identifies the role', required=True)
         login_option = PulpCliOption('--login', 'identifies the user', required=True)
-        
+
         # AddUser command
         add_user_command = PulpCliCommand('add', 'adds user to a role', self.add_user)
         add_user_command.add_option(id_option)
         add_user_command.add_option(login_option)
         self.add_command(add_user_command)
-        
+
         # RemoveUser command
         remove_user_command = PulpCliCommand('remove', 'removes user from a role', self.remove_user)
         remove_user_command.add_option(id_option)
         remove_user_command.add_option(login_option)
         self.add_command(remove_user_command)
-        
+
     def add_user(self, **kwargs):
         role_id = kwargs['role-id']
         login = kwargs['login']
@@ -328,7 +342,7 @@ class PermissionSection(PulpCliSection):
         list_command = PulpCliCommand('list', 'lists permissions for a particular resource', self.list)
         list_command.add_option(PulpCliOption('--resource', 'uniquely identifies a resource', required=True))
         self.add_command(list_command)
-        
+
         # Grant Command
         usage_description = 'you can specify either login or role-id in this command; both cannot be specified at the same time'
         grant_command = PulpCliCommand('grant', 'grants resource permissions to given user or given role', self.grant, usage_description=usage_description)
@@ -337,7 +351,7 @@ class PermissionSection(PulpCliSection):
         grant_command.add_option(PulpCliOption('--role-id', 'id of the role to which access to given resource is being granted', required=False))
         grant_command.add_option(PulpCliOption('-o', 'type of permissions being granted, valid permissions: create, read, update, delete, execute', required=True, allow_multiple=True))
         self.add_command(grant_command)
-        
+
         # Revoke Command
         revoke_command = PulpCliCommand('revoke', 'revokes resource permissions from given user or given role', self.revoke, usage_description=usage_description)
         revoke_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
@@ -346,7 +360,7 @@ class PermissionSection(PulpCliSection):
         revoke_command.add_option(PulpCliOption('-o', 'type of permissions being revoked, valid permissions: create, read, update, delete, execute', required=True, allow_multiple=True))
         self.add_command(revoke_command)
 
-    
+
     def list(self, **kwargs):
         resource = kwargs['resource']
         self.prompt.render_title('Permissions for %s' % resource)
@@ -355,14 +369,14 @@ class PermissionSection(PulpCliSection):
             permission = permissions[0]
             if 'users' in permission:
                 self.prompt.render_document(permission['users'])
-            
+
 
     def grant(self, **kwargs):
         resource = kwargs['resource']
         login = kwargs['login'] or None
         role_id = kwargs['role-id'] or None
         operations = [o.upper() for o in kwargs['o']]
-        
+
         if login is None and role_id is None:
             self.prompt.render_failure_message('No user login or role id specified to grant permissions to.')
             return
@@ -383,7 +397,7 @@ class PermissionSection(PulpCliSection):
         login = kwargs['login'] or None
         role_id = kwargs['role-id'] or None
         operations = [o.upper() for o in kwargs['o']]
-        
+
         if login is None and role_id is None:
             self.prompt.render_failure_message('No user login or role id specified to revoke permissions from.')
             return

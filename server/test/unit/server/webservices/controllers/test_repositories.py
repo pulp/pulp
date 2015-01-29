@@ -30,7 +30,8 @@ from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter,
                                              RepoPublishResult, RepoSyncResult)
 from pulp.server.db.model.resources import Worker
-from pulp.server.exceptions import MissingResource, OperationPostponed, PulpException
+from pulp.server.exceptions import MissingResource, OperationPostponed, PulpException, \
+    PulpCodedValidationException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
@@ -673,7 +674,7 @@ class RepoImportersTests(RepoPluginsTests):
         }
         status, body = self.post('/v2/repositories/blah/importers/', params=req_body)
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     def test_post_bad_request_missing_data(self):
         """
@@ -700,7 +701,28 @@ class RepoImportersTests(RepoPluginsTests):
         # Test
         status, body = self.post('/v2/repositories/walnuts/importers/', params=req_body)
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(400, status)
+
+    @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.validate_importer_config',
+                side_effect=PulpCodedValidationException())
+    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    def test_post_bad_request_invalid_config(self, mock_get_worker_for_reservation, mock_validator):
+        """
+        Tests adding an importer but specifying incorrect metadata.
+        """
+        # Setup
+        self.repo_manager.create_repo('bees')
+        req_body = {
+            'importer_type_id': 'beads',
+            'importer_config': {'max_speed': -2}
+        }
+        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
+        # Test
+        status, body = self.post('/v2/repositories/bees/importers/', params=req_body)
+        # Verify
+        mock_validator.assert_called_once_with('bees', req_body['importer_type_id'],
+                                               req_body['importer_config'])
+        self.assertEqual(400, status)
 
 
 class RepoImporterTests(RepoPluginsTests):
@@ -770,7 +792,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Test
         status, body = self.delete('/v2/repositories/bad_pie/importers/dummy-importer/')
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     def test_delete_missing_importer(self, mock_get_worker_for_reservation):
@@ -783,7 +805,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Test
         status, body = self.delete('/v2/repositories/apple_pie/importers/dummy-importer/')
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
@@ -821,7 +843,7 @@ class RepoImporterTests(RepoPluginsTests):
         status, body = self.put('/v2/repositories/foo/importers/dummy-importer/',
                                 params={'importer_config': {}})
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     def test_update_missing_importer(self, mock_get_worker_for_reservation):
@@ -835,7 +857,7 @@ class RepoImporterTests(RepoPluginsTests):
         status, body = self.put('/v2/repositories/pie/importers/dummy-importer/',
                                 params={'importer_config': {}})
         # Verify
-        self.assertEqual(202, status)
+        self.assertEqual(404, status)
 
     def test_update_bad_request(self):
         """

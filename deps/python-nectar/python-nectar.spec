@@ -2,7 +2,7 @@
 
 Name:           python-nectar
 Version:        1.3.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
 Group:          Development/Tools
@@ -16,7 +16,7 @@ BuildArch:      noarch
 BuildRequires:  python-setuptools
 
 Requires:       python-isodate >= 0.4.9
-Requires:       python-requests >= 2.2.1
+Requires:       python-requests >= 2.4.3
 
 %description
 Nectar is a download library that abstracts the workflow of making and tracking
@@ -45,6 +45,9 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
+* Mon Jan 19 2015 Chris Duryee <cduryee@redhat.com> 1.3.1-2
+- 1174283 - bump python-requests to 2.4.3 (austin@dhcp129-50.rdu.redhat.com)
+
 * Thu Aug 21 2014 Barnaby Court <bcourt@redhat.com> 1.3.1-1
 - 1127298 - Canceling a download causes hang in ThreadedDownloader (bcourt@redhat.com)
 

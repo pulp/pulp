@@ -48,4 +48,3 @@ class TestMigration(unittest.TestCase):
         migration.migrate()
 
         mock_update.assert_called_once_with('repo_distributors', 'last_publish')
-

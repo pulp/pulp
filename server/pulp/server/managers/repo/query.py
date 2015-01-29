@@ -1,30 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for searching for repositories.
 """
 
-import logging
-
-from pulp.server.exceptions import MissingResource
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
+from pulp.server.exceptions import MissingResource
 
-# -- constants ----------------------------------------------------------------
-
-_LOG = logging.getLogger(__name__)
-
-# -- manager ------------------------------------------------------------------
 
 class RepoQueryManager(object):
     """
@@ -69,7 +49,7 @@ class RepoQueryManager(object):
         @return: serialized data describing the repository
         @rtype:  dict or None
         """
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
         return repo
 
     def find_by_id_list(self, repo_id_list):
@@ -100,11 +80,12 @@ class RepoQueryManager(object):
 
         repos_by_id = {}
 
-        repo_distributors = list(RepoDistributor.get_collection().find({'distributor_type_id' : distributor_type_id}))
+        repo_distributors = list(
+            RepoDistributor.get_collection().find({'distributor_type_id': distributor_type_id}))
         for rd in repo_distributors:
             repo = repos_by_id.get(rd['repo_id'], None)
             if repo is None:
-                repo = Repo.get_collection().find_one({'id' : rd['repo_id']})
+                repo = Repo.get_collection().find_one({'id': rd['repo_id']})
                 repos_by_id[rd['repo_id']] = repo
 
             dists = repo.setdefault('distributors', [])
@@ -127,9 +108,10 @@ class RepoQueryManager(object):
 
         results = []
 
-        repo_importers = list(RepoImporter.get_collection().find({'importer_type_id' : importer_type_id}))
+        repo_importers = list(
+            RepoImporter.get_collection().find({'importer_type_id': importer_type_id}))
         for ri in repo_importers:
-            repo = Repo.get_collection().find_one({'id' : ri['repo_id']})
+            repo = Repo.get_collection().find_one({'id': ri['repo_id']})
             repo['importers'] = [ri]
             results.append(repo)
 

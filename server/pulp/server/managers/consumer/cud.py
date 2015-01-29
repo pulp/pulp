@@ -1,24 +1,11 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains manager class and exceptions for operations surrounding the creation,
 removal, and update on a consumer.
 """
 
-import sys
 import logging
 import re
+import sys
 
 from celery import task
 
@@ -26,16 +13,16 @@ from pulp.common.bundle import Bundle
 from pulp.server import config
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Consumer
-from pulp.server.managers import factory
-from pulp.server.managers.schedule import utils as schedule_utils
 from pulp.server.exceptions import DuplicateResource, InvalidValue, \
     MissingResource, PulpExecutionException, MissingValue
+from pulp.server.managers import factory
+from pulp.server.managers.schedule import utils as schedule_utils
 
 
-_CONSUMER_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_CONSUMER_ID_REGEX = re.compile(r'^[.\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ConsumerManager(object):
@@ -139,10 +126,10 @@ class ConsumerManager(object):
 
         # Database Updates
         try:
-            Consumer.get_collection().remove({'id' : consumer_id}, safe=True)
+            Consumer.get_collection().remove({'id': consumer_id}, safe=True)
         except Exception:
-            logger.exception('Error updating database collection while removing '
-                'consumer [%s]' % consumer_id)
+            _logger.exception(
+                'Error updating database collection while removing consumer [%s]' % consumer_id)
             raise PulpExecutionException("database-error"), None, sys.exc_info()[2]
 
         # remove the consumer from any groups it was a member of
@@ -177,7 +164,7 @@ class ConsumerManager(object):
         consumer = ConsumerManager.get_consumer(id)
 
         if delta is None:
-            logger.exception('Missing delta when updating consumer [%s]' % id)
+            _logger.exception('Missing delta when updating consumer [%s]' % id)
             raise MissingValue('delta')
 
         if 'notes' in delta:
@@ -211,7 +198,7 @@ class ConsumerManager(object):
         :raises MissingResource: if a consumer with given id does not exist
         """
         consumer_coll = Consumer.get_collection()
-        consumer = consumer_coll.find_one({'id' : id}, fields=fields)
+        consumer = consumer_coll.find_one({'id': id}, fields=fields)
         if not consumer:
             raise MissingResource(consumer=id)
         return consumer

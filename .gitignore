@@ -25,3 +25,5 @@ tags
 # Sublime
 .codeintel
 
+#Rope
+.ropeproject

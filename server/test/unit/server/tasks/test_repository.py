@@ -1,18 +1,4 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from mock import patch, ANY
-
 
 from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.devel.unit import util
@@ -113,7 +99,7 @@ class TestDistributorUpdate(PulpCeleryTaskTests):
         mock_dist_manager.return_value.update_distributor_config.return_value = \
             generated_distributor
 
-        #Use None for the delta value to ensure it doesn't throw an exception
+        # Use None for the delta value to ensure it doesn't throw an exception
         result = repository.distributor_update('foo-id', 'bar-id', config, None)
 
         mock_dist_manager.return_value.update_distributor_config. \

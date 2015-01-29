@@ -20,8 +20,8 @@ from pymongo.errors import DuplicateKeyError
 import pulp.plugins.conduits._common as common_utils
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.async.tasks import get_current_task_id
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import MissingResource
 import pulp.server.managers.factory as manager_factory
 
@@ -226,6 +226,29 @@ class SearchUnitsMixin(object):
         except Exception, e:
             logger.exception('Exception from server requesting all units of type [%s]' % type_id)
             raise self.exception_class(e), None, sys.exc_info()[2]
+
+    def find_unit_by_unit_key(self, type_id, unit_key):
+        """
+        Finds a unit based on its unit key. If more than one unit comes back,
+        an exception will be raised.
+
+        @param type_id: indicates the type of units being retrieved
+        @type  type_id: str
+        @param unit_key: the unit key for the unit
+        @type  unit_key: dict
+
+        @return: a single unit
+        @rtype:  L{Unit}
+        """
+        content_query_manager = manager_factory.content_query_manager()
+        try:
+            # this call returns a unit or raises MissingResource
+            existing_unit = content_query_manager.get_content_unit_by_keys_dict(type_id, unit_key)
+            type_def = types_db.type_definition(type_id)
+            plugin_unit = common_utils.to_plugin_unit(existing_unit, type_def)
+            return plugin_unit
+        except MissingResource:
+            return None
 
 
 class ImporterScratchPadMixin(object):
@@ -601,8 +624,7 @@ class StatusMixin(object):
 
         try:
             self.progress_report[self.report_id] = status
-            delta = {'progress_report': self.progress_report}
-            TaskStatusManager.update_task_status(self.task_id, delta)
+            TaskStatus.objects(task_id=self.task_id).update_one(set__progress_report=self.progress_report)
         except Exception, e:
             logger.exception('Exception from server setting progress for report [%s]' % self.report_id)
             try:

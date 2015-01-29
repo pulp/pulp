@@ -10,8 +10,8 @@
 Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
-Version:        3.0.15
-Release:        13.pulp%{?dist}
+Version:        3.0.24
+Release:        4.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,8 +19,8 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
-Patch0:         qpid_transport.patch
-Patch1:         kombu-344.patch
+Patch0:         1174361.patch
+Patch1:         1182322.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -48,25 +48,30 @@ BuildRequires:  python-nose
 BuildRequires:  python-setuptools
 
 # required for tests:
-BuildRequires: python-amqp >= 1.4.5
+BuildRequires: python-amqp >= 1.4.6
 BuildRequires: python-mock
 BuildRequires: python-msgpack
 BuildRequires: python-qpid
 BuildRequires: python-qpid-qmf
 BuildRequires: qpid-tools
 BuildRequires: python-simplejson
+%if 0%{?fedora} >= 21
+# require the newer python-unittest2 if we are building on fedora 21 or greater
+BuildRequires: python-unittest2 >= 0.8.0
+%else
 BuildRequires: python-unittest2
+%endif
 BuildRequires: PyYAML
 
 %if 0%{?with_python3}
-BuildRequires: python3-amqp >= 1.4.5
+BuildRequires: python3-amqp >= 1.4.6
 %endif
 
 # For documentation
 #BuildRequires:  pymongo python-sphinx
 #This causes tests error, needs fixing upstream. Incompatible with python > 2.7
 #BuildRequires:  python-couchdb
-Requires: python-amqp >= 1.4.5
+Requires: python-amqp >= 1.4.6
 Requires: python-amqp < 2.0
 Requires: python-anyjson >= 0.3.3
 %if 0%{?rhel} == 6
@@ -90,7 +95,7 @@ Summary:        AMQP Messaging Framework for Python3
 Group:          Development/Languages
 
 Requires:       python3
-Requires:       python3-amqp >= 1.4.5
+Requires:       python3-amqp >= 1.4.6
 
 %description -n python3-kombu
 AMQP is the Advanced Message Queuing Protocol, an open standard protocol
@@ -107,15 +112,7 @@ This subpackage is for python3
 
 %prep
 %setup -q -n %{srcname}-%{version}
-
-# Add Qpid broker support until the following PR is accepted upstream and
-# included in a release:
-# https://github.com/celery/kombu/pull/335
 %patch0 -p1
-# Some of the kombu tests didn't have a decorator to skip if Redis wasn't
-# installed. Keep this patch until the following PR is accepted upstream and
-# included in a release:
-# https://github.com/celery/kombu/pull/345
 %patch1 -p1
 
 # manage requirements on rpm base
@@ -173,6 +170,23 @@ popd
 %endif # with_python3
 
 %changelog
+* Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-4.pulp
+- 1182322 - handle case where PLAIN is used with saslwrapper
+  (cduryee@redhat.com)
+
+* Wed Jan 14 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-4.pulp
+- add a patch for RHBZ #1182322
+
+* Mon Jan 05 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-3.pulp
+- Conditionally require python-unittest2 >= 0.8.0 (cduryee@redhat.com)
+
+* Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 3.0.24-2.pulp
+- Adds fix for 1174361 to python-kombu and bumps release (bmbouter@gmail.com)
+- Build updates for Fedora 21. (cduryee@redhat.com)
+
+* Thu Dec 11 2014 Brian Bouterse 3.0.24-1
+- Updates python-kombu to 3.0.24 (bbouters@redhat.com)
+
 * Fri Sep 19 2014 Chris Duryee <cduryee@redhat.com> 3.0.15-13.pulp
 - 1124589 - python-kombu does not work with Qpid unless the user adjusts
   qpidd.conf (cduryee@redhat.com)

@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011-2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from datetime import datetime
 import calendar
 import copy
@@ -21,16 +9,18 @@ from bson import ObjectId
 from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
+from mongoengine import DictField, Document, DynamicField, ListField, StringField
 import isodate
 
-from pulp.common import dateutils
+from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.db.model.base import Model
+from pulp.server.db.model.base import Model, CriteriaQuerySet
+from pulp.server.db.model.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.managers import factory
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class CallResource(Model):
@@ -343,10 +333,11 @@ class ScheduledCall(Model):
         # An interval could be an isodate.Duration or a datetime.timedelta
         interval = self.as_schedule_entry().schedule.run_every
         if isinstance(interval, isodate.Duration):
-            # Determine how long (in seconds) to wait between the last run and the next one. This changes
-            # depending on the current time because a duration can be a month or a year.
+            # Determine how long (in seconds) to wait between the last run and the next one. This
+            # changes depending on the current time because a duration can be a month or a year.
             if self.last_run_at is not None:
-                last_run_dt = dateutils.to_utc_datetime(dateutils.parse_iso8601_datetime(str(self.last_run_at)))
+                last_run_dt = dateutils.to_utc_datetime(
+                    dateutils.parse_iso8601_datetime(str(self.last_run_at)))
                 run_every_s = timedelta_seconds(interval.totimedelta(start=last_run_dt))
             else:
                 run_every_s = timedelta_seconds(interval.totimedelta(start=first_run_dt))
@@ -436,7 +427,7 @@ class ScheduleEntry(beat.ScheduleEntry):
         if self._scheduled_call.remaining_runs:
             self._scheduled_call.remaining_runs -= 1
         if self._scheduled_call.remaining_runs == 0:
-            logger.info('disabling schedule with 0 remaining runs: %s' % self._scheduled_call.id)
+            _logger.info('disabling schedule with 0 remaining runs: %s' % self._scheduled_call.id)
             self._scheduled_call.enabled = False
         self._scheduled_call.save()
         return self._scheduled_call.as_schedule_entry()
@@ -464,23 +455,23 @@ class ScheduleEntry(beat.ScheduleEntry):
 
         # if the first run is in the future, don't run it now
         if since_first_s < 0:
-            logger.debug('not running task %s: first run is in the future' % self.name)
+            _logger.debug('not running task %s: first run is in the future' % self.name)
             return False, -since_first_s
         # if it hasn't run before, run it now
         if not (self.total_run_count and self.last_run_at):
-            logger.debug('running task %s: it has never run before' % self.name)
+            _logger.debug('running task %s: it has never run before' % self.name)
             return True, remaining_s
 
         last_run_s = calendar.timegm(self.last_run_at.utctimetuple())
 
         # is this hasn't run since the most recent scheduled run, then run now
         if last_run_s < last_scheduled_run_s:
-            logger.debug('running task %s: it has been %d seconds since last run' % (
-                         self.name, now_s - last_run_s))
+            _logger.debug('running task %s: it has been %d seconds since last run' % (
+                          self.name, now_s - last_run_s))
             return True, remaining_s
         else:
-            logger.debug('not running task %s: %d seconds remaining' % (
-                         self.name, remaining_s))
+            _logger.debug('not running task %s: %d seconds remaining' % (
+                          self.name, remaining_s))
             return False, remaining_s
 
 
@@ -503,118 +494,98 @@ class ArchivedCall(Model, ReaperMixin):
         self.serialized_call_report = call_report.serialize()
 
 
-class TaskStatus(Model, ReaperMixin):
+class TaskStatus(Document, ReaperMixin):
     """
-    Represents current state of a task.
-    The documents in this collection may be reaped, so it inherits from ReaperMixin.
+    Represents a task.
+    This inherits from mongoengine.Document and defines the schema for the documents
+    in task_status collection. The documents in this collection may be reaped,
+    so it inherits from ReaperMixin.
 
     :ivar task_id:     identity of the task this status corresponds to
     :type task_id:     basestring
-    :ivar task_type:   the fully qualified (package/method) type of the task
-    :type task_type:   basestring
+    :ivar worker_name: The name of the worker that the Task is in
+    :type worker_name: basestring
     :ivar tags:        custom tags on the task
     :type tags:        list
     :ivar state:       state of callable in its lifecycle
     :type state:       basestring
-    :ivar result:      return value of the callable, if any
-    :type result:      any
-    :ivar exception:   Deprecated. This is always None.
-    :type exception:   None
-    :ivar traceback:   Deprecated. This is always None.
-    :type traceback:   None
-    :ivar start_time:  time the task started executing
-    :type start_time:  datetime.datetime
-    :ivar finish_time: time the task completed
-    :type finish_time: datetime.datetime
-    :ivar worker_name: The name of the worker that the Task is in
-    :type worker_name: basestring
     :ivar error: Any errors or collections of errors that occurred while this task was running
     :type error: dict (created from a PulpException)
     :ivar spawned_tasks: List of tasks that were spawned during the running of this task
     :type spawned_tasks: list of str
     :ivar progress_report: A report containing information about task's progress
     :type progress_report: dict
+    :ivar task_type:   the fully qualified (package/method) type of the task
+    :type task_type:   basestring
+    :ivar start_time:  ISO8601 representation of the time the task started executing
+    :type start_time:  basestring
+    :ivar finish_time: ISO8601 representation of the time the task completed
+    :type finish_time: basestring
+    :ivar result:      return value of the callable, if any
+    :type result:      any
+    :ivar exception:   Deprecated. This is always None.
+    :type exception:   None
+    :ivar traceback:   Deprecated. This is always None.
+    :type traceback:   None
     """
+    task_id = StringField(unique=True, required=True)
+    worker_name = StringField()
+    tags = ListField(StringField())
+    state = StringField(choices=constants.CALL_STATES, default=constants.CALL_WAITING_STATE)
+    error = DictField(default=None)
+    spawned_tasks = ListField(StringField())
+    progress_report = DictField()
+    task_type = StringField()
+    start_time = ISO8601StringField()
+    finish_time = ISO8601StringField()
+    result = DynamicField()
 
-    collection_name = 'task_status'
-    unique_indices = ('task_id',)
-    search_indices = ('task_id', 'tags', 'state')
+    # These are deprecated, and will always be None
+    exception = StringField()
+    traceback = StringField()
 
-    def __init__(
-            self, task_id, worker_name=None, tags=None, state=None, error=None, spawned_tasks=None,
-            progress_report=None, task_type=None, start_time=None, finish_time=None, result=None):
+    # For backward compatibility
+    _ns = StringField(default='task_status')
+
+    meta = {'collection': 'task_status',
+            'indexes': ['-task_id', '-tags', '-state'],
+            'allow_inheritance': False,
+            'queryset_class': CriteriaQuerySet}
+
+    def save_with_set_on_insert(self, fields_to_set_on_insert):
         """
-        Initialize the TaskStatus based on the provided attributes. All parameters besides task_id
-        are optional.
+        Save the current state of the TaskStatus to the database, using an upsert operation.
+        The upsert operation will only set those fields if this becomes an insert operation,
+        otherwise those fields will be ignored. This also validates the fields according to the
+        schema above.
 
-        :param task_id:         identity of the task this status corresponds to
-        :type  task_id:         basestring
-        :param worker_name:     The name of the worker that the Task is in
-        :type  worker_name:     basestring
-        :param tags:            custom tags on the task
-        :type  tags:            list
-        :param state:           state of callable in its lifecycle
-        :type  state:           basestring
-        :param error:           Any errors or collections of errors that occurred while this task
-                                was running
-        :type  error:           dict (created from a PulpException)
-        :param spawned_tasks:   List of tasks that were spawned during the running of this task
-        :type  spawned_tasks:   list of basestrings
-        :param progress_report: A report containing information about task's progress
-        :type  progress_report: dict
-        :param task_type:       the fully qualified (package/method) type of the task
-        :type  task_type:       basestring
-        :param start_time:      time the task started executing
-        :type  start_time:      datetime.datetime
-        :param finish_time:     time the task completed
-        :type  finish_time:     datetime.datetime
-        :param result:          return value of the callable, if any
-        :type  result:          any
-        """
-        super(TaskStatus, self).__init__()
-
-        self.task_id = task_id
-        self.task_type = task_type
-        self.state = state
-        self.worker_name = worker_name
-        self.tags = tags or []
-        self.start_time = start_time
-        self.finish_time = finish_time
-        self.spawned_tasks = spawned_tasks or []
-        self.progress_report = progress_report or {}
-        self.result = result
-        self.error = error
-        # These are deprecated, and will always be None
-        self.exception = None
-        self.traceback = None
-
-    def save(self, fields_to_set_on_insert=None):
-        """
-        Save the current state of the TaskStatus to the database, using an upsert operiation. If
-        fields_to_set_on_insert is provided as a list of field names, the upsert operation will only
-        set those fields if this becomes an insert operation, otherwise those fields will be
-        ignored.
+        This is required because the current mongoengine version we are using does not support
+        upsert with set_on_insert through mongoengine queries. Once we update to the version
+        which supports this, this method can be deleted and it's usages can be replaced
+        with mongoengine upsert queries.
 
         :param fields_to_set_on_insert: A list of field names that should be updated with Mongo's
                                         $setOnInsert operator.
         :type  fields_to_set_on_insert: list
         """
-        stuff_to_update = dict(copy.deepcopy(self))
+        # If fields_to_set_on_insert is None or empty, just call superclass' save method.
+        if not fields_to_set_on_insert:
+            super(TaskStatus, self).save()
+            return
+
+        # This will be used in place of superclass' save method, so we need to call validate()
+        # explicitly.
+        self.validate()
+
+        stuff_to_update = dict(copy.deepcopy(self._data))
 
         # Let's pop the $setOnInsert attributes out of the copy of self so that we can pass the
         # remaining attributes to the $set operator in the query below.
-        fields_to_set_on_insert = fields_to_set_on_insert or []
         set_on_insert = {}
         for field in fields_to_set_on_insert:
             set_on_insert[field] = stuff_to_update.pop(field)
         task_id = stuff_to_update.pop('task_id')
-        # MongoDB will be angry with us if we try to update the _id field
-        stuff_to_update.pop('_id')
 
-        update = {'$set': stuff_to_update}
-        if set_on_insert:
-            update['$setOnInsert'] = set_on_insert
-        self.get_collection().update(
-            {'task_id': task_id},
-            update,
-            upsert=True)
+        update = {'$set': stuff_to_update,
+                  '$setOnInsert': set_on_insert}
+        TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)

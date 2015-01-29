@@ -259,17 +259,15 @@ _chuid () {
 
 start_beat () {
     echo "Starting ${SCRIPT_NAME}..."
-    _chuid --scheduler=$CELERYBEAT_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
+    _chuid --app=CELERYBEAT_APP --scheduler=$CELERYBEAT_SCHEDULER $CELERYBEAT_OPTS $DAEMON_OPTS --detach \
                 --pidfile="$CELERYBEAT_PID_FILE"
 }
 
 # this function implements the fix for bz #1145723
 write_log_message () {
+  touch $CELERYBEAT_LOG_FILE && chown $CELERYD_USER $CELERYBEAT_LOG_FILE
   echo -n `date "+%Y-%m-%d %T"` >> $CELERYBEAT_LOG_FILE
   echo " $1" >> $CELERYBEAT_LOG_FILE
-  # it is possible that we are the first to touch this file. If so, fix
-  # permissions.
-  chown $CELERYD_USER $CELERYBEAT_LOG_FILE
 }
 
 

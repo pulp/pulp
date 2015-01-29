@@ -3,19 +3,6 @@ import unittest
 import mock
 
 from pulp.server.async import worker_watcher
-from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
-
-
-class TestIsResourceManager(unittest.TestCase):
-    def test__is_resource_manager_positive(self):
-        event = {'hostname': RESOURCE_MANAGER_QUEUE + 'the rest of the hostname'}
-        result = worker_watcher._is_resource_manager(event)
-        self.assertTrue(result)
-
-    def test__is_resource_manager_negative(self):
-        event = {'hostname': 'not a matching hostname'}
-        result = worker_watcher._is_resource_manager(event)
-        self.assertFalse(result)
 
 
 class TestParseAndLogEvent(unittest.TestCase):
@@ -59,14 +46,13 @@ class TestLogEvent(unittest.TestCase):
 class TestHandleWorkerHeartbeat(unittest.TestCase):
     @mock.patch('__builtin__.list', return_value=False)
     @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher._is_resource_manager', return_value=False)
     @mock.patch('pulp.server.async.worker_watcher.Criteria')
     @mock.patch('pulp.server.async.worker_watcher.resources')
     @mock.patch('pulp.server.async.worker_watcher.Worker')
     @mock.patch('pulp.server.async.worker_watcher._')
     @mock.patch('pulp.server.async.worker_watcher._logger')
     def test_handle_worker_heartbeat_new(self, mock__logger, mock_gettext, mock_worker,
-                                         mock_resources, mock_criteria, mock__is_resource_manager,
+                                         mock_resources, mock_criteria,
                                          mock__parse_and_log_event, mock_list):
         mock_event = mock.Mock()
 
@@ -77,22 +63,20 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
         mock_criteria.assert_called_once_with(filters={'_id': event_info['worker_name']},
                                               fields=('_id', 'last_heartbeat'))
         mock_resources.filter_workers.assert_called_once(mock_criteria.return_value)
-        mock_worker.assert_called_once_with(event_info['worker_name'],
-                                                     event_info['timestamp'])
+        mock_worker.assert_called_once_with(event_info['worker_name'], event_info['timestamp'])
         mock_gettext.assert_called_once_with("New worker '%(worker_name)s' discovered")
         mock__logger.assert_called_once()
         mock_worker.return_value.save.assert_called_once_with()
 
     @mock.patch('__builtin__.list', return_value=True)
     @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher._is_resource_manager', return_value=False)
     @mock.patch('pulp.server.async.worker_watcher.Criteria')
     @mock.patch('pulp.server.async.worker_watcher.resources')
     @mock.patch('pulp.server.async.worker_watcher.Worker')
     @mock.patch('pulp.server.async.worker_watcher._', new=mock.Mock())
     @mock.patch('pulp.server.async.worker_watcher._logger', new=mock.Mock())
     def test_handle_worker_heartbeat_update(self, mock_worker, mock_resources,
-                                            mock_criteria, mock__is_resource_manager,
+                                            mock_criteria,
                                             mock__parse_and_log_event, mock_list):
         mock_event = mock.Mock()
 
@@ -110,48 +94,20 @@ class TestHandleWorkerHeartbeat(unittest.TestCase):
             update={'$set': {'last_heartbeat': event_info['timestamp']}}
         )
 
-    @mock.patch('__builtin__.list', return_value=True)
-    @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher._is_resource_manager', return_value=True)
-    @mock.patch('pulp.server.async.worker_watcher.Criteria')
-    @mock.patch('pulp.server.async.worker_watcher.resources', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher.Worker', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher._', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher._logger', new=mock.Mock())
-    def test_handle_worker_heartbeat_with_resource_manager_event(self, mock_criteria,
-                                                                 mock__is_resource_manager,
-                                                                 mock_list):
-        mock_event = mock.Mock()
-        worker_watcher.handle_worker_heartbeat(mock_event)
-        self.assertTrue(not mock_criteria.called)
-
 
 class TestHandleWorkerOffline(unittest.TestCase):
     @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher._is_resource_manager', return_value=False)
     @mock.patch('pulp.server.async.worker_watcher._delete_worker')
     @mock.patch('pulp.server.async.worker_watcher._')
     @mock.patch('pulp.server.async.worker_watcher._logger')
     def test_handle_worker_offline(self, mock__logger, mock_gettext, mock__delete_worker,
-                                   mock__is_resource_manager, mock__parse_and_log_event):
+                                   mock__parse_and_log_event):
         mock_event = mock.Mock()
 
         worker_watcher.handle_worker_offline(mock_event)
 
         event_info = mock__parse_and_log_event.return_value
         mock__parse_and_log_event.assert_called_once_with(mock_event)
-        mock__is_resource_manager.assert_called_once_with(mock_event)
         mock_gettext.assert_called_once_with("Worker '%(worker_name)s' shutdown")
         mock__logger.info.assert_called_once()
         mock__delete_worker.assert_called_once_with(event_info['worker_name'], normal_shutdown=True)
-
-    @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher._is_resource_manager', return_value=True)
-    @mock.patch('pulp.server.async.worker_watcher._delete_worker', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher._')
-    @mock.patch('pulp.server.async.worker_watcher._logger', new=mock.Mock())
-    def test_handle_worker_offline_with_resource_manager(self, mock_gettext,
-                                                         mock__is_resource_manager):
-        mock_event = mock.Mock()
-        worker_watcher.handle_worker_offline(mock_event)
-        self.assertTrue(not mock_gettext.called)

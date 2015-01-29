@@ -1,18 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
-
 from pulp.server.exceptions import MissingResource
+
 
 class RepoGroupQueryManager(object):
 
@@ -28,7 +16,7 @@ class RepoGroupQueryManager(object):
 
         @raise MissingResource: if there is no group with the given ID
         """
-        group = RepoGroup.get_collection().find_one({'id' : repo_group_id})
+        group = RepoGroup.get_collection().find_one({'id': repo_group_id})
         if group is None:
             raise MissingResource(repo_group=repo_group_id)
         return group
@@ -60,12 +48,12 @@ class RepoGroupQueryManager(object):
 
         groups_by_id = {}
 
-        spec = {'distributor_type_id' : distributor_type_id}
+        spec = {'distributor_type_id': distributor_type_id}
         group_distributors = list(group_distributor_coll.find(spec))
         for gd in group_distributors:
             group = groups_by_id.get(gd['repo_group_id'], None)
             if group is None:
-                group = group_coll.find_one({'id' : gd['repo_group_id']})
+                group = group_coll.find_one({'id': gd['repo_group_id']})
                 groups_by_id[gd['repo_group_id']] = group
 
             dists = group.setdefault('distributors', [])
@@ -86,4 +74,3 @@ class RepoGroupQueryManager(object):
         @rtype:     list
         """
         return RepoGroup.get_collection().query(criteria)
-

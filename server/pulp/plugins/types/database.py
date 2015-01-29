@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Responsible for the storage and retrieval of content types in the database.
 This module covers both the ContentType collection itself as well as any
@@ -21,16 +8,13 @@ import logging
 
 from pymongo import ASCENDING
 
-import pulp.server.db.connection as pulp_db
 from pulp.server.db.model.content import ContentType
+import pulp.server.db.connection as pulp_db
 
-# -- constants ----------------------------------------------------------------
 
 TYPE_COLLECTION_PREFIX = 'units_'
 
-LOG = logging.getLogger('db')
-
-# -- database exceptions ------------------------------------------------------
+_logger = logging.getLogger(__name__)
 
 
 class UpdateFailed(Exception):
@@ -63,8 +47,6 @@ class MissingDefinitions(Exception):
     def __str__(self):
         return 'MissingDefinitions [%s]' % ', '.join(self.missing_type_ids)
 
-# -- public -------------------------------------------------------------------
-
 
 def update_database(definitions, error_on_missing_definitions=False):
     """
@@ -82,7 +64,7 @@ def update_database(definitions, error_on_missing_definitions=False):
 
     all_type_ids = [d.id for d in definitions]
 
-    LOG.info('Updating the database with types [%s]' % ', '.join(all_type_ids))
+    _logger.info('Updating the database with types [%s]' % ', '.join(all_type_ids))
 
     # Get a list of all type collections now so we can figure out which
     # previously existed but are not in the new list
@@ -91,7 +73,10 @@ def update_database(definitions, error_on_missing_definitions=False):
     missing = set(existing_type_names) - set(update_type_ids)
 
     if len(missing) > 0:
-        LOG.warn('Found the following type definitions that were not present in the update collection [%s]' % ', '.join(missing))
+        msg = ('Found the following type definitions that were not present in the update '
+               'collection [%s]')
+        msg = msg % ', '.join(missing)
+        _logger.warn(msg)
 
         if error_on_missing_definitions:
             raise MissingDefinitions(missing)
@@ -103,7 +88,7 @@ def update_database(definitions, error_on_missing_definitions=False):
         try:
             _create_or_update_type(type_def)
         except Exception:
-            LOG.exception('Exception creating/updating collection for type [%s]' % type_def.id)
+            _logger.exception('Exception creating/updating collection for type [%s]' % type_def.id)
             error_defs.append(type_def)
             continue
 
@@ -111,21 +96,21 @@ def update_database(definitions, error_on_missing_definitions=False):
             # May need to revisit if the recreation takes too long with large content sets
             _drop_indexes(type_def)
         except Exception:
-            LOG.exception('Exception dropping indexes for type [%s]' % type_def.id)
+            _logger.exception('Exception dropping indexes for type [%s]' % type_def.id)
             error_defs.append(type_def)
             continue
 
         try:
             _update_unit_key(type_def)
         except Exception:
-            LOG.exception('Exception updating unit key for type [%s]' % type_def.id)
+            _logger.exception('Exception updating unit key for type [%s]' % type_def.id)
             error_defs.append(type_def)
             continue
 
         try:
             _update_search_indexes(type_def)
         except Exception:
-            LOG.exception('Exception updating search indexes for type [%s]' % type_def.id)
+            _logger.exception('Exception updating search indexes for type [%s]' % type_def.id)
             error_defs.append(type_def)
             continue
 
@@ -140,13 +125,14 @@ def clean():
     for test cases.
     """
 
-    LOG.info('Purging the database of all content type definitions and collections')
+    _logger.info('Purging the database of all content type definitions and collections')
 
     # Search the database instead of just going on what's in the type listing
     # just in case they got out of sync
     database = pulp_db.get_database()
     all_collection_names = database.collection_names()
-    type_collection_names = [n for n in all_collection_names if n.startswith(TYPE_COLLECTION_PREFIX)]
+    type_collection_names = [
+        n for n in all_collection_names if n.startswith(TYPE_COLLECTION_PREFIX)]
     for drop_me in type_collection_names:
         database[drop_me].drop()
 
@@ -178,7 +164,7 @@ def all_type_ids():
     """
 
     collection = ContentType.get_collection()
-    type_id_son = list(collection.find(fields={'id' : 1}))
+    type_id_son = list(collection.find(fields={'id': 1}))
     type_ids = [t['id'] for t in type_id_son]
 
     return type_ids
@@ -191,7 +177,7 @@ def all_type_collection_names():
     """
 
     collection = ContentType.get_collection()
-    type_ids = list(collection.find(fields={'id' : 1}))
+    type_ids = list(collection.find(fields={'id': 1}))
 
     type_collection_names = []
     for id in type_ids:
@@ -254,8 +240,6 @@ def type_units_unit_key(type_id):
         return None
     return type_def['unit_key']
 
-# -- private -----------------------------------------------------------------
-
 
 def _create_or_update_type(type_def):
     """
@@ -277,8 +261,9 @@ def _create_or_update_type(type_def):
 
     # Add or update an entry in the types list
     content_type_collection = ContentType.get_collection()
-    content_type = ContentType(type_def.id, type_def.display_name, type_def.description,
-                               type_def.unit_key, type_def.search_indexes, type_def.referenced_types)
+    content_type = ContentType(
+        type_def.id, type_def.display_name, type_def.description, type_def.unit_key,
+        type_def.search_indexes, type_def.referenced_types)
     # no longer rely on _id = id
     existing_type = content_type_collection.find_one({'id': type_def.id}, fields=[])
     if existing_type is not None:
@@ -293,7 +278,7 @@ def _update_indexes(type_def, unique):
     collection = pulp_db.get_collection(collection_name, create=False)
 
     if unique:
-        index_list = [type_def.unit_key] # treat the key as a compound key
+        index_list = [type_def.unit_key]  # treat the key as a compound key
     else:
         index_list = type_def.search_indexes
 
@@ -303,18 +288,22 @@ def _update_indexes(type_def, unique):
     for index in index_list:
 
         if isinstance(index, (list, tuple)):
-            LOG.debug('Ensuring index [%s] (unique: %s) on type definition [%s]' % (', '.join(index), unique, type_def.id))
+            msg = 'Ensuring index [%s] (unique: %s) on type definition [%s]'
+            msg = msg % (', '.join(index), unique, type_def.id)
+            _logger.debug(msg)
             mongo_index = _create_index_keypair(index)
         else:
-            LOG.debug('Ensuring index [%s] (unique: %s) on type definition [%s]' % (index, unique, type_def.id))
+            msg = 'Ensuring index [%s] (unique: %s) on type definition [%s]'
+            msg = msg % (index, unique, type_def.id)
+            _logger.debug(msg)
             mongo_index = index
 
         index_name = collection.ensure_index(mongo_index, unique=unique, drop_dups=False)
 
         if index_name is not None:
-            LOG.debug('Index [%s] created on type definition [%s]' % (index_name, type_def.id))
+            _logger.debug('Index [%s] created on type definition [%s]' % (index_name, type_def.id))
         else:
-            LOG.debug('Index already existed on type definition [%s]' % type_def.id)
+            _logger.debug('Index already existed on type definition [%s]' % type_def.id)
 
 
 def _update_unit_key(type_def):

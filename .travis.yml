@@ -1,0 +1,7 @@
+language: python
+python:
+    - "2.7"
+install:
+    - "pip install flake8"
+script:
+    - "git diff HEAD^ | flake8 --diff --config flake8.cfg"

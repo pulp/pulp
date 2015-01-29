@@ -1,4 +1,3 @@
-
 from unittest import TestCase
 
 from mock import Mock, patch
@@ -8,7 +7,7 @@ from pulp_node.importers.strategies import ImporterStrategy
 
 class TestAddUnits(TestCase):
 
-    @patch('pulp.server.content.sources.ContentContainer.download')
+    @patch('pulp.server.content.sources.container.ContentContainer.download')
     def test_download_reporting(self, fake_download):
         fake_download.return_value = Mock()
 
@@ -24,4 +23,3 @@ class TestAddUnits(TestCase):
 
         # validation
         self.assertEqual(fake_request.summary.sources, fake_download())
-

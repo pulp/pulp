@@ -1,20 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
+from types import NoneType
 import copy
 import re
 import sys
-from types import NoneType
 
 import pymongo
 
@@ -46,11 +33,11 @@ class Criteria(Model):
         @rtype:     dict
         """
         return {
-            'filters' : self.filters,
-            'sort' : self.sort,
-            'limit' : self.limit,
-            'skip' : self.skip,
-            'fields' : self.fields
+            'filters': self.filters,
+            'sort': self.sort,
+            'limit': self.limit,
+            'skip': self.skip,
+            'fields': self.fields
         }
 
     @classmethod
@@ -178,8 +165,10 @@ class UnitAssociationCriteria(Model):
         # frankly it doesn't make sense without them but it's also a technical
         # requirement for the algorithm to run. Make sure they are there.
         if association_fields is not None:
-            if 'unit_id' not in association_fields: association_fields.append('unit_id')
-            if 'unit_type_id' not in association_fields: association_fields.append('unit_type_id')
+            if 'unit_id' not in association_fields:
+                association_fields.append('unit_id')
+            if 'unit_type_id' not in association_fields:
+                association_fields.append('unit_type_id')
 
         self.association_fields = association_fields
         self.unit_fields = unit_fields
@@ -266,8 +255,9 @@ class UnitAssociationCriteria(Model):
         if unit_filters:
             _compile_regexs_for_not(unit_filters)
 
-        return cls(type_ids=type_ids, association_filters=association_filters, unit_filters=unit_filters,
-                   association_sort=association_sort, unit_sort=unit_sort, limit=limit, skip=skip,
+        return cls(type_ids=type_ids, association_filters=association_filters,
+                   unit_filters=unit_filters, association_sort=association_sort,
+                   unit_sort=unit_sort, limit=limit, skip=skip,
                    association_fields=association_fields, unit_fields=unit_fields,
                    remove_duplicates=remove_duplicates)
 
@@ -289,19 +279,27 @@ class UnitAssociationCriteria(Model):
 
     def __str__(self):
         s = ''
-        if self.type_ids: s += 'Type IDs [%s] ' % self.type_ids
-        if self.association_filters: s += 'Assoc Filters [%s] ' % self.association_filters
-        if self.unit_filters is not None: s += 'Unit Filters [%s] ' % self.unit_filters
-        if self.association_sort is not None: s += 'Assoc Sort [%s] ' % self.association_sort
-        if self.unit_sort is not None: s += 'Unit Sort [%s] ' % self.unit_sort
-        if self.limit: s += 'Limit [%s] ' % self.limit
-        if self.skip: s += 'Skip [%s] ' % self.skip
-        if self.association_fields: s += 'Assoc Fields [%s] ' % self.association_fields
-        if self.unit_fields: s += 'Unit Fields [%s] ' % self.unit_fields
+        if self.type_ids:
+            s += 'Type IDs [%s] ' % self.type_ids
+        if self.association_filters:
+            s += 'Assoc Filters [%s] ' % self.association_filters
+        if self.unit_filters is not None:
+            s += 'Unit Filters [%s] ' % self.unit_filters
+        if self.association_sort is not None:
+            s += 'Assoc Sort [%s] ' % self.association_sort
+        if self.unit_sort is not None:
+            s += 'Unit Sort [%s] ' % self.unit_sort
+        if self.limit:
+            s += 'Limit [%s] ' % self.limit
+        if self.skip:
+            s += 'Skip [%s] ' % self.skip
+        if self.association_fields:
+            s += 'Assoc Fields [%s] ' % self.association_fields
+        if self.unit_fields:
+            s += 'Unit Fields [%s] ' % self.unit_fields
         s += 'Remove Duplicates [%s]' % self.remove_duplicates
         return s
 
-# validation helper functions --------------------------------------------------
 
 def _validate_filters(filters):
     if filters is None:
@@ -336,7 +334,7 @@ def _validate_sort(sort):
                 raise ValueError('Invalid sort direction [%s]' % flag)
             valid_sort.append((entry[0], direction))
     except (TypeError, ValueError):
-       raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
+        raise pulp_exceptions.InvalidValue(['sort']), None, sys.exc_info()[2]
     else:
         return valid_sort
 
@@ -396,4 +394,3 @@ def _compile_regexs_for_not(spec):
         if key == '$not' and isinstance(value, basestring):
             spec[key] = re.compile(value)
         _compile_regexs_for_not(value)
-

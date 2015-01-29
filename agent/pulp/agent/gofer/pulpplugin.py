@@ -5,12 +5,15 @@ Contains recurring actions and remote classes.
 
 import os
 
+from time import sleep
+from threading import Thread
+from gettext import gettext as _
 from logging import getLogger
 
 from M2Crypto import RSA, BIO
 from M2Crypto.X509 import X509Error
 
-from gofer.decorators import *
+from gofer.decorators import initializer, remote, action
 from gofer.agent.plugin import Plugin
 from gofer.pmon import PathMonitor
 from gofer.agent.rmi import Context
@@ -22,6 +25,7 @@ from pulp.agent.lib.dispatcher import Dispatcher
 from pulp.agent.lib.conduit import Conduit as HandlerConduit
 from pulp.bindings.server import PulpConnection
 from pulp.bindings.bindings import Bindings
+from pulp.bindings.exceptions import NotFoundException
 from pulp.client.consumer.config import read_config
 
 
@@ -39,6 +43,9 @@ path_monitor = PathMonitor()
 # this plugin object
 plugin = Plugin.find(__name__)
 
+# registration status
+registered = False
+
 
 @initializer
 def init_plugin():
@@ -49,47 +56,72 @@ def init_plugin():
       2. Register the consumer certificate bundle path for monitoring.
       3. Start the path monitor.
     """
-    setup_plugin()
     path = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-    path_monitor.add(path, registration_changed)
+    path_monitor.add(path, certificate_changed)
     path_monitor.start()
+    attach = Attach()
+    attach.start()
 
 
-def setup_plugin():
+def validate_registration():
     """
-    Plugin setup.
-    Update the plugin configuration using the consumer configuration.
+    Validate the registration status using the Pulp REST API.
+    This is done by fetching the consumer using the ID contained in the certificate.
+    Then, matching the UID in the certificate with the _id (database ID) returned
+    by the server.
+    """
+    global registered
+    registered = False
+    bundle = ConsumerX509Bundle()
+
+    if not bundle.valid():
+        return
+
+    try:
+        consumer_id = bundle.cn()
+        bindings = PulpBindings()
+        reply = bindings.consumer.consumer(consumer_id)
+        _id = reply.response_body['_id']['$oid']
+        if _id == bundle.uid():
+            registered = True
+    except NotFoundException:
+        # not registered
+        pass
+    except Exception, e:
+        msg = _('validate registration failed: %(r)s')
+        log.warn(msg, {'r': str(e)})
+        raise
+
+
+def update_settings():
+    """
+    Update the plugin settings using the consumer configuration.
     """
     pulp_conf.update(read_config())
     scheme = cfg.messaging.scheme
     host = cfg.messaging.host or cfg.server.host
     port = cfg.messaging.port
-    url = '%s://%s:%s' % (scheme, host, port)
-    plugin_conf = plugin.cfg()
-    plugin_conf.messaging.url = url
-    plugin_conf.messaging.uuid = get_agent_id()
-    plugin_conf.messaging.cacert = cfg.messaging.cacert
-    plugin_conf.messaging.clientcert = cfg.messaging.clientcert or \
+    adapter = cfg.messaging.transport
+    plugin.cfg.messaging.url = '%s+%s://%s:%s' % (adapter, scheme, host, port)
+    plugin.cfg.messaging.uuid = get_agent_id()
+    plugin.cfg.messaging.cacert = cfg.messaging.cacert
+    plugin.cfg.messaging.clientcert = cfg.messaging.clientcert or \
         os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-    plugin_conf.messaging.transport = cfg.messaging.transport
     plugin.authenticator = Authenticator()
-    log.info('plugin configuration updated')
+    log.info(_('plugin configuration updated'))
 
 
-def registration_changed(path):
+def certificate_changed(path):
     """
     The consumer certificate bundle has changed.
     This indicates a change in registration to pulp.
     :param path: The absolute path to the changed bundle.
     :type path: str
     """
-    log.info('changed: %s', path)
-    agent_id = get_agent_id()
-    if agent_id:
-        setup_plugin()
-        plugin.attach()
-    else:
-        plugin.detach()
+    log.info(_('changed: %(p)s'), {'p': path})
+    attach = Attach()
+    attach.start()
+    attach.join()
 
 
 def get_agent_id():
@@ -117,6 +149,36 @@ def get_secret():
     """
     bundle = ConsumerX509Bundle()
     return bundle.uid()
+
+
+class Attach(Thread):
+    """
+    This thread (task) persistently:
+      - validates the registration status
+      - if registered, updates the plugin settings and attach.
+      - if not registered, detach the plugin.
+    The reason for doing this in a thread is that we don't
+    want to block in the initializer.
+    """
+
+    def __init__(self):
+        super(Attach, self).__init__()
+        self.setDaemon(True)
+
+    def run(self):
+        while True:
+            try:
+                validate_registration()
+                if registered:
+                    update_settings()
+                    plugin.attach()
+                else:
+                    plugin.detach()
+                # DONE
+                break
+            except Exception, e:
+                log.warn(str(e))
+                sleep(60)
 
 
 class Authenticator(object):
@@ -188,7 +250,8 @@ class ConsumerX509Bundle(Bundle):
         try:
             return Bundle.cn(self)
         except X509Error:
-            log.warn('certificate: %s, not valid', self.path)
+            msg = _('certificate: %(p)s, not valid')
+            log.warn(msg, {'p': self.path})
 
     def uid(self):
         """
@@ -201,7 +264,8 @@ class ConsumerX509Bundle(Bundle):
         try:
             return Bundle.uid(self)
         except X509Error:
-            log.warn('certificate: %s, not valid', self.path)
+            msg = _('certificate: %(p)s, not valid')
+            log.warn(msg, {'p': self.path})
 
 
 class PulpBindings(Bindings):
@@ -214,8 +278,12 @@ class PulpBindings(Bindings):
         verify_ssl = parse_bool(cfg.server.verify_ssl)
         ca_path = cfg.server.ca_path
         cert = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
-        connection = PulpConnection(host, port, cert_filename=cert, verify_ssl=verify_ssl,
-                                    ca_path=ca_path)
+        connection = PulpConnection(
+            host=host,
+            port=port,
+            cert_filename=cert,
+            verify_ssl=verify_ssl,
+            ca_path=ca_path)
         Bindings.__init__(self, connection)
 
 
@@ -271,17 +339,18 @@ def update_profile():
     """
     Report the unit profile(s).
     """
-    if get_agent_id():
+    if registered:
         profile = Profile()
         profile.send()
     else:
-        log.info('not registered, profile report skipped')
+        msg = _('not registered, profile report skipped')
+        log.info(msg)
 
 
 # --- API --------------------------------------------------------------------
 
 
-class Consumer:
+class Consumer(object):
     """
     Consumer Management.
     """
@@ -339,7 +408,7 @@ class Consumer:
         return report.dict()
 
 
-class Content:
+class Content(object):
     """
     Content Management.
     """
@@ -399,7 +468,7 @@ class Content:
         return report.dict()
 
 
-class Profile:
+class Profile(object):
     """
     Profile Management
     """
@@ -418,11 +487,18 @@ class Profile:
         bindings = PulpBindings()
         dispatcher = Dispatcher()
         report = dispatcher.profile(conduit)
-        log.debug('reporting profiles: %s', report)
+
+        msg = _('reporting profiles: %(r)s')
+        log.debug(msg, {'r': report})
+
         for type_id, profile_report in report.details.items():
             if not profile_report['succeeded']:
                 continue
+
             details = profile_report['details']
             http = bindings.profile.send(consumer_id, type_id, details)
-            log.info('profile (%s), reported: %d', type_id, http.response_code)
+
+            msg = _('profile (%(t)s), reported: %(r)s')
+            log.info(msg, {'t': type_id, 'r': http.response_code})
+
         return report.dict()

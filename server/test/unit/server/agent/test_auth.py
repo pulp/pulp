@@ -1,19 +1,9 @@
-# Copyright (c) 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-from unittest import TestCase
 from ConfigParser import ConfigParser
 from StringIO import StringIO
+from unittest import TestCase
 
-from mock import patch, Mock
 from M2Crypto import RSA, BIO
+from mock import patch, Mock
 from gofer.messaging.auth import ValidationFailed
 
 from pulp.server.agent.auth import Authenticator
@@ -109,20 +99,15 @@ class TestAuthentication(TestCase):
 
         key = Authenticator.get_key(consumer_id)
 
-        # validation
-
         self.assertTrue(isinstance(key, RSA.RSA))
 
     def test_signing(self):
         message = 'hello'
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
 
-        # test
         authenticator = Authenticator()
         authenticator.rsa_key = key
         signature = authenticator.sign(message)
-
-        #validation
 
         self.assertEqual(signature, key.sign(message))
 
@@ -137,15 +122,14 @@ class TestAuthentication(TestCase):
         message = 'hello'
         consumer_id = 'test-consumer_id'
         document = Mock()
-        document.any = {'consumer_id': consumer_id}
+        document.data = {'consumer_id': consumer_id}
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
 
         mock_get.return_value = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
 
-        # test
-
         authenticator = Authenticator()
         authenticator.validate(document, message, key.sign(message))
+
         mock_get.assert_called_with(consumer_id)
 
     @patch('pulp.server.agent.auth.Authenticator.get_key')
@@ -153,12 +137,10 @@ class TestAuthentication(TestCase):
         message = 'hello'
         consumer_id = 'test-consumer_id'
         document = Mock()
-        document.any = {'consumer_id': consumer_id}
+        document.data = {'consumer_id': consumer_id}
         key = RSA.load_key_bio(BIO.MemoryBuffer(OTHER_KEY))
 
         mock_get.return_value = RSA.load_pub_key_bio(BIO.MemoryBuffer(RSA_PUB))
-
-        # test
 
         authenticator = Authenticator()
         self.assertRaises(
@@ -170,7 +152,7 @@ class TestAuthentication(TestCase):
         mock_get.return_value.verify = Mock(return_value=False)
         consumer_id = 'test-consumer_id'
         document = Mock()
-        document.any = {'consumer_id': consumer_id}
+        document.data = {'consumer_id': consumer_id}
 
         # test
 

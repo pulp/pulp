@@ -8,7 +8,7 @@ from gettext import gettext as _
 
 import mongoengine
 from pymongo.collection import Collection
-from pymongo.errors import AutoReconnect
+from pymongo.errors import AutoReconnect, OperationFailure
 from pymongo.son_manipulator import NamespaceInjector
 
 from pulp.server import config
@@ -46,6 +46,14 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         if seeds is None:
             seeds = config.config.get('database', 'seeds')
 
+        if seeds != '':
+            first_seed = seeds.split(',')[0]
+            seed = first_seed.strip().split(':')
+            if len(seed) == 2:
+                connection_kwargs.update({'host': seed[0], 'port': int(seed[1])})
+            else:
+                connection_kwargs.update({'host': seed[0]})
+
         if max_pool_size is None:
             # we may want to make this configurable, but then again, we may not
             max_pool_size = _DEFAULT_MAX_POOL_SIZE
@@ -71,14 +79,26 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             connection_kwargs['ssl_cert_reqs'] = ssl.CERT_REQUIRED if verify_ssl else ssl.CERT_NONE
             connection_kwargs['ssl_ca_certs'] = config.config.get('database', 'ca_path')
 
-        _logger.debug(_('Attempting Database connection with seeds = %s') % seeds)
+        # If username & password have been specified in the database config,
+        # attempt to authenticate to the database
+        username = config.config.get('database', 'username')
+        password = config.config.get('database', 'password')
+        if username and password:
+            _logger.debug(_('Attempting username and password authentication.'))
+            connection_kwargs['username'] = username
+            connection_kwargs['password'] = password
+        elif (username and not password) or (password and not username):
+            raise Exception(_("The server config specified username/password authentication but "
+                            "is missing either the username or the password"))
+
         _logger.debug(_('Connection Arguments: %s') % connection_kwargs)
 
         # Wait until the Mongo database is available
-        mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
+        mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16],
+                                                                itertools.repeat(32))
         while True:
             try:
-                _CONNECTION = mongoengine.connect(seeds, **connection_kwargs)
+                _CONNECTION = mongoengine.connect(name, **connection_kwargs)
             except mongoengine.connection.ConnectionError as e:
                 next_delay = min(mongo_retry_timeout_seconds_generator.next(), max_timeout)
                 msg = _(
@@ -89,19 +109,13 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
                 break
             time.sleep(next_delay)
 
-        _DATABASE = getattr(_CONNECTION, name)
-
-        # If username & password have been specified in the database config,
-        # attempt to authenticate to the database
-        username = config.config.get('database', 'username')
-        password = config.config.get('database', 'password')
-        if username and password:
-            _logger.debug(_('Database authentication enabled, attempting username/password'
-                            ' authentication.'))
-            _DATABASE.authenticate(username, password)
-        elif (username and not password) or (password and not username):
-            raise Exception(_("The server config specified username/password authentication but "
-                            "is missing either the username or the password"))
+        try:
+            _DATABASE = mongoengine.connection.get_db()
+        except OperationFailure as error:
+            if error.code == 18:
+                msg = _('Authentication to MongoDB '
+                        'with username and password failed.')
+                raise RuntimeError(msg)
 
         _DATABASE.add_son_manipulator(NamespaceInjector())
 
@@ -117,11 +131,6 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         if db_version_tuple < db_min_version_tuple:
             raise RuntimeError(_("Pulp requires Mongo version %s, but DB is reporting version %s") %
                                (MONGO_MINIMUM_VERSION, db_version))
-
-        _logger.debug(
-            _("Database connection established with: seeds = %(seeds)s, name = %(name)s") %
-            {'seeds': seeds, 'name': name}
-        )
 
     except Exception, e:
         _logger.critical(_('Database initialization failed: %s') % str(e))
@@ -173,11 +182,11 @@ class PulpCollection(Collection):
     applications
     """
 
-    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options', 'unset_lasterror_options',
-                          'insert', 'save', 'update', 'remove', 'drop', 'find', 'find_one', 'count',
-                          'create_index', 'ensure_index', 'drop_index', 'drop_indexes', 'reindex',
-                          'index_information', 'options', 'group', 'rename', 'distinct', 'map_reduce',
-                          'inline_map_reduce', 'find_and_modify')
+    _decorated_methods = (
+        'get_lasterror_options', 'set_lasterror_options', 'unset_lasterror_options', 'insert',
+        'save', 'update', 'remove', 'drop', 'find', 'find_one', 'count', 'create_index',
+        'ensure_index', 'drop_index', 'drop_indexes', 'reindex', 'index_information', 'options',
+        'group', 'rename', 'distinct', 'map_reduce', 'inline_map_reduce', 'find_and_modify')
 
     def __init__(self, database, name, create=False, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)

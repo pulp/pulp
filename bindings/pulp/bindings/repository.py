@@ -1,22 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.search import SearchAPI
 from pulp.common import constants
 
 # Default for update APIs to differentiate between None and not updating the value
 UNSPECIFIED = object()
+
 
 class RepositoryAPI(PulpAPI):
     """
@@ -38,7 +26,7 @@ class RepositoryAPI(PulpAPI):
         repodata = {"id": id,
                     "display_name": display_name,
                     "description": description,
-                    "notes": notes,}
+                    "notes": notes}
         return self.server.POST(path, repodata)
 
     def create_and_configure(self, id, display_name, description, notes,
@@ -81,19 +69,19 @@ class RepositoryAPI(PulpAPI):
         """
         path = self.base_path
         repo_data = {
-            'id' : id,
-            'display_name' : display_name,
-            'description' : description,
-            'notes' : notes,
-            'importer_type_id' : importer_type_id,
-            'importer_config' : importer_config,
-            'distributors' : distributors,
+            'id': id,
+            'display_name': display_name,
+            'description': description,
+            'notes': notes,
+            'importer_type_id': importer_type_id,
+            'importer_config': importer_config,
+            'distributors': distributors,
         }
         return self.server.POST(path, repo_data)
 
-    def repository(self, id):
+    def repository(self, id, query_parameters=()):
         path = self.base_path + ("%s/" % id)
-        return self.server.GET(path)
+        return self.server.GET(path, query_parameters)
 
     def delete(self, id):
         path = self.base_path + "%s/" % id
@@ -178,14 +166,17 @@ class RepositoryAPI(PulpAPI):
 
         # Assemble the repo metadata
         delta = {}
-        if display_name is not None: delta['display_name'] = display_name
-        if description is not None: delta['description'] = description
-        if notes is not None: delta['notes'] = notes
+        if display_name is not None:
+            delta['display_name'] = display_name
+        if description is not None:
+            delta['description'] = description
+        if notes is not None:
+            delta['notes'] = notes
 
         path = self.base_path + "%s/" % id
-        body = {'delta' : delta,
-                'importer_config' : importer_config,
-                'distributor_configs' : distributor_configs,}
+        body = {'delta': delta,
+                'importer_config': importer_config,
+                'distributor_configs': distributor_configs}
         return self.server.PUT(path, body)
 
 
@@ -211,7 +202,7 @@ class RepositoryImporterAPI(PulpAPI):
     def create(self, repo_id, importer_type_id, importer_config):
         path = self.base_path % repo_id
         data = {"importer_type_id": importer_type_id,
-                "importer_config": importer_config,}
+                "importer_config": importer_config}
         return self.server.POST(path, data)
 
     def importer(self, repo_id, importer_id):
@@ -248,7 +239,7 @@ class RepositoryDistributorAPI(PulpAPI):
         data = {"distributor_type_id": distributor_type_id,
                 "distributor_config": distributor_config,
                 "auto_publish": auto_publish,
-                "distributor_id": distributor_id,}
+                "distributor_id": distributor_id}
         return self.server.POST(path, data)
 
     def distributor(self, repo_id, distributor_id):
@@ -366,19 +357,20 @@ class RepositoryActionsAPI(PulpAPI):
 
     def sync(self, repo_id, override_config):
         path = self.base_path % repo_id + "sync/"
-        data = {'override_config' : override_config,}
+        data = {'override_config': override_config}
         return self.server.POST(path, data)
 
     def publish(self, repo_id, distributor_id, override_config):
         path = self.base_path % repo_id + "/publish/"
-        data = {'id' : distributor_id,
-                'override_config' : override_config,}
+        data = {'id': distributor_id,
+                'override_config': override_config}
         return self.server.POST(path, data)
 
     def associate(self, repo_id, source_repo_id):
         path = self.base_path % repo_id + "/associate/"
-        data = {'source_repo_id' : source_repo_id,}
+        data = {'source_repo_id': source_repo_id}
         return self.server.POST(path, data)
+
 
 class RepositoryUnitAPI(PulpAPI):
     """
@@ -410,7 +402,7 @@ class RepositoryUnitAPI(PulpAPI):
         """
         criteria = {
             'filters': {'unit': SearchAPI.compose_filters(**kwargs)},
-            'type_ids' : kwargs.get('type_ids', None),
+            'type_ids': kwargs.get('type_ids', None),
         }
         # allow a caller with type-specific knowledge to limit the fields that
         # are retrieved. for copy purposes, we probably don't need all of the
@@ -484,9 +476,9 @@ class RepositoryUnitAPI(PulpAPI):
 
         criteria = self._generate_search_criteria(**kwargs)
         data = {
-            'source_repo_id' : source_repo_id,
-            'criteria' : criteria,
-            'override_config' : override_config,
+            'source_repo_id': source_repo_id,
+            'criteria': criteria,
+            'override_config': override_config,
         }
         path = self.COPY_PATH % destination_repo_id
         return self.server.POST(path, data)
@@ -505,7 +497,7 @@ class RepositoryUnitAPI(PulpAPI):
         :return: server response
         """
         criteria = self._generate_search_criteria(**kwargs)
-        data = {'criteria' : criteria}
+        data = {'criteria': criteria}
 
         path = self.REMOVE_PATH % repo_id
         return self.server.POST(path, data)
@@ -530,10 +522,10 @@ class RepositorySyncSchedulesAPI(PulpAPI):
     def add_schedule(self, repo_id, importer_id, schedule, override_config, failure_threshold, enabled):
         url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/' % (repo_id, importer_id)
         body = {
-            'schedule' : schedule,
-            'override_config' : override_config,
-            'failure_threshold' : failure_threshold,
-            'enabled' : enabled,
+            'schedule': schedule,
+            'override_config': override_config,
+            'failure_threshold': failure_threshold,
+            'enabled': enabled,
         }
         return self.server.POST(url, body)
 
@@ -545,15 +537,16 @@ class RepositorySyncSchedulesAPI(PulpAPI):
                         override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
         url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
         body = {
-            'schedule' : schedule,
-            'override_config' : override_config,
-            'failure_threshold' : failure_threshold,
-            'enabled' : enabled,
+            'schedule': schedule,
+            'override_config': override_config,
+            'failure_threshold': failure_threshold,
+            'enabled': enabled,
         }
 
         # Strip out anything that wasn't specified by the caller
         body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
         self.server.PUT(url, body)
+
 
 class RepositoryPublishSchedulesAPI(PulpAPI):
 
@@ -574,11 +567,11 @@ class RepositoryPublishSchedulesAPI(PulpAPI):
     def add_schedule(self, repo_id, distributor_id, schedule, override_config, failure_threshold, enabled):
         url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/' % (repo_id, distributor_id)
         body = {
-            'schedule' : schedule,
-            'override_config' : override_config,
-            'failure_threshold' : failure_threshold,
-            'enabled' : enabled,
-            }
+            'schedule': schedule,
+            'override_config': override_config,
+            'failure_threshold': failure_threshold,
+            'enabled': enabled,
+        }
         return self.server.POST(url, body)
 
     def delete_schedule(self, repo_id, distributor_id, schedule_id):
@@ -589,11 +582,11 @@ class RepositoryPublishSchedulesAPI(PulpAPI):
                         override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
         url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
         body = {
-            'schedule' : schedule,
-            'override_config' : override_config,
-            'failure_threshold' : failure_threshold,
-            'enabled' : enabled,
-            }
+            'schedule': schedule,
+            'override_config': override_config,
+            'failure_threshold': failure_threshold,
+            'enabled': enabled,
+        }
 
         # Strip out anything that wasn't specified by the caller
         body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])

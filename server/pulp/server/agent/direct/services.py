@@ -1,60 +1,69 @@
-from logging import getLogger
+from datetime import datetime
 from gettext import gettext as _
+from logging import getLogger
 
-from pulp.server.config import config
-from pulp.server.async.task_status_manager import TaskStatusManager
-from pulp.server.managers import factory as managers
-from pulp.server.agent.auth import Authenticator
-
-from gofer.messaging import Broker
-from gofer.messaging import Queue
+from gofer.messaging import Domain, Broker, Queue
 from gofer.rmi.async import ReplyConsumer, Listener
 
+from pulp.common import constants, dateutils
+from pulp.server.agent.auth import Authenticator
+from pulp.server.config import config
+from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.managers import factory as managers
 
-log = getLogger(__name__)
+
+_logger = getLogger(__name__)
 
 
-class Services:
+class Services(object):
     """
     Agent services.
-    :cvar REPLY_QUEUE: The agent RMI reply queue.
-    :type REPLY_QUEUE: str
     :cvar reply_handler: Asynchronous RMI reply listener.
     :type reply_handler: ReplyHandler
     """
 
     reply_handler = None
-    heartbeat_listener = None
-
-    REPLY_QUEUE = 'pulp.task'
 
     @staticmethod
     def init():
-        url = config.get('messaging', 'url')
-        transport = config.get('messaging', 'transport')
-        broker = Broker(url, transport=transport)
-        broker.cacert = config.get('messaging', 'cacert')
-        broker.clientcert = config.get('messaging', 'clientcert')
-        log.info(_('AMQP broker configured: %(b)s'), {'b': broker})
+        url = Services.get_url()
+        broker = Broker(url)
+        broker.ssl.ca_certificate = config.get('messaging', 'cacert')
+        broker.ssl.client_certificate = config.get('messaging', 'clientcert')
+        Domain.broker.add(broker)
+        _logger.info(_('AMQP broker configured: %(b)s'), {'b': broker})
 
-    @classmethod
-    def start(cls):
+    @staticmethod
+    def start():
+        url = Services.get_url()
+        Services.reply_handler = ReplyHandler(url)
+        Services.reply_handler.start()
+        _logger.info(_('AMQP reply handler started'))
+
+    @staticmethod
+    def get_url():
+        """
+        This constructs a gofer 2.x URL and is intended to maintain
+        configuration file backwards compatibility until pulp 3.0
+
+        :return: A gofer 2.x broker URL.
+        :rtype: str
+        """
         url = config.get('messaging', 'url')
-        transport = config.get('messaging', 'transport')
-        # asynchronous reply
-        cls.reply_handler = ReplyHandler(url, transport)
-        cls.reply_handler.start()
-        log.info(_('AMQP reply handler started'))
+        adapter = config.get('messaging', 'transport')
+        return '+'.join((adapter, url))
 
 
 class ReplyHandler(Listener):
     """
     The async RMI reply handler.
+    :cvar REPLY_QUEUE: The agent RMI reply queue.
+    :type REPLY_QUEUE: str
     :ivar consumer: The reply consumer.
     :type consumer: ReplyConsumer
     """
 
-    # --- action post-processing ---------------------------------------------
+    REPLY_QUEUE = 'pulp.task'
 
     @staticmethod
     def _bind_succeeded(action_id, call_context):
@@ -107,24 +116,22 @@ class ReplyHandler(Listener):
     # added for clarity
     _unbind_failed = _bind_failed
 
-    def __init__(self, url, transport):
+    def __init__(self, url):
         """
         :param url: The broker URL.
         :type url: str
-        :param transport: The gofer transport.
-        :type transport: str
         """
-        queue = Queue(Services.REPLY_QUEUE, transport=transport)
-        self.consumer = ReplyConsumer(queue, url=url, transport=transport, authenticator=Authenticator())
-
-    # --- agent replies ------------------------------------------------------
+        queue = Queue(ReplyHandler.REPLY_QUEUE)
+        queue.durable = True
+        queue.declare(url)
+        self.consumer = ReplyConsumer(queue, url=url, authenticator=Authenticator())
 
     def start(self):
         """
         Start the reply handler (thread)
         """
         self.consumer.start(self)
-        log.info(_('Task reply handler, started.'))
+        _logger.info(_('Task reply handler, started.'))
 
     def accepted(self, reply):
         """
@@ -133,10 +140,11 @@ class ReplyHandler(Listener):
         :param reply: A status reply object.
         :type reply: gofer.rmi.async.Accepted
         """
-        log.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
-        call_context = dict(reply.any)
+        _logger.debug(_('Task RMI (accepted): %(r)s'), {'r': reply})
+        call_context = dict(reply.data)
         task_id = call_context['task_id']
-        TaskStatusManager.set_task_accepted(task_id)
+        TaskStatus.objects(task_id=task_id, state=constants.CALL_WAITING_STATE).\
+            update_one(set__state=constants.CALL_ACCEPTED_STATE)
 
     def started(self, reply):
         """
@@ -145,10 +153,17 @@ class ReplyHandler(Listener):
         :param reply: A status reply object.
         :type reply: gofer.rmi.async.Started
         """
-        log.debug(_('Task RMI (started): %(r)s'), {'r': reply})
-        call_context = dict(reply.any)
+        _logger.debug(_('Task RMI (started): %(r)s'), {'r': reply})
+        call_context = dict(reply.data)
         task_id = call_context['task_id']
-        TaskStatusManager.set_task_started(task_id, timestamp=reply.timestamp)
+        started = reply.timestamp
+        if not started:
+            now = datetime.now(dateutils.utc_tz())
+            started = dateutils.format_iso8601_datetime(now)
+        TaskStatus.objects(task_id=task_id).update_one(set__start_time=started)
+        TaskStatus.objects(task_id=task_id, state__in=[constants.CALL_WAITING_STATE,
+                                                       constants.CALL_ACCEPTED_STATE]).\
+            update_one(set__state=constants.CALL_RUNNING_STATE)
 
     def rejected(self, reply):
         """
@@ -157,13 +172,17 @@ class ReplyHandler(Listener):
         :param reply: A rejected reply object.
         :type reply: gofer.rmi.async.Rejected
         """
-        log.warn(_('Task RMI (rejected): %(r)s'), {'r': reply})
+        _logger.warn(_('Task RMI (rejected): %(r)s'), {'r': reply})
 
-        call_context = dict(reply.any)
+        call_context = dict(reply.data)
         action = call_context.get('action')
         task_id = call_context['task_id']
-
-        TaskStatusManager.set_task_failed(task_id, timestamp=reply.timestamp)
+        finished = reply.timestamp
+        if not finished:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
@@ -179,15 +198,20 @@ class ReplyHandler(Listener):
         :param reply: A successful reply object.
         :type reply: gofer.rmi.async.Succeeded
         """
-        log.info(_('Task RMI (succeeded): %(r)s'), {'r': reply})
+        _logger.info(_('Task RMI (succeeded): %(r)s'), {'r': reply})
 
-        call_context = dict(reply.any)
+        call_context = dict(reply.data)
         action = call_context.get('action')
         task_id = call_context['task_id']
         result = dict(reply.retval)
+        finished = reply.timestamp
+        if not finished:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
 
-        TaskStatusManager.set_task_succeeded(task_id, result=result, timestamp=reply.timestamp)
-
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_FINISHED_STATE,
+                                                       set__result=result)
         if action == 'bind':
             if result['succeeded']:
                 ReplyHandler._bind_succeeded(task_id, call_context)
@@ -208,14 +232,20 @@ class ReplyHandler(Listener):
         :param reply: A failure reply object.
         :type reply: gofer.rmi.async.Failed
         """
-        log.info(_('Task RMI (failed): %(r)s'), {'r': reply})
+        _logger.info(_('Task RMI (failed): %(r)s'), {'r': reply})
 
-        call_context = dict(reply.any)
+        call_context = dict(reply.data)
         action = call_context.get('action')
         task_id = call_context['task_id']
         traceback = reply.xstate['trace']
+        finished = reply.timestamp
+        if not finished:
+            now = datetime.now(dateutils.utc_tz())
+            finished = dateutils.format_iso8601_datetime(now)
 
-        TaskStatusManager.set_task_failed(task_id, traceback=traceback, timestamp=reply.timestamp)
+        TaskStatus.objects(task_id=task_id).update_one(set__finish_time=finished,
+                                                       set__state=constants.CALL_ERROR_STATE,
+                                                       set__traceback=traceback)
 
         if action == 'bind':
             ReplyHandler._bind_failed(task_id, call_context)
@@ -231,7 +261,6 @@ class ReplyHandler(Listener):
         :param reply: A progress reply object.
         :type reply: gofer.rmi.async.Progress
         """
-        call_context = dict(reply.any)
+        call_context = dict(reply.data)
         task_id = call_context['task_id']
-        delta = {'progress_report': reply.details}
-        TaskStatusManager.update_task_status(task_id, delta)
+        TaskStatus.objects(task_id=task_id).update_one(set__progress_report=reply.details)

@@ -6,7 +6,8 @@ import sys
 
 import web
 
-from pulp.common import constants, dateutils, tags
+from pulp.common import constants, dateutils, error_codes, tags
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.auth.authorization import CREATE, DELETE, EXECUTE, READ, UPDATE
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo, RepoContentUnit
@@ -312,15 +313,25 @@ class RepoImporters(JSONController):
 
     @auth_required(CREATE)
     def POST(self, repo_id):
+        """
+        Associate an importer with a repository.
 
-        # Params (validation will occur in the manager)
+        This will validate that the repository exists and that there is an importer with the
+        importer_type_id given. However, the importer configuration validation only checks the
+        provided values against a standard set of importer configuration keys. The importer
+        specific validation is called on association, so any type specific configuration will
+        be validated later. This means the spawned task could fail with a validation error.
+
+        :param repo_id: the repository to associate the importer with
+        :type  repo_id: str
+        """
         params = self.params()
         importer_type = params.get('importer_type_id', None)
-        importer_config = params.get('importer_config', None)
+        config = params.get('importer_config', None)
 
-        if importer_type is None:
-            _logger.error('Missing importer type adding importer to repository [%s]' % repo_id)
-            raise exceptions.MissingValue(['importer_type'])
+        # This call will raise the appropriate exception
+        importer_manager = manager_factory.repo_importer_manager()
+        importer_manager.validate_importer_config(repo_id, importer_type, config)
 
         # Note: If an importer exists, it's removed, so no need to handle 409s.
         # Note: If the plugin raises an exception during initialization, let it
@@ -330,7 +341,7 @@ class RepoImporters(JSONController):
                      tags.action_tag('add_importer')]
         async_result = set_importer.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, importer_type],
-            {'repo_plugin_config': importer_config}, tags=task_tags)
+            {'repo_plugin_config': config}, tags=task_tags)
         raise exceptions.OperationPostponed(async_result)
 
 
@@ -352,8 +363,21 @@ class RepoImporter(JSONController):
         importer = importer_manager.get_importer(repo_id)
         return self.ok(importer)
 
-    @auth_required(UPDATE)
+    @auth_required(DELETE)
     def DELETE(self, repo_id, importer_id):
+        """
+        Remove an importer from a repository.
+
+        :param repo_id:     The id of the repository to remove the importer from
+        :type  repo_id:     str
+        :param importer_id: The id of the importer to remove from the given repository
+        :type  importer_id: str
+        """
+        # Raise a MissingResource exception if the repo or the importer doesn't exist
+        importer_manager = manager_factory.repo_importer_manager()
+        importer = importer_manager.get_importer(repo_id)
+        if importer['id'] != importer_id:
+            raise exceptions.MissingResource(importer_id=importer_id)
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                      tags.resource_tag(tags.RESOURCE_REPOSITORY_IMPORTER_TYPE, importer_id),
@@ -364,8 +388,15 @@ class RepoImporter(JSONController):
 
     @auth_required(UPDATE)
     def PUT(self, repo_id, importer_id):
+        # Raise a MissingResource exception if the repo or the importer doesn't exist
+        importer_manager = manager_factory.repo_importer_manager()
+        importer = importer_manager.get_importer(repo_id)
+        if importer['id'] != importer_id:
+            raise exceptions.MissingResource(importer_id=importer_id)
 
-        # Params (validation will occur in the manager)
+        if not plugin_api.is_valid_importer(importer_id):
+            raise exceptions.PulpCodedValidationException(error_code=error_codes.PLP1008)
+
         params = self.params()
         importer_config = params.get('importer_config', None)
 

@@ -33,10 +33,9 @@ class TestConsumerCapability(TestCase):
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_unregistered(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
 
         mock_agent = Mock()
@@ -51,22 +50,20 @@ class TestConsumerCapability(TestCase):
         # validation
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            url=context.url,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator,
-            transport=context.transport,
-            async=True)
+            wait=0)
 
         mock_consumer.unregistered.assert_called_with()
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_bind(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
         context.details = {'task_id': '4567'}
         context.reply_queue = 'pulp.task'
@@ -82,23 +79,21 @@ class TestConsumerCapability(TestCase):
         Consumer.bind(context, bindings, options)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            ctag=context.reply_queue,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
+            reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
-            any=context.details)
+            data=context.details)
 
         mock_consumer.bind.assert_called_with(bindings, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_unbind(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
         context.details = {'task_id': '4567'}
         context.reply_queue = 'pulp.task'
@@ -114,13 +109,12 @@ class TestConsumerCapability(TestCase):
         Consumer.unbind(context, bindings, options)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            ctag=context.reply_queue,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
+            reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
-            any=context.details)
+            data=context.details)
 
         mock_consumer.unbind.assert_called_with(bindings, options)
 
@@ -130,10 +124,9 @@ class TestContentCapability(TestCase):
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_install(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
         context.details = {'task_id': '4567'}
         context.reply_queue = 'pulp.task'
@@ -149,23 +142,21 @@ class TestContentCapability(TestCase):
         Content.install(context, units, options)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            ctag=context.reply_queue,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
+            reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
-            any=context.details)
+            data=context.details)
 
         mock_content.install.assert_called_with(units, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_update(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
         context.details = {'task_id': '4567'}
         context.reply_queue = 'pulp.task'
@@ -181,23 +172,21 @@ class TestContentCapability(TestCase):
         Content.update(context, units, options)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            ctag=context.reply_queue,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
+            reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
-            any=context.details)
+            data=context.details)
 
         mock_content.update.assert_called_with(units, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_uninstall(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
         context.details = {'task_id': '4567'}
         context.reply_queue = 'pulp.task'
@@ -213,13 +202,12 @@ class TestContentCapability(TestCase):
         Content.uninstall(context, units, options)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            ctag=context.reply_queue,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
+            reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
-            any=context.details)
+            data=context.details)
 
         mock_content.uninstall.assert_called_with(units, options)
 
@@ -229,10 +217,9 @@ class TestProfileCapability(TestCase):
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_send(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.secret = 'test-secret'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
 
         mock_agent = Mock()
@@ -243,9 +230,8 @@ class TestProfileCapability(TestCase):
         Profile.send(context)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
             secret=context.secret,
             authenticator=context.authenticator)
 
@@ -257,9 +243,8 @@ class TestAdminCapability(TestCase):
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_send(self, mock_gofer_agent):
         context = Mock()
-        context.agent_id = '123'
+        context.route = '123'
         context.url = 'http://broker.com'
-        context.transport = 'qpid'
         context.authenticator = Mock()
 
         task_id = '5678'
@@ -274,10 +259,9 @@ class TestAdminCapability(TestCase):
         agent.cancel(context, task_id)
 
         mock_gofer_agent.assert_called_with(
-            context.agent_id,
-            url=context.url,
-            transport=context.transport,
+            context.url,
+            context.route,
             authenticator=context.authenticator,
-            async=True)
+            wait=0)
 
         mock_admin.cancel.assert_called_with(criteria=criteria)

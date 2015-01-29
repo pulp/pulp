@@ -3,6 +3,8 @@ This module contains management functions for the models found in the
 pulp.server.db.model.resources module.
 """
 
+from pulp.common.constants import SCHEDULER_WORKER_NAME
+from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 from pulp.server.db.model import criteria, resources
 from pulp.server.exceptions import NoWorkers
 
@@ -46,6 +48,18 @@ def get_worker_for_reservation(resource_id):
         raise NoWorkers()
 
 
+def _is_worker(worker_name):
+    """
+    Strip out workers that should never be assigned work. We need to check
+    via "startswith()" since we do not know which host the worker is running on.
+    """
+
+    if worker_name.startswith(SCHEDULER_WORKER_NAME) or \
+       worker_name.startswith(RESOURCE_MANAGER_QUEUE):
+        return False
+    return True
+
+
 def get_unreserved_worker():
     """
     Return the Worker instance that has no reserved_resource entries associated with it. If there
@@ -56,13 +70,17 @@ def get_unreserved_worker():
     :returns:          The Worker instance that has no reserved_resource entries associated with it.
     :rtype:            pulp.server.db.model.resources.Worker
     """
+
     # Build a mapping of queue names to Worker objects
     workers_dict = dict((worker['name'], worker) for worker in filter_workers(criteria.Criteria()))
     worker_names = [name for name in workers_dict.keys()]
     reserved_names = [r['worker_name'] for r in resources.ReservedResource.get_collection().find()]
 
-    # Find an unreserved worker using set differences of the names
-    unreserved_workers = set(worker_names) - set(reserved_names)
+    # Find an unreserved worker using set differences of the names, and filter
+    # out workers that should not be assigned work.
+    # NB: this is a little messy but set comprehensions are in python 2.7+
+    unreserved_workers = set(filter(_is_worker, worker_names)) - set(reserved_names)
+
     try:
         return workers_dict[unreserved_workers.pop()]
     except KeyError:

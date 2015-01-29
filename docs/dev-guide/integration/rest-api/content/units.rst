@@ -1,5 +1,5 @@
-Retrieval
-=========
+Content Units
+=============
 
 Retrieve a Single Unit
 ----------------------
@@ -23,14 +23,64 @@ Returns information about a single content unit.
       "_content_type_id": "type-2",
       "_last_updated": "2013-09-05T17:49:41Z",
       "_storage_path": "/var/lib/pulp/content/type-2/A",
+      "pulp_user_metadata": {},
       "key-2a": "A",
       "key-2b": "B",
     }
 
-.. note::
- In the above example, the fields that begin with ``_`` are consistent across content
- types. All other data, such as the example data "key-2a", is contingent on the type
- of unit being retrieved.
+
+.. _get-user-metadata:
+
+Retrieve a Single Unit's User Metadata
+--------------------------------------
+
+Returns the pulp_user_metadata field from a single content unit.
+
+| :method:`get`
+| :path:`/v2/content/units/<content_type>/<unit_id>/pulp_user_metadata/`
+| :permission:`read`
+| :response_list:`_`
+
+* :response_code:`200,if the unit is found`
+* :response_code:`404,if there is no unit at the given id`
+
+| :return:`the Unit's pulp_user_metadata field`
+
+:sample_response:`200` ::
+
+    {
+      "user_key_1": "A",
+      "user_key_2": "B"
+    }
+
+
+.. _set-user-metadata:
+
+Set Single Unit's User Metadata
+-------------------------------
+
+Sets the pulp_user_metadata field on a single content unit to the provided values.
+
+| :method:`put`
+| :path:`/v2/content/units/<content_type>/<unit_id>/pulp_user_metadata/`
+| :permission:`update`
+| :response_list:`_`
+
+* :response_code:`200,if the unit is found`
+* :response_code:`404,if there is no unit at the given id`
+
+| :return:`null`
+
+:sample_request:`_` ::
+
+ {
+    "user_key_1": "A",
+    "user_key_2": "B"
+ }
+
+:sample_response:`200` ::
+
+    null
 
 
 Search for Units
@@ -64,6 +114,7 @@ case when the content type specified in the URL does not exist.
         "key-2a": "A",
         "_ns": "units_type-2",
         "_id": "046ca98d-5977-400d-b4de-a5bb57c8b7e2",
+        "pulp_user_metadata": {},
         "key-2b": "A",
         "_content_type_id": "type-2",
         "repository_memberships": ["repo1", "repo2"]
@@ -72,6 +123,7 @@ case when the content type specified in the URL does not exist.
         "key-2a": "B",
         "_ns": "units_type-2",
         "_id": "2cc5b44a-c5d7-4751-9505-c54ad4f43497",
+        "pulp_user_metadata": {},
         "key-2b": "C",
         "_content_type_id": "type-2",
         "repository_memberships": ["repo1"]
@@ -108,6 +160,7 @@ filter expressions may not be serializable as query parameters.
         "key-2a": "A",
         "_ns": "units_type-2",
         "_id": "046ca98d-5977-400d-b4de-a5bb57c8b7e2",
+        "pulp_user_metadata": {},
         "key-2b": "A",
         "_content_type_id": "type-2",
         "repository_memberships": ["repo1", "repo2"]
@@ -116,6 +169,7 @@ filter expressions may not be serializable as query parameters.
         "key-2a": "B",
         "_ns": "units_type-2",
         "_id": "2cc5b44a-c5d7-4751-9505-c54ad4f43497",
+        "pulp_user_metadata": {},
         "key-2b": "C",
         "_content_type_id": "type-2",
         "repository_memberships": ["repo1"]

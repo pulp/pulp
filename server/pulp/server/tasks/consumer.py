@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import celery
 
 from pulp.server.async.tasks import TaskResult, Task
@@ -51,7 +38,7 @@ def bind(consumer_id, repo_id, distributor_id, notify_agent, binding_config, age
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.bind(consumer_id, repo_id, distributor_id, agent_options)
         # we only want the task's ID, not the full task
-        response.spawned_tasks.append({'task_id': task.get('task_id')})
+        response.spawned_tasks.append({'task_id': task['task_id']})
 
     return response
 
@@ -60,7 +47,8 @@ def unbind(consumer_id, repo_id, distributor_id, options):
     """
     Unbind a  consumer.
     The itinerary is:
-      1. Unbind the consumer from the repo on the server (mark the binding on the server as deleted).
+      1. Unbind the consumer from the repo on the server (mark the binding on the server as
+         deleted.)
       2. Request that the consumer (agent) perform the unbind.
       3. Delete the binding on the server.
 
@@ -90,7 +78,7 @@ def unbind(consumer_id, repo_id, distributor_id, options):
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
         # we only want the task's ID, not the full task
-        response.spawned_tasks.append({'task_id': task.get('task_id')})
+        response.spawned_tasks.append({'task_id': task['task_id']})
     else:
         # Since there was no agent notification, perform the delete immediately
         bind_manager.delete(consumer_id, repo_id, distributor_id, True)
@@ -131,7 +119,7 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
         agent_manager = managers.consumer_agent_manager()
         task = agent_manager.unbind(consumer_id, repo_id, distributor_id, options)
         # we only want the task's ID, not the full task
-        response.spawned_tasks.append({'task_id': task.get('task_id')})
+        response.spawned_tasks.append({'task_id': task['task_id']})
 
     return response
 

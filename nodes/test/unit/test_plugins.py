@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import sys
 import tempfile
@@ -19,6 +6,7 @@ import random
 import tarfile
 
 from copy import deepcopy
+from unittest import TestCase
 
 from mock import Mock, patch
 from base import WebTest
@@ -28,7 +16,8 @@ from nectar.config import DownloaderConfig
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/mocks")
 
-from pulp_node.distributors.http.distributor import NodesHttpDistributor, entry_point as dist_entry_point
+from pulp_node.distributors.http.distributor import (NodesHttpDistributor,
+                                                     entry_point as dist_entry_point)
 from pulp_node.importers.http.importer import NodesHttpImporter, entry_point as imp_entry_point
 from pulp_node.profilers.nodes import NodeProfiler, entry_point as profiler_entry_point
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
@@ -48,7 +37,7 @@ from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.common.plugins import importer_constants
 from pulp.common.config import Config
 from pulp.server.managers import factory as managers
-from pulp.server.content.sources import Request as DownloadRequest
+from pulp.server.content.sources.model import Request as DownloadRequest
 from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp_node.manifest import Manifest, RemoteManifest, MANIFEST_FILE_NAME, UNITS_FILE_NAME
@@ -76,8 +65,6 @@ REPO_DESCRIPTION = 'full of goodness'
 REPO_NOTES = {'the answer to everything': 42}
 REPO_SCRATCHPAD = {'a': 1, 'b': 2}
 
-# --- testing mock classes ---------------------------------------------------
-
 
 class Repository(object):
 
@@ -91,9 +78,9 @@ class FakeDistributor(object):
     @classmethod
     def metadata(cls):
         return {
-            'id' : FAKE_DISTRIBUTOR,
-            'display_name' : 'Fake Distributor',
-            'types' : ['node',]
+            'id': FAKE_DISTRIBUTOR,
+            'display_name': 'Fake Distributor',
+            'types': ['node']
         }
 
     def validate_config(self, *unused):
@@ -137,6 +124,7 @@ class BadDownloadRequest(DownloadRequest):
     def __init__(self, *args, **kwargs):
         DownloadRequest.__init__(self, *args, **kwargs)
         self.url = 'http:/NOWHERE/FAIL_ME_%f' % random.random()
+
 
 class AgentConduit(Conduit):
 
@@ -272,14 +260,11 @@ class PluginTestBase(WebTest):
 
     def dist_conf(self):
         return {
-            'protocol':'file',
-            'http':{'alias':self.alias},
-            'https':{'alias':self.alias},
-            'file':{'alias':self.alias},
+            'protocol': 'file',
+            'http': {'alias': self.alias},
+            'https': {'alias': self.alias},
+            'file': {'alias': self.alias},
         }
-
-
-# --- handler tests ------------------------------------------------
 
 
 class AgentHandlerTest(PluginTestBase):
@@ -320,32 +305,88 @@ class AgentHandlerTest(PluginTestBase):
 # --- pulp plugin tests --------------------------------------------
 
 
-class TestProfiler(PluginTestBase):
+class TestProfiler(TestCase):
 
     def test_entry_point(self):
         _class, conf = profiler_entry_point()
         plugin = _class()
+        self.assertEqual(conf, {})
         self.assertTrue(isinstance(plugin, NodeProfiler))
 
+    @patch('pulp_node.profilers.nodes._')
+    def test_metadata(self, gettext):
+        self.assertEqual(
+            NodeProfiler.metadata(),
+            {
+                'id': constants.PROFILER_ID,
+                'display_name': gettext.return_value,
+                'types': [constants.NODE_SCOPE, constants.REPOSITORY_SCOPE]
+            })
+
+    @patch('__builtin__.open')
     @patch('pulp_node.profilers.nodes.read_config')
-    def test_update_units(self, mock_read_config):
-        # Setup
-        mock_read_config.return_value = self.node_configuration()
-        # Test
-        host = 'abc'
-        port = 443
-        units = [1, 2, 3]
+    @patch('pulp_node.profilers.nodes.pulp_conf')
+    def test_inject_parent_settings(self, _pulp_conf, _read_config, _open):
+        host = 'test-host'
+        cert_path = '/path/cert'
+
+        _pulp_conf.get.return_value = host
+        _read_config.return_value.main = Mock(node_certificate=cert_path)
+
+        fp = Mock()
+        fp.__enter__ = Mock(return_value=fp)
+        fp.__exit__ = Mock()
+        _open.return_value = fp
+
+        # test
         options = {}
-        p = NodeProfiler()
-        pulp_conf.set('server', 'server_name', host)
-        _units = p.update_units(None, units, options, None, None)
-        # Verify
-        self.assertTrue(constants.PARENT_SETTINGS in options)
+        NodeProfiler._inject_parent_settings(options)
+
+        # validation
+        _pulp_conf.get.assert_called_once_with('server', 'server_name')
+        _read_config.assert_called_once_with()
+        _open.assert_called_once_with(cert_path)
         settings = options[constants.PARENT_SETTINGS]
         self.assertEqual(settings[constants.HOST], host)
-        self.assertEqual(settings[constants.PORT], port)
-        self.assertEqual(settings[constants.NODE_CERTIFICATE], NODE_CERTIFICATE)
-        self.assertEqual(units, _units)
+        self.assertEqual(settings[constants.PORT], 443)
+        self.assertEqual(
+            settings[constants.NODE_CERTIFICATE],
+            _open.return_value.read.return_value)
+
+    @patch('pulp_node.profilers.nodes.managers')
+    def test_inject_strategy(self, managers):
+        consumer_id = 'test-consumer'
+        strategy = 'test-strategy'
+        notes = {constants.STRATEGY_NOTE_KEY: strategy}
+        manager = Mock()
+        manager.get_consumer.return_value = {'notes': notes}
+        managers.consumer_manager.return_value = manager
+
+        # test
+        options = {}
+        NodeProfiler._inject_strategy(consumer_id, options)
+
+        # validation
+        manager.get_consumer.assert_called_once_with(consumer_id)
+        self.assertEqual(options[constants.STRATEGY_KEYWORD], strategy)
+
+    def test_update_units(self):
+        consumer = Mock(id='123')
+        units = [1, 2, 3]
+        options = {}
+        config = Mock()
+        conduit = Mock()
+
+        # test
+        profiler = NodeProfiler()
+        profiler._inject_parent_settings = Mock()
+        profiler._inject_strategy = Mock()
+
+        # validation
+        _units = profiler.update_units(consumer, units, options, config, conduit)
+        profiler._inject_parent_settings.assert_called_once_with(options)
+        profiler._inject_strategy.assert_called_once_with(consumer.id, options)
+        self.assertEqual(_units, units)
 
 
 class TestDistributor(PluginTestBase):
@@ -577,7 +618,6 @@ class ImporterTest(PluginTestBase):
         self.assertFalse(report[0])
         self.assertTrue(len(report[1]), 1)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -623,7 +663,6 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
     def test_import_cached_manifest_matched(self, mock_fetch, *unused):
@@ -669,7 +708,6 @@ class ImporterTest(PluginTestBase):
         self.assertEquals(len(units), self.NUM_UNITS)
         self.assertFalse(mock_fetch.called)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     def test_import_cached_manifest_missing_units(self, *unused):
         # Setup
@@ -711,7 +749,6 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     def test_import_cached_manifest_units_invalid(self, *unused):
         # Setup
@@ -755,7 +792,6 @@ class ImporterTest(PluginTestBase):
         units = conduit.get_units()
         self.assertEquals(len(units), self.NUM_UNITS)
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -800,7 +836,6 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)
@@ -851,7 +886,6 @@ class ImporterTest(PluginTestBase):
         mock_importer_config_to_nectar_config = mocks[0]
         mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
-    @patch('pulp.server.async.task_status_manager.TaskStatusManager.update_task_status')
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
            wraps=importer_config_to_nectar_config)

@@ -11,6 +11,24 @@ from pulp.devel.test_runner import run_tests
 PROJECT_DIR = os.path.dirname(__file__)
 subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
+# These paths should all pass PEP-8 checks
+paths_to_check = [
+    'server/pulp/plugins/file/',
+    'server/pulp/plugins/loader/',
+    'server/pulp/plugins/types/',
+    'server/pulp/server/agent/',
+    'server/pulp/server/async/',
+    'server/pulp/server/auth/',
+    'server/pulp/server/common/',
+    'server/pulp/server/content/',
+    'server/pulp/server/db/',
+    'server/pulp/server/event/',
+    'server/pulp/server/maintenance/',
+    'server/pulp/server/managers/content/',
+    'server/pulp/server/managers/consumer/',
+    'server/pulp/server/managers/repo/',
+    'server/pulp/server/tasks/',
+    'server/test/unit/server/']
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
@@ -39,4 +57,7 @@ TESTS_NON_RHEL5 = [
 dir_safe_all_platforms = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_ALL_PLATFORMS]
 dir_safe_non_rhel5 = [os.path.join(os.path.dirname(__file__), x) for x in TESTS_NON_RHEL5]
 
-sys.exit(run_tests(PACKAGES, dir_safe_all_platforms, dir_safe_non_rhel5))
+tests_exit_code = run_tests(PACKAGES, dir_safe_all_platforms, dir_safe_non_rhel5,
+                            flake8_paths=paths_to_check)
+
+sys.exit(tests_exit_code)

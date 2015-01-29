@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Forwards events to a HTTP call. The configuration used by this notifier
 is as follows:
@@ -29,13 +16,11 @@ import threading
 
 from pulp.server.compat import json, json_util
 
-# -- constants ----------------------------------------------------------------
 
 TYPE_ID = 'http'
 
-LOG = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
-# -- framework hook -----------------------------------------------------------
 
 def handle_event(notifier_config, event):
     # fire the actual http push function off in a separate thread to keep
@@ -43,7 +28,7 @@ def handle_event(notifier_config, event):
 
     data = event.data()
 
-    LOG.info(data)
+    _logger.info(data)
 
     body = json.dumps(data, default=json_util.default)
 
@@ -51,7 +36,6 @@ def handle_event(notifier_config, event):
     thread.setDaemon(True)
     thread.start()
 
-# -- private ------------------------------------------------------------------
 
 def _send_post(notifier_config, body):
 
@@ -61,7 +45,7 @@ def _send_post(notifier_config, body):
 
     # Parse the URL for the pieces we need
     if 'url' not in notifier_config or not notifier_config['url']:
-        LOG.warn('HTTP notifier configured without a URL; cannot fire event')
+        _logger.warn('HTTP notifier configured without a URL; cannot fire event')
         return
 
     url = notifier_config['url']
@@ -69,7 +53,7 @@ def _send_post(notifier_config, body):
     try:
         scheme, empty, server, path = url.split('/', 3)
     except ValueError:
-        LOG.warn('Improperly configured post_sync_url: %(u)s' % {'u': url})
+        _logger.warn('Improperly configured post_sync_url: %(u)s' % {'u': url})
         return
 
     connection = _create_connection(scheme, server)
@@ -84,8 +68,9 @@ def _send_post(notifier_config, body):
     response = connection.getresponse()
     if response.status != httplib.OK:
         error_msg = response.read()
-        LOG.warn('Error response from HTTP notifier: %(e)s' % {'e': error_msg})
+        _logger.warn('Error response from HTTP notifier: %(e)s' % {'e': error_msg})
     connection.close()
+
 
 def _create_connection(scheme, server):
     if scheme.startswith('https'):

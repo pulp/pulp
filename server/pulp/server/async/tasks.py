@@ -9,11 +9,11 @@ from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
 from celery.signals import worker_init
+from mongoengine.queryset import DoesNotExist
 
 from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
-from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.exceptions import PulpException, MissingResource
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
@@ -23,7 +23,7 @@ from pulp.server.managers import resources
 
 
 controller = control.Control(app=celery)
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @task(acks_late=True)
@@ -104,7 +104,7 @@ def _delete_worker(name, normal_shutdown=False):
     if normal_shutdown is False:
         msg = _('The worker named %(name)s is missing. Canceling the tasks in its queue.')
         msg = msg % {'name': name}
-        logger.error(msg)
+        _logger.error(msg)
 
     # Delete the worker document
     worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
@@ -117,11 +117,9 @@ def _delete_worker(name, normal_shutdown=False):
 
     # Cancel all of the tasks that were assigned to this worker's queue
     worker = Worker.from_bson({'_id': name})
-    for task in TaskStatusManager.find_by_criteria(
-            Criteria(
-                filters={'worker_name': worker.name,
-                         'state': {'$in': constants.CALL_INCOMPLETE_STATES}})):
-        cancel(task['task_id'])
+    for task_status in TaskStatus.objects(worker_name=worker.name,
+                                          state__in=constants.CALL_INCOMPLETE_STATES):
+        cancel(task_status['task_id'])
 
 
 @task
@@ -255,7 +253,7 @@ class ReservedTaskMixin(object):
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
 
         _queue_reserved_task.apply_async(args=[task_name, inner_task_id, resource_id, args, kwargs],
                                          queue=RESOURCE_MANAGER_QUEUE)
@@ -297,7 +295,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         # To avoid the race condition where __call__ method below is called before
         # this change is propagated to all db nodes, using an 'upsert' here and setting
         # the task state to 'waiting' only on an insert.
-        task_status.save(fields_to_set_on_insert=['state', 'start_time'])
+        task_status.save_with_set_on_insert(fields_to_set_on_insert=['state', 'start_time'])
         return async_result
 
     def __call__(self, *args, **kwargs):
@@ -306,9 +304,12 @@ class Task(CeleryTask, ReservedTaskMixin):
         for task state tracking of Pulp tasks.
         """
         # Check task status and skip running the task if task state is 'canceled'.
-        task_status = TaskStatusManager.find_by_task_id(task_id=self.request.id)
+        try:
+            task_status = TaskStatus.objects.get(task_id=self.request.id)
+        except DoesNotExist:
+            task_status = None
         if task_status and task_status['state'] == constants.CALL_CANCELED_STATE:
-            logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
+            _logger.debug("Task cancel received for task-id : [%s]" % self.request.id)
             return
         # Update start_time and set the task state to 'running' for asynchronous tasks.
         # Skip updating status for eagerly executed tasks, since we don't want to track
@@ -318,13 +319,10 @@ class Task(CeleryTask, ReservedTaskMixin):
             start_time = dateutils.format_iso8601_datetime(now)
             # Using 'upsert' to avoid a possible race condition described in the apply_async method
             # above.
-            TaskStatus.get_collection().update(
-                {'task_id': self.request.id},
-                {'$set': {'state': constants.CALL_RUNNING_STATE,
-                          'start_time': start_time}},
-                upsert=True)
+            TaskStatus.objects(task_id=self.request.id).update_one(
+                set__state=constants.CALL_RUNNING_STATE, set__start_time=start_time, upsert=True)
         # Run the actual task
-        logger.debug("Running task : [%s]" % self.request.id)
+        _logger.debug("Running task : [%s]" % self.request.id)
         return super(Task, self).__call__(*args, **kwargs)
 
     def on_success(self, retval, task_id, args, kwargs):
@@ -339,22 +337,23 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param args:    Original arguments for the executed task.
         :param kwargs:  Original keyword arguments for the executed task.
         """
-        logger.debug("Task successful : [%s]" % task_id)
+        _logger.debug("Task successful : [%s]" % task_id)
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            delta = {'finish_time': finish_time,
-                     'result': retval}
-            task_status = TaskStatusManager.find_by_task_id(task_id)
+            task_status = TaskStatus.objects.get(task_id=task_id)
+            task_status['finish_time'] = finish_time
+            task_status['result'] = retval
+
             # Only set the state to finished if it's not already in a complete state. This is
             # important for when the task has been canceled, so we don't move the task from canceled
             # to finished.
             if task_status['state'] not in constants.CALL_COMPLETE_STATES:
-                delta['state'] = constants.CALL_FINISHED_STATE
+                task_status['state'] = constants.CALL_FINISHED_STATE
             if isinstance(retval, TaskResult):
-                delta['result'] = retval.return_value
+                task_status['result'] = retval.return_value
                 if retval.error:
-                    delta['error'] = retval.error.to_dict()
+                    task_status['error'] = retval.error.to_dict()
                 if retval.spawned_tasks:
                     task_list = []
                     for spawned_task in retval.spawned_tasks:
@@ -362,12 +361,12 @@ class Task(CeleryTask, ReservedTaskMixin):
                             task_list.append(spawned_task.task_id)
                         elif isinstance(spawned_task, dict):
                             task_list.append(spawned_task['task_id'])
-                    delta['spawned_tasks'] = task_list
+                    task_status['spawned_tasks'] = task_list
             if isinstance(retval, AsyncResult):
-                delta['spawned_tasks'] = [retval.task_id, ]
-                delta['result'] = None
+                task_status['spawned_tasks'] = [retval.task_id, ]
+                task_status['result'] = None
 
-            TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+            task_status.save()
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
@@ -381,18 +380,19 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
-        logger.debug("Task failed : [%s]" % task_id)
+        _logger.debug("Task failed : [%s]" % task_id)
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
-            delta = {'state': constants.CALL_ERROR_STATE,
-                     'finish_time': finish_time,
-                     'traceback': einfo.traceback}
+            task_status = TaskStatus.objects.get(task_id=task_id)
+            task_status['state'] = constants.CALL_ERROR_STATE
+            task_status['finish_time'] = finish_time
+            task_status['traceback'] = einfo.traceback
             if not isinstance(exc, PulpException):
                 exc = PulpException(str(exc))
-            delta['error'] = exc.to_dict()
+            task_status['error'] = exc.to_dict()
 
-            TaskStatusManager.update_task_status(task_id=task_id, delta=delta)
+            task_status.save()
 
 
 def cancel(task_id):
@@ -406,21 +406,21 @@ def cancel(task_id):
     :raises MissingResource: if a task with given task_id does not exist
     :raises PulpCodedException: if given task is already in a complete state
     """
-    task_status = TaskStatusManager.find_by_task_id(task_id)
-    if task_status is None:
+    try:
+        task_status = TaskStatus.objects.get(task_id=task_id)
+    except DoesNotExist:
         raise MissingResource(task_id)
     if task_status['state'] in constants.CALL_COMPLETE_STATES:
         # If the task is already done, just stop
         msg = _('Task [%(task_id)s] already in a completed state: %(state)s')
-        logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
+        _logger.info(msg % {'task_id': task_id, 'state': task_status['state']})
         return
     controller.revoke(task_id, terminate=True)
-    TaskStatus.get_collection().find_and_modify(
-        {'task_id': task_id, 'state': {'$nin': constants.CALL_COMPLETE_STATES}},
-        {'$set': {'state': constants.CALL_CANCELED_STATE}})
+    TaskStatus.objects(task_id=task_id, state__nin=constants.CALL_COMPLETE_STATES).\
+        update_one(set__state=constants.CALL_CANCELED_STATE)
     msg = _('Task canceled: %(task_id)s.')
     msg = msg % {'task_id': task_id}
-    logger.info(msg)
+    _logger.info(msg)
 
 
 def get_current_task_id():

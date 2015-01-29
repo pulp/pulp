@@ -18,3 +18,4 @@ PYTHONIOENCODING="UTF-8"
 # Please do not edit any of the settings below this mark in this file!
 ######################################################################
 CELERYBEAT_SCHEDULER="pulp.server.async.scheduler.Scheduler"
+CELERYBEAT_APP="pulp.server.async.celery_instance.celery"

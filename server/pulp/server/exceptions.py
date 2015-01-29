@@ -1,7 +1,7 @@
-import httplib
 from datetime import timedelta
 from gettext import gettext as _
 from pprint import pformat
+import httplib
 
 from pulp.common import error_codes, auth_utils
 
@@ -87,7 +87,7 @@ class PulpCodedException(PulpException):
         # Validate that the coded exception was raised with all the error_data fields that
         # are required
         for key in self.error_code.required_fields:
-            if not key in self.error_data:
+            if key not in self.error_data:
                 raise PulpCodedException(error_codes.PLP0008, code=self.error_code.code,
                                          field=key)
 
@@ -119,7 +119,8 @@ class PulpCodedAuthenticationException(PulpCodedException):
     Class for coded authentication exceptions. Raising this exception results in a
     401 Unauthorized code being returned.
 
-    :param error_code: The particular error code that should be used for this authentication exception
+    :param error_code: The particular error code that should be used for this authentication
+                       exception
     :type  error_code: pulp.common.error_codes.Error
     """
 

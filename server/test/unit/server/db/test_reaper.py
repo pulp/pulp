@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 """
 This module contains tests for the pulp.server.db.reaper module.
 """
@@ -46,14 +34,17 @@ class TestReaperCollectionConfig(unittest.TestCase):
         # Also check the values.
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.ArchivedCall], 'archived_calls')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.TaskStatus], 'task_status_history')
-        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[consumer.ConsumerHistoryEvent], 'consumer_history')
-        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoSyncResult], 'repo_sync_history')
+        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[consumer.ConsumerHistoryEvent],
+                         'consumer_history')
+        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoSyncResult],
+                         'repo_sync_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoPublishResult],
                          'repo_publish_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repo_group.RepoGroupPublishResult],
                          'repo_group_publish_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[celery_result.CeleryResult],
                          'task_result_history')
+
 
 class TestCreateExpiredObjectId(unittest.TestCase):
     """

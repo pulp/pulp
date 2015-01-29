@@ -95,6 +95,12 @@ Repositories
 
     $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm
 
+.. note::
+   EPEL requires users of RHEL 6.x to enable the ``optional`` repository,
+   and users of RHEL 7.x to additionally enable the ``extras`` repository.
+   Details are described
+   `here <https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F>`_.
+
 3. For RHEL 5 systems, subscribe to the following RHN channels:
 
  * MRG Messaging v. 1
@@ -363,7 +369,7 @@ specific consumer dependencies with one command by running:
 
      For RabbitMQ installations, install the Pulp consumer client and agent packages without any
      Qpid specific dependencies using ``sudo yum groupinstall pulp-consumer``. You may need to
-     install additional RabbitMQ dependencies manually including the ``python-gofer-amqplib``
+     install additional RabbitMQ dependencies manually including the ``python-gofer-amqp``
      package.
 
 
@@ -478,7 +484,7 @@ themselves outside of Pulp, which is why this setting should not be used.
 
 .. warning::
 
-   The Pulp team plans to deprecate the ``capath``, ``cakey``, and ``ssl_ca_certificate`` settings.
+   The Pulp team plans to deprecate the ``cacert``, ``cakey``, and ``ssl_ca_certificate`` settings.
    It is best to avoid altering these settings from their defaults, as described above. See
    `1123509`_ and `1165403`_.
 

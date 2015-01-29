@@ -2,6 +2,34 @@
 Pulp 2.4 Release Notes
 ======================
 
+Pulp 2.4.4
+==========
+
+This is a minor bugfix release that contains a small patch to support the fix for
+`#1165355 <https://bugzilla.redhat.com/show_bug.cgi?id=1165355>`_.
+
+To upgrade, shut down all Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl stop $s; done;
+
+Next, update the packages::
+
+    $ sudo yum update
+
+Next, run ``pulp-manage-db``::
+
+    $ sudo -u apache pulp-manage-db
+
+And lastly, restart the Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl start $s; done;
+
+
+.. note::
+
+   If you are using Upstart instead of systemd, you should use service $s {stop,start} in the lines
+   above.
+
 Pulp 2.4.3
 ==========
 
@@ -284,15 +312,15 @@ this by running the following commands on the broker machine:
     $ sudo yum update qpid-cpp-server
     $ sudo yum install qpid-cpp-server-store
 
-   .. note::
-      In environments that use Qpid, the ``qpid-cpp-server-store`` package provides durability, a
-      feature that saves broker state if the broker is restarted. This is a required feature for
-      the correct operation of Pulp. Qpid provides a higher performance durability package named
-      ``qpid-cpp-server-linearstore`` which can be used instead of ``qpid-cpp-server-store``, but
-      may not be available on all versions of Qpid. If ``qpid-cpp-server-linearstore`` is available
-      in your environment, consider uninstalling ``qpid-cpp-server-store`` and installing
-      ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
-      this package, you will need to restart the Qpid broker to enable the durability feature.
+.. note::
+   In environments that use Qpid, the ``qpid-cpp-server-store`` package provides durability, a
+   feature that saves broker state if the broker is restarted. This is a required feature for
+   the correct operation of Pulp. Qpid provides a higher performance durability package named
+   ``qpid-cpp-server-linearstore`` which can be used instead of ``qpid-cpp-server-store``, but
+   may not be available on all versions of Qpid. If ``qpid-cpp-server-linearstore`` is available
+   in your environment, consider uninstalling ``qpid-cpp-server-store`` and installing
+   ``qpid-cpp-server-linearstore`` instead for improved broker performance. After installing
+   this package, you will need to restart the Qpid broker to enable the durability feature.
 
 To upgrade to the new Pulp release from version 2.3.x use yum to install the latest RPMs from the
 Pulp repository. To do this you can run:

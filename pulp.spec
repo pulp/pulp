@@ -29,7 +29,7 @@
 
 Name: pulp
 Version: 2.6.0
-Release: 0.1.alpha%{?dist}
+Release: 0.5.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -55,7 +55,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %setup -q
 
 %build
-for directory in agent bindings client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common devel
 do
     pushd $directory
     %{__python} setup.py build
@@ -96,11 +96,11 @@ make man SPHINXBUILD=sphinx-1.0-build
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 19
 make man
 %endif
-popd docs
+popd
 
 %install
 rm -rf %{buildroot}
-for directory in agent bindings client_consumer client_lib common
+for directory in agent bindings client_consumer client_lib common devel
 do
     pushd $directory
     %{__python} setup.py install -O1 --skip-build --root %{buildroot}
@@ -124,7 +124,6 @@ mkdir -p %{buildroot}/%{_usr}/lib/%{name}/consumer/extensions
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/agent/handlers
 mkdir -p %{buildroot}/%{_var}/log/%{name}/
-mkdir -p %{buildroot}/%{_libdir}/gofer/plugins
 mkdir -p %{buildroot}/%{_bindir}
 %if 0%{?rhel} >= 6 || 0%{?fedora} >= 19
 mkdir -p %{buildroot}/%{_mandir}/man1
@@ -236,9 +235,7 @@ cp client_consumer/etc/bash_completion.d/pulp-consumer %{buildroot}/%{_sysconfdi
 %endif
 
 # Agent
-rm -rf %{buildroot}/%{python_sitelib}/%{name}/agent/gofer
 cp agent/etc/gofer/plugins/pulpplugin.conf %{buildroot}/%{_sysconfdir}/gofer/plugins
-cp -R agent/pulp/agent/gofer/pulpplugin.py %{buildroot}/%{_libdir}/gofer/plugins
 
 # Ghost
 touch %{buildroot}/%{_sysconfdir}/pki/%{name}/consumer/consumer-cert.pem
@@ -280,8 +277,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 1.4.0
-Requires: python-gofer-qpid >= 1.4.0
+Requires: python-gofer >= 2.3
+Requires: python-gofer-qpid >= 2.3
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -328,9 +325,9 @@ Pulp provides replication, access, and accounting for software repositories.
 %if %{pulp_systemd} == 0
 # Install the init scripts
 %defattr(755,root,root,-)
-%config %{_initddir}/pulp_celerybeat
-%config %{_initddir}/pulp_workers
-%config %{_initddir}/pulp_resource_manager
+%{_initddir}/pulp_celerybeat
+%{_initddir}/pulp_workers
+%{_initddir}/pulp_resource_manager
 %else
 # Install the systemd unit files
 %defattr(-,root,root,-)
@@ -407,6 +404,24 @@ A collection of components that are common between the pulp server and client.
 %{python_sitelib}/%{name}/__init__.*
 %{python_sitelib}/%{name}/common/
 %{python_sitelib}/pulp_common*.egg-info
+%doc README LICENSE COPYRIGHT
+
+
+# ---- Devel ------------------------------------------------------------------
+
+%package -n python-pulp-devel
+Summary: Pulp devel python packages
+Group: Development/Languages
+
+%description -n python-pulp-devel
+A collection of tools used for developing & testing Pulp plugins
+
+%files -n python-pulp-devel
+%defattr(-,root,root,-)
+%dir %{python_sitelib}/%{name}
+%{python_sitelib}/%{name}/__init__.*
+%{python_sitelib}/%{name}/devel/
+%{python_sitelib}/pulp_devel*.egg-info
 %doc README LICENSE COPYRIGHT
 
 
@@ -507,6 +522,7 @@ synching, and to kick off remote actions on consumers.
 %config(noreplace) %{_sysconfdir}/%{name}/admin/admin.conf
 %{_bindir}/%{name}-admin
 %doc README LICENSE COPYRIGHT
+%doc %{_mandir}/man1/pulp-admin.1*
 %endif # End of pulp_admin if block
 
 
@@ -567,9 +583,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 1.4.0
-Requires: python-gofer-qpid >= 1.4.0
-Requires: gofer >= 1.4.0
+Requires: python-gofer >= 2.3
+Requires: python-gofer-qpid >= 2.3
+Requires: gofer >= 2.3
 Requires: m2crypto
 
 %description agent
@@ -580,8 +596,8 @@ on a defined interval.
 %files agent
 %defattr(-,root,root,-)
 %config(noreplace) %{_sysconfdir}/%{name}/agent/agent.conf
+%{python_sitelib}/%{name}/agent/gofer/
 %{_sysconfdir}/gofer/plugins/pulpplugin.conf
-%{_libdir}/gofer/plugins/pulpplugin.*
 %doc README LICENSE COPYRIGHT
 
 # --- Selinux ---------------------------------------------------------------------
@@ -643,6 +659,63 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.5.beta
+- 1174283 - bump python-requests to 2.4.3 (austin@dhcp129-50.rdu.redhat.com)
+- 1145723 - touch and chown log file before writing to it (cduryee@redhat.com)
+- 1182335 - Fixes username and password auth for mongoDB connection
+  (bmbouter@gmail.com)
+* Tue Jan 13 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.4.beta
+- Pulp rebuild
+
+* Mon Jan 12 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.3.beta
+- 1066022 - update role doc to remove mentions of permissions
+  (cduryee@redhat.com)
+- 1171278 - additional helper method for finding units (cduryee@redhat.com)
+
+* Tue Dec 23 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.2.beta
+- 1174353 - improving performance of "pulp-admin tasks list"
+  (mhrivnak@redhat.com)
+- 1154790 - inject node strategy into the options. (jortel@redhat.com)
+- 1175512 - Fixes mongoengine database args to use correct database
+  (bmbouter@gmail.com)
+- 1166202 - documenting that EPEL requires RHEL "optional" and "extras" repos
+  (mhrivnak@redhat.com)
+- 1167908 - Migration for TaskStatus and Reserved Resources
+  (dkliban@redhat.com)
+- 1142325 - the unit tests no longer depend on qpidtoollibs.
+  (jcline@redhat.com)
+- 1150128 - The pulp-consumer tool now reports the error message for permission
+  exceptions. (jcline@redhat.com)
+- 1012091 - SELinux policy now allows setting directory attributes in /tmp
+  (dkliban@redhat.com)
+- 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
+  was not cleaning up after itself. (bcourt@redhat.com)
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1166703 - builder.py now checks to make sure master isn't checked out.
+  (jcline@redhat.com)
+- 1163451 - create ~/.pulp with correct perms, and warn when it has wrong perms
+  (mhrivnak@redhat.com)
+- 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
+
+* Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.1.rc
+- Pulp rebuild
+
+* Mon Dec 22 2014 Randy Barlow <rbarlow@redhat.com> 2.4.4-0.3.beta
+- 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
+
+* Fri Dec 19 2014 Randy Barlow <rbarlow@redhat.com> 2.5.2-0.0.beta
+- 1166202 - documenting that EPEL requires RHEL "optional" and "extras" repos
+  (mhrivnak@redhat.com)
+- 1155604 - fixing incorrect formatting of a note (skarmark@redhat.com)
+
+* Tue Dec 16 2014 Barnaby Court <bcourt@redhat.com> 2.5.1-1
+- 1171509 - FastForwardXmlFileContext was sometimes finding the wrong file and
+  was not cleaning up after itself. (bcourt@redhat.com)
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1129828 - split stack traces into separate log records. (jortel@redhat.com)
+- 1165355 - Add a sanitize_checksum_type function. (rbarlow@redhat.com)
+- 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
+
 * Fri Nov 21 2014 Chris Duryee <cduryee@redhat.com> 2.6.0-0.1.alpha
 - 1162820 - Clarify SSL configuration settings. (rbarlow@redhat.com)
 - 1116825 - Adding a non-existent user to a role now returns HTTP 400 instead
@@ -697,7 +770,6 @@ exit 0
 - 1095483 - fix message to not refer to pulp.log (cduryee@redhat.com)
 - 1133939 - tab completion for short options (igulina@redhat.com)
 
-* Mon Nov 17 2014 asmacdo <asmacdo@gmail.com> 2.5.0-0.19.rc
 * Fri Nov 21 2014 Austin Macdonald <asmacdo@gmail.com> 2.5.0-1
 - 1129488 - Adjusts mongoDB auto-reconnect to never stop attempting
   (bmbouter@gmail.com)

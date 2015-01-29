@@ -1,16 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+"""
+This module contains tests for pulp.server.db.migrations.0007_scheduled_task_conversion.py.
+"""
 import os
 import pickle
 import time
@@ -31,7 +21,7 @@ consumer_install_path = os.path.join(os.path.dirname(__file__),
                                      '../../../../data/migration_0007/consumer_install.pickle')
 consumer_install = open(consumer_install_path).read()
 publish_path = os.path.join(os.path.dirname(__file__),
-                                     '../../../../data/migration_0007/publish.pickle')
+                            '../../../../data/migration_0007/publish.pickle')
 publish = open(publish_path).read()
 
 
@@ -82,7 +72,8 @@ class TestMigrate(unittest.TestCase):
         migration.migrate()
 
         # make sure we called the move function
-        mock_move.assert_called_once_with(self.mock_distributor_collection, self.mock_sched_collection)
+        mock_move.assert_called_once_with(self.mock_distributor_collection,
+                                          self.mock_sched_collection)
 
 
 class TestMoveScheduledSyncs(unittest.TestCase):
@@ -195,8 +186,9 @@ class TestConvert(unittest.TestCase):
         self.assertTrue(new['enabled'])
         self.assertEqual(new['first_run'], '2014-01-21T16:02:06Z')
         self.assertEqual(new['iso_schedule'], 'PT1M')
-        self.assertEqual(new['kwargs'], {'options': {},
-                                         'units': [{'type_id': 'rpm', 'unit_key': {'name': 'fakepackage'}}]})
+        self.assertEqual(
+            new['kwargs'],
+            {'options': {}, 'units': [{'type_id': 'rpm', 'unit_key': {'name': 'fakepackage'}}]})
         self.assertEqual(new['last_run_at'], '2014-01-21T16:03:06Z')
         self.assertEqual(new['remaining_runs'], None)
         self.assertEqual(new['resource'], 'pulp:consumer:con1')

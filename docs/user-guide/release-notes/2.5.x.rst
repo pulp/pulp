@@ -1,9 +1,58 @@
-=========================
+======================
 Pulp 2.5 Release Notes
-=========================
+======================
+
+Pulp 2.5.2
+==========
+This release fixes `#1179463 <https://bugzilla.redhat.com/show_bug.cgi?id=1179463>`_,
+ `#1178920 <https://bugzilla.redhat.com/show_bug.cgi?id=1178920>`_,
+ `#1171278 <https://bugzilla.redhat.com/show_bug.cgi?id=1171278>`_ and
+ `#1159040 <https://bugzilla.redhat.com/show_bug.cgi?id=1159040>`_.
+
+To upgrade, shut down all Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl stop $s; done;
+
+Next, update the packages::
+
+    $ sudo yum update
+ 
+Run the pulp-manage-db script as the apache user::
+
+    $ sudo -u apache pulp-manage-db
+
+Restart the pulp services and apache
+
+
+Pulp 2.5.1
+==========
+This is a an important bugfix release that contains the fix for
+`#1165355 <https://bugzilla.redhat.com/show_bug.cgi?id=1165355>`_ and
+`#1171509 <https://bugzilla.redhat.com/show_bug.cgi?id=1171509>`_.  Additional bugs that were
+`fixed in Pulp 2.5.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&component=user-experience&component=z_other&list_id=2768089&product=Pulp&query_format=advanced&target_release=2.5.1>`_.
+
+
+Upgrade Instructions for 2.5.0 --> 2.5.1
+----------------------------------------
+
+Perform the upgrade instructions for `upgrading from 2.4.x`_
+
+Additionally for systems that are being upgraded from 2.5.0 to 2.5.1 and are using pulp_rpm
+to manage yum repositories you will need to manually remove the published repositories from
+disk and republish due to `1171509 <https://bugzilla.redhat.com/show_bug.cgi?id=1171509>`_
+This is only necessary if you have been running Pulp 2.5.0.  If you are upgrading from 2.4.x
+these steps are not required::
+
+    $ sudo rm -rf /var/lib/pulp/published/yum/*
+
+For each of your rpm repositories::
+
+    $ pulp-admin rpm repo publish run --repo-id <repo-id>
+
+.. _upgrading from 2.4.x: 2.4.x_upgrade_to_2.5.x_
 
 Pulp 2.5.0
-===========
+==========
 
 New Features
 ------------
@@ -47,12 +96,38 @@ You can see the complete list of bugs that were
 
 .. _2.4.x_upgrade_to_2.5.0:
 
-Upgrade Instructions for 2.4.x --> 2.5.0
------------------------------------------
+.. _2.4.x_upgrade_to_2.5.x :
 
-For all systems that have Pulp software installed, perform a system update::
+Upgrade Instructions for 2.4.x --> 2.5.x
+----------------------------------------
+
+To upgrade, shut down all Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl stop $s; done;
+
+Next, update the packages::
 
     $ sudo yum update
+    
+Run the pulp-manage-db script as the apache user::
+
+    $ sudo -u apache pulp-manage-db
+    
+Restart the pulp services and apache
+
+Next, run ``pulp-manage-db``::
+
+    $ sudo -u apache pulp-manage-db
+
+And lastly, restart the Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl start $s; done;
+
+
+.. note::
+
+   If you are using Upstart instead of systemd, you should use service $s {stop,start} in the lines
+   above.
 
 Thank You
 ---------

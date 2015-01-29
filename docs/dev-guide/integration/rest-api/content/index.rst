@@ -7,6 +7,6 @@ Content Manipulation APIs
    upload
    associate
    orphan
-   retrieval
+   units
    source
    catalog

@@ -1,32 +1,21 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 from gettext import gettext as _
 import logging
 import sys
 
 from celery import task
+from pulp.common import error_codes
 
-from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
-                                    PulpDataException)
-import pulp.server.managers.repo._common as common_utils
+from pulp.server.exceptions import (MissingResource, PulpExecutionException,
+                                    PulpDataException, PulpCodedValidationException)
 from pulp.server.managers.schedule.repo import RepoSyncScheduleManager
+import pulp.server.managers.repo._common as common_utils
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class RepoImporterManager(object):
@@ -41,7 +30,7 @@ class RepoImporterManager(object):
         @raise MissingResource: if the repo does not exist or has no importer associated
         """
 
-        importer = RepoImporter.get_collection().find_one({'repo_id' : repo_id})
+        importer = RepoImporter.get_collection().find_one({'repo_id': repo_id})
         if importer is None:
             raise MissingResource(repository=repo_id)
 
@@ -58,11 +47,11 @@ class RepoImporterManager(object):
         @raise MissingResource: if the given repo doesn't exist
         """
 
-        repo = Repo.get_collection().find_one({'id' : repo_id})
+        repo = Repo.get_collection().find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
-        importers = list(RepoImporter.get_collection().find({'repo_id' : repo_id}))
+        importers = list(RepoImporter.get_collection().find({'repo_id': repo_id}))
         return importers
 
     @staticmethod
@@ -78,8 +67,8 @@ class RepoImporterManager(object):
         @return: list of serialized importers
         @rtype:  list of dict
         """
-        spec = {'repo_id' : {'$in' : repo_id_list}}
-        projection = {'scratchpad' : 0}
+        spec = {'repo_id': {'$in': repo_id_list}}
+        projection = {'scratchpad': 0}
         importers = list(RepoImporter.get_collection().find(spec, projection))
 
         return importers
@@ -104,18 +93,11 @@ class RepoImporterManager(object):
         :raise InvalidImporterConfiguration: if the importer cannot be initialized for the given
                                              repo
         """
-
+        RepoImporterManager.validate_importer_config(repo_id, importer_type_id, repo_plugin_config)
         repo_coll = Repo.get_collection()
         importer_coll = RepoImporter.get_collection()
 
-        # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
-        if repo is None:
-            raise MissingResource(repo_id)
-
-        if not plugin_api.is_valid_importer(importer_type_id):
-            raise InvalidValue(['importer_type_id'])
-
+        repo = repo_coll.find_one({'id': repo_id})
         importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
 
         # Convention is that a value of None means unset. Remove any keys that
@@ -130,45 +112,76 @@ class RepoImporterManager(object):
         transfer_repo = common_utils.to_transfer_repo(repo)
         transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
 
-        try:
-            result = importer_instance.validate_config(transfer_repo, call_config)
-
-            # For backward compatibility with plugins that don't yet return the tuple
-            if isinstance(result, bool):
-                valid_config = result
-                message = None
-            else:
-                valid_config, message = result
-
-        except Exception, e:
-            logger.exception(
-                'Exception received from importer [%s] while validating config' % importer_type_id)
-            raise PulpDataException(e.args), None, sys.exc_info()[2]
-
-        if not valid_config:
-            raise PulpDataException(message)
-
         # Remove old importer if one exists
         try:
             RepoImporterManager.remove_importer(repo_id)
         except MissingResource:
-            pass # it didn't exist, so no harm done
+            pass  # it didn't exist, so no harm done
 
         # Let the importer plugin initialize the repository
         try:
             importer_instance.importer_added(transfer_repo, call_config)
         except Exception:
-            logger.exception(
+            _logger.exception(
                 'Error initializing importer [%s] for repo [%s]' % (importer_type_id, repo_id))
             raise PulpExecutionException(), None, sys.exc_info()[2]
 
         # Database Update
-        importer_id = importer_type_id # use the importer name as its repo ID
+        importer_id = importer_type_id  # use the importer name as its repo ID
 
         importer = RepoImporter(repo_id, importer_id, importer_type_id, clean_config)
         importer_coll.save(importer, safe=True)
 
         return importer
+
+    @staticmethod
+    def validate_importer_config(repo_id, importer_type_id, importer_config):
+        """
+        Validate an importer configuration. This validates that the repository and importer type
+        exist as these are both required to validate the configuration.
+
+        :param repo_id:             identifies the repo
+        :type  repo_id:             str
+        :param importer_type_id:    identifies the type of importer being added;
+                                    must correspond to an importer loaded at server startup
+        :type  importer_type_id:    str
+        :param importer_config:     configuration values for the importer; may be None
+        :type  importer_config:     dict
+        """
+        repo_coll = Repo.get_collection()
+        repo = repo_coll.find_one({'id': repo_id})
+        if repo is None:
+            raise MissingResource(repo_id)
+
+        if not plugin_api.is_valid_importer(importer_type_id):
+            raise PulpCodedValidationException(error_code=error_codes.PLP1008,
+                                               importer_type_id=importer_type_id)
+
+        importer_instance, plugin_config = plugin_api.get_importer_by_id(importer_type_id)
+
+        # Convention is that a value of None means unset. Remove any keys that
+        # are explicitly set to None so the plugin will default them.
+        if importer_config is not None:
+            clean_config = dict([(k, v) for k, v in importer_config.items() if v is not None])
+        else:
+            clean_config = None
+
+        # Let the importer plugin verify the configuration
+        call_config = PluginCallConfiguration(plugin_config, clean_config)
+        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo.working_dir = common_utils.importer_working_dir(importer_type_id, repo_id)
+
+        result = importer_instance.validate_config(transfer_repo, call_config)
+
+        # For backward compatibility with plugins that don't yet return the tuple
+        if isinstance(result, bool):
+            valid_config = result
+            message = None
+        else:
+            valid_config, message = result
+
+        if not valid_config:
+            raise PulpCodedValidationException(validation_errors=message)
 
     @staticmethod
     def remove_importer(repo_id):
@@ -185,11 +198,11 @@ class RepoImporterManager(object):
         importer_coll = RepoImporter.get_collection()
 
         # Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        repo_importer = importer_coll.find_one({'repo_id': repo_id})
 
         if repo_importer is None:
             raise MissingResource(repo_id)
@@ -209,7 +222,7 @@ class RepoImporterManager(object):
         importer_instance.importer_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
-        importer_coll.remove({'repo_id' : repo_id}, safe=True)
+        importer_coll.remove({'repo_id': repo_id}, safe=True)
 
     @staticmethod
     def update_importer_config(repo_id, importer_config):
@@ -232,11 +245,11 @@ class RepoImporterManager(object):
         importer_coll = RepoImporter.get_collection()
 
         # Input Validation
-        repo = repo_coll.find_one({'id' : repo_id})
+        repo = repo_coll.find_one({'id': repo_id})
         if repo is None:
             raise MissingResource(repo_id)
 
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        repo_importer = importer_coll.find_one({'repo_id': repo_id})
         if repo_importer is None:
             raise MissingResource(repo_id)
 
@@ -277,7 +290,7 @@ class RepoImporterManager(object):
             msg = _('Exception received from importer [%(i)s] while validating config for repo '
                     '[%(r)s]')
             msg = msg % {'i': importer_type_id, 'r': repo_id}
-            logger.exception(msg)
+            _logger.exception(msg)
             raise PulpDataException(e.args), None, sys.exc_info()[2]
 
         if not valid_config:
@@ -305,7 +318,7 @@ class RepoImporterManager(object):
         importer_coll = RepoImporter.get_collection()
 
         # Validation
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        repo_importer = importer_coll.find_one({'repo_id': repo_id})
         if repo_importer is None:
             return None
 
@@ -329,7 +342,7 @@ class RepoImporterManager(object):
         importer_coll = RepoImporter.get_collection()
 
         # Validation
-        repo_importer = importer_coll.find_one({'repo_id' : repo_id})
+        repo_importer = importer_coll.find_one({'repo_id': repo_id})
         if repo_importer is None:
             return
 

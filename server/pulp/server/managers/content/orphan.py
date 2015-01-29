@@ -1,21 +1,8 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012-2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from gettext import gettext as _
 import logging
 import os
 import re
 import shutil
-from gettext import gettext as _
 
 from celery import task
 
@@ -25,7 +12,7 @@ from pulp.server.async.tasks import Task
 from pulp.server.db.model.repository import RepoContentUnit
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class OrphanManager(object):
@@ -199,7 +186,6 @@ class OrphanManager(object):
         for content_type_id, content_unit_id_list in content_units_by_content_type.items():
             OrphanManager.delete_orphans_by_type(content_type_id, content_unit_id_list)
 
-
     @staticmethod
     def delete_orphans_by_type(content_type_id, content_unit_ids=None):
         """
@@ -237,7 +223,7 @@ class OrphanManager(object):
         @param path: absolute path to the file to delete
         @type  path: str
         """
-        logger.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
+        _logger.debug(_('Deleting orphaned file: %(p)s') % {'p': path})
 
         if not os.path.isabs(path):
             raise ValueError(_('Path: %(p)s must be absolute path') % {'p': path})
@@ -324,7 +310,7 @@ class OrphanManager(object):
             else:
                 shutil.rmtree(path)
         except OSError, e:
-            logger.error(_('Delete path: %(p)s failed: %(m)s'), {'p': path, 'm': str(e)})
+            _logger.error(_('Delete path: %(p)s failed: %(m)s'), {'p': path, 'm': str(e)})
 
 
 delete_all_orphans = task(OrphanManager.delete_all_orphans, base=Task, ignore_result=True)

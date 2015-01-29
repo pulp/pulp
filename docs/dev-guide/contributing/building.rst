@@ -368,7 +368,7 @@ To tag::
 Follow the instructions given by tito on pushing the updated branch and tag. At
 this point tagging is complete and you need to create SRPMs to feed to Koji::
 
-   $ for r in el6 el7 fc19 fc20; do tito build --srpm --dist .$r; done
+   $ for r in el6 el7 fc20 fc21; do tito build --srpm --dist .$r; done
 
 This will create four SRPMs. Here is how to feed them into Koji::
 
@@ -412,9 +412,9 @@ the Pulp team can provide you with this. Additionally you should be familiar
 with the concepts in the `Creating GPG Keys
 <https://fedoraproject.org/wiki/Creating_GPG_Keys>`_ guide.
 
-All beta and GA RPMs should be signed with the Pulp team's GPG key. A new key
-is created for each X release (3.0.0, 4.0.0, etc).  If you are doing a new X
-release, a new key needs to be created. To create a new key, run ``gpg
+All alpha, beta and GA RPMs should be signed with the Pulp team's GPG key. A
+new key is created for each X release (3.0.0, 4.0.0, etc).  If you are doing a
+new X release, a new key needs to be created. To create a new key, run ``gpg
 --gen-key`` and follow the prompts. We usually set "Real Name" to "Pulp (3)"
 and "Email address" to "pulp-list@redhat.com". Key expiriation should occur
 five years after the key's creation date. After creating the key, export both
@@ -453,17 +453,27 @@ This will sign all of the RPMs in the mash. You then need to import signatures i
 
    $ find -name "*.rpm" | xargs koji import-sig
 
+.. note::
+
+   Koji does not store the entire signed RPM. It merely stores the additional
+   signature metadata, and then re-creates a signed RPM in a different
+   directory when the ``write-signed-rpm`` command is issued. The original
+   unsigned RPM will remain untouched.
+
 As ``list-signed`` does not seem to work, do a random check in
 http://koji.katello.org/packages/ that
 http://koji.katello.org/packages/<name>/<version>/<release>/data/sigcache/<sig-hash>/
 exists and has some content in it. Once this is complete, you will need to
-re-import the RPMs as well into koji::
+tell koji to write out the signed RPMs (both commands are run from your mash dir)::
 
-   $ find -name "*.rpm" | xargs koji write-signed-rpm <sig-hash>
+   $ for r in `find -name "*src.rpm"`; do basename $r; done | sort | uniq | sed s/\.src\.rpm//g > /tmp/builds
+   $ for x in `cat /tmp/builds`; do koji write-signed-rpm <SIGNATURE-HASH> $x; done
 
-Sync down your mash one more time and push to the testing repo. Create an
-instance somewhere and update your pulp repo file to point to the testing repo,
-but enable GPG signatures and attempt an install. It should be successful.
+Sync down your mash one more time (run from the ``pulp/rel-eng`` dir)::
+
+   $ ./builder.py --disable-build --rpmsig <SIGNATURE-HASH> <version> <release>
+
+After it is synced down, you can publish the build.
 
 Publishing the Build
 --------------------

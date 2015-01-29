@@ -1,20 +1,8 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+from gettext import gettext as _
+import threading
 
 import celery
-import logging
-import threading
-from gettext import gettext as _
 
 from pulp.common import error_codes
 from pulp.common.plugins import reporting_constants
@@ -24,9 +12,6 @@ from pulp.plugins.util.publish_step import Step
 from pulp.server.async.tasks import Task
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.exceptions import PulpCodedTaskException
-
-
-logger = logging.getLogger(__name__)
 
 
 class ContentSourcesConduit(StatusMixin, PublishReportMixin):
@@ -83,18 +68,11 @@ class ContentSourcesRefreshStep(Step):
         if item:
             self.progress_description = item.descriptor['name']
             e = threading.Event()
+            self.progress_details = self.progress_description
             report = item.refresh(e)[0]
-            self.details.append(report.dict())
-            self.progress_details = self.details
             if not report.succeeded:
                 raise PulpCodedTaskException(error_code=error_codes.PLP0031, id=report.source_id,
                                              url=report.url)
-
-    def initialize(self):
-        self.details = []
-
-    def finalize(self):
-        self.progress_details = self.details
 
     def _get_total(self):
         return len(self.sources)
@@ -118,4 +96,3 @@ def refresh_content_source(content_source_id=None):
     conduit = ContentSourcesConduit('Refresh Content Source')
     step = ContentSourcesRefreshStep(conduit, content_source_id=content_source_id)
     step.process_lifecycle()
-
