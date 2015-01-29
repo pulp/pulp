@@ -70,7 +70,7 @@ class TestDistributorsView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
-    def test_get_distributors_view(self, mock_factory, mock_serializer):
+    def test_get_distributors_view(self, mock_factory, mock_resp):
         """
         DistributorsView should create a response from a list of distributor dicts.
         """
@@ -87,8 +87,8 @@ class TestDistributorsView(unittest.TestCase):
         expected_content = [{'id': 'mock_distributor_1', '_href': '/mock/path/mock_distributor_1/'},
                             {'id': 'mock_distributor_2', '_href': '/mock/path/mock_distributor_2/'}]
 
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestImporterResourceView(unittest.TestCase):
@@ -100,7 +100,7 @@ class TestImporterResourceView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
-    def test_get_importer_resource_view_existing_importer(self, mock_factory, mock_serializer):
+    def test_get_importer_resource_view_existing_importer(self, mock_factory, mock_resp):
         """
         Importer Resource should return a generate a serialized response with importer data.
         """
@@ -114,8 +114,8 @@ class TestImporterResourceView(unittest.TestCase):
         response = importer_resource.get(request, 'mock_importer_2')
 
         expected_content = {'id': 'mock_importer_2', '_href': '/mock/path/'}
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -151,7 +151,7 @@ class TestImportersView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
-    def test_get_importers_view(self, mock_factory, mock_serializer):
+    def test_get_importers_view(self, mock_factory, mock_resp):
         """
         Importers views should return a list of dicts that represent each importer object
         """
@@ -166,8 +166,8 @@ class TestImportersView(unittest.TestCase):
 
         expected_content = [{'id': 'mock_importer_1', '_href': '/mock/path/mock_importer_1/'},
                             {'id': 'mock_importer_2', '_href': '/mock/path/mock_importer_2/'}]
-        mock_serializer.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_serializer.return_value)
+        mock_resp.assert_called_once_with(expected_content)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestTypeResourceView(unittest.TestCase):
@@ -179,7 +179,7 @@ class TestTypeResourceView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
-    def test_get_type_resource_view_existing_type(self, mock_factory, mock_serializer):
+    def test_get_type_resource_view_existing_type(self, mock_factory, mock_resp):
         """
         Type Resource should call the seralizer with the appropriate object.
         """
@@ -193,7 +193,7 @@ class TestTypeResourceView(unittest.TestCase):
         type_resource.get(request, 'mock_type_2')
 
         expected_content = {'id': 'mock_type_2', '_href': '/mock/path/'}
-        mock_serializer.assert_called_once_with(expected_content)
+        mock_resp.assert_called_once_with(expected_content)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -229,7 +229,7 @@ class TestTypesView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
-    def test_get_types_view(self, mock_factory, mock_serializer):
+    def test_get_types_view(self, mock_factory, mock_resp):
         """
         Types View should return a list of objects representing each type.
         """
@@ -244,4 +244,4 @@ class TestTypesView(unittest.TestCase):
         types_view.get(request)
 
         expected_content = [{'id': 'mock_id', '_href': '/mock/path/mock_id/'}]
-        mock_serializer.assert_called_once_with(expected_content)
+        mock_resp.assert_called_once_with(expected_content)
