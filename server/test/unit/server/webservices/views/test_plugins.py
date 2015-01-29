@@ -61,6 +61,7 @@ class TestDistributorResourceView(unittest.TestCase):
         self.assertEqual(response.error_data['resources'],
                          {'distributor_type_id': 'nonexistent_distributor'})
 
+
 class TestDistributorsView(unittest.TestCase):
     """
     Tests for views for all distributors.
@@ -147,7 +148,7 @@ class TestImportersView(unittest.TestCase):
     """
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                 new=assert_auth_READ())
+                new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
     def test_get_importers_view(self, mock_factory, mock_serializer):
@@ -244,4 +245,3 @@ class TestTypesView(unittest.TestCase):
 
         expected_content = [{'id': 'mock_id', '_href': '/mock/path/mock_id/'}]
         mock_serializer.assert_called_once_with(expected_content)
-
