@@ -7,7 +7,12 @@ from pulp.server.webservices.views.consumer_groups import (ConsumerGroupView,
                                                            ConsumerGroupContentActionView,
                                                            ConsumerGroupResourceView,
                                                            ConsumerGroupUnassociateActionView)
-from pulp.server.webservices.views.content import UploadSegmentResourceView
+from pulp.server.webservices.views.content import (
+    CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
+    ContentUnitsCollectionView, DeleteOrphansActionView, OrphanCollectionView, OrphanResourceView,
+    OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
+    UploadSegmentResourceView
+)
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
@@ -21,7 +26,7 @@ from pulp.server.webservices.views.tasks import TasksView
 
 
 urlpatterns = patterns('',
-    url(r'^v2/actions/login/$', LoginView.as_view(), name='login'),
+    url(r'^v2/actions/login/$', LoginView.as_view(), name='login'), # flake8: noqa
     url(r'^v2/consumer_groups/$', ConsumerGroupView.as_view(), name='consumer_group'),
     url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/$',
         ConsumerGroupResourceView.as_view(), name='consumer_group_resource'),
@@ -36,6 +41,27 @@ urlpatterns = patterns('',
     url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)' +
         r'/bindings/(?P<repo_id>[^/]+)/(?P<distributor_id>[^/]+)/$',
         ConsumerGroupBindingView.as_view(), name='consumer_group_unbind'),
+    url(r'^v2/content/actions/delete_orphans/$', DeleteOrphansActionView.as_view(),
+        name='content_actions_delete_orphans'),
+    url(r'^v2/content/catalog/(?P<source_id>[^/]+)/$', CatalogResourceView.as_view(),
+        name='content_catalog_resource'),
+    url(r'^v2/content/orphans/$', OrphanCollectionView.as_view(), name='content_orphan_collection'),
+    url(r'^v2/content/orphans/(?P<content_type>[^/]+)/$', OrphanTypeSubCollectionView.as_view(),
+        name='content_orphan_type_subcollection'),
+    url(r'^v2/content/orphans/(?P<content_type>[^/]+)/(?P<unit_id>[^/]+)/$',
+        OrphanResourceView.as_view(), name='content_orphan_resource'),
+    url(r'^v2/content/types/$', ContentTypesView.as_view(),
+        name='content_types'),
+    url(r'^v2/content/types/(?P<type_id>[^/]+)/$', ContentTypeResourceView.as_view(),
+        name='content_type_resource'),
+    url(r'^v2/content/units/(?P<type_id>[^/]+)/$', ContentUnitsCollectionView.as_view(),
+        name='content_units_collection'),
+    url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/$',
+        ContentUnitResourceView.as_view(), name='content_unit_resource'),
+    url(r'^v2/content/uploads/$', UploadsCollectionView.as_view(),
+        name='content_uploads'),
+    url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/$', UploadResourceView.as_view(),
+        name='content_upload_resource'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
         UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
     url(r'^v2/plugins/distributors/$', DistributorsView.as_view(), name='plugin_distributors'),
@@ -62,5 +88,5 @@ urlpatterns = patterns('',
         RepoGroupDistributorResource.as_view(), name='repo_group_distributor_resource'),
     url(r'^v2/repositories/(?P<repo_id>[^/]+)/actions/sync/$', RepoSync.as_view(),
         name="repositories_resource_sync"),
-    url(r'^v2/tasks/$', TasksView.as_view(), name='tasks')
+    url(r'^v2/tasks/$', TasksView.as_view(), name='tasks'),
 )

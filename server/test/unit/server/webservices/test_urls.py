@@ -46,15 +46,105 @@ def assert_url_match(expected_url, url_name, *args, **kwargs):
 
 
 class TestDjangoContentUrls(unittest.TestCase):
+    """
+    Test the matching of the content urls
+    """
 
-    def test_match_content_upload_segment_resource_view(self):
+    def test_match_content_catalog_resource(self):
+        """
+        Test url matching for content_catalog_resource.
+        """
+        url = '/v2/content/catalog/mock-source/'
+        url_name = 'content_catalog_resource'
+        assert_url_match(url, url_name, source_id='mock-source')
+
+    def test_match_content_orphan_collection(self):
+        """
+        Test url matching for content_orphan_collection.
+        """
+        url = '/v2/content/orphans/'
+        url_name = 'content_orphan_collection'
+        assert_url_match(url, url_name)
+
+    def test_match_content_type_resource(self):
+        """
+        Test the url matching for content_type_resource.
+        """
+        url = '/v2/content/types/mock-type/'
+        url_name = 'content_type_resource'
+        assert_url_match(url, url_name, type_id='mock-type')
+
+    def test_match_content_types(self):
+        """
+        Test the url matching for content_types.
+        """
+        url = '/v2/content/types/'
+        url_name = 'content_types'
+        assert_url_match(url, url_name)
+
+    def test_match_content_units_collection(self):
+        """
+        Test the url matching for content_units_collection.
+        """
+        url = '/v2/content/units/mock-type/'
+        url_name = 'content_units_collection'
+        assert_url_match(url, url_name, type_id='mock-type')
+
+    def test_match_content_unit_resource(self):
+        """
+        Test url matching for content_unit_resource.
+        """
+        url = '/v2/content/units/mock-type/mock-unit/'
+        url_name = 'content_unit_resource'
+        assert_url_match(url, url_name, type_id='mock-type', unit_id='mock-unit')
+
+    def test_match_content_upload_resource(self):
+        """
+        Test url matching for content_upload_resource.
+        """
+        url = '/v2/content/uploads/mock-upload/'
+        url_name = 'content_upload_resource'
+        assert_url_match(url, url_name, upload_id='mock-upload')
+
+    def test_match_content_upload_segment_resource(self):
         """
         Test Url matching for content_upload_segment_resource.
         """
-
         url = '/v2/content/uploads/mock-upload-id/8/'
         url_name = 'content_upload_segment_resource'
         assert_url_match(url, url_name, upload_id='mock-upload-id', offset='8')
+
+    def test_match_content_actions_delete_orphans(self):
+        """
+        Test url matching for content_actions_delete_orphans.
+        """
+        url = '/v2/content/actions/delete_orphans/'
+        url_name = 'content_actions_delete_orphans'
+        assert_url_match(url, url_name)
+
+    def test_match_content_orphan_resource(self):
+        """
+        Test url matching for content_orphan_resource.
+        """
+        url = '/v2/content/orphans/mock-type/mock-unit/'
+        url_name = 'content_orphan_resource'
+        assert_url_match(url, url_name, content_type='mock-type', unit_id='mock-unit')
+
+    def test_match_content_orphan_type_subcollection(self):
+        """
+        Test url matching for content_orphan_type_subcollection.
+        """
+        url = '/v2/content/orphans/mock_type/'
+        url_name = 'content_orphan_type_subcollection'
+        assert_url_match(url, url_name, content_type='mock_type')
+
+    def test_match_content_uploads(self):
+        """
+        Test url matching for content_uploads.
+        """
+        url = '/v2/content/uploads/'
+        url_name = 'content_uploads'
+        assert_url_match(url, url_name)
 
 
 class TestDjangoPluginsUrls(unittest.TestCase):
