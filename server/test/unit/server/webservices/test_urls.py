@@ -208,49 +208,6 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         assert_url_match(url, url_name)
 
 
-class TestDjangoRepoGroupsUrls(unittest.TestCase):
-    """
-    Test url matching for /repo_groups/*
-    """
-
-    def test_match_repo_groups(self):
-        pass
-
-    def test_match_repo_group_resource(self):
-        pass
-
-    def test_match_repo_group_associate(self):
-        pass
-
-    def test_match_repo_group_unassociate(self):
-        pass
-
-    def test_match_repo_group_distributors(self):
-        pass
-
-    def test_match_repo_group_distributor_resource(self):
-        pass
-
-    def test_repo_group_publish(self):
-        pass
-
-
-class TestDjangoRepositoriesUrls(unittest.TestCase):
-
-    def test_match_repositories_resource_sync(self):
-        url = '/v2/repositories/a1b2%21/actions/sync/'
-        url_name = 'repositories_resource_sync'
-        assert_url_match(url, url_name, repo_id='a1b2!')
-
-
-class TestDjangoTasksUrls(unittest.TestCase):
-
-    def test_match_tasks_url(self):
-        url = '/v2/tasks/'
-        url_name = 'tasks'
-        assert_url_match(url, url_name)
-
-
 class TestDjangoLoginUrls(unittest.TestCase):
     """
     Tests for root_actions urls.
