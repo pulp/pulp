@@ -50,6 +50,8 @@ from pulp.server.webservices.controllers import (
     plugins, repo_groups, repositories, roles, root_actions, status, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
+from pulp.server.webservices.middleware.framework_router import FrameworkRoutingMiddleware
+from pulp.server.webservices.wsgi import application as django_application
 
 # constants and application globals --------------------------------------------
 
@@ -127,9 +129,11 @@ def wsgi_application():
     using the web.py framework and custom Pulp middleware.
     @return: wsgi application callable
     """
-    application = web.subdir_application(URLS).wsgifunc()
-    stack_components = [application, PostponedOperationMiddleware, ExceptionHandlerMiddleware]
-    stack = reduce(lambda a, m: m(a), stack_components)
+    webpy_application = web.subdir_application(URLS).wsgifunc()
+    webpy_stack_components = [webpy_application, PostponedOperationMiddleware, ExceptionHandlerMiddleware]
+    webpy_stack = reduce(lambda a, m: m(a), webpy_stack_components)
+
+    app = FrameworkRoutingMiddleware(webpy_stack, django_application)
 
     # The following intentionally don't raise the exception. The logging writes
     # to both error_log and pulp.log. Raising the exception caused it to be
@@ -160,4 +164,4 @@ def wsgi_application():
     logger.info('The Pulp server has been successfully initialized')
     logger.info('*************************************************************')
 
-    return stack
+    return app
