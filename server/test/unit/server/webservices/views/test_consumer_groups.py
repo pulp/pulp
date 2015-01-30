@@ -2,8 +2,7 @@ import json
 import unittest
 
 import mock
-from django.http import (HttpResponse, HttpResponseNotFound,
-                         HttpResponseRedirect, HttpResponseBadRequest)
+from django.http import HttpResponseRedirect, HttpResponseBadRequest
 
 from base import (assert_auth_CREATE, assert_auth_READ, assert_auth_UPDATE, assert_auth_DELETE,
                   assert_auth_EXECUTE)
@@ -24,8 +23,10 @@ class TestconsumerGroupView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumer_groups.ConsumerGroup.get_collection')
-    def test_get_all_consumer_groups(self, mock_collection):
+    def test_get_all_consumer_groups(self, mock_collection, mock_resp):
         """
         Test the consumer groups retrieval.
         """
@@ -38,14 +39,9 @@ class TestconsumerGroupView(unittest.TestCase):
         consumer_group = ConsumerGroupView()
         response = consumer_group.get(request)
 
-        self.assertTrue(isinstance(response, HttpResponse))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
         expected_cont = [{'id': 'foo', 'display_name': 'bar', '_href': '/v2/consumer_groups/foo/'}]
-        self.assertEqual(len(content), 1)
-        self.assertEqual(content, expected_cont)
+        mock_resp.assert_called_once_with(expected_cont)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -114,8 +110,9 @@ class TestconsumerGroupResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.consumer_groups.generate_json_response')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_delete_consumer_group_resource(self, mock_factory):
+    def test_delete_consumer_group_resource(self, mock_factory, mock_resp):
         """
         Test consumer group delete resource.
         """
@@ -127,19 +124,17 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         consumer_group_resource = ConsumerGroupResourceView()
         response = consumer_group_resource.delete(request, 'test-group')
 
-        self.assertTrue(isinstance(response, HttpResponse))
-        self.assertFalse(isinstance(response, HttpResponseNotFound))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
-        self.assertEqual(content, None)
         mock_group_manager.delete_consumer_group.assert_called_once_with('test-group')
+
+        mock_resp.assert_called_once_with(None)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumer_groups.ConsumerGroup.get_collection')
-    def test_get_consumer_group_resource(self, mock_collection):
+    def test_get_consumer_group_resource(self, mock_collection, mock_resp):
         """
         Test single consumer group retrieval.
         """
@@ -151,13 +146,10 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         consumer_group = ConsumerGroupResourceView()
         response = consumer_group.get(request, 'foo')
 
-        self.assertTrue(isinstance(response, HttpResponse))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
         expected_cont = {'id': 'foo', '_href': '/v2/consumer_groups/foo/'}
-        self.assertEqual(content, expected_cont)
+
+        mock_resp.assert_called_once_with(expected_cont)
+        self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -182,8 +174,10 @@ class TestconsumerGroupResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_UPDATE())
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_update_consumer_group(self, mock_factory):
+    def test_update_consumer_group(self, mock_factory, mock_resp):
         """
         Test consumer group update.
         """
@@ -196,12 +190,8 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         consumer_group = ConsumerGroupResourceView()
         response = consumer_group.put(request, 'foo')
 
-        self.assertTrue(isinstance(response, HttpResponse))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
-        self.assertEqual(content, expected_cont)
+        mock_resp.assert_called_once_with(expected_cont)
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestConsumerGroupAssociateActionView(unittest.TestCase):
@@ -211,8 +201,10 @@ class TestConsumerGroupAssociateActionView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_cons_group_association_view(self, mock_factory):
+    def test_cons_group_association_view(self, mock_factory, mock_resp):
         """
         Test consumer group associate a consumer.
         """
@@ -223,12 +215,9 @@ class TestConsumerGroupAssociateActionView(unittest.TestCase):
         request.body_as_json = {'criteria': {'filters': {'id': 'c1'}}}
         consumer_group_associate = ConsumerGroupAssociateActionView()
         response = consumer_group_associate.post(request, 'my-group')
-        self.assertTrue(isinstance(response, HttpResponse))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
-        self.assertEqual(content, ['c1'])
+
+        mock_resp.assert_called_once_with(['c1'])
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestConsumerGroupUnassociateActionView(unittest.TestCase):
@@ -238,8 +227,10 @@ class TestConsumerGroupUnassociateActionView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_cons_group_unassociation_view(self, mock_factory):
+    def test_cons_group_unassociation_view(self, mock_factory, mock_resp):
         """
         Test consumer group unassociate a consumer.
         """
@@ -250,12 +241,9 @@ class TestConsumerGroupUnassociateActionView(unittest.TestCase):
         request.body_as_json = {'criteria': {'filters': {'id': 'c1'}}}
         consumer_group_unassociate = ConsumerGroupUnassociateActionView()
         response = consumer_group_unassociate.post(request, 'my-group')
-        self.assertTrue(isinstance(response, HttpResponse))
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
-        self.assertEqual(content, [])
+
+        mock_resp.assert_called_once_with([])
+        self.assertTrue(response is mock_resp.return_value)
 
 
 class TestConsumerGroupBindingsView(unittest.TestCase):
