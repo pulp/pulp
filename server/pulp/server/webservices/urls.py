@@ -9,7 +9,8 @@ from pulp.server.webservices.views.consumer_groups import (ConsumerGroupView,
                                                            ConsumerGroupUnassociateActionView)
 from pulp.server.webservices.views.content import (
     CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
-    ContentUnitsCollectionView, DeleteOrphansActionView, OrphanCollectionView, OrphanResourceView,
+    ContentUnitsCollectionView,ContentUnitUserMetadataResourceView,
+    DeleteOrphansActionView, OrphanCollectionView, OrphanResourceView,
     OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
     UploadSegmentResourceView
 )
@@ -52,6 +53,8 @@ urlpatterns = patterns('',
         name='content_units_collection'),
     url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/$',
         ContentUnitResourceView.as_view(), name='content_unit_resource'),
+    url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/pulp_user_metadata/$',
+        ContentUnitUserMetadataResourceView.as_view(), name='content_unit_user_metadata_resource'),
     url(r'^v2/content/uploads/$', UploadsCollectionView.as_view(),
         name='content_uploads'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/$', UploadResourceView.as_view(),
