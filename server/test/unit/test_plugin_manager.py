@@ -73,6 +73,7 @@ class PluginManagerTests(base.PulpServerTests):
         """
 
         # Setup
+        types_db.clean()
         type_def_1 = TypeDefinition('type-1', 'Type 1', 'Type 1', [], [], [])
         type_def_2 = TypeDefinition('type-2', 'Type 2', 'Type 2', [], [], [])
 

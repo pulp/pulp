@@ -47,7 +47,7 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
     consumer_groups, consumers, contents, dispatch, events, permissions,
-    plugins, repo_groups, repositories, roles, root_actions, status, users)
+    repo_groups, repositories, roles, status, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 from pulp.server.webservices.middleware.framework_router import FrameworkRoutingMiddleware
@@ -57,13 +57,11 @@ from pulp.server.webservices.wsgi import application as django_application
 
 URLS = (
     # Please keep the following in alphabetical order.
-    '/v2/actions', root_actions.application,
     '/v2/consumer_groups', consumer_groups.application,
     '/v2/consumers', consumers.application,
     '/v2/content', contents.application,
     '/v2/events', events.application,
     '/v2/permissions', permissions.application,
-    '/v2/plugins', plugins.application,
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
     '/v2/roles', roles.application,
