@@ -17,6 +17,7 @@ from pulp.server.webservices.views.plugins import (DistributorResourceView, Dist
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
 from pulp.server.webservices.views.root_actions import LoginView
+from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
 
 
 urlpatterns = patterns('',
@@ -67,4 +68,6 @@ urlpatterns = patterns('',
     url(r'^v2/plugins/types/$', TypesView.as_view(), name='plugin_types'),
     url(r'^v2/plugins/types/(?P<type_id>[^/]+)/$', TypeResourceView.as_view(),
         name='plugin_type_resource'),
+    url(r'^v2/tasks/$', TaskCollectionView.as_view(), name='task_collection'),
+    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', TaskResourceView.as_view(), name='task_resource'),
 )
