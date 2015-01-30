@@ -12,6 +12,7 @@ from gettext import gettext as _
 from celery import task
 
 from pulp.common import dateutils, constants
+from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
@@ -335,6 +336,31 @@ class RepoPublishManager(object):
         dist_coll = RepoDistributor.get_collection()
         auto_distributors = list(dist_coll.find({'repo_id': repo_id, 'auto_publish': True}))
         return auto_distributors
+
+    @staticmethod
+    def queue_publish(repo_id, distributor_id, overrides=None):
+        """
+        Create an itinerary for repo publish.
+        :param repo_id: id of the repo to publish
+        :type repo_id: str
+        :param distributor_id: id of the distributor to use for the repo publish
+        :type distributor_id: str
+        :param overrides: dictionary of options to pass to the publish manager
+        :type overrides: dict or None
+        :return: task result object
+        :rtype: pulp.server.async.tasks.TaskResult
+        """
+        kwargs = {
+            'repo_id': repo_id,
+            'distributor_id': distributor_id,
+            'publish_config_override': overrides
+        }
+
+        tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
+                action_tag('publish')]
+
+        return publish.apply_async_with_reservation(
+            RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
 
 
 publish = task(RepoPublishManager.publish, base=Task)

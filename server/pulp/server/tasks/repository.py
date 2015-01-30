@@ -16,11 +16,9 @@ import logging
 import celery
 
 from pulp.common.error_codes import PLP0002, PLP0003, PLP0007
-from pulp.common.tags import action_tag, resource_tag, RESOURCE_REPOSITORY_TYPE
 from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.managers import factory as managers
-from pulp.server.managers.repo.publish import publish as publish_task
 from pulp.server.tasks import consumer
 
 
@@ -168,7 +166,7 @@ def distributor_update(repo_id, distributor_id, config, delta):
     return TaskResult(distributor, bind_error, additional_tasks)
 
 
-@celery.task(base=Task)
+@celery.task()
 def publish(repo_id, distributor_id, overrides=None):
     """
     Create an itinerary for repo publish.
@@ -181,20 +179,10 @@ def publish(repo_id, distributor_id, overrides=None):
     :return: list of call requests
     :rtype: list
     """
-    kwargs = {
-        'repo_id': repo_id,
-        'distributor_id': distributor_id,
-        'publish_config_override': overrides
-    }
-
-    tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id),
-            action_tag('publish')]
-
-    return publish_task.apply_async_with_reservation(
-        RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
+    return managers.repo_publish_manager().queue_publish(repo_id, distributor_id, overrides)
 
 
-@celery.task(base=Task)
+@celery.task()
 def sync_with_auto_publish(repo_id, overrides=None):
     """
     Sync a repository and upon successful completion, publish
@@ -207,18 +195,4 @@ def sync_with_auto_publish(repo_id, overrides=None):
     :return: A task result containing the details of the task executed and any spawned tasks
     :rtype: TaskResult
     """
-    sync_result = managers.repo_sync_manager().sync(repo_id, sync_config_override=overrides)
-
-    result = TaskResult(sync_result)
-
-    repo_publish_manager = managers.repo_publish_manager()
-    auto_distributors = repo_publish_manager.auto_distributors(repo_id)
-
-    spawned_tasks = []
-    for distributor in auto_distributors:
-        distributor_id = distributor['id']
-        spawned_tasks.append(publish(repo_id, distributor_id))
-
-    result.spawned_tasks = spawned_tasks
-
-    return result
+    return managers.repo_sync_manager().queue_sync_with_auto_publish(repo_id, overrides)
