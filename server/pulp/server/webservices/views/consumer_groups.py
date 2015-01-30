@@ -1,8 +1,5 @@
-import json
-
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
-from django.utils.encoding import iri_to_uri
+from django.http import HttpResponseBadRequest
 from django.views.generic import View
 
 from pulp.server import exceptions as pulp_exceptions
@@ -11,69 +8,9 @@ from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.group.cud import bind, unbind
-from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder)
-
-
-class ConsumerGroupView(View):
-    """
-    Views for consumer groups.
-    """
-
-    @auth_required(authorization.READ)
-    def get(self, request):
-        """
-        List the available consumer groups.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :return: Response containing a list of consumer groups
-        :rtype: django.http.HttpResponse
-        """
-        collection = ConsumerGroup.get_collection()
-        cursor = collection.find({})
-        groups = []
-        for group in cursor:
-            link = {"_href": reverse('consumer_group_resource',
-                    kwargs={'consumer_group_id': group['id']})}
-            group.update(link)
-            groups.append(group)
-        return generate_json_response_with_pulp_encoder(groups)
-
-    @auth_required(authorization.CREATE)
-    def post(self, request):
-        """
-        Create a consumer group and return a serialized object containing just created group.
-
-        :param request: WSGI request object
-        :type request: django.core.handlers.wsgi.WSGIRequest
-        :return: Response containing the consumer group
-        :rtype: HttpResponseRedirect
-        :raises: MissingValue if group ID is not provided
-        :raises: InvalidValue if some parameters are invalid
-        """
-        params = request.body_as_json
-        group_id = params.pop('id', None)
-        if group_id is None:
-            raise pulp_exceptions.MissingValue(['id'])
-        display_name = params.pop('display_name', None)
-        description = params.pop('description', None)
-        consumer_ids = params.pop('consumer_ids', None)
-        notes = params.pop('notes', None)
-        if params:
-            raise pulp_exceptions.InvalidValue(params.keys())
-        manager = factory.consumer_group_manager()
-        group = manager.create_consumer_group(group_id, display_name, description, consumer_ids,
-                                              notes)
-        link = {"_href": reverse('consumer_group_resource',
-                kwargs={'consumer_group_id': group['id']})}
-        group.update(link)
-        response = generate_json_response_with_pulp_encoder(group)
-        response['Location'] = iri_to_uri(link['_href'])
-        response.status_code = 201
-        return response
 
 
 class ConsumerGroupResourceView(View):
