@@ -7,9 +7,11 @@ import mock
 
 from .... import base
 from pulp.common import dateutils, constants
+from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.devel import mock_plugins
 from pulp.plugins.model import SyncReport
 from pulp.server.async import tasks
+from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
 from pulp.server.exceptions import PulpExecutionException, InvalidValue
 import pulp.server.managers.factory as manager_factory
@@ -71,9 +73,24 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Reset the state of the mock's tracker variables
         MockRepoPublishManager.reset()
 
+    @mock.patch('pulp.server.managers.repo.sync.sync.apply_async_with_reservation')
+    def test_queue_sync(self, mock_sync_task):
+        repo_id = 'foo'
+        overrides = {'baz': 1}
+        self.sync_manager.queue_sync_with_auto_publish(repo_id, overrides)
+        kwargs = {
+            'repo_id': repo_id,
+            'sync_config_override': overrides
+        }
+        tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('sync')]
+        mock_sync_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
+                                          kwargs=kwargs)
+
+    @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.queue_publish')
+    @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.auto_distributors')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_sync_started')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_sync_finished')
-    def test_sync(self, mock_finished, mock_started):
+    def test_sync(self, mock_finished, mock_started, mock_auto_distributors, mock_queue_publish):
         """
         Tests sync under normal conditions where everything is configured
         correctly. No importer config is specified.
@@ -83,9 +100,11 @@ class RepoSyncManagerTests(base.PulpServerTests):
         sync_config = {'bruce' : 'hulk', 'tony' : 'ironman'}
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', sync_config)
+        mock_auto_distributors.return_value = [{'id': 'my_distributor'}]
+        mock_queue_publish.return_value.task_id = 'abc123'
 
         # Test
-        self.sync_manager.sync('repo-1', sync_config_override=None)
+        report = self.sync_manager.sync('repo-1', sync_config_override=None)
 
         # Verify
         repo = Repo.get_collection().find_one({'id' : 'repo-1'})
@@ -128,6 +147,12 @@ class RepoSyncManagerTests(base.PulpServerTests):
 
         self.assertEqual(1, mock_finished.call_count)
         self.assertEqual('repo-1', mock_finished.call_args[0][0]['repo_id'])
+
+        # auto publish tests
+        mock_auto_distributors.assert_called_once_with('repo-1')
+        mock_queue_publish.assert_called_once_with('repo-1', 'my_distributor')
+        self.assertTrue(isinstance(report, TaskResult))
+        self.assertEqual(report.spawned_tasks, [{'task_id': 'abc123'}])
 
     def test_sync_with_graceful_fail(self):
         # Setup

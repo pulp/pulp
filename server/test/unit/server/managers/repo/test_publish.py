@@ -5,6 +5,7 @@ import mock
 
 from .... import base
 from pulp.common import dateutils, constants
+from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.devel import mock_plugins
 from pulp.plugins.model import PublishReport
 from pulp.plugins.loader.exceptions import PluginNotFound
@@ -36,6 +37,21 @@ class RepoSyncManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         RepoPublishResult.get_collection().remove()
+
+    @mock.patch('pulp.server.managers.repo.publish.publish.apply_async_with_reservation')
+    def test_queue_publish(self, mock_publish_task):
+        repo_id = 'foo'
+        distributor_id = 'bar'
+        overrides = {'baz': 1}
+        self.publish_manager.queue_publish(repo_id, distributor_id, overrides)
+        kwargs = {
+            'repo_id': repo_id,
+            'distributor_id': distributor_id,
+            'publish_config_override': overrides
+        }
+        tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('publish')]
+        mock_publish_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
+                                             kwargs=kwargs)
 
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_started')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_finished')

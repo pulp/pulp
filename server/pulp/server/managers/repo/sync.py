@@ -27,13 +27,14 @@ from gettext import gettext as _
 from celery import task
 
 from pulp.common import dateutils, constants
+from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
-from pulp.server.async.tasks import register_sigterm_handler, Task
+from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
 from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
@@ -112,10 +113,16 @@ class RepoSyncManager(object):
         if sync_result['result'] == RepoSyncResult.RESULT_FAILED:
             raise PulpExecutionException(_('Importer indicated a failed response'))
 
-        return sync_result
+        repo_publish_manager = manager_factory.repo_publish_manager()
+        auto_distributors = repo_publish_manager.auto_distributors(repo_id)
 
-        # auto publish call has been moved to a dependent call in a multiple
-        # call execution through the coordinator
+        spawned_tasks = []
+        for distributor in auto_distributors:
+            distributor_id = distributor['id']
+            spawned_tasks.append(
+                repo_publish_manager.queue_publish(repo_id, distributor_id).task_id)
+
+        return TaskResult(sync_result, spawned_tasks=spawned_tasks)
 
     @staticmethod
     def _get_importer_instance_and_config(repo_id):
@@ -312,6 +319,31 @@ class RepoSyncManager(object):
             os.makedirs(dir)
 
         return dir
+
+    @staticmethod
+    def queue_sync_with_auto_publish(repo_id, overrides=None):
+        """
+        Sync a repository and upon successful completion, publish
+        any distributors that are configured for auto publish.
+
+        :param repo_id: id of the repository to create a sync call request list for
+        :type repo_id: str
+        :param overrides: dictionary of configuration overrides for this sync
+        :type overrides: dict or None
+        :return: A task result containing the details of the task executed and any spawned tasks
+        :rtype: TaskResult
+        """
+        kwargs = {
+            'repo_id': repo_id,
+            'sync_config_override': overrides,
+        }
+
+        tags = [resource_tag(RESOURCE_REPOSITORY_TYPE, repo_id), action_tag('sync')]
+
+        result = sync.apply_async_with_reservation(
+            RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags, kwargs=kwargs)
+
+        return result
 
 
 sync = task(RepoSyncManager.sync, base=Task)
