@@ -284,3 +284,17 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
         url_name = 'consumer_group_unbind'
         assert_url_match(url, url_name, consumer_group_id='test-group',
                          repo_id='repo1', distributor_id='dist1')
+
+
+class TestDjangoTasksUrls(unittest.TestCase):
+    """
+    Test the matching for tasks urls.
+    """
+
+    def test_match_task_collection(self):
+        """
+        Test the matching for task_collection.
+        """
+        url = '/v2/tasks/'
+        url_name = 'task_collection'
+        assert_url_match(url, url_name)
