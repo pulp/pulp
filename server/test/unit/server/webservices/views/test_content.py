@@ -1,9 +1,8 @@
 from gettext import gettext as _
-import json
 import mock
 import unittest
 
-from django.http import HttpResponseNotFound, HttpResponseRedirect
+from django.http import HttpResponseNotFound
 
 from .base import assert_auth_DELETE, assert_auth_READ, assert_auth_CREATE, assert_auth_UPDATE
 from pulp.server import constants
@@ -524,9 +523,12 @@ class TestUploadsCollectionView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.content.iri_to_uri')
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.reverse')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_post_uploads_collection_view(self, mock_factory, mock_reverse):
+    def test_post_uploads_collection_view(self, mock_factory, mock_reverse, mock_resp,
+                                          mock_iri_to_uri):
         """
         View post should return a response that contains data for a new upload.
         """
@@ -540,17 +542,12 @@ class TestUploadsCollectionView(unittest.TestCase):
         content_types_view = UploadsCollectionView()
         response = content_types_view.post(request)
 
-        self.assertTrue(isinstance(response, HttpResponseRedirect))
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.reason_phrase, "Created")
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-
-        content = json.loads(response.content)
-        self.assertTrue(isinstance(content, dict))
-        self.assertEqual(content['_href'], '/mock/path/')
-        self.assertEqual(content['upload_id'], 'mock_id')
         self.assertTrue(mock_upload_manager.initialize_upload.called)
+
+        mock_resp.assert_called_once_with({'upload_id': 'mock_id', '_href': '/mock/path/'})
+        self.assertTrue(response is mock_resp.return_value)
+        self.assertTrue(mock_resp.return_value.status_code, 201)
+        mock_iri_to_uri.assert_called_once_with(mock_reverse.return_value)
 
 
 class TestUploadSegmentResourceView(unittest.TestCase):

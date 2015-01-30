@@ -2,6 +2,7 @@ import json
 
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.utils.encoding import iri_to_uri
 from django.views.generic import View
 
 from pulp.server import exceptions as pulp_exceptions
@@ -69,12 +70,10 @@ class ConsumerGroupView(View):
         link = {"_href": reverse('consumer_group_resource',
                 kwargs={'consumer_group_id': group['id']})}
         group.update(link)
-        return HttpResponseRedirect(
-            link["_href"],
-            json.dumps(group, default=pulp_json_encoder),
-            content_type="application/json",
-            status=201,
-            )
+        response = generate_json_response_with_pulp_encoder(group)
+        response['Location'] = iri_to_uri(link['_href'])
+        response.status_code = 201
+        return response
 
 
 class ConsumerGroupResourceView(View):

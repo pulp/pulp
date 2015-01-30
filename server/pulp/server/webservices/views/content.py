@@ -3,6 +3,7 @@ import json
 
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseNotFound, HttpResponseRedirect
+from django.utils.encoding import iri_to_uri
 from django.views.generic import View
 
 from pulp.common import tags
@@ -409,13 +410,10 @@ class UploadsCollectionView(View):
         upload_manager = factory.content_upload_manager()
         upload_id = upload_manager.initialize_upload()
         href = reverse('content_upload_resource', kwargs={'upload_id': upload_id})
-        return HttpResponseRedirect(
-            redirect_to=href,
-            status=201,
-            reason="Created",
-            content=json.dumps({'_href': href, 'upload_id': upload_id}),
-            content_type="application/json"
-        )
+        response = generate_json_response({'_href': href, 'upload_id': upload_id})
+        response['Location'] = iri_to_uri(href)
+        response.status_code = 201
+        return response
 
 
 class UploadSegmentResourceView(View):

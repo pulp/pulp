@@ -1,8 +1,7 @@
-import json
 import unittest
 
 import mock
-from django.http import HttpResponseRedirect, HttpResponseBadRequest
+from django.http import HttpResponseBadRequest
 
 from base import (assert_auth_CREATE, assert_auth_READ, assert_auth_UPDATE, assert_auth_DELETE,
                   assert_auth_EXECUTE)
@@ -45,8 +44,11 @@ class TestconsumerGroupView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.consumer_groups.iri_to_uri')
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_create_consumer_group(self, mock_factory):
+    def test_create_consumer_group(self, mock_factory, mock_resp, mock_iri_to_uri):
         """
         Test consumer group creation.
         """
@@ -59,12 +61,10 @@ class TestconsumerGroupView(unittest.TestCase):
         consumer_group = ConsumerGroupView()
         response = consumer_group.post(request)
 
-        self.assertTrue(isinstance(response, HttpResponseRedirect))
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-        content = json.loads(response.content)
-        self.assertEqual(content, expected_cont)
+        mock_resp.assert_called_once_with(expected_cont)
+        self.assertTrue(response is mock_resp.return_value)
+        self.assertTrue(mock_resp.return_value.status_code, 201)
+        mock_iri_to_uri.assert_called_once_with(expected_cont['_href'])
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_CREATE())

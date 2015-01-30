@@ -184,10 +184,6 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         url_name = 'plugin_importer_resource'
         assert_url_match(url, url_name, importer_id='mock_importer_id')
 
-        symbols_url = '/v2/plugins/importers/%21/'
-        url_name = 'plugin_importer_resource'
-        assert_url_match(symbols_url, url_name, importer_id='!')
-
     def test_match_importers_view(self):
         """
         Test the url matching for the Importers view
@@ -203,9 +199,6 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         url = '/v2/plugins/types/type_id/'
         url_name = 'plugin_type_resource'
         assert_url_match(url, url_name, type_id='type_id')
-
-        url_with_symbol = '/v2/plugins/types/%21/'
-        assert_url_match(url_with_symbol, url_name, type_id='!')
 
     def test_match_types_view(self):
         """
