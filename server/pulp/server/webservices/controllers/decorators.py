@@ -119,23 +119,102 @@ def is_consumer_authorized(resource, consumerid, operation):
     return False
 
 
-def auth_required(operation=None, super_user_only=False):
+def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
     """
-    Controller method wrapper that authenticates users based on various
-    credentials and then checks their authorization before allowing the
-    controller to be accessed.
+    Internal method for checking authentication and authorization. This code
+    is kept outside of the decorator which calls it so that it can be mocked.
+    This allows for the decorator itself which calls here to have assertions
+    made about the operation and super_user values set in the view code.
 
-    A None for the operation means not to check authorization, only check
+    An operation of None means not to check authorization; only check
     authentication.
 
     The super_user_only flag set to True means that only members of the
     built in SuperUsers role are authorized.
 
     :type operation: int or None
-    :param operation: the operation a user needs permission for
+    :param operation: The operation a user needs permission for, or None to
+                      skip authorization.
 
     :type super_user_only: bool
-    :param super_user_only: only authorize a user if they are a super user
+    :param super_user_only: Only authorize a user if they are a super user.
+    """
+    # Check Authentication
+
+    # Run through each registered and enabled auth function
+    is_consumer = False
+    registered_auth_functions = [check_preauthenticated,
+                                 password_authentication,
+                                 user_cert_authentication,
+                                 consumer_cert_authentication,
+                                 oauth_authentication]
+
+    user_authenticated = False
+    for authenticate_user in registered_auth_functions:
+        if authenticate_user == oauth_authentication:
+            userid, is_consumer = authenticate_user()
+        else:
+            userid = authenticate_user()
+
+        if userid is not None:
+            user_authenticated = True
+            if authenticate_user == consumer_cert_authentication:
+                is_consumer = True
+            break
+
+    if not user_authenticated:
+        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0025)
+
+    # Check Authorization
+
+    principal_manager = factory.principal_manager()
+    user_query_manager = factory.user_query_manager()
+
+    if super_user_only and not user_query_manager.is_superuser(userid):
+        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
+                                                       operation=OPERATION_NAMES[operation])
+    # if the operation is None, don't check authorization
+    elif operation is not None:
+        if is_consumer:
+            if is_consumer_authorized(http.resource_path(), userid, operation):
+                # set default principal = SYSTEM
+                principal_manager.set_principal()
+            else:
+                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
+                                                               user=userid,
+                                                               operation=OPERATION_NAMES[operation])
+        elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
+            user = user_query_manager.find_by_login(userid)
+            principal_manager.set_principal(user)
+        else:
+            raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
+                                                           user=userid,
+                                                           operation=OPERATION_NAMES[operation])
+
+    # Authentication and authorization succeeded. Call method and then clear principal.
+    value = method(self, *args, **kwargs)
+    principal_manager.clear_principal()
+    return value
+
+
+def auth_required(operation=None, super_user_only=False):
+    """
+    View method wrapper that authenticates users based on various credentials
+    and then checks their authorization before allowing the view to be
+    accessed.
+
+    An operation of None means not to check authorization; only check
+    authentication.
+
+    The super_user_only flag set to True means that only members of the
+    built in SuperUsers role are authorized.
+
+    :type operation: int or None
+    :param operation: The operation a user needs permission for or None to
+                      skip authorization.
+
+    :type super_user_only: bool
+    :param super_user_only: Only authorize a user if they are a super user.
     """
     def _auth_required(method):
         """
@@ -143,61 +222,23 @@ def auth_required(operation=None, super_user_only=False):
         """
         @wraps(method)
         def _auth_decorator(self, *args, **kwargs):
+            """
+            Calls the internal method which provides the authorization and
+            authentication.
 
-            # Check Authentication
+            :param args: The positional arguments to be passed to the wrapped
+                         view.
+            :type args: tuple
 
-            # Run through each registered and enabled auth function
-            is_consumer = False
-            registered_auth_functions = [check_preauthenticated,
-                                         password_authentication,
-                                         user_cert_authentication,
-                                         consumer_cert_authentication,
-                                         oauth_authentication]
+            :param kwargs: The keyword arguments to be passed to the wrapped
+                           view.
+            :type kwargs: dict
 
-            user_authenticated = False
-            for authenticate_user in registered_auth_functions:
-                if authenticate_user == oauth_authentication:
-                    userid, is_consumer = authenticate_user()
-                else:
-                    userid = authenticate_user()
-
-                if userid is not None:
-                    user_authenticated = True
-                    if authenticate_user == consumer_cert_authentication:
-                        is_consumer = True
-                    break
-
-            if not user_authenticated:
-                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0025)
-
-            # Check Authorization
-            principal_manager = factory.principal_manager()
-            user_query_manager = factory.user_query_manager()
-            if super_user_only and not user_query_manager.is_superuser(userid):
-                raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
-                                                       operation=OPERATION_NAMES[operation])
-            # if the operation is None, don't check authorization
-            elif operation is not None:
-                if is_consumer:
-                    if is_consumer_authorized(http.resource_path(), userid, operation):
-                        # set default principal = SYSTEM
-                        principal_manager.set_principal()
-                    else:
-                        raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                               user=userid,
-                                                               operation=OPERATION_NAMES[operation])
-                elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
-                    user = user_query_manager.find_by_login(userid)
-                    principal_manager.set_principal(user)
-                else:
-                    raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                           user=userid,
-                                                           operation=OPERATION_NAMES[operation])
-
-            # Authentication and authorization succeeded. Call method and then clear principal.
-            value = method(self, *args, **kwargs)
-            principal_manager.clear_principal()
-            return value
+            :raises: An Authorization or Authentication exception if either
+                     is invalid.
+            :returns: The result of the wrapped view method.
+            """
+            return _verify_auth(self, operation, super_user_only, method, *args, **kwargs)
 
         return _auth_decorator
     return _auth_required

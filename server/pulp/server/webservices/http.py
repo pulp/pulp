@@ -19,11 +19,16 @@ import base64
 import httplib
 import os
 import re
+import threading
 import urllib
 
 import web
 
 from pulp.server.compat import http_responses
+
+
+_thread_local = threading.local()
+
 
 # constants --------------------------------------------------------------------
 
@@ -31,6 +36,30 @@ API_HREF = '/pulp/api'
 API_V2_HREF = API_HREF + '/v2'
 
 # request methods -------------------------------------------------------------
+
+
+def _is_django():
+    """
+    Checks if the current request is handling Django by looking in thread-local data.
+
+    :return: True if being handled by Django, False otherwise
+    :rtype: bool
+    """
+    return hasattr(_thread_local, 'wsgi_environ')
+
+
+def _get_wsgi_environ():
+    """
+    Get the WSGI environment dictionary abstracted from which framework is serving this request.
+
+    :return: The WSGI environment dictionary
+    :rtype: bool
+    """
+    if _is_django():
+        return _thread_local.wsgi_environ
+    else:
+        return web.ctx.environ
+
 
 def request_info(key):
     """
@@ -42,7 +71,7 @@ def request_info(key):
     @rtype: str or None
     @return: request value
     """
-    return web.ctx.environ.get(key, None)
+    return _get_wsgi_environ().get(key, None)
 
 
 def request_method():
@@ -174,7 +203,6 @@ def username_password():
         return _digest_username_password(credentials)
     return (None, None)
 
-# ssl methods -----------------------------------------------------------------
 
 def ssl_client_cert():
     """
@@ -182,16 +210,18 @@ def ssl_client_cert():
     @rtype: str or None
     @return: pem encoded cert
     """
-    return web.ctx.environ.get('SSL_CLIENT_CERT', None)
+    return _get_wsgi_environ().get('SSL_CLIENT_CERT', None)
 
-# uri path functions ----------------------------------------------------------
 
 def uri_path():
     """
     Return the current URI path
     @return: full current URI path
     """
-    return web.http.url(web.ctx.path)
+    if _is_django():
+        return unicode(_get_wsgi_environ()['REQUEST_URI'])
+    else:
+        return web.http.url(web.ctx.path)
 
 
 def extend_uri_path(suffix, prefix=None):
@@ -216,6 +246,7 @@ def extend_uri_path(suffix, prefix=None):
         suffix = urllib.pathname2url(suffix.encode('utf-8'))
     path = os.path.normpath(os.path.join(prefix, suffix))
     return ensure_ending_slash(path)
+
 
 def sub_uri_path(*args):
     """
@@ -270,7 +301,6 @@ def ensure_ending_slash(uri_or_path):
         uri_or_path += '/'
     return uri_or_path
 
-# response functions ----------------------------------------------------------
 
 def header(hdr, value, unique=True):
     """
@@ -296,7 +326,6 @@ def header(hdr, value, unique=True):
             web.ctx.headers.remove(p)
     web.ctx.headers.append((hdr, value))
 
-# status functions ------------------------------------------------------------
 
 def _status(code):
     """
@@ -389,6 +418,7 @@ def status_not_implemented():
     Set the status reponse code to not implemented
     """
     _status(httplib.NOT_IMPLEMENTED)
+
 
 def status_partial():
     """
