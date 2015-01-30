@@ -1,18 +1,17 @@
 from gettext import gettext as _
-import json
 import mock
 import unittest
 
-from django.http import HttpResponseNotFound, HttpResponseRedirect
+from django.http import HttpResponseNotFound
 
-from .base import assert_auth_DELETE, assert_auth_READ, assert_auth_CREATE, assert_auth_UPDATE
+from .base import assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
 from pulp.server import constants
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.webservices.views.content import (
     CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
     ContentUnitsCollectionView, ContentUnitUserMetadataResourceView, DeleteOrphansActionView,
     OrphanCollectionView, OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView,
-    UploadsCollectionView, UploadSegmentResourceView
+    UploadSegmentResourceView
 )
 
 
@@ -495,62 +494,6 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
         msg = _('No content unit resource: mock_unit')
         mock_resp.assert_called_once_with(msg, HttpResponseNotFound)
         self.assertTrue(response is mock_resp.return_value)
-
-
-class TestUploadsCollectionView(unittest.TestCase):
-    """
-    Tests for views of all uploads.
-    """
-
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
-    @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_uploads_collection_view(self, mock_factory, mock_resp):
-        """
-        View should return an response that contains a serialized dict with a list of upload_ids.
-        """
-        mock_upload_manager = mock.MagicMock()
-        mock_upload_manager.list_upload_ids.return_value = ['mock_upload_1', 'mock_upload_2']
-        mock_factory.content_upload_manager.return_value = mock_upload_manager
-        request = mock.MagicMock()
-
-        content_types_view = UploadsCollectionView()
-        response = content_types_view.get(request)
-
-        expected_content = {'upload_ids': ['mock_upload_1', 'mock_upload_2']}
-        mock_resp.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_resp.return_value)
-
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.content.reverse')
-    @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_post_uploads_collection_view(self, mock_factory, mock_reverse):
-        """
-        View post should return a response that contains data for a new upload.
-        """
-        mock_upload_manager = mock.MagicMock()
-        mock_upload_manager.initialize_upload.return_value = 'mock_id'
-        mock_factory.content_upload_manager.return_value = mock_upload_manager
-
-        request = mock.MagicMock()
-        mock_reverse.return_value = '/mock/path/'
-
-        content_types_view = UploadsCollectionView()
-        response = content_types_view.post(request)
-
-        self.assertTrue(isinstance(response, HttpResponseRedirect))
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(response.reason_phrase, "Created")
-        self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
-
-        content = json.loads(response.content)
-        self.assertTrue(isinstance(content, dict))
-        self.assertEqual(content['_href'], '/mock/path/')
-        self.assertEqual(content['upload_id'], 'mock_id')
-        self.assertTrue(mock_upload_manager.initialize_upload.called)
 
 
 class TestUploadSegmentResourceView(unittest.TestCase):

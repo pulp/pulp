@@ -146,14 +146,6 @@ class TestDjangoContentUrls(unittest.TestCase):
         url_name = 'content_orphan_type_subcollection'
         assert_url_match(url, url_name, content_type='mock_type')
 
-    def test_match_content_uploads(self):
-        """
-        Test url matching for content_uploads.
-        """
-        url = '/v2/content/uploads/'
-        url_name = 'content_uploads'
-        assert_url_match(url, url_name)
-
 
 class TestDjangoPluginsUrls(unittest.TestCase):
     """
@@ -184,10 +176,6 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         url_name = 'plugin_importer_resource'
         assert_url_match(url, url_name, importer_id='mock_importer_id')
 
-        symbols_url = '/v2/plugins/importers/%21/'
-        url_name = 'plugin_importer_resource'
-        assert_url_match(symbols_url, url_name, importer_id='!')
-
     def test_match_importers_view(self):
         """
         Test the url matching for the Importers view
@@ -203,9 +191,6 @@ class TestDjangoPluginsUrls(unittest.TestCase):
         url = '/v2/plugins/types/type_id/'
         url_name = 'plugin_type_resource'
         assert_url_match(url, url_name, type_id='type_id')
-
-        url_with_symbol = '/v2/plugins/types/%21/'
-        assert_url_match(url_with_symbol, url_name, type_id='!')
 
     def test_match_types_view(self):
         """
@@ -234,13 +219,6 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
     """
     Tests for consumer_groups urls
     """
-    def test_match_consumer_group_view(self):
-        """
-        Test url matching for consumer_groups
-        """
-        url = '/v2/consumer_groups/'
-        url_name = 'consumer_group'
-        assert_url_match(url, url_name)
 
     def test_match_consumer_group_resource_view(self):
         """

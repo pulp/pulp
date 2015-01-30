@@ -1,8 +1,7 @@
 from gettext import gettext as _
-import json
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseNotFound, HttpResponseRedirect
+from django.http import HttpResponseNotFound
 from django.views.generic import View
 
 from pulp.common import tags
@@ -377,45 +376,6 @@ class ContentUnitUserMetadataResourceView(View):
         delta = {constants.PULP_USER_METADATA_FIELDNAME: params}
         cm.update_content_unit(type_id, unit_id, delta)
         return generate_json_response(None)
-
-
-class UploadsCollectionView(View):
-
-    @auth_required(authorization.READ)
-    def get(self, request):
-        """
-        Return a serialized response containing a dict with a list of upload_ids.
-
-        :param request: WSGI request object
-        :type  request: django.core.handlers.wsgi.WSGIRequest
-
-        :return: Serialized response containing a list  of upload ids
-        :rtype: django.http.HttpResponse
-        """
-        upload_manager = factory.content_upload_manager()
-        upload_ids = upload_manager.list_upload_ids()
-        return generate_json_response({'upload_ids': upload_ids})
-
-    @auth_required(authorization.CREATE)
-    def post(self, request, *args, **kwargs):
-        """
-        Initialize an upload and return a serialized dict conaining the upload data.
-
-        :param request: WSGI request object
-        :type  request: django.core.handlers.wsgi.WSGIRequest
-        :return       : Serialized response containing a url to delete an upload and a unique id.
-        :rtype        : HttpResponseRedirect
-        """
-        upload_manager = factory.content_upload_manager()
-        upload_id = upload_manager.initialize_upload()
-        href = reverse('content_upload_resource', kwargs={'upload_id': upload_id})
-        return HttpResponseRedirect(
-            redirect_to=href,
-            status=201,
-            reason="Created",
-            content=json.dumps({'_href': href, 'upload_id': upload_id}),
-            content_type="application/json"
-        )
 
 
 class UploadSegmentResourceView(View):

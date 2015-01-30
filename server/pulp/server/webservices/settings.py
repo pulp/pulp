@@ -34,9 +34,20 @@ WSGI_APPLICATION = 'pulp.server.webservices.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/1.4/ref/settings/#databases
+# Pulp doesn't give Django a connection to the database, but it needs to be defined for 1.4 tests
+# to pass.
 
 DATABASES = {
+    'default': {
+        'ENGINE': '',
+        'NAME': '',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    },
 }
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.4/topics/i18n/
