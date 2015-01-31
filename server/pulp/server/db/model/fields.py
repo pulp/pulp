@@ -24,4 +24,4 @@ class ISO8601StringField(StringField):
         try:
             dateutils.parse_iso8601_datetime(value)
         except ISO8601Error, e:
-            self.error(e.message)
+            self.error(str(e))

@@ -1044,7 +1044,7 @@ class TaskStatusTests(base.PulpServerTests):
         try:
             TaskStatus(task_id).save()
         except Exception, e:
-            self.assertTrue(task_id in e.message)
+            self.assertTrue(task_id in str(e))
         else:
             self.fail('Task status with a duplicate task id did not raise an exception')
 

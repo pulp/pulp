@@ -331,7 +331,7 @@ class Step(object):
             error_details['traceback'] = '\n'.join(traceback.format_tb(tb))
 
         if e is not None:
-            error_details['error'] = str(e.message) or str(e)
+            error_details['error'] = str(e)
 
         if error_details.values() != (None, None):
             self.error_details.append(error_details)

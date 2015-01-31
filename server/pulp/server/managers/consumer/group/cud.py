@@ -329,10 +329,10 @@ class ConsumerGroupManager(object):
                     additional_tasks.extend(report.spawned_tasks)
             except PulpException, e:
                 # Log a message so that we can debug but don't throw
-                _logger.debug(e.message)
+                _logger.debug(e)
                 bind_errors.append(e)
             except Exception, e:
-                _logger.exception(e.message)
+                _logger.exception(e)
                 # Don't do anything else since we still want to process all the other consumers
                 bind_errors.append(e)
 
@@ -374,7 +374,7 @@ class ConsumerGroupManager(object):
                     additional_tasks.extend(report.spawned_tasks)
             except PulpException, e:
                 # Log a message so that we can debug but don't throw
-                _logger.warn(e.message)
+                _logger.warn(e)
                 bind_errors.append(e)
             except Exception, e:
                 bind_errors.append(e)
@@ -416,10 +416,10 @@ class ConsumerGroupManager(object):
                 spawned_tasks.append(group_task)
             except PulpException, e:
                 # Log a message so that we can debug but don't throw
-                _logger.warn(e.message)
+                _logger.warn(e)
                 errors.append(e)
             except Exception, e:
-                _logger.exception(e.message)
+                _logger.exception(e)
                 errors.append(e)
                 # Don't do anything else since we still want to process all the other consumers
 
