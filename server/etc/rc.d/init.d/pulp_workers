@@ -47,50 +47,8 @@ DEFAULT_PULP_CONCURRENCY=$(nproc --all)
 
 CELERY_DEFAULTS=${CELERY_DEFAULTS:-"/etc/default/${SCRIPT_NAME}"}
 
-# Make sure executable configuration script is owned by root
-_config_sanity() {
-    local path="$1"
-    local owner=$(stat -Lt "$path" | awk '{print $5}')
-    local perm=$(stat -Lt "$path" | awk '{print $3}')
-
-    if [ "$owner" != "0" ]; then
-        echo "Error: Config script '$path' must be owned by root!"
-        echo
-        echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
-        echo "modified with mailicious intent.  When sure the "
-        echo "script is safe to execute with superuser privileges "
-        echo "you can change ownership of the script:"
-        echo "    $ sudo chown root '$path'"
-        exit 1
-    fi
-
-    if [ "$(($perm & 02))" -ne 0 ]; then  # S_IWOTH
-        echo "Error: Config script '$path' cannot be writable by others!"
-        echo
-        echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
-        echo "modified with malicious intent.  When sure the "
-        echo "script is safe to execute with superuser privileges "
-        echo "you can change the scripts permissions:"
-        echo "    $ sudo chmod 640 '$path'"
-        exit 1
-    fi
-    if [ "$(($perm & 020))" -ne 0 ]; then  # S_IWGRP
-        echo "Error: Config script '$path' cannot be writable by group!"
-        echo
-        echo "Resolution:"
-        echo "Review the file carefully and make sure it has not been "
-        echo "modified with malicious intent.  When sure the "
-        echo "script is safe to execute with superuser privileges "
-        echo "you can change the scripts permissions:"
-        echo "    $ sudo chmod 640 '$path'"
-        exit 1
-    fi
-}
 
 if [ -f "$CELERY_DEFAULTS" ]; then
-    _config_sanity "$CELERY_DEFAULTS"
     echo "Using config script: $CELERY_DEFAULTS"
     . "$CELERY_DEFAULTS"
 fi
