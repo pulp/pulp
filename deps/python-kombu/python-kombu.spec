@@ -11,7 +11,7 @@ Name:           python-%{srcname}
 # The Fedora package is using epoch 1, so we need to also do that to make sure ours gets installed
 Epoch:          1
 Version:        3.0.24
-Release:        4.pulp%{?dist}
+Release:        5.pulp%{?dist}
 Summary:        AMQP Messaging Framework for Python
 
 Group:          Development/Languages
@@ -19,8 +19,7 @@ Group:          Development/Languages
 License:        BSD and Python
 URL:            http://pypi.python.org/pypi/%{srcname}
 Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%{version}.tar.gz
-Patch0:         1174361.patch
-Patch1:         1182322.patch
+Patch0:         1182322.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -113,7 +112,6 @@ This subpackage is for python3
 %prep
 %setup -q -n %{srcname}-%{version}
 %patch0 -p1
-%patch1 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
@@ -170,6 +168,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Feb 03 2015 Brian Bouterse 3.0.24-5.pulp
+- 1174361 - Revert patch introduced with b0f2319. It is not needed.
+  (bbouters@redhat.com)
+
 * Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-4.pulp
 - 1182322 - handle case where PLAIN is used with saslwrapper
   (cduryee@redhat.com)
