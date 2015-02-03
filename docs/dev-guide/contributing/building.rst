@@ -473,6 +473,12 @@ Sync down your mash one more time (run from the ``pulp/rel-eng`` dir)::
 
    $ ./builder.py --disable-build --rpmsig <SIGNATURE-HASH> <version> <release>
 
+.. note::
+
+   This command does not download signed RPMs for RHEL 5, due to bugs in RHEL 5
+   related to signature verification. While we sign all RPMs including RHEL 5, we
+   do not publish the signed RPMs for this particular platform.
+
 After it is synced down, you can publish the build.
 
 Publishing the Build
