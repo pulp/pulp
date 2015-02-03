@@ -168,6 +168,10 @@ popd
 %endif # with_python3
 
 %changelog
+* Tue Feb 03 2015 Brian Bouterse 3.0.24-5.pulp
+- 1174361 - Revert patch introduced with b0f2319. It is not needed.
+  (bbouters@redhat.com)
+
 * Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 3.0.24-4.pulp
 - 1182322 - handle case where PLAIN is used with saslwrapper
   (cduryee@redhat.com)
