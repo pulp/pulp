@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import itertools
 import logging
 import ssl
@@ -91,10 +92,14 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
             raise Exception(_("The server config specified username/password authentication but "
                             "is missing either the username or the password"))
 
-        _logger.debug(_('Connection Arguments: %s') % connection_kwargs)
+        shadow_connection_kwargs = copy.deepcopy(connection_kwargs)
+        if connection_kwargs.get('password'):
+            shadow_connection_kwargs['password'] = '*'*len(shadow_connection_kwargs['password'])
+        _logger.debug(_('Connection Arguments: %s') % shadow_connection_kwargs)
 
         # Wait until the Mongo database is available
-        mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16], itertools.repeat(32))
+        mongo_retry_timeout_seconds_generator = itertools.chain([1, 2, 4, 8, 16],
+                                                                itertools.repeat(32))
         while True:
             try:
                 _CONNECTION = mongoengine.connect(name, **connection_kwargs)
@@ -181,11 +186,12 @@ class PulpCollection(Collection):
     applications
     """
 
-    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options', 'unset_lasterror_options',
-                          'insert', 'save', 'update', 'remove', 'drop', 'find', 'find_one', 'count',
-                          'create_index', 'ensure_index', 'drop_index', 'drop_indexes', 'reindex',
-                          'index_information', 'options', 'group', 'rename', 'distinct', 'map_reduce',
-                          'inline_map_reduce', 'find_and_modify')
+    _decorated_methods = ('get_lasterror_options', 'set_lasterror_options',
+                          'unset_lasterror_options', 'insert', 'save', 'update', 'remove', 'drop',
+                          'find', 'find_one', 'count', 'create_index', 'ensure_index',
+                          'drop_index', 'drop_indexes', 'reindex', 'index_information', 'options',
+                          'group', 'rename', 'distinct', 'map_reduce', 'inline_map_reduce',
+                          'find_and_modify')
 
     def __init__(self, database, name, create=False, **kwargs):
         super(PulpCollection, self).__init__(database, name, create=create, **kwargs)

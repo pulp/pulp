@@ -24,6 +24,15 @@ class TestDatabaseSeeds(unittest.TestCase):
         self.assertEqual(config.config.get('database', 'seeds'), 'localhost:27017')
 
     @patch('pulp.server.db.connection.mongoengine')
+    def test_seeds_invalid(self, mock_mongoengine):
+        mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
+        connection.initialize(seeds='localhost:27017:1234')
+        max_pool_size = connection._DEFAULT_MAX_POOL_SIZE
+        database = config.config.get('database', 'name')
+        mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
+                                                         host='localhost')
+
+    @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_is_empty(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
         connection.initialize(seeds='')
@@ -337,6 +346,25 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine.connect.assert_called_once_with('pulp_unittest', username='admin',
                                                          host='localhost', password='admin',
                                                          max_pool_size=10, port=27017)
+
+    @patch('pulp.server.db.connection._logger.debug')
+    @patch('pulp.server.db.connection.mongoengine')
+    def test_initialize_username_and_shadows_password(self, mock_mongoengine, mock_log):
+        mock_mongoengine_instance = mock_mongoengine.connect.return_value
+        mock_mongoengine_instance.server_info.return_value = {"version":
+                                                              connection.MONGO_MINIMUM_VERSION}
+        config.config.set('database', 'username', 'admin')
+        config.config.set('database', 'password', 'admin')
+        connection.initialize()
+        mock_mongoengine.connect.assert_called_once_with('pulp_unittest', username='admin',
+                                                         host='localhost', password='admin',
+                                                         max_pool_size=10, port=27017)
+        expected_calls = [
+            call('Attempting username and password authentication.'),
+            call("Connection Arguments: {'username': 'admin', 'host': 'localhost', "
+                 "'password': '*****', 'max_pool_size': 10, 'port': 27017}"),
+            call('Querying the database to validate the connection.')]
+        mock_log.assert_has_calls(expected_calls)
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_initialize_no_username_or_password(self, mock_mongoengine):
