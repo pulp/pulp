@@ -270,7 +270,7 @@ class TestDelQueueCatchQueueInUseException(TestCase):
             string_a = 'Consumers are still bound to the queue'
             string_b = ('All consumers must be unregistered, upgraded, or off before you can '
                         'continue')
-            if string_a not in error.message or string_b not in error.message:
+            if string_a not in str(error) or string_b not in str(error):
                 self.fail("Migration 0009 does not handle a 'queue in use' exception")
 
     def test__del_queue_catch_no_queue_in_use_exception_calls_passed_through_other_exceptions(self):

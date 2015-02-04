@@ -217,7 +217,7 @@ class PluginStepTests(PluginBase):
             plugin_step._record_failure(e, tb)
 
         self.assertEquals(plugin_step.progress_failures, 1)
-        details = {'error': e.message,
+        details = {'error': str(e),
                    'traceback': '\n'.join(traceback.format_tb(tb))}
         self.assertEqual(plugin_step.error_details[0], details)
 
@@ -477,7 +477,7 @@ class PublishStepTests(PublisherBase):
             publish_step._record_failure(e, tb)
 
         self.assertEquals(publish_step.progress_failures, 1)
-        details = {'error': e.message,
+        details = {'error': str(e),
                    'traceback': '\n'.join(traceback.format_tb(tb))}
         self.assertEqual(publish_step.error_details[0], details)
 

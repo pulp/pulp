@@ -143,7 +143,7 @@ def _del_queue_catch_queue_in_use_exception(broker, name):
     try:
         broker.delQueue(name)
     except Exception as exc:
-        if 'Cannot delete queue' in exc.message and 'queue in use' in exc.message:
+        if 'Cannot delete queue' in str(exc) and 'queue in use' in str(exc):
             msg_data = {'queue_name': name, 'cannot_delete_queue_url': CANNOT_DELETE_QUEUE_URL}
             msg = _(
                 "Consumers are still bound to the queue '%(queue_name)s'. "
