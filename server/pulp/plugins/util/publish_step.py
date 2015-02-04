@@ -1080,6 +1080,10 @@ class GetLocalUnitsStep(PluginStep):
 
         This should be overridden in a subclass.
 
+        Any keys in the "metadata" dict on the returned unit will overwrite the
+        corresponding values that are currently saved in the unit's metadata.
+        Thus, a plugin should use an empty dict for the metadata.
+
         :param unit_dict:   a flat dictionary that has all unit key, metadata,
                             etc. keys at the root level, representing a unit
                             in pulp
