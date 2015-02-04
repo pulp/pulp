@@ -1,0 +1,13 @@
+=========================
+Pulp 2.7 Release Notes
+=========================
+
+Pulp 2.7.0
+===========
+
+New Features
+------------
+
+- The repo authentication functionality previously associated with pulp_rpm has
+  been moved to platform. This makes it available for other plugins to use.
+

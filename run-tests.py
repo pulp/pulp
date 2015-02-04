@@ -16,6 +16,7 @@ paths_to_check = [
     'server/pulp/plugins/file/',
     'server/pulp/plugins/loader/',
     'server/pulp/plugins/types/',
+    'repoauth/',
     'server/pulp/server/agent/',
     'server/pulp/server/async/',
     'server/pulp/server/auth/',
@@ -52,6 +53,7 @@ TESTS_NON_RHEL5 = [
     'client_admin/test/unit',
     'nodes/test/unit',
     'server/test/unit',
+    'repoauth/test',
     'devel/test/unit'
 ]
 
