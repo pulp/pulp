@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 Contains users query classes
 """
@@ -99,11 +87,10 @@ class UserQueryManager(object):
         @rtype: bool
         @return: True if the user is a super user, False otherwise
         """
-        user = User.get_collection().find_one({'login' : login})
+        user = User.get_collection().find_one({'login': login})
         if user is None:
             raise MissingResource(login)
 
-        role_manager = factory.role_manager()
         return SUPER_USER_ROLE in user['roles']
 
     def is_authorized(self, resource, login, operation):
@@ -154,7 +141,6 @@ class UserQueryManager(object):
         @raise PulpDataException: if no super users are found
         """
         user = User.get_collection().find_one({'login': login})
-        role_manager = factory.role_manager()
         if SUPER_USER_ROLE not in user['roles']:
             return False
 
@@ -165,7 +151,7 @@ class UserQueryManager(object):
         if len(users) >= 2:
             return False
 
-        return users[0]['_id'] == user['_id'] # this should be True
+        return users[0]['_id'] == user['_id']  # this should be True
 
     @staticmethod
     def find_by_criteria(criteria):

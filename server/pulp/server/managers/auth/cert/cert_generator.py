@@ -1,34 +1,22 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2010 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import logging
-from M2Crypto import X509, EVP, RSA, util
 from threading import RLock
+import logging
 import subprocess
 
-from pulp.server.exceptions import PulpException
-from pulp.server import config
-from pulp.server.util import Singleton
-from pulp.common.util import encode_unicode
+from M2Crypto import X509, EVP, RSA, util
 
-log = logging.getLogger(__name__)
+from pulp.common.util import encode_unicode
+from pulp.server import config
+from pulp.server.exceptions import PulpException
+from pulp.server.util import Singleton
+
+
+_logger = logging.getLogger(__name__)
 
 ADMIN_PREFIX = 'admin:'
 ADMIN_SPLITTER = ':'
 
 
 class CertGenerationManager(object):
-    
     def make_admin_user_cert(self, user):
         """
         Generates a x509 certificate for an admin user.
@@ -63,9 +51,9 @@ class CertGenerationManager(object):
         except UnicodeEncodeError:
             cn = encode_unicode(cn)
 
-        log.debug("make_cert: [%s]" % cn)
+        _logger.debug("make_cert: [%s]" % cn)
 
-        #Make a private key
+        # Make a private key
         # Don't use M2Crypto directly as it leads to segfaults when trying to convert
         # the key to a PEM string.  Instead create the key with openssl and return the PEM string
         # Sorta hacky but necessary.
@@ -87,9 +75,9 @@ class CertGenerationManager(object):
         serial = sn.next()
 
         cmd = 'openssl x509 -req -sha1 -CA %s -CAkey %s -set_serial %s -days %d' % \
-                (ca_cert, ca_key, serial, expiration)
+              (ca_cert, ca_key, serial, expiration)
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         output = p.communicate(input=req.as_pem())[0]
         p.wait()
         exit_code = p.returncode
@@ -113,7 +101,7 @@ class CertGenerationManager(object):
         ca_cert = config.config.get('security', 'cacert')
         cmd = 'openssl verify -CAfile %s' % ca_cert
         p = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE,
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # Use communicate to pipe the certificate to the verify call
         stdout, stderr = p.communicate(input=cert_pem)
@@ -161,7 +149,7 @@ class CertGenerationManager(object):
 
         @param encoded_string: string representation of the user provided by encode_admin_user
         @type  encoded_string: string
-    
+
         @return: tuple of information describing the admin user; (username, id)
         @rtype:  (string, string)
         '''
@@ -220,8 +208,6 @@ class SerialNumber:
         finally:
             self.__mutex.release()
 
-    
-#----------------------------------------------------------------------------------------------------
 
 def _make_priv_key():
     cmd = 'openssl genrsa 1024'
@@ -252,4 +238,3 @@ def _make_cert_request(cn, rsa, uid=None):
     request.add_extensions(extensions)
     request.sign(pub_key, 'sha1')
     return request, pub_key
-

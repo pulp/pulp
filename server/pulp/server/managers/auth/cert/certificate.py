@@ -1,16 +1,3 @@
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
-
 """
 Contains classes for working with x.509 certificates.
 The backing implementation is M2Crypto.X509 which has insufficient
@@ -18,17 +5,15 @@ support for custom v3 extensions.  It is not intended to be a
 replacement of full wrapper but instead and extension.
 """
 
-import logging
+from datetime import datetime as dt
 import os
 import re
-from datetime import datetime as dt
 
 from M2Crypto import X509
 
 from pulp.common import dateutils
 from pulp.common.util import encode_unicode
 
-log = logging.getLogger(__name__)
 
 class CertificateManager(object):
     """
@@ -153,7 +138,7 @@ class CertificateManager(object):
         if hasattr(self, 'path'):
             os.unlink(self.path)
         else:
-            raise Exception, 'no path, not deleted'
+            raise Exception('no path, not deleted')
 
     def toPEM(self):
         """
@@ -233,7 +218,7 @@ class Key(object):
         if hasattr(self, 'path'):
             os.unlink(self.path)
         else:
-            raise Exception, 'no path, not deleted'
+            raise Exception('no path, not deleted')
 
     def __str__(self):
         return self.content
@@ -282,7 +267,7 @@ class DateRange:
         """
         gmt = dt.utcnow()
         gmt = gmt.replace(tzinfo=GMT())
-        return ( gmt >= self.begin() and gmt <= self.end() )
+        return gmt >= self.begin() and gmt <= self.end()
 
     def __parse(self, asn1):
         try:
@@ -327,7 +312,7 @@ class Extensions(dict):
         @rtype: L{Extensions}
         """
         d = {}
-        for oid,v in self.items():
+        for oid, v in self.items():
             d[oid.ltrim(n)] = v
         return Extensions(d)
 
@@ -383,8 +368,8 @@ class Extensions(dict):
             root = OID(root)
         if root[-1]:
             root = root.append('')
-        ln = len(root)-1
-        for oid,v in self.find(root):
+        ln = len(root) - 1
+        for oid, v in self.find(root):
             trimmed = oid.ltrim(ln)
             d[trimmed] = v
         return Extensions(d)
@@ -524,7 +509,7 @@ class OID(object):
             if len(parts) != len(oid):
                 raise Exception()
             for x in parts:
-                if ( x == oid[i] or oid[i] == self.WILDCARD ):
+                if x == oid[i] or oid[i] == self.WILDCARD:
                     i += 1
                 else:
                     raise Exception()
@@ -545,7 +530,7 @@ class OID(object):
         return hash(str(self))
 
     def __eq__(self, other):
-        return ( str(self) == str(other) )
+        return str(self) == str(other)
 
     def __str__(self):
         return '.'.join(self.part)
@@ -673,8 +658,7 @@ class EntitlementCertificate(ProductCertificate):
         @return: A list of entitlement object.
         @rtype: [L{Entitlement},..]
         """
-        return self.getContentEntitlements() \
-             + self.getRoleEntitlements()
+        return self.getContentEntitlements() + self.getRoleEntitlements()
 
     def getContentEntitlements(self):
         """
@@ -806,7 +790,7 @@ class Product:
         return self.ext.get('4')
 
     def __eq__(self, rhs):
-        return ( self.getHash() == rhs.getHash() )
+        return self.getHash() == rhs.getHash()
 
     def __str__(self):
         s = []
@@ -856,7 +840,7 @@ class Content(Entitlement):
         return self.ext.get('8')
 
     def __eq__(self, rhs):
-        return ( self.getLabel() == rhs.getLabel() )
+        return self.getLabel() == rhs.getLabel()
 
     def __str__(self):
         s = []
@@ -885,7 +869,7 @@ class Role(Entitlement):
         return self.ext.get('2')
 
     def __eq__(self, rhs):
-        return ( self.getName() == rhs.getName() )
+        return self.getName() == rhs.getName()
 
     def __str__(self):
         s = []
@@ -912,11 +896,11 @@ class Bundle(object):
     def split(cls, pem):
         m = cls.KEY_PATTERN.search(pem)
         if m is None:
-            raise Exception, 'Key not found.'
+            raise Exception('Key not found.')
         key = m.group(0)
         m = cls.CERT_PATTERN.search(pem)
         if m is None:
-            raise Exception, 'Certificate not found.'
+            raise Exception('Certificate not found.')
         cert = m.group(0)
         return (key, cert)
 
