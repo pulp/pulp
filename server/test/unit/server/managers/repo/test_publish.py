@@ -53,9 +53,11 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_publish_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
                                              kwargs=kwargs)
 
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_started')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_finished')
-    def test_publish(self, mock_finished, mock_started):
+    def test_publish(self, mock_finished, mock_started, mock_get_working_directory):
         """
         Tests publish under normal conditions when everything is configured
         correctly.
@@ -112,7 +114,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertEqual(1, mock_finished.call_count)
         self.assertEqual('repo-1', mock_finished.call_args[0][0]['repo_id'])
 
-    def test_publish_failure_report(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_failure_report(self, mock_get_working_directory):
         """
         Tests a publish call that indicates a graceful failure.
         """
@@ -148,7 +152,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.reset()
 
-    def test_publish_with_config_override(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_with_config_override(self, mock_get_working_directory):
         """
         Tests a publish when passing in override values.
         """
@@ -236,7 +242,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         except publish_manager.MissingResource, e:
             self.assertTrue('repo' == e.resources['repository'])
 
-    def test_publish_with_error(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_with_error(self, mock_get_working_directory):
         """
         Tests a publish when the plugin raises an error.
         """
@@ -374,7 +382,9 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertRaises(MissingResource, self.publish_manager.last_publish, 'repo-1',
                           'random-dist')
 
-    def test_publish_no_plugin_report(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_no_plugin_report(self, mock_get_working_directory):
         """
         Tests publishing against a sloppy plugin that doesn't return a report.
         """

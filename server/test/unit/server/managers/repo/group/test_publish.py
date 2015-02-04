@@ -1,3 +1,5 @@
+import mock
+
 from ..... import base
 from pulp.common import dateutils
 from pulp.devel import mock_plugins
@@ -9,7 +11,10 @@ from pulp.server.managers import factory as manager_factory
 
 
 class RepoGroupPublishManagerTests(base.PulpServerTests):
-    def setUp(self):
+
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def setUp(self, mock_get_working_directory):
         super(RepoGroupPublishManagerTests, self).setUp()
         mock_plugins.install()
 
@@ -35,7 +40,9 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         RepoGroupDistributor.get_collection().remove()
         RepoGroupPublishResult.get_collection().remove()
 
-    def test_publish(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish(self, mock_get_working_directory):
         # Setup
         summary = 'summary'
         details = 'details'
@@ -85,7 +92,9 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         # Clean Up
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = None
 
-    def test_publish_with_plugin_exception(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_with_plugin_exception(self, mock_get_working_directory):
         # Setup
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.side_effect = Exception()
 
@@ -106,7 +115,9 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         # Clean Up
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.side_effect = None
 
-    def test_publish_with_plugin_failure_report(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_with_plugin_failure_report(self, mock_get_working_directory):
         # Setup
         summary = 'summary'
         details = 'details'
@@ -126,7 +137,9 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         # Clean Up
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.publish_group.return_value = None
 
-    def test_publish_with_plugin_no_report(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_publish_with_plugin_no_report(self, mock_get_working_directory):
         # Test
         self.publish_manager.publish(self.group_id, self.distributor_id)
 
@@ -135,7 +148,9 @@ class RepoGroupPublishManagerTests(base.PulpServerTests):
         self.assertEqual(1, len(history_entries))
         self.assertEqual(history_entries[0]['result'], RepoGroupPublishResult.RESULT_SUCCESS)
 
-    def test_last_publish(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_last_publish(self, mock_get_working_directory):
         # Setup
         self.publish_manager.publish(self.group_id, self.distributor_id)
 

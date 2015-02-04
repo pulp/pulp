@@ -44,6 +44,7 @@ DIRS = [
     '/var/lib/pulp_client/admin/extensions',
     '/var/lib/pulp_client/consumer',
     '/var/lib/pulp_client/consumer/extensions',
+    '/var/cache/pulp',
 ]
 
 # We only support Python >= 2.6 for the server code

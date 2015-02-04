@@ -142,7 +142,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         for unit in repo_units:
             self.assertTrue(unit['unit_id'] in ids)
 
-    def test_unassociate_by_id(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_unassociate_by_id(self, mock_get_working_directory):
         """
         Tests removing an association that exists by its unit ID.
         """
@@ -171,7 +173,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.manager.unassociate_unit_by_id(self.repo_id, 'type-1', 'unit-1', OWNER_TYPE_USER,
                                             'admin')
 
-    def test_associate_from_repo_no_criteria(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_associate_from_repo_no_criteria(self, mock_get_working_directory):
         # Setup
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -226,7 +230,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         # Clean Up
         manager_factory.principal_manager().set_principal(principal=None)
 
-    def test_associate_from_repo_with_criteria(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_associate_from_repo_with_criteria(self, mock_get_working_directory):
         # Setup
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -316,7 +322,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertRaises(exceptions.MissingResource,
                           self.manager.associate_from_repo, source_repo_id, dest_repo_id)
 
-    def test_associate_from_repo_importer_error(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_associate_from_repo_importer_error(self, mock_get_working_directory):
         # Setup
         source_repo_id = 'source-repo'
         dest_repo_id = 'dest-repo'
@@ -457,7 +465,9 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
 
         mock_call.assert_called_once_with(self.repo_id, 'type-1', 2)
 
-    def test_unassociate_all(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_unassociate_all(self, mock_get_working_directory):
         """
         Tests unassociating multiple units in a single call.
         """
@@ -496,8 +506,10 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertTrue(unit_coll.find_one({'repo_id': self.repo_id, 'unit_type_id': 'type-2',
                                             'unit_id': 'unit-2'}) is not None)
 
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_unit_count')
-    def test_unassociate_by_id_calls_update_unit_count(self, mock_call):
+    def test_unassociate_by_id_calls_update_unit_count(self, mock_call, mock_get_working_directory):
         self.manager.associate_unit_by_id(
             self.repo_id, self.unit_type_id, self.unit_id, OWNER_TYPE_USER, 'admin')
         self.manager.unassociate_unit_by_id(
@@ -535,8 +547,10 @@ class RepoUnitAssociationManagerTests(base.PulpServerTests):
         self.assertFalse(self.manager.association_exists(self.repo_id, 'type-1', 'unit-1'))
         self.assertEqual(mock_count.call_count, 1)
 
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.repo.cud.RepoManager.update_last_unit_removed')
-    def test_unassociate_via_criteria(self, mock_call):
+    def test_unassociate_via_criteria(self, mock_call, mock_get_working_directory):
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id,
                                           OWNER_TYPE_USER, 'admin')
         self.manager.associate_unit_by_id(self.repo_id, self.unit_type_id, self.unit_id_2,

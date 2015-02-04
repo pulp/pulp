@@ -73,8 +73,7 @@ class RepoPublishManager(object):
         call_config = PluginCallConfiguration(distributor_config, repo_distributor['config'],
                                               publish_config_override)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.distributor_working_dir(
-            repo_distributor['distributor_type_id'], repo_id, mkdir=True)
+        transfer_repo.working_dir = common_utils.get_working_directory()
 
         # Fire events describing the publish state
         fire_manager = manager_factory.event_fire_manager()

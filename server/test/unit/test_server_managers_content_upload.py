@@ -13,6 +13,7 @@ import os
 import shutil
 
 import base
+import mock
 
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.upload import UploadConduit
@@ -158,15 +159,18 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'empty', 'mock-type')
         self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'fake', 'mock-type')
 
-    def test_is_valid_upload_unsupported_type(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_is_valid_upload_unsupported_type(self, mock_get_working_directory):
         # Setup
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
-
         # Test
         self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u', 'fake-type')
 
-    def test_import_uploaded_unit(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_import_uploaded_unit(self, mock_get_working_directory):
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
 
@@ -209,7 +213,9 @@ class ContentUploadManagerTests(base.PulpServerTests):
         # Test
         self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake', 'mock-type', {}, {}, 'irrelevant')
 
-    def test_import_uploaded_unit_importer_error(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_import_uploaded_unit_importer_error(self, mock_get_working_directory):
         # Setup
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
@@ -221,7 +227,10 @@ class ContentUploadManagerTests(base.PulpServerTests):
         # Test
         self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
 
-    def test_import_uploaded_unit_importer_error_reraise_pulp_exception(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_import_uploaded_unit_importer_error_reraise_pulp_exception(self,
+                                                                        mock_get_working_dir):
         # Setup
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})

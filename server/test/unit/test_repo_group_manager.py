@@ -270,20 +270,15 @@ class RepoGroupCUDTests(RepoGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(group['notes'])
 
-    def test_delete(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_delete(self, mock_get_working_directory):
         # Setup
         group_id = 'delete_me'
         self.manager.create_repo_group(group_id)
 
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(group is None)
-
-        # Simulate the working dir being created by a plugin
-        working_dir = common_utils.repo_group_working_dir(group_id)
-        if os.path.exists(working_dir):
-            shutil.rmtree(working_dir)
-        os.makedirs(working_dir)
-        self.assertTrue(os.path.exists(working_dir))
 
         # Test
         self.manager.delete_repo_group(group_id)
@@ -292,10 +287,10 @@ class RepoGroupCUDTests(RepoGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertTrue(group is None)
 
-        # Ensure the working dir was deleted
-        self.assertTrue(not os.path.exists(working_dir))
 
-    def test_delete_with_distributor(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_delete_with_distributor(self, mock_get_working_directory):
         # Setup
         group_id = 'doomed'
         self.manager.create_repo_group(group_id)

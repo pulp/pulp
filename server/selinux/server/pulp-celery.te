@@ -5,8 +5,12 @@ type celery_t;
 type celery_exec_t;
 init_daemon_domain(celery_t, celery_exec_t)
 
+type pulp_var_cache_t;
+files_type(pulp_var_cache_t)
+
 require {
         type celery_t;
+        type pulp_var_cache_t;
         type pulp_cert_t;
         type puppet_etc_t;
         type var_run_t;
@@ -14,7 +18,7 @@ require {
         class file { lock rename write setattr getattr read create unlink open };
         class process { setsched signal signull };
         class tcp_socket { connect create getattr getopt read setopt shutdown write };
-        class lnk_file { create };
+        class lnk_file { create read getattr unlink};
         class netlink_route_socket { bind create getattr nlmsg_read write read };
         class udp_socket { ioctl create getattr connect write read };
         class unix_dgram_socket { create connect };
@@ -57,6 +61,16 @@ ifdef(`distro_rhel6', `
 ',`
     miscfiles_read_generic_certs(celery_t)
 ')
+
+######################################
+#
+# Pulp workers need temporary working directories to perform various tasks.  This policy allows
+# management of files and directories. The default root directory is /var/cache/pulp.
+#
+
+allow celery_t pulp_var_cache_t:lnk_file { create read getattr unlink };
+manage_dirs_pattern(celery_t, pulp_var_cache_t, pulp_var_cache_t)
+manage_files_pattern(celery_t, pulp_var_cache_t, pulp_var_cache_t)
 
 ######################################
 

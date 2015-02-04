@@ -178,6 +178,7 @@ mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/static
 mkdir -p %{buildroot}/%{_var}/www
+mkdir -p %{buildroot}/%{_var}/cache/%{name}
 
 # Configuration
 cp -R server/etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
@@ -355,6 +356,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 # - apache:apache
 %defattr(-,apache,apache,-)
+%{_var}/cache/%{name}/
 %dir %{_var}/log/%{name}
 %{_var}/lib/%{name}/
 %{_var}/www/pub

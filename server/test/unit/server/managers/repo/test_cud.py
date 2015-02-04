@@ -342,7 +342,9 @@ class RepoManagerTests(base.ResourceReservationTests):
         except exceptions.MissingResource, e:
             self.assertTrue('fake repo' == e.resources['resource_id'])
 
-    def test_delete_with_plugins(self):
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def test_delete_with_plugins(self, mock_get_working_directory):
         """
         Tests that deleting a repo that has importers and distributors configured deletes them as
         well.
@@ -375,7 +377,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
         self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.call_count)
 
-        repo_working_dir = common_utils.repository_working_dir('doomed', mkdir=False)
+        repo_working_dir = common_utils.get_working_directory()
         self.assertTrue(not os.path.exists(repo_working_dir))
 
     def test_delete_with_plugin_error(self):
@@ -451,10 +453,13 @@ class RepoManagerTests(base.ResourceReservationTests):
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' == e.resources['resource_id'])
 
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     @mock.patch('pulp.server.tasks.repository.distributor_update.apply_async_with_reservation',
                 side_effect=repository.distributor_update.apply_async_with_reservation)
-    def test_update_repo_and_plugins(self, distributor_update, mock_get_worker_for_reservation):
+    def test_update_repo_and_plugins(self, distributor_update, mock_get_worker_for_reservation,
+                                     mock_get_working_directory):
         """
         Tests the aggregate call to update a repo and its plugins.
         """
