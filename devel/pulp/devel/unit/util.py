@@ -1,5 +1,5 @@
 import os
-
+import mock
 
 def compare_dict(source, target):
     """
@@ -78,10 +78,14 @@ class SideEffect(object):
         """
         self.values = iter(values)
 
-    def __call__(self):
+    def __call__(self, *args, **kwargs):
         value = self.values.next()
+        if isinstance(value, mock.Mock):
+            return value
+        if isinstance(value, mock.MagicMock):
+            return value
         if callable(value):
-            value = value()
+            value = value(*args, **kwargs)
         if isinstance(value, Exception):
             raise value
         return value
