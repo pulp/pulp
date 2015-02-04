@@ -30,6 +30,7 @@ paths_to_check = [
     'server/pulp/server/managers/consumer/',
     'server/pulp/server/managers/repo/',
     'server/pulp/server/tasks/',
+    'server/test/unit/plugins/',
     'server/test/unit/server/']
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'

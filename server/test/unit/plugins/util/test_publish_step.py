@@ -9,16 +9,15 @@ import traceback
 import unittest
 
 from mock import Mock, patch, MagicMock
-
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.request import DownloadRequest
 
 from pulp.common.plugins import reporting_constants, importer_constants
 from pulp.devel.unit.util import touch, compare_dict
-from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
-from pulp.plugins.model import Repository, Unit
+from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.model import Repository, SyncReport, Unit
 from pulp.plugins.util.publish_step import Step, PublishStep, UnitPublishStep, PluginStep, \
     AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep, \
     PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep
@@ -61,8 +60,8 @@ class PluginBase(unittest.TestCase):
         self.conduit.get_repo_scratchpad = Mock(return_value={})
 
         self.config = PluginCallConfiguration(None, None)
-        self.pluginstep = PluginStep("base-step", repo=self.repo, conduit=self.conduit, config=self.config,
-                                     plugin_type='test_plugin_type')
+        self.pluginstep = PluginStep("base-step", repo=self.repo, conduit=self.conduit,
+                                     config=self.config, plugin_type='test_plugin_type')
 
 
 class PostOrderTests(unittest.TestCase):
@@ -339,7 +338,6 @@ class PluginStepTests(PluginBase):
         step.process.assert_called_once_with()
         child_step.process.assert_called_once_with()
         step.report_progress.assert_called_once_with(force=True)
-        #self.assertTrue(False)
 
     def test_process_lifecycle_reports_on_error(self):
         # set working_dir and conduit. This is required by process_lifecycle
@@ -763,8 +761,7 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         master_dir = os.path.join(self.working_directory, 'master')
         publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
         publish_dir += '/'
-        step = AtomicDirectoryPublishStep(source_dir,
-                                                        [('/', publish_dir)], master_dir)
+        step = AtomicDirectoryPublishStep(source_dir, [('/', publish_dir)], master_dir)
         step.parent = Mock(timestamp=str(time.time()))
 
         # create some files to test
@@ -793,10 +790,8 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
 
         target_qux = os.path.join(self.working_directory, 'publish', 'qux.html')
 
-        step = AtomicDirectoryPublishStep(source_dir,
-                                                        [('/', publish_dir),
-                                                         ('qux/quux.html', target_qux)
-                                                         ], master_dir)
+        step = AtomicDirectoryPublishStep(
+            source_dir, [('/', publish_dir), ('qux/quux.html', target_qux)], master_dir)
         step.parent = Mock(timestamp=str(time.time()))
 
         step.process_main()
@@ -879,6 +874,7 @@ class TestCopyDirectoryStep(unittest.TestCase):
 
         self.assertTrue(os.path.exists(target_file))
 
+
 class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
 
     class DummyStep(PluginStepIterativeProcessingMixin):
@@ -892,7 +888,7 @@ class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
             self.report_progress = Mock()
 
         def get_generator(self):
-            return (n for n in [1,2])
+            return (n for n in [1, 2])
 
     class DummyCanceledStep(PluginStepIterativeProcessingMixin):
         """
@@ -905,7 +901,7 @@ class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
             self.report_progress = Mock()
 
         def get_generator(self):
-            return (n for n in [1,2])
+            return (n for n in [1, 2])
 
     def test_get_generator(self):
         mixin = PluginStepIterativeProcessingMixin()
@@ -935,15 +931,15 @@ class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
 
 class DownloadStepTests(unittest.TestCase):
 
-    TYPE_ID_FOO = 'foo' 
+    TYPE_ID_FOO = 'foo'
 
     def get_basic_config(*arg, **kwargs):
-        plugin_config = {"num_retries":0, "retry_delay":0}
+        plugin_config = {"num_retries": 0, "retry_delay": 0}
         repo_plugin_config = {}
         for key in kwargs:
             repo_plugin_config[key] = kwargs[key]
         config = PluginCallConfiguration(plugin_config,
-                repo_plugin_config=repo_plugin_config)
+                                         repo_plugin_config=repo_plugin_config)
         return config
 
     def get_sync_conduit(type_id=None, existing_units=None, pkg_dir=None):
@@ -1014,7 +1010,6 @@ class DownloadStepTests(unittest.TestCase):
         self.real_config = self.get_basic_config(**conf_dict)
         self.real_conduit = self.get_sync_conduit()
 
-
         self.mock_repo = Mock()
         self.mock_conduit = Mock()
         self.mock_config = Mock()
@@ -1067,7 +1062,7 @@ class DownloadStepTests(unittest.TestCase):
         tests https://bugzilla.redhat.com/show_bug.cgi?id=949004
         """
         slash_config = self.get_basic_config(
-                       **{importer_constants.KEY_FEED: 'http://fake.com/no_trailing_slash'})
+            **{importer_constants.KEY_FEED: 'http://fake.com/no_trailing_slash'})
 
         # override mock config with real config dict
         self.dlstep.config = slash_config
@@ -1078,7 +1073,7 @@ class DownloadStepTests(unittest.TestCase):
 
     def test__init___file_downloader(self):
         slash_config = self.get_basic_config(
-                       **{importer_constants.KEY_FEED: 'file:///some/path/'})
+            **{importer_constants.KEY_FEED: 'file:///some/path/'})
         # override mock config with real config dict
         self.dlstep.config = slash_config
         self.dlstep.initialize()
@@ -1090,21 +1085,21 @@ class DownloadStepTests(unittest.TestCase):
         """
         # It should default to True
         self.dlstep.config = self.get_basic_config(
-                              **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/'})
+            **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/'})
         self.dlstep.initialize()
         self.assertEqual(self.dlstep.downloader.config.ssl_validation, True)
 
         # It should be possible to explicitly set it to False
         self.dlstep.config = self.get_basic_config(
-                               **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/',
-                               importer_constants.KEY_SSL_VALIDATION: False})
+            **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/',
+               importer_constants.KEY_SSL_VALIDATION: False})
         self.dlstep.initialize()
         self.assertEqual(self.dlstep.downloader.config.ssl_validation, False)
 
         # It should be possible to explicitly set it to True
         self.dlstep.config = self.get_basic_config(
-                               **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/',
-                               importer_constants.KEY_SSL_VALIDATION: True})
+            **{importer_constants.KEY_FEED: 'http://fake.com/iso_feed/',
+               importer_constants.KEY_SSL_VALIDATION: True})
         self.dlstep.initialize()
         self.assertEqual(self.dlstep.downloader.config.ssl_validation, True)
 
@@ -1172,7 +1167,7 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         super(TestGetLocalUnitsStep, self).setUp()
         self.parent = MagicMock()
         self.step = self.DemoGetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
-                                      ['foo'], '/a/b/c')
+                                               ['foo'], '/a/b/c')
         self.step.parent = self.parent
         self.step.conduit = MagicMock()
         self.parent.available_units = []
@@ -1199,7 +1194,7 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         self.step.process_main()
 
         self.step.conduit.save_unit.assert_called_once_with(Unit('fake_unit_type',
-            {'foo': 'a'}, {}, ''))
+                                                            {'foo': 'a'}, {}, ''))
 
     def test_populates_units_to_download(self, mock_get_multiple):
         mock_get_multiple.return_value = [{'foo': 'a'}]

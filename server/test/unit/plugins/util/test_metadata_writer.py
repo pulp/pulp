@@ -1,5 +1,3 @@
-
-import glob
 import gzip
 import hashlib
 import unittest
@@ -9,7 +7,7 @@ import shutil
 import sys
 from time import sleep
 
-from mock import Mock, patch, ANY
+from mock import Mock, patch
 
 from pulp.common.error_codes import PLP1005
 from pulp.devel.unit.server.util import assert_validation_exception
@@ -17,6 +15,7 @@ from pulp.plugins.util.metadata_writer import MetadataFileContext, JSONArrayFile
 from pulp.plugins.util.metadata_writer import XmlFileContext
 from pulp.plugins.util.metadata_writer import FastForwardXmlFileContext
 from pulp.plugins.util.verification import TYPE_SHA1
+
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data'))
 
@@ -178,8 +177,8 @@ class MetadataWriterTests(unittest.TestCase):
         file_object.close()
 
     def test_is_closed_file_attribute_error(self):
-        # passing in a list gives it an object that does not have a closed attribute, thus triggering
-        # an Attribute error that cannot be solved with the python 2.6 compatibility code
+        # passing in a list gives it an object that does not have a closed attribute, thus
+        # triggering an Attribute error that cannot be solved with the python 2.6 compatibility code
         self.assertRaises(AttributeError, MetadataFileContext._is_closed, [])
 
     def test_finalize_closed_gzip_file(self):
@@ -392,7 +391,7 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
         context._open_metadata_file_handle()
         self.assertTrue(context.fast_forward)
         # check that the file has been renamed
-        self.assertEquals(context.existing_file, os.path.join(self.working_dir, 'original.test.xml'))
+        self.assertEqual(context.existing_file, os.path.join(self.working_dir, 'original.test.xml'))
 
     @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
     def test_open_metadata_file_handle_existing_gzip_file(self, mock_generator):
@@ -528,7 +527,6 @@ class FastForwardXmlFileContextTests(unittest.TestCase):
             content = test_file_handle.read()
         test_file_handle.close()
         self.assertEquals(test_content, created_content)
-
 
     @patch('pulp.plugins.util.metadata_writer.XMLGenerator')
     def test_write_file_header_no_fast_forward(self, mock_generator):
