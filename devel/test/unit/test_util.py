@@ -15,7 +15,7 @@ import os
 import shutil
 import tempfile
 
-from mock import Mock
+from mock import Mock, MagicMock
 
 from pulp.devel.unit import util
 
@@ -99,7 +99,10 @@ class TestTouch(unittest.TestCase):
 
 class TestSideEffect(unittest.TestCase):
     def test_side_effect(self):
-        side_effect = util.SideEffect(None, ValueError, Exception('foo'), 'apple')
+        mock_object = Mock(foo='bar')
+        magic_mock = MagicMock(foo='qux')
+        side_effect = util.SideEffect(None, ValueError, Exception('foo'),
+                                      'apple', mock_object, magic_mock)
         # test with an empty value
         self.assertEquals(None, side_effect())
         # Test with an exception that has not been instantiated
@@ -108,3 +111,8 @@ class TestSideEffect(unittest.TestCase):
         self.assertRaises(Exception, side_effect)
         # Test with a string value
         self.assertEquals('apple', side_effect())
+        # Test mock and magic mock to ensure we don't call the mock object
+        # and use the return_value instead of the object itself.
+        self.assertEquals(side_effect().foo, 'bar')
+        self.assertEquals(side_effect().foo, 'qux')
+
