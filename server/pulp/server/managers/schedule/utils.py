@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
 
 from gettext import gettext as _
 import itertools
@@ -29,7 +18,8 @@ from pulp.server.db.model.dispatch import ScheduledCall
 
 
 SCHEDULE_OPTIONS_FIELDS = ('failure_threshold', 'last_run', 'enabled')
-SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold', 'remaining_runs', 'enabled')
+SCHEDULE_MUTABLE_FIELDS = ('call_request', 'schedule', 'failure_threshold', 'remaining_runs',
+                           'enabled')
 
 _logger = logging.getLogger(__name__)
 
@@ -104,10 +94,16 @@ def delete(schedule_id):
     :param schedule_id: a unique ID for a schedule
     :type  schedule_id: basestring
     """
+
     try:
-        ScheduledCall.get_collection().remove({'_id': ObjectId(schedule_id)}, safe=True)
+        spec = {'_id': ObjectId(schedule_id)}
     except InvalidId:
         raise exceptions.InvalidValue(['schedule_id'])
+
+    schedule = ScheduledCall.get_collection().find_and_modify(
+        query=spec, remove=True, safe=True)
+    if schedule is None:
+        raise exceptions.MissingResource(schedule_id=schedule_id)
 
 
 def delete_by_resource(resource):
@@ -142,7 +138,6 @@ def update(schedule_id, delta):
         raise exceptions.UnsupportedValue(list(unknown_keys))
 
     delta['last_updated'] = time.time()
-
 
     # bz 1139703 - if we update iso_schedule, update the pickled object as well
     if delta.has_key('iso_schedule'):
