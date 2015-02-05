@@ -1,21 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
-import base
+from .... import base
 from pulp.devel import mock_plugins
-
 from pulp.plugins.conduits.dependency import DependencyResolutionConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.types import database, model
@@ -24,12 +10,10 @@ from pulp.server.db.model.repository import Repo, RepoImporter, RepoContentUnit
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 
-# -- constants ----------------------------------------------------------------
 
 TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
-    ['key-1'], ['search-1'], [])
+                                  ['key-1'], ['search-1'], [])
 
-# -- test cases ---------------------------------------------------------------
 
 class DependencyManagerTests(base.PulpServerTests):
 
@@ -69,8 +53,10 @@ class DependencyManagerTests(base.PulpServerTests):
         report = 'dep report'
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = report
 
-        unit_id_1 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'v1'})
-        unit_id_2 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'v2'})
+        unit_id_1 = manager_factory.content_manager().add_content_unit('type-1', None,
+                                                                       {'key-1': 'v1'})
+        unit_id_2 = manager_factory.content_manager().add_content_unit('type-1', None,
+                                                                       {'key-1': 'v2'})
 
         association_manager = manager_factory.repo_unit_association_manager()
         association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1, 'user', 'admin')
@@ -92,14 +78,16 @@ class DependencyManagerTests(base.PulpServerTests):
 
     def test_resolve_dependencies_by_unit_no_repo(self):
         # Test
-        self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'foo', [], {})
+        self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'foo', [],
+                          {})
 
     def test_resolve_dependencies_by_unit_no_importer(self):
         # Setup
         manager_factory.repo_manager().create_repo('empty')
 
         # Test
-        self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'empty', [], {})
+        self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'empty', [],
+                          {})
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
@@ -108,14 +96,16 @@ class DependencyManagerTests(base.PulpServerTests):
         report = 'dep report'
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = report
 
-        unit_id_1 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'unit-id-1'})
-        unit_id_2 = manager_factory.content_manager().add_content_unit('type-1', None, {'key-1' : 'dep-1'})
+        unit_id_1 = manager_factory.content_manager().add_content_unit('type-1', None,
+                                                                       {'key-1': 'unit-id-1'})
+        unit_id_2 = manager_factory.content_manager().add_content_unit('type-1', None,
+                                                                       {'key-1': 'dep-1'})
 
         association_manager = manager_factory.repo_unit_association_manager()
         association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1, 'user', 'admin')
         association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2, 'user', 'admin')
 
-        criteria = UnitAssociationCriteria(type_ids=['type-1'], unit_filters={'key-1' : 'unit-id-1'})
+        criteria = UnitAssociationCriteria(type_ids=['type-1'], unit_filters={'key-1': 'unit-id-1'})
 
         # Test
         result = self.manager.resolve_dependencies_by_criteria(self.repo_id, criteria, {})
@@ -127,4 +117,3 @@ class DependencyManagerTests(base.PulpServerTests):
 
         args = mock_plugins.MOCK_IMPORTER.resolve_dependencies.call_args[0]
         self.assertEqual(1, len(args[1]))
-
