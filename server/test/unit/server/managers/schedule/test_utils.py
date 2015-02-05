@@ -42,7 +42,8 @@ class TestGet(unittest.TestCase):
         self.assertEqual(len(mock_query.call_args[0]), 1)
         criteria = mock_query.call_args[0][0]
         self.assertTrue(isinstance(criteria, Criteria))
-        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1), ObjectId(self.schedule_id2)]}})
+        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1),
+                                            ObjectId(self.schedule_id2)]}})
 
         # three instances of ScheduledCall should be returned
         self.assertEqual(len(ret), 3)
@@ -208,6 +209,15 @@ class TestDelete(unittest.TestCase):
         self.assertEqual(mock_remove.call_args[0][0], {'_id': ObjectId(self.schedule_id)})
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_delete_missing(self, mock_get_collection):
+        # this should cause the exception to be raised
+        mock_find = mock_get_collection.return_value.find_one
+        mock_find.return_value = None
+
+        self.assertRaises(exceptions.MissingResource, utils.delete, self.schedule_id)
+        self.assertEqual(mock_find.call_count, 1)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     def test_gets_correct_collection(self, mock_get_collection):
         """
         make sure this operation uses the correct collection
@@ -300,7 +310,8 @@ class TestUpdate(unittest.TestCase):
         mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = None
 
-        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id, {'enabled': True})
+        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id,
+                          {'enabled': True})
         self.assertEqual(mock_find.call_count, 1)
 
     def test_invalid_schedule_id(self):
