@@ -209,6 +209,8 @@ def get_paths_to_copy():
             # this to be the same as the spec file.
             {'source': 'server/etc/pulp/server.conf', 'destination': '/etc/pulp/server.conf',
              'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
+            {'source': 'server/etc/pulp/repo_auth.conf', 'destination': '/etc/pulp/repo_auth.conf',
+             'owner': 'root', 'group': 'apache', 'mode': '644', 'overwrite': False},
         ])
     if LSB_VERSION >= 6.0 and LSB_VERSION < 7.0:
         paths.append({'source': 'server/etc/default/upstart_pulp_celerybeat',
