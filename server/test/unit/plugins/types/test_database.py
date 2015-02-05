@@ -1,25 +1,9 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import base
-
-import pulp.plugins.types.database as types_db
+from ... import base
 from pulp.plugins.types.model import TypeDefinition
 from pulp.server.db.model.content import ContentType
+import pulp.plugins.types.database as types_db
 import pulp.server.db.connection as pulp_db
 
-# -- constants -----------------------------------------------------------------
 
 DEF_1 = TypeDefinition('def_1', 'Definition 1', 'Test definition',
                        'single_1', ['search_1'], [])
@@ -30,15 +14,12 @@ DEF_3 = TypeDefinition('def_3', 'Definition 3', 'Test definition',
 DEF_4 = TypeDefinition('def_4', 'Definition 4', 'Test definition',
                        'single_1', ['search_1'], [])
 
-# -- test cases ----------------------------------------------------------------
 
 class TypesDatabaseTests(base.PulpServerTests):
 
     def clean(self):
         super(TypesDatabaseTests, self).clean()
         types_db.clean()
-
-    # -- public api tests ------------------------------------------------------
 
     def test_update_clean_database(self):
         """
@@ -60,7 +41,7 @@ class TypesDatabaseTests(base.PulpServerTests):
             collection = types_db.type_units_collection(d.id)
             all_indexes = collection.index_information()
 
-            total_index_count = 1 + 1 + len(d.search_indexes) # _id + unit key + all search
+            total_index_count = 1 + 1 + len(d.search_indexes)  # _id + unit key + all search
             self.assertEqual(total_index_count, len(all_indexes))
 
     def test_update_no_changes(self):
@@ -74,7 +55,8 @@ class TypesDatabaseTests(base.PulpServerTests):
         types_db.update_database(defs)
 
         # Test
-        same_defs = [DEF_4, DEF_3, DEF_2, DEF_1] # no real reason for this, just felt better than using the previous list
+        # no real reason for this, just felt better than using the previous list
+        same_defs = [DEF_4, DEF_3, DEF_2, DEF_1]
         types_db.update_database(same_defs)
 
         # Verify
@@ -88,7 +70,7 @@ class TypesDatabaseTests(base.PulpServerTests):
             collection = types_db.type_units_collection(d.id)
             all_indexes = collection.index_information()
 
-            total_index_count = 1 + 1 + len(d.search_indexes) # _id + unit key + all search
+            total_index_count = 1 + 1 + len(d.search_indexes)  # _id + unit key + all search
             self.assertEqual(total_index_count, len(all_indexes))
 
     def test_update_missing_no_error(self):
@@ -107,7 +89,8 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         # Verify
         all_collection_names = types_db.all_type_collection_names()
-        self.assertEqual(len(defs) + len(new_defs), len(all_collection_names)) # old are not deleted
+        # old are not deleted
+        self.assertEqual(len(defs) + len(new_defs), len(all_collection_names))
 
         for d in defs:
             self.assertTrue(types_db.unit_collection_name(d.id) in all_collection_names)
@@ -116,7 +99,7 @@ class TypesDatabaseTests(base.PulpServerTests):
             collection = types_db.type_units_collection(d.id)
             all_indexes = collection.index_information()
 
-            total_index_count = 1 + 1 + len(d.search_indexes) # _id + unit key + all search
+            total_index_count = 1 + 1 + len(d.search_indexes)  # _id + unit key + all search
             self.assertEqual(total_index_count, len(all_indexes))
 
     def test_update_missing_with_error(self):
@@ -140,7 +123,7 @@ class TypesDatabaseTests(base.PulpServerTests):
             self.assertTrue(DEF_1.id in e.missing_type_ids)
             self.assertTrue(DEF_2.id in e.missing_type_ids)
             self.assertTrue(DEF_3.id in e.missing_type_ids)
-            str(e) # used to test the __str__ impl
+            str(e)  # used to test the __str__ impl
 
     def test_update_failed_create(self):
         """
@@ -240,7 +223,8 @@ class TypesDatabaseTests(base.PulpServerTests):
         """
 
         # Setup
-        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['unique_1', 'unique_2'], ['name'], [])
+        type_def = TypeDefinition('rpm', 'RPM', 'RPM Packages', ['unique_1', 'unique_2'], ['name'],
+                                  [])
         types_db._create_or_update_type(type_def)
 
         # Test
@@ -259,8 +243,6 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         # Verify
         self.assertTrue(indexes is None)
-
-    # -- utility method tests ------------------------------------------------
 
     def test_create_or_update_type_collection(self):
         """
@@ -342,7 +324,7 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         index_dict = collection.index_information()
 
-        self.assertEqual(2, len(index_dict)) # default (_id) + unit key
+        self.assertEqual(2, len(index_dict))  # default (_id) + unit key
 
         index = index_dict['individual_1_1']
         self.assertTrue(index['unique'])
@@ -370,7 +352,7 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         index_dict = collection.index_information()
 
-        self.assertEqual(2, len(index_dict)) # default (_id) + unit key
+        self.assertEqual(2, len(index_dict))  # default (_id) + unit key
 
         index = index_dict['compound_1_1_compound_2_1']
         self.assertTrue(index['unique'])
@@ -405,7 +387,7 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         index_dict = collection.index_information()
 
-        self.assertEqual(3, len(index_dict)) # default (_id) + definition ones
+        self.assertEqual(3, len(index_dict))  # default (_id) + definition ones
 
         #   Verify individual index
         index = index_dict['individual_1_1']
@@ -427,7 +409,8 @@ class TypesDatabaseTests(base.PulpServerTests):
 
     def test_drop_indexes(self):
         """
-        Tests updating indexes on an existing collection with different indexes correctly changes them.
+        Tests updating indexes on an existing collection with different indexes correctly changes
+        them.
         """
 
         # Setup
@@ -449,4 +432,4 @@ class TypesDatabaseTests(base.PulpServerTests):
 
         index_dict = collection.index_information()
 
-        self.assertEqual(2, len(index_dict)) # default (_id) + new one
+        self.assertEqual(2, len(index_dict))  # default (_id) + new one
