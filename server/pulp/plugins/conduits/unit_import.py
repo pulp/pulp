@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the definitions for all classes related to the importer's API for
 interacting with the Pulp server when importing units.
@@ -26,10 +13,8 @@ from pulp.plugins.conduits.mixins import (
     SearchUnitsMixin, AddUnitMixin)
 import pulp.server.managers.factory as manager_factory
 
-from pulp.server.db.model.criteria import UnitAssociationCriteria # shadow for importing by plugins
 
-
-_LOG = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
@@ -67,7 +52,8 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
         RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
         SearchUnitsMixin.__init__(self, ImporterConduitException)
-        AddUnitMixin.__init__(self, dest_repo_id, dest_importer_id, association_owner_type, association_owner_id)
+        AddUnitMixin.__init__(self, dest_repo_id, dest_importer_id, association_owner_type,
+                              association_owner_id)
 
         self.source_repo_id = source_repo_id
         self.dest_repo_id = dest_repo_id
@@ -83,9 +69,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         self.__importer_manager = manager_factory.repo_importer_manager()
 
     def __str__(self):
-        return _('ImportUnitConduit for repository [%(r)s]') % {'r' : self.repo_id}
-
-    # -- public ---------------------------------------------------------------
+        return _('ImportUnitConduit for repository [%(r)s]') % {'r': self.repo_id}
 
     def associate_unit(self, unit):
         """
@@ -102,12 +86,12 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         """
 
         try:
-            self.__association_manager.associate_unit_by_id(self.dest_repo_id, unit.type_id, unit.id,
-                                                            self.association_owner_type,
-                                                            self.association_owner_id)
+            self.__association_manager.associate_unit_by_id(
+                self.dest_repo_id, unit.type_id, unit.id, self.association_owner_type,
+                self.association_owner_id)
             return unit
         except Exception, e:
-            _LOG.exception(_('Content unit association failed [%s]' % str(unit)))
+            _logger.exception(_('Content unit association failed [%s]' % str(unit)))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
     def get_source_units(self, criteria=None):

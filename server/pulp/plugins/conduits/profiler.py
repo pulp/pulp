@@ -1,30 +1,19 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Profiler conduits.
 """
 from gettext import gettext as _
-
 import logging
 import sys
 
-from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException, UnitAssociationCriteria
+from pulp.plugins.conduits.mixins import MultipleRepoUnitsMixin, ProfilerConduitException
 from pulp.plugins.model import Unit
 from pulp.plugins.types import database as types_db
+from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.managers import factory as managers
 
-_LOG = logging.getLogger(__name__)
+
+_logger = logging.getLogger(__name__)
+
 
 class ProfilerConduit(MultipleRepoUnitsMixin):
 
@@ -45,10 +34,9 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         bindings = manager.find_by_consumer(consumer_id)
         return [b['repo_id'] for b in bindings]
 
-
     def get_repo_units(self, repo_id, content_type_id, additional_unit_fields=[]):
         """
-        Searches for units in the given repository with given content type 
+        Searches for units in the given repository with given content type
         and returns a plugin unit containing unit id, unit key and any additional
         fields requested.
 
@@ -58,7 +46,7 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
         :param content_type_id: content type id of the units
         :type  content_type_id: str
 
-        :param additional_unit_fields: additional fields from the unit metadata to be added 
+        :param additional_unit_fields: additional fields from the unit metadata to be added
                                        in the result
         :type additional_unit_fields: list of str
 
@@ -97,5 +85,5 @@ class ProfilerConduit(MultipleRepoUnitsMixin):
             return all_units
 
         except Exception, e:
-            _LOG.exception(_('Exception from server getting units from repo [%s]' % repo_id))
+            _logger.exception(_('Exception from server getting units from repo [%s]' % repo_id))
             raise self.exception_class(e), None, sys.exc_info()[2]

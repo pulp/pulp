@@ -13,6 +13,7 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 # These paths should all pass PEP-8 checks
 paths_to_check = [
+    'server/pulp/plugins/conduits',
     'server/pulp/plugins/file/',
     'server/pulp/plugins/loader/',
     'server/pulp/plugins/types/',
