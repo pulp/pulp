@@ -1,6 +1,6 @@
-import copy
 from gettext import gettext as _
 from itertools import chain, imap
+import copy
 import logging
 import os
 import shutil
@@ -16,17 +16,15 @@ from pulp.common.util import encode_unicode
 from pulp.plugins.model import Unit
 from pulp.plugins.util import misc
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
-from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp.server.db.model.criteria import Criteria
-import pulp.server.managers.factory as manager_factory
+from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.exceptions import PulpCodedTaskFailedException
 from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
+import pulp.server.managers.factory as manager_factory
 
 
-
-_LOG = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _post_order(step):
@@ -183,7 +181,7 @@ class Step(object):
                 self.initialize()
                 self.report_progress()
                 if self.get_iterator():
-                    #We are using a generator and will call _process_block for each item
+                    # We are using a generator and will call _process_block for each item
                     for item in self.get_iterator():
                         try:
                             self._process_block(item=item)
@@ -239,7 +237,7 @@ class Step(object):
         This block is called for the main processing loop
         """
         failures = self.progress_failures
-        #Need to keep backwards compatibility
+        # Need to keep backwards compatibility
         if item:
             self.process_main(item=item)
         else:
@@ -747,7 +745,7 @@ class AtomicDirectoryPublishStep(PublishStep):
         # Given that it is timestamped for this publish/repo we could skip the copytree
         # for items where http & https are published to a separate directory
 
-        _LOG.debug('Copying tree from %s to %s' % (self.source_dir, timestamp_master_dir))
+        _logger.debug('Copying tree from %s to %s' % (self.source_dir, timestamp_master_dir))
         shutil.copytree(self.source_dir, timestamp_master_dir, symlinks=True)
 
         for source_relative_location, publish_location in self.publish_locations:
@@ -867,7 +865,6 @@ class PluginStepIterativeProcessingMixin(object):
     """
     A mixin for steps that iterate over a generator
     """
-
 
     def _process_block(self):
         """

@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains utilities for validating a Pulp standard importer config.
 """
@@ -30,7 +18,7 @@ class InvalidConfig(Exception):
     def __init__(self):
         super(InvalidConfig, self).__init__()
 
-        self.failure_messages = [] # running list of all i18n'd failure messages encountered
+        self.failure_messages = []  # running list of all i18n'd failure messages encountered
 
     def add_failure_message(self, msg):
         self.failure_messages.append(msg)
@@ -110,9 +98,10 @@ def validate_ssl_client_cert(config):
         return  # optional
     elif ssl_client_cert is None:
         # If the key is set, we should also have a cert
-        msg = _('The configuration parameter <%(key_name)s> requires the <%(cert_name)s> parameter to also '
-                'be set.')
-        msg = msg % {'key_name': importer_constants.KEY_SSL_CLIENT_KEY, 'cert_name': importer_constants.KEY_SSL_CLIENT_CERT}
+        msg = _('The configuration parameter <%(key_name)s> requires the <%(cert_name)s> parameter '
+                'to also be set.')
+        msg = msg % {'key_name': importer_constants.KEY_SSL_CLIENT_KEY,
+                     'cert_name': importer_constants.KEY_SSL_CLIENT_CERT}
         raise ValueError(msg)
 
     if not isinstance(ssl_client_cert, basestring):
@@ -141,16 +130,17 @@ def validate_max_speed(config):
     """
     max_speed = config.get(importer_constants.KEY_MAX_SPEED)
     if max_speed is None:
-        return # optional
+        return  # optional
 
     try:
         max_speed = float(max_speed)
         if max_speed <= 0:
             raise ValueError()
     except ValueError:
-        msg = _('The configuration parameter <%(max_speed_name)s> must be set to a positive numerical value, '
-                'but is currently set to <%(max_speed_value)s>.')
-        msg = msg % {'max_speed_name': importer_constants.KEY_MAX_SPEED, 'max_speed_value': max_speed}
+        msg = _('The configuration parameter <%(max_speed_name)s> must be set to a positive '
+                'numerical value, but is currently set to <%(max_speed_value)s>.')
+        msg = msg % {'max_speed_name': importer_constants.KEY_MAX_SPEED,
+                     'max_speed_value': max_speed}
         raise ValueError(msg)
 
 
@@ -160,16 +150,17 @@ def validate_max_downloads(config):
     """
     max_downloads = config.get(importer_constants.KEY_MAX_DOWNLOADS)
     if max_downloads is None:
-        return # optional
+        return  # optional
 
     try:
         max_downloads = _cast_to_int_without_allowing_floats(max_downloads)
         if max_downloads < 1:
             raise ValueError()
     except ValueError:
-        msg = _('The configuration parameter <%(num_threads_name)s> must be set to a positive integer, but '
-                'is currently set to <%(num_threads)s>.')
-        msg = msg % {'num_threads_name': importer_constants.KEY_MAX_DOWNLOADS, 'num_threads': max_downloads}
+        msg = _('The configuration parameter <%(num_threads_name)s> must be set to a positive '
+                'integer, but is currently set to <%(num_threads)s>.')
+        msg = msg % {'num_threads_name': importer_constants.KEY_MAX_DOWNLOADS,
+                     'num_threads': max_downloads}
         raise ValueError(msg)
 
 
@@ -184,10 +175,10 @@ def validate_proxy_host(config):
                     importer_constants.KEY_PROXY_USER]
     proxy_url = config.get(importer_constants.KEY_PROXY_HOST)
     if proxy_url is None and all([config.get(parameter) is None for parameter in dependencies]):
-        return # optional
+        return  # optional
     elif proxy_url is None:
-        msg = _('The configuration parameter <%(name)s> is required when any of the following other '
-                'parameters are defined: ' + ', '.join(dependencies) + '.')
+        msg = _('The configuration parameter <%(name)s> is required when any of the following '
+                'other parameters are defined: ' + ', '.join(dependencies) + '.')
         msg = msg % {'name': importer_constants.KEY_PROXY_HOST}
         raise ValueError(msg)
 
@@ -199,8 +190,8 @@ def validate_proxy_host(config):
 
 def validate_proxy_port(config):
     """
-    The proxy_port is optional. If it is set, this will make sure the proxy_url is also set, and that the port
-    is a positive integer.
+    The proxy_port is optional. If it is set, this will make sure the proxy_url is also set, and
+    that the port is a positive integer.
 
     :param config: The configuration object that we are validating.
     :type config: pulp.plugins.config.PluginCallConfiguration
@@ -214,16 +205,16 @@ def validate_proxy_port(config):
         if proxy_port < 1:
             raise ValueError()
     except ValueError:
-        msg = _('The configuration parameter <%(name)s> must be set to a positive integer, but is currently '
-                'set to <%(value)s>.')
+        msg = _('The configuration parameter <%(name)s> must be set to a positive integer, but is '
+                'currently set to <%(value)s>.')
         msg = msg % {'name': importer_constants.KEY_PROXY_PORT, 'value': proxy_port}
         raise ValueError(msg)
 
 
 def validate_proxy_username(config):
     """
-    The proxy_username is optional. If it is set, this method will ensure that it is a string, and it will
-    also ensure that the proxy_password and proxy_url settings are set.
+    The proxy_username is optional. If it is set, this method will ensure that it is a string, and
+    it will also ensure that the proxy_password and proxy_url settings are set.
 
     :param config: The configuration object that we are validating.
     :type config: pulp.plugins.config.PluginCallConfiguration
@@ -234,8 +225,8 @@ def validate_proxy_username(config):
         return
     elif proxy_username is None:
         # If proxy_password is set, proxy_username must also be set
-        msg = _('The configuration parameter <%(password_name)s> requires the <%(username_name)s> parameter '
-                'to also be set.')
+        msg = _('The configuration parameter <%(password_name)s> requires the <%(username_name)s> '
+                'parameter to also be set.')
         msg = msg % {'password_name': importer_constants.KEY_PROXY_PASS,
                      'username_name': importer_constants.KEY_PROXY_USER}
         raise ValueError(msg)
@@ -266,8 +257,8 @@ def validate_proxy_password(config):
         raise ValueError(msg)
 
     if not isinstance(proxy_password, basestring):
-        msg = _('The configuration parameter <%(proxy_password_name)s> should be a string, but it was '
-                '%(type)s.')
+        msg = _('The configuration parameter <%(proxy_password_name)s> should be a string, but it '
+                'was %(type)s.')
         msg = msg % {'proxy_password_name': importer_constants.KEY_PROXY_PASS,
                      'type': type(proxy_password)}
         raise ValueError(msg)
@@ -286,8 +277,8 @@ def validate_validate_downloads(config):
 
 def validate_remove_missing(config):
     """
-    This method will validate the optional config setting called "remove_missing_units". If it is set, it must
-    be a boolean, otherwise it may be None.
+    This method will validate the optional config setting called "remove_missing_units". If it is
+    set, it must be a boolean, otherwise it may be None.
 
     :param config: the config to be validated
     :type config: pulp.plugins.config.PluginCallConfiguration
@@ -304,27 +295,25 @@ def validate_retain_old_count(config):
     """
     retain_old_count = config.get(importer_constants.KEY_UNITS_RETAIN_OLD_COUNT)
     if retain_old_count is None:
-        return # optional
+        return  # optional
 
     try:
         retain_old_count = _cast_to_int_without_allowing_floats(retain_old_count)
         if retain_old_count < 0:
             raise ValueError()
     except ValueError:
-        msg = _('The configuration parameter <%(old_count_name)s> must be set to an integer greater '
-                'than or equal to zero, but is currently set to <%(old_count)s>.')
+        msg = _('The configuration parameter <%(old_count_name)s> must be set to an integer '
+                'greater than or equal to zero, but is currently set to <%(old_count)s>.')
         msg = msg % {'old_count_name': importer_constants.KEY_UNITS_RETAIN_OLD_COUNT,
                      'old_count': retain_old_count}
         raise ValueError(msg)
 
 
-# -- utilities ----------------------------------------------------------------
-
 def _cast_to_int_without_allowing_floats(value):
     """
-    Attempt to return an int of the value, without allowing any floating point values. This is useful to
-    ensure that you get an int type out of value, while allowing a string representation of the value. If
-    there are any non numerical characters in value, this will raise ValueError.
+    Attempt to return an int of the value, without allowing any floating point values. This is
+    useful to ensure that you get an int type out of value, while allowing a string representation
+    of the value. If there are any non numerical characters in value, this will raise ValueError.
 
     :param value: The value you want to validate
     :type value: int or basestring
@@ -344,8 +333,8 @@ def _cast_to_int_without_allowing_floats(value):
 
 def _run_validate_is_non_required_bool(config, setting_name):
     """
-    Validate that the bool represented in the config by setting_name is either not set, or if it is set that
-    it is a boolean value.
+    Validate that the bool represented in the config by setting_name is either not set, or if it is
+    set that it is a boolean value.
 
     :param config: the config to be validated
     :type config: pulp.plugins.config.PluginCallConfiguration
