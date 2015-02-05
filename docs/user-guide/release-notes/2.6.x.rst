@@ -43,6 +43,9 @@ Deprecation
  * The ``api_version`` field that is returned by the ``/status`` API is
    deprecated and will be removed in a future release.
 
+ * The python-gofer-amqplib package was discontinued in gofer 2.4. Installations must replace
+   python-gofer-amqplib with python-gofer-amqp if installed.
+
 
 .. _2.5.x_upgrade_to_2.6.0:
 
