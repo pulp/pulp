@@ -28,6 +28,7 @@ REPO_NAME = 'repo_name'
 DIST_KOJI_NAME = 'koji_name'
 PULP_PACKAGES = 'pulp_packages'
 REPO_CHECKSUM_TYPE = 'checksum'
+DISABLE_SIGNED_DOWNLOAD = 'disable_signed_download'
 
 # Mapping for the package keys in the DISTRIBUTION_INFO to the locations on disk
 PULP_PACKAGE_LOCATIONS = {
@@ -46,35 +47,40 @@ DISTRIBUTION_INFO = {
         REPO_NAME: '5Server',
         DIST_KOJI_NAME: 'rhel5',
         PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha'
+        REPO_CHECKSUM_TYPE: 'sha',
+        DISABLE_SIGNED_DOWNLOAD: True
     },
     'el6': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: '6Server',
         DIST_KOJI_NAME: 'rhel6',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha256'
+        REPO_CHECKSUM_TYPE: 'sha256',
+        DISABLE_SIGNED_DOWNLOAD: False
     },
     'el7': {
         ARCH: ['x86_64'],
         REPO_NAME: '7Server',
         DIST_KOJI_NAME: 'rhel7',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha256'
+        REPO_CHECKSUM_TYPE: 'sha256',
+        DISABLE_SIGNED_DOWNLOAD: False
     },
     'fc20': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-20',
         DIST_KOJI_NAME: 'fedora20',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha256'
+        REPO_CHECKSUM_TYPE: 'sha256',
+        DISABLE_SIGNED_DOWNLOAD: False
     },
     'fc21': {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-21',
         DIST_KOJI_NAME: 'fedora21',
         PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
-        REPO_CHECKSUM_TYPE: 'sha256'
+        REPO_CHECKSUM_TYPE: 'sha256',
+        DISABLE_SIGNED_DOWNLOAD: False
     },
 }
 
@@ -274,7 +280,7 @@ def wait_for_completion(build_ids):
             time.sleep(5)
 
 
-def download_rpms_from_tag(tag, output_directory):
+def download_rpms_from_tag(tag, output_directory, disable_signed_download=False):
     """
     For a given tag download all the latest contents of that tag to the given output directory.
     This will create subdirectories for each arch in the tag (noarch, i686, x86_64,
@@ -284,6 +290,9 @@ def download_rpms_from_tag(tag, output_directory):
     :type tag: str
     :param output_directory: The directory to save the output into
     :type output_directory: str
+    :param disable_signed_download: override what is passed in via 'opts' and
+                                    skip signed RPM downloading
+    :type disable_signed_download: boolean
     """
     # clean out and ensure the output directory exists
     shutil.rmtree(output_directory, ignore_errors=True)
@@ -297,14 +306,14 @@ def download_rpms_from_tag(tag, output_directory):
     for package in rpms[1]:
         koji_dir = "/packages/%(name)s/%(version)s/%(release)s/" % package
         # append the signature to download URL if needed
-        if opts.rpmsig:
+        if opts.rpmsig and not disable_signed_download:
             koji_dir = koji_dir + "data/signed/%s/" % opts.rpmsig
         data_dir = "/packages/%(name)s/%(version)s/%(release)s/data" % package
         koji_url = "http://koji.katello.org"
         location_on_koji = "%s%s" % (koji_url, koji_dir)
         # the wget commands are slightly different depending on if we are
         # downloading signed RPMs or not.
-        if opts.rpmsig:
+        if opts.rpmsig and not disable_signed_download:
             command = "wget -r -np -nH --cut-dirs=7 -R index.htm*  %s" % \
                       (location_on_koji)
         else:
@@ -589,7 +598,8 @@ if not opts.disable_repo_build:
             os.makedirs(os.path.join(output_dir, arch))
         print "Downloading tag: %s to %s" % (build_target, output_dir)
         # Get the full build RPMs for the target
-        download_rpms_from_tag(build_target, output_dir)
+        download_rpms_from_tag(build_target, output_dir,
+                               disable_signed_download=distvalue.get(DISABLE_SIGNED_DOWNLOAD))
         # Get any scratch build RPMS for the target
         download_rpms_from_scratch_tasks(output_dir, distkey)
         build_repos(output_dir, distkey)
