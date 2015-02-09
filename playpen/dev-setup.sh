@@ -62,6 +62,25 @@ if [ $(getenforce) = "Enforcing" ]; then
     sudo sed -i 's/enforcing/permissive/' /etc/sysconfig/selinux
 fi
 
+
+if ! sudo grep -q "StrictModes no" /etc/ssh/sshd_config; then
+    echo -e "\nIn some setups (eg. Vagrant), it is necessary to disable"
+    echo "ssh strict modes to access the machine with key based authentication."
+    echo "StrictModes will be disabled now and for future restarts."
+    while true; do
+        read -p "Do you want to proceed? (y/n) " yn
+        case $yn in
+            [Yy])
+                echo "Disabling StrictModes"
+                sudo sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config
+                sudo systemctl restart sshd
+                break;;
+            [Nn]) break;;
+        esac
+    done
+fi
+
+
 echo "Install some prereqs"
 sudo yum install -y wget yum-utils redhat-lsb-core
 
@@ -138,7 +157,6 @@ fi
 echo "Adjusting facls for apache"
 setfacl -m user:apache:rwx $HOME
 
-
 echo "Starting services, this may take a few minutes due to mongodb journal allocation"
 for s in qpidd goferd mongod; do
   sudo systemctl enable $s
@@ -150,6 +168,7 @@ sudo -u apache pulp-manage-db
 
 echo "Starting more services"
 for s in httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
+  sudo systemctl enable $s
   sudo systemctl start $s
 done
 

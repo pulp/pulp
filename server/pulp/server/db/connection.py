@@ -94,7 +94,7 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
 
         shadow_connection_kwargs = copy.deepcopy(connection_kwargs)
         if connection_kwargs.get('password'):
-            shadow_connection_kwargs['password'] = '*' * len(shadow_connection_kwargs['password'])
+            shadow_connection_kwargs['password'] = '*****'
         _logger.debug(_('Connection Arguments: %s') % shadow_connection_kwargs)
 
         # Wait until the Mongo database is available
