@@ -1436,11 +1436,10 @@ class ScheduledSyncTests(RepoPluginsTests):
 
     def test_delete_schedule_does_not_exist(self):
         """
-        make sure it doesn't return an error if the schedule doesn't exist. That's
-        what the client wanted anyway!
+        make sure it *does* return an error if the schedule doesn't exist.
         """
         status, body = self.delete(self.resource_uri_path(str(ObjectId())))
-        self.assertTrue(status == httplib.OK, msg=status)
+        self.assertTrue(status == httplib.NOT_FOUND, msg=status)
 
     def test_delete_invalid_schedule_id(self):
         status, body = self.delete(self.resource_uri_path('not-there'))
@@ -1529,11 +1528,10 @@ class ScheduledPublishTests(RepoPluginsTests):
 
     def test_delete_non_existent(self):
         """
-        make sure it doesn't return an error if the schedule doesn't exist. That's
-        what the client wanted anyway!
+        make sure it *does* return an error if the schedule doesn't exist.
         """
         status, body = self.delete(self.resource_uri_path(str(ObjectId())))
-        self.assertTrue(status == httplib.OK)
+        self.assertTrue(status == httplib.NOT_FOUND)
 
     def test_delete_invalid_schedule_id(self):
         status, body = self.delete(self.resource_uri_path('not-there'))

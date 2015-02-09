@@ -20,6 +20,7 @@ call always executes asynchronously and will return a :term:`call report`.
 | :response_list:`_`
 
 * :response_code:`202, if the publish is set to be executed`
+* :response_code:`404,if repo does not exist`
 
 | :return:`a` :ref:`call_report` representing the current state of the sync
 
@@ -54,6 +55,8 @@ schedule options must be set on a repository's :term:`distributor`.
 | :response_list:`_`
 
 * :response_code:`201,if the schedule was successfully created`
+* :response_code:`400,if one or more of the parameters are invalid`
+* :response_code:`404,if there is no repository or distributor with the specified IDs`
 
 | :return:`schedule report representing the current state of the scheduled call`
 
@@ -108,6 +111,8 @@ The same parameters used to create a scheduled publish may be updated at any poi
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was successfully updated`
+* :response_code:`400,if one or more of the parameters are invalid`
+* :response_code:`404,if there is no repository, distributor or schedule with the specified IDs`
 
 | :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Publish for details)`
 
@@ -123,6 +128,7 @@ Delete a scheduled publish to remove it permanently from the distributor.
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was deleted successfully`
+* :response_code:`404,if there is no repository, distributor or schedule with the specified IDs`
 
 | :return:`null`
 
@@ -134,7 +140,41 @@ All of the scheduled publishes for a given distributor may be listed.
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/`
 | :permission:`read`
+
+| :response_list:`_`
+
+* :response_code:`200,if repo, distributor exist`
+* :response_code:`404,if there is no repository or distributor with the specified IDs`
+
 | :return:`array of schedule reports for all scheduled publishes defined (see sample response of Scheduling a Publish for details)`
+
+:sample_response:`200` ::
+ 
+    {
+        "_href": "/pulp/api/v2/repositories/test/distributors/yum_distributor/schedules/publish/54d88df045ef4876fb50c994/",
+        "_id": "54d88df045ef4876fb50c994",
+        "args": [
+            "test",
+            "yum_distributor"
+        ],
+        "consecutive_failures": 0,
+        "enabled": true,
+        "failure_threshold": null,
+        "first_run": "2015-02-09T10:37:36Z",
+        "kwargs": {
+            "overrides": {}
+        },
+        "last_run_at": "2015-02-09T10:38:23Z",
+        "last_updated": 1423478256.805917,
+        "next_run": "2015-02-10T10:37:36Z",
+        "remaining_runs": null,
+        "resource": "pulp:distributor:test:yum_distributor",
+        "schedule": "P1DT",
+        "task": "pulp.server.tasks.repository.publish",
+        "total_run_count": 1
+    }
+]
+
 
 
 Listing a Single Scheduled Publish
@@ -144,7 +184,40 @@ Each scheduled publish may be inspected.
 | :method:`get`
 | :permission:`read`
 | :path:`/v2/repositories/<repo_id>/distributors/<distributor_id>/schedules/publish/<schedule_id>/`
+
+| :response_list:`_`
+
+* :response_code:`200,if repo, distributor or schedule exist`
+* :response_code:`404,if there is no repository, distributor or schedule with the specified IDs`
+
 | :return:`a schedule report for the scheduled publish (see sample response of Scheduling a Publish for details)`
+
+:sample_response:`200` ::
+
+ {
+    "_href": "/pulp/api/v2/repositories/test/distributors/yum_distributor/schedules/publish/54d88df045ef4876fb50c994/",
+    "_id": "54d88df045ef4876fb50c994",
+    "args": [
+        "test",
+        "yum_distributor"
+    ],
+    "consecutive_failures": 0,
+    "enabled": true,
+    "failure_threshold": null,
+    "first_run": "2015-02-09T10:37:36Z",
+    "kwargs": {
+        "overrides": {}
+    },
+    "last_run_at": "2015-02-09T10:38:23Z",
+    "last_updated": 1423478256.805917,
+    "next_run": "2015-02-10T10:37:36Z",
+    "remaining_runs": null,
+    "resource": "pulp:distributor:test:yum_distributor",
+    "schedule": "P1DT",
+    "task": "pulp.server.tasks.repository.publish",
+    "total_run_count": 1
+ }
+
 
 
 Retrieving Publish History

@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import time
 import unittest
@@ -42,7 +31,8 @@ class TestGet(unittest.TestCase):
         self.assertEqual(len(mock_query.call_args[0]), 1)
         criteria = mock_query.call_args[0][0]
         self.assertTrue(isinstance(criteria, Criteria))
-        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1), ObjectId(self.schedule_id2)]}})
+        self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1),
+                                            ObjectId(self.schedule_id2)]}})
 
         # three instances of ScheduledCall should be returned
         self.assertEqual(len(ret), 3)
@@ -64,7 +54,7 @@ class TestGet(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get([])
+        utils.get([])
 
         mock_get_collection.assert_called_once_with()
 
@@ -106,7 +96,7 @@ class TestGetByResource(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get_by_resource('resource1')
+        utils.get_by_resource('resource1')
 
         mock_get_collection.assert_called_once_with()
 
@@ -148,7 +138,7 @@ class TestGetUpdatedSince(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get_updated_since(time.time())
+        utils.get_updated_since(time.time())
 
         mock_get_collection.assert_called_once_with()
 
@@ -187,7 +177,7 @@ class TestGetEnabled(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.get_enabled()
+        utils.get_enabled()
 
         mock_get_collection.assert_called_once_with()
 
@@ -197,22 +187,32 @@ class TestDelete(unittest.TestCase):
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     def test_delete(self, mock_get_collection):
-        mock_remove = mock_get_collection.return_value.remove
-        mock_remove.return_value = None
+        mock_remove = mock_get_collection.return_value.find_and_modify
+        mock_remove.return_value = 'not none'
 
         utils.delete(self.schedule_id)
 
         self.assertEqual(mock_remove.call_count, 1)
         # there should only be 1 argument, a criteria
-        self.assertEqual(len(mock_remove.call_args[0]), 1)
-        self.assertEqual(mock_remove.call_args[0][0], {'_id': ObjectId(self.schedule_id)})
+        self.assertEqual(len(mock_remove.call_args[0]), 0)
+        self.assertEqual(mock_remove.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
+        self.assertEqual(mock_remove.call_args[1]['remove'], True)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_delete_missing(self, mock_get_collection):
+        # this should cause the exception to be raised
+        mock_find = mock_get_collection.return_value.find_and_modify
+        mock_find.return_value = None
+
+        self.assertRaises(exceptions.MissingResource, utils.delete, self.schedule_id)
+        self.assertEqual(mock_find.call_count, 1)
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     def test_gets_correct_collection(self, mock_get_collection):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.delete(self.schedule_id)
+        utils.delete(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
 
@@ -286,7 +286,7 @@ class TestUpdate(unittest.TestCase):
         """
         mock_get_collection.return_value.find_and_modify.return_value = SCHEDULES[0]
 
-        ret = utils.update(self.schedule_id, {'enabled': True})
+        utils.update(self.schedule_id, {'enabled': True})
 
         mock_get_collection.assert_called_once_with()
 
@@ -300,7 +300,8 @@ class TestUpdate(unittest.TestCase):
         mock_find = mock_get_collection.return_value.find_and_modify
         mock_find.return_value = None
 
-        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id, {'enabled': True})
+        self.assertRaises(exceptions.MissingResource, utils.update, self.schedule_id,
+                          {'enabled': True})
         self.assertEqual(mock_find.call_count, 1)
 
     def test_invalid_schedule_id(self):
@@ -329,7 +330,7 @@ class TestResetFailureCount(unittest.TestCase):
         """
         make sure this operation uses the correct collection
         """
-        ret = utils.reset_failure_count(self.schedule_id)
+        utils.reset_failure_count(self.schedule_id)
 
         mock_get_collection.assert_called_once_with()
 
