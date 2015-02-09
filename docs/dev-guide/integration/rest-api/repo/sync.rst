@@ -17,6 +17,7 @@ Syncs content into a repository from a feed source using the repository's
 | :response_list:`_`
 
 * :response_code:`202,if the sync is set to be executed`
+* :response_code:`404,if repo does not exist`
 
 | :return:`a` :ref:`call_report`
 
@@ -51,6 +52,8 @@ schedule options must be set on the repository's :term:`importer`.
 | :response_list:`_`
 
 * :response_code:`201,if the schedule was successfully created`
+* :response_code:`400,if one or more of the parameters are invalid`
+* :response_code:`404,if there is no repository or importer with the specified IDs`
 
 | :return:`schedule report representing the current state of the scheduled call`
 
@@ -106,6 +109,8 @@ The same parameters used to create a scheduled sync may be updated at any point.
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was successfully updated`
+* :response_code:`400,if one or more of the parameters are invalid`
+* :response_code:`404,if there is no repository, importer or schedule with the specified IDs`
 
 | :return:`schedule report representing the current state of the scheduled call (see sample response of Scheduling a Sync for details)`
 
@@ -121,6 +126,7 @@ Delete a scheduled sync to remove it permanently from the importer.
 | :response_list:`_`
 
 * :response_code:`200,if the schedule was deleted successfully`
+* :response_code:`404,if there is no repository, importer or schedule with the specified IDs`
 
 | :return:`null`
 
@@ -132,7 +138,41 @@ All of the scheduled syncs for a given importer may be listed.
 | :method:`get`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/`
 | :permission:`read`
-| :return:`array of schedule reports for all scheduled syncs defined (see sample response of Scheduling a Sync for details)`
+
+| :response_list:`_`
+
+* :response_code:`200,if repo, importer exist`
+* :response_code:`404,if there is no repository or importer with the specified IDs`
+
+| :return:`array of schedule reports for all scheduled syncs defined`
+
+:sample_response:`200` ::
+
+ [
+    {
+        "_href": "/pulp/api/v2/repositories/test/importers/yum_importer/schedules/sync/54d8852245ef4876fade7cc2/",
+        "_id": "54d8852245ef4876fade7cc2",
+        "args": [
+            "test"
+        ],
+        "consecutive_failures": 0,
+        "enabled": true,
+        "failure_threshold": null,
+        "first_run": "2015-02-09T10:00:02Z",
+        "kwargs": {
+            "overrides": {}
+        },
+        "last_run_at": "2015-02-09T10:00:23Z",
+        "last_updated": 1423476133.825821,
+        "next_run": "2015-02-10T10:00:02Z",
+        "remaining_runs": null,
+        "resource": "pulp:importer:test:yum_importer",
+        "schedule": "P1DT",
+        "task": "pulp.server.tasks.repository.sync_with_auto_publish",
+        "total_run_count": 1
+    }
+ ]
+
 
 
 Listing a Single Scheduled Sync
@@ -142,7 +182,38 @@ Each scheduled sync may be inspected.
 | :method:`get`
 | :permission:`read`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/schedules/sync/<schedule_id>/`
-| :return:`a schedule report for the scheduled sync (see sample response of Scheduling a Sync for details)`
+
+| :response_list:`_`
+
+* :response_code:`200,if repo, importer, schedule exist`
+* :response_code:`404,if there is no repository, importer or schedule with the specified IDs`
+
+| :return:`a schedule report for the scheduled sync`
+
+:sample_response:`200` ::
+
+ {
+    "_href": "/pulp/api/v2/repositories/test/importers/yum_importer/schedules/sync/54d8852245ef4876fade7cc2/",
+    "_id": "54d8852245ef4876fade7cc2",
+    "args": [
+        "test"
+    ],
+    "consecutive_failures": 0,
+    "enabled": true,
+    "failure_threshold": null,
+    "first_run": "2015-02-09T10:00:02Z",
+    "kwargs": {
+        "overrides": {}
+    },
+    "last_run_at": "2015-02-09T10:00:23Z",
+    "last_updated": 1423476133.825821,
+    "next_run": "2015-02-10T10:00:02Z",
+    "remaining_runs": null,
+    "resource": "pulp:importer:test:yum_importer",
+    "schedule": "P1DT",
+    "task": "pulp.server.tasks.repository.sync_with_auto_publish",
+    "total_run_count": 1
+ }
 
 
 Retrieving Sync History
@@ -183,4 +254,3 @@ Retrieve sync history for a repository. Each sync performed on a repository crea
    "error_message": null,
   }
  ]
-

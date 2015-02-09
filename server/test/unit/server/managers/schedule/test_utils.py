@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import time
 import unittest
 
@@ -30,7 +32,7 @@ class TestGet(unittest.TestCase):
         criteria = mock_query.call_args[0][0]
         self.assertTrue(isinstance(criteria, Criteria))
         self.assertEqual(criteria.filters, {'_id': {'$in': [ObjectId(self.schedule_id1),
-                         ObjectId(self.schedule_id2)]}})
+                                            ObjectId(self.schedule_id2)]}})
 
         # three instances of ScheduledCall should be returned
         self.assertEqual(len(ret), 3)
@@ -185,15 +187,25 @@ class TestDelete(unittest.TestCase):
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     def test_delete(self, mock_get_collection):
-        mock_remove = mock_get_collection.return_value.remove
-        mock_remove.return_value = None
+        mock_remove = mock_get_collection.return_value.find_and_modify
+        mock_remove.return_value = 'not none'
 
         utils.delete(self.schedule_id)
 
         self.assertEqual(mock_remove.call_count, 1)
         # there should only be 1 argument, a criteria
-        self.assertEqual(len(mock_remove.call_args[0]), 1)
-        self.assertEqual(mock_remove.call_args[0][0], {'_id': ObjectId(self.schedule_id)})
+        self.assertEqual(len(mock_remove.call_args[0]), 0)
+        self.assertEqual(mock_remove.call_args[1]['query'], {'_id': ObjectId(self.schedule_id)})
+        self.assertEqual(mock_remove.call_args[1]['remove'], True)
+
+    @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
+    def test_delete_missing(self, mock_get_collection):
+        # this should cause the exception to be raised
+        mock_find = mock_get_collection.return_value.find_and_modify
+        mock_find.return_value = None
+
+        self.assertRaises(exceptions.MissingResource, utils.delete, self.schedule_id)
+        self.assertEqual(mock_find.call_count, 1)
 
     @mock.patch('pulp.server.db.model.dispatch.ScheduledCall.get_collection')
     def test_gets_correct_collection(self, mock_get_collection):

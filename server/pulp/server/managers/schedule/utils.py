@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from gettext import gettext as _
 import itertools
 import logging
@@ -92,10 +94,16 @@ def delete(schedule_id):
     :param schedule_id: a unique ID for a schedule
     :type  schedule_id: basestring
     """
+
     try:
-        ScheduledCall.get_collection().remove({'_id': ObjectId(schedule_id)}, safe=True)
+        spec = {'_id': ObjectId(schedule_id)}
     except InvalidId:
         raise exceptions.InvalidValue(['schedule_id'])
+
+    schedule = ScheduledCall.get_collection().find_and_modify(
+        query=spec, remove=True, safe=True)
+    if schedule is None:
+        raise exceptions.MissingResource(schedule_id=schedule_id)
 
 
 def delete_by_resource(resource):
