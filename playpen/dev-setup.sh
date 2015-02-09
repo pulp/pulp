@@ -35,6 +35,23 @@ else
     esac
 fi
 
+if ! sudo grep -q "StrictModes no" /etc/ssh/sshd_config; then
+    echo -e "\nIn some setups (es. Vagrant machine) is it necessary to disable"
+    echo "Ssh strict key check to access the machine."
+    echo "Strict Key check will be disabled now and for future restart"
+    while true; do
+        read -p "Do you want to proceed?(y/n)" yn
+        case $yn in
+            [Yy])
+                echo "Disabling StrictHostCheck"
+                sudo sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config
+                sudo systemctl restart sshd
+                break;;
+            [Nn]) break;;
+        esac
+    done
+fi 
+
 echo "Disabling selinux for dev install"
 # dev setup does not work with selinux at this time
 sudo setenforce 0
@@ -80,9 +97,9 @@ pushd pulp
 setfacl -m user:apache:rwx .
 popd; popd
 
-
 echo "Starting services, this may take a few minutes due to mongodb journal allocation"
 for s in qpidd goferd mongod; do
+  sudo systemctl enable $s
   sudo systemctl start $s
 done
 
@@ -91,6 +108,7 @@ sudo -u apache pulp-manage-db
 
 echo "Starting more services"
 for s in httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
+  sudo systemctl enable $s
   sudo systemctl start $s
 done
 
