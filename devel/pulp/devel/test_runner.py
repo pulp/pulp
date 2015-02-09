@@ -74,6 +74,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
             flake8_command = ['flake8', '--max-line-length=100', '--ignore=E401',
                               '--exclude=.ropeproject,docs,playpen,pulp-dev.py']
             flake8_command.extend(flake8_paths)
+            print "Running flake8"
             flake8_exit_code = subprocess.call(flake8_command)
 
     else:
@@ -93,5 +94,6 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
     if arguments.xunit_file:
         args.extend(['--xunit-file', '../test/' + arguments.xunit_file])
 
+    print "Running Unit Tests"
     # Call the test process, and return its exit code
     return subprocess.call(args) or flake8_exit_code

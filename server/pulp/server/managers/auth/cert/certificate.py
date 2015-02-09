@@ -8,6 +8,7 @@ replacement of full wrapper but instead and extension.
 from datetime import datetime as dt
 import os
 import re
+import sys
 
 from M2Crypto import X509
 
@@ -936,7 +937,6 @@ class Bundle(object):
         return '\n'.join(s)
 
 
-import sys
 if __name__ == '__main__':
     for path in sys.argv[1:]:
         print path
