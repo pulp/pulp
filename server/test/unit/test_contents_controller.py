@@ -29,37 +29,6 @@ import base
 import pulp.server.managers.factory as manager_factory
 
 
-class TestContentUnitsCollection(base.PulpWebserviceTests):
-    @mock.patch('pulp.server.webservices.serialization.content.content_unit_obj')
-    @mock.patch('pulp.server.webservices.serialization.link.search_safe_link_obj')
-    @mock.patch('pulp.server.webservices.serialization.content.content_unit_child_link_objs')
-    def test_process_unit(self, mock_content_unit_child_link_objs,
-                          mock_search_safe_link_obj, mock_content_unit_obj):
-        """
-        Make sure it calls the right serialization methods
-        """
-        UNIT = {'_id':'cu1'}
-        ContentUnitsCollection.process_unit(UNIT)
-        self.assertEqual(mock_content_unit_child_link_objs.call_count, 1)
-        self.assertEqual(mock_search_safe_link_obj.call_count, 1)
-        self.assertEqual(mock_content_unit_obj.call_count, 1)
-
-    @mock.patch(
-        'pulp.server.webservices.controllers.contents.ContentUnitsCollection.process_unit',
-        return_value='ContentUnit')
-    @mock.patch(
-        'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=['IAmAUnit'])
-    def test_get(self, mock_find_by_criteria, mock_process_unit):
-        """
-        Make sure this calls process_unit for each result. In this case, we mock
-        find_by_criteria so we can simulate results from the database.
-        """
-        status, body = self.get('/v2/content/units/deb/')
-        self.assertEqual(status, 200)
-        mock_process_unit.assert_called_once_with('IAmAUnit')
-
-
 class TestContentUnitsSearch(base.PulpWebserviceTests):
     @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_collection')
     def test_post_retrieves_collection(self, mock_get_collection):
@@ -219,78 +188,6 @@ class UploadsCollectionTests(BaseUploadTest):
 
         upload_file = self.upload_manager._upload_file_path(body['upload_id'])
         self.assertTrue(os.path.exists(upload_file))
-
-
-class UploadResourceTests(BaseUploadTest):
-
-    def test_delete(self):
-        # Setup
-        upload_id = self.upload_manager.initialize_upload()
-
-        # Test
-        status, body = self.delete('/v2/content/uploads/%s/' % upload_id)
-
-        # Verify
-        self.assertEqual(200, status)
-        self.assertEqual(None, body)
-
-        upload_file = self.upload_manager._upload_file_path(upload_id)
-        self.assertTrue(not os.path.exists(upload_file))
-
-
-class UploadSegmentResourceTests(BaseUploadTest):
-
-    def test_put(self):
-
-        # Setup
-        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + '/../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
-        self.assertTrue(os.path.exists(test_rpm_filename))
-
-        # Test
-        upload_id = self.upload_manager.initialize_upload()
-
-        f = open(test_rpm_filename)
-        offset = 0
-        chunk_size = 256
-        while True:
-            f.seek(offset)
-            data = f.read(chunk_size)
-            if data:
-                url = '/v2/content/uploads/%s/%s/' % (upload_id, offset)
-                ret = self.put(url, data, serialize_json=False)
-                self.assertEqual(ret[0], 200)
-                self.assertEqual(ret[1], None)
-            else:
-                break
-            offset += chunk_size
-        f.close()
-
-        # Verify
-        uploaded_filename = self.upload_manager._upload_file_path(upload_id)
-        self.assertTrue(os.path.exists(uploaded_filename))
-
-        expected_size = os.path.getsize(test_rpm_filename)
-        found_size = os.path.getsize(uploaded_filename)
-
-        self.assertEqual(expected_size, found_size)
-
-    def test_put_invalid_offset(self):
-
-        # Test
-        upload_id = self.upload_manager.initialize_upload()
-
-        status, body = self.put('/v2/content/uploads/%s/foo/' % upload_id, 'string data')
-
-        # Verify
-        self.assertEqual(400, status)
-
-    def test_put_invalid_upload(self):
-
-        # Test
-        status, body = self.put('/v2/content/uploads/foo/0/', 'string data')
-
-        # Verify
-        self.assertEqual(404, status)
 
 
 class ReservedResourceApplyAsync(object):
