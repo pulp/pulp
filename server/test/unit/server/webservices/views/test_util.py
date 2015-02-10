@@ -54,3 +54,18 @@ class TestWebservicesUtils(unittest.TestCase):
         test_content = {'foo': 'bar'}
         util.generate_json_response_with_pulp_encoder(test_content)
         mock_json.dumps.assert_called_once_with(test_content, default=pulp_json_encoder)
+
+    @mock.patch('pulp.server.webservices.views.util.iri_to_uri')
+    def test_generate_redirect_response(self, mock_iri_to_uri):
+        """
+        Test HttpResponseRedirect.
+        """
+        test_content = {'foo': 'bar'}
+        href = '/some/url/'
+        response = HttpResponse(content=test_content)
+        redirect_response = util.generate_redirect_response(response, href)
+        self.assertEqual(redirect_response.status_code, 201)
+        self.assertEqual(redirect_response.reason_phrase, 'CREATED')
+        self.assertEqual(redirect_response._headers['location'][1],
+                         str(mock_iri_to_uri.return_value))
+        mock_iri_to_uri.assert_called_once_with(href)

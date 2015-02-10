@@ -2,6 +2,7 @@ import functools
 import json
 
 from django.http import HttpResponse
+from django.utils.encoding import iri_to_uri
 
 from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
 
@@ -38,3 +39,10 @@ generate_json_response_with_pulp_encoder = functools.partial(
     generate_json_response,
     default=pulp_json_encoder,
 )
+
+
+def generate_redirect_response(response, href):
+    response['Location'] = iri_to_uri(href)
+    response.status_code = 201
+    response.reason_phrase = 'CREATED'
+    return response
