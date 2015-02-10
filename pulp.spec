@@ -25,6 +25,10 @@
 %define pulp_systemd 0
 %endif
 
+# Required gofer version
+%global gofer_version 2.5
+
+
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
@@ -313,8 +317,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 2.3
-Requires: python-gofer-qpid >= 2.3
+Requires: python-gofer >= %{gofer_version}
+Requires: python-gofer-qpid >= %{gofer_version}
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -724,9 +728,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 2.3
-Requires: python-gofer-qpid >= 2.3
-Requires: gofer >= 2.3
+Requires: python-gofer >= %{gofer_version}
+Requires: python-gofer-qpid >= %{gofer_version}
+Requires: gofer >= %{gofer_version}
 Requires: m2crypto
 
 %description agent
