@@ -421,7 +421,6 @@ fi
 %package nodes-common
 Summary: Pulp nodes common modules
 Group: Development/Languages
-Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-bindings = %{pulp_version}
 
