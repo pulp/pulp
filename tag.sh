@@ -16,7 +16,6 @@ PARENT='master'
 GIT_ROOTS="pulp pulp_rpm pulp_puppet"
 PACKAGES="
   pulp/
-  pulp/nodes/
   pulp_rpm/
   pulp_puppet/"
 

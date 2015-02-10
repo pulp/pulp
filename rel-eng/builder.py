@@ -33,7 +33,6 @@ DISABLE_SIGNED_DOWNLOAD = 'disable_signed_download'
 # Mapping for the package keys in the DISTRIBUTION_INFO to the locations on disk
 PULP_PACKAGE_LOCATIONS = {
     'pulp': 'pulp',
-    'pulp-nodes': 'pulp/nodes',
     'pulp-rpm': 'pulp_rpm',
     'pulp-puppet': 'pulp_puppet'
 }
@@ -54,7 +53,7 @@ DISTRIBUTION_INFO = {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: '6Server',
         DIST_KOJI_NAME: 'rhel6',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256',
         DISABLE_SIGNED_DOWNLOAD: False
     },
@@ -62,7 +61,7 @@ DISTRIBUTION_INFO = {
         ARCH: ['x86_64'],
         REPO_NAME: '7Server',
         DIST_KOJI_NAME: 'rhel7',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256',
         DISABLE_SIGNED_DOWNLOAD: False
     },
@@ -70,7 +69,7 @@ DISTRIBUTION_INFO = {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-20',
         DIST_KOJI_NAME: 'fedora20',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256',
         DISABLE_SIGNED_DOWNLOAD: False
     },
@@ -78,7 +77,7 @@ DISTRIBUTION_INFO = {
         ARCH: ['i686', 'x86_64'],
         REPO_NAME: 'fedora-21',
         DIST_KOJI_NAME: 'fedora21',
-        PULP_PACKAGES: ['pulp', 'pulp-nodes', 'pulp-rpm', 'pulp-puppet'],
+        PULP_PACKAGES: ['pulp', 'pulp-rpm', 'pulp-puppet'],
         REPO_CHECKSUM_TYPE: 'sha256',
         DISABLE_SIGNED_DOWNLOAD: False
     },

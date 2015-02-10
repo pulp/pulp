@@ -70,9 +70,12 @@ popd
 %endif # End pulp-admin build block
 
 %if %{pulp_server}
-pushd server
-%{__python} setup.py build
-popd
+for directory in server nodes/common nodes/parent nodes/child nodes/extensions/admin nodes/extensions/consumer
+do
+    pushd $directory
+    %{__python} setup.py build
+    popd
+done
 
 # SELinux Configuration
 cd server/selinux/server
@@ -149,9 +152,12 @@ cp docs/_build/man/pulp-admin.1 %{buildroot}/%{_mandir}/man1/
 
 # Server installation
 %if %{pulp_server}
-pushd server
-%{__python} setup.py install -O1 --skip-build --root %{buildroot}
-popd
+for directory in server nodes/common nodes/parent nodes/child nodes/extensions/admin nodes/extensions/consumer
+do
+    pushd $directory
+    %{__python} setup.py install -O1 --skip-build --root %{buildroot}
+    popd
+done
 
 # These directories are specific to the server
 mkdir -p %{buildroot}/srv
@@ -168,6 +174,10 @@ mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/static
 mkdir -p %{buildroot}/%{_var}/www
+# These directories are used for Nodes
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/nodes/published/http
+mkdir -p %{buildroot}/%{_var}/lib/%{name}/nodes/published/https
+mkdir -p %{buildroot}/%{_var}/www/%{name}/nodes
 
 # Configuration
 cp -R server/etc/pulp/* %{buildroot}/%{_sysconfdir}/%{name}
@@ -218,6 +228,32 @@ cp enable.sh %{buildroot}%{_datadir}/pulp/selinux/server
 cp uninstall.sh %{buildroot}%{_datadir}/pulp/selinux/server
 cp relabel.sh %{buildroot}%{_datadir}/pulp/selinux/server
 popd
+
+# Nodes Configuration
+pushd nodes/common
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
+pushd nodes/parent
+cp -R etc/httpd %{buildroot}/%{_sysconfdir}
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
+pushd nodes/child
+cp -R etc/pulp %{buildroot}/%{_sysconfdir}
+popd
+
+# Nodes Scripts
+pushd nodes/common
+cp bin/* %{buildroot}/%{_bindir}
+popd
+
+# Types
+cp -R nodes/child/pulp_node/importers/types/* %{buildroot}/%{_usr}/lib/pulp/plugins/types/
+
+# WWW
+ln -s %{_var}/lib/pulp/nodes/published/http %{buildroot}/%{_var}/www/pulp/nodes
+ln -s %{_var}/lib/pulp/nodes/published/https %{buildroot}/%{_var}/www/pulp/nodes
+# End Nodes Configuration
+
 %endif # End server installation block
 
 # Everything else installation
@@ -375,6 +411,132 @@ fi
 %postun server
 %systemd_postun
 %endif
+
+# ---- Nodes Common ----------------------------------------------------------------
+
+%package nodes-common
+Summary: Pulp nodes common modules
+Group: Development/Languages
+Requires: %{name}-common = %{version}
+Requires: pulp-server = %{pulp_version}
+Requires: python-pulp-bindings = %{pulp_version}
+
+%description nodes-common
+Pulp nodes common modules.
+
+%files nodes-common
+%defattr(-,root,root,-)
+%dir %{python_sitelib}/pulp_node
+%dir %{python_sitelib}/pulp_node/extensions
+%{_bindir}/pulp-gen-nodes-certificate
+%{python_sitelib}/pulp_node/extensions/__init__.py*
+%{python_sitelib}/pulp_node/*.py*
+%{python_sitelib}/pulp_node_common*.egg-info
+%defattr(640,root,apache,-)
+# The nodes.conf file contains OAuth secrets, so we don't want it to be world readable
+%config(noreplace) %{_sysconfdir}/pulp/nodes.conf
+%defattr(-,root,root,-)
+%doc
+
+%post nodes-common
+# Generate the certificate used to access the local server.
+pulp-gen-nodes-certificate
+
+%postun nodes-common
+# clean up the nodes certificate.
+if [ $1 -eq 0 ]; then
+  rm -rf /etc/pki/pulp/nodes
+fi
+
+
+# ---- Parent Nodes ----------------------------------------------------------
+
+%package nodes-parent
+Summary: Pulp parent nodes support
+Group: Development/Languages
+Requires: %{name}-nodes-common = %{version}
+Requires: pulp-server = %{pulp_version}
+
+%description nodes-parent
+Pulp parent nodes support.
+
+%files nodes-parent
+%defattr(-,root,root,-)
+%config(noreplace) %{_sysconfdir}/httpd/conf.d/pulp_nodes.conf
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/distributor/
+%{python_sitelib}/pulp_node/profilers/
+%{python_sitelib}/pulp_node/distributors/
+%{python_sitelib}/pulp_node_parent*.egg-info
+%defattr(-,apache,apache,-)
+%{_var}/lib/pulp/nodes
+%{_var}/www/pulp/nodes
+%defattr(-,root,root,-)
+%doc
+
+
+# ---- Child Nodes -----------------------------------------------------------
+
+%package nodes-child
+Summary: Pulp child nodes support
+Group: Development/Languages
+Requires: %{name}-nodes-common = %{version}
+Requires: pulp-server = %{pulp_version}
+Requires: python-pulp-agent-lib = %{pulp_version}
+Requires: python-nectar >= 1.1.2
+
+%description nodes-child
+Pulp child nodes support.
+
+%files nodes-child
+%defattr(-,root,root,-)
+%dir %{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer
+%{python_sitelib}/pulp_node/importers/
+%{python_sitelib}/pulp_node/handlers/
+%{python_sitelib}/pulp_node_child*.egg-info
+%{_usr}/lib/pulp/plugins/types/nodes.json
+%{_sysconfdir}/pulp/agent/conf.d/nodes.conf
+%defattr(640,root,apache,-)
+# We don't want the importer config to be world readable, since it can contain proxy passwords
+%{_sysconfdir}/pulp/server/plugins.conf.d/nodes/importer/*
+%defattr(-,root,root,-)
+%doc
+
+
+# ---- Nodes Admin Extensions ------------------------------------------------------
+
+%package nodes-admin-extensions
+Summary: Pulp admin client extensions
+Group: Development/Languages
+Requires: %{name}-nodes-common = %{version}
+Requires: pulp-admin-client = %{pulp_version}
+
+%description nodes-admin-extensions
+Pulp nodes admin client extensions.
+
+%files nodes-admin-extensions
+%defattr(-,root,root,-)
+%{python_sitelib}/pulp_node/extensions/admin/
+%{python_sitelib}/pulp_node_admin_extensions*.egg-info
+%doc
+
+
+# ---- Nodes Consumer Extensions ---------------------------------------------------
+
+%package nodes-consumer-extensions
+Summary: Pulp nodes consumer client extensions
+Group: Development/Languages
+Requires: %{name}-nodes-common = %{version}
+Requires: %{name}-consumer-client = %{pulp_version}
+
+%description nodes-consumer-extensions
+Pulp nodes consumer client extensions.
+
+%files nodes-consumer-extensions
+%defattr(-,root,root,-)
+%{python_sitelib}/pulp_node/extensions/consumer/
+%{python_sitelib}/pulp_node_consumer_extensions*.egg-info
+%doc
+
 %endif # End pulp_server if block
 
 
@@ -656,6 +818,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Feb 10 2015 Barnaby Court 2.6.0-0.5.beta
+- Merge pulp-nodes.spec into pulp.spec
+
 * Fri Jan 16 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.5.beta
 - 1174283 - bump python-requests to 2.4.3 (austin@dhcp129-50.rdu.redhat.com)
 - 1145723 - touch and chown log file before writing to it (cduryee@redhat.com)
