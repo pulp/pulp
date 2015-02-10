@@ -34,6 +34,7 @@ User=apache
 WorkingDirectory=/var/lib/pulp/celery/
 ExecStart=/usr/bin/celery worker -n reserved_resource_worker-%(num)s@%%%%h -A pulp.server.async.app\
           -c 1 --events --umask 18
+KillSignal=SIGQUIT
 """
 
 
