@@ -6,8 +6,8 @@
 %endif
 
 Name: gofer
-Version: 2.4.0
-Release: 3%{?dist}
+Version: 2.5.0
+Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
 License: LGPLv2
@@ -158,12 +158,8 @@ Provides gofer python lib modules.
 Summary: Gofer Qpid messaging adapter python package
 Group: Development/Languages
 BuildRequires: python
-Requires: python-%{name} >= %{version}
+Requires: python-%{name} = %{version}
 Requires: python-qpid >= 0.18
-Requires: python-qpid-qmf >= 0.18
-%if 0%{?rhel} && 0%{?rhel} < 6
-Requires: python-ssl
-%endif
 
 %description -n python-%{name}-qpid
 Provides the gofer qpid messaging adapter package.
@@ -173,13 +169,30 @@ Provides the gofer qpid messaging adapter package.
 %doc LICENSE
 
 
+# --- python-qpid-proton messaging adapter -----------------------------------
+
+%package -n python-%{name}-proton
+Summary: Gofer Qpid proton messaging adapter python package
+Group: Development/Languages
+BuildRequires: python
+Requires: python-%{name} = %{version}
+Requires: python-qpid-proton >= 0.9
+
+%description -n python-%{name}-proton
+Provides the gofer qpid proton messaging adapter package.
+
+%files -n python-%{name}-proton
+%{python_sitelib}/%{name}/messaging/adapter/proton
+%doc LICENSE
+
+
 # --- python-amqp messaging adapter ------------------------------------------
 
 %package -n python-%{name}-amqp
 Summary: Gofer amqp messaging adapter python package
 Group: Development/Languages
 BuildRequires: python
-Requires: python-%{name} >= %{version}
+Requires: python-%{name} = %{version}
 Requires: python-amqp >= 1.4.5
 
 %description -n python-%{name}-amqp
@@ -252,13 +265,15 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
-* Mon Jan 26 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-3
-- downgrade requires python-qpid-qmf to match EL5. (jortel@redhat.com)
-
-* Mon Jan 26 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-2
-- downgrade requires python-qpid >= 0.18 to match EL5. (jortel@redhat.com)
-- Remove fc21 from gofer builds (cduryee@redhat.com)
-
+* Tue Feb 10 2015 Jeff Ortel <jortel@redhat.com> 2.5.0-1
+- AdapterNotFound raised when explicit adapter not found. (jortel@redhat.com)
+- NotFound raised amqp node not found. (jortel@redhat.com)
+- Add url to Queue/Exchange constructor. (jortel@redhat.com)
+- Renamed: route to: address. (jortel@redhat.com)
+- Support amqp 1.0; add proton messaging adapter. (jortel@redhat.com)
+- Support auto-delete queue expiration. (jortel@redhat.com)
+- python-gofer-qpid no longer requires python-qpid-qmf. (jortel@redhat.com)
+- Add 2.5 release notes. (jortel@redhat.com)
 * Fri Jan 09 2015 Jeff Ortel <jortel@redhat.com> 2.4.0-1
 - Better thread pool worker selection. (jortel@redhat.com)
 - Fix builtin.Admin.help(). (jortel@redhat.com)
