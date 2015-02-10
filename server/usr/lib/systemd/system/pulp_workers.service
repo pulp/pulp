@@ -7,7 +7,6 @@ Type=oneshot
 RemainAfterExit=true
 ExecStart=/usr/libexec/pulp-manage-workers start
 ExecStop=/usr/libexec/pulp-manage-workers stop
-KillSignal=SIGQUIT
 
 [Install]
 WantedBy=multi-user.target
