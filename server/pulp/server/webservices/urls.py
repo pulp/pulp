@@ -5,12 +5,13 @@ from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociat
                                                            ConsumerGroupBindingsView,
                                                            ConsumerGroupContentActionView,
                                                            ConsumerGroupResourceView,
-                                                           ConsumerGroupUnassociateActionView)
+                                                           ConsumerGroupUnassociateActionView,
+                                                           ConsumerGroupView)
 from pulp.server.webservices.views.content import (
     CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
     ContentUnitsCollectionView,ContentUnitUserMetadataResourceView,
     DeleteOrphansActionView, OrphanCollectionView, OrphanResourceView,
-    OrphanTypeSubCollectionView, UploadResourceView,
+    OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
     UploadSegmentResourceView
 )
 from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
@@ -29,6 +30,7 @@ from pulp.server.webservices.views.users import UserResourceView, UsersView
 
 urlpatterns = patterns('',
     url(r'^v2/actions/login/$', LoginView.as_view(), name='login'), # flake8: noqa
+    url(r'^v2/consumer_groups/$', ConsumerGroupView.as_view(), name='consumer_group'),
     url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/$',
         ConsumerGroupResourceView.as_view(), name='consumer_group_resource'),
     url(r'^v2/consumer_groups/(?P<consumer_group_id>[^/]+)/actions/associate/$',
@@ -61,6 +63,7 @@ urlpatterns = patterns('',
         ContentUnitResourceView.as_view(), name='content_unit_resource'),
     url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/pulp_user_metadata/$',
         ContentUnitUserMetadataResourceView.as_view(), name='content_unit_user_metadata_resource'),
+    url(r'^v2/content/uploads/$', UploadsCollectionView.as_view(), name='content_uploads'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/$', UploadResourceView.as_view(),
         name='content_upload_resource'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',

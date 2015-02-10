@@ -6,13 +6,100 @@ from django.http import HttpResponseBadRequest
 
 from base import (assert_auth_CREATE, assert_auth_READ, assert_auth_UPDATE, assert_auth_DELETE,
                   assert_auth_EXECUTE)
-from pulp.server.exceptions import OperationPostponed, MissingResource, InvalidValue
+from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, OperationPostponed
 from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociateActionView,
                                                            ConsumerGroupBindingView,
                                                            ConsumerGroupBindingsView,
                                                            ConsumerGroupContentActionView,
                                                            ConsumerGroupResourceView,
-                                                           ConsumerGroupUnassociateActionView)
+                                                           ConsumerGroupUnassociateActionView,
+                                                           ConsumerGroupView,)
+
+
+class TestconsumerGroupView(unittest.TestCase):
+    """
+    Test consumer groups view.
+    """
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.consumer_groups.ConsumerGroup.get_collection')
+    def test_get_all_consumer_groups(self, mock_collection, mock_resp):
+        """
+        Test the consumer groups retrieval.
+        """
+        consumer_mock = mock.MagicMock()
+        resp = [{'id': 'foo', 'display_name': 'bar'}]
+        consumer_mock.find.return_value = resp
+        mock_collection.return_value = consumer_mock
+
+        request = mock.MagicMock()
+        consumer_group = ConsumerGroupView()
+        response = consumer_group.get(request)
+
+        expected_cont = [{'id': 'foo', 'display_name': 'bar', '_href': '/v2/consumer_groups/foo/'}]
+        mock_resp.assert_called_once_with(expected_cont)
+        self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.consumer_groups.generate_redirect_response')
+    @mock.patch(
+        'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
+    def test_create_consumer_group(self, mock_factory, mock_resp, mock_redirect):
+        """
+        Test consumer group creation.
+        """
+        resp = {'id': 'foo', 'display_name': 'bar'}
+        expected_cont = {'id': 'foo', 'display_name': 'bar', '_href': '/v2/consumer_groups/foo/'}
+
+        request = mock.MagicMock()
+        request.body = json.dumps({'id': 'foo', 'display_name': 'bar'})
+        mock_factory.consumer_group_manager.return_value.create_consumer_group.return_value = resp
+        consumer_group = ConsumerGroupView()
+        response = consumer_group.post(request)
+        mock_resp.assert_called_once_with(expected_cont)
+        mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
+        self.assertTrue(response is mock_redirect.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_CREATE())
+    def test_create_consumer_group_invalid_param(self):
+        """
+        Test consumer group creation with invalid parameters.
+        """
+        request = mock.MagicMock()
+        request.body = json.dumps({'id': 'foo', 'display_name': 'bar', 'invalid_param': 'some'})
+        consumer_group = ConsumerGroupView()
+        try:
+            response = consumer_group.post(request)
+        except InvalidValue, response:
+            pass
+        else:
+            raise AssertionError("Invalidvalue should be raised with invalid options")
+        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.error_data['property_names'], ['invalid_param'])
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_CREATE())
+    def test_create_consumer_group_missing_param(self):
+        """
+        Test consumer group creation with missing required group id.
+        """
+        request = mock.MagicMock()
+        request.body = json.dumps({'display_name': 'bar'})
+        consumer_group = ConsumerGroupView()
+        try:
+            response = consumer_group.post(request)
+        except MissingValue, response:
+            pass
+        else:
+            raise AssertionError("MissingValue should be raised with missing options")
+        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.error_data['property_names'], ['id'])
 
 
 class TestconsumerGroupResourceView(unittest.TestCase):
