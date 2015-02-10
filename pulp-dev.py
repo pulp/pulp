@@ -331,6 +331,7 @@ def install(opts):
         # packages dir
         os.system('chown -R apache:apache /var/log/pulp')
         os.system('chown -R apache:apache /var/lib/pulp')
+        os.system('chown -R apache:apache /var/cache/pulp')
 
         # The Celery init script will get angry if /etc/default things aren't root owned
         os.system('chown root:root /etc/default/pulp_celerybeat')
@@ -340,6 +341,7 @@ def install(opts):
         # Guarantee apache always has write permissions
         os.system('chmod 3775 /var/log/pulp')
         os.system('chmod 3775 /var/lib/pulp')
+        os.system('chmod 3775 /var/cache/pulp')
 
         # Generate certificates
         print 'generating certificates'
