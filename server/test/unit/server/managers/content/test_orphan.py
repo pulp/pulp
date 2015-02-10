@@ -1,15 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012-2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including implied
-# warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR
-# PURPOSE. You should have received a copy of GPLv2 along with this software;
-# if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from pprint import pformat
+from unittest import TestCase
 import os
 import random
 import shutil
@@ -17,21 +7,16 @@ import string
 import tempfile
 import traceback
 
-from pprint import pformat
-from unittest import TestCase
-
 from mock import patch
 
-import base
-
-from pulp.server import exceptions as pulp_exceptions
+from .... import base
 from pulp.plugins.types import database as content_type_db
 from pulp.plugins.types.model import TypeDefinition
+from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.content.orphan import OrphanManager
 
-# globals and constants --------------------------------------------------------
 
 PHONY_TYPE_1 = TypeDefinition('phony_type_1', 'Phony Type 1', None, 'name', [], [])
 PHONY_TYPE_2 = TypeDefinition('phony_type_2', 'Phony Type 2', None, 'name', [], [])
@@ -39,7 +24,6 @@ PHONY_TYPE_2 = TypeDefinition('phony_type_2', 'Phony Type 2', None, 'name', [], 
 PHONY_REPO_ID = 'phony_repo'
 PHONY_USER_ID = 'orphan_manager_unittests'
 
-# content generation -----------------------------------------------------------
 
 def gen_content_unit(content_type_id, content_root, name=None):
     name = name or ''.join(random.sample(string.ascii_letters, 5))
@@ -71,7 +55,7 @@ def gen_content_unit_with_directory(content_type_id, content_root, name=None):
 
 def gen_buttload_of_content_units(content_type_id, content_root, num_units):
     unit_name_format = '%%s-%%0%dd' % len(str(num_units))
-    for i in xrange(1, num_units+1):
+    for i in xrange(1, num_units + 1):
         unit_name = unit_name_format % (content_type_id, i)
         gen_content_unit(content_type_id, content_root, unit_name)
 
@@ -91,7 +75,6 @@ def unassociate_content_unit_from_repo(content_unit):
     collection = RepoContentUnit.get_collection()
     collection.remove(spec, safe=True)
 
-# manager instantiation tests --------------------------------------------------
 
 class OrphanManagerInstantiationTests(base.PulpServerTests):
 
@@ -107,8 +90,6 @@ class OrphanManagerInstantiationTests(base.PulpServerTests):
         except:
             self.fail(traceback.format_exc())
 
-# manager tests ----------------------------------------------------------------
-
 
 class OrphanManagerTests(base.PulpServerTests):
 
@@ -122,11 +103,11 @@ class OrphanManagerTests(base.PulpServerTests):
         super(OrphanManagerTests, self).tearDown()
         RepoContentUnit.get_collection().remove(safe=True)
         content_type_db.clean()
-        if os.path.exists(self.content_root): # can be removed by delete operations
+        if os.path.exists(self.content_root):  # can be removed by delete operations
             shutil.rmtree(self.content_root)
 
     def number_of_files_in_content_root(self):
-        if not os.path.exists(self.content_root): # can be removed by delete operations
+        if not os.path.exists(self.content_root):  # can be removed by delete operations
             return 0
         contents = os.listdir(self.content_root)
         return len(contents)
@@ -134,15 +115,11 @@ class OrphanManagerTests(base.PulpServerTests):
 
 class OrphanManagerGeneratorTests(OrphanManagerTests):
 
-    # utilities test methods ---------------------------------------------------
-
     def test_content_creation(self):
         self.assertTrue(self.number_of_files_in_content_root() == 0)
         content_unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         self.assertTrue(os.path.exists(content_unit['_storage_path']))
         self.assertTrue(self.number_of_files_in_content_root() == 1)
-
-    # generator test methods ---------------------------------------------------
 
     def test_list_one_orphan_using_generators(self):
         orphans = list(self.orphan_manager.generate_all_orphans())
@@ -154,22 +131,22 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         self.assertEqual(content_unit['_id'], orphans[0]['_id'])
 
     def test_list_two_orphans_using_generators(self):
-        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_2.id, self.content_root)
 
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 2)
 
     def test_list_two_orphans_using_generators_with_search_indexes(self):
-        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_2.id, self.content_root)
 
         orphans = list(self.orphan_manager.generate_all_orphans_with_unit_keys())
         self.assertEqual(len(orphans), 2)
 
     def test_list_orphans_by_type_using_generators(self):
-        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_2.id, self.content_root)
 
         orphans_1 = list(self.orphan_manager.generate_orphans_by_type(PHONY_TYPE_1.id))
         self.assertEqual(len(orphans_1), 1)
@@ -179,13 +156,12 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
 
     def test_generate_orphans_by_type_with_unit_keys_invalid_type(self):
         """
-        Assert that when an invalid content type is passed to generate_orphans_by_type_with_unit_keys
-        a MissingResource exception is raised.
+        Assert that when an invalid content type is passed to
+        generate_orphans_by_type_with_unit_keys a MissingResource exception is raised.
         """
-
-        self.assertRaises(pulp_exceptions.MissingResource,
-                          OrphanManager.generate_orphans_by_type_with_unit_keys('Not a type').next
-                          )
+        self.assertRaises(
+            pulp_exceptions.MissingResource,
+            OrphanManager.generate_orphans_by_type_with_unit_keys('Not a type').next)
 
     def test_generate_orphans_by_type_with_unit_keys(self):
         """
@@ -193,7 +169,7 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         """
         # Add two content units of different types
         unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
-        unit_2 = gen_content_unit(PHONY_TYPE_2.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_2.id, self.content_root)
 
         results = list(self.orphan_manager.generate_orphans_by_type_with_unit_keys(PHONY_TYPE_1.id))
         self.assertEqual(1, len(results))
@@ -221,10 +197,8 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 1)
 
-    # delete with generator test methods ---------------------------------------
-
     def test_delete_one_orphan_using_generators(self):
-        unit = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        gen_content_unit(PHONY_TYPE_1.id, self.content_root)
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 1)
 
@@ -235,7 +209,7 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         self.assertEqual(self.number_of_files_in_content_root(), 0)
 
     def test_delete_one_orphan_with_directory_using_generators(self):
-        unit = gen_content_unit_with_directory(PHONY_TYPE_1.id, self.content_root)
+        gen_content_unit_with_directory(PHONY_TYPE_1.id, self.content_root)
         orphans = list(self.orphan_manager.generate_all_orphans())
         self.assertEqual(len(orphans), 1)
 
@@ -260,7 +234,8 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
         type_2_num_units = 15000
         gen_buttload_of_content_units(PHONY_TYPE_1.id, self.content_root, type_1_num_units)
         gen_buttload_of_content_units(PHONY_TYPE_2.id, self.content_root, type_2_num_units)
-        self.assertEqual(self.number_of_files_in_content_root(), type_1_num_units+type_2_num_units)
+        self.assertEqual(self.number_of_files_in_content_root(),
+                         type_1_num_units + type_2_num_units)
 
         self.orphan_manager.delete_all_orphans()
         self.assertEqual(self.number_of_files_in_content_root(), 0)
