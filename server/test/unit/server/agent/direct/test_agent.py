@@ -28,7 +28,43 @@ class TestAgent(TestCase):
         self.assertEqual(agent.profile, Profile)
 
 
+class NotFound(Exception):
+    pass
+
+
 class TestConsumerCapability(TestCase):
+
+    @patch('pulp.server.agent.direct.pulpagent.Queue')
+    def test_delete_queue(self, queue):
+        url = 'test-url'
+        name = 'test-queue'
+
+        # test
+        agent = PulpAgent()
+        agent.delete_queue(url, name)
+
+        # validation
+        queue.assert_called_once_with(name)
+        queue = queue.return_value
+        queue.purge.assert_called_once_with(url)
+        queue.delete.assert_called_once_with(url)
+
+    @patch('pulp.server.agent.direct.pulpagent.Queue')
+    @patch('pulp.server.agent.direct.pulpagent.NotFound', NotFound)
+    def test_delete_queue_not_found(self, queue):
+        url = 'test-url'
+        name = 'test-queue'
+        queue.return_value.purge.side_effect = NotFound
+
+        # test
+        agent = PulpAgent()
+        agent.delete_queue(url, name)
+
+        # validation
+        queue.assert_called_once_with(name)
+        queue = queue.return_value
+        queue.purge.assert_called_once_with(url)
+        self.assertFalse(queue.delete.called)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_unregistered(self, mock_gofer_agent):

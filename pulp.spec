@@ -25,11 +25,15 @@
 %define pulp_systemd 0
 %endif
 
+# Required gofer version
+%global gofer_version 2.5
+
+
 # ---- Pulp Platform -----------------------------------------------------------
 
 Name: pulp
 Version: 2.6.0
-Release: 0.5.beta%{?dist}
+Release: 0.6.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -313,8 +317,8 @@ Requires: mod_ssl
 Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
-Requires: python-gofer >= 2.3
-Requires: python-gofer-qpid >= 2.3
+Requires: python-gofer >= %{gofer_version}
+Requires: python-gofer-qpid >= %{gofer_version}
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -417,7 +421,6 @@ fi
 %package nodes-common
 Summary: Pulp nodes common modules
 Group: Development/Languages
-Requires: %{name}-common = %{version}
 Requires: pulp-server = %{pulp_version}
 Requires: python-pulp-bindings = %{pulp_version}
 
@@ -742,9 +745,9 @@ Group: Development/Languages
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
-Requires: python-gofer >= 2.3
-Requires: python-gofer-qpid >= 2.3
-Requires: gofer >= 2.3
+Requires: python-gofer >= %{gofer_version}
+Requires: python-gofer-qpid >= %{gofer_version}
+Requires: gofer >= %{gofer_version}
 Requires: m2crypto
 
 %description agent
@@ -818,6 +821,29 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Feb 10 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.6.beta
+- 1190756 - Send SIGQUIT to the workers instead of the proxy.
+  (rbarlow@redhat.com)
+- 1190824 - Don't log the length of the database pw. (rbarlow@redhat.com)
+- 1185011 - pulp-admin says sync schedule deleted succesfully for non-existing
+  schedule id. (ipanova@redhat.com)
+- 1190794 - Fixes release note formatting on 2.6.0 release note
+  (bmbouter@gmail.com)
+- 1185937 - added release not for python-gofer-amqplib. (jortel@redhat.com)
+- 1182279 - DEBUG level logs database password. (ipanova@redhat.com)
+- 1174361 - Revert patch introduced with b0f2319. It is not needed.
+  (bmbouter@gmail.com)
+- 1120671 - scheduled tasks show correct resources in task list
+  (mhrivnak@redhat.com)
+- 1159303 - delete agent queues during unregistration. (jortel@redhat.com)
+- 1186420 - fixed reading cert_t for custom SSL config (lzap+git@redhat.com)
+- 1186420 - reading cert_t for custom SSL config (lzap+git@redhat.com)
+- 1183706 - Remove permission check from upstart celery scripts
+  (bmbouter@gmail.com)
+- 1183700 - Update pulp.spec to overwrite Celery related init scripts
+  (bmbouter@gmail.com)
+- 1184187 - Causes all platform tests to use pulp_unittest (bmbouter@gmail.com)
+
 * Tue Feb 10 2015 Barnaby Court 2.6.0-0.5.beta
 - Merge pulp-nodes.spec into pulp.spec
 
