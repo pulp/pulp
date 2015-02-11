@@ -73,7 +73,7 @@ class TaskResourceView(View):
 
         :return: Response containing a serialized dict of the requested task
         :rtype : django.http.HttpResponse
-        :raises: MissingResource if task is not found
+        :raises MissingResource: if task is not found
         """
         try:
             task = TaskStatus.objects.get(task_id=task_id)

@@ -1,15 +1,8 @@
-from datetime import datetime
-
-from mongoengine.queryset import DoesNotExist
 import web
 
-from pulp.server.async import tasks
-from pulp.server.auth.authorization import READ, DELETE
+from pulp.server.auth.authorization import READ
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import Worker
-from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
-from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.controllers.search import SearchController
 
@@ -66,54 +59,8 @@ class SearchTaskCollection(SearchController):
         serialized_tasks = [task_serializer(task) for task in raw_tasks]
         return self.ok(serialized_tasks)
 
-
-class TaskCollection(JSONController):
-
-    @auth_required(READ)
-    def GET(self):
-        valid_filters = ['tag']
-        filters = self.filters(valid_filters)
-        tags = filters.get('tag', [])
-        if tags:
-            raw_tasks = TaskStatus.objects(tags__all=tags)
-        else:
-            raw_tasks = TaskStatus.objects()
-        serialized_task_statuses = [task_serializer(task) for task in raw_tasks]
-        return self.ok(serialized_task_statuses)
-
-
-class TaskResource(JSONController):
-
-    @auth_required(READ)
-    def GET(self, task_id):
-        try:
-            task = TaskStatus.objects.get(task_id=task_id)
-        except DoesNotExist:
-            raise MissingResource(task_id)
-
-        task_dict = task_serializer(task)
-        if 'worker_name' in task_dict:
-            queue_name = Worker(task_dict['worker_name'], datetime.now()).queue_name
-            task_dict.update({'queue': queue_name})
-        return self.ok(task_dict)
-
-    @auth_required(DELETE)
-    def DELETE(self, task_id):
-        """
-        Cancel the task that is represented by the given task_id, unless it is already in a
-        complete state.
-
-        :param task_id: The ID of the task you wish to cancel
-        :type  task_id: basestring
-        """
-        tasks.cancel(task_id)
-        return self.ok(None)
-
-
 # mapped to /v2/tasks/
 TASK_URLS = (
-    '/', TaskCollection,
     '/search/', SearchTaskCollection,
-    '/([^/]+)/', TaskResource,
 )
 task_application = web.application(TASK_URLS, globals())
