@@ -284,3 +284,49 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
         url_name = 'consumer_group_unbind'
         assert_url_match(url, url_name, consumer_group_id='test-group',
                          repo_id='repo1', distributor_id='dist1')
+
+
+class TestDjangoPermissionsUrls(unittest.TestCase):
+    """
+    Tests for permissions urls
+    """
+
+    def test_match_permissions_view(self):
+        """
+        Test url matching for permissions
+        """
+        url = '/v2/permissions/'
+        url_name = 'permissions'
+        assert_url_match(url, url_name)
+
+    def test_match_permission_grant_to_role_view(self):
+        """
+        Test url matching for grant permissions to a role
+        """
+        url = '/v2/permissions/actions/grant_to_role/'
+        url_name = 'grant_to_role'
+        assert_url_match(url, url_name)
+
+    def test_match_permission_grant_to_user_view(self):
+        """
+        Test url matching for grant permissions to a user
+        """
+        url = '/v2/permissions/actions/grant_to_user/'
+        url_name = 'grant_to_user'
+        assert_url_match(url, url_name)
+
+    def test_match_permission_revoke_from_role_view(self):
+        """
+        Test url matching for revoke permissions from a role
+        """
+        url = '/v2/permissions/actions/revoke_from_role/'
+        url_name = 'revoke_from_role'
+        assert_url_match(url, url_name)
+
+    def test_match_permission_revoke_from_userview(self):
+        """
+        Test url matching for revoke permissions from a user
+        """
+        url = '/v2/permissions/actions/revoke_from_user/'
+        url_name = 'revoke_from_user'
+        assert_url_match(url, url_name)

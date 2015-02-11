@@ -13,6 +13,9 @@ from pulp.server.webservices.views.content import (
     OrphanTypeSubCollectionView, UploadResourceView,
     UploadSegmentResourceView
 )
+from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
+                                                       PermissionView, RevokeFromRoleView,
+                                                       RevokeFromUserView)
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
@@ -57,6 +60,11 @@ urlpatterns = patterns('',
         name='content_upload_resource'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
         UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
+    url(r'^v2/permissions/$', PermissionView.as_view(), name='permissions'),
+    url(r'^v2/permissions/actions/grant_to_role/$', GrantToRoleView.as_view(), name='grant_to_role'),
+    url(r'^v2/permissions/actions/grant_to_user/$', GrantToUserView.as_view(), name='grant_to_user'),
+    url(r'^v2/permissions/actions/revoke_from_role/$', RevokeFromRoleView.as_view(), name='revoke_from_role'),
+    url(r'^v2/permissions/actions/revoke_from_user/$', RevokeFromUserView.as_view(), name='revoke_from_user'),
     url(r'^v2/plugins/distributors/$', DistributorsView.as_view(), name='plugin_distributors'),
     url(r'^v2/plugins/distributors/(?P<distributor_id>[^/]+)/$', DistributorResourceView.as_view(),
         name='plugin_distributor_resource'),
