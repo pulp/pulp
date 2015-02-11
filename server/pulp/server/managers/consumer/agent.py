@@ -2,8 +2,13 @@
 Contains agent management classes
 """
 
-from uuid import uuid4
 import sys
+
+from logging import getLogger
+from uuid import uuid4
+from gettext import gettext as _
+
+from celery import task
 
 from pulp.common import tags
 from pulp.plugins.conduits.profiler import ProfilerConduit
@@ -17,17 +22,26 @@ from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
 
+QUEUE_DELETE_DELAY = 600  # 10 min.
+QUEUE_DELETE_FAILED = _('queue %(name)s cannot be deleted: %(reason)s')
+QUEUE_DELETED = _('queue %(name)s deleted')
+
+
+logger = getLogger(__name__)
+
 
 class AgentManager(object):
     """
     The agent manager.
     """
 
-    def unregistered(self, consumer_id):
+    @staticmethod
+    def unregistered(consumer_id):
         """
         Notification that a consumer (agent) has
         been unregistered.  This ensure that all registration
-        artifacts have been cleaned up.
+        artifacts have been cleaned up.  Then, we fire off a task to lazily
+        delete the agent queue.
         :param consumer_id: The consumer ID.
         :type consumer_id: str
         """
@@ -36,6 +50,9 @@ class AgentManager(object):
         context = Context(consumer)
         agent = PulpAgent()
         agent.consumer.unregistered(context)
+        url = context.url
+        name = context.route.split('/')[-1]
+        delete_queue.apply_async(args=[url, name, consumer_id], countdown=QUEUE_DELETE_DELAY)
 
     @staticmethod
     def bind(consumer_id, repo_id, distributor_id, options):
@@ -387,6 +404,47 @@ class AgentManager(object):
             agent_bindings.append(agent_binding)
         return agent_bindings
 
+    @staticmethod
+    def delete_queue(url, name, consumer_id):
+        """
+        Delete the agent queue.
+        :param url: The broker URL.
+        :type url: str
+        :param name: The queue name.
+        :type name: str
+        :param consumer_id: The consumer ID.
+        :type consumer_id: str
+        """
+        try:
+            manager = managers.consumer_manager()
+            manager.get_consumer(consumer_id)
+            return  # still registered (abort)
+        except MissingResource:
+            # expected
+            pass
+        agent = PulpAgent()
+        agent.delete_queue(url, name)
+
+
+@task
+def delete_queue(url, name, consumer_id):
+    """
+    Task to delete the agent queue.
+    :param url: The broker URL.
+    :type url: str
+    :param name: The queue name.
+    :type name: str
+    :param consumer_id: The consumer ID.
+    :type consumer_id: str
+    """
+    try:
+        AgentManager.delete_queue(url, name, consumer_id)
+    except Exception, e:
+        delete_queue.retry(countdown=QUEUE_DELETE_DELAY)
+        logger.error(QUEUE_DELETE_FAILED, {'name': name, 'reason': e})
+    else:
+        logger.info(QUEUE_DELETED, {'name': name})
+
 
 class Units(dict):
     """
@@ -399,6 +457,7 @@ class Units(dict):
         :param units: A list of content units.
         :type units: list
         """
+        super(Units, self).__init__()
         for unit in units:
             typeid = unit['type_id']
             lst = self.get(typeid)
