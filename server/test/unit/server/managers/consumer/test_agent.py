@@ -477,13 +477,14 @@ class TestAgentManager(TestCase):
             self.assertEqual(binding['repo_id'], agent_binding['repo_id'])
             self.assertEqual(distributor['distributor_type_id'], agent_binding['type_id'])
 
-    @patch('pulp.server.managers.repo.distributor.RepoDistributorManager')
-    def test_get_agent_unbindings_distributor_deleted(self, mock_repo_distributor_manager):
+    @patch('pulp.server.managers.consumer.agent.managers')
+    def test_get_agent_unbindings_distributor_deleted(self, mock_managers):
         # Test that AgentManager._unbindings does not raise an exception
         # when the distributor is deleted and returns None as the distributor_type_id.
-        def test_get_distributor():
-            raise MissingResource()
-        mock_repo_distributor_manager.get_distributor = test_get_distributor
+        class MockedRepoDistributorManager:
+            def get_distributor(*args):
+                raise MissingResource()
+        mock_managers.repo_distributor_manager = Mock(return_value=MockedRepoDistributorManager())
 
         # test
         bindings = [
