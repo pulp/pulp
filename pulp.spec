@@ -33,7 +33,7 @@
 
 Name: pulp
 Version: 2.6.0
-Release: 0.6.beta%{?dist}
+Release: 0.7.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
@@ -821,6 +821,9 @@ exit 0
 %endif # End selinux if block
 
 %changelog
+* Tue Feb 10 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.7.beta
+- Pulp rebuild
+
 * Tue Feb 10 2015 Chris Duryee <cduryee@redhat.com> 2.6.0-0.6.beta
 - 1190756 - Send SIGQUIT to the workers instead of the proxy.
   (rbarlow@redhat.com)
