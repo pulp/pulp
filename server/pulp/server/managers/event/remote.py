@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import logging
 
 from qpid.messaging import Connection
@@ -27,7 +14,7 @@ class TopicPublishManager(object):
 
     _connection = None
     _logged_disabled = False
-    logger = logging.getLogger(__name__)
+    _logger = logging.getLogger(__name__)
 
     @classmethod
     def _disabled_message(cls):
@@ -36,7 +23,7 @@ class TopicPublishManager(object):
         otherwise this could be very noisy.
         """
         if not cls._logged_disabled:
-            cls.logger.debug(
+            cls._logger.debug(
                 'remote messaging is disabled because no server was specified')
             cls._logged_disabled = True
 
@@ -54,9 +41,9 @@ class TopicPublishManager(object):
             cls._connection = Connection(address, reconnect=True)
             try:
                 cls._connection.open()
-            except ConnectionError, e:
+            except ConnectionError:
                 # log the error, but allow life to go on.
-                cls.logger.exception(
+                cls._logger.exception(
                     'could not connect to messaging server %s' % address)
                 return
 
@@ -82,12 +69,13 @@ class TopicPublishManager(object):
         connection = cls.connection()
         if connection:
             subject = '%s.%s' % (cls.BASE_SUBJECT, event.event_type)
-            destination = '%s/%s; {create:always, node:{type:topic}, link:{x-declare:{auto-delete:True}}}' % (
-                exchange or cls.EXCHANGE, subject)
+            destination = (
+                '%s/%s; {create:always, node:{type:topic}, link:{x-declare:{auto-delete:True}}}' % (
+                    exchange or cls.EXCHANGE, subject))
 
             data = json.dumps(event.data(), default=json_util.default)
             try:
                 cls.connection().session().sender(destination).send(data)
             except MessagingError, e:
                 # log the error, but allow life to go on.
-                cls.logger.exception('could not publish message: %s' % str(e))
+                cls._logger.exception('could not publish message: %s' % str(e))

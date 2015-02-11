@@ -1,29 +1,16 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Handles the CRUD for event listeners.
 """
-from bson.errors import InvalidId
 import sys
+
+from bson.errors import InvalidId
 
 from pulp.server.compat import ObjectId
 from pulp.server.db.model.event import EventListener
-from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.event import notifiers
 from pulp.server.event.data import ALL_EVENT_TYPES
+from pulp.server.exceptions import InvalidValue, MissingResource
 
-# -- manager -----------------------------------------------------------------
 
 class EventListenerManager(object):
 
@@ -94,7 +81,7 @@ class EventListenerManager(object):
         except InvalidId:
             raise MissingResource(event_listener=event_listener_id), None, sys.exc_info()[2]
 
-        listener = collection.find_one({'_id' : id})
+        listener = collection.find_one({'_id': id})
 
         if listener is None:
             raise MissingResource(event_listener=event_listener_id)
@@ -113,9 +100,9 @@ class EventListenerManager(object):
         """
         collection = EventListener.get_collection()
 
-        self.get(event_listener_id) # check for MissingResource
+        self.get(event_listener_id)  # check for MissingResource
 
-        collection.remove({'_id' : ObjectId(event_listener_id)})
+        collection.remove({'_id': ObjectId(event_listener_id)})
 
     def update(self, event_listener_id, notifier_config=None, event_types=None):
         """
@@ -145,7 +132,7 @@ class EventListenerManager(object):
         collection = EventListener.get_collection()
 
         # Validation
-        existing = self.get(event_listener_id) # will raise MissingResource
+        existing = self.get(event_listener_id)  # will raise MissingResource
 
         # Munge the existing configuration if it was specified
         if notifier_config is not None:
@@ -168,7 +155,7 @@ class EventListenerManager(object):
         collection.save(existing, safe=True)
 
         # Reload to return
-        existing = collection.find_one({'_id' : ObjectId(event_listener_id)})
+        existing = collection.find_one({'_id': ObjectId(event_listener_id)})
         return existing
 
     def list(self):
@@ -181,6 +168,7 @@ class EventListenerManager(object):
         """
         listeners = list(EventListener.get_collection().find())
         return listeners
+
 
 def _validate_event_types(event_types):
     if not isinstance(event_types, (tuple, list)) or len(event_types) == 0:

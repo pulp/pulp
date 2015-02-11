@@ -1,24 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
-
-import mock
-from qpid.messaging import Connection
-from qpid.messaging.exceptions import ConnectionError, MessagingError
 
 # needed to create unserializable ID
 from bson.objectid import ObjectId as _test_objid
+from qpid.messaging import Connection
+from qpid.messaging.exceptions import ConnectionError, MessagingError
+import mock
 
 from pulp.common.compat import json
 from pulp.server.config import config
@@ -53,13 +39,13 @@ class TestTopicPublishManager(unittest.TestCase):
         self.assertEqual(connection1, connection2)
 
     @mock.patch.object(Connection, 'open', side_effect=ConnectionError)
-    @mock.patch.object(TopicPublishManager.logger, 'exception')
+    @mock.patch.object(TopicPublishManager._logger, 'exception')
     def test_connect_fails(self, mock_error, mock_open):
         connection = self.manager.connection()
         self.assertTrue(connection is None)
         self.assertEqual(mock_error.call_count, 1)
 
-    @mock.patch.object(TopicPublishManager.logger, 'debug')
+    @mock.patch.object(TopicPublishManager._logger, 'debug')
     @mock.patch.object(config, 'get', return_value='')
     def test_no_address_configured(self, mock_config_get, mock_debug):
         connection = self.manager.connection()
@@ -67,7 +53,7 @@ class TestTopicPublishManager(unittest.TestCase):
         self.assertEqual(mock_config_get.call_count, 1)
         self.assertEqual(mock_debug.call_count, 1)
 
-    @mock.patch.object(TopicPublishManager.logger, 'debug')
+    @mock.patch.object(TopicPublishManager._logger, 'debug')
     @mock.patch.object(config, 'get', return_value='')
     def test_no_address_configured_single_log(self, mock_config_get, mock_debug):
         # make sure the error is only logged once
@@ -99,7 +85,7 @@ class TestTopicPublishManager(unittest.TestCase):
 
     @mock.patch('qpid.messaging.Connection.open')
     @mock.patch('qpid.messaging.Connection.session', side_effect=MessagingError)
-    @mock.patch.object(TopicPublishManager.logger, 'exception')
+    @mock.patch.object(TopicPublishManager._logger, 'exception')
     def test_publish_failed(self, mock_error, mock_session, mock_open):
         # make sure this just logs the error
         mock_event = mock.MagicMock()
@@ -130,5 +116,3 @@ class TestTopicPublishManager(unittest.TestCase):
         mock_event.event_type = data.TYPE_REPO_PUBLISH_FINISHED
         # no TypeError = success
         self.manager.publish(mock_event, 'pulp')
-
-
