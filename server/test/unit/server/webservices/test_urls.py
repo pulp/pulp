@@ -302,6 +302,48 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
                          repo_id='repo1', distributor_id='dist1')
 
 
+class TestDjangoRepoGroupsUrls(unittest.TestCase):
+    """
+    Test url matching for repo_groups urls
+    """
+    def test_match_repo_groups(self):
+        """Test url matching for repo_groups."""
+        url = '/v2/repo_groups/'
+        url_name = 'repo_groups'
+        assert_url_match(url, url_name)
+
+    def test_match_repo_group_resource(self):
+        url = '/v2/repo_groups/test-group-id/'
+        url_name = 'repo_group_resource'
+        assert_url_match(url, url_name, repo_group_id='test-group-id')
+
+    def test_match_repo_group_associate(self):
+        url = '/v2/repo_groups/test-group-id/actions/associate/'
+        url_name = 'repo_group_associate'
+        assert_url_match(url, url_name, repo_group_id='test-group-id')
+
+    def test_match_repo_group_unassociate(self):
+        url = '/v2/repo_groups/test-group-id/actions/unassociate/'
+        url_name = 'repo_group_unassociate'
+        assert_url_match(url, url_name, repo_group_id='test-group-id')
+
+    def test_match_repo_group_distributors(self):
+        url = '/v2/repo_groups/test-group-id/distributors/'
+        url_name = 'repo_group_distributors'
+        assert_url_match(url, url_name, repo_group_id='test-group-id')
+
+    def test_match_repo_group_distributor_resource(self):
+        url = '/v2/repo_groups/test-group-id/distributors/test-distributor/'
+        url_name = 'repo_group_distributor_resource'
+        assert_url_match(url, url_name, repo_group_id='test-group-id',
+                         distributor_id='test-distributor')
+
+    def test_repo_group_publish(self):
+        url = '/v2/repo_groups/test-group-id/actions/publish/'
+        url_name = 'repo_group_publish'
+        assert_url_match(url, url_name, repo_group_id='test-group-id')
+
+
 class TestDjangoTasksUrls(unittest.TestCase):
     """
     Test the matching for tasks urls.
