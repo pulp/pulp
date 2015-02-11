@@ -256,7 +256,7 @@ class TestAgentManager(TestCase):
 
         options = {'a': 1}
         agent_manager = AgentManager()
-        task = agent_manager.update_content(consumer['id'], [unit], options)
+        agent_manager.update_content(consumer['id'], [unit], options)
 
         # validations
 
