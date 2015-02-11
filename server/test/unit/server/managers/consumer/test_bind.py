@@ -1,30 +1,13 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import base
-
 from mock import patch
 
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.db.model.consumer import Consumer, Bind
-from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
-
-
-# -- test cases ---------------------------------------------------------------
 
 
 class BindManagerTests(base.PulpServerTests):
@@ -61,9 +44,9 @@ class BindManagerTests(base.PulpServerTests):
         mock_plugins.reset()
 
     def populate(self):
-        config = {'key1' : 'value1', 'key2' : None}
+        config = {'key1': 'value1', 'key2': None}
         manager = factory.repo_manager()
-        repo = manager.create_repo(self.REPO_ID)
+        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -206,7 +189,7 @@ class BindManagerTests(base.PulpServerTests):
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
         # Test
-        criteria = Criteria({'consumer_id':self.CONSUMER_ID})
+        criteria = Criteria({'consumer_id': self.CONSUMER_ID})
         bindings = manager.find_by_criteria(criteria)
         bind = bindings[0]
         self.assertEqual(len(bindings), 1)
@@ -216,7 +199,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
         # Test ($in)
-        criteria = Criteria({'consumer_id':{'$in':[self.CONSUMER_ID]}})
+        criteria = Criteria({'consumer_id': {'$in': [self.CONSUMER_ID]}})
         bindings = manager.find_by_criteria(criteria)
         bind = bindings[0]
         self.assertEqual(len(bindings), 1)
@@ -414,28 +397,34 @@ class BindManagerTests(base.PulpServerTests):
         self.populate()
         manager = factory.consumer_bind_manager()
         for consumer_id in self.ALL_CONSUMERS:
-            manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)
-        manager.action_pending(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '1')
-        manager.action_pending(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '2')
-        # Test
+            manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID, self.NOTIFY_AGENT,
+                         self.BINDING_CONFIG)
+        manager.action_pending(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID,
+                               Bind.Action.BIND, '1')
+        manager.action_pending(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID,
+                               Bind.Action.BIND, '2')
+
         manager.mark_deleted(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        # Verify
-        self.assertRaises(MissingResource, manager.get_bind, self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+
+        self.assertRaises(MissingResource, manager.get_bind, self.CONSUMER_ID, self.REPO_ID,
+                          self.DISTRIBUTOR_ID)
         manager.get_bind(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager.get_bind(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID)
 
     def test_delete_but_not_marked_for_delete(self):
-        # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
         for consumer_id in self.ALL_CONSUMERS:
-            manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)
-        manager.action_pending(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '1')
-        manager.action_pending(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID, Bind.Action.BIND, '2')
-        # Test
+            manager.bind(consumer_id, self.REPO_ID, self.DISTRIBUTOR_ID, self.NOTIFY_AGENT,
+                         self.BINDING_CONFIG)
+        manager.action_pending(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID,
+                               Bind.Action.BIND, '1')
+        manager.action_pending(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID,
+                               Bind.Action.BIND, '2')
+
         manager.delete(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
-        # Verify
+
         manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager.get_bind(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager.get_bind(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID)
