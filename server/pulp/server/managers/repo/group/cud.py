@@ -1,7 +1,4 @@
-from gettext import gettext as _
 import logging
-import os
-import shutil
 import sys
 
 from celery import task
@@ -13,7 +10,6 @@ from pulp.server.async.tasks import Task
 from pulp.server.db.model.repo_group import RepoGroup
 from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as manager_factory
-from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
 
 
@@ -166,17 +162,6 @@ class RepoGroupManager(object):
         distributors = RepoGroupDistributorManager.find_distributors(group_id)
         for distributor in distributors:
             RepoGroupDistributorManager.remove_distributor(group_id, distributor['id'])
-
-        # Delete the working directory for the group
-        working_dir = common_utils.get_working_directory()
-        if os.path.exists(working_dir):
-            try:
-                shutil.rmtree(working_dir)
-            except Exception:
-                msg = _('Error while deleting working dir [%(d)s] for repo group [%(g)s]')
-                msg = msg % {'d': working_dir, 'g': group_id}
-                _logger.exception(msg)
-                raise
 
         # Delete from the database
         collection.remove({'id': group_id}, safe=True)
