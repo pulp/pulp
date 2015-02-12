@@ -50,7 +50,8 @@ class ImportUnitConduitTests(base.PulpServerTests):
         self.conduit.get_source_units(criteria=criteria)
 
         # Verify the correct propagation to the mixin method
-        mock_get.assert_called_once_with(self.source_repo_id, criteria, ImporterConduitException)
+        mock_get.assert_called_once_with(self.source_repo_id, criteria, ImporterConduitException,
+                                         as_generator=False)
 
     @mock.patch('pulp.plugins.conduits.mixins.do_get_repo_units')
     def test_get_destination_units(self, mock_get):
