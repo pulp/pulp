@@ -6,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 2.5.0
+Version: 2.5.1
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -265,6 +265,11 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Thu Feb 12 2015 Jeff Ortel <jortel@redhat.com> 2.5.1-1
+- Fix virtual hosts. (jortel@redhat.com)
+- Using LinkDetached in proton.reliable. (jortel@redhat.com)
+- Better recognition of when SSL is to be used. (jortel@redhat.com)
+- Sender supports durable option. (jortel@redhat.com)
 * Tue Feb 10 2015 Jeff Ortel <jortel@redhat.com> 2.5.0-1
 - AdapterNotFound raised when explicit adapter not found. (jortel@redhat.com)
 - NotFound raised amqp node not found. (jortel@redhat.com)
