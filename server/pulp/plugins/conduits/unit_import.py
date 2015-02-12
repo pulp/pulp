@@ -94,7 +94,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
             _logger.exception(_('Content unit association failed [%s]' % str(unit)))
             raise ImporterConduitException(e), None, sys.exc_info()[2]
 
-    def get_source_units(self, criteria=None):
+    def get_source_units(self, criteria=None, as_generator=False):
         """
         Returns the collection of content units associated with the source
         repository for a unit import.
@@ -109,7 +109,8 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         :return: list of unit instances
         :rtype:  list of pulp.plugins.model.AssociatedUnit
         """
-        return mixins.do_get_repo_units(self.source_repo_id, criteria, ImporterConduitException)
+        return mixins.do_get_repo_units(self.source_repo_id, criteria, ImporterConduitException,
+                                        as_generator=as_generator)
 
     def get_destination_units(self, criteria=None):
         """
