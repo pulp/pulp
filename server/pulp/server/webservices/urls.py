@@ -16,6 +16,8 @@ from pulp.server.webservices.views.content import (
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
+from pulp.server.webservices.views.roles import (RoleResourceView, RoleUserView, RoleUsersView,
+                                                 RolesView)
 from pulp.server.webservices.views.root_actions import LoginView
 from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
 
@@ -67,6 +69,10 @@ urlpatterns = patterns('',
     url(r'^v2/plugins/types/$', TypesView.as_view(), name='plugin_types'),
     url(r'^v2/plugins/types/(?P<type_id>[^/]+)/$', TypeResourceView.as_view(),
         name='plugin_type_resource'),
+    url(r'^v2/roles/$', RolesView.as_view(), name='roles'),
+    url(r'^v2/roles/(?P<role_id>[^/]+)/$', RoleResourceView.as_view(), name='role_resource'),
+    url(r'^v2/roles/(?P<role_id>[^/]+)/users/$', RoleUsersView.as_view(), name='role_users'),
+    url(r'^v2/roles/(?P<role_id>[^/]+)/users/(?P<login>[^/]+)/$', RoleUserView.as_view(), name='role_user'),
     url(r'^v2/tasks/$', TaskCollectionView.as_view(), name='task_collection'),
-    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', TaskResourceView.as_view(), name='task_resource'),
+    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', TaskResourceView.as_view(), name='task_resource')
 )

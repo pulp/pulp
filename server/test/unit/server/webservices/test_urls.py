@@ -306,3 +306,41 @@ class TestDjangoTasksUrls(unittest.TestCase):
         url = '/v2/tasks/test-task/'
         url_name = 'task_resource'
         assert_url_match(url, url_name, task_id='test-task')
+
+
+class TestDjangoRolesUrls(unittest.TestCase):
+    """
+    Tests for roles urls.
+    """
+
+    def test_match_roles_view(self):
+        """
+        Test url match for roles.
+        """
+        url = '/v2/roles/'
+        url_name = 'roles'
+        assert_url_match(url, url_name)
+
+    def test_match_role_resource_view(self):
+        """
+        Test url matching for single role.
+        """
+        url = '/v2/roles/test-role/'
+        url_name = 'role_resource'
+        assert_url_match(url, url_name, role_id='test-role')
+
+    def test_match_role_users_view(self):
+        """
+        Test url matching for role's users.
+        """
+        url = '/v2/roles/test-role/users/'
+        url_name = 'role_users'
+        assert_url_match(url, url_name, role_id='test-role')
+
+    def test_match_role_user_view(self):
+        """
+        Test url matching for role's user.
+        """
+        url = '/v2/roles/test-role/users/test-login/'
+        url_name = 'role_user'
+        assert_url_match(url, url_name, role_id='test-role', login='test-login')

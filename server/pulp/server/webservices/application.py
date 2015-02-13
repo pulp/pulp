@@ -1,14 +1,3 @@
-# Copyright (c) 2010-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import logging
 import sys
 
@@ -47,7 +36,7 @@ from pulp.server.debugging import StacktraceDumper
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
     consumer_groups, consumers, contents, dispatch, events, permissions,
-    repo_groups, repositories, roles, status, users)
+    repo_groups, repositories, status, users)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 from pulp.server.webservices.middleware.framework_router import FrameworkRoutingMiddleware
@@ -64,7 +53,6 @@ URLS = (
     '/v2/permissions', permissions.application,
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
-    '/v2/roles', roles.application,
     '/v2/status', status.application,
     '/v2/tasks', dispatch.task_application,
     '/v2/users', users.application,
