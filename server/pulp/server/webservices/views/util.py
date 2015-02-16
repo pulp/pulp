@@ -1,9 +1,12 @@
 import functools
 import json
+from functools import wraps
 
 from django.http import HttpResponse
 from django.utils.encoding import iri_to_uri
 
+from pulp.common import error_codes
+from pulp.server.exceptions import PulpCodedValidationException
 from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
 
 
@@ -46,3 +49,22 @@ def generate_redirect_response(response, href):
     response.status_code = 201
     response.reason_phrase = 'CREATED'
     return response
+
+
+def json_body_required(func, allow_empty=False):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        request = args[1]
+        if allow_empty and not request.body:
+            request.body_as_json = {}
+            return func(*args, **kwargs)
+
+        try:
+            request.body_as_json = json.loads(request.body)
+        except ValueError:
+            raise PulpCodedValidationException(error_code=error_codes.PLP1009)
+        return func(*args, **kwargs)
+    return wrapper
+
+json_body_allow_empty = functools.partial(json_body_required, allow_empty=True)

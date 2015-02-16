@@ -1,3 +1,4 @@
+import json
 import unittest
 
 import mock
@@ -55,7 +56,7 @@ class TestPermissionsiew(unittest.TestCase):
         mock_f.permission_manager.return_value.operation_value_to_name.return_value = 'READ'
 
         request = mock.MagicMock()
-        request.GET = {'resource': '/v2/some/'}
+        request.body = json.dumps({'resource': '/v2/some/'})
 
         permission = PermissionView()
         response = permission.get(request)
@@ -78,7 +79,8 @@ class TestGrantToUserView(unittest.TestCase):
         Test grant permissions to user.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'operations': ['READ'], 'login': 'test', 'resource': '/v2/some/'}
+        request.body = json.dumps(
+            {'operations': ['READ'], 'login': 'test', 'resource': '/v2/some/'})
         mock_factory.permission_manager.return_value.grant.return_value = None
         mock_factory.permission_manager.return_value.operation_names_to_values.return_value = [0]
         grant = GrantToUserView()
@@ -96,7 +98,7 @@ class TestGrantToUserView(unittest.TestCase):
         Test grant permissions to user with invalid params.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'operations': ['READ'], 'resource': '/v2/some/'}
+        request.body = json.dumps({'operations': ['READ'], 'resource': '/v2/some/'})
         grant = GrantToUserView()
         try:
             grant.post(request)
@@ -122,7 +124,8 @@ class TestRevokeFromUserView(unittest.TestCase):
         Test revoke permissions from user.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'operations': ['READ'], 'login': 'test', 'resource': '/v2/some/'}
+        request.body = json.dumps(
+            {'operations': ['READ'], 'login': 'test', 'resource': '/v2/some/'})
         mock_factory.permission_manager.return_value.revoke.return_value = None
         mock_factory.permission_manager.return_value.operation_names_to_values.return_value = [0]
         revoke = RevokeFromUserView()
@@ -148,7 +151,8 @@ class TestGrantToRoleView(unittest.TestCase):
         Test grant permissions to role.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'operations': ['READ'], 'role_id': 'test', 'resource': '/v2/some/'}
+        request.body = json.dumps(
+            {'operations': ['READ'], 'role_id': 'test', 'resource': '/v2/some/'})
         mock_factory.role_manager.return_value.add_permissions_to_role.return_value = None
         mock_factory.permission_manager.return_value.operation_names_to_values.return_value = [0]
         grant = GrantToRoleView()
@@ -174,7 +178,8 @@ class TestRevokeFromRoleView(unittest.TestCase):
         Test revoke permissions from role.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'operations': ['READ'], 'role_id': 'test', 'resource': '/v2/some/'}
+        request.body = json.dumps(
+            {'operations': ['READ'], 'role_id': 'test', 'resource': '/v2/some/'})
         mock_factory.role_manager.return_value.remove_permissions_from_role.return_value = None
         mock_factory.permission_manager.return_value.operation_names_to_values.return_value = [0]
         revoke = RevokeFromRoleView()

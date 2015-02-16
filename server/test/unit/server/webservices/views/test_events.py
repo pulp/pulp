@@ -1,3 +1,4 @@
+import json
 import unittest
 
 import mock
@@ -43,7 +44,7 @@ class TestEventView(unittest.TestCase):
         mock_factory.event_listener_manager.return_value.create.return_value = resp
 
         request = mock.MagicMock()
-        request.body_as_json = {'notifier_type_id': 'http', "event_types": ["foo", "bar"]}
+        request.body = json.dumps({'notifier_type_id': 'http', "event_types": ["foo", "bar"]})
         event_listeners = EventView()
         response = event_listeners.post(request)
 
@@ -109,7 +110,7 @@ class TestEventResourceView(unittest.TestCase):
         mock_factory.event_listener_manager.return_value.update.return_value = resp
 
         request = mock.MagicMock()
-        request.body_as_json = {'event_types': ['some']}
+        request.body = json.dumps({'event_types': ['some']})
         event_listeners = EventResourceView()
         response = event_listeners.put(request, '12345')
 

@@ -1,4 +1,5 @@
 from gettext import gettext as _
+import json
 import mock
 import unittest
 
@@ -200,7 +201,7 @@ class TestDeleteOrphansActionView(unittest.TestCase):
         Test delete orphans action, should call delete_orphans_by_id with appropriate tags.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'fake': 'json'}
+        request.body = json.dumps({'fake': 'json'})
         mock_tags.action_tag.return_value = 'mock_action_tag'
         mock_tags.resource_tag.return_value = 'mock_resource_tag'
 
@@ -209,6 +210,29 @@ class TestDeleteOrphansActionView(unittest.TestCase):
 
         mock_orphan_manager.delete_orphans_by_id.apply_async.assert_called_once_with(
             [{'fake': 'json'}], tags=['mock_action_tag', 'mock_resource_tag']
+        )
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.content.content_orphan')
+    @mock.patch('pulp.server.webservices.views.content.tags')
+    def test_post_delete_orphans_action_no_json(self, mock_tags, mock_orphan_manager):
+        """
+        Test delete orphans action, without json body.
+        """
+        request = mock.MagicMock()
+        request.body = None
+        mock_tags.action_tag.return_value = 'mock_action_tag'
+        mock_tags.resource_tag.return_value = 'mock_resource_tag'
+
+        delete_orphans_view = DeleteOrphansActionView()
+        try:
+            delete_orphans_view.post(request)
+        except OperationPostponed:
+            pass
+
+        mock_orphan_manager.delete_orphans_by_id.apply_async.assert_called_once_with(
+            [{}], tags=['mock_action_tag', 'mock_resource_tag']
         )
 
 
@@ -465,7 +489,7 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_put_content_unit_user_metadata_resource(self, mock_factory, mock_resp):
         request = mock.MagicMock()
-        request.body_as_json = 'mock_data'
+        request.body = json.dumps('mock_data')
         mock_cm = mock_factory.content_manager()
 
         metadata_resource = ContentUnitUserMetadataResourceView()
@@ -485,6 +509,7 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
         View should return a response not found and a helpful message when unit is not found.
         """
         request = mock.MagicMock()
+        request.body = json.dumps('')
         mock_cqm = mock_factory.content_query_manager()
         mock_cqm.get_content_unit_by_id.side_effect = MissingResource()
 

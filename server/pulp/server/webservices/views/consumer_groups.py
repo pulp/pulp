@@ -10,7 +10,9 @@ from pulp.server.managers import factory
 from pulp.server.managers.consumer.group.cud import bind, unbind
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
-                                                generate_json_response_with_pulp_encoder)
+                                                generate_json_response_with_pulp_encoder,
+                                                json_body_allow_empty,
+                                                json_body_required)
 
 
 class ConsumerGroupResourceView(View):
@@ -57,6 +59,7 @@ class ConsumerGroupResourceView(View):
         return generate_json_response(result)
 
     @auth_required(authorization.UPDATE)
+    @json_body_allow_empty
     def put(self, request, consumer_group_id):
         """
         Update a specified consumer group.
@@ -83,6 +86,7 @@ class ConsumerGroupAssociateActionView(View):
     """
 
     @auth_required(authorization.EXECUTE)
+    @json_body_allow_empty
     def post(self, request, consumer_group_id):
         """
         Associate a consumer to the group.
@@ -109,6 +113,7 @@ class ConsumerGroupUnassociateActionView(View):
     """
 
     @auth_required(authorization.EXECUTE)
+    @json_body_allow_empty
     def post(self, request, consumer_group_id):
         """
         Unassociate a consumer from the group.
@@ -135,6 +140,7 @@ class ConsumerGroupContentActionView(View):
     """
 
     @auth_required(authorization.CREATE)
+    @json_body_allow_empty
     def post(self, request, consumer_group_id, action):
         """
         Install/update/uninstall content unit/s on each consumer in the group.
@@ -222,6 +228,7 @@ class ConsumerGroupBindingsView(View):
     """
 
     @auth_required(authorization.CREATE)
+    @json_body_required
     def post(self, request, consumer_group_id):
         """
         Create a bind association between the consumers belonging to the given

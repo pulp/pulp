@@ -1,3 +1,4 @@
+import json
 import unittest
 
 import mock
@@ -96,7 +97,7 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         expected_cont = {'id': 'foo', 'display_name': 'bar', '_href': '/v2/consumer_groups/foo/'}
 
         request = mock.MagicMock()
-        request.body_as_json = {'display_name': 'bar'}
+        request.body = json.dumps({'display_name': 'bar'})
         mock_factory.consumer_group_manager.return_value.update_consumer_group.return_value = resp
         consumer_group = ConsumerGroupResourceView()
         response = consumer_group.put(request, 'foo')
@@ -123,7 +124,7 @@ class TestConsumerGroupAssociateActionView(unittest.TestCase):
         mock_factory.consumer_group_manager.return_value.associate.return_value = 'ok'
         mock_factory.consumer_group_query_manager.return_value.get_group.return_value = grp
         request = mock.MagicMock()
-        request.body_as_json = {'criteria': {'filters': {'id': 'c1'}}}
+        request.body = json.dumps({'criteria': {'filters': {'id': 'c1'}}})
         consumer_group_associate = ConsumerGroupAssociateActionView()
         response = consumer_group_associate.post(request, 'my-group')
 
@@ -149,7 +150,7 @@ class TestConsumerGroupUnassociateActionView(unittest.TestCase):
         mock_factory.consumer_group_manager.return_value.unassociate.return_value = 'ok'
         mock_factory.consumer_group_query_manager.return_value.get_group.return_value = grp
         request = mock.MagicMock()
-        request.body_as_json = {'criteria': {'filters': {'id': 'c1'}}}
+        request.body = json.dumps({'criteria': {'filters': {'id': 'c1'}}})
         consumer_group_unassociate = ConsumerGroupUnassociateActionView()
         response = consumer_group_unassociate.post(request, 'my-group')
 
@@ -173,7 +174,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         mock_factory.repo_query_manager.return_value.find_by_id.return_value = None
         mock_factory.repo_distributor_manager.return_value.get_distributor.return_value = 'yyy'
         request = mock.MagicMock()
-        request.body_as_json = {'repo_id': 'xxx', 'distributor_id': 'yyy'}
+        request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
         bind_view = ConsumerGroupBindingsView()
         try:
             response = bind_view.post(request, 'test-group')
@@ -195,7 +196,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         mock_f.repo_query_manager.return_value.find_by_id.return_value = 'xxx'
         mock_f.repo_distributor_manager.return_value.get_distributor.side_effect = MissingResource
         request = mock.MagicMock()
-        request.body_as_json = {'repo_id': 'xxx', 'distributor_id': 'yyy'}
+        request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
         bind_view = ConsumerGroupBindingsView()
         try:
             response = bind_view.post(request, 'test-group')
@@ -217,7 +218,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         mock_f.repo_query_manager.return_value.find_by_id.return_value = 'xxx'
         mock_f.repo_distributor_manager.return_value.get_distributor.return_value = 'yyy'
         request = mock.MagicMock()
-        request.body_as_json = {'repo_id': 'xxx', 'distributor_id': 'yyy'}
+        request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
         bind_view = ConsumerGroupBindingsView()
         try:
             response = bind_view.post(request, 'test-group')
@@ -238,7 +239,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         """
         mock_resources.return_value = {}
         request = mock.MagicMock()
-        request.body_as_json = {'repo_id': 'xxx', 'distributor_id': 'yyy'}
+        request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
         bind_view = ConsumerGroupBindingsView()
         self.assertRaises(OperationPostponed, bind_view.post, request, 'test-group')
         bind_args_tuple = ('test-group', 'xxx', 'yyy', True, None, {})
@@ -253,6 +254,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         """
         mock_resources.return_value = {'group_id': 'nonexistent_id'}
         request = mock.MagicMock()
+        request.body = json.dumps({})
         bind_view = ConsumerGroupBindingsView()
         try:
             response = bind_view.post(request, 'nonexistent_id')
@@ -272,6 +274,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         """
         mock_resources.return_value = {'repo_id': 'nonexistent_id'}
         request = mock.MagicMock()
+        request.body = json.dumps({})
         bind_view = ConsumerGroupBindingsView()
         try:
             response = bind_view.post(request, 'test-group')
@@ -291,6 +294,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         """
         mock_resources.return_value = {'invalid_param': 'foo'}
         request = mock.MagicMock()
+        request.body = json.dumps({})
         bind_view = ConsumerGroupBindingsView()
         try:
             response = bind_view.post(request, 'test-group')
@@ -354,6 +358,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         Test consumer group invalid content action.
         """
         request = mock.MagicMock()
+        request.body = json.dumps('')
         consumer_group_content = ConsumerGroupContentActionView()
         response = consumer_group_content.post(request, 'my-group', 'no_such_action')
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
@@ -368,7 +373,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         """
         mock_factory.consumer_group_manager.return_value.install_content.return_value = 'ok'
         request = mock.MagicMock()
-        request.body_as_json = {"units": [], "options": {}}
+        request.body = json.dumps({"units": [], "options": {}})
         consumer_group_content = ConsumerGroupContentActionView()
         self.assertRaises(OperationPostponed, consumer_group_content.post, request,
                           'my-group', 'install')
@@ -384,7 +389,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         """
         mock_factory.consumer_group_manager.return_value.update_content.return_value = 'ok'
         request = mock.MagicMock()
-        request.body_as_json = {"units": [], "options": {}}
+        request.body = json.dumps({"units": [], "options": {}})
         consumer_group_content = ConsumerGroupContentActionView()
         self.assertRaises(OperationPostponed, consumer_group_content.post, request,
                           'my-group', 'update')
@@ -400,7 +405,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         """
         mock_factory.consumer_group_manager.return_value.uninstall_content.return_value = 'ok'
         request = mock.MagicMock()
-        request.body_as_json = {"units": [], "options": {}}
+        request.body = json.dumps({"units": [], "options": {}})
         consumer_group_content = ConsumerGroupContentActionView()
         self.assertRaises(OperationPostponed, consumer_group_content.post, request,
                           'my-group', 'uninstall')
