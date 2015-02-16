@@ -1,30 +1,15 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+from ... import base
 from pulp.devel import mock_plugins
-import base
-
-from pulp.server.managers import factory
+from pulp.plugins.conduits.profiler import ProfilerConduit
+from pulp.plugins.loader import api as plugin_api
+from pulp.plugins.types import database as typedb
+from pulp.plugins.types.model import TypeDefinition
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
+from pulp.server.managers import factory
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
-from pulp.plugins.types import database as typedb
-from pulp.plugins.types.model import TypeDefinition
-from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.conduits.profiler import ProfilerConduit
 
-# -- test cases ---------------------------------------------------------------
 
 class BaseProfilerConduitTests(base.PulpServerTests):
 
@@ -32,10 +17,10 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     REPO_ID = 'test-repo'
     DISTRIBUTOR_ID = 'test-distributor'
     NOTIFY_AGENT = True
-    BINDING_CONFIG = {'x' : 'x'}
+    BINDING_CONFIG = {'x': 'x'}
     TYPE_1_DEF = TypeDefinition('type-1', 'Type 1', 'One', ['key-1'], [], [])
     TYPE_2_DEF = TypeDefinition('type-2', 'Type 2', 'Two', ['key-2'], [], [])
-    PROFILE = { 'name':'zsh', 'version':'1.0'}
+    PROFILE = {'name': 'zsh', 'version': '1.0'}
     UNIT_ID = 0
 
     def setUp(self):
@@ -75,7 +60,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         manager.register(self.CONSUMER_ID)
 
     def populate_repository(self):
-        config = {'key1' : 'value1', 'key2' : None}
+        config = {'key1': 'value1', 'key2': None}
         manager = factory.repo_manager()
         manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
@@ -92,9 +77,9 @@ class BaseProfilerConduitTests(base.PulpServerTests):
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
 
     def populate_units(self, key, typedef, additional_key=None):
-        for i in range(1,10):
+        for i in range(1, 10):
             unit_id = 'unit-%s' % self.UNIT_ID
-            md = {key:str(i)}
+            md = {key: str(i)}
             if additional_key:
                 md[additional_key] = str(i)
             manager = factory.content_manager()
@@ -137,8 +122,10 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         self.populate()
         # Test
         conduit = ProfilerConduit()
-        units1 = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_1_DEF.id, additional_unit_fields=[])
-        units2 = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_2_DEF.id, additional_unit_fields=[])
+        units1 = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_1_DEF.id,
+                                        additional_unit_fields=[])
+        units2 = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_2_DEF.id,
+                                        additional_unit_fields=[])
 
         # Verify that all the units in the repo with given type are returned along with unit_key
         self.assertEquals(len(units1), 9)
@@ -155,10 +142,11 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         self.populate(additional_key='extra_field')
         # Test
         conduit = ProfilerConduit()
-        units = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_1_DEF.id, 
+        units = conduit.get_repo_units(self.REPO_ID, content_type_id=self.TYPE_1_DEF.id,
                                        additional_unit_fields=['extra_field'])
 
-        # Verify that all the units in the repo with given type are returned along with unit_key and extra field
+        # Verify that all the units in the repo with given type are returned along with unit_key and
+        # extra field
         self.assertEquals(len(units), 9)
         for u in units:
             self.assertTrue('key-1' in u.unit_key)

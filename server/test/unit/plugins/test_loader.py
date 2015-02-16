@@ -1,36 +1,22 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import atexit
 import os
 import shutil
 import string
 import sys
-import traceback
 import tempfile
-from pprint import pprint
+import traceback
 
 import mock
 
-import base
-from pulp.plugins.loader import exceptions, loading, manager
+from .. import base
+from pulp.plugins.cataloger import Cataloger
 from pulp.plugins.distributor import Distributor
 from pulp.plugins.importer import Importer
-from pulp.plugins.cataloger import Cataloger
+from pulp.plugins.loader import exceptions, loading, manager
 
-# test data and data generation api --------------------------------------------
 
 _generated_paths = []
+
 
 def _delete_generated_paths():
     for p in _generated_paths:
@@ -41,8 +27,8 @@ def _delete_generated_paths():
 
 atexit.register(_delete_generated_paths)
 
-# test file(s) generation
 
+# test file(s) generation
 def gen_plugin_root():
     path = tempfile.mkdtemp()
     sys.path.insert(0, path)
@@ -133,6 +119,7 @@ def gen_plugin(root, type_, name, types, enabled=True, conf_template=_CONF_TEMPL
     # return the top level directory
     return os.path.join(root, '%ss' % base_name)
 
+
 def gen_multi_plugin(root, type_, name, types, enabled=True):
     base_name = type_.lower()
     base_title = type_.title()
@@ -147,9 +134,8 @@ def gen_multi_plugin(root, type_, name, types, enabled=True):
     handle.write('\n')
     handle.close()
     # write the plugin module
-    contents = _MULTI_PLUGIN_TEMPLATE.safe_substitute({'BASE_NAME': base_name,
-                                                 'BASE_TITLE': base_title,
-                                                 'TYPE_LIST': type_list})
+    contents = _MULTI_PLUGIN_TEMPLATE.safe_substitute(
+        {'BASE_NAME': base_name, 'BASE_TITLE': base_title, 'TYPE_LIST': type_list})
     mod_name = os.path.join(plugin_dir, '%s.py' % base_name)
     handle = open(mod_name, 'w')
     handle.write(contents)
@@ -195,7 +181,6 @@ class TestCataloger(Cataloger):
     def metadata(cls):
         return {'types': ['good_type']}
 
-# unit tests -------------------------------------------------------------------
 
 class PluginMapTests(base.PulpServerTests):
 
@@ -260,7 +245,7 @@ class LoaderInstanceTest(base.PulpServerTests):
 
     def test_loader_instantiation(self):
         try:
-            l = manager.PluginManager()
+            manager.PluginManager()
         except Exception, e:
             self.fail('\n'.join((repr(e), traceback.format_exc())))
 
