@@ -422,7 +422,7 @@ class InputEncodingError(PulpDataException):
     """
 
     def __init__(self, value):
-        super(DuplicateResource, self).__init__(value)
+        super(InputEncodingError, self).__init__(value)
         self.error_code = error_codes.PLP0019
         self.error_data = {'value': value}
         self.value = value

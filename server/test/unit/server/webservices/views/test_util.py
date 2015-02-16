@@ -4,11 +4,11 @@ import unittest
 
 from django.http import HttpResponse, HttpResponseNotFound
 
+from pulp.server.exceptions import InputEncodingError, PulpCodedValidationException
 from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
-from pulp.server.exceptions import PulpCodedValidationException
 from pulp.server.webservices.views import util
-from pulp.server.webservices.views.util import (json_body_required,
-                                                json_body_allow_empty)
+from pulp.server.webservices.views.util import (json_body_allow_empty,
+                                                json_body_required)
 
 
 class TestResponseGenerators(unittest.TestCase):
@@ -165,3 +165,21 @@ class TestMustHaveJSONBody(unittest.TestCase):
 
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_code.code, 'PLP1009')
+
+
+class TestEnsureInputEncoding(unittest.TestCase):
+
+    def test_ensure_invalid_input_encoding(self):
+        """
+        Test invalid input encoding
+        """
+        input_data = {"invalid": "json\x81"}
+        self.assertRaises(InputEncodingError, util._ensure_input_encoding, input_data)
+
+    def test_ensure_valid_input_encoding(self):
+        """
+        Test valid input encoding.
+        """
+        input = {u'valid': u'json'}
+        response = util._ensure_input_encoding(input)
+        self.assertEqual(response, {'valid': 'json'})

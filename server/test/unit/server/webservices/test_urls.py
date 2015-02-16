@@ -412,3 +412,25 @@ class TestDjangoEventListenersUrls(unittest.TestCase):
         url = '/v2/events/12345/'
         url_name = 'event_resource'
         assert_url_match(url, url_name, event_listener_id='12345')
+
+
+class TestDjangoUsersUrls(unittest.TestCase):
+    """
+    Tests for userss urls
+    """
+
+    def test_match_users_view(self):
+        """
+        Test url matching for users
+        """
+        url = '/v2/users/'
+        url_name = 'users'
+        assert_url_match(url, url_name)
+
+    def test_match_user_resource(self):
+        """
+        Test the matching for user resource.
+        """
+        url = '/v2/users/user_login/'
+        url_name = 'user_resource'
+        assert_url_match(url, url_name, login='user_login')

@@ -111,35 +111,40 @@ class UserManager(object):
         # Check invalid values
         invalid_values = []
         if 'password' in delta:
-            if delta['password'] is None or invalid_type(delta['password'], basestring):
+            password = delta.pop('password')
+            if password is None or invalid_type(password, basestring):
                 invalid_values.append('password')
             else:
-                user['password'] = factory.password_manager().hash_password(delta['password'])
+                user['password'] = factory.password_manager().hash_password(password)
 
         if 'name' in delta:
-            if delta['name'] is None or invalid_type(delta['name'], basestring):
+            name = delta.pop('name')
+            if name is None or invalid_type(name, basestring):
                 invalid_values.append('name')
             else:
-                user['name'] = delta['name']
+                user['name'] = name
 
         if 'roles' in delta:
-            if delta['roles'] is None or invalid_type(delta['roles'], list):
+            roles = delta.pop('roles')
+            if roles is None or invalid_type(roles, list):
                 invalid_values.append('roles')
             else:
                 # Add new roles to the user and remove deleted roles from the user according to
                 # delta
                 role_manager = factory.role_manager()
                 old_roles = user['roles']
-                for new_role in delta['roles']:
+                for new_role in roles:
                     if new_role not in old_roles:
                         role_manager.add_user_to_role(new_role, login)
                 for old_role in old_roles:
-                    if old_role not in delta['roles']:
+                    if old_role not in roles:
                         role_manager.remove_user_from_role(old_role, login)
-                user['roles'] = delta['roles']
+                user['roles'] = roles
 
         if invalid_values:
             raise InvalidValue(invalid_values)
+        if delta:
+            raise InvalidValue(delta.keys())
 
         User.get_collection().save(user, safe=True)
 

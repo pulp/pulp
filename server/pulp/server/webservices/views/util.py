@@ -1,12 +1,14 @@
 import functools
 import json
+import sys
 from functools import wraps
 
 from django.http import HttpResponse
 from django.utils.encoding import iri_to_uri
 
 from pulp.common import error_codes
-from pulp.server.exceptions import PulpCodedValidationException
+from pulp.common.util import decode_unicode, encode_unicode
+from pulp.server.exceptions import PulpCodedValidationException, InputEncodingError
 from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
 
 
@@ -51,6 +53,25 @@ def generate_redirect_response(response, href):
     return response
 
 
+def _ensure_input_encoding(input):
+    """
+    Recursively traverse any input structures and ensure any strings are
+    encoded as utf-8.
+
+    :param input: input data
+
+    :return: input data with strings encoded as utf-8
+    """
+    if isinstance(input, (list, set, tuple)):
+        return [_ensure_input_encoding(i) for i in input]
+    if isinstance(input, dict):
+        return dict((_ensure_input_encoding(k), _ensure_input_encoding(v)) for k, v in input.items())
+    try:
+        return encode_unicode(decode_unicode(input))
+    except (UnicodeDecodeError, UnicodeEncodeError):
+        raise InputEncodingError(input), None, sys.exc_info()[2]
+
+
 def json_body_required(func, allow_empty=False):
 
     @wraps(func)
@@ -61,9 +82,11 @@ def json_body_required(func, allow_empty=False):
             return func(*args, **kwargs)
 
         try:
-            request.body_as_json = json.loads(request.body)
+            request_json = json.loads(request.body)
         except ValueError:
             raise PulpCodedValidationException(error_code=error_codes.PLP1009)
+        else:
+            request.body_as_json = _ensure_input_encoding(request_json)
         return func(*args, **kwargs)
     return wrapper
 
