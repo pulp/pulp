@@ -123,7 +123,7 @@ optional_policy(`
     tunable_policy(`pulp_manage_puppet', `
         # Puppet modules can contain symlinks, though it seems they often do not. This line allows
         # Pulp to install the symlinks if they are present.
-        allow celery_t puppet_etc_t:lnk_file create;
+        allow celery_t puppet_etc_t:lnk_file { create read getattr unlink };
         manage_dirs_pattern(celery_t, puppet_etc_t, puppet_etc_t)
         manage_files_pattern(celery_t, puppet_etc_t, puppet_etc_t)
     ')
