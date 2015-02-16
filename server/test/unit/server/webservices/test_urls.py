@@ -390,3 +390,25 @@ class TestDjangoPermissionsUrls(unittest.TestCase):
         url = '/v2/permissions/actions/revoke_from_user/'
         url_name = 'revoke_from_user'
         assert_url_match(url, url_name)
+
+
+class TestDjangoEventListenersUrls(unittest.TestCase):
+    """
+    Tests for events urls
+    """
+
+    def test_match_event_listeners_view(self):
+        """
+        Test url matching for event_listeners
+        """
+        url = '/v2/events/'
+        url_name = 'events'
+        assert_url_match(url, url_name)
+
+    def test_match_event_listeners_resource_view(self):
+        """
+        Test url matching for single event_listener
+        """
+        url = '/v2/events/12345/'
+        url_name = 'event_resource'
+        assert_url_match(url, url_name, event_listener_id='12345')

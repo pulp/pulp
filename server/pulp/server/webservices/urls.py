@@ -13,6 +13,8 @@ from pulp.server.webservices.views.content import (
     OrphanTypeSubCollectionView, UploadResourceView,
     UploadSegmentResourceView
 )
+from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
+from pulp.server.webservices.views.events import (EventResourceView, EventView)
 from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
                                                        PermissionView, RevokeFromRoleView,
                                                        RevokeFromUserView)
@@ -22,7 +24,6 @@ from pulp.server.webservices.views.plugins import (DistributorResourceView, Dist
 from pulp.server.webservices.views.roles import (RoleResourceView, RoleUserView, RoleUsersView,
                                                  RolesView)
 from pulp.server.webservices.views.root_actions import LoginView
-from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
 
 
 urlpatterns = patterns('',
@@ -63,6 +64,8 @@ urlpatterns = patterns('',
         name='content_upload_resource'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
         UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
+    url(r'^v2/events/$', EventView.as_view(), name='events'),
+    url(r'^v2/events/(?P<event_listener_id>[^/]+)/$', EventResourceView.as_view(), name='event_resource'),
     url(r'^v2/permissions/$', PermissionView.as_view(), name='permissions'),
     url(r'^v2/permissions/actions/grant_to_role/$', GrantToRoleView.as_view(), name='grant_to_role'),
     url(r'^v2/permissions/actions/grant_to_user/$', GrantToUserView.as_view(), name='grant_to_user'),
