@@ -81,6 +81,9 @@ class DjangoExceptionHandlerMiddleware(object):
             response.update(exception.data_dict())
             response['error'] = exception.to_dict()
             logger.info(str(exception))
+            e_type, e_value, trace = sys.exc_info()
+            response['exception'] = traceback.format_exception_only(e_type, e_value)
+            response['traceback'] = traceback.format_tb(trace)
             response_obj = HttpResponse(json.dumps(response), status=status,
                                         content_type="application/json")
         else:
