@@ -1,6 +1,9 @@
 HTTP Notifier
 =================
 
+.. deprecated:: 2.7
+   This page describes a notification framework that has been deprecated and will go away in Pulp 3.0.
+
 The HTTP notifier is used to trigger a callback to a URL when the
 event fires. The callback is a POST operation, and the body of the call will
 be the contents of the event (and thus vary by type).
