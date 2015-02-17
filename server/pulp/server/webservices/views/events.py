@@ -6,7 +6,9 @@ from pulp.server.managers import factory
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
-                                                generate_redirect_response)
+                                                generate_redirect_response,
+                                                json_body_allow_empty,
+                                                json_body_required)
 
 
 class EventView(View):
@@ -33,6 +35,7 @@ class EventView(View):
         return generate_json_response_with_pulp_encoder(events)
 
     @auth_required(authorization.CREATE)
+    @json_body_required
     def post(self, request):
         """
         Create a new event listener.
@@ -102,6 +105,7 @@ class EventResourceView(View):
         return generate_json_response(None)
 
     @auth_required(authorization.UPDATE)
+    @json_body_allow_empty
     def put(self, request, event_listener_id):
         """
         Update a specific event listener.

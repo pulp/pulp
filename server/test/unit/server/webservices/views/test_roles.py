@@ -1,3 +1,4 @@
+import json
 import unittest
 
 import mock
@@ -50,7 +51,7 @@ class TestRolesView(unittest.TestCase):
         expected_cont = {'id': 'foo', 'display_name': 'bar', '_href': '/v2/roles/foo/'}
 
         request = mock.MagicMock()
-        request.body_as_json = {'role_id': 'foo', 'display_name': 'bar'}
+        request.body = json.dumps({'role_id': 'foo', 'display_name': 'bar'})
         mock_factory.role_manager.return_value.create_role.return_value = resp
         create_role = RolesView()
         response = create_role.post(request)
@@ -141,7 +142,7 @@ class TestRoleResourceView(unittest.TestCase):
         expected_cont = {'id': 'foo', 'display_name': 'bar', '_href': '/v2/roles/foo/'}
 
         request = mock.MagicMock()
-        request.body_as_json = {'display_name': 'bar'}
+        request.body = json.dumps({'display_name': 'bar'})
         mock_factory.role_manager.return_value.update_role.return_value = resp
         role_resource = RoleResourceView()
         response = role_resource.put(request, 'foo')
@@ -185,7 +186,7 @@ class TestRoleUsersView(unittest.TestCase):
         mock_factory.role_manager.return_value.add_user_to_role.return_value = None
 
         request = mock.MagicMock()
-        request.body_as_json = {'login': 'test-user'}
+        request.body = json.dumps({'login': 'test-user'})
         role_users = RoleUsersView()
         response = role_users.post(request, 'test-role')
 
@@ -199,7 +200,7 @@ class TestRoleUsersView(unittest.TestCase):
         Test add invalid user to a role.
         """
         request = mock.MagicMock()
-        request.body_as_json = {'login': None}
+        request.body = json.dumps({'login': None})
         role_users = RoleUsersView()
 
         try:

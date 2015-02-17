@@ -14,7 +14,9 @@ from pulp.server.managers.content import orphan as content_orphan
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
-                                                generate_json_response_with_pulp_encoder)
+                                                generate_json_response_with_pulp_encoder,
+                                                json_body_required,
+                                                json_body_allow_empty)
 
 
 class OrphanCollectionView(View):
@@ -158,6 +160,7 @@ class DeleteOrphansActionView(View):
     """
 
     @auth_required(authorization.DELETE)
+    @json_body_allow_empty
     def post(self, request):
         """
         Dispatch a delete_orphan_by_id task.
@@ -352,6 +355,7 @@ class ContentUnitUserMetadataResourceView(View):
         return generate_json_response(resource)
 
     @auth_required(authorization.UPDATE)
+    @json_body_required
     def put(self, request, type_id, unit_id):
         """
         Set the pulp_user_metadata field on a content unit.

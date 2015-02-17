@@ -5,10 +5,13 @@ import unittest
 from django.http import HttpResponse, HttpResponseNotFound
 
 from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
+from pulp.server.exceptions import PulpCodedValidationException
 from pulp.server.webservices.views import util
+from pulp.server.webservices.views.util import (json_body_required,
+                                                json_body_allow_empty)
 
 
-class TestWebservicesUtils(unittest.TestCase):
+class TestResponseGenerators(unittest.TestCase):
     """
     Test webservices utilities.
     """
@@ -69,3 +72,96 @@ class TestWebservicesUtils(unittest.TestCase):
         self.assertEqual(redirect_response._headers['location'][1],
                          str(mock_iri_to_uri.return_value))
         mock_iri_to_uri.assert_called_once_with(href)
+
+
+class TestMustHaveJSONBody(unittest.TestCase):
+
+    def test_json_body_required_valid(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = '{"Valid": "JSON"}'
+
+        @json_body_required
+        def mock_function(self, request):
+            return request
+
+        final_request = mock_function(self, mock_request)
+        self.assertEqual(final_request.body_as_json, {"Valid": "JSON"})
+
+    def test_json_body_required_invalid(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = '{"Invalid": "JSON"'
+
+        @json_body_required
+        def mock_function(self, request):
+            return request
+
+        try:
+            mock_function(self, mock_request)
+        except PulpCodedValidationException, response:
+            pass
+        else:
+            raise AssertionError('PulpCodedValidationException shoudl be raised if invalid JSON'
+                                 ' is passed.')
+
+        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.error_code.code, 'PLP1009')
+
+    def test_json_body_required_empty(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = ''
+
+        @json_body_required
+        def mock_function(self, request):
+            return request
+
+        try:
+            mock_function(self, mock_request)
+        except PulpCodedValidationException, response:
+            pass
+        else:
+            raise AssertionError('PulpCodedValidationException shoudl be raised if invalid JSON'
+                                 ' is passed.')
+
+        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.error_code.code, 'PLP1009')
+
+    def test_json_body_allow_empty_valid(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = '{"Valid": "JSON"}'
+
+        @json_body_required
+        def mock_function(self, request):
+            return request
+
+        final_request = mock_function(self, mock_request)
+        self.assertEqual(final_request.body_as_json, {"Valid": "JSON"})
+
+    def test_json_body_allow_empty_no_body(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = ''
+
+        @json_body_allow_empty
+        def mock_function(self, request):
+            return request
+
+        final_request = mock_function(self, mock_request)
+        self.assertEqual(final_request.body_as_json, {})
+
+    def test_json_body_allow_empty_invalid(self):
+        mock_request = mock.MagicMock()
+        mock_request.body = '{"Invalid": "JSON"'
+
+        @json_body_required
+        def mock_function(self, request):
+            return request
+
+        try:
+            mock_function(self, mock_request)
+        except PulpCodedValidationException, response:
+            pass
+        else:
+            raise AssertionError('PulpCodedValidationException shoudl be raised if invalid JSON'
+                                 ' is passed.')
+
+        self.assertEqual(response.http_status_code, 400)
+        self.assertEqual(response.error_code.code, 'PLP1009')
