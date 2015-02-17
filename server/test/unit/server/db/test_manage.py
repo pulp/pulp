@@ -288,18 +288,20 @@ class TestManageDB(MigrationTest):
                 # All other packages should reach their top versions
                 self.assertEqual(package.current_version, package.latest_available_version)
 
+    @patch('pulp.plugins.types.database._drop_indexes')
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('sys.stdout', MagicMock())
     @patch('pulp.server.db.manage._start_logging')
-    def test_pulp_manage_db_loads_types(self, start_logging_mock, listdir_mock):
+    def test_pulp_manage_db_loads_types(self, start_logging_mock, listdir_mock, mock_drop_indices):
         """
         Test calling pulp-manage-db imports types on a clean types database.
         """
         manage.main()
 
         all_collection_names = types_db.all_type_collection_names()
+        self.assertFalse(mock_drop_indices.called)
         self.assertEqual(len(all_collection_names), 1)
 
         self.assertEqual(['units_test_type_id'], all_collection_names)

@@ -52,6 +52,9 @@ created and need not be specified in the ``search_indexes`` field:
 Note that neither an index on just "b" nor the index "b, c" are automatically
 created.
 
+Note that indices can only be created using this configuration. If one needs to be destroyed, a
+migration should be written to do so.
+
 
 Format
 ------

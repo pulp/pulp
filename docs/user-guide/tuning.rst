@@ -176,6 +176,12 @@ dedicated hardware for larger production deployments. At this time, Pulp can be
 used with `replication <http://docs.mongodb.org/manual/replication/>`_ but does
 not support sharding.
 
+If searches for content are performing poorly, performance may be improved by adding an index for
+the collection responsible for that content type. Each content type has a collection called
+`unit_<type>`. More about index creation can be found here_.
+
+.. _here: http://docs.mongodb.org/manual/core/index-creation/
+
 Monitoring
 ----------
 

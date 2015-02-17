@@ -48,7 +48,7 @@ class MissingDefinitions(Exception):
         return 'MissingDefinitions [%s]' % ', '.join(self.missing_type_ids)
 
 
-def update_database(definitions, error_on_missing_definitions=False):
+def update_database(definitions, error_on_missing_definitions=False, drop_indices=False):
     """
     Brings the database up to date with the types defined in the given
     descriptors.
@@ -92,13 +92,14 @@ def update_database(definitions, error_on_missing_definitions=False):
             error_defs.append(type_def)
             continue
 
-        try:
-            # May need to revisit if the recreation takes too long with large content sets
-            _drop_indexes(type_def)
-        except Exception:
-            _logger.exception('Exception dropping indexes for type [%s]' % type_def.id)
-            error_defs.append(type_def)
-            continue
+        if drop_indices:
+            try:
+                # May need to revisit if the recreation takes too long with large content sets
+                _drop_indexes(type_def)
+            except Exception:
+                _logger.exception('Exception dropping indexes for type [%s]' % type_def.id)
+                error_defs.append(type_def)
+                continue
 
         try:
             _update_unit_key(type_def)

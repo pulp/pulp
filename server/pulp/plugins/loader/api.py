@@ -382,7 +382,7 @@ def get_cataloger_by_id(catloger_id):
     return cls(), cfg
 
 
-def load_content_types(types_dir=_TYPES_DIR, dry_run=False):
+def load_content_types(types_dir=_TYPES_DIR, dry_run=False, drop_indices=False):
     """
     :type types_dir: str
     """
@@ -394,7 +394,7 @@ def load_content_types(types_dir=_TYPES_DIR, dry_run=False):
     if dry_run:
         return _check_content_definitions(descriptors)
     else:
-        _load_type_definitions(descriptors)
+        _load_type_definitions(descriptors, drop_indices=drop_indices)
 
 # initialization methods -------------------------------------------------------
 
@@ -457,12 +457,12 @@ def _load_type_descriptors(path):
     return descriptors
 
 
-def _load_type_definitions(descriptors):
+def _load_type_definitions(descriptors, drop_indices=False):
     """
     :type descriptors: list [TypeDescriptor, ...]
     """
     definitions = parser.parse(descriptors)
-    database.update_database(definitions)
+    database.update_database(definitions, drop_indices=drop_indices)
 
 
 def _validate_importers():
