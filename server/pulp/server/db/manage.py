@@ -8,7 +8,6 @@ import os
 import sys
 import traceback
 
-from pulp.plugins.loader.api import load_content_types
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
@@ -135,18 +134,6 @@ def _auto_manage_db(options):
     :param options: The command line parameters from the user.
     """
     unperformed_migrations = False
-
-    message = _('Loading content types.')
-    _logger.info(message)
-    # Note that if dry_run is False, None is always returned
-    old_content_types = load_content_types(dry_run=options.dry_run)
-    if old_content_types:
-        for content_type in old_content_types:
-            message = _(
-                'Would have created or updated the following type definition: ' + content_type.id)
-            _logger.info(message)
-    message = _('Content types loaded.')
-    _logger.info(message)
 
     message = _('Ensuring the admin role and user are in place.')
     _logger.info(message)
