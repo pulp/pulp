@@ -1,5 +1,3 @@
-import mock
-
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.dependency import DependencyResolutionConduit
@@ -46,9 +44,7 @@ class DependencyManagerTests(base.PulpServerTests):
 
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = None
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_resolve_dependencies_by_unit(self, mock_get_working_directory):
+    def test_resolve_dependencies_by_unit(self):
         # Setup
         report = 'dep report'
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = report
@@ -89,9 +85,7 @@ class DependencyManagerTests(base.PulpServerTests):
         self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'empty', [],
                           {})
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_resolve_dependencies_by_criteria(self, mock_get_working_directory):
+    def test_resolve_dependencies_by_criteria(self):
         # Setup
         report = 'dep report'
         mock_plugins.MOCK_IMPORTER.resolve_dependencies.return_value = report

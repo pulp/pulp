@@ -226,7 +226,6 @@ class RepoDistributorManager(object):
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
 
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.get_working_directory()
 
         distributor_instance.distributor_removed(transfer_repo, call_config)
 
@@ -294,7 +293,6 @@ class RepoDistributorManager(object):
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.get_working_directory()
         config_conduit = RepoConfigConduit(distributor_type_id)
 
         try:
@@ -361,7 +359,6 @@ class RepoDistributorManager(object):
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.get_working_directory()
 
         try:
             payload = distributor_instance.create_consumer_payload(transfer_repo, call_config,

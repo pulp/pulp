@@ -270,9 +270,7 @@ class RepoGroupCUDTests(RepoGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(group['notes'])
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_delete(self, mock_get_working_directory):
+    def test_delete(self):
         # Setup
         group_id = 'delete_me'
         self.manager.create_repo_group(group_id)
@@ -288,9 +286,7 @@ class RepoGroupCUDTests(RepoGroupTests):
         self.assertTrue(group is None)
 
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_delete_with_distributor(self, mock_get_working_directory):
+    def test_delete_with_distributor(self):
         # Setup
         group_id = 'doomed'
         self.manager.create_repo_group(group_id)

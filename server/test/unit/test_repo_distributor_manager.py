@@ -119,9 +119,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         self.assertTrue('dist_1' in dist_ids)
         self.assertTrue('dist_2' in dist_ids)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_add_distributor_replace_existing(self, mock_get_working_directory):
+    def test_add_distributor_replace_existing(self):
         """
         Tests adding a distributor under the same ID as an existing distributor.
         """
@@ -285,10 +283,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     # -- remove ---------------------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.schedule.repo.RepoPublishScheduleManager.delete_by_distributor_id')
-    def test_remove_distributor(self, mock_delete_schedules, mock_get_working_directory):
+    def test_remove_distributor(self, mock_delete_schedules):
         """
         Tests removing an existing distributor from a repository.
         """
@@ -334,9 +330,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     # -- update ---------------------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_distributor_config(self, mock_get_working_directory):
+    def test_update_distributor_config(self):
         """
         Tests the successful case of updating a distributor's config.
         """
@@ -366,9 +360,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         call_config = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][1]
         self.assertEqual(expected_config, call_config.repo_plugin_config)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_auto_publish(self, mock_get_working_directory):
+    def test_update_auto_publish(self):
         # Setup
         self.repo_manager.create_repo('test-repo')
         config = {'key': 'value'}
@@ -380,9 +372,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'test-repo'})
         self.assertFalse(repo_dist['auto_publish'])
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_invalid_auto_publish(self, mock_get_working_directory):
+    def test_update_invalid_auto_publish(self):
         # Setup
         self.repo_manager.create_repo('test-repo')
         config = {'key': 'value'}
@@ -420,9 +410,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue('missing' == e.resources['distributor'])
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_validate_exception(self, mock_get_working_directory):
+    def test_update_validate_exception(self):
         """
         Tests updating a config when the plugin raises an exception during validate.
         """
@@ -444,9 +432,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_invalid_config(self, mock_get_working_directory):
+    def test_update_invalid_config(self):
         """
         Tests updating a config when the plugin indicates the config is invalid.
         """
@@ -468,9 +454,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_invalid_config_backward_compatibility(self, mock_get_working_directory):
+    def test_update_invalid_config_backward_compatibility(self):
         """
         Tests updating a config when the plugin indicates the config is invalid.
         """
@@ -494,9 +478,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     # -- payload --------------------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_create_bind_payload(self, mock_get_working_directory):
+    def test_create_bind_payload(self):
         # Setup
         repo_id = 'repo-a'
         distributor_id = 'dist-1'
@@ -528,9 +510,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         self.assertRaises(exceptions.MissingResource, self.distributor_manager.create_bind_payload,
                           'missing', 'also missing', 'irrelevant')
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_create_bind_payload_distributor_error(self, mock_get_working_directory):
+    def test_create_bind_payload_distributor_error(self):
         # Setup
         self.repo_manager.create_repo('repo-a')
         self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True,
@@ -678,9 +658,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     # -- publish schedules -----------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_publish_schedule(self, mock_get_working_directory):
+    def test_publish_schedule(self):
 
         # setup
         repo_id = 'scheduled_repo'

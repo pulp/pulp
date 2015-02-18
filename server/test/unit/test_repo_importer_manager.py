@@ -123,9 +123,7 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertRaises(exceptions.PulpCodedValidationException,
                           self.importer_manager.set_importer, 'real-repo', 'fake-importer', None)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_set_importer_with_existing(self, mock_get_working_directory):
+    def test_set_importer_with_existing(self):
         """
         Tests setting a different importer on a repo that already had one.
         """
@@ -263,10 +261,8 @@ class RepoManagerTests(base.PulpServerTests):
 
     # -- remove ---------------------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.schedule.repo.RepoSyncScheduleManager.delete_by_importer_id')
-    def test_remove_importer(self, mock_delete_schedules, mock_get_working_directory):
+    def test_remove_importer(self, mock_delete_schedules):
         """
         Tests the successful case of removing an importer.
         """
@@ -314,9 +310,7 @@ class RepoManagerTests(base.PulpServerTests):
 
     # -- update ---------------------------------------------------------------
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_importer_config(self, mock_working_directory):
+    def test_update_importer_config(self):
         """
         Tests the successful case of updating an importer's configuration.
         """
@@ -376,9 +370,7 @@ class RepoManagerTests(base.PulpServerTests):
         except exceptions.MissingResource:
             pass
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_importer_plugin_exception(self, mock_get_working_directory):
+    def test_update_importer_plugin_exception(self):
         """
         Tests the appropriate exception is raised when the plugin throws an error during validation.
         """
@@ -399,9 +391,7 @@ class RepoManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = None
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_importer_invalid_config(self, mock_get_working_directory):
+    def test_update_importer_invalid_config(self):
         """
         Tests the appropriate exception is raised when the plugin indicates the config is invalid.
         """
@@ -422,9 +412,7 @@ class RepoManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = True
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_update_importer_invalid_config_backward_compatibility(self, mock_get_working_dir):
+    def test_update_importer_invalid_config_backward_compatibility(self):
         """
         Tests the appropriate exception is raised when the plugin indicates the config is invalid.
         """
