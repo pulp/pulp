@@ -1,7 +1,6 @@
-from base import PulpServerTests
-
 from mock import patch, Mock
 
+from ...base import PulpServerTests
 from pulp.server.managers import status as status_manager
 
 

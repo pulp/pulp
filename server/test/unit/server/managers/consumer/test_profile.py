@@ -12,12 +12,12 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-import base
 import mock
 import pymongo
 
 from mock import patch
 
+from .... import base
 from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.server.exceptions import MissingResource

@@ -19,7 +19,7 @@ import unittest
 
 import mock
 
-from base import PulpServerTests
+from ....base import PulpServerTests
 from pulp.server.db.model import consumer
 
 

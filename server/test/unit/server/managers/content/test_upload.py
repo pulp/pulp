@@ -12,9 +12,9 @@
 import os
 import shutil
 
-import base
 import mock
 
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.model import Repository
@@ -71,7 +71,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
     def test_save_data_rpm(self):
 
         # Setup
-        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + '/../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
+        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + \
+            '/../../../../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
         self.assertTrue(os.path.exists(test_rpm_filename))
 
         # Test
