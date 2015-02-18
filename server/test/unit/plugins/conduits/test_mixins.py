@@ -12,6 +12,7 @@ from pulp.server.db.model.repository import Repo
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.cud import RepoManager
+from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.importer import RepoImporterManager
 import pulp.plugins.types.database as types_database
 
@@ -42,6 +43,63 @@ def _create_mock_side_effect(items):
             pass
         return ret
     return _side_effect
+
+
+class DistributorScratchpadMixinTests(base.PulpServerTests):
+
+    def clean(self):
+        super(DistributorScratchpadMixinTests, self).clean()
+        types_database.clean()
+
+        Repo.get_collection().remove()
+
+    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
+                return_value="/var/cache/pulp/mock_worker/mock_task_id")
+    def setUp(self, mock_get_working_directory):
+        super(DistributorScratchpadMixinTests, self).setUp()
+        mock_plugins.install()
+
+        self.repo_manager = RepoManager()
+        self.distributor_manager = RepoDistributorManager()
+
+        repo_id = 'repo-1'
+        self.repo_manager.create_repo(repo_id)
+        self.distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True,
+                                                 distributor_id='test-distributor')
+
+        self.conduit = mixins.DistributorScratchPadMixin(repo_id, 'test-distributor')
+
+    def tearDown(self):
+        super(DistributorScratchpadMixinTests, self).tearDown()
+        manager_factory.reset()
+        mock_plugins.reset()
+
+    def test_get_set_scratchpad(self):
+        """
+        Tests scratchpad calls.
+        """
+
+        # Test - get no scratchpad
+        self.assertTrue(self.conduit.get_scratchpad() is None)
+
+        # Test - set scrathpad
+        value = 'dragon'
+        self.conduit.set_scratchpad(value)
+
+        # Test - get updated value
+        self.assertEqual(value, self.conduit.get_scratchpad())
+
+    def test_scratchpad_with_error(self):
+        # Setup
+        mock_distributor_manager = mock.Mock()
+        mock_distributor_manager.get_distributor_scratchpad.side_effect = Exception()
+        mock_distributor_manager.set_distributor_scratchpad.side_effect = Exception()
+
+        manager_factory._INSTANCES[manager_factory.TYPE_REPO_DISTRIBUTOR] = mock_distributor_manager
+
+        # Test
+        self.assertRaises(mixins.DistributorConduitException, self.conduit.get_scratchpad)
+        self.assertRaises(mixins.DistributorConduitException, self.conduit.set_scratchpad, 'foo')
 
 
 class RepoScratchPadMixinTests(unittest.TestCase):
