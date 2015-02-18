@@ -1,16 +1,5 @@
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import datetime
+
 import mock
 
 from ... import base
@@ -43,7 +32,8 @@ class RepoPublishConduitTests(base.PulpServerTests):
 
         # Populate the database with a repo with units
         self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {}, True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {}, True,
+                                                 distributor_id='dist-1')
 
         self.conduit = RepoPublishConduit('repo-1', 'dist-1')
 
@@ -68,13 +58,13 @@ class RepoPublishConduitTests(base.PulpServerTests):
 
         # Setup - Previous publish
         last_publish = datetime.datetime.now()
-        repo_dist = RepoDistributor.get_collection().find_one({'repo_id' : 'repo-1'})
+        repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'repo-1'})
         repo_dist['last_publish'] = dateutils.format_iso8601_datetime(last_publish)
         RepoDistributor.get_collection().save(repo_dist, safe=True)
 
         # Test - Last publish
         found = self.conduit.last_publish()
-        self.assertTrue(isinstance(found, datetime.datetime)) # check returned format
+        self.assertTrue(isinstance(found, datetime.datetime))  # check returned format
         self.assertEqual(repo_dist['last_publish'], dateutils.format_iso8601_datetime(found))
 
     @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.last_publish')
@@ -84,6 +74,7 @@ class RepoPublishConduitTests(base.PulpServerTests):
 
         # Test
         self.assertRaises(DistributorConduitException, self.conduit.last_publish)
+
 
 class RepoGroupPublishConduitTests(base.PulpServerTests):
     def clean(self):
@@ -106,7 +97,8 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
         self.distributor_id = 'conduit-distributor'
 
         self.group_manager.create_repo_group(self.group_id)
-        distributor = self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id=self.distributor_id)
+        distributor = self.distributor_manager.add_distributor(
+            self.group_id, 'mock-group-distributor', {}, distributor_id=self.distributor_id)
 
         self.conduit = RepoGroupPublishConduit(self.group_id, distributor)
 
@@ -115,7 +107,7 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
         mock_plugins.reset()
 
     def test_str(self):
-        str(self.conduit) # make sure no exception is raised
+        self.assertEqual(str(self.conduit), 'RepoGroupPublishConduit for group [conduit-group]')
 
     def test_last_publish(self):
         # Test - Unpublished
@@ -124,15 +116,16 @@ class RepoGroupPublishConduitTests(base.PulpServerTests):
 
         # Setup - Publish
         last_publish = datetime.datetime.now()
-        repo_group_dist = self.distributor_manager.get_distributor(self.group_id, self.distributor_id)
+        repo_group_dist = self.distributor_manager.get_distributor(self.group_id,
+                                                                   self.distributor_id)
         repo_group_dist['last_publish'] = dateutils.format_iso8601_datetime(last_publish)
         RepoGroupDistributor.get_collection().save(repo_group_dist, safe=True)
 
         # Test
         found = self.conduit.last_publish()
         self.assertTrue(isinstance(found, datetime.datetime))
-
-        last_publish = dateutils.parse_iso8601_datetime(repo_group_dist['last_publish']) # simulate the DB encoding
+        # simulate the DB encoding
+        last_publish = dateutils.parse_iso8601_datetime(repo_group_dist['last_publish'])
         self.assertEqual(last_publish, found)
 
     @mock.patch('pulp.server.managers.repo.group.publish.RepoGroupPublishManager.last_publish')

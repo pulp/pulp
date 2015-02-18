@@ -1,17 +1,3 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
 from ... import base
@@ -19,23 +5,22 @@ from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.model import SyncReport
+from pulp.server.db.model.repository import Repo, RepoContentUnit
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
-from pulp.server.db.model.repository import Repo, RepoContentUnit
+import pulp.server.managers.content.cud as content_manager
+import pulp.server.managers.content.query as query_manager
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 import pulp.server.managers.repo.sync as sync_manager
 import pulp.server.managers.repo.unit_association as association_manager
 import pulp.server.managers.repo.unit_association_query as association_query_manager
-import pulp.server.managers.content.cud as content_manager
-import pulp.server.managers.content.query as query_manager
 
-# constants --------------------------------------------------------------------
+TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'],
+                                        ['type_2'])
+TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'key-2b'], [],
+                                        ['type_1'])
 
-TYPE_1_DEF = types_model.TypeDefinition('type_1', 'Type 1', 'One', ['key-1'], ['search-1'], ['type_2'])
-TYPE_2_DEF = types_model.TypeDefinition('type_2', 'Type 2', 'Two', ['key-2a', 'key-2b'], [], ['type_1'])
-
-# -- test cases ---------------------------------------------------------------
 
 class RepoSyncConduitTests(base.PulpServerTests):
 
@@ -84,8 +69,8 @@ class RepoSyncConduitTests(base.PulpServerTests):
         """
 
         # Setup
-        unit_1_key = {'key-1' : 'unit_1'}
-        unit_1_metadata = {'meta_1' : 'value_1'}
+        unit_1_key = {'key-1': 'unit_1'}
+        unit_1_metadata = {'meta_1': 'value_1'}
         unit_1 = self.conduit.init_unit(TYPE_1_DEF.id, unit_1_key, unit_1_metadata, '/foo/bar')
         self.conduit.save_unit(unit_1)
 
@@ -100,8 +85,8 @@ class RepoSyncConduitTests(base.PulpServerTests):
         # Test - remove_units
         self.conduit.remove_unit(units[0])
 
-        #   Verify repo association removed in the database
-        associated_units = list(RepoContentUnit.get_collection().find({'repo_id' : 'repo-1'}))
+        # Verify repo association removed in the database
+        associated_units = list(RepoContentUnit.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(0, len(associated_units))
 
         #   Verify the unit itself is still in the database
@@ -117,18 +102,18 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
         # Setup
 
-        #   Created - 10
+        # Created - 10
         for i in range(0, 10):
-            unit_key = {'key-1' : 'unit_%d' % i}
+            unit_key = {'key-1': 'unit_%d' % i}
             unit = self.conduit.init_unit(TYPE_1_DEF.id, unit_key, {}, '/foo/bar')
             self.conduit.save_unit(unit)
 
-        #   Removed - 1
+        # Removed - 1
         doomed = self.conduit.get_units()[0]
         self.conduit.remove_unit(doomed)
 
-        #   Updated - 1
-        update_me = self.conduit.init_unit(TYPE_1_DEF.id, {'key-1' : 'unit_5'}, {}, '/foo/bar')
+        # Updated - 1
+        update_me = self.conduit.init_unit(TYPE_1_DEF.id, {'key-1': 'unit_5'}, {}, '/foo/bar')
         self.conduit.save_unit(update_me)
 
         # Test

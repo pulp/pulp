@@ -1,32 +1,16 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
-import os
-import shutil
 import traceback
 import unittest
 
 import mock
 
 from .....base import PulpServerTests
-from pulp.devel import mock_plugins
 from pulp.common.plugins import distributor_constants
+from pulp.devel import mock_plugins
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
 from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers_factory
-from pulp.server.managers.repo import _common as common_utils
 from pulp.server.managers.repo.group import cud
 
 
@@ -287,7 +271,6 @@ class RepoGroupCUDTests(RepoGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertTrue(group is None)
 
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_delete_with_distributor(self, mock_get_working_directory):
@@ -297,17 +280,19 @@ class RepoGroupCUDTests(RepoGroupTests):
 
         distributor_id = 'doomed-dist'
         dist_manager = managers_factory.repo_group_distributor_manager()
-        dist_manager.add_distributor(group_id, 'mock-group-distributor', {}, distributor_id=distributor_id)
+        dist_manager.add_distributor(group_id, 'mock-group-distributor', {},
+                                     distributor_id=distributor_id)
 
-        distributor = RepoGroupDistributor.get_collection().find_one({'id' : distributor_id})
+        distributor = RepoGroupDistributor.get_collection().find_one({'id': distributor_id})
         self.assertTrue(distributor is not None)
 
         # Test
         self.manager.delete_repo_group(group_id)
 
         # Verify
-        distributor = RepoGroupDistributor.get_collection().find_one({'id' : distributor_id})
+        distributor = RepoGroupDistributor.get_collection().find_one({'id': distributor_id})
         self.assertTrue(distributor is None)
+
 
 class RepoGroupMembershipTests(RepoGroupTests):
 
@@ -362,5 +347,3 @@ class RepoGroupMembershipTests(RepoGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertTrue(repo_1['id'] in group['repo_ids'])
         self.assertTrue(repo_2['id'] in group['repo_ids'])
-
-

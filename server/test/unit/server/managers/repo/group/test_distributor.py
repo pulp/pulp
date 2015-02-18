@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
 from ..... import base
@@ -18,10 +5,10 @@ from pulp.devel import mock_plugins
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import RepositoryGroup
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
-from pulp.server.exceptions import InvalidValue, MissingResource, PulpExecutionException, PulpDataException
+from pulp.server.exceptions import (InvalidValue, MissingResource, PulpExecutionException,
+                                    PulpDataException)
 from pulp.server.managers import factory as manager_factory
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoGroupDistributorManagerTests(base.PulpServerTests):
     def setUp(self):
@@ -44,27 +31,26 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 
-    # -- add ------------------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_add_distributor(self, mock_get_working_directory):
         # Setup
-        config = {'a' : 'a', 'b' : None}
+        config = {'a': 'a', 'b': None}
 
         # Test
-        added = self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', config)
+        added = self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor',
+                                                         config)
 
         # Verify
-        expected_config = {'a' : 'a'}
+        expected_config = {'a': 'a'}
 
-        #   Returned Value
+        # Returned Value
         self.assertTrue(added is not None)
         self.assertEqual(added['config'], expected_config)
         self.assertEqual(added['distributor_type_id'], 'mock-group-distributor')
 
-        #   Database
-        distributor = RepoGroupDistributor.get_collection().find_one({'id' : added['id']})
+        # Database
+        distributor = RepoGroupDistributor.get_collection().find_one({'id': added['id']})
         self.assertTrue(distributor is not None)
         self.assertEqual(distributor['config'], expected_config)
         self.assertEqual(distributor['distributor_type_id'], 'mock-group-distributor')
@@ -105,10 +91,12 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_add_distributor_replace_existing(self, mock_get_working_directory):
         # Setup
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
 
         # Test
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor-2', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor-2', {},
+                                                 distributor_id='d1')
 
         # Verify
         all_distributors = list(RepoGroupDistributor.get_collection().find())
@@ -124,7 +112,8 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
     def test_add_distributor_invalid_id(self):
         bad_id = '!@#$%^&*()'
         try:
-            self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id=bad_id)
+            self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                     distributor_id=bad_id)
             self.fail()
         except InvalidValue, e:
             self.assertTrue('distributor_id' in e.property_names)
@@ -188,19 +177,18 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
         except PulpDataException, e:
             self.assertEqual(e.args[0][0], 'foo')
 
-    # -- remove ---------------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_remove_distributor(self, mock_get_working_directory):
         # Setup
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
 
         # Test
         self.distributor_manager.remove_distributor(self.group_id, 'd1')
 
         # Verify
-        distributor = RepoGroupDistributor.get_collection().find_one({'id' : 'd1'})
+        distributor = RepoGroupDistributor.get_collection().find_one({'id': 'd1'})
         self.assertTrue(distributor is None)
 
     def test_remove_distributor_no_distributor(self):
@@ -224,35 +212,35 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
     def test_remove_distributor_plugin_exception(self, mock_get_working_directory):
         # Setup
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.distributor_removed.side_effect = Exception()
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
 
         # Test
         try:
             self.distributor_manager.remove_distributor(self.group_id, 'd1')
             self.fail()
-        except PulpExecutionException, e:
+        except PulpExecutionException:
             pass
 
         # Clean Up
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.distributor_removed.side_effect = None
 
-    # -- update ---------------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_update_distributor_config(self, mock_get_working_directory):
         # Setup
-        orig = {'a' : 'a', 'b' : 'b', 'c' : 'c'}
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', orig, distributor_id='d1')
+        orig = {'a': 'a', 'b': 'b', 'c': 'c'}
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', orig,
+                                                 distributor_id='d1')
 
         # Test
-        delta = {'a' : 'A', 'b' : None, 'd' : 'D'}
+        delta = {'a': 'A', 'b': None, 'd': 'D'}
         self.distributor_manager.update_distributor_config(self.group_id, 'd1', delta)
 
         # Verify
-        expected_config = {'a' : 'A', 'c' : 'c', 'd' : 'D'}
+        expected_config = {'a': 'A', 'c': 'c', 'd': 'D'}
 
-        #   Database
+        # Database
         distributor = self.distributor_manager.get_distributor(self.group_id, 'd1')
         self.assertEqual(expected_config, distributor['config'])
 
@@ -281,7 +269,8 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_update_validate_exception(self, mock_get_working_directory):
         # Setup
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.validate_config.side_effect = Exception('foo')
 
         # Test
@@ -298,7 +287,8 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_update_invalid_config(self, mock_get_working_directory):
         # Setup
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
         mock_plugins.MOCK_GROUP_DISTRIBUTOR.validate_config.return_value = False, 'foo'
 
         # Test
@@ -308,34 +298,33 @@ class RepoGroupDistributorManagerTests(base.PulpServerTests):
         except PulpDataException, e:
             self.assertEqual(e.args[0][0], 'foo')
 
-    # -- scratchpad -----------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_get_set_scratchpad(self, mock_get_working_directory):
         # Setup
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
 
         # Test - Get Without Set
         sp = self.distributor_manager.get_distributor_scratchpad(self.group_id, 'd1')
         self.assertTrue(sp is None)
 
         # Test - Set
-        value = {'a' : 'a'}
+        value = {'a': 'a'}
         self.distributor_manager.set_distributor_scratchpad(self.group_id, 'd1', value)
 
         # Test - Get
         sp = self.distributor_manager.get_distributor_scratchpad(self.group_id, 'd1')
         self.assertEqual(value, sp)
 
-    # -- find -----------------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_find_distributors(self, mock_get_working_directory):
         # Setup
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d1')
-        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {}, distributor_id='d2')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d1')
+        self.distributor_manager.add_distributor(self.group_id, 'mock-group-distributor', {},
+                                                 distributor_id='d2')
 
         # Test
         matching = self.distributor_manager.find_distributors(self.group_id)

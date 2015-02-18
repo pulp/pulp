@@ -1,30 +1,14 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-
 import mock
 
 from .... import base
 from pulp.devel import mock_plugins
-from pulp.plugins.model import Repository
 from pulp.plugins.config import PluginCallConfiguration
+from pulp.plugins.model import Repository
 from pulp.server.db.model.repository import Repo, RepoDistributor
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoDistributorManagerTests(base.PulpServerTests):
 
@@ -48,8 +32,6 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
 
-    # -- add ------------------------------------------------------------------
-
     def test_add_distributor(self):
         """
         Tests adding a distributor to a new repo.
@@ -57,15 +39,16 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('test_me')
-        config = {'key1' : 'value1', 'key2' : None}
+        config = {'key1': 'value1', 'key2': None}
 
         # Test
-        added = self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, True, distributor_id='my_dist')
+        added = self.distributor_manager.add_distributor('test_me', 'mock-distributor', config,
+                                                         True, distributor_id='my_dist')
 
         # Verify
-        expected_config = {'key1' : 'value1'}
+        expected_config = {'key1': 'value1'}
 
-        #    Database
+        # Database
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
         self.assertEqual('my_dist', all_distributors[0]['id'])
@@ -106,10 +89,12 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         """
 
         self.repo_manager.create_repo('test_me')
-        self.distributor_manager.add_distributor('test_me', 'mock-distributor', {}, True, distributor_id='dist_1')
+        self.distributor_manager.add_distributor(
+            'test_me', 'mock-distributor', {}, True, distributor_id='dist_1')
 
         # Test
-        self.distributor_manager.add_distributor('test_me', 'mock-distributor-2', {}, True, distributor_id='dist_2')
+        self.distributor_manager.add_distributor(
+            'test_me', 'mock-distributor-2', {}, True, distributor_id='dist_2')
 
         # Verify
         all_distributors = list(RepoDistributor.get_collection().find())
@@ -129,21 +114,23 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Setup
         self.repo_manager.create_repo('test_me')
 
-        self.distributor_manager.add_distributor('test_me', 'mock-distributor', {}, True, distributor_id='dist_1')
+        self.distributor_manager.add_distributor(
+            'test_me', 'mock-distributor', {}, True, distributor_id='dist_1')
 
         # Test
-        config = {'foo' : 'bar'}
-        self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, False, distributor_id='dist_1')
+        config = {'foo': 'bar'}
+        self.distributor_manager.add_distributor('test_me', 'mock-distributor', config, False,
+                                                 distributor_id='dist_1')
 
         # Verify
 
-        #    Database
+        # Database
         all_distributors = list(RepoDistributor.get_collection().find())
         self.assertEqual(1, len(all_distributors))
         self.assertTrue(not all_distributors[0]['auto_publish'])
         self.assertEqual(config, all_distributors[0]['config'])
 
-        #    Plugin Calls
+        # Plugin Calls
         self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.distributor_added.call_count)
         self.assertEqual(1, mock_plugins.MOCK_DISTRIBUTOR.distributor_removed.call_count)
 
@@ -159,7 +146,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         added = self.distributor_manager.add_distributor('happy-repo', 'mock-distributor', {}, True)
 
         # Verify
-        distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'happy-repo', 'id' : added['id']})
+        distributor = RepoDistributor.get_collection().find_one({'repo_id': 'happy-repo',
+                                                                 'id': added['id']})
         self.assertTrue(distributor is not None)
 
     def test_add_distributor_no_repo(self):
@@ -173,7 +161,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.fail('No exception thrown for an invalid repo ID')
         except exceptions.MissingResource, e:
             self.assertTrue('fake' == e.resources['repository'])
-            print(e) # for coverage
+            self.assertEqual(str(e), 'Missing resource(s): repository=fake')
 
     def test_add_distributor_no_distributor(self):
         """
@@ -188,7 +176,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.distributor_manager.add_distributor('real-repo', 'fake-distributor', {}, True)
             self.fail('No exception thrown for an invalid distributor type')
         except exceptions.InvalidValue, e:
-            print(e) # for coverage
+            self.assertEqual(str(e), "Invalid properties: ['distributor_type_id']")
 
     def test_add_distributor_invalid_id(self):
         """
@@ -205,7 +193,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.fail('No exception thrown for an invalid distributor ID')
         except exceptions.InvalidValue, e:
             self.assertTrue('distributor_id' in e.property_names)
-            print(e) # for coverage
+            self.assertEqual(str(e), "Invalid properties: ['distributor_id']")
 
     def test_add_distributor_initialize_raises_error(self):
         """
@@ -228,7 +216,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     def test_add_distributor_validate_raises_error(self):
         """
-        Tests the correct error is raised when the distributor raises an error during config validation.
+        Tests the correct error is raised when the distributor raises an error during config
+        validation.
         """
 
         # Setup
@@ -239,7 +228,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         try:
             self.distributor_manager.add_distributor('rohan', 'mock-distributor', {}, True)
             self.fail('Exception expected')
-        except Exception, e:
+        except Exception:
             pass
 
         # Cleanup
@@ -283,11 +272,10 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
-    # -- remove ---------------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    @mock.patch('pulp.server.managers.schedule.repo.RepoPublishScheduleManager.delete_by_distributor_id')
+    @mock.patch(
+        'pulp.server.managers.schedule.repo.RepoPublishScheduleManager.delete_by_distributor_id')
     def test_remove_distributor(self, mock_delete_schedules, mock_get_working_directory):
         """
         Tests removing an existing distributor from a repository.
@@ -295,13 +283,15 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('dist-repo')
-        self.distributor_manager.add_distributor('dist-repo', 'mock-distributor', {}, True, distributor_id='doomed')
+        self.distributor_manager.add_distributor(
+            'dist-repo', 'mock-distributor', {}, True, distributor_id='doomed')
 
         # Test
         self.distributor_manager.remove_distributor('dist-repo', 'doomed')
 
         # Verify
-        distributor = RepoDistributor.get_collection().find_one({'repo_id' : 'dist-repo', 'id' : 'doomed'})
+        distributor = RepoDistributor.get_collection().find_one({'repo_id': 'dist-repo',
+                                                                 'id': 'doomed'})
         self.assertTrue(distributor is None)
         mock_delete_schedules.assert_called_once_with('dist-repo', 'doomed')
 
@@ -321,7 +311,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
     def test_remove_distributor_no_repo(self):
         """
-        Tests the proper exception is raised when removing a distributor from a repo that doesn't exist.
+        Tests the proper exception is raised when removing a distributor from a repo that doesn't
+        exist.
         """
 
         # Test
@@ -330,9 +321,7 @@ class RepoDistributorManagerTests(base.PulpServerTests):
             self.fail('No exception thrown for an invalid repo ID')
         except exceptions.MissingResource, e:
             self.assertTrue('fake-repo' == e.resources['repository'])
-            print(e) # for coverage
-
-    # -- update ---------------------------------------------------------------
+            self.assertEqual(str(e), 'Missing resource(s): repository=fake-repo')
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
@@ -343,25 +332,23 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('dawnstar')
-        config = {'key1' : 'value1',
-                  'key2' : 'value2',
-                  'key3' : 'value3',}
-        distributor = self.distributor_manager.add_distributor('dawnstar', 'mock-distributor', config, True)
+        config = {'key1': 'value1', 'key2': 'value2', 'key3': 'value3'}
+        distributor = self.distributor_manager.add_distributor('dawnstar', 'mock-distributor',
+                                                               config, True)
         dist_id = distributor['id']
 
         # Test
-        delta_config = {'key1' : 'updated1',
-                        'key2' : None}
+        delta_config = {'key1': 'updated1', 'key2': None}
         self.distributor_manager.update_distributor_config('dawnstar', dist_id, delta_config)
 
         # Verify
-        expected_config = {'key1' : 'updated1', 'key3' : 'value3'}
+        expected_config = {'key1': 'updated1', 'key3': 'value3'}
 
-        #    Database
-        repo_dist = RepoDistributor.get_collection().find_one({'repo_id' : 'dawnstar'})
+        # Database
+        repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'dawnstar'})
         self.assertEqual(repo_dist['config'], expected_config)
 
-        #    Plugin
+        # Plugin
         self.assertEqual(2, mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_count)
         call_config = mock_plugins.MOCK_DISTRIBUTOR.validate_config.call_args[0][1]
         self.assertEqual(expected_config, call_config.repo_plugin_config)
@@ -372,11 +359,12 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Setup
         self.repo_manager.create_repo('test-repo')
         config = {'key': 'value'}
-        distributor = self.distributor_manager.add_distributor('test-repo', 'mock-distributor', config,
-                                                               True)
+        distributor = self.distributor_manager.add_distributor('test-repo', 'mock-distributor',
+                                                               config, True)
 
         # Test
-        self.distributor_manager.update_distributor_config('test-repo', distributor['id'], {}, False)
+        self.distributor_manager.update_distributor_config('test-repo', distributor['id'], {},
+                                                           False)
         repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'test-repo'})
         self.assertFalse(repo_dist['auto_publish'])
 
@@ -386,12 +374,13 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Setup
         self.repo_manager.create_repo('test-repo')
         config = {'key': 'value'}
-        distributor = self.distributor_manager.add_distributor('test-repo', 'mock-distributor', config,
-                                                               True)
+        distributor = self.distributor_manager.add_distributor(
+            'test-repo', 'mock-distributor', config, True)
 
         # Test that an exception is raised if you hand update_distributor_config a bad auto_publish
-        self.assertRaises(exceptions.InvalidValue, self.distributor_manager.update_distributor_config,
-                          'test-repo', distributor['id'], {}, 'notbool')
+        self.assertRaises(
+            exceptions.InvalidValue, self.distributor_manager.update_distributor_config,
+            'test-repo', distributor['id'], {}, 'notbool')
 
     def test_update_missing_repo(self):
         """
@@ -453,7 +442,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('dwarf')
-        distributor = self.distributor_manager.add_distributor('dwarf', 'mock-distributor', {}, True)
+        distributor = self.distributor_manager.add_distributor(
+            'dwarf', 'mock-distributor', {}, True)
         dist_id = distributor['id']
 
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = (False, 'Invalid config')
@@ -477,7 +467,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('dwarf')
-        distributor = self.distributor_manager.add_distributor('dwarf', 'mock-distributor', {}, True)
+        distributor = self.distributor_manager.add_distributor(
+            'dwarf', 'mock-distributor', {}, True)
         dist_id = distributor['id']
 
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = False
@@ -492,25 +483,24 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.validate_config.return_value = True
 
-    # -- payload --------------------------------------------------------------
-
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     def test_create_bind_payload(self, mock_get_working_directory):
         # Setup
         repo_id = 'repo-a'
         distributor_id = 'dist-1'
-        binding_config = {'a' : 'a'}
+        binding_config = {'a': 'a'}
 
         self.repo_manager.create_repo(repo_id)
         self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True,
                                                  distributor_id=distributor_id)
 
-        expected_payload = {'payload' : 'stuff'}
+        expected_payload = {'payload': 'stuff'}
         mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.return_value = expected_payload
 
         # Test
-        payload = self.distributor_manager.create_bind_payload(repo_id, distributor_id, binding_config)
+        payload = self.distributor_manager.create_bind_payload(repo_id, distributor_id,
+                                                               binding_config)
 
         # Verify
         self.assertEqual(payload, expected_payload)
@@ -536,13 +526,20 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {}, True,
                                                  distributor_id='dist-1')
 
-        mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.side_effect = Exception()
+        # This module is doing some very strange things with mock, and this Exception side effect
+        # was causing other unrelated tests to fail. Unfortunately, the with operator does not work
+        # here due to the call to reset_mock() in the clean() method. This was the only way I could
+        # get this to work in reasonable time.
+        original_side_effect = mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.side_effect
+        try:
+            mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.side_effect = Exception()
 
-        # Test
-        self.assertRaises(exceptions.PulpExecutionException, self.distributor_manager.create_bind_payload,
-                          'repo-a', 'dist-1', 'config')
-
-    # -- get ------------------------------------------------------------------
+            # Test
+            self.assertRaises(
+                exceptions.PulpExecutionException,
+                self.distributor_manager.create_bind_payload, 'repo-a', 'dist-1', 'config')
+        finally:
+            mock_plugins.MOCK_DISTRIBUTOR.create_consumer_payload.side_effect = original_side_effect
 
     def test_get_distributor(self):
         """
@@ -551,8 +548,9 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('fire')
-        distributor_config = {'element' : 'fire'}
-        self.distributor_manager.add_distributor('fire', 'mock-distributor', distributor_config, True, distributor_id='flame')
+        distributor_config = {'element': 'fire'}
+        self.distributor_manager.add_distributor('fire', 'mock-distributor', distributor_config,
+                                                 True, distributor_id='flame')
 
         # Test
         distributor = self.distributor_manager.get_distributor('fire', 'flame')
@@ -597,9 +595,11 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('ice')
-        distributor_config = {'element' : 'ice'}
-        self.distributor_manager.add_distributor('ice', 'mock-distributor', distributor_config, True, distributor_id='snowball-1')
-        self.distributor_manager.add_distributor('ice', 'mock-distributor', distributor_config, True, distributor_id='snowball-2')
+        distributor_config = {'element': 'ice'}
+        self.distributor_manager.add_distributor(
+            'ice', 'mock-distributor', distributor_config, True, distributor_id='snowball-1')
+        self.distributor_manager.add_distributor(
+            'ice', 'mock-distributor', distributor_config, True, distributor_id='snowball-2')
 
         # Test
         distributors = self.distributor_manager.get_distributors('ice')
@@ -635,8 +635,6 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         except exceptions.MissingResource, e:
             self.assertTrue('fake' == e.resources['repository'])
 
-    # -- scratchpad -----------------------------------------------------------
-
     def test_get_set_distributor_scratchpad(self):
         """
         Tests the retrieval and setting of a repo distributor's scratchpad.
@@ -644,7 +642,8 @@ class RepoDistributorManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('repo')
-        self.distributor_manager.add_distributor('repo', 'mock-distributor', {}, True, distributor_id='dist')
+        self.distributor_manager.add_distributor(
+            'repo', 'mock-distributor', {}, True, distributor_id='dist')
 
         # Test - Unset Scratchpad
         scratchpad = self.distributor_manager.get_distributor_scratchpad('repo', 'dist')
@@ -688,28 +687,36 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         distributor_id = 'scheduled_repo_distributor'
         schedule_id = 'scheduled_repo_publish'
         self.repo_manager.create_repo(repo_id)
-        self.distributor_manager.add_distributor(repo_id, distributor_type_id, {}, False, distributor_id=distributor_id)
+        self.distributor_manager.add_distributor(
+            repo_id, distributor_type_id, {}, False, distributor_id=distributor_id)
 
         # pre-condition
-        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
+        self.assertEqual(
+            len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
 
         # add the schedule
         self.distributor_manager.add_publish_schedule(repo_id, distributor_id, schedule_id)
-        self.assertTrue(schedule_id in self.distributor_manager.list_publish_schedules(repo_id, distributor_id))
-        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 1)
+        self.assertTrue(
+            schedule_id in self.distributor_manager.list_publish_schedules(repo_id, distributor_id))
+        self.assertEqual(
+            len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 1)
 
         # idempotent add
         self.distributor_manager.add_publish_schedule(repo_id, distributor_id, schedule_id)
-        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 1)
+        self.assertEqual(
+            len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 1)
 
         # remove the schedule
         self.distributor_manager.remove_publish_schedule(repo_id, distributor_id, schedule_id)
-        self.assertFalse(schedule_id in self.distributor_manager.list_publish_schedules(repo_id, distributor_id))
-        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
+        self.assertFalse(
+            schedule_id in self.distributor_manager.list_publish_schedules(repo_id, distributor_id))
+        self.assertEqual(
+            len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
 
         # idempotent remove
         self.distributor_manager.remove_publish_schedule(repo_id, distributor_id, schedule_id)
-        self.assertEqual(len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
+        self.assertEqual(
+            len(self.distributor_manager.list_publish_schedules(repo_id, distributor_id)), 0)
 
         # errors
         self.distributor_manager.remove_distributor(repo_id, distributor_id)

@@ -4,13 +4,14 @@ import mock
 
 from pulp.server.db.model.repository import RepoContentUnit
 
+
 REPOSITORY = 'pulp.server.db.model.repository'
 
 
 class TestRepoContentUnit(unittest.TestCase):
     def setUp(self):
         self.unit = RepoContentUnit('repo1', 'unit1', 'rpm',
-            RepoContentUnit.OWNER_TYPE_IMPORTER, 'owner1')
+                                    RepoContentUnit.OWNER_TYPE_IMPORTER, 'owner1')
 
     def test_utc_in_iso8601(self):
         # make sure the ISO8601 serialization includes the UTC timezone
