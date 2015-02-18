@@ -1,27 +1,11 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import base
 import random
 import string
 
+from ..... import base
 from pulp.server.auth import authorization
+from pulp.server.db.model.auth import Role
 from pulp.server.managers import factory as manager_factory
 import pulp.server.exceptions as exceptions
-
-from pulp.server.db.model.auth import Role
-
-# -- test cases ---------------------------------------------------------------
 
 
 class PermissionManagerTests(base.PulpServerTests):
@@ -46,8 +30,6 @@ class PermissionManagerTests(base.PulpServerTests):
     def clean(self):
         base.PulpServerTests.clean(self)
         Role.get_collection().remove()
-
-    # test data generation
 
     def _create_user(self):
         username = ''.join(random.sample(self.alpha_num, random.randint(6, 10)))

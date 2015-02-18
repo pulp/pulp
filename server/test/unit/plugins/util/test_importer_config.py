@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from inspect import getmembers, isfunction
 import unittest
 
@@ -29,7 +17,7 @@ class MainMethodTests(unittest.TestCase):
         # no exception should be raised
 
     def test_failure(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_VALIDATE : 0})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_VALIDATE: 0})
         self.assertRaises(importer_config.InvalidConfig, importer_config.validate_config, config)
 
     def test_validation_step_list(self):
@@ -39,8 +27,9 @@ class MainMethodTests(unittest.TestCase):
         """
         # Function names from the module itself
         functions_list = [f for f in getmembers(importer_config, isfunction)]
-        validate_step_function_names = [f[0] for f in functions_list if f[0].startswith('validate') and
-                                                                        f[0] != 'validate_config']
+        validate_step_function_names = [
+            f[0] for f in functions_list if f[0].startswith('validate') and
+            f[0] != 'validate_config']
 
         # Function names from the driver constant
         found_step_function_names = [f.__name__ for f in importer_config.VALIDATIONS]
@@ -152,7 +141,8 @@ class MaxDownloadsTests(unittest.TestCase):
 class ProxyHostTests(unittest.TestCase):
 
     def test_validate(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_PROXY_HOST: 'http://fake.com/'})
+        config = PluginCallConfiguration({},
+                                         {importer_constants.KEY_PROXY_HOST: 'http://fake.com/'})
         importer_config.validate_proxy_host(config)
         # no exception should be raised
 
@@ -164,9 +154,9 @@ class ProxyHostTests(unittest.TestCase):
     def test_required_when_other_parameters_are_present(self):
 
         dependent_parameters = (
-            {importer_constants.KEY_PROXY_PASS : 'pass-1'},
-            {importer_constants.KEY_PROXY_USER : 'user-1'},
-            {importer_constants.KEY_PROXY_PORT : 8080},
+            {importer_constants.KEY_PROXY_PASS: 'pass-1'},
+            {importer_constants.KEY_PROXY_USER: 'user-1'},
+            {importer_constants.KEY_PROXY_PORT: 8080},
         )
 
         for parameters in dependent_parameters:
@@ -255,7 +245,8 @@ class ProxyUsernameTests(unittest.TestCase):
 class ProxyPasswordTests(unittest.TestCase):
 
     def test_valid(self):
-        config = PluginCallConfiguration({},
+        config = PluginCallConfiguration(
+            {},
             {importer_constants.KEY_PROXY_PASS: 'duderino',
              importer_constants.KEY_PROXY_USER: 'the_dude'})
         importer_config.validate_proxy_password(config)
@@ -296,7 +287,7 @@ class SSLValidationFlagTests(unittest.TestCase):
 class SSLCACertTests(unittest.TestCase):
 
     def test_valid(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_SSL_CA_CERT : 'cert'})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_SSL_CA_CERT: 'cert'})
         importer_config.validate_ssl_ca_cert(config)
         # no exception should be raised
 
@@ -317,7 +308,7 @@ class SSLCACertTests(unittest.TestCase):
 class SSLClientCertTests(unittest.TestCase):
 
     def test_valid(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_SSL_CLIENT_CERT : 'cert'})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_SSL_CLIENT_CERT: 'cert'})
         importer_config.validate_ssl_client_cert(config)
         # no exception should be raised
 
@@ -346,7 +337,7 @@ class SSLClientCertTests(unittest.TestCase):
 class SSLClientKeyTests(unittest.TestCase):
 
     def test_valid(self):
-        config = PluginCallConfiguration({}, {importer_constants.KEY_SSL_CLIENT_KEY : 'key'})
+        config = PluginCallConfiguration({}, {importer_constants.KEY_SSL_CLIENT_KEY: 'key'})
         importer_config.validate_ssl_client_key(config)
         # no exception should be raised
 
@@ -419,12 +410,12 @@ class RetainOldCountTests(unittest.TestCase):
 class ValidateIsNonRequiredBooleanTests(unittest.TestCase):
 
     def test_valid_bool(self):
-        config = PluginCallConfiguration({}, {'a' : True})
+        config = PluginCallConfiguration({}, {'a': True})
         importer_config._run_validate_is_non_required_bool(config, 'a')
         # no exception should be raised
 
     def test_valid_str(self):
-        config = PluginCallConfiguration({}, {'a' : 'true'})
+        config = PluginCallConfiguration({}, {'a': 'true'})
         importer_config._run_validate_is_non_required_bool(config, 'a')
         # no exception should be raised
 
@@ -434,7 +425,7 @@ class ValidateIsNonRequiredBooleanTests(unittest.TestCase):
         # no exception should be raised
 
     def test_unparsable(self):
-        config = PluginCallConfiguration({}, {'a' : 'x'})
+        config = PluginCallConfiguration({}, {'a': 'x'})
         try:
             importer_config._run_validate_is_non_required_bool(config, 'a')
             self.fail()
