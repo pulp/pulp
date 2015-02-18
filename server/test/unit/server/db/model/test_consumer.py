@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 This module contains tests for the pulp.server.db.model.consumer module.
 """
@@ -159,6 +147,7 @@ class TestRepoProfileApplicability(PulpServerTests):
         # Our applicability object should now have the correct _id attribute
         self.assertEqual(applicability._id, document['_id'])
 
+
 class TestUnitProfile(unittest.TestCase):
     """
     Test the UnitProfile class.
@@ -201,13 +190,13 @@ class TestUnitProfile(unittest.TestCase):
         """
         profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '1.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',
              'release': '3.fc18', 'arch': 'x86_64'}])
         profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
-            {'vendor': 'Fedora Project', 'name': 'libestr',  'epoch': 0, 'version': '0.1.5',
+            {'vendor': 'Fedora Project', 'name': 'libestr', 'epoch': 0, 'version': '0.1.5',
              'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'openssh-clients', 'epoch': 0, 'version': '6.1p1',
              'release': '8.fc18', 'arch': 'x86_64'},
@@ -223,14 +212,14 @@ class TestUnitProfile(unittest.TestCase):
         """
         profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '1.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',
              'release': '3.fc18', 'arch': 'x86_64'}])
         profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '1.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',
@@ -245,10 +234,10 @@ class TestUnitProfile(unittest.TestCase):
         """
         profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
             {'vendor': 'Fedora Project', 'name': u'¿Donde esta el baño?', 'epoch': 0,
-             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+             'version': '1.49', 'release': '1.fc18', 'arch': 'x86_64'}])
         profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
             {'vendor': 'Fedora Project', 'name': u'¿Donde esta el baño?', 'epoch': 0,
-             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+             'version': '1.49', 'release': '1.fc18', 'arch': 'x86_64'}])
 
         self.assertEqual(consumer.UnitProfile.calculate_hash(profile_1.profile),
                          consumer.UnitProfile.calculate_hash(profile_2.profile))
@@ -260,23 +249,24 @@ class TestUnitProfile(unittest.TestCase):
         """
         profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
             {'vendor': 'Fedora Project', 'name': u'¿Donde esta el baño?', 'epoch': 0,
-             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+             'version': '1.49', 'release': '1.fc18', 'arch': 'x86_64'}])
         # profile_2 has the codepoints for the two Spanish characters above, so this test ensures
         # that this is considered to be different
         profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
             {'vendor': 'Fedora Project', 'name': '\u00bfDonde esta el ba\u00f1o?', 'epoch': 0,
-             'version': '1.49', 'release': '1.fc18',   'arch': 'x86_64'}])
+             'version': '1.49', 'release': '1.fc18', 'arch': 'x86_64'}])
 
         self.assertNotEqual(consumer.UnitProfile.calculate_hash(profile_1.profile),
-                         consumer.UnitProfile.calculate_hash(profile_2.profile))
+                            consumer.UnitProfile.calculate_hash(profile_2.profile))
 
     def test_calculate_hash_reordered_profiles(self):
         """
-        Test that the hashes of two equivalent, but differently ordered profile lists are not the same.
+        Test that the hashes of two equivalent, but differently ordered profile lists are not the
+        same.
         """
         profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '1.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',
@@ -285,7 +275,7 @@ class TestUnitProfile(unittest.TestCase):
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '1.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',
              'release': '3.fc18', 'arch': 'x86_64'}])
 
@@ -298,16 +288,16 @@ class TestUnitProfile(unittest.TestCase):
         """
         profile_1 = consumer.UnitProfile('consumer_1', 'rpm', [
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '1.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',
              'release': '3.fc18', 'arch': 'x86_64'}])
-        # profile_2 is almost the same as profile_1, but it has a different release on the python-slip-dbus
-        # package
+        # profile_2 is almost the same as profile_1, but it has a different release on the
+        # python-slip-dbus package
         profile_2 = consumer.UnitProfile('consumer_2', 'rpm', [
             {'vendor': 'Fedora Project', 'name': 'perl-Filter', 'epoch': 0, 'version': '1.49',
-             'release': '1.fc18',   'arch': 'x86_64'},
+             'release': '1.fc18', 'arch': 'x86_64'},
             {'vendor': 'Fedora Project', 'name': 'python-slip-dbus', 'epoch': 0, 'version': '0.4.0',
              'release': '2.fc18', 'arch': 'noarch'},
             {'vendor': 'Fedora Project', 'name': 'kmod', 'epoch': 0, 'version': '12',

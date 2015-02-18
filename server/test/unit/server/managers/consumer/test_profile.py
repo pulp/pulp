@@ -1,30 +1,14 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 import pymongo
 
-from mock import patch
-
 from .... import base
+from pulp.devel import mock_plugins
 from pulp.plugins.profiler import Profiler
 from pulp.server.db.model.consumer import Consumer, UnitProfile
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.consumer.profile import ProfileManager
-from pulp.devel import mock_plugins
 
 
 class ProfileManagerTests(base.PulpServerTests):
@@ -32,9 +16,9 @@ class ProfileManagerTests(base.PulpServerTests):
     CONSUMER_ID = 'test-consumer'
     TYPE_1 = 'type-1'
     TYPE_2 = 'type-2'
-    PROFILE_1 = {'name':'zsh', 'version':'1.0'}
-    PROFILE_2 = {'name':'zsh', 'version':'2.0'}
-    PROFILE_3 = {'name':'xxx', 'path':'/tmp/xxx'}
+    PROFILE_1 = {'name': 'zsh', 'version': '1.0'}
+    PROFILE_2 = {'name': 'zsh', 'version': '2.0'}
+    PROFILE_3 = {'name': 'xxx', 'path': '/tmp/xxx'}
 
     def setUp(self):
         super(ProfileManagerTests, self).setUp()
@@ -60,7 +44,7 @@ class ProfileManagerTests(base.PulpServerTests):
         manager.create(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         # Verify
         collection = UnitProfile.get_collection()
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         profiles = list(cursor)
         self.assertEquals(len(profiles), 1)
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
@@ -135,7 +119,7 @@ class ProfileManagerTests(base.PulpServerTests):
         manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_2)
         # Verify
         collection = UnitProfile.get_collection()
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         profiles = list(cursor)
         self.assertEquals(len(profiles), 1)
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
@@ -193,7 +177,7 @@ class ProfileManagerTests(base.PulpServerTests):
         manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         manager.update(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
         # Verify
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         cursor.sort('content_type', pymongo.ASCENDING)
         profiles = list(cursor)
         # Type_1
@@ -212,7 +196,6 @@ class ProfileManagerTests(base.PulpServerTests):
     def test_fetch_by_type1(self):
         # Setup
         self.populate()
-        collection = UnitProfile.get_collection()
         manager = factory.consumer_profile_manager()
         manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         manager.update(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
@@ -229,7 +212,6 @@ class ProfileManagerTests(base.PulpServerTests):
     def test_fetch_by_type2(self):
         # Setup
         self.populate()
-        collection = UnitProfile.get_collection()
         manager = factory.consumer_profile_manager()
         manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         manager.update(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
@@ -251,14 +233,14 @@ class ProfileManagerTests(base.PulpServerTests):
         manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         manager.update(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
         collection = UnitProfile.get_collection()
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         profiles = list(cursor)
         self.assertEquals(len(profiles), 2)
         # Test
         manager.delete(self.CONSUMER_ID, self.TYPE_1)
         # Verify
         collection = UnitProfile.get_collection()
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         profiles = list(cursor)
         self.assertEquals(len(profiles), 1)
         self.assertEquals(profiles[0]['consumer_id'], self.CONSUMER_ID)
@@ -275,7 +257,7 @@ class ProfileManagerTests(base.PulpServerTests):
         manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
         manager.update(self.CONSUMER_ID, self.TYPE_2, self.PROFILE_2)
         collection = UnitProfile.get_collection()
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         profiles = list(cursor)
         self.assertEquals(len(profiles), 2)
         # Test
@@ -284,7 +266,7 @@ class ProfileManagerTests(base.PulpServerTests):
         profiles = list(cursor)
         self.assertEquals(len(profiles), 0)
 
-    @patch('pulp.server.managers.factory.consumer_agent_manager')
+    @mock.patch('pulp.server.managers.factory.consumer_agent_manager')
     def test_consumer_unregister_cleanup(self, *unused):
         # Setup
         self.test_create()
@@ -293,6 +275,6 @@ class ProfileManagerTests(base.PulpServerTests):
         manager.unregister(self.CONSUMER_ID)
         # Verify
         collection = UnitProfile.get_collection()
-        cursor = collection.find({'consumer_id':self.CONSUMER_ID})
+        cursor = collection.find({'consumer_id': self.CONSUMER_ID})
         profiles = list(cursor)
         self.assertEquals(len(profiles), 0)

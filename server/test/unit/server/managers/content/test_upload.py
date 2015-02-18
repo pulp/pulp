@@ -48,8 +48,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
 
-    # -- uploading bits functionality -----------------------------------------
-
     def test_save_data_string(self):
 
         # Test
@@ -157,7 +155,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('empty')
 
         # Test
-        self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'empty', 'mock-type')
+        self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'empty',
+                          'mock-type')
         self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'fake', 'mock-type')
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
@@ -167,7 +166,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
         # Test
-        self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u', 'fake-type')
+        self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u',
+                          'fake-type')
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
@@ -175,8 +175,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
 
-        key = {'key' : 'value'}
-        metadata = {'k1' : 'v1'}
+        key = {'key': 'value'}
+        metadata = {'k1': 'v1'}
 
         importer_return_report = object()
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = importer_return_report
@@ -212,7 +212,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
     def test_import_uploaded_unit_missing_repo(self):
         # Test
-        self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake', 'mock-type', {}, {}, 'irrelevant')
+        self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake',
+                          'mock-type', {}, {}, 'irrelevant')
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
@@ -226,7 +227,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
 
         # Test
-        self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
+        self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit,
+                          'repo-u', 'mock-type', {}, {}, upload_id)
 
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
@@ -241,9 +243,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
 
         # Test
-        self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
-
-    # -- util method tests -----------------------------------------------------
+        self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u',
+                          'mock-type', {}, {}, upload_id)
 
     def test_upload_dir_auto_created(self):
         # Setup
@@ -257,5 +258,3 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
         # Verify
         self.assertTrue(os.path.exists(upload_storage_dir))
-
-
