@@ -62,7 +62,7 @@ it is replaced with the profile supplied in this call.
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",
    "content_type": "rpm",
-   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
+   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/rpm/",
    "profile_hash": "2ecdf09a0f1f6ea43b5a991b468866bc07bcf8c2ac8251395ef2d78adf6e5c5b",
    "_id": {"$oid": "5008500ae138230abe000095"},
    "id": "5008500ae138230abe000095"
@@ -129,11 +129,28 @@ using the specified content type.
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",
    "content_type": "rpm",
-   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
+   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/rpm/",
    "profile_hash": "2abcf09a0f1f6ea43b5a991b468866bc07bcf8c2ac8251395ef2d78adf6e5c5b",
    "_id": {"$oid": "5008500ae138230abe000095"},
    "id": "5008500ae138230abe000095"
  }
+
+
+Delete a profile
+---------------------
+
+Removes a profile associated with a consumer.
+
+| :method:`delete`
+| :path:`/v2/consumers/<consumer_id>/profiles/<content_type>/`
+| :permission:`delete`
+| :param_list:`delete`
+| :response_list:`_`
+
+* :response_code:`200,if the profile was successfully deleted`
+* :response_code:`404,if there is no consumer with the given ID or profile`
+
+| :return:`null`
 
 
 Retrieve All Profiles By Consumer Id
@@ -156,7 +173,7 @@ a :term:`consumer`.
 :sample_response:`200` ::
 
  [
-  {"_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/test-content-type/",
+  {"_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-content-type/",
    "_id": {"$oid": "521d92b1e5e7102f7500004a"},
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",
@@ -176,7 +193,7 @@ a :term:`consumer`.
                 "version": "4.9.1.3"}],
    "profile_hash": "15df1c6105edacd6b167d2e9dd87311b069f50cebb2f7968ef185c1d6eae5197"
   },
-  {"_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/rpm/",
+  {"_href": "/pulp/api/v2/consumers/test-consumer/profiles/rpm/",
    "_id": {"$oid": "5217d77de5e710796700000c"},
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",
@@ -205,7 +222,7 @@ content type.
 | :param_list:`get` None; There are no supported query parameters
 | :response_list:`_`
 
-* :response_code:`200,regardless of whether any profiles exist`
+* :response_code:`200,if profile exists`
 * :response_code:`404,if the consumer or requested profile does not exists`
 
 | :return:`the requested unit profile object`
@@ -213,7 +230,7 @@ content type.
 :sample_response:`200` ::
 
  {
-   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-consumer/test-content-type/",
+   "_href": "/pulp/api/v2/consumers/test-consumer/profiles/test-content-type/",
    "_id": {"$oid": "521d92b1e5e7102f7500004a"},
    "_ns": "consumer_unit_profiles",
    "consumer_id": "test-consumer",

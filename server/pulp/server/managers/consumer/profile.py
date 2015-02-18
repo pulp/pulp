@@ -19,7 +19,7 @@ from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptio
 from pulp.plugins.profiler import Profiler
 from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import UnitProfile
-from pulp.server.exceptions import MissingResource
+from pulp.server.exceptions import MissingResource, MissingValue
 from pulp.server.managers import factory
 
 
@@ -54,16 +54,17 @@ class ProfileManager(object):
         :param profile:      The unit profile
         :type  profile:      object
         """
+        consumer = factory.consumer_manager().get_consumer(consumer_id)
         try:
             profiler, config = plugin_api.get_profiler_by_type(content_type)
         except plugin_exceptions.PluginNotFound:
             # Not all profile types have a type specific profiler, so let's use the baseclass
             # Profiler
             profiler, config = (Profiler(), {})
-        consumer = factory.consumer_manager().get_consumer(consumer_id)
         # Allow the profiler a chance to update the profile before we save it
+        if profile is None:
+            raise MissingValue('profile')
         profile = profiler.update_profile(consumer, content_type, profile, config)
-
         try:
             p = ProfileManager.get_profile(consumer_id, content_type)
             p['profile'] = profile

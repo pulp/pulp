@@ -492,3 +492,170 @@ class TestDjangoUsersUrls(unittest.TestCase):
         url = '/v2/users/user_login/'
         url_name = 'user_resource'
         assert_url_match(url, url_name, login='user_login')
+
+
+class TestDjangoConsumersUrls(unittest.TestCase):
+    """
+    Tests for consumers urls
+    """
+
+    def test_match_consumers_view(self):
+        """
+        Test url matching for consumer
+        """
+        url = '/v2/consumers/'
+        url_name = 'consumers'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_resource_view(self):
+        """
+        Test url matching for consumer resource.
+        """
+        url = '/v2/consumers/test-consumer/'
+        url_name = 'consumer_resource'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_profiles_view(self):
+        """
+        Test url matching for consumer profiles
+        """
+        url = '/v2/consumers/test-consumer/profiles/'
+        url_name = 'consumer_profiles'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_profile_resource_view(self):
+        """
+        Test url matching for consumer profile resource
+        """
+        url = '/v2/consumers/test-consumer/profiles/some-profile/'
+        url_name = 'consumer_profile_resource'
+        assert_url_match(url, url_name, consumer_id='test-consumer', content_type='some-profile')
+
+    def test_match_consumer_bindings_view(self):
+        """
+        Test url matching for consumer bindings
+        """
+        url = '/v2/consumers/test-consumer/bindings/'
+        url_name = 'bindings'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_binding_resource_view(self):
+        """
+        Test url matching for consumer binding resource
+        """
+        url = '/v2/consumers/test-consumer/bindings/some-repo/some-dist/'
+        url_name = 'consumer_binding_resource'
+        assert_url_match(url, url_name, consumer_id='test-consumer', repo_id='some-repo',
+                         distributor_id='some-dist')
+
+    def test_match_consumer_binding_repo_view(self):
+        """
+        Test url matching for consumer and repo binding
+        """
+        url = '/v2/consumers/test-consumer/bindings/some-repo/'
+        url_name = 'bindings_repo'
+        assert_url_match(url, url_name, consumer_id='test-consumer', repo_id='some-repo')
+
+    def test_match_consumer_appicability_regen_view(self):
+        """
+        Test url matching for consumer applicability renegeration
+        """
+        url = '/v2/consumers/test-consumer/actions/content/regenerate_applicability/'
+        url_name = 'consumer_appl_regen'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_content_action_install_view(self):
+        """
+        Test url matching for consumer content installation
+        """
+        url = '/v2/consumers/test-consumer/actions/content/install/'
+        url_name = 'consumer_content'
+        assert_url_match(url, url_name, consumer_id='test-consumer', action='install')
+
+    def test_match_consumer_content_action_update_view(self):
+        """
+        Test url matching for consumer content update
+        """
+        url = '/v2/consumers/test-consumer/actions/content/update/'
+        url_name = 'consumer_content'
+        assert_url_match(url, url_name, consumer_id='test-consumer', action='update')
+
+    def test_match_consumer_content_action_uninstall_view(self):
+        """
+        Test url matching for consumer content uninstall
+        """
+        url = '/v2/consumers/test-consumer/actions/content/uninstall/'
+        url_name = 'consumer_content'
+        assert_url_match(url, url_name, consumer_id='test-consumer', action='uninstall')
+
+    def test_match_consumers_appicability_regen_view(self):
+        """
+        Test url matching for consumers applicability renegeration
+        """
+        url = '/v2/consumers/actions/content/regenerate_applicability/'
+        url_name = 'appl_regen'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_query_appicability_view(self):
+        """
+        Test url matching for consumer query applicability
+        """
+        url = '/v2/consumers/content/applicability/'
+        url_name = 'consumer_query_appl'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_schedule_content_action_install_view(self):
+        """
+        Test url matching for consumer schedule content installation
+        """
+        url = '/v2/consumers/test-consumer/schedules/content/install/'
+        url_name = 'schedule_content_install'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_schedule_content_action_update_view(self):
+        """
+        Test url matching for consumer schedule  content update
+        """
+        url = '/v2/consumers/test-consumer/schedules/content/update/'
+        url_name = 'schedule_content_update'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_schedule_content_action_uninstall_view(self):
+        """
+        Test url matching for consumer schedule content uninstall
+        """
+        url = '/v2/consumers/test-consumer/schedules/content/uninstall/'
+        url_name = 'schedule_content_uninstall'
+        assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_schedule_content_action_install_resource_view(self):
+        """
+        Test url matching for consumer schedule content resource installation
+        """
+        url = '/v2/consumers/test-consumer/schedules/content/install/12345/'
+        url_name = 'schedule_content_install_resource'
+        assert_url_match(url, url_name, consumer_id='test-consumer', schedule_id='12345')
+
+    def test_match_consumer_schedule_content_action_update_resource_view(self):
+        """
+        Test url matching for consumer schedule content resource update
+        """
+        url = '/v2/consumers/test-consumer/schedules/content/update/12345/'
+        url_name = 'schedule_content_update_resource'
+        assert_url_match(url, url_name, consumer_id='test-consumer', schedule_id='12345')
+
+    def test_match_consumer_schedule_content_action_uninstall_resource_view(self):
+        """
+        Test url matching for consumer schedule content resource uninstall
+        """
+        url = '/v2/consumers/test-consumer/schedules/content/uninstall/12345/'
+        url_name = 'schedule_content_uninstall_resource'
+        assert_url_match(url, url_name, consumer_id='test-consumer', schedule_id='12345')
+
+    def test_match_consumer_history_view(self):
+        """
+        Test url matching for consumer history
+        """
+        url = '/v2/consumers/test-consumer/history/'
+        url_name = 'consumer_history'
+        assert_url_match(url, url_name, consumer_id='test-consumer')

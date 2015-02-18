@@ -16,7 +16,7 @@ import itertools
 
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.exceptions import MissingResource
+from pulp.server.exceptions import MissingValue
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
 from pulp.server.tasks import consumer
@@ -46,7 +46,6 @@ class ConsumerScheduleManager(object):
         :param consumer_id: a unique ID for a consumer
         :type  consumer_id: basestring
 
-        :raises:    pulp.server.exceptions.MissingResource
         """
         consumer_manager = managers_factory.consumer_manager()
         consumer_manager.get_consumer(consumer_id)
@@ -107,12 +106,12 @@ class ConsumerScheduleManager(object):
         :return:    instance of the new ScheduledCal
         :rtype:     pulp.server.db.models.dispatch.ScheduledCall
 
-        :raise:     pulp.server.exceptions.MissingResource
+        :raise:     pulp.server.exceptions.MissingValue
         """
         cls._validate_consumer(consumer_id)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
         if not units:
-            raise MissingResource(['units'])
+            raise MissingValue(['units'])
 
         task = ACTIONS_TO_TASKS[action]
         args = [consumer_id]

@@ -35,8 +35,9 @@ Valid values for the event type filtering are as follows:
 
 * :response_code:`200,for the successful retrieval of consumer history`
 * :response_code:`404,if the given consumer is not found`
+* :response_code:`400,if one or more of the query param are invalid`
 
-| :return:`array of event history objects`
+| :return:`empty array or array of event history objects`
 
 :sample_request:`_` ::
 
