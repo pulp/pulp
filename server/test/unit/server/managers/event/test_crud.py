@@ -1,29 +1,13 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
-from pulp.server.db.model.dispatch import TaskStatus
 
+from .... import base
+from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.event import EventListener
-from pulp.server.event import data as event_data
-from pulp.server.event import http
+from pulp.server.event import data as event_data, http
 from pulp.server.exceptions import InvalidValue, MissingResource
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.event import crud
 
-import base
-
-# -- test cases ---------------------------------------------------------------
 
 class EventListenerManagerTests(base.PulpServerTests):
 
@@ -111,14 +95,16 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_update(self):
         # Setup
-        orig_config = {'k1' : 'v1', 'k2' : 'v2', 'k3' : 'v3'}
-        created = self.manager.create(http.TYPE_ID, orig_config, [event_data.TYPE_REPO_SYNC_STARTED])
+        orig_config = {'k1': 'v1', 'k2': 'v2', 'k3': 'v3'}
+        created = self.manager.create(http.TYPE_ID, orig_config,
+                                      [event_data.TYPE_REPO_SYNC_STARTED])
 
         # Test
-        updated = self.manager.update(created['_id'], {'k1' : 'vX', 'k2' : None}, [event_data.TYPE_REPO_SYNC_FINISHED])
+        updated = self.manager.update(created['_id'], {'k1': 'vX', 'k2': None},
+                                      [event_data.TYPE_REPO_SYNC_FINISHED])
 
         # Verify
-        expected_config = {'k1' : 'vX', 'k3' : 'v3'}
+        expected_config = {'k1': 'vX', 'k3': 'v3'}
         self.assertEqual(updated['notifier_config'], expected_config)
         self.assertEqual(updated['event_types'], [event_data.TYPE_REPO_SYNC_FINISHED])
 
@@ -152,14 +138,14 @@ class EventListenerManagerTests(base.PulpServerTests):
         # Verify
         self.assertEqual(2, len(listeners))
 
-        listeners.sort(key=lambda x : x['event_types'])
+        listeners.sort(key=lambda x: x['event_types'])
 
         self.assertEqual(listeners[0]['event_types'], [event_data.TYPE_REPO_SYNC_FINISHED])
         self.assertEqual(listeners[1]['event_types'], [event_data.TYPE_REPO_SYNC_STARTED])
 
     def test_list_no_listeners(self):
         # Test
-        listeners = self.manager.list() # should not error
+        listeners = self.manager.list()  # should not error
 
         # Verify
         self.assertEqual(0, len(listeners))
@@ -172,8 +158,6 @@ class EventListenerManagerTests(base.PulpServerTests):
 
     def test_validate_empty(self):
         self.assertRaises(InvalidValue, crud._validate_event_types, [])
-
-# event tests ------------------------------------------------------------------
 
 
 class EventTests(base.PulpServerTests):
@@ -215,4 +199,3 @@ class EventTests(base.PulpServerTests):
         event = event_data.Event('fake_type', {})
 
         self.assertTrue(event.call_report is None)
-

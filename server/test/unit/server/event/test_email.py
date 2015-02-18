@@ -1,33 +1,18 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+import dummy_threading
 import smtplib
 import unittest
-import dummy_threading
 try:
     from email.parser import Parser
 except ImportError:
     # for python 2.4
     from email.Parser import Parser
 
-import mock
-
 # needed to create unserializable ID
 from bson.objectid import ObjectId as _test_objid
+import mock
 
 from pulp.server.compat import json
 from pulp.server.config import config
-from pulp.server.event.data import Event
 from pulp.server.event import data, mail
 from pulp.server.managers import factory
 
@@ -38,13 +23,13 @@ class TestSendEmail(unittest.TestCase):
         # send a message
         mail._send_email('hello', 'stuff', 'someone@some.domain')
         mock_smtp.assert_called_once_with(host=config.get('email', 'host'),
-            port=config.getint('email', 'port'))
+                                          port=config.getint('email', 'port'))
 
         # verify
         mock_sendmail = mock_smtp.return_value.sendmail
         self.assertEqual(mock_sendmail.call_count, 1)
         self.assertEqual(mock_sendmail.call_args[0][0],
-            config.get('email', 'from'))
+                         config.get('email', 'from'))
         self.assertEqual(mock_sendmail.call_args[0][1], 'someone@some.domain')
 
         # verify message attributes
@@ -64,7 +49,8 @@ class TestSendEmail(unittest.TestCase):
     @mock.patch('smtplib.SMTP')
     @mock.patch('logging.Logger.error')
     def test_send_failure(self, mock_error, mock_smtp):
-        mock_smtp.return_value.sendmail.side_effect = smtplib.SMTPRecipientsRefused(['someone@some.domain'])
+        mock_smtp.return_value.sendmail.side_effect = smtplib.SMTPRecipientsRefused(
+            ['someone@some.domain'])
         mail._send_email('hello', 'stuff', 'someone@some.domain')
         self.assertTrue(mock_error.called)
 
@@ -94,11 +80,11 @@ class TestHandleEvent(unittest.TestCase):
     def test_email_enabled(self, mock_smtp, mock_getbool):
         mail.handle_event(self.notifier_config, self.event)
 
-        #verify
+        # verify
         self.assertEqual(mock_smtp.call_count, 2)
         mock_sendmail = mock_smtp.return_value.sendmail
         self.assertEqual(mock_sendmail.call_args[0][0],
-            config.get('email', 'from'))
+                         config.get('email', 'from'))
         self.assertTrue(mock_sendmail.call_args[0][1] in self.notifier_config['addresses'])
 
         # verify message attributes
@@ -113,7 +99,7 @@ class TestHandleEvent(unittest.TestCase):
     @mock.patch('ConfigParser.SafeConfigParser.getboolean', return_value=True)
     @mock.patch('smtplib.SMTP')
     def test_email_serialize_objid(self, mock_smtp, mock_getbool):
-        event_with_id = Event('test-1', {'foo': _test_objid()})
+        event_with_id = data.Event('test-1', {'foo': _test_objid()})
         # no TypeError = success
         mail.handle_event(self.notifier_config, event_with_id)
 
@@ -127,9 +113,9 @@ class TestSystem(unittest.TestCase):
             'addresses': ['user1@some.domain', 'user2@some.domain']
         }
         self.event_doc = {
-            'notifier_type_id' : mail.TYPE_ID,
-            'event_types' : data.TYPE_REPO_SYNC_FINISHED,
-            'notifier_config' : self.notifier_config,
+            'notifier_type_id': mail.TYPE_ID,
+            'event_types': data.TYPE_REPO_SYNC_FINISHED,
+            'notifier_config': self.notifier_config,
         }
 
     # don't actually spawn a thread
@@ -151,5 +137,3 @@ class TestSystem(unittest.TestCase):
 
         # verify that the mail event handler was called and processed something
         self.assertTrue(mock_smtp.return_value.sendmail.call_count, 2)
-
-
