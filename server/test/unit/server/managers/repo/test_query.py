@@ -14,7 +14,7 @@
 
 import mock
 
-import base
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor

@@ -13,7 +13,7 @@
 import datetime
 import mock
 
-import base
+from ... import base
 from pulp.common import dateutils
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import DistributorConduitException

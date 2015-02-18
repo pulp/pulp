@@ -14,7 +14,7 @@
 
 import mock
 
-import base
+from ... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit

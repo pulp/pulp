@@ -14,7 +14,7 @@
 
 import mock
 
-import base
+from ..... import base
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.repo.group import query
 

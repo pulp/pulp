@@ -15,7 +15,7 @@
 
 import mock
 
-import base
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.model import Repository
 from pulp.plugins.config import PluginCallConfiguration

@@ -1,6 +1,6 @@
-import base
 from operator import itemgetter
 
+from ... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.server.db.model.repository import Repo, RepoDistributor

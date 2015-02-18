@@ -18,7 +18,7 @@ import unittest
 
 import mock
 
-from base import PulpServerTests
+from .....base import PulpServerTests
 from pulp.devel import mock_plugins
 from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
