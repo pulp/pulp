@@ -145,7 +145,6 @@ class RepoGroupDistributorManager(object):
         # Let the plugin validate the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.get_working_directory()
 
         config_conduit = RepoConfigConduit(distributor_type_id)
 
@@ -217,7 +216,6 @@ class RepoGroupDistributorManager(object):
 
         call_config = PluginCallConfiguration(plugin_config, distributor['config'])
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.get_working_directory()
 
         try:
             distributor_instance.distributor_removed(transfer_group, call_config)
@@ -266,7 +264,6 @@ class RepoGroupDistributorManager(object):
         # Request the distributor validate the new configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_group = common_utils.to_transfer_repo_group(group)
-        transfer_group.working_dir = common_utils.get_working_directory()
         config_conduit = RepoConfigConduit(distributor_type_id)
 
         # Request the plugin validate the configuration

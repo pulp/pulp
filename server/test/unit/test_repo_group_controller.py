@@ -290,9 +290,7 @@ class RepoGroupResourceTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_delete(self, mock_get_working_directory):
+    def test_delete(self):
         # Setup
         group_id = 'doomed'
         self.manager.create_repo_group(group_id)
@@ -367,9 +365,7 @@ class RepoGroupDistributorsTests(base.PulpWebserviceTests):
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_get(self, mock_get_working_directory):
+    def test_get(self):
         # Setup
         group_id = 'dist-group'
         self.manager.create_repo_group(group_id)
@@ -399,9 +395,7 @@ class RepoGroupDistributorsTests(base.PulpWebserviceTests):
         self.assertTrue(isinstance(body, list))
         self.assertEqual(0, len(body))
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_post(self, mock_get_working_directory):
+    def test_post(self):
         # Setup
         group_id = 'group-1'
         self.manager.create_repo_group(group_id)
@@ -443,9 +437,7 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_get(self, mock_get_working_directory):
+    def test_get(self):
         # Setup
         group_id = 'dist-group'
         self.manager.create_repo_group(group_id)
@@ -477,9 +469,7 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_delete(self, mock_get_working_directory):
+    def test_delete(self):
         # Setup
         group_id = 'group'
         distributor_id = 'created'
@@ -515,9 +505,7 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_put(self, mock_get_working_directory):
+    def test_put(self):
         # Setup
         group_id = 'group-1'
         distributor_id = 'dist-1'
@@ -535,9 +523,7 @@ class RepoGroupDistributorTests(base.PulpWebserviceTests):
         found = RepoGroupDistributor.get_collection().find_one({'id' : distributor_id})
         self.assertEqual(found['config'], {'a' : 'A', 'b' : 'B'})
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_put_extra_data(self, mock_get_working_directory):
+    def test_put_extra_data(self):
         # Setup
         group_id = 'group-1'
         distributor_id = 'dist-1'
@@ -584,11 +570,9 @@ class PublishActionTests(base.PulpWebserviceTests):
         RepoGroup.get_collection().remove()
         RepoGroupDistributor.get_collection().remove()
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
     @mock.patch('pulp.server.webservices.controllers.repo_groups.publish')
-    def test_post(self, mock_publish, mock_get_worker_for_reservation, mock_get_working_directory):
+    def test_post(self, mock_publish, mock_get_worker_for_reservation):
         """
         Test that publish repo group creates a task for a worker.
         """

@@ -249,10 +249,8 @@ class RepoUnitAssociationManager(object):
 
         # Convert the two repos into the plugin API model
         transfer_dest_repo = common_utils.to_transfer_repo(dest_repo)
-        transfer_dest_repo.working_dir = common_utils.get_working_directory()
 
         transfer_source_repo = common_utils.to_transfer_repo(source_repo)
-        transfer_source_repo.working_dir = common_utils.get_working_directory()
 
         # Invoke the importer
         importer_instance, plugin_config = plugin_api.get_importer_by_id(
@@ -486,7 +484,6 @@ def remove_from_importer(repo_id, transfer_units):
     repo_importer = importer_manager.get_importer(repo_id)
 
     transfer_repo = common_utils.to_transfer_repo(repo)
-    transfer_repo.working_dir = common_utils.get_working_directory()
 
     # Retrieve the plugin instance to invoke
     importer_instance, plugin_config = plugin_api.get_importer_by_id(

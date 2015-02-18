@@ -142,9 +142,7 @@ class ConsumerTest(base.PulpWebserviceTests):
         self.assertEquals(bindings[0]['distributor_id'], self.DISTRIBUTOR_ID)
         self.assertEquals(bindings[0]['consumer_actions'], [])
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_get_bindings_consumer_repo(self, mock_get_working_directory):
+    def test_get_bindings_consumer_repo(self):
         """
         Test that it is possible to retrieve all bindings for a specific consumer on
         to a specific repository
@@ -718,9 +716,7 @@ class BindTest(base.PulpWebserviceTests):
         manager = factory.consumer_manager()
         manager.register(self.CONSUMER_ID)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_get_bind(self, mock_get_working_directory):
+    def test_get_bind(self):
         # Setup
         self.populate()
         # Test
@@ -743,9 +739,7 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEqual(body['_href'].count(self.REPO_ID), 1)
         self.assertEqual(body['_href'].count(self.DISTRIBUTOR_ID), 1)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_get_bind_by_consumer(self, mock_get_working_directory):
+    def test_get_bind_by_consumer(self):
         # Setup
         self.populate()
         # Test
@@ -768,9 +762,7 @@ class BindTest(base.PulpWebserviceTests):
         self.assertEquals(bind['details'], self.PAYLOAD)
         self.assertEquals(bind['type_id'], self.DISTRIBUTOR_TYPE_ID)
 
-    @mock.patch('pulp.server.managers.repo._common.get_working_directory',
-                return_value="/var/cache/pulp/mock_worker/mock_task_id")
-    def test_get_bind_by_consumer_and_repo(self, mock_get_working_directory):
+    def test_get_bind_by_consumer_and_repo(self):
         # Setup
         self.populate()
         # Test

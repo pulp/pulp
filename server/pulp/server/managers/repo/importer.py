@@ -272,7 +272,6 @@ class RepoImporterManager(object):
         # Let the importer plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
         transfer_repo = common_utils.to_transfer_repo(repo)
-        transfer_repo.working_dir = common_utils.get_working_directory()
 
         try:
             result = importer_instance.validate_config(transfer_repo, call_config)
