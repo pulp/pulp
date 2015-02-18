@@ -88,11 +88,16 @@ class DjangoExceptionHandlerMiddleware(object):
             response = serialization.error.http_error_obj(status, str(exception))
             msg = _('Unhandled Exception')
             logger.error(msg)
+
+        if status == httplib.INTERNAL_SERVER_ERROR:
             logger.exception(str(exception))
             e_type, e_value, trace = sys.exc_info()
             response['exception'] = traceback.format_exception_only(e_type, e_value)
             response['traceback'] = traceback.format_tb(trace)
             response_obj = HttpResponseServerError(json.dumps(response),
                                                    content_type="application/json")
+        else:
+            logger.info(str(exception))
+
         response_obj['Content-Encoding'] = 'utf-8'
         return response_obj
