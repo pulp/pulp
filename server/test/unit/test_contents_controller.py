@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import copy
 import datetime
 import os
@@ -24,20 +11,22 @@ from pulp.devel import dummy_plugins
 from pulp.devel.unit.util import assert_body_matches_async_task
 from pulp.server.db.model.repository import Repo, RepoImporter
 from pulp.server.db.model.resources import Worker
-from pulp.server.webservices.controllers.contents import ContentUnitsCollection, ContentUnitsSearch
+from pulp.server.webservices.controllers.contents import ContentUnitsSearch
 import base
 import pulp.server.managers.factory as manager_factory
 
 
 class TestContentUnitsSearch(base.PulpWebserviceTests):
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_collection')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_collection')
     def test_post_retrieves_collection(self, mock_get_collection):
-        status, body = self.post('/v2/content/units/deb/search/', {'criteria':{}})
+        status, body = self.post('/v2/content/units/deb/search/', {'criteria': {}})
         self.assertEqual(status, 200)
         self.assertEqual(mock_get_collection.call_count, 1)
         self.assertEqual(mock_get_collection.call_args[0][0], 'deb')
 
-    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.get_content_unit_collection')
+    @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
+                'get_content_unit_collection')
     def test_get_retrieves_collection(self, mock_get_collection):
         status, body = self.get('/v2/content/units/deb/search/?limit=20')
         self.assertEqual(status, 200)
@@ -51,7 +40,7 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
         return_value=['IAmAContentUnit'])
     def test_post_processes_units(self, mock_find, mock_process_unit):
-        status, body = self.post('/v2/content/units/deb/search/', {'criteria':{}})
+        status, body = self.post('/v2/content/units/deb/search/', {'criteria': {}})
         self.assertEqual(status, 200)
         mock_process_unit.assert_called_once_with(mock_find.return_value[0])
 
@@ -68,8 +57,9 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
 
     @mock.patch(
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=[{'_id':'foo', '_last_updated': 0}])
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
+        return_value=[{'_id': 'foo', '_last_updated': 0}])
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.'
+                'find_by_criteria')
     def test_add_repo_memberships_criteria(self, mock_find_assoc, mock_find_unit):
         status, body = self.get('/v2/content/units/rpm/search/?include_repos=true')
         self.assertEqual(status, 200)
@@ -80,10 +70,11 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
 
     @mock.patch(
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=[{'_id':'foo', '_last_updated': 0}])
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
+        return_value=[{'_id': 'foo', '_last_updated': 0}])
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.'
+                'find_by_criteria')
     def test_add_repo_memberships_get(self, mock_find_assoc, mock_find_unit):
-        mock_find_assoc.return_value = [{'unit_id':'foo', 'repo_id':'repo1'}]
+        mock_find_assoc.return_value = [{'unit_id': 'foo', 'repo_id': 'repo1'}]
         status, body = self.get('/v2/content/units/rpm/search/?include_repos=true')
         self.assertEqual(status, 200)
         self.assertEqual(len(body), 1)
@@ -91,11 +82,12 @@ class TestContentUnitsSearch(base.PulpWebserviceTests):
 
     @mock.patch(
         'pulp.server.managers.content.query.ContentQueryManager.find_by_criteria',
-        return_value=[{'_id':'foo', '_last_updated': 0}])
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
+        return_value=[{'_id': 'foo', '_last_updated': 0}])
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.'
+                'find_by_criteria')
     def test_add_repo_memberships_post(self, mock_find_assoc, mock_find_unit):
-        mock_find_assoc.return_value = [{'unit_id':'foo', 'repo_id':'repo1'}]
-        post_body = {'criteria': {}, 'include_repos':True}
+        mock_find_assoc.return_value = [{'unit_id': 'foo', 'repo_id': 'repo1'}]
+        post_body = {'criteria': {}, 'include_repos': True}
         status, body = self.post('/v2/content/units/rpm/search/', post_body)
         self.assertEqual(status, 200)
         self.assertEqual(len(body), 1)
@@ -107,16 +99,18 @@ class TestContentUnitsSearchNonWeb(base.PulpServerTests):
         super(TestContentUnitsSearchNonWeb, self).setUp()
         self.controller = ContentUnitsSearch()
 
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.'
+                'find_by_criteria')
     def test_add_repo_memberships_empty(self, mock_find):
         # make sure it doesn't do a search for associations if there are no
         # units found
         self.controller._add_repo_memberships([], 'rpm')
         self.assertEqual(mock_find.call_count, 0)
 
-    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.find_by_criteria')
+    @mock.patch('pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager.'
+                'find_by_criteria')
     def test_add_repo_memberships_(self, mock_find):
-        mock_find.return_value = [{'repo_id':'repo1', 'unit_id':'unit1'}]
+        mock_find.return_value = [{'repo_id': 'repo1', 'unit_id': 'unit1'}]
 
         units = [{'_id': 'unit1'}]
         ret = self.controller._add_repo_memberships(units, 'rpm')
@@ -219,10 +213,10 @@ class ImportUnitTests(BaseUploadTest):
 
         # Test
         body = {
-            'upload_id' : upload_id,
-            'unit_type_id' : 'dummy-type',
-            'unit_key' : {'name' : 'foo'},
-            'unit_metadata' : {'stuff' : 'bar'},
+            'upload_id': upload_id,
+            'unit_type_id': 'dummy-type',
+            'unit_key': {'name': 'foo'},
+            'unit_metadata': {'stuff': 'bar'},
         }
         status, body = self.post('/v2/repositories/repo-upload/actions/import_upload/', body)
 
@@ -230,7 +224,7 @@ class ImportUnitTests(BaseUploadTest):
         self.assertEqual(202, status)
         assert_body_matches_async_task(body, expected_async_result)
         exepcted_call_args = ['repo-upload', 'dummy-type',
-                              {'name': 'foo'}, {'stuff': 'bar'}, 
+                              {'name': 'foo'}, {'stuff': 'bar'},
                               upload_id, None]
         self.assertEqual(exepcted_call_args, mock_apply_async.call_args[0][0])
 
@@ -255,10 +249,10 @@ class ImportUnitTests(BaseUploadTest):
         # Test
         test_override_config = {'key1': 'value1', 'key2': 'value2'}
         body = {
-            'upload_id' : upload_id,
-            'unit_type_id' : 'dummy-type',
-            'unit_key' : {'name' : 'foo'},
-            'unit_metadata' : {'stuff' : 'bar'},
+            'upload_id': upload_id,
+            'unit_type_id': 'dummy-type',
+            'unit_key': {'name': 'foo'},
+            'unit_metadata': {'stuff': 'bar'},
             'override_config': test_override_config,
         }
         status, body = self.post('/v2/repositories/repo-upload/actions/import_upload/', body)

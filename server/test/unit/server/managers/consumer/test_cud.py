@@ -1,28 +1,11 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2012 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import base
-
 from mock import patch
 
+from .... import base
 from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent
 import pulp.server.managers.consumer.cud as consumer_manager
 import pulp.server.managers.consumer.history as history_manager
 import pulp.server.exceptions as exceptions
 
-
-# -- test cases ---------------------------------------------------------------
 
 class ConsumerManagerTests(base.PulpServerTests):
 
@@ -101,7 +84,7 @@ class ConsumerManagerTests(base.PulpServerTests):
             self.fail('Invalid ID did not raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue(['id'] in e)
-            print(e) # for coverage
+            self.assertEqual(str(e), "Invalid properties: ['id']")
 
     def test_create_duplicate_id(self):
         """
@@ -119,7 +102,7 @@ class ConsumerManagerTests(base.PulpServerTests):
             self.fail('Consumer with an existing ID did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(consumer_id in e)
-            print(e) # for coverage
+            self.assertEqual(str(e), 'Duplicate resource: duplicate')
 
     def test_create_invalid_notes(self):
         """
@@ -136,9 +119,8 @@ class ConsumerManagerTests(base.PulpServerTests):
             self.manager.register(consumer_id, notes=notes)
             self.fail('Invalid notes did not cause create to raise an exception')
         except exceptions.InvalidValue, e:
-            print e
             self.assertTrue(['notes'] in e)
-            print(e) # for coverage
+            self.assertEqual(str(e), "Invalid properties: ['notes']")
 
     @patch('pulp.server.managers.consumer.agent.AgentManager.unregistered')
     def test_unregister_consumer(self, mock_unreg):
@@ -154,7 +136,7 @@ class ConsumerManagerTests(base.PulpServerTests):
         self.manager.unregister(consumer_id)
 
         # Verify
-        consumers = list(Consumer.get_collection().find({'id' : consumer_id}))
+        consumers = list(Consumer.get_collection().find({'id': consumer_id}))
         self.assertEqual(0, len(consumers))
         mock_unreg.assert_called_with(consumer_id)
 
@@ -177,7 +159,8 @@ class ConsumerManagerTests(base.PulpServerTests):
 
         # Setup
         self.manager.register(
-            'update-me', display_name='display_name_1', description='description_1', notes={'a': 'a'})
+            'update-me', display_name='display_name_1', description='description_1',
+            notes={'a': 'a'})
 
         delta = {
             'display_name': 'display_name_2',
@@ -228,8 +211,8 @@ class ConsumerManagerTests(base.PulpServerTests):
         consumer = consumers[0]
         self.assertEqual(consumer['notes'], {})
 
-        notes = {'note1' : 'value1', 'note2' : 'value2'}
-        self.manager.update(consumer_id, delta={'notes':notes})
+        notes = {'note1': 'value1', 'note2': 'value2'}
+        self.manager.update(consumer_id, delta={'notes': notes})
 
         # Verify
         consumers = list(Consumer.get_collection().find())
@@ -245,7 +228,7 @@ class ConsumerManagerTests(base.PulpServerTests):
         consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
-        notes = {'note1' : 'value1', 'note2' : 'value2'}
+        notes = {'note1': 'value1', 'note2': 'value2'}
         self.manager.register(consumer_id, name, description, notes)
 
         consumers = list(Consumer.get_collection().find())
@@ -254,8 +237,8 @@ class ConsumerManagerTests(base.PulpServerTests):
         self.assertEqual(consumer['notes'], notes)
 
         # Test
-        updated_notes = {'note1' : 'new-value1', 'note2' : 'new-value2'}
-        self.manager.update(consumer_id, delta={'notes':updated_notes})
+        updated_notes = {'note1': 'new-value1', 'note2': 'new-value2'}
+        self.manager.update(consumer_id, delta={'notes': updated_notes})
 
         # Verify
         consumers = list(Consumer.get_collection().find())
@@ -271,29 +254,28 @@ class ConsumerManagerTests(base.PulpServerTests):
         consumer_id = 'consumer_1'
         name = 'Consumer 1'
         description = 'Test Consumer 1'
-        notes = {'note1' : 'value1', 'note2' : 'value2'}
+        notes = {'note1': 'value1', 'note2': 'value2'}
         self.manager.register(consumer_id, name, description, notes)
 
         # Test
-        removed_notes = {'note1' : None}
-        self.manager.update(consumer_id, delta={'notes':removed_notes})
+        removed_notes = {'note1': None}
+        self.manager.update(consumer_id, delta={'notes': removed_notes})
 
         # Verify
         consumers = list(Consumer.get_collection().find())
         consumer = consumers[0]
-        self.assertEqual(consumer['notes'], {'note2' : 'value2'})
+        self.assertEqual(consumer['notes'], {'note2': 'value2'})
 
     def test_add_update_remove_notes_with_nonexisting_consumer(self):
         # Setup
         consumer_id = 'non_existing_consumer'
 
         # Try adding and deleting notes from a non-existing consumer
-        notes = {'note1' : 'value1', 'note2' : None}
+        notes = {'note1': 'value1', 'note2': None}
         try:
-            self.manager.update(consumer_id, delta={'notes':notes})
+            self.manager.update(consumer_id, delta={'notes': notes})
             self.fail('Missing Consumer did not raise an exception')
         except exceptions.MissingResource, e:
-            print e
             self.assertTrue(consumer_id == e.resources['consumer'])
 
     def test_add_update_remove_notes_with_invalid_notes(self):
@@ -307,11 +289,10 @@ class ConsumerManagerTests(base.PulpServerTests):
 
         # Test add_notes
         try:
-            self.manager.update(consumer_id, delta={'notes':notes})
+            self.manager.update(consumer_id, delta={'notes': notes})
             self.fail('Invalid notes did not raise an exception')
         except exceptions.InvalidValue, e:
             self.assertTrue("delta['notes']" in e)
-            print(e)
 
 
 class ConsumerHistoryManagerTests(base.PulpServerTests):
