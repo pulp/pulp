@@ -305,11 +305,9 @@ Requires: python-pymongo >= 2.5.2
 Requires: python-mongoengine >= 0.7.10
 Requires: python-setuptools
 Requires: python-webpy
-Requires: python-okaara >= 1.0.32
 Requires: python-oauth2 >= 1.5.211
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp
-Requires: python-BeautifulSoup
 Requires: python-qpid
 Requires: python-nectar >= 1.1.6
 Requires: httpd
@@ -318,7 +316,6 @@ Requires: openssl
 Requires: nss-tools
 Requires: python-ldap
 Requires: python-gofer >= %{gofer_version}
-Requires: python-gofer-qpid >= %{gofer_version}
 Requires: crontabs
 Requires: acl
 Requires: mod_wsgi >= 3.4-1.pulp
@@ -644,7 +641,6 @@ for content, bind and system specific operations.
 Summary: Admin tool to administer the pulp server
 Group: Development/Languages
 Requires: python >= 2.6
-Requires: python-okaara >= 1.0.32
 Requires: python-%{name}-common = %{pulp_version}
 Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-client-lib = %{pulp_version}
@@ -728,7 +724,6 @@ Requires: python-%{name}-bindings = %{pulp_version}
 Requires: python-%{name}-agent-lib = %{pulp_version}
 Requires: %{name}-consumer-client = %{pulp_version}
 Requires: python-gofer >= %{gofer_version}
-Requires: python-gofer-qpid >= %{gofer_version}
 Requires: gofer >= %{gofer_version}
 Requires: m2crypto
 

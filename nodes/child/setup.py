@@ -11,5 +11,5 @@ setup(
         'pulp.importers': [
             'importer = pulp_node.importers.http.importer:entry_point',
         ],
-    }
+    },
 )
