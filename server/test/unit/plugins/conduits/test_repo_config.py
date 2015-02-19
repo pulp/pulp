@@ -1,6 +1,6 @@
-import base
 from operator import itemgetter
 
+from ... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.server.db.model.repository import Repo, RepoDistributor
@@ -19,25 +19,29 @@ class RepoConfigConduitTests(base.PulpServerTests):
 
         # Populate the database with a repo with units
         self.repo_manager.create_repo('repo-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {"relative_url": "/a/bc/d"},
-                                                 True, distributor_id='dist-1')
-        self.distributor_manager.add_distributor('repo-1', 'mock-distributor', {"relative_url": "/a/c"},
-                                                 True, distributor_id='dist-2')
+        self.distributor_manager.add_distributor(
+            'repo-1', 'mock-distributor', {"relative_url": "/a/bc/d"}, True,
+            distributor_id='dist-1')
+        self.distributor_manager.add_distributor(
+            'repo-1', 'mock-distributor', {"relative_url": "/a/c"}, True, distributor_id='dist-2')
         self.repo_manager.create_repo('repo-2')
-        self.distributor_manager.add_distributor('repo-2', 'mock-distributor', {"relative_url": "/a/bc/e"},
-                                                 True, distributor_id='dist-3')
+        self.distributor_manager.add_distributor(
+            'repo-2', 'mock-distributor', {"relative_url": "/a/bc/e"}, True,
+            distributor_id='dist-3')
         self.repo_manager.create_repo('repo-3')
         self.distributor_manager.add_distributor('repo-3', 'mock-distributor', {},
                                                  True, distributor_id='dist-4')
         self.repo_manager.create_repo('repo-4')
-        self.distributor_manager.add_distributor('repo-4', 'mock-distributor', {"relative_url": "repo-5"},
-                                                 True, distributor_id='dist-5')
+        self.distributor_manager.add_distributor(
+            'repo-4', 'mock-distributor', {"relative_url": "repo-5"}, True, distributor_id='dist-5')
         self.repo_manager.create_repo('repo-5')
-        self.distributor_manager.add_distributor('repo-5', 'mock-distributor', {"relative_url": "a/bcd/e"},
-                                                 True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor(
+            'repo-5', 'mock-distributor', {"relative_url": "a/bcd/e"}, True,
+            distributor_id='dist-1')
         self.repo_manager.create_repo('repo-6')
-        self.distributor_manager.add_distributor('repo-6', 'mock-distributor', {"relative_url": "a/bcde/f/"},
-                                                 True, distributor_id='dist-1')
+        self.distributor_manager.add_distributor(
+            'repo-6', 'mock-distributor', {"relative_url": "a/bcde/f/"}, True,
+            distributor_id='dist-1')
 
         self.conduit = RepoConfigConduit('rpm')
 
@@ -104,21 +108,21 @@ class RepoConfigConduitTests(base.PulpServerTests):
         """
         matches = self.conduit.get_repo_distributors_by_relative_url("/a/bc")
         self.assertEquals(matches.count(), 2)
-        #verify that the correct 2 repositories were found
+        # verify that the correct 2 repositories were found
         matches = sorted(list(matches), key=itemgetter('repo_id'))
         self.assertEquals(matches[0]['repo_id'], 'repo-1')
         self.assertEquals(matches[1]['repo_id'], 'repo-2')
 
         matches = self.conduit.get_repo_distributors_by_relative_url("a/bc")
         self.assertEquals(matches.count(), 2)
-        #verify that the correct 2 repositories were found
+        # verify that the correct 2 repositories were found
         matches = sorted(list(matches), key=itemgetter('repo_id'))
         self.assertEquals(matches[0]['repo_id'], 'repo-1')
         self.assertEquals(matches[1]['repo_id'], 'repo-2')
 
         matches = self.conduit.get_repo_distributors_by_relative_url("a/bc/")
         self.assertEquals(matches.count(), 2)
-        #verify that the correct 2 repositories were found
+        # verify that the correct 2 repositories were found
         matches = sorted(list(matches), key=itemgetter('repo_id'))
         self.assertEquals(matches[0]['repo_id'], 'repo-1')
         self.assertEquals(matches[1]['repo_id'], 'repo-2')

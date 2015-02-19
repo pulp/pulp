@@ -1,26 +1,11 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
-import base
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
 import pulp.server.managers.factory as manager_factory
 
-# -- test cases ---------------------------------------------------------------
 
 class RepoQueryManagerTests(base.PulpServerTests):
 
@@ -30,7 +15,7 @@ class RepoQueryManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
-        
+
     def setUp(self):
         super(RepoQueryManagerTests, self).setUp()
         mock_plugins.install()
@@ -136,9 +121,11 @@ class RepoQueryManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('repo-c')
         self.repo_manager.create_repo('repo-d')
 
-        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a1' : 'a1'}, True, distributor_id='dist-1')
-        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a2' : 'a2'}, True, distributor_id='dist-2')
-        self.distributor_manager.add_distributor('repo-b', 'mock-distributor', {'b' : 'b'}, True)
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a1': 'a1'}, True,
+                                                 distributor_id='dist-1')
+        self.distributor_manager.add_distributor('repo-a', 'mock-distributor', {'a2': 'a2'}, True,
+                                                 distributor_id='dist-2')
+        self.distributor_manager.add_distributor('repo-b', 'mock-distributor', {'b': 'b'}, True)
         self.distributor_manager.add_distributor('repo-c', 'mock-distributor-2', {}, True)
 
         # Test
@@ -153,17 +140,17 @@ class RepoQueryManagerTests(base.PulpServerTests):
 
         dist_1 = [d for d in repo_a['distributors'] if d['id'] == 'dist-1'][0]
         self.assertEqual(dist_1['distributor_type_id'], 'mock-distributor')
-        self.assertEqual(dist_1['config'], {'a1' : 'a1'})
+        self.assertEqual(dist_1['config'], {'a1': 'a1'})
 
         dist_2 = [d for d in repo_a['distributors'] if d['id'] == 'dist-2'][0]
         self.assertEqual(dist_2['distributor_type_id'], 'mock-distributor')
-        self.assertEqual(dist_2['config'], {'a2' : 'a2'})
+        self.assertEqual(dist_2['config'], {'a2': 'a2'})
 
         repo_b = repos[1]
         self.assertEqual(repo_b['id'], 'repo-b')
         self.assertEqual(1, len(repo_b['distributors']))
         self.assertEqual(repo_b['distributors'][0]['distributor_type_id'], 'mock-distributor')
-        self.assertEqual(repo_b['distributors'][0]['config'], {'b' : 'b'})
+        self.assertEqual(repo_b['distributors'][0]['config'], {'b': 'b'})
 
     def test_find_with_distributor_type_no_matches(self):
         # Setup
@@ -184,7 +171,7 @@ class RepoQueryManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('repo-c')
         self.repo_manager.create_repo('repo-d')
 
-        self.importer_manager.set_importer('repo-a', 'mock-importer', {'a' : 'a'})
+        self.importer_manager.set_importer('repo-a', 'mock-importer', {'a': 'a'})
 
         # Test
         repos = self.query_manager.find_with_importer_type('mock-importer')
@@ -196,7 +183,7 @@ class RepoQueryManagerTests(base.PulpServerTests):
         self.assertEqual(repo_a['id'], 'repo-a')
         self.assertEqual(1, len(repo_a['importers']))
         self.assertEqual(repo_a['importers'][0]['importer_type_id'], 'mock-importer')
-        self.assertEqual(repo_a['importers'][0]['config'], {'a' : 'a'})
+        self.assertEqual(repo_a['importers'][0]['config'], {'a': 'a'})
 
     def test_find_with_importer_type_no_matches(self):
         # Setup

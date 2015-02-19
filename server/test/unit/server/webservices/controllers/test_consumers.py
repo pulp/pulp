@@ -728,7 +728,9 @@ class BindTest(base.PulpWebserviceTests):
             (self.CONSUMER_ID,
              self.REPO_ID,
              self.DISTRIBUTOR_ID)
+
         status, body = self.get(path)
+
         self.assertEquals(status, 200)
         self.assertTrue(body is not None)
         self.assertEquals(body['consumer_id'], self.CONSUMER_ID)
