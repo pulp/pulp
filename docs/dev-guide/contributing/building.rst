@@ -513,7 +513,9 @@ typical email you can use::
 
    Subject: [devel] Pulp beta <version> is available
 
-   Pulp <version> has been published to the beta repositories. This fixes <add some text here>.
+   Pulp <version> has been published to the beta repositories[1]. This fixes <add some text here>.
+
+   [1] https://repos.fedorapeople.org/repos/pulp/pulp/beta/
 
 If you have published a stable build, there are a few more items to take care of:
 
