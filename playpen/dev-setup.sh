@@ -134,7 +134,7 @@ for r in $REPOS; do
       # Configure the upstream remote
       git remote add -f upstream git@github.com:pulp/$r.git
       # Add the ability to checkout pull requests (git checkout pr/99 will check out #99!)
-      git config --add remote.upstream.fetch '+refs/pull/*/head:refs/remotes/origin/pr/*'
+      git config --add remote.upstream.fetch '+refs/pull/*/head:refs/remotes/upstream/pr/*'
       # Set master's remote to upstream
       git config branch.master.remote upstream
       # Get the latest code from upstream
