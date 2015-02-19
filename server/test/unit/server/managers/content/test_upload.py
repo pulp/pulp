@@ -12,9 +12,9 @@
 import os
 import shutil
 
-import base
 import mock
 
+from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.upload import UploadConduit
 from pulp.plugins.model import Repository
@@ -48,8 +48,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
 
-    # -- uploading bits functionality -----------------------------------------
-
     def test_save_data_string(self):
 
         # Test
@@ -71,7 +69,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
     def test_save_data_rpm(self):
 
         # Setup
-        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + '/../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
+        test_rpm_filename = os.path.abspath(os.path.dirname(__file__)) + \
+            '/../../../../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm'
         self.assertTrue(os.path.exists(test_rpm_filename))
 
         # Test
@@ -156,7 +155,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('empty')
 
         # Test
-        self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'empty', 'mock-type')
+        self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'empty',
+                          'mock-type')
         self.assertRaises(MissingResource, self.upload_manager.is_valid_upload, 'fake', 'mock-type')
 
     def test_is_valid_upload_unsupported_type(self):
@@ -164,14 +164,15 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
         # Test
-        self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u', 'fake-type')
+        self.assertRaises(PulpDataException, self.upload_manager.is_valid_upload, 'repo-u',
+                          'fake-type')
 
     def test_import_uploaded_unit(self):
         self.repo_manager.create_repo('repo-u')
         self.importer_manager.set_importer('repo-u', 'mock-importer', {})
 
-        key = {'key' : 'value'}
-        metadata = {'k1' : 'v1'}
+        key = {'key': 'value'}
+        metadata = {'k1': 'v1'}
 
         importer_return_report = object()
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = importer_return_report
@@ -207,7 +208,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
     def test_import_uploaded_unit_missing_repo(self):
         # Test
-        self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake', 'mock-type', {}, {}, 'irrelevant')
+        self.assertRaises(MissingResource, self.upload_manager.import_uploaded_unit, 'fake',
+                          'mock-type', {}, {}, 'irrelevant')
 
     def test_import_uploaded_unit_importer_error(self):
         # Setup
@@ -219,7 +221,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
 
         # Test
-        self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
+        self.assertRaises(PulpExecutionException, self.upload_manager.import_uploaded_unit,
+                          'repo-u', 'mock-type', {}, {}, upload_id)
 
     def test_import_uploaded_unit_importer_error_reraise_pulp_exception(self):
         # Setup
@@ -231,9 +234,8 @@ class ContentUploadManagerTests(base.PulpServerTests):
         upload_id = self.upload_manager.initialize_upload()
 
         # Test
-        self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u', 'mock-type', {}, {}, upload_id)
-
-    # -- util method tests -----------------------------------------------------
+        self.assertRaises(InvalidValue, self.upload_manager.import_uploaded_unit, 'repo-u',
+                          'mock-type', {}, {}, upload_id)
 
     def test_upload_dir_auto_created(self):
         # Setup
@@ -247,5 +249,3 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
         # Verify
         self.assertTrue(os.path.exists(upload_storage_dir))
-
-
