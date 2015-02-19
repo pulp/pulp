@@ -1,25 +1,11 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 from pulp.plugins.types import parser, model
 
-# -- test data ---------------------------------------------------------------
 
-VALID_DESCRIPTOR_1 = model.TypeDescriptor('valid_descriptor_1',
-"""{"types": [
+VALID_DESCRIPTOR_1 = model.TypeDescriptor(
+    'valid_descriptor_1',
+    """{"types": [
     {"id" : "rpm",
      "display_name" : "RPM",
      "description" : "Yum RPM package",
@@ -31,8 +17,9 @@ VALID_DESCRIPTOR_1 = model.TypeDescriptor('valid_descriptor_1',
    ]}
 """)
 
-VALID_DESCRIPTOR_2 = model.TypeDescriptor('valid_descriptor_2',
-"""{"types": [
+VALID_DESCRIPTOR_2 = model.TypeDescriptor(
+    'valid_descriptor_2',
+    """{"types": [
     {"id" : "deb",
      "display_name" : "DEB",
      "description" : "Debian package",
@@ -43,8 +30,9 @@ VALID_DESCRIPTOR_2 = model.TypeDescriptor('valid_descriptor_2',
    ]}
 """)
 
-MULTI_TYPE_DESCRIPTOR = model.TypeDescriptor('multi_descriptor',
-"""{"types": [
+MULTI_TYPE_DESCRIPTOR = model.TypeDescriptor(
+    'multi_descriptor',
+    """{"types": [
     {"id" : "rpm", "display_name" : "RPM", "description" : "RPM",
      "unit_key" : "name", "search_indexes" : "name"},
     {"id" : "deb", "display_name" : "DEB", "description" : "DEB",
@@ -52,8 +40,9 @@ MULTI_TYPE_DESCRIPTOR = model.TypeDescriptor('multi_descriptor',
    ]}
 """)
 
-CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('child_descriptor',
-"""{"types": [
+CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor(
+    'child_descriptor',
+    """{"types": [
     {"id" : "aaa", "display_name" : "A", "description" : "A", "unit_key" : "name",
      "referenced_types" : ["ccc"]},
     {"id" : "bbb", "display_name" : "B", "description" : "B", "unit_key" : "name",
@@ -62,13 +51,14 @@ CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('child_descriptor',
    ]}
 """)
 
-BAD_CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor('bad_children',
-"""{"types": [
-    {"id" : "a", "display_name" : "A", "description" : "A", "unit_key" : "name", "referenced_types" : ["not_there"]}
+BAD_CHILD_TYPES_DESCRIPTOR = model.TypeDescriptor(
+    'bad_children',
+    """{"types": [
+    {"id" : "a", "display_name" : "A", "description" : "A", "unit_key" : "name", \
+"referenced_types" : ["not_there"]}
    ]}
 """)
 
-# -- test cases --------------------------------------------------------------
 
 class ParserTest(unittest.TestCase):
 
@@ -81,8 +71,6 @@ class ParserTest(unittest.TestCase):
         MULTI_TYPE_DESCRIPTOR.parsed = None
         CHILD_TYPES_DESCRIPTOR.parsed = None
         BAD_CHILD_TYPES_DESCRIPTOR.parsed = None
-
-    # -- parse tests ----------------------------------------------------------
 
     def test_parse_single_descriptor_single_type(self):
         """
@@ -102,10 +90,12 @@ class ParserTest(unittest.TestCase):
         self.assertEqual('rpm', type_def.id)
         self.assertEqual('RPM', type_def.display_name)
 
-        self.assertEqual(["name", "version", "release", "arch", "filename", "checksum"], type_def.unit_key)
+        self.assertEqual(["name", "version", "release", "arch", "filename", "checksum"],
+                         type_def.unit_key)
 
         self.assertEqual(2, len(type_def.search_indexes))
-        self.assertEqual(["name", "epoch", "version", "release", "arch"], type_def.search_indexes[0])
+        self.assertEqual(["name", "epoch", "version", "release", "arch"],
+                         type_def.search_indexes[0])
         self.assertEqual("filename", type_def.search_indexes[1])
 
     def test_parse_multiple_descriptors(self):
@@ -160,7 +150,7 @@ class ParserTest(unittest.TestCase):
 
         ccc_def = [d for d in definitions if d.id == 'ccc'][0]
         self.assertEqual(0, len(ccc_def.referenced_types))
-        
+
     def test_parse_invalid_descriptor(self):
         """
         Tests the proper exception is thrown when a descriptor cannot be parsed.
@@ -178,7 +168,7 @@ class ParserTest(unittest.TestCase):
         except parser.Unparsable, e:
             self.assertEqual(1, len(e.error_filenames()))
             self.assertEqual('invalid', e.error_filenames()[0])
-            e.__str__() # included just for coverage
+            self.assertEqual(e.__str__(), 'Exception [Unparsable] for files [invalid]')
 
     def test_parse_invalid_root(self):
         """
@@ -197,20 +187,20 @@ class ParserTest(unittest.TestCase):
         except parser.MissingRoot, e:
             self.assertEqual(1, len(e.error_filenames()))
             self.assertEqual('incorrect', e.error_filenames()[0])
-        
+
     def test_parse_extra_attribute(self):
         """
         Tests a type definition with unexpected attributes cannot be parsed.
         """
 
         # Setup
-        extra = model.TypeDescriptor('extra',
+        extra = model.TypeDescriptor(
+            'extra',
             """{"types": [
                 {"id" : "rpm", "display_name" : "RPM", "description" : "RPM",
                  "unit_key" : "name", "search_indexes" : "name",
                  "unexpected_attribute" : "foo"}
-               ]}"""
-        )
+               ]}""")
 
         # Test
         try:
@@ -226,12 +216,12 @@ class ParserTest(unittest.TestCase):
         """
 
         # Setup
-        no_id = model.TypeDescriptor('no_id',
+        no_id = model.TypeDescriptor(
+            'no_id',
             """{"types": [
                 {"display_name" : "RPM", "description" : "RPM",
                  "unit_key" : "name", "search_indexes" : "name"}
-               ]}"""
-        )
+               ]}""")
 
         # Test
         try:
@@ -248,7 +238,8 @@ class ParserTest(unittest.TestCase):
         """
 
         # Setup
-        bad_id = model.TypeDescriptor('bad_id',
+        bad_id = model.TypeDescriptor(
+            'bad_id',
             """{"types": [
                 {"id" : "bad-id", "display_name" : "RPM", "description" : "RPM",
                  "unit_key" : "name", "search_indexes" : "name"}
@@ -262,7 +253,7 @@ class ParserTest(unittest.TestCase):
         except parser.InvalidTypeId, e:
             self.assertEqual(1, len(e.type_ids))
             self.assertEqual('bad-id', e.type_ids[0])
-        
+
     def test_parse_duplicate_type(self):
         """
         Tests two types with the same ID throw the correct error.
