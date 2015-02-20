@@ -12,7 +12,7 @@
 
 import mock
 
-import base
+from ... import base
 from pulp.plugins.conduits import mixins, unit_import
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.server.db.model.criteria import UnitAssociationCriteria

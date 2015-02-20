@@ -13,7 +13,7 @@
 
 import mock
 
-import base
+from ..... import base
 from pulp.server.auth.ldap_connection import LDAPConnection
 from pulp.server.db.model.auth import User, Role
 from pulp.server.db.model.criteria import Criteria
