@@ -145,45 +145,6 @@ class BaseUploadTest(base.PulpWebserviceTests):
         RepoImporter.get_collection().remove()
 
 
-class UploadsCollectionTests(BaseUploadTest):
-
-    def test_get_no_uploads(self):
-        # Test
-        status, body = self.get('/v2/content/uploads/')
-
-        # Verify
-        self.assertEqual(200, status)
-        self.assertTrue('upload_ids' in body)
-        self.assertEqual([], body['upload_ids'])
-
-    def test_get_uploads(self):
-        # Setup
-        id1 = self.upload_manager.initialize_upload()
-        id2 = self.upload_manager.initialize_upload()
-
-        # Test
-        status, body = self.get('/v2/content/uploads/')
-
-        # Verify
-        self.assertEqual(200, status)
-        self.assertTrue('upload_ids' in body)
-        self.assertTrue(id1 in body['upload_ids'])
-        self.assertTrue(id2 in body['upload_ids'])
-
-    def test_post(self):
-        # Test
-        status, body = self.post('/v2/content/uploads/')
-
-        # Verify
-        self.assertEqual(201, status)
-        self.assertTrue('upload_id' in body)
-        self.assertTrue('_href' in body)
-        self.assertEqual('/v2/content/uploads/%s/' % body['upload_id'], body['_href'])
-
-        upload_file = self.upload_manager._upload_file_path(body['upload_id'])
-        self.assertTrue(os.path.exists(upload_file))
-
-
 class ReservedResourceApplyAsync(object):
     """
     This object allows us to mock the return value of _reserve_resource.apply_async.get().
