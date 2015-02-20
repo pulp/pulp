@@ -24,6 +24,7 @@ from pulp.server.webservices.views.plugins import (DistributorResourceView, Dist
 from pulp.server.webservices.views.roles import (RoleResourceView, RoleUserView, RoleUsersView,
                                                  RolesView)
 from pulp.server.webservices.views.root_actions import LoginView
+from pulp.server.webservices.views.users import UserResourceView, UsersView
 
 
 urlpatterns = patterns('',
@@ -85,5 +86,7 @@ urlpatterns = patterns('',
     url(r'^v2/roles/(?P<role_id>[^/]+)/users/$', RoleUsersView.as_view(), name='role_users'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/users/(?P<login>[^/]+)/$', RoleUserView.as_view(), name='role_user'),
     url(r'^v2/tasks/$', TaskCollectionView.as_view(), name='task_collection'),
-    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', TaskResourceView.as_view(), name='task_resource')
+    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', TaskResourceView.as_view(), name='task_resource'),
+    url(r'^v2/users/$', UsersView.as_view(), name='users'),
+    url(r'^v2/users/(?P<login>[^/]+)/$', UserResourceView.as_view(), name='user_resource')
 )
