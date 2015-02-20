@@ -15,8 +15,9 @@ from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
-                                                json_body_required,
-                                                json_body_allow_empty)
+                                                generate_redirect_response,
+                                                json_body_allow_empty,
+                                                json_body_required)
 
 
 class OrphanCollectionView(View):
@@ -380,6 +381,42 @@ class ContentUnitUserMetadataResourceView(View):
         delta = {constants.PULP_USER_METADATA_FIELDNAME: params}
         cm.update_content_unit(type_id, unit_id, delta)
         return generate_json_response(None)
+
+
+class UploadsCollectionView(View):
+
+    @auth_required(authorization.READ)
+    def get(self, request):
+        """
+        Return a serialized response containing a dict with a list of upload_ids.
+
+        :param request: WSGI request object
+        :type request: django.core.handlers.wsgi.WSGIRequest
+
+        :return: Serialized response containing a list of upload ids
+        :rtype: django.http.HttpResponse
+        """
+        upload_manager = factory.content_upload_manager()
+        upload_ids = upload_manager.list_upload_ids()
+        return generate_json_response({'upload_ids': upload_ids})
+
+    @auth_required(authorization.CREATE)
+    @json_body_allow_empty
+    def post(self, request, *args, **kwargs):
+        """
+        Initialize an upload and return a serialized dict containing the upload data.
+
+        :param request: WSGI request object
+        :type request: django.core.handlers.wsgi.WSGIRequest
+        :return : Serialized response containing a url to delete an upload and a unique id.
+        :rtype : django.http.HttpResponse
+        """
+        upload_manager = factory.content_upload_manager()
+        upload_id = upload_manager.initialize_upload()
+        href = reverse('content_upload_resource', kwargs={'upload_id': upload_id})
+        response = generate_json_response({'_href': href, 'upload_id': upload_id})
+        response_redirect = generate_redirect_response(response, href)
+        return response_redirect
 
 
 class UploadSegmentResourceView(View):

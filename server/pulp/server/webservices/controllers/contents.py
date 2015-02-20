@@ -1,7 +1,7 @@
 from web.webapi import BadRequest
 import web
 
-from pulp.server.auth.authorization import CREATE, READ, UPDATE
+from pulp.server.auth.authorization import READ, UPDATE
 from pulp.server.content.sources.container import ContentContainer
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import MissingResource, OperationPostponed
@@ -129,27 +129,6 @@ class ContentUnitsSearch(SearchController):
         return self.ok(units)
 
 
-class UploadsCollection(JSONController):
-
-    # Scope: Collection
-    # GET:   Retrieve all upload request IDs
-    # POST:  Create a new upload request (and return the ID)
-
-    @auth_required(READ)
-    def GET(self):
-        upload_manager = factory.content_upload_manager()
-        upload_ids = upload_manager.list_upload_ids()
-
-        return self.ok({'upload_ids': upload_ids})
-
-    @auth_required(CREATE)
-    def POST(self):
-        upload_manager = factory.content_upload_manager()
-        upload_id = upload_manager.initialize_upload()
-        location = serialization.link.child_link_obj(upload_id)
-        return self.created(location['_href'], {'_href': location['_href'], 'upload_id': upload_id})
-
-
 class ContentSourceCollection(JSONController):
 
     @auth_required(READ)
@@ -244,7 +223,6 @@ class ContentSourceResource(JSONController):
 
 
 _URLS = ('/units/([^/]+)/search/$', ContentUnitsSearch,
-         '/uploads/$', UploadsCollection,
          '/sources/$', ContentSourceCollection,
          '/sources/action/(refresh)/$', ContentSourceCollection,
          '/sources/([^/]+)/$', ContentSourceResource,
