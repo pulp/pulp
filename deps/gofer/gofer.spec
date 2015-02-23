@@ -6,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 2.5.2
+Version: 2.5.3
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -265,6 +265,10 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Fri Feb 20 2015 Jeff Ortel <jortel@redhat.com> 2.5.3-1
+- Broker renamed: Connector. (jortel@redhat.com)
+- Plugin not-found logged and discarded. (jortel@redhat.com)
+
 * Fri Feb 20 2015 Jeff Ortel <jortel@redhat.com> 2.5.2-1
 - proton 0.9-1.20150219 compat; proton.reactors renamed: proton.reactor.
   (jortel@redhat.com)
