@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE. You should have received a copy of GPLv2 along with this
-# software; if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 class InvalidUnitsRequested(Exception):
     """
     Raised by install_units, update_units, or uninstall_units to indicate
@@ -147,7 +135,7 @@ class Profiler(object):
 
         :param options: Install options; based on unit type.
         :type options: dict
-        
+
         :param config: plugin configuration
         :type config: pulp.plugins.config.PluginCallConfiguration
 
@@ -219,7 +207,7 @@ class Profiler(object):
 
         :param options: Update options; based on unit type.
         :type options: dict
-        
+
         :param config: plugin configuration
         :type config: pulp.plugins.config.PluginCallConfiguration
 
