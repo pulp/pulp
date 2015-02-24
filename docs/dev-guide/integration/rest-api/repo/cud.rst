@@ -85,7 +85,7 @@ is centered around updating only that metadata.
 | :param_list:`put` The body of the request is a JSON document with three
   possible root elements:
 
-* :param:`delta,object,object containing keys with values that should be updated on the repository`
+* :param:`?delta,object,object containing keys with values that should be updated on the repository`
 * :param:`?importer_config,object,object containing keys with values that should be updated on the repository's importer config`
 * :param:`?distributor_configs,object,object containing keys that are distributor ids, and values that are objects containing keys with values that should be updated on the specified distributor's config`
 
@@ -320,6 +320,7 @@ Any importer configuration value that is not specified remains unchanged.
 
 * :response_code:`202,if the request was accepted by the server to update the importer
   when the repository is available`
+* :response_code:`400,if request body parameters are invalid`
 * :response_code:`404,if there is no repository or importer with the specified IDs`
 
 | :return:`a` :ref:`call_report` which includes a spawned task that should be polled for a :ref:`task_report`

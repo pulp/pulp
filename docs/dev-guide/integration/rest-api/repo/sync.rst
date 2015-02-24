@@ -12,7 +12,7 @@ Syncs content into a repository from a feed source using the repository's
 | :permission:`execute`
 | :param_list:`post`
 
-* :param:`override_config,object,importer configuration values that override the importer's default configuration for this sync`
+* :param:`?override_config,object,importer configuration values that override the importer's default configuration for this sync`
 
 | :response_list:`_`
 
