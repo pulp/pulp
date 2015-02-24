@@ -65,7 +65,8 @@ def _ensure_input_encoding(input):
     if isinstance(input, (list, set, tuple)):
         return [_ensure_input_encoding(i) for i in input]
     if isinstance(input, dict):
-        return dict((_ensure_input_encoding(k), _ensure_input_encoding(v)) for k, v in input.items())
+        return dict((_ensure_input_encoding(k), _ensure_input_encoding(v))
+                    for k, v in input.items())
     try:
         return encode_unicode(decode_unicode(input))
     except (UnicodeDecodeError, UnicodeEncodeError):
