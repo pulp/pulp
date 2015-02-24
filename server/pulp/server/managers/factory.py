@@ -1,14 +1,3 @@
-# Copyright (c) 2011-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Provides a loosely coupled way of retrieving references into other manager
 instances. Test cases can manipulate this module to mock out the class of
@@ -21,57 +10,55 @@ do so may indirectly break other tests.
 """
 
 
-# -- constants ----------------------------------------------------------------
-
 # Keys used to look up a specific builtin manager (please alphabetize)
 TYPE_APPLICABILITY_REGENERATION = 'application-regeneration-manager'
-TYPE_AUTHENTICATION             = 'authentication-manager'
-TYPE_CDS                        = 'cds-manager'
-TYPE_CERTIFICATE                = 'certificate-manager'
-TYPE_CERT_GENERATION            = 'cert-generation-manager'
-TYPE_CONSUMER                   = 'consumer-manager'
-TYPE_CONSUMER_AGENT             = 'consumer-agent-manager'
-TYPE_CONSUMER_BIND              = 'consumer-bind-manager'
-TYPE_CONSUMER_CONTENT           = 'consumer-content-manager'
-TYPE_CONSUMER_GROUP             = 'consumer-group-manager'
-TYPE_CONSUMER_GROUP_QUERY       = 'consumer-group-query-manager'
-TYPE_CONSUMER_HISTORY           = 'consumer-history-manager'
-TYPE_CONSUMER_PROFILE           = 'consumer-profile-manager'
-TYPE_CONSUMER_QUERY             = 'consumer-query-manager'
-TYPE_CONSUMER_SCHEDULE          = 'consumer-schedule-manager'
-TYPE_CONTENT                    = 'content-manager'
-TYPE_CONTENT_CATALOG            = 'content-catalog-manager'
-TYPE_CONTENT_ORPHAN             = 'content-orphan-manager'
-TYPE_CONTENT_QUERY              = 'content-query-manager'
-TYPE_CONTENT_UPLOAD             = 'content-upload-manager'
-TYPE_DEPENDENCY                 = 'dependencies-manager'
-TYPE_EVENT_FIRE                 = 'event-fire-manager'
-TYPE_EVENT_LISTENER             = 'event-listener-manager'
-TYPE_MIGRATION_TRACKER          = 'migration-tracker-manager'
-TYPE_PASSWORD                   = 'password-manager'
-TYPE_PERMISSION                 = 'permission-manager'
-TYPE_PERMISSION_QUERY           = 'permission-query-manager'
-TYPE_PLUGIN_MANAGER             = 'plugin-manager'
-TYPE_PRINCIPAL                  = 'principal'
-TYPE_REPO                       = 'repo-manager'
-TYPE_REPO_ASSOCIATION           = 'repo-association-manager'
-TYPE_REPO_ASSOCIATION_QUERY     = 'repo-association-query-manager'
-TYPE_REPO_GROUP                 = 'repo-group-manager'
-TYPE_REPO_GROUP_DISTRIBUTOR     = 'repo-group-distributor'
-TYPE_REPO_GROUP_PUBLISH         = 'repo-group-publish'
-TYPE_REPO_GROUP_QUERY           = 'repo-group-query-manager'
-TYPE_REPO_IMPORTER              = 'repo-importer-manager'
-TYPE_REPO_DISTRIBUTOR           = 'repo-distributor-manager'
-TYPE_REPO_PUBLISH               = 'repo-publish-manager'
-TYPE_REPO_PUBLISH_SCHEDULE      = 'repo-publish-schedule-manager'
-TYPE_REPO_QUERY                 = 'repo-query-manager'
-TYPE_REPO_SYNC                  = 'repo-sync-manager'
-TYPE_REPO_SYNC_SCHEDULE         = 'repo-sync-schedule-manager'
-TYPE_ROLE                       = 'role-manager'
-TYPE_ROLE_QUERY                 = 'role-query-manager'
-TYPE_TOPIC_PUBLISH              = 'topic-publish-manager'
-TYPE_USER                       = 'user-manager'
-TYPE_USER_QUERY                 = 'user-query-manager'
+TYPE_AUTHENTICATION = 'authentication-manager'
+TYPE_CDS = 'cds-manager'
+TYPE_CERTIFICATE = 'certificate-manager'
+TYPE_CERT_GENERATION = 'cert-generation-manager'
+TYPE_CONSUMER = 'consumer-manager'
+TYPE_CONSUMER_AGENT = 'consumer-agent-manager'
+TYPE_CONSUMER_BIND = 'consumer-bind-manager'
+TYPE_CONSUMER_CONTENT = 'consumer-content-manager'
+TYPE_CONSUMER_GROUP = 'consumer-group-manager'
+TYPE_CONSUMER_GROUP_QUERY = 'consumer-group-query-manager'
+TYPE_CONSUMER_HISTORY = 'consumer-history-manager'
+TYPE_CONSUMER_PROFILE = 'consumer-profile-manager'
+TYPE_CONSUMER_QUERY = 'consumer-query-manager'
+TYPE_CONSUMER_SCHEDULE = 'consumer-schedule-manager'
+TYPE_CONTENT = 'content-manager'
+TYPE_CONTENT_CATALOG = 'content-catalog-manager'
+TYPE_CONTENT_ORPHAN = 'content-orphan-manager'
+TYPE_CONTENT_QUERY = 'content-query-manager'
+TYPE_CONTENT_UPLOAD = 'content-upload-manager'
+TYPE_DEPENDENCY = 'dependencies-manager'
+TYPE_EVENT_FIRE = 'event-fire-manager'
+TYPE_EVENT_LISTENER = 'event-listener-manager'
+TYPE_MIGRATION_TRACKER = 'migration-tracker-manager'
+TYPE_PASSWORD = 'password-manager'
+TYPE_PERMISSION = 'permission-manager'
+TYPE_PERMISSION_QUERY = 'permission-query-manager'
+TYPE_PLUGIN_MANAGER = 'plugin-manager'
+TYPE_PRINCIPAL = 'principal'
+TYPE_REPO = 'repo-manager'
+TYPE_REPO_ASSOCIATION = 'repo-association-manager'
+TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
+TYPE_REPO_GROUP = 'repo-group-manager'
+TYPE_REPO_GROUP_DISTRIBUTOR = 'repo-group-distributor'
+TYPE_REPO_GROUP_PUBLISH = 'repo-group-publish'
+TYPE_REPO_GROUP_QUERY = 'repo-group-query-manager'
+TYPE_REPO_IMPORTER = 'repo-importer-manager'
+TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
+TYPE_REPO_PUBLISH = 'repo-publish-manager'
+TYPE_REPO_PUBLISH_SCHEDULE = 'repo-publish-schedule-manager'
+TYPE_REPO_QUERY = 'repo-query-manager'
+TYPE_REPO_SYNC = 'repo-sync-manager'
+TYPE_REPO_SYNC_SCHEDULE = 'repo-sync-schedule-manager'
+TYPE_ROLE = 'role-manager'
+TYPE_ROLE_QUERY = 'role-query-manager'
+TYPE_TOPIC_PUBLISH = 'topic-publish-manager'
+TYPE_USER = 'user-manager'
+TYPE_USER_QUERY = 'user-query-manager'
 
 
 # Mapping of key to class that will be instantiated in the factory method
@@ -82,7 +69,6 @@ _CLASSES = {}
 # method. This should only be used for testing purposes to inject a mock object.
 _INSTANCES = {}
 
-# -- exceptions ---------------------------------------------------------------
 
 class InvalidType(Exception):
     """
@@ -96,7 +82,6 @@ class InvalidType(Exception):
     def __str__(self):
         return 'Invalid manager type requested [%s]' % self.type_key
 
-# -- manager retrieval --------------------------------------------------------
 
 # When adding these syntactic sugar methods, please use the @rtype tag to make
 # sure IDEs can correctly guess at the returned type and provide auto-complete.
@@ -104,11 +89,13 @@ class InvalidType(Exception):
 # Be sure to add an entry to test_syntactic_sugar_methods in test_manager_factory.py
 # to verify the correct type of manager is returned.
 
+
 def applicability_regeneration_manager():
     """
     @rtype: L{pulp.server.managers.consumer.applicability.ApplicabilityRegenerationManager}
     """
     return get_manager(TYPE_APPLICABILITY_REGENERATION)
+
 
 def authentication_manager():
     """
@@ -116,11 +103,13 @@ def authentication_manager():
     """
     return get_manager(TYPE_AUTHENTICATION)
 
+
 def certificate_manager(content=None):
     """
     @rtype: L{pulp.server.managers.auth.cert.certificate.CertificateManager}
     """
     return get_manager(TYPE_CERTIFICATE, content)
+
 
 def cert_generation_manager():
     """
@@ -128,11 +117,13 @@ def cert_generation_manager():
     """
     return get_manager(TYPE_CERT_GENERATION)
 
+
 def consumer_manager():
     """
     @rtype: L{pulp.server.managers.consumer.cud.ConsumerManager}
     """
     return get_manager(TYPE_CONSUMER)
+
 
 def consumer_agent_manager():
     """
@@ -140,11 +131,13 @@ def consumer_agent_manager():
     """
     return get_manager(TYPE_CONSUMER_AGENT)
 
+
 def consumer_bind_manager():
     """
     @rtype: L{pulp.server.managers.consumer.bind.BindManager}
     """
     return get_manager(TYPE_CONSUMER_BIND)
+
 
 def consumer_content_manager():
     """
@@ -152,11 +145,13 @@ def consumer_content_manager():
     """
     return get_manager(TYPE_CONSUMER_CONTENT)
 
+
 def consumer_group_manager():
     """
     @rtype: L{pulp.server.managers.consumer.group.ConsumerGroupManager}
     """
     return get_manager(TYPE_CONSUMER_GROUP)
+
 
 def consumer_group_query_manager():
     """
@@ -164,11 +159,13 @@ def consumer_group_query_manager():
     """
     return get_manager(TYPE_CONSUMER_GROUP_QUERY)
 
+
 def consumer_query_manager():
     """
     @rtype: L{pulp.server.managers.consumer.query.ConsumerQueryManager}
     """
     return get_manager(TYPE_CONSUMER_QUERY)
+
 
 def consumer_history_manager():
     """
@@ -176,11 +173,13 @@ def consumer_history_manager():
     """
     return get_manager(TYPE_CONSUMER_HISTORY)
 
+
 def consumer_profile_manager():
     """
     @rtype: L{pulp.server.managers.consumer.profile.ProfileManager}
     """
     return get_manager(TYPE_CONSUMER_PROFILE)
+
 
 def consumer_schedule_manager():
     """
@@ -188,11 +187,13 @@ def consumer_schedule_manager():
     """
     return get_manager(TYPE_CONSUMER_SCHEDULE)
 
+
 def content_manager():
     """
     @rtype: L{pulp.server.managers.content.cud.ContentManager}
     """
     return get_manager(TYPE_CONTENT)
+
 
 def content_catalog_manager():
     """
@@ -200,11 +201,13 @@ def content_catalog_manager():
     """
     return get_manager(TYPE_CONTENT_CATALOG)
 
+
 def content_orphan_manager():
     """
     @rtype: L{pulp.server.managers.content.orphan.OrphanManager}
     """
     return get_manager(TYPE_CONTENT_ORPHAN)
+
 
 def content_query_manager():
     """
@@ -212,11 +215,13 @@ def content_query_manager():
     """
     return get_manager(TYPE_CONTENT_QUERY)
 
+
 def content_upload_manager():
     """
     @rtype: L{pulp.server.managers.content.upload.ContentUploadManager}
     """
     return get_manager(TYPE_CONTENT_UPLOAD)
+
 
 def dependency_manager():
     """
@@ -224,11 +229,13 @@ def dependency_manager():
     """
     return get_manager(TYPE_DEPENDENCY)
 
+
 def event_fire_manager():
     """
     @rtype: L{pulp.server.managers.event.fire.EventFireManager}
     """
     return get_manager(TYPE_EVENT_FIRE)
+
 
 def event_listener_manager():
     """
@@ -236,11 +243,13 @@ def event_listener_manager():
     """
     return get_manager(TYPE_EVENT_LISTENER)
 
+
 def migration_tracker_manager():
     """
     @rtype: L{pulp.server.managers.migration_tracker.MigrationTrackerManager}
     """
     return get_manager(TYPE_MIGRATION_TRACKER)
+
 
 def password_manager():
     """
@@ -248,11 +257,13 @@ def password_manager():
     """
     return get_manager(TYPE_PASSWORD)
 
+
 def permission_manager():
     """
     @rtype: L{pulp.server.managers.auth.permission.cud.PermissionManager}
     """
     return get_manager(TYPE_PERMISSION)
+
 
 def permission_query_manager():
     """
@@ -260,11 +271,13 @@ def permission_query_manager():
     """
     return get_manager(TYPE_PERMISSION_QUERY)
 
+
 def plugin_manager():
     """
     @rtype: L{pulp.server.managers.plugin.PluginManager}
     """
     return get_manager(TYPE_PLUGIN_MANAGER)
+
 
 def principal_manager():
     """
@@ -272,11 +285,13 @@ def principal_manager():
     """
     return get_manager(TYPE_PRINCIPAL)
 
+
 def repo_group_manager():
     """
     @rtype: L{pulp.server.managers.repo.group.cud.RepoGroupManager}
     """
     return get_manager(TYPE_REPO_GROUP)
+
 
 def repo_group_distributor_manager():
     """
@@ -284,11 +299,13 @@ def repo_group_distributor_manager():
     """
     return get_manager(TYPE_REPO_GROUP_DISTRIBUTOR)
 
+
 def repo_group_publish_manager():
     """
     @rtype: L{pulp.server.managers.repo.group.publish.RepoGroupPublishManager}
     """
     return get_manager(TYPE_REPO_GROUP_PUBLISH)
+
 
 def repo_group_query_manager():
     """
@@ -296,11 +313,13 @@ def repo_group_query_manager():
     """
     return get_manager(TYPE_REPO_GROUP_QUERY)
 
+
 def repo_manager():
     """
     @rtype: L{pulp.server.managers.repo.cud.RepoManager}
     """
     return get_manager(TYPE_REPO)
+
 
 def repo_importer_manager():
     """
@@ -308,11 +327,13 @@ def repo_importer_manager():
     """
     return get_manager(TYPE_REPO_IMPORTER)
 
+
 def repo_distributor_manager():
     """
     @rtype: L{pulp.server.managers.repo.distributor.RepoDistributorManager}
     """
     return get_manager(TYPE_REPO_DISTRIBUTOR)
+
 
 def repo_unit_association_manager():
     """
@@ -320,11 +341,13 @@ def repo_unit_association_manager():
     """
     return get_manager(TYPE_REPO_ASSOCIATION)
 
+
 def repo_unit_association_query_manager():
     """
     @rtype: L{pulp.server.managers.repo.unit_association_query.RepoUnitAssociationQueryManager}
     """
     return get_manager(TYPE_REPO_ASSOCIATION_QUERY)
+
 
 def repo_publish_manager():
     """
@@ -332,11 +355,13 @@ def repo_publish_manager():
     """
     return get_manager(TYPE_REPO_PUBLISH)
 
+
 def repo_publish_schedule_manager():
     """
     @rtype: L{pulp.server.managers.schedule.repo.RepoPublishScheduleManager}
     """
     return get_manager(TYPE_REPO_PUBLISH_SCHEDULE)
+
 
 def repo_query_manager():
     """
@@ -344,11 +369,13 @@ def repo_query_manager():
     """
     return get_manager(TYPE_REPO_QUERY)
 
+
 def repo_sync_manager():
     """
     @rtype: L{pulp.server.managers.repo.sync.RepoSyncManager}
     """
     return get_manager(TYPE_REPO_SYNC)
+
 
 def repo_sync_schedule_manager():
     """
@@ -356,11 +383,13 @@ def repo_sync_schedule_manager():
     """
     return get_manager(TYPE_REPO_SYNC_SCHEDULE)
 
+
 def role_manager():
     """
     @rtype: L{pulp.server.managers.auth.role.cud.RoleManager}
     """
     return get_manager(TYPE_ROLE)
+
 
 def role_query_manager():
     """
@@ -368,11 +397,13 @@ def role_query_manager():
     """
     return get_manager(TYPE_ROLE_QUERY)
 
+
 def topic_publish_manager():
     """
     @rtype: L{pulp.server.managers.event.remote.TopicPublishManager}
     """
     return get_manager(TYPE_TOPIC_PUBLISH)
+
 
 def user_manager():
     """
@@ -380,13 +411,13 @@ def user_manager():
     """
     return get_manager(TYPE_USER)
 
+
 def user_query_manager():
     """
     @rtype: L{pulp.server.managers.auth.user.query.UserQueryManager}
     """
     return get_manager(TYPE_USER_QUERY)
 
-# -- other --------------------------------------------------------------------
 
 def initialize():
     """
@@ -438,15 +469,16 @@ def initialize():
     from pulp.server.managers.repo.sync import RepoSyncManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
-    from pulp.server.managers.schedule.repo import RepoPublishScheduleManager, RepoSyncScheduleManager
+    from pulp.server.managers.schedule.repo import (RepoPublishScheduleManager,
+                                                    RepoSyncScheduleManager)
     from pulp.server.managers.schedule.consumer import ConsumerScheduleManager
 
     # Builtins for a normal running Pulp server (used to reset the state of the
     # factory between runs)
     builtins = {
         TYPE_APPLICABILITY_REGENERATION: ApplicabilityRegenerationManager,
-        TYPE_AUTHENTICATION : AuthenticationManager,
-        TYPE_CERTIFICATE : CertificateManager,
+        TYPE_AUTHENTICATION: AuthenticationManager,
+        TYPE_CERTIFICATE: CertificateManager,
         TYPE_CERT_GENERATION: CertGenerationManager,
         TYPE_CONSUMER: ConsumerManager,
         TYPE_CONSUMER_AGENT: AgentManager,
@@ -474,12 +506,12 @@ def initialize():
         TYPE_PRINCIPAL: PrincipalManager,
         TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
-        TYPE_REPO_ASSOCIATION_QUERY : RepoUnitAssociationQueryManager,
+        TYPE_REPO_ASSOCIATION_QUERY: RepoUnitAssociationQueryManager,
         TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
         TYPE_REPO_GROUP: RepoGroupManager,
-        TYPE_REPO_GROUP_DISTRIBUTOR : RepoGroupDistributorManager,
-        TYPE_REPO_GROUP_PUBLISH : RepoGroupPublishManager,
-        TYPE_REPO_GROUP_QUERY : RepoGroupQueryManager,
+        TYPE_REPO_GROUP_DISTRIBUTOR: RepoGroupDistributorManager,
+        TYPE_REPO_GROUP_PUBLISH: RepoGroupPublishManager,
+        TYPE_REPO_GROUP_QUERY: RepoGroupQueryManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
         TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_PUBLISH_SCHEDULE: RepoPublishScheduleManager,
