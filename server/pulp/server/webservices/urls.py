@@ -22,6 +22,10 @@ from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToU
 from pulp.server.webservices.views.plugins import (DistributorResourceView, DistributorsView,
                                                    ImporterResourceView, ImportersView,
                                                    TypeResourceView, TypesView)
+from pulp.server.webservices.views.repo_groups import (
+    RepoGroupAssociateView, RepoGroupDistributorResourceView, RepoGroupDistributorsView,
+    RepoGroupPublishView, RepoGroupResourceView, RepoGroupsView, RepoGroupUnassociateView
+)
 from pulp.server.webservices.views.roles import (RoleResourceView, RoleUserView, RoleUsersView,
                                                  RolesView)
 from pulp.server.webservices.views.root_actions import LoginView
@@ -84,6 +88,19 @@ urlpatterns = patterns('',
     url(r'^v2/plugins/types/$', TypesView.as_view(), name='plugin_types'),
     url(r'^v2/plugins/types/(?P<type_id>[^/]+)/$', TypeResourceView.as_view(),
         name='plugin_type_resource'),
+    url(r'^v2/repo_groups/$', RepoGroupsView.as_view(), name='repo_groups'),
+    url(r'^v2/repo_groups/(?P<repo_group_id>[^/]+)/$', RepoGroupResourceView.as_view(),
+        name='repo_group_resource'),
+    url(r'^v2/repo_groups/(?P<repo_group_id>[^/]+)/actions/associate/$',
+        RepoGroupAssociateView.as_view(), name='repo_group_associate'),
+    url(r'^v2/repo_groups/(?P<repo_group_id>[^/]+)/actions/publish/$',
+        RepoGroupPublishView.as_view(), name='repo_group_publish'),
+    url(r'^v2/repo_groups/(?P<repo_group_id>[^/]+)/actions/unassociate/$',
+        RepoGroupUnassociateView.as_view(), name='repo_group_unassociate'),
+    url(r'^v2/repo_groups/(?P<repo_group_id>[^/]+)/distributors/$',
+        RepoGroupDistributorsView.as_view(), name='repo_group_distributors'),
+    url(r'^v2/repo_groups/(?P<repo_group_id>[^/]+)/distributors/(?P<distributor_id>[^/]+)/$',
+        RepoGroupDistributorResourceView.as_view(), name='repo_group_distributor_resource'),
     url(r'^v2/roles/$', RolesView.as_view(), name='roles'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/$', RoleResourceView.as_view(), name='role_resource'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/users/$', RoleUsersView.as_view(), name='role_users'),
