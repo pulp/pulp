@@ -1,5 +1,6 @@
-# -*- coding: utf-8 -*-
-
+"""
+This module contains views that deal with User objects.
+"""
 from django.views.generic import View
 from django.core.urlresolvers import reverse
 
@@ -7,7 +8,9 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.auth import Permission
 from pulp.server.managers import factory
+from pulp.server.managers.auth.user import query
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
@@ -15,6 +18,30 @@ from pulp.server.webservices.views.util import (generate_json_response,
 
 
 USER_WHITELIST = [u'login', u'name', u'roles']
+
+
+def serialize(user):
+    """
+    This function accepts a user object, adds a link to it, removes sensitive information from it,
+    and returns the modified object.
+
+    :param user: A user document
+    :type  user: bson.BSON
+    :return:     A modified version of the User, suitable for returning via the REST interface.
+    :rtype:      bson.BSON
+    """
+    _add_link(user)
+    _process_dictionary_against_whitelist(user, USER_WHITELIST)
+    return user
+
+
+class UserSearchView(search.SearchView):
+    """
+    This view provides GET and POST searching on User objects.
+    """
+    generate_json_response = staticmethod(generate_json_response_with_pulp_encoder)
+    manager = query.UserQueryManager()
+    serializer = staticmethod(serialize)
 
 
 class UsersView(View):
@@ -37,8 +64,7 @@ class UsersView(View):
         users = query_manager.find_all()
 
         for user in users:
-            add_link(user)
-            process_dictionary_against_whitelist(user, USER_WHITELIST)
+            serialize(user)
 
         return generate_json_response_with_pulp_encoder(users)
 
@@ -74,7 +100,7 @@ class UsersView(View):
         user = manager.create_user(*args, **kwargs)
 
         # Add the link to the user
-        link = add_link(user)
+        link = _add_link(user)
 
         # Grant permissions
         permission_manager = factory.permission_manager()
@@ -107,8 +133,7 @@ class UserResourceView(View):
         if user is None:
             raise pulp_exceptions.MissingResource(login)
 
-        add_link(user)
-        process_dictionary_against_whitelist(user, USER_WHITELIST)
+        user = serialize(user)
         return generate_json_response_with_pulp_encoder(user)
 
     @auth_required(authorization.DELETE)
@@ -155,18 +180,18 @@ class UserResourceView(View):
         # Perform update
         manager = factory.user_manager()
         result = manager.update_user(login, delta)
-        process_dictionary_against_whitelist(result, USER_WHITELIST)
+        _process_dictionary_against_whitelist(result, USER_WHITELIST)
         return generate_json_response_with_pulp_encoder(result)
 
 
-def add_link(user):
+def _add_link(user):
     link = {'_href': reverse('user_resource',
             kwargs={'login': user['login']})}
     user.update(link)
     return link
 
 
-def process_dictionary_against_whitelist(source_dict, valid_keys):
+def _process_dictionary_against_whitelist(source_dict, valid_keys):
     """
     Process a dictionary and remove all keys that are not in a known white list
 
