@@ -1,6 +1,7 @@
 from datetime import datetime
 import calendar
 import copy
+import isodate
 import logging
 import pickle
 import time
@@ -10,10 +11,11 @@ from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
 from mongoengine import DictField, Document, DynamicField, ListField, StringField
-import isodate
+from mongoengine import signals
 
 from pulp.common import constants, dateutils
 from pulp.server.async.celery_instance import celery as app
+from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.model.base import Model, CriteriaQuerySet
 from pulp.server.db.model.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
@@ -568,9 +570,9 @@ class TaskStatus(Document, ReaperMixin):
                                         $setOnInsert operator.
         :type  fields_to_set_on_insert: list
         """
-        # If fields_to_set_on_insert is None or empty, just call superclass' save method.
+        # If fields_to_set_on_insert is None or empty, just save
         if not fields_to_set_on_insert:
-            super(TaskStatus, self).save()
+            self.save()
             return
 
         # This will be used in place of superclass' save method, so we need to call validate()
@@ -589,3 +591,19 @@ class TaskStatus(Document, ReaperMixin):
         update = {'$set': stuff_to_update,
                   '$setOnInsert': set_on_insert}
         TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
+
+    @classmethod
+    def post_save(cls, sender, document, **kwargs):
+        """
+        Send a taskstatus message on save.
+
+        :param sender: class of sender (unused)
+        :type  sender: class
+        :param document: mongoengine document
+        :type  document: mongoengine.Document
+
+        """
+        send_taskstatus_message(document, routing_key="tasks.%s" % document['task_id'])
+
+
+signals.post_save.connect(TaskStatus.post_save, sender=TaskStatus)

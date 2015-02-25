@@ -1,5 +1,7 @@
 Email Notifier
 ==============
+.. deprecated:: 2.7
+   This pages describes a notification framework that has been deprecated and will go away in Pulp 3.0.
 
 The Email notifier is used to send an email to specified recipients every time
 a particular event type fires. The body of the email will be a JSON serialized

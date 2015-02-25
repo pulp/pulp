@@ -1023,6 +1023,18 @@ class TaskStatusTests(base.PulpServerTests):
         self.assertEqual([], task_statuses[0]['tags'])
         self.assertEqual('waiting', task_statuses[0]['state'])
 
+    @mock.patch('pulp.server.db.model.dispatch.send_taskstatus_message')
+    def test_save_task_status_fires_notification(self, mock_send):
+        """
+        Test that saving a TaskStatus fires an event notification.
+        """
+        task_id = self.get_random_uuid()
+
+        ts = TaskStatus(task_id)
+        ts.save()
+
+        mock_send.assert_called_once_with(ts, routing_key="tasks.%s" % task_id)
+
     def test_create_task_status_invalid_task_id(self):
         """
         Test that TaskStatus creation with an invalid task id raises the correct error.
@@ -1092,6 +1104,32 @@ class TaskStatusTests(base.PulpServerTests):
         self.assertEqual(task_status['state'], delta['state'])
         self.assertEqual(task_status['progress_report'], delta['progress_report'])
         self.assertEqual(task_status['worker_name'], worker_name)
+
+    @mock.patch('pulp.server.db.model.dispatch.send_taskstatus_message')
+    def test_task_status_update_fires_notification(self, mock_send):
+        """
+        Test that update_one() also fires a notification.
+        """
+        task_id = self.get_random_uuid()
+        worker_name = 'special_worker_name'
+        tags = ['test-tag1', 'test-tag2']
+        state = 'waiting'
+        ts = TaskStatus(task_id, worker_name, tags, state)
+        ts.save()
+        # ensure event was fired for save()
+        mock_send.assert_called_once_with(ts, routing_key="tasks.%s" % task_id)
+        now = datetime.now(dateutils.utc_tz())
+        start_time = dateutils.format_iso8601_datetime(now)
+        delta = {'start_time': start_time,
+                 'state': 'running',
+                 'progress_report': {'report-id': 'my-progress'}}
+
+        TaskStatus.objects(task_id=task_id).update_one(
+            set__start_time=delta['start_time'], set__state=delta['state'],
+            set__progress_report=delta['progress_report'])
+
+        # ensure event was fired for update_one()
+        mock_send.assert_called_once_with(ts, routing_key="tasks.%s" % task_id)
 
     @mock.patch('pulp.server.db.model.base.CriteriaQuerySet.find_by_criteria')
     def test_find_by_criteria(self, mock_find_by_criteria):

@@ -1,6 +1,9 @@
 Repository Synchronize and Publish Events
 =========================================
 
+.. deprecated:: 2.7
+   This page describes a notification framework that has been deprecated and will go away in Pulp 3.0.
+
 The following events are related to repo sync and publish operations.
 
 Repository Sync Started

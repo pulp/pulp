@@ -1,8 +1,14 @@
+import logging
 from mongoengine.queryset import QuerySet
 from pymongo import DESCENDING, ASCENDING
 
 from pulp.server.compat import ObjectId
 from pulp.server.db.connection import get_collection
+
+from pulp.server.async.emit import send as send_taskstatus_message
+
+
+_logger = logging.getLogger(__name__)
 
 
 class DoesNotExist(Exception):
@@ -155,3 +161,15 @@ class CriteriaQuerySet(QuerySet):
             query_set = query_set.limit(criteria.limit)
 
         return query_set
+
+    def update(self, *args, **kwargs):
+        """
+        Send a taskstatus event message and update.
+
+        This method emulates post_save() on Documents.
+
+        All params are sent through to the super()'s update() call.
+        """
+        super(CriteriaQuerySet, self).update(*args, **kwargs)
+        for doc in self:
+            send_taskstatus_message(doc, routing_key="tasks.%s" % doc['task_id'])

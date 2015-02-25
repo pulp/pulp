@@ -1,6 +1,9 @@
 AMQP Notifier
 ==============
 
+.. deprecated:: 2.7
+   This page describes a notification framework that has been deprecated and will go away in Pulp 3.0.
+
 The AMQP notifier is used to send Pulp events to an AMQP message broker. Messages
 are sent to a topic exchange. Each message "subject" starts with "pulp.server"
 and is then followed by the full message type, such as "repo.sync.finish" to

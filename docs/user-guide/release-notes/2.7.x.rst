@@ -11,3 +11,5 @@ New Features
 - The repo authentication functionality previously associated with pulp_rpm has
   been moved to platform. This makes it available for other plugins to use.
 
+- A new event notification framework is available. Please see
+  :ref:`the developer documentation <event>` for more detail.
