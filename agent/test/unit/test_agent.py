@@ -1,28 +1,14 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import os
-
 from threading import Thread
 from unittest import TestCase
-
-from mock import patch, Mock
-from M2Crypto import RSA, BIO
+import os
 
 from gofer.messaging.auth import ValidationFailed
+from M2Crypto import RSA, BIO
+from mock import patch, Mock
 
 from pulp.common.config import Config
 from pulp.devel.unit.util import SideEffect
+
 
 TEST_HOST = 'test-host'
 TEST_PORT = '443'
@@ -260,8 +246,7 @@ class TestAuthentication(PluginTest):
         authenticator = self.plugin.Authenticator()
         signature = authenticator.sign(message)
 
-        #validation
-
+        # validation
         mock_open.assert_called_with(key_path)
         self.assertEqual(signature, key.sign(message))
         mock_fp.close.assert_called_with()
@@ -320,7 +305,6 @@ class TestAuthentication(PluginTest):
         message = 'hello'
         key_path = '/etc/pki/pulp/consumer/server/rsa_pub.pem'
         key = RSA.load_key_bio(BIO.MemoryBuffer(RSA_KEY))
-
 
         test_conf = {'server': {'rsa_pub': key_path}}
         self.plugin.pulp_conf.update(test_conf)
@@ -499,7 +483,7 @@ class TestConduit(PluginTest):
         self.assertEqual(mock_context.progress.details, report)
 
     @patch('gofer.agent.rmi.Context.current')
-    def test_cancelled(self, mock_current):
+    def test_cancelled_true(self, mock_current):
         mock_context = Mock()
         mock_context.cancelled = Mock(return_value=True)
         mock_current.return_value = mock_context
@@ -513,7 +497,7 @@ class TestConduit(PluginTest):
         self.assertTrue(mock_context.cancelled.called)
 
     @patch('gofer.agent.rmi.Context.current')
-    def test_cancelled(self, mock_current):
+    def test_cancelled_false(self, mock_current):
         mock_context = Mock()
         mock_context.cancelled = Mock(return_value=False)
         mock_current.return_value = mock_context
@@ -797,7 +781,7 @@ class TestProfile(PluginTest):
 
         # test
         profile = self.plugin.Profile()
-        report = profile.send()
+        profile.send()
 
         # validation
         mock_dispatcher().profile.assert_called_with(mock_conduit())

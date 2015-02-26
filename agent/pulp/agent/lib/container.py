@@ -1,23 +1,12 @@
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
-
+from logging import getLogger
 import imp
 import os
-from pulp.common.config import Config, Validator, SectionNotFound
-from pulp.common.config import REQUIRED, OPTIONAL, BOOL, ANY
-from logging import getLogger
 
-log = getLogger(__name__)
+from pulp.common.config import ANY, BOOL, Config, OPTIONAL, REQUIRED, SectionNotFound, Validator
+
+
+_logger = getLogger(__name__)
+
 
 # handler roles
 SYSTEM = 0
@@ -44,22 +33,20 @@ class Descriptor:
     @ivar cfg: The raw INI configuration object.
     @type cfg: L{Config}
     """
-    
+
     ROOT = '/etc/pulp/agent/conf.d'
 
     SCHEMA = (
         ('main', REQUIRED,
             (
                 ('enabled', REQUIRED, BOOL),
-            ),
-        ),
+            )),
         ('types', REQUIRED,
             (
                 ('system', OPTIONAL, ANY),
                 ('content', OPTIONAL, ANY),
                 ('distributor', OPTIONAL, ANY),
-            ),
-        ),
+            )),
     )
 
     @classmethod
@@ -80,7 +67,7 @@ class Descriptor:
                     continue
                 descriptors.append((name, descriptor))
             except:
-                log.exception(path)
+                _logger.exception(path)
         return descriptors
 
     @classmethod
@@ -97,8 +84,8 @@ class Descriptor:
             part = fn.split('.', 1)
             if len(part) < 2:
                 continue
-            name,ext = part
-            if not ext in ('.conf'):
+            name, ext = part
+            if ext not in ('.conf'):
                 continue
             path = os.path.join(root, fn)
             if os.path.isdir(path):
@@ -294,13 +281,13 @@ class Container:
                     typedef = Typedef(descriptor.cfg, type_id)
                     path = typedef.cfg['class']
                     if mod is None:
-                       mod = self.__import_module(path)
+                        mod = self.__import_module(path)
                     Handler = getattr(mod, path.rsplit('.')[-1])
                     handler = Handler(typedef.cfg)
                     self.handlers[role][type_id] = handler
         except Exception, e:
             self.raised.append(e)
-            log.exception('handler "%s", import failed', name)
+            _logger.exception('handler "%s", import failed', name)
 
     def __load_module(self, name):
         """
@@ -350,5 +337,5 @@ class Container:
         for dir_path in self.path:
             path = os.path.join(dir_path, file_name)
             if os.path.exists(path):
-                log.info('using module at: %s', path)
+                _logger.info('using module at: %s', path)
                 return path

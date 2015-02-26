@@ -1,33 +1,18 @@
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-#
-
+from logging import getLogger
 import os
 
-from logging import getLogger
-
-from pulp.agent.lib.container import Container
-from pulp.agent.lib.container import SYSTEM, CONTENT, BIND
-from pulp.agent.lib.report import *
+from pulp.agent.lib.container import BIND, Container, CONTENT, SYSTEM
+from pulp.agent.lib import report
 
 
-log = getLogger(__name__)
+_logger = getLogger(__name__)
 
 
 class HandlerNotFound(Exception):
     """
     Handler not found.
     """
-    
+
     def __init__(self, **criteria):
         """
         @param criteria: The handler criteria.
@@ -68,20 +53,20 @@ class Dispatcher:
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         collated = Units(units)
         for type_id, units in collated.items():
             try:
                 handler = self.__handler(type_id, CONTENT)
-                report = handler.install(conduit, units, dict(options))
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _report = handler.install(conduit, units, dict(options))
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
             except Exception:
-                log.exception('handler failed')
-                report = HandlerReport()
-                report.aggregation_key = type_id
-                report.set_failed(LastExceptionDetails())
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.HandlerReport()
+                _report.aggregation_key = type_id
+                _report.set_failed(report.LastExceptionDetails())
+                _report.update(dispatch_report)
         mgr = RebootManager(conduit, self, options)
         reboot_report = mgr.reboot(dispatch_report.num_changes)
         reboot_report.update(dispatch_report)
@@ -100,20 +85,20 @@ class Dispatcher:
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         collated = Units(units)
         for type_id, units in collated.items():
             try:
                 handler = self.__handler(type_id, CONTENT)
-                report = handler.update(conduit, units, dict(options))
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _report = handler.update(conduit, units, dict(options))
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
             except Exception:
-                log.exception('handler failed')
-                report = HandlerReport()
-                report.aggregation_key = type_id
-                report.set_failed(LastExceptionDetails())
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.HandlerReport()
+                _report.aggregation_key = type_id
+                _report.set_failed(report.LastExceptionDetails())
+                _report.update(dispatch_report)
         mgr = RebootManager(conduit, self, options)
         reboot_report = mgr.reboot(dispatch_report.num_changes)
         reboot_report.update(dispatch_report)
@@ -132,20 +117,20 @@ class Dispatcher:
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         collated = Units(units)
         for type_id, units in collated.items():
             try:
                 handler = self.__handler(type_id, CONTENT)
-                report = handler.uninstall(conduit, units, dict(options))
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _report = handler.uninstall(conduit, units, dict(options))
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
             except Exception:
-                log.exception('handler failed')
-                report = HandlerReport()
-                report.aggregation_key = type_id
-                report.set_failed(LastExceptionDetails())
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.HandlerReport()
+                _report.aggregation_key = type_id
+                _report.set_failed(report.LastExceptionDetails())
+                _report.update(dispatch_report)
         mgr = RebootManager(conduit, self, options)
         reboot_report = mgr.reboot(dispatch_report.num_changes)
         reboot_report.update(dispatch_report)
@@ -163,24 +148,24 @@ class Dispatcher:
         @rtype: L{DispatchReport}
         """
         NAME = 'profile'
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         for type_id, handler in self.container.all(CONTENT):
             method = getattr(handler, NAME, 0)
             if not callable(method):
                 continue
             try:
-                report = method(conduit)
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _report = method(conduit)
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
             except NotImplementedError:
                 # optional
                 pass
             except Exception:
-                log.exception('handler failed')
-                report = ProfileReport()
-                report.set_failed(LastExceptionDetails())
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.ProfileReport()
+                _report.set_failed(report.LastExceptionDetails())
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
         return dispatch_report
 
     def reboot(self, conduit, options):
@@ -194,18 +179,18 @@ class Dispatcher:
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         try:
             type_id = os.uname()[0]
             handler = self.__handler(type_id, SYSTEM)
-            report = handler.reboot(conduit, options)
-            report.aggregation_key = type_id
-            report.update(dispatch_report)
+            _report = handler.reboot(conduit, options)
+            _report.aggregation_key = type_id
+            _report.update(dispatch_report)
         except Exception:
-            log.exception('handler failed')
-            report = RebootReport()
-            report.set_failed(LastExceptionDetails())
-            report.update(report)
+            _logger.exception('handler failed')
+            _report = report.RebootReport()
+            _report.set_failed(report.LastExceptionDetails())
+            _report.update(_report)
         return dispatch_report
 
     def bind(self, conduit, bindings, options):
@@ -222,20 +207,20 @@ class Dispatcher:
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         for binding in bindings:
             type_id = binding.pop('type_id')
             try:
                 handler = self.__handler(type_id, BIND)
-                report = handler.bind(conduit, binding, options)
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _report = handler.bind(conduit, binding, options)
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
             except Exception:
-                log.exception('handler failed')
-                report = BindReport(binding['repo_id'])
-                report.aggregation_key = type_id
-                report.set_failed(LastExceptionDetails())
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.BindReport(binding['repo_id'])
+                _report.aggregation_key = type_id
+                _report.set_failed(report.LastExceptionDetails())
+                _report.update(dispatch_report)
         return dispatch_report
 
     def unbind(self, conduit, bindings, options):
@@ -251,26 +236,26 @@ class Dispatcher:
         @return: A dispatch report.
         @rtype: L{DispatchReport}
         """
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         for binding in bindings:
             repo_id = binding['repo_id']
             type_id = binding.pop('type_id', None)
             try:
                 if type_id:
                     handler = self.__handler(type_id, BIND)
-                    report = handler.unbind(conduit, repo_id, options)
-                    report.aggregation_key = type_id
-                    report.update(dispatch_report)
+                    _report = handler.unbind(conduit, repo_id, options)
+                    _report.aggregation_key = type_id
+                    _report.update(dispatch_report)
                 else:
                     reports = self.unbind_all(conduit, repo_id, options)
                     for r in reports:
                         r.update(dispatch_report)
             except Exception:
-                log.exception('handler failed')
-                report = BindReport(repo_id)
-                report.aggregation_key = type_id
-                report.set_failed(LastExceptionDetails())
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.BindReport(repo_id)
+                _report.aggregation_key = type_id
+                _report.set_failed(report.LastExceptionDetails())
+                _report.update(dispatch_report)
         return dispatch_report
 
     def unbind_all(self, conduit, repo_id, options):
@@ -288,15 +273,15 @@ class Dispatcher:
         reports = []
         for type_id, handler in self.container.all(BIND):
             try:
-                report = handler.unbind(conduit, repo_id, options)
-                report.aggregation_key = type_id
-                reports.append(report)
+                _report = handler.unbind(conduit, repo_id, options)
+                _report.aggregation_key = type_id
+                reports.append(_report)
             except Exception:
-                log.exception('handler failed')
-                report = BindReport(repo_id)
-                report.aggregation_key = type_id
-                report.set_failed(LastExceptionDetails())
-                reports.append(report)
+                _logger.exception('handler failed')
+                _report = report.BindReport(repo_id)
+                _report.aggregation_key = type_id
+                _report.set_failed(report.LastExceptionDetails())
+                reports.append(_report)
         return reports
 
     def clean(self, conduit):
@@ -309,24 +294,24 @@ class Dispatcher:
         @rtype: L{DispatchReport}
         """
         NAME = 'clean'
-        dispatch_report = DispatchReport()
+        dispatch_report = report.DispatchReport()
         for type_id, handler in self.container.all():
             method = getattr(handler, NAME, 0)
             if not callable(method):
                 continue
             try:
-                report = method(conduit)
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _report = method(conduit)
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
             except NotImplementedError:
                 # optional
                 pass
             except Exception:
-                log.exception('handler failed')
-                report = CleanReport()
-                report.set_failed(LastExceptionDetails())
-                report.aggregation_key = type_id
-                report.update(dispatch_report)
+                _logger.exception('handler failed')
+                _report = report.CleanReport()
+                _report.set_failed(report.LastExceptionDetails())
+                _report.aggregation_key = type_id
+                _report.update(dispatch_report)
         return dispatch_report
 
     def __handler(self, type_id, role):
@@ -375,17 +360,17 @@ class RebootManager:
         @return: A reboot report.
         @rtype: L{RebootReport}
         """
-        report = RebootReport()
+        _report = report.RebootReport()
         requested = self.options.get('reboot', 0)
         if requested and num_changes > 0:
             dispatch_report = self.dispatcher.reboot(self.conduit, self.options)
-            scheduled = dispatch_report.reboot['scheduled']
+            dispatch_report.reboot['scheduled']
             details = dispatch_report.reboot['details']
             if dispatch_report.succeeded:
-                report.set_succeeded(details, num_changes=1)
+                _report.set_succeeded(details, num_changes=1)
             else:
-                report.failed(details)
-        return report
+                _report.failed(details)
+        return _report
 
 
 class Units(dict):
@@ -406,4 +391,3 @@ class Units(dict):
                 lst = []
                 self[type_id] = lst
             lst.append(unit['unit_key'])
-
