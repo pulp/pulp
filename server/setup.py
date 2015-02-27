@@ -15,6 +15,6 @@ setup(
         ]
     },
     install_requires=[
-        'celery >=3.1.0, <3.2.0', 'httplib2', 'iniparse', 'isodate>=0.5.0', 'm2crypto',
+        'blinker', 'celery >=3.1.0, <3.2.0', 'httplib2', 'iniparse', 'isodate>=0.5.0', 'm2crypto',
         'mongoengine>=0.7.10', 'oauth2>=1.5.211', 'pymongo>=2.5.2', 'setuptools', 'web.py']
 )
