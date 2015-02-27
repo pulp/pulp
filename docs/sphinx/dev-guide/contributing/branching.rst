@@ -63,11 +63,8 @@ which point "2.4-dev" will be used for 2.4.3 development.
 Bug Fix Branches
 ----------------
 
-When creating a pull request that fixes a specific bug in bugzilla, a naming
-convention is used for the pull request branch that is merged with the
-development branch. A bugzilla bug fix branch name should contain
-the bugzilla bug number and optionally, a short description may follow the BZ
-number.
+When creating a Pull Request (PR) that fixes a specific bug, title the PR as
+you would the :ref:`git commit message <commit_messages>`.
 
 
 Feature Branches
@@ -93,11 +90,14 @@ that merge, you additionally need to merge forward your commit to all "newer"
 branches. See :ref:`Merging to Multiple Releases <merging-to-multiple-releases>`
 for more information on merging forward from an older branch.
 
+
+.. _commit_messages:
+
 Commit Messages
 ---------------
 
 The primary commit in a bug fix should have a log message that starts with
-'<bz_id> - ', for example ``123456 - fixes a silly bug``.
+'<bug_id> - ', for example ``123456 - fixes a silly bug``.
 
 
 Cherry-picking and Rebasing
