@@ -1,8 +1,9 @@
 Bugs
 ====
 
-The Pulp team uses `Red Hat Bugzilla <https://bugzilla.redhat.com/>`_ for
-tracking defects and Requests for Enhancements (RFEs).
+Pulp bugs and feature requests (stories) are tracked in `Pulp's Redmine instance <https://pulp.plan.io/>`_.
+You can view `existing bugs <https://pulp.plan.io/issues?utf8=%E2%9C%93&set_filter=1&f%5B%5D=status_id&op%5Bstatus_id%5D=o&f%5B%5D=tracker_id&op%5Btracker_id%5D=%3D&v%5Btracker_id%5D%5B%5D=1&f%5B%5D=&c%5B%5D=project&c%5B%5D=tracker&c%5B%5D=status&c%5B%5D=priority&c%5B%5D=subject&c%5B%5D=assigned_to&c%5B%5D=updated_on&group_by=>`_
+or `existing stories <https://pulp.plan.io/issues?utf8=%E2%9C%93&set_filter=1&f%5B%5D=status_id&op%5Bstatus_id%5D=o&f%5B%5D=tracker_id&op%5Btracker_id%5D=%3D&v%5Btracker_id%5D%5B%5D=3&f%5B%5D=&c%5B%5D=project&c%5B%5D=tracker&c%5B%5D=status&c%5B%5D=priority&c%5B%5D=subject&c%5B%5D=assigned_to&c%5B%5D=updated_on&group_by=>`_.
 
 How to file a bug
 -----------------
@@ -10,30 +11,32 @@ How to file a bug
 Bugs are one of the main ways that the Pulp team interacts with users
 (pulp-list@redhat.com and the #pulp IRC channel being the other methods).
 
-To file a bug:
+You can `file a new bug or feature request <https://pulp.plan.io/projects/pulp/issues/new>`_.
 
-#. Go to `bugzilla <https://bugzilla.redhat.com/>`_ and create an account if
-   you do not already have one.
-#. After logging in, click on "New" in the upper left corner of the main page.
-#. Click "Community" to get a list of community projects and then click "Pulp".
-   You can also go `directly <https://bugzilla.redhat.com/enter_bug.cgi?product=Pulp>`_
-   to the bug entry page if you like.
-#. Enter your bug here. The Pulp team looks through all new bugs at least once
-   a week except for during holidays.
+.. warning::
+  Security related bugs need to be marked as private when reported. Use the
+  private checkbox (top right) for this. Consider also setting the tag 'Security'.
 
-The main information to capture is which command you ran, what went wrong, and
-what you expected to happen. Please also include the output of ``rpm -qa | grep
-pulp | sort`` if possible, and set the *version* field to the corresponding
-Pulp version. You can also select a component in the *Components* field if you
-have an idea about where the bug should go but this is not
-required.
+If you are filing an issue or defect, select ``Issue`` as the *Tracker*. If you
+are filing a feature request, select *Story*.
 
-If you are running code off of the master branch, select *master* in the
-*version* field.
+Fill in the *Subject* and *Description*. Leave the status at ``NEW``. Please
+select the closest corresponding component, if any, using the *Components*
+field. Select the *Severity* field and any tags based on your best judgement.
 
-Once a week (typically on Wednesday), the Pulp team triages all new bugs, at which point
-the bug may be aligned to a different component and its *Severity* rating will be evaluated.
-If necessary, the bug may be marked as ``NEEDINFO`` if more clarification is requested.
+Use the *Version* field to indicate which Pulp version you are using. It has an entry
+for each Pulp release (2.0.6, 2.0.7, 2.1.0, etc.). If a bug is found when running
+from source instead of a released version, the value "Master" should be selected.
+
+You can also upload attachments, but please only upload relevant data. For
+example, if you have an entire log which contains some errors, please trim it
+to just the relevant portions and upload those.
+
+Once a week, the Pulp team triages all new bugs, at which point its
+*Severity* rating and other aspects of the report will be evaluated. If
+necessary, the bug may be commented in requesting more information or
+clarification from the reporter. When a bug has enough information, it has
+its *Priority* rating set and is marked as triaged using the 'Triaged' boolean.
 
 Fixing
 ------
@@ -46,10 +49,10 @@ Developer
 #. Once the bug has been triaged and assigned to a developer, the state of the bug is set to
    ``ASSIGNED``.
 #. The developer creates a new remote branch for the bug on their GitHub fork. The name of the
-   branch should be the number of the bugzilla entry.
+   branch should be the number of the bug entry.
    Example: 123456
 #. When the fix is complete, the developer submits a pull request for the bug into the appropriate
-   branch (master, release branch, etc.). It's appreciated by the reviewer if a link to the bugzilla
+   branch (master, release branch, etc.). It's appreciated by the reviewer if a link to the bug
    is included in the merge request, as well as a brief description of what the change is. It is
    not required to find and assign someone to do the review.
 #. When the pull request is submitted, the developer changes the status of the bug to ``POST``.
