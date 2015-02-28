@@ -12,11 +12,11 @@ On the GitHub page for the repo where your development branch lives, there will 
 a "Pull Request" button. Click it. From there you will choose the source and
 destination branches.
 
-If there is a Bugzilla bug associated with the commit, please title the pull
-request "<bz_id> - Short Message". In the comment section below, please include
-a link to the issue. Use of GitHub's markdown for the link is prefered.
-Example: ``[BZ-123456](http://link.tobug)`` Additionally, please also include a
-link to the pull request in the bugzilla comments.
+If there is a bug for this issue, please title the pull request "<bug_id> -
+Short Message". In the comment section below, please include a link to the
+issue. Use of GitHub's markdown for the link is prefered. Example:
+``[Issue 123456](https://link.tobug)`` Additionally, please also include a
+link to the pull request in the bugs notes.
 
 If there is a Redmine issue associated with the commit, please add ``closes
 #<issue number>`` somewhere in the commit. This will set the issue to
