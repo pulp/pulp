@@ -357,7 +357,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_bindir}/pulp-manage-db
 %{_bindir}/pulp-qpid-ssl-cfg
 %{_bindir}/pulp-gen-ca-certificate
-%{_usr}/lib/%{name}/plugins/types
+%dir %{_usr}/lib/%{name}/plugins/types
 %{python_sitelib}/%{name}/server/
 %{python_sitelib}/%{name}/plugins/
 %{python_sitelib}/pulp_server*.egg-info
@@ -383,7 +383,11 @@ Pulp provides replication, access, and accounting for software repositories.
 %config(noreplace) %{_sysconfdir}/%{name}/server.conf
 # - apache:apache
 %defattr(-,apache,apache,-)
-%{_var}/lib/%{name}/
+%dir %{_var}/lib/%{name}
+%{_var}/lib/%{name}/celery
+%{_var}/lib/%{name}/published
+%{_var}/lib/%{name}/static
+%{_var}/lib/%{name}/uploads
 %dir %{_var}/log/%{name}
 %{_var}/www/pub
 # Install the docs
