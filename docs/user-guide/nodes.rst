@@ -63,7 +63,7 @@ content which is downloaded (as needed) by the *child* node using HTTPS requirin
 certificate that has been signed by the Pulp CA.
 
 During installation of the *Nodes* packages, an x.509 certificate is generated and signed
-using the Pulp CA (specified in server.conf) and stored in ``/etc/pkp/pulp/nodes/node.crt``.
+using the Pulp CA (specified in server.conf) and stored in ``/etc/pki/pulp/nodes/node.crt``.
 The certificate is generated using ``/usr/bin/pulp-gen-nodes-certificate``, which is provided
 by the *Nodes* packages.
 
