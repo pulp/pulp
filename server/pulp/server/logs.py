@@ -1,21 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module defines and configures Pulp's logging system.
 """
 import ConfigParser
 import logging
 import os
+import sys
 import threading
 
 from celery.signals import setup_logging
@@ -29,6 +18,7 @@ DEFAULT_LOG_LEVEL = logging.INFO
 # future.
 LOG_BLACKLIST = ['qpid.messaging.io.ops', 'qpid.messaging.io.raw']
 LOG_FORMAT_STRING = 'pulp: %(name)s:%(levelname)s: %(message)s'
+LOG_PATH = os.path.join('/', 'dev', 'log')
 
 
 def _blacklist_loggers():
@@ -63,8 +53,11 @@ def start_logging(*args, **kwargs):
     root_logger.setLevel(log_level)
 
     # Set up our handler and add it to the root logger
-    handler = CompliantSysLogHandler(address=os.path.join('/', 'dev', 'log'),
-                                     facility=CompliantSysLogHandler.LOG_DAEMON)
+    if not os.path.exists(LOG_PATH):
+        print >> sys.stderr, "Unable to access to log, {log_path}.".format(log_path=LOG_PATH)
+        sys.exit(os.EX_UNAVAILABLE)
+
+    handler = CompliantSysLogHandler(address=LOG_PATH, facility=CompliantSysLogHandler.LOG_DAEMON)
     formatter = logging.Formatter(LOG_FORMAT_STRING)
     handler.setFormatter(formatter)
     root_logger.handlers = []
