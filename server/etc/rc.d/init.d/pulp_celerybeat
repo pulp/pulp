@@ -251,6 +251,10 @@ case "$1" in
         check_paths
         stop_beat
         check_dev_null
+        write_log_message "**********************************************************"
+        write_log_message "* Celerybeat startup requested. After startup is         *"
+        write_log_message "* complete, messages will be logged to /var/log/messages.*"
+        write_log_message "**********************************************************"
         start_beat
     ;;
     status)
