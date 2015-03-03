@@ -2,6 +2,7 @@ from pulp.bindings.base import PulpAPI
 from pulp.bindings.search import SearchAPI
 from pulp.common import constants
 
+
 # Default for update APIs to differentiate between None and not updating the value
 UNSPECIFIED = object()
 
@@ -234,7 +235,8 @@ class RepositoryDistributorAPI(PulpAPI):
         path = self.base_path % repo_id
         return self.server.GET(path)
 
-    def create(self, repo_id, distributor_type_id, distributor_config, auto_publish, distributor_id):
+    def create(self, repo_id, distributor_type_id, distributor_config, auto_publish,
+               distributor_id):
         path = self.base_path % repo_id
         data = {"distributor_type_id": distributor_type_id,
                 "distributor_config": distributor_config,
@@ -254,17 +256,17 @@ class RepositoryDistributorAPI(PulpAPI):
         """
         Update a repository distributor configuration.
 
-        :param repo_id:             The repository ID
-        :type repo_id:              str
-        :param distributor_id:      The unique distributor id
-        :type distributor_id:       str
-        :param distributor_config:  The distributor config dictionary. Supported values depend on the
-                                    type of distributor
-        :type distributor_config:   dict
-        :param delta:               A dictionary with values to change in the distributor configuration.
-                                    Currently, only 'auto_publish' is supported, and should be a
-                                    boolean value
-        :type  delta:               dict
+        :param repo_id:            The repository ID
+        :type repo_id:             str
+        :param distributor_id:     The unique distributor id
+        :type distributor_id:      str
+        :param distributor_config: The distributor config dictionary. Supported values depend on the
+                                   type of distributor
+        :type distributor_config:  dict
+        :param delta:              A dictionary with values to change in the distributor
+                                   configuration. Currently, only 'auto_publish' is supported, and
+                                   should be a boolean value
+        :type  delta:              dict
         """
         path = self.base_path % repo_id + "%s/" % distributor_id
         body = dict(distributor_config=distributor_config, delta=delta)
@@ -292,10 +294,12 @@ class RepositoryHistoryAPI(PulpAPI):
         :type limit: int
         :param sort: indicates the sort direction (options are "ascending" or "descending")
         :type sort: str
-        :param start_date: only entries that occurred at or after the given iso8601 datetime are returned
-        :type start_date: str
-        :param end_date: only entries that occurred at or before the given iso8601 datetime are returned
-        :type end_date: str
+        :param start_date: only entries that occurred at or after the given iso8601 datetime are
+                           returned
+        :type  start_date: str
+        :param end_date: only entries that occurred at or before the given iso8601 datetime are
+                         returned
+        :type  end_date: str
         :return: server response code and response body
         :rtype: pulp.bindings.responses.Response
         """
@@ -324,10 +328,12 @@ class RepositoryHistoryAPI(PulpAPI):
         :type limit: int
         :param sort: indicates the sort direction (options are "ascending" or "descending")
         :type sort: str
-        :param start_date: only entries that occurred at or after the given iso8601 datetime are returned
-        :type start_date: str
-        :param end_date: only entries that occurred at or before the given iso8601 datetime are returned
-        :type end_date: str
+        :param start_date: only entries that occurred at or after the given iso8601 datetime are
+                           returned
+        :type  start_date: str
+        :param end_date: only entries that occurred at or before the given iso8601 datetime are
+                         returned
+        :type  end_date: str
         :return: server response code and response body
         :rtype: pulp.bindings.responses.Response
         """
@@ -421,7 +427,8 @@ class RepositoryUnitAPI(PulpAPI):
         # use compose_filters() to create the actual mongo spec, which requires
         # simulating the **kwargs that okaara would pass in.
         if association_fake_kwargs:
-            criteria['filters']['association'] = SearchAPI.compose_filters(**association_fake_kwargs)
+            criteria['filters']['association'] = SearchAPI.compose_filters(
+                **association_fake_kwargs)
 
         return criteria
 
@@ -516,10 +523,12 @@ class RepositorySyncSchedulesAPI(PulpAPI):
         return self.server.GET(url)
 
     def get_schedule(self, repo_id, importer_id, schedule_id):
-        url = '/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
+        url = '/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id,
+                                                                       schedule_id)
         return self.server.GET(url)
 
-    def add_schedule(self, repo_id, importer_id, schedule, override_config, failure_threshold, enabled):
+    def add_schedule(self, repo_id, importer_id, schedule, override_config, failure_threshold,
+                     enabled):
         url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/' % (repo_id, importer_id)
         body = {
             'schedule': schedule,
@@ -530,12 +539,15 @@ class RepositorySyncSchedulesAPI(PulpAPI):
         return self.server.POST(url, body)
 
     def delete_schedule(self, repo_id, importer_id, schedule_id):
-        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
+        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (
+            repo_id, importer_id, schedule_id)
         return self.server.DELETE(url)
 
-    def update_schedule(self, repo_id, importer_id, schedule_id, schedule=UNSPECIFIED,
-                        override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
-        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (repo_id, importer_id, schedule_id)
+    def update_schedule(
+            self, repo_id, importer_id, schedule_id, schedule=UNSPECIFIED,
+            override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
+        url = '/pulp/api/v2/repositories/%s/importers/%s/schedules/sync/%s/' % (
+            repo_id, importer_id, schedule_id)
         body = {
             'schedule': schedule,
             'override_config': override_config,
@@ -561,11 +573,14 @@ class RepositoryPublishSchedulesAPI(PulpAPI):
         return self.server.GET(url)
 
     def get_schedule(self, repo_id, distributor_id, schedule_id):
-        url = '/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
+        url = '/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (
+            repo_id, distributor_id, schedule_id)
         return self.server.GET(url)
 
-    def add_schedule(self, repo_id, distributor_id, schedule, override_config, failure_threshold, enabled):
-        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/' % (repo_id, distributor_id)
+    def add_schedule(self, repo_id, distributor_id, schedule, override_config, failure_threshold,
+                     enabled):
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/' % (
+            repo_id, distributor_id)
         body = {
             'schedule': schedule,
             'override_config': override_config,
@@ -575,12 +590,15 @@ class RepositoryPublishSchedulesAPI(PulpAPI):
         return self.server.POST(url, body)
 
     def delete_schedule(self, repo_id, distributor_id, schedule_id):
-        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (
+            repo_id, distributor_id, schedule_id)
         return self.server.DELETE(url)
 
-    def update_schedule(self, repo_id, distributor_id, schedule_id, schedule=UNSPECIFIED,
-                        override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
-        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (repo_id, distributor_id, schedule_id)
+    def update_schedule(
+            self, repo_id, distributor_id, schedule_id, schedule=UNSPECIFIED,
+            override_config=UNSPECIFIED, failure_threshold=UNSPECIFIED, enabled=UNSPECIFIED):
+        url = '/pulp/api/v2/repositories/%s/distributors/%s/schedules/publish/%s/' % (
+            repo_id, distributor_id, schedule_id)
         body = {
             'schedule': schedule,
             'override_config': override_config,

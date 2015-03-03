@@ -1,23 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import mock
 
-from pulp.bindings.server import PulpConnection
 from pulp.bindings.repository import (RepositorySearchAPI, RepositoryUnitAPI, RepositoryAPI,
                                       RepositoryDistributorAPI, RepositoryHistoryAPI)
+from pulp.bindings.server import PulpConnection
 from pulp.common import constants
 
 
@@ -60,17 +47,18 @@ class TestRepoUnitSearchAPI(unittest.TestCase):
     def test_unit_filters(self):
         self.api.search('repo1', type_ids=['rpm'], lte=[('count', 5)])
         self.assertEqual(self.query['filters'],
-                {'unit': {'count': {'$lte': 5}}})
+                         {'unit': {'count': {'$lte': 5}}})
 
     def test_after(self):
         self.api.search('repo1', type_ids=['rpm'], after='2012-03-15')
         self.assertEqual(self.query['filters']['association'],
-                {'created': {'$gte': '2012-03-15'}})
+                         {'created': {'$gte': '2012-03-15'}})
 
     def test_before(self):
         self.api.search('repo1', type_ids=['rpm'], before='2012-03-15')
         self.assertEqual(self.query['filters']['association'],
-                {'created': {'$lte': '2012-03-15'}})
+                         {'created': {'$lte': '2012-03-15'}})
+
 
 class TestRepoUnitCopyAPI(unittest.TestCase):
     def setUp(self):
@@ -88,17 +76,17 @@ class TestRepoUnitCopyAPI(unittest.TestCase):
     def test_after(self):
         self.api.copy('repo1', 'repo2', type_ids=['rpm'], after='2012-03-15')
         self.assertEqual(self.query['filters']['association'],
-                {'created': {'$gte': '2012-03-15'}})
+                         {'created': {'$gte': '2012-03-15'}})
 
     def test_before(self):
         self.api.copy('repo1', 'repo2', type_ids=['rpm'], before='2012-03-15')
         self.assertEqual(self.query['filters']['association'],
-                {'created': {'$lte': '2012-03-15'}})
+                         {'created': {'$lte': '2012-03-15'}})
 
     def test_unit_filters(self):
         self.api.copy('repo1', 'repo2', type_ids=['rpm'], lte=[('count', 5)])
         self.assertEqual(self.query['filters'],
-                {'unit': {'count': {'$lte': 5}}})
+                         {'unit': {'count': {'$lte': 5}}})
 
     def test_unit_fields(self):
         self.api.copy('repo1', 'repo2', type_ids=['rpm'], fields=['a', 'b'])
@@ -122,7 +110,8 @@ class TestRepositoryDistributorAPI(unittest.TestCase):
         expected_body = {'distributor_config': {'key': 'value'}, 'delta': {'auto_publish': True}}
 
         # Test
-        result = self.api.update('test-repo', 'test-distributor', {'key': 'value'}, {'auto_publish': True})
+        result = self.api.update('test-repo', 'test-distributor', {'key': 'value'},
+                                 {'auto_publish': True})
         self.api.server.PUT.assert_called_once_with(expected_path, expected_body)
         self.assertEqual(result, self.api.server.PUT.return_value)
 
@@ -162,8 +151,9 @@ class TestRespositoryHistoryAPI(unittest.TestCase):
         }
 
         # Test
-        result = self.api.sync_history('test_repo', limit=3, sort='ascending', start_date='2013-01-01T00:00:00Z',
-                                       end_date='2013-01-01T00:00:00Z')
+        result = self.api.sync_history(
+            'test_repo', limit=3, sort='ascending', start_date='2013-01-01T00:00:00Z',
+            end_date='2013-01-01T00:00:00Z')
         self.api.server.GET.assert_called_once_with(expected_path, expected_query)
         self.assertEqual(result, self.api.server.GET.return_value)
 
@@ -194,8 +184,9 @@ class TestRespositoryHistoryAPI(unittest.TestCase):
         }
 
         # Test
-        result = self.api.publish_history('test_repo', 'test_distributor',limit=3, sort='ascending',
-                                          start_date='2013-01-01T00:00:00Z', end_date='2013-01-01T00:00:00Z')
+        result = self.api.publish_history(
+            'test_repo', 'test_distributor', limit=3, sort='ascending',
+            start_date='2013-01-01T00:00:00Z', end_date='2013-01-01T00:00:00Z')
         self.api.server.GET.assert_called_once_with(expected_path, expected_query)
         self.assertEqual(result, self.api.server.GET.return_value)
 
@@ -222,4 +213,3 @@ class TestRepositoryUpdateAPI(unittest.TestCase):
         self.api.update(self.repo_id, {}, importer_config={'foo': 'bar'})
         expected_body = {'delta': {}, 'importer_config': {'foo': 'bar'}}
         self.api.server.PUT.assert_called_once_with(self.expected_path, expected_body)
-
