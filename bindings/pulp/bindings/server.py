@@ -1,3 +1,4 @@
+from types import NoneType
 import base64
 import locale
 import logging
@@ -9,15 +10,13 @@ except ImportError:
     # python-oauth2 isn't available on RHEL 5.
     oauth = None
 
-from types import NoneType
 from M2Crypto import httpslib, m2, SSL
 
 from pulp.bindings import exceptions
 from pulp.bindings.responses import Response, Task
-from pulp.common.constants import DEFAULT_CA_PATH
 from pulp.common.compat import json
+from pulp.common.constants import DEFAULT_CA_PATH
 from pulp.common.util import ensure_utf_8, encode_unicode
-
 
 
 class PulpConnection(object):
@@ -142,9 +141,11 @@ class PulpConnection(object):
         response_code, response_body = self.server_wrapper.request(method, url, body)
 
         if self.api_responses_logger:
-            self.api_responses_logger.info('%s request to %s with parameters %s' % (method, url, body))
+            self.api_responses_logger.info(
+                '%s request to %s with parameters %s' % (method, url, body))
             self.api_responses_logger.info("Response status : %s \n" % response_code)
-            self.api_responses_logger.info("Response body :\n %s\n" % json.dumps(response_body, indent=2))
+            self.api_responses_logger.info(
+                "Response body :\n %s\n" % json.dumps(response_body, indent=2))
 
         if response_code >= 300:
             self._handle_exceptions(response_code, response_body)
@@ -172,10 +173,10 @@ class PulpConnection(object):
 
     def _handle_exceptions(self, response_code, response_body):
 
-        code_class_mappings = {400 : exceptions.BadRequestException,
-                               401 : exceptions.PermissionsException,
-                               404 : exceptions.NotFoundException,
-                               409 : exceptions.ConflictException}
+        code_class_mappings = {400: exceptions.BadRequestException,
+                               401: exceptions.PermissionsException,
+                               404: exceptions.NotFoundException,
+                               409: exceptions.ConflictException}
 
         if response_code not in code_class_mappings:
 
@@ -229,8 +230,6 @@ class PulpConnection(object):
             path = '?'.join((path, queries))
         return path
 
-
-# -- wrapper classes ----------------------------------------------------------
 
 class HTTPSServerWrapper(object):
     """
@@ -305,7 +304,8 @@ class HTTPSServerWrapper(object):
             oauth_request = oauth.Request.from_consumer_and_token(
                 oauth_consumer,
                 http_method=method,
-                http_url='https://%s:%d%s' % (self.pulp_connection.host, self.pulp_connection.port, url))
+                http_url='https://%s:%d%s' % (self.pulp_connection.host, self.pulp_connection.port,
+                                              url))
             oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), oauth_consumer, None)
             oauth_header = oauth_request.to_header()
             # unicode header values causes m2crypto to do odd things.
