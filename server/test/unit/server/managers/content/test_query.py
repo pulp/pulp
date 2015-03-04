@@ -75,7 +75,7 @@ class PulpContentQueryTests(PulpContentTests):
 
     def test_multi_key_dicts(self):
         ids, key_dicts = self.query_manager.get_content_unit_keys(TYPE_2_DEF.id, self.type_2_ids)
-        units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, key_dicts)
+        units = list(self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, key_dicts))
         self.assertEqual(len(units), len(self.type_2_ids))
 
     def __test_keys_dicts_query(self):
@@ -116,5 +116,5 @@ class TestGetContentUnitIDs(unittest.TestCase):
 
         # evaluate the generator so the code actually runs
         list(ret)
-        expected_spec = {'a': {'$in': ['foo', 'bar']}}
+        expected_spec = {'$or': ({'a': 'foo'}, {'a': 'bar'})}
         mock_find.assert_called_once_with(expected_spec, fields=['_id'])

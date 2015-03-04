@@ -10,17 +10,5 @@
     "qpid-qmf": {
         "version": "0.26-2",
         "platform": ["el6"]
-    },
-    "pulp-docker": {
-        "version": "0.2.2-1",
-        "platform": ["el6", "el7", "fc20", "fc21"]
-    },
-    "pulp-python": {
-        "version": "0.0.0-1",
-        "platform": ["el6", "el7", "fc20", "fc21"]
-    },
-    "python-crane": {
-        "version": "0.2.2-1",
-        "platform": ["el6", "el7", "fc20", "fc21"]
     }
 }
