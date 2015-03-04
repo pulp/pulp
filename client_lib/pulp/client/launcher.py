@@ -232,10 +232,11 @@ def _create_prompt(config):
 
     enable_color = config.parse_bool(config['output']['enable_color'])
 
+    fallback_wrap = int(config['output']['wrap_width'])
     if config.parse_bool(config['output']['wrap_to_terminal']):
         wrap = WIDTH_TERMINAL
     else:
-        wrap = int(config['output']['wrap_width'])
+        wrap = fallback_wrap
 
-    prompt = PulpPrompt(enable_color=enable_color, wrap_width=wrap)
+    prompt = PulpPrompt(enable_color=enable_color, wrap_width=wrap, fallback_wrap=fallback_wrap)
     return prompt
