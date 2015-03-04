@@ -59,9 +59,14 @@ ABORT = okaara.prompt.ABORT
 
 class PulpPrompt(Prompt):
     def __init__(self, input=sys.stdin, output=sys.stdout, enable_color=True,
-                 wrap_width=80, record_tags=False):
-        Prompt.__init__(self, input=input, output=output, enable_color=enable_color,
-                        wrap_width=wrap_width, record_tags=record_tags)
+                 wrap_width=80, record_tags=False, fallback_wrap=80):
+        try:
+            Prompt.__init__(self, input=input, output=output, enable_color=enable_color,
+                            wrap_width=wrap_width, record_tags=record_tags)
+        except IOError:
+            print "\nUnable to access tty size, continuing with wrap width.\n"
+            Prompt.__init__(self, input=input, output=output, enable_color=enable_color,
+                            wrap_width=fallback_wrap, record_tags=record_tags)
 
         # Shadowed for another alternative to referencing it
         self.ABORT = ABORT
