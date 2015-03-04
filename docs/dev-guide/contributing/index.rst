@@ -18,8 +18,8 @@ For New Contributors
 ^^^^^^^^^^^^^^^^^^^^
 
 If you are interested in contributing to Pulp, the best way is to select a bug
-that interests you and submit a patch for it. We use `Bugzilla
-<https://bugzilla.redhat.com/buglist.cgi?bug_status=NEW&classification=Community&list_id=2962559&product=Pulp&query_format=advanced&target_release=--->`_
+that interests you and submit a patch for it. We use `Redmine
+<https://pulp.plan.io/projects/pulp/issues/new>`_
 for tracking bugs. Of course, you may have your own idea for a feature or
 bugfix as well! You may want to send an email to pulp-list@redhat.com or ask in
 the #pulp channel on freenode before working on your feature or bugfix. The
