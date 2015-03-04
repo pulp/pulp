@@ -74,7 +74,7 @@ sudo yum install -y @pulp-server-qpid @pulp-admin @pulp-consumer
 sudo yum remove -y pulp-\* python-pulp\*
 sudo yum install -y python-setuptools redhat-lsb mongodb mongodb-server \
                     qpid-cpp-server qpid-cpp-server-store python-qpid-qmf \
-                    git python-pip python-nose python-mock python-paste
+                    git python-pip python-nose python-mock python-paste python-flake8
 sudo yum-config-manager --disable pulp-2.6-testing > /dev/null
 
 echo "installing newer kombu (temporary step until 2.6.0 is in testing repo)"
