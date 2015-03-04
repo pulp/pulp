@@ -93,15 +93,19 @@ class ContentUploadManager(object):
         """
         Deletes all files associated with the given upload request. If the
         upload request does not exist or has already been deleted, this call
-        has no effect.
+        will raise MissingResource.
 
         @param upload_id: upload request ID
         @type  upload_id: str
+
+        @raise MissingResource: if the upload request ID does not exist
         """
 
         file_path = ContentUploadManager._upload_file_path(upload_id)
         if os.path.exists(file_path):
             os.remove(file_path)
+        else:
+            raise MissingResource(upload_id=upload_id)
 
     def read_upload(self, upload_id):
         """
