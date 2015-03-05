@@ -13,6 +13,8 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 # These paths should all pass PEP-8 checks
 paths_to_check = [
+    'bindings/pulp/bindings/tasks.py',
+    'bindings/test/unit/test_tasks.py',
     'repoauth/',
     'server/pulp/plugins/conduits',
     'server/pulp/plugins/file/',
