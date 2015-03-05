@@ -15,31 +15,6 @@ from pulp.client import constants, launcher
 from pulp.common import config
 
 
-class TestLoggingSetup(unittest.TestCase):
-    """
-    This class contains tests for default logging setup.
-    """
-    def test_initialize_logging_no_verbose(self):
-        cli_logger = launcher._initialize_logging(verbose=None)
-        self.assertEqual(cli_logger.level, logging.FATAL)
-        self._test_handler(cli_logger)
-
-    def test_initialize_logging_verbose(self):
-        cli_logger = launcher._initialize_logging(verbose=1)
-        self.assertEqual(cli_logger.level, logging.INFO)
-        self._test_handler(cli_logger)
-
-    def test_initialize_logging_extra_verbose(self):
-        cli_logger = launcher._initialize_logging(verbose=2)
-        self.assertEqual(cli_logger.level, logging.DEBUG)
-        self._test_handler(cli_logger)
-
-    def _test_handler(self, cli_logger):
-        handler = cli_logger.handlers[0]
-        self.assertEqual(handler.stream, sys.stderr)
-        self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
-
-
 class TestCreateBindings(unittest.TestCase):
     """
     This class contains tests for the _create_bindings() function.
@@ -92,6 +67,13 @@ class TestCreateBindings(unittest.TestCase):
         bindings = launcher._create_bindings(self.config, None, 'username', 'password', verbose=2)
         api_logger = bindings.bindings.server.api_responses_logger
         handler = api_logger.handlers[0]
+        self.assertEqual(handler.stream, sys.stderr)
+        self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
+
+    def test_initialize_logging_no_verbose(self):
+        cli_logger = launcher._initialize_logging(verbose=None)
+        self.assertEqual(cli_logger.level, logging.FATAL)
+        handler = cli_logger.handlers[0]
         self.assertEqual(handler.stream, sys.stderr)
         self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
 
