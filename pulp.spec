@@ -390,6 +390,7 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_var}/lib/%{name}/uploads
 %dir %{_var}/log/%{name}
 %{_var}/www/pub
+%{_var}/cache/%{name}/
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE COPYRIGHT
