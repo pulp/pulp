@@ -152,7 +152,7 @@ def _initialize_logging(verbose=None):
     """
     @return: configured cli logger
     """
-    cli_log_handler = logging.StreamHandler(stream=sys.stderr)
+    cli_log_handler = logging.StreamHandler(sys.stderr)
     cli_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
     cli_logger = logging.getLogger('pulp')
@@ -190,7 +190,7 @@ def _create_bindings(config, cli_logger, username, password, verbose=None):
 
     api_logger = None
     if verbose and verbose > 1:
-        api_log_handler = logging.StreamHandler(stream=sys.stderr)
+        api_log_handler = logging.StreamHandler(sys.stderr)
         api_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
         api_logger = logging.getLogger('call_log')
