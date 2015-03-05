@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 from gettext import gettext as _
 
@@ -22,11 +9,13 @@ from pulp.client.commands.criteria import CriteriaCommand
 
 # -- framework hook -----------------------------------------------------------
 
+
 def initialize(context):
     auth_section = AuthSection(context)
     context.cli.add_section(auth_section)
 
 # -- common exceptions --------------------------------------------------------
+
 
 class InvalidConfig(Exception):
     """
@@ -38,6 +27,7 @@ class InvalidConfig(Exception):
 
 # -- sections -----------------------------------------------------------------
 
+
 class AuthSection(PulpCliSection):
 
     def __init__(self, context):
@@ -48,7 +38,7 @@ class AuthSection(PulpCliSection):
         PulpCliSection.__init__(self, 'auth', _('manage users, roles and permissions'))
 
         self.context = context
-        self.prompt = context.prompt # for easier access
+        self.prompt = context.prompt  # for easier access
 
         # Subsections
         self.add_subsection(UserSection(context))
@@ -59,43 +49,59 @@ class AuthSection(PulpCliSection):
 
 # -- user sections -----------------------------------------------------------
 
+
 class UserSection(PulpCliSection):
 
     def __init__(self, context):
         PulpCliSection.__init__(self, 'user', 'manage users')
 
         self.context = context
-        self.prompt = context.prompt # for easier access
+        self.prompt = context.prompt  # for easier access
 
         # Common Options
-        login_option = PulpCliOption('--login', 'uniquely identifies the user; only alphanumeric, -, ., and _ allowed',
-                                     required=True, validate_func=validators.id_validator_allow_dots)
-        name_option = PulpCliOption('--name', 'user-readable full name of the user', required=False)
+        login_option = PulpCliOption('--login', 'uniquely identifies the user; '
+                                                'only alphanumeric, -, ., and _ allowed',
+                                     required=True,
+                                     validate_func=validators.id_validator_allow_dots)
+        name_option = PulpCliOption('--name', 'user-readable full name of the user',
+                                    required=False)
 
         # Create command
         create_command = PulpCliCommand('create', 'creates a user', self.create)
         create_command.add_option(login_option)
-        create_command.add_option(PulpCliOption('--password', 'password for the new user, if you do not want to be prompted for one', required=False))
+        create_command.add_option(PulpCliOption('--password', 'password for the new user, '
+                                                'if you do not want to be prompted for one',
+                                                required=False))
         create_command.add_option(name_option)
         self.add_command(create_command)
 
         # Update Command
-        update_command = PulpCliCommand('update', 'changes metadata of an existing user', self.update)
-        update_command.add_option(PulpCliOption('--login', 'identifies the user to be updated', required=True))
+        update_command = PulpCliCommand('update', 'changes metadata of an existing user',
+                                        self.update)
+        update_command.add_option(PulpCliOption('--login', 'identifies the user to be updated',
+                                                required=True))
         update_command.add_option(name_option)
-        update_command.add_option(PulpCliOption('--password', 'new password for the user, use -p if you want to be prompted for the password', required=False))
-        update_command.add_option(PulpCliFlag('-p', 'if specified, you will be prompted to enter new password for the user'))
+        update_command.add_option(PulpCliOption('--password', 'new password for the user, use -p '
+                                                'if you want to be prompted for the password',
+                                                required=False))
+        update_command.add_option(PulpCliFlag('-p', 'if specified, you will be prompted to enter '
+                                              'new password for the user'))
         self.add_command(update_command)
 
         # Delete Command
         delete_command = PulpCliCommand('delete', 'deletes a user', self.delete)
-        delete_command.add_option(PulpCliOption('--login', 'identifies the user to be deleted', required=True))
+        delete_command.add_option(PulpCliOption('--login', 'identifies the user to be deleted',
+                                                required=True))
         self.add_command(delete_command)
 
         # List Command
-        list_command = PulpCliCommand('list', 'lists summary of users registered to the Pulp server', self.list)
-        list_command.add_option(PulpCliFlag('--details', 'if specified, all the user information is displayed'))
-        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if specified, only the given fields will displayed', required=False))
+        list_command = PulpCliCommand('list', 'lists summary of users registered to the Pulp '
+                                      'server', self.list)
+        list_command.add_option(PulpCliFlag('--details', 'if specified, all the user information '
+                                            'is displayed'))
+        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if '
+                                              'specified, only the given fields will displayed',
+                                              required=False))
         self.add_command(list_command)
 
         # Search Command
@@ -127,7 +133,8 @@ class UserSection(PulpCliSection):
             self.context.server.user.update(kwargs['login'], delta)
             self.prompt.render_success_message('User [%s] successfully updated' % kwargs['login'])
         except NotFoundException:
-            self.prompt.write('User [%s] does not exist on the server' % kwargs['login'], tag='not-found')
+            self.prompt.write('User [%s] does not exist on the server' % kwargs['login'],
+                              tag='not-found')
 
     def _prompt_password(self, login, password=''):
         """
@@ -196,40 +203,53 @@ class UserSection(PulpCliSection):
 
 # -- role sections -----------------------------------------------------------
 
+
 class RoleSection(PulpCliSection):
 
     def __init__(self, context):
         PulpCliSection.__init__(self, 'role', 'manage user roles')
 
         self.context = context
-        self.prompt = context.prompt # for easier access
+        self.prompt = context.prompt  # for easier access
 
         # Common Options
-        id_option = PulpCliOption('--role-id', 'uniquely identifies the role; only alphanumeric, -, and _ allowed', required=True, validate_func=validators.id_validator)
+        id_option = PulpCliOption('--role-id', 'uniquely identifies the role; only alphanumeric, '
+                                  ' -, and _ allowed',
+                                  required=True, validate_func=validators.id_validator)
 
         # Create command
         create_command = PulpCliCommand('create', 'creates a role', self.create)
         create_command.add_option(id_option)
-        create_command.add_option(PulpCliOption('--display-name', 'user-friendly name for the role', required=False))
-        create_command.add_option(PulpCliOption('--description', 'user-friendly text describing the role', required=False))
+        create_command.add_option(PulpCliOption('--display-name', 'user-friendly name for the role',
+                                                required=False))
+        create_command.add_option(PulpCliOption('--description', 'user-friendly text describing '
+                                                'the role', required=False))
         self.add_command(create_command)
 
         # Update command
         update_command = PulpCliCommand('update', 'updates a role', self.update)
-        update_command.add_option(PulpCliOption('--role-id', 'identifies the role to be updated', required=True))
-        update_command.add_option(PulpCliOption('--display-name', 'user-friendly name for the role', required=False))
-        update_command.add_option(PulpCliOption('--description', 'user-friendly text describing the role', required=False))
+        update_command.add_option(PulpCliOption('--role-id', 'identifies the role to be updated',
+                                                required=True))
+        update_command.add_option(PulpCliOption('--display-name', 'user-friendly name for the role',
+                                                required=False))
+        update_command.add_option(PulpCliOption('--description', 'user-friendly text describing '
+                                                'the role', required=False))
         self.add_command(update_command)
 
         # Delete Command
         delete_command = PulpCliCommand('delete', 'deletes a role', self.delete)
-        delete_command.add_option(PulpCliOption('--role-id', 'identifies the role to be deleted', required=True))
+        delete_command.add_option(PulpCliOption('--role-id', 'identifies the role to be deleted',
+                                                required=True))
         self.add_command(delete_command)
 
         # List Command
-        list_command = PulpCliCommand('list', 'lists summary of roles on the Pulp server', self.list)
-        list_command.add_option(PulpCliFlag('--details', 'if specified, all the role information is displayed'))
-        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; if specified, only the given fields will displayed', required=False))
+        list_command = PulpCliCommand('list', 'lists summary of roles on the Pulp server',
+                                      self.list)
+        list_command.add_option(PulpCliFlag('--details', 'if specified, all the role information '
+                                            'is displayed'))
+        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; '
+                                              'if specified, only the given fields will displayed',
+                                              required=False))
         self.add_command(list_command)
 
     def create(self, **kwargs):
@@ -277,7 +297,7 @@ class RoleSection(PulpCliSection):
         order = filters
 
         if kwargs['details'] is True:
-            filters = ['id','display_name','description','users','permissions']
+            filters = ['id', 'display_name', 'description', 'users', 'permissions']
             order = filters
         elif kwargs['fields'] is not None:
             filters = kwargs['fields'].split(',')
@@ -288,13 +308,14 @@ class RoleSection(PulpCliSection):
         for r in role_list:
             self.prompt.render_document(r, filters=filters, order=order)
 
+
 class RoleUserSection(PulpCliSection):
 
     def __init__(self, context):
         PulpCliSection.__init__(self, 'user', _('add/remove user from the role'))
 
         self.context = context
-        self.prompt = context.prompt # for easier access
+        self.prompt = context.prompt  # for easier access
 
         # Common Options
         id_option = PulpCliOption('--role-id', 'identifies the role', required=True)
@@ -318,7 +339,8 @@ class RoleUserSection(PulpCliSection):
 
         # Call the server
         self.context.server.role.add_user(role_id, login)
-        self.prompt.render_success_message('User [%s] successfully added to role [%s]' % (login, role_id))
+        self.prompt.render_success_message('User [%s] successfully added to role [%s]'
+                                           % (login, role_id))
 
     def remove_user(self, **kwargs):
         role_id = kwargs['role-id']
@@ -326,40 +348,59 @@ class RoleUserSection(PulpCliSection):
 
         # Call the server
         self.context.server.role.remove_user(role_id, login)
-        self.prompt.render_success_message('User [%s] successfully removed from role [%s]' % (login, role_id))
+        self.prompt.render_success_message('User [%s] successfully removed from role [%s]'
+                                           % (login, role_id))
 
 # -- permission sections -------------------------------------------------------
+
 
 class PermissionSection(PulpCliSection):
 
     def __init__(self, context):
-        PulpCliSection.__init__(self, 'permission', 'manage granting, revoking and listing permissions for resources')
+        PulpCliSection.__init__(self, 'permission', 'manage granting, revoking and listing '
+                                'permissions for resources')
 
         self.context = context
-        self.prompt = context.prompt # for easier access
+        self.prompt = context.prompt  # for easier access
 
         # List Command
-        list_command = PulpCliCommand('list', 'lists permissions for a particular resource', self.list)
-        list_command.add_option(PulpCliOption('--resource', 'uniquely identifies a resource', required=True))
+        list_command = PulpCliCommand('list', 'lists permissions for a particular resource',
+                                      self.list)
+        list_command.add_option(PulpCliOption('--resource', 'uniquely identifies a resource',
+                                              required=True))
         self.add_command(list_command)
 
         # Grant Command
-        usage_description = 'you can specify either login or role-id in this command; both cannot be specified at the same time'
-        grant_command = PulpCliCommand('grant', 'grants resource permissions to given user or given role', self.grant, usage_description=usage_description)
-        grant_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
-        grant_command.add_option(PulpCliOption('--login', 'login of the user to which access to given resource is being granted', required=False))
-        grant_command.add_option(PulpCliOption('--role-id', 'id of the role to which access to given resource is being granted', required=False))
-        grant_command.add_option(PulpCliOption('-o', 'type of permissions being granted, valid permissions: create, read, update, delete, execute', required=True, allow_multiple=True))
+        usage_description = 'you can specify either login or role-id in this command; '\
+                            'both cannot be specified at the same time'
+        grant_command = PulpCliCommand('grant', 'grants resource permissions to given user or '
+                                       'given role', self.grant,
+                                       usage_description=usage_description)
+        grant_command.add_option(PulpCliOption('--resource', 'resource REST API path whose '
+                                               'permissions are being manipulated', required=True))
+        grant_command.add_option(PulpCliOption('--login', 'login of the user to which access to '
+                                               'given resource is being granted', required=False))
+        grant_command.add_option(PulpCliOption('--role-id', 'id of the role to which access to '
+                                               'given resource is being granted', required=False))
+        grant_command.add_option(PulpCliOption('-o', 'type of permissions being granted, valid '
+                                               'permissions: create, read, update, delete, execute',
+                                               required=True, allow_multiple=True))
         self.add_command(grant_command)
 
         # Revoke Command
-        revoke_command = PulpCliCommand('revoke', 'revokes resource permissions from given user or given role', self.revoke, usage_description=usage_description)
-        revoke_command.add_option(PulpCliOption('--resource', 'resource REST API path whose permissions are being manipulated', required=True))
-        revoke_command.add_option(PulpCliOption('--login', 'login of the user from which access to given resource is being revoked', required=False))
-        revoke_command.add_option(PulpCliOption('--role-id', 'id of the role from which access to given resource is being revoked', required=False))
-        revoke_command.add_option(PulpCliOption('-o', 'type of permissions being revoked, valid permissions: create, read, update, delete, execute', required=True, allow_multiple=True))
+        revoke_command = PulpCliCommand('revoke', 'revokes resource permissions from given user or '
+                                        'given role', self.revoke,
+                                        usage_description=usage_description)
+        revoke_command.add_option(PulpCliOption('--resource', 'resource REST API path whose '
+                                                'permissions are being manipulated', required=True))
+        revoke_command.add_option(PulpCliOption('--login', 'login of the user from which access to '
+                                                'given resource is being revoked', required=False))
+        revoke_command.add_option(PulpCliOption('--role-id', 'id of the role from which access to '
+                                                'given resource is being revoked', required=False))
+        revoke_command.add_option(PulpCliOption('-o', 'type of permissions being revoked, valid '
+                                                'permissions: create, read, update, delete, '
+                                                'execute', required=True, allow_multiple=True))
         self.add_command(revoke_command)
-
 
     def list(self, **kwargs):
         resource = kwargs['resource']
@@ -370,7 +411,6 @@ class PermissionSection(PulpCliSection):
             if 'users' in permission:
                 self.prompt.render_document(permission['users'])
 
-
     def grant(self, **kwargs):
         resource = kwargs['resource']
         login = kwargs['login'] or None
@@ -378,19 +418,25 @@ class PermissionSection(PulpCliSection):
         operations = [o.upper() for o in kwargs['o']]
 
         if login is None and role_id is None:
-            self.prompt.render_failure_message('No user login or role id specified to grant permissions to.')
+            self.prompt.render_failure_message(
+                'No user login or role id specified to grant permissions to.')
             return
 
         if login and role_id:
-            self.prompt.render_failure_message('Both user login and role id specified. Please specify either user login OR role id.')
+            m = 'Both user login and role id specified.Please specify either user login OR role id.'
+            self.prompt.render_failure_message(m)
             return
 
         if login:
             self.context.server.permission.grant_to_user(resource, login, operations)
-            self.prompt.render_success_message('Permissions [%s : %s] successfully granted to user [%s]' % (resource, operations, login))
+            self.prompt.render_success_message(
+                'Permissions [%s : %s] successfully granted to user [%s]' % (resource, operations,
+                                                                             login))
         else:
             self.context.server.permission.grant_to_role(resource, role_id, operations)
-            self.prompt.render_success_message('Permissions [%s : %s] successfully granted to role [%s]' % (resource, operations, role_id))
+            self.prompt.render_success_message(
+                'Permissions [%s : %s] successfully granted to role [%s]' % (resource, operations,
+                                                                             role_id))
 
     def revoke(self, **kwargs):
         resource = kwargs['resource']
@@ -399,17 +445,22 @@ class PermissionSection(PulpCliSection):
         operations = [o.upper() for o in kwargs['o']]
 
         if login is None and role_id is None:
-            self.prompt.render_failure_message('No user login or role id specified to revoke permissions from.')
+            self.prompt.render_failure_message(
+                'No user login or role id specified to revoke permissions from.')
             return
 
         if login and role_id:
-            self.prompt.render_failure_message('Both user login and role id specified. Please specify either user login OR role id.')
+            m = 'Both user login and role id specified.Please specify either user login OR role id.'
+            self.prompt.render_failure_message(m)
             return
 
         if login:
             self.context.server.permission.revoke_from_user(resource, login, operations)
-            self.prompt.render_success_message('Permissions [%s : %s] successfully revoked from user [%s]' % (resource, operations, login))
+            self.prompt.render_success_message(
+                'Permissions [%s : %s] successfully revoked from user [%s]' % (resource, operations,
+                                                                               login))
         else:
             self.context.server.permission.revoke_from_role(resource, role_id, operations)
-            self.prompt.render_success_message('Permissions [%s : %s] successfully revoked from role [%s]' % (resource, operations, role_id))
-
+            self.prompt.render_success_message(
+                'Permissions [%s : %s] successfully revoked from role [%s]' % (resource, operations,
+                                                                               role_id))
