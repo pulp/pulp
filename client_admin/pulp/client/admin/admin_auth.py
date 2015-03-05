@@ -15,6 +15,11 @@ from gettext import gettext as _
 from M2Crypto import X509
 import os
 import stat
+try:
+    import kerberos as krb
+    import krbV
+except ImportError:
+    krb = None
 
 from pulp.client.extensions.extensions import PulpCliCommand
 
@@ -38,24 +43,47 @@ class LoginCommand(PulpCliCommand):
 
         self.context = context
 
-        self.create_option('--username', _('server account username'), aliases=['-u'], required=True)
+        self.create_option('--username', _('server account username'), aliases=['-u'], required=False)
         self.create_option('--password', _('server account password'), aliases=['-p'], required=False)
 
     def login(self, **kwargs):
-        # Query the server
-        username = kwargs['username']
-        password = kwargs['password']
+        for auth_type in ['Kerberos', 'Basic']:
+            if auth_type is 'Kerberos':
+                if krb is not None and self.has_kerberos_ticket():
+                    __, krb_context = krb.authGSSClientInit("HTTP@%s" % self.context.server.server_info.server.host)
+                    krb.authGSSClientStep(krb_context, "")
+                    negotiate_details = krb.authGSSClientResponse(krb_context)
+                    #logger.info("KERBEROS selected - %s" % krbV.default_context().default_ccache().principal())
+                    username = krbV.default_context().default_ccache().principal()
+                    password = None
+                else:
+                    continue
+            if auth_type is 'Basic':
+                # Query the server
+                username = kwargs['username']
+                password = kwargs['password']
+                # Hidden, interactive prompt for the password if not specified
 
-        # Hidden, interactive prompt for the password if not specified
-        if password is None:
-            prompt_msg = 'Enter password: '
-            password = self.context.prompt.prompt_password(_(prompt_msg))
-            if password is self.context.prompt.ABORT:
-                self.context.prompt.render_spacer()
-                self.context.prompt.write(_('Login cancelled'))
-                return os.EX_NOUSER
+                if username is None:
+                    self.context.prompt.write(_('No username provided'))
+                    return os.EX_NOUSER
 
-        result = self.context.server.actions.login(username, password).response_body
+                if password is None:
+                    prompt_msg = 'Enter password: '
+                    password = self.context.prompt.prompt_password(_(prompt_msg))
+                    if password is self.context.prompt.ABORT:
+                        self.context.prompt.render_spacer()
+                        self.context.prompt.write(_('Login cancelled'))
+                        return os.EX_NOUSER
+           
+            #result = self.context.server.actions.login(username, password).response_body
+            try:
+                response = self.context.server.actions.login(username, password)
+                break
+            except Exception:
+                continue
+
+        result = response.response_body
         key_cert = result['key'] + result['certificate']
 
         # Save the certificate to the filesystem
@@ -93,6 +121,22 @@ class LoginCommand(PulpCliCommand):
             msg = msg % {'e' : expiration_date}
 
         self.context.prompt.render_success_message(msg)
+    
+    def has_kerberos_ticket(self):
+        """
+        Verify if the user has a valid Kerberos ticket.
+
+        :rtype: boolean
+        """
+        ctx = krbV.default_context()
+        cc = ctx.default_ccache()
+        try:
+            printc = cc.principal()
+            retval = True
+        except krbV.Krb5Error:
+            retval = False
+        return retval
+
 
 class LogoutCommand(PulpCliCommand):
     """

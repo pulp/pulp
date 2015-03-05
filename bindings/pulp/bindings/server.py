@@ -2,12 +2,18 @@ import base64
 import locale
 import logging
 import os
+import requests
 import urllib
 try:
     import oauth2 as oauth
 except ImportError:
     # python-oauth2 isn't available on RHEL 5.
     oauth = None
+try:
+    import kerberos as krb
+    import krbV
+except ImportError:
+    krb = None
 
 from types import NoneType
 from M2Crypto import httpslib, m2, SSL
@@ -229,6 +235,21 @@ class PulpConnection(object):
             path = '?'.join((path, queries))
         return path
 
+    def has_kerberos_ticket(self):
+        """
+        Verify if the user has a valid Kerberos ticket.
+
+        :rtype: boolean
+        """
+        ctx = krbV.default_context()
+        cc = ctx.default_ccache()
+        try:
+            princ = cc.principal()
+            retval = True
+        except krbV.Krb5Error:
+            retval = False
+        return retval
+
 
 # -- wrapper classes ----------------------------------------------------------
 
@@ -289,47 +310,68 @@ class HTTPSServerWrapper(object):
                 raise exceptions.MissingCAPathException(self.pulp_connection.ca_path)
         ssl_context.set_session_timeout(self.pulp_connection.timeout)
 
-        if self.pulp_connection.username and self.pulp_connection.password:
-            raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
-            encoded = base64.encodestring(raw)[:-1]
-            headers['Authorization'] = 'Basic ' + encoded
-        elif self.pulp_connection.cert_filename:
-            ssl_context.load_cert(self.pulp_connection.cert_filename)
+        original_headers = headers
+        for auth_type in ['Kerberos', 'Certificate', 'OAuth', 'Basic']:
+            headers = original_headers
+            if auth_type is 'Kerberos':
+                if krb is not None and self.pulp_connection.has_kerberos_ticket():
+                    __, krb_context = krb.authGSSClientInit("HTTP@%s" % self.pulp_connection.host)
+                    krb.authGSSClientStep(krb_context, "")
+                    negotiate_details = krb.authGSSClientResponse(krb_context)
+                    headers['Authorization'] = "Negotiate " + negotiate_details
+                else:
+                    continue
+            if auth_type is 'Certificate':
+                if self.pulp_connection.cert_filename:
+                    ssl_context.load_cert(self.pulp_connection.cert_filename)
+                else:
+                    continue
+            if auth_type is 'OAuth':
+                # oauth configuration. This block is only True if oauth is not None, so it won't run on RHEL
+                # 5.
+                if self.pulp_connection.oauth_key and self.pulp_connection.oauth_secret and oauth:
+                    oauth_consumer = oauth.Consumer(
+                        self.pulp_connection.oauth_key,
+                        self.pulp_connection.oauth_secret)
+                    oauth_request = oauth.Request.from_consumer_and_token(
+                        oauth_consumer,
+                        http_method=method,
+                        http_url='https://%s:%d%s' % (self.pulp_connection.host, self.pulp_connection.port, url))
+                    oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), oauth_consumer, None)
+                    oauth_header = oauth_request.to_header()
+                    # unicode header values causes m2crypto to do odd things.
+                    for k, v in oauth_header.items():
+                        oauth_header[k] = encode_unicode(v)
+                    headers.update(oauth_header)
+                    headers['pulp-user'] = self.pulp_connection.oauth_user
+                else:
+                    continue
+            if auth_type is 'Basic':
+                if self.pulp_connection.username and self.pulp_connection.password:
+                    raw = ':'.join((self.pulp_connection.username, self.pulp_connection.password))
+                    encoded = base64.encodestring(raw)[:-1]
+                    headers['Authorization'] = 'Basic ' + encoded
+                else:
+                    continue
 
-        # oauth configuration. This block is only True if oauth is not None, so it won't run on RHEL
-        # 5.
-        if self.pulp_connection.oauth_key and self.pulp_connection.oauth_secret and oauth:
-            oauth_consumer = oauth.Consumer(
-                self.pulp_connection.oauth_key,
-                self.pulp_connection.oauth_secret)
-            oauth_request = oauth.Request.from_consumer_and_token(
-                oauth_consumer,
-                http_method=method,
-                http_url='https://%s:%d%s' % (self.pulp_connection.host, self.pulp_connection.port, url))
-            oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), oauth_consumer, None)
-            oauth_header = oauth_request.to_header()
-            # unicode header values causes m2crypto to do odd things.
-            for k, v in oauth_header.items():
-                oauth_header[k] = encode_unicode(v)
-            headers.update(oauth_header)
-            headers['pulp-user'] = self.pulp_connection.oauth_user
-
-        connection = httpslib.HTTPSConnection(
-            self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
-
-        try:
-            # Request against the server
-            connection.request(method, url, body=body, headers=headers)
-            response = connection.getresponse()
-        except SSL.SSLError, err:
-            # Translate stale login certificate to an auth exception
-            if 'sslv3 alert certificate expired' == str(err):
-                raise exceptions.ClientCertificateExpiredException(
-                    self.pulp_connection.cert_filename)
-            elif 'certificate verify failed' in str(err):
-                raise exceptions.CertificateVerificationException()
-            else:
-                raise exceptions.ConnectionException(None, str(err), None)
+            connection = httpslib.HTTPSConnection(
+                self.pulp_connection.host, self.pulp_connection.port, ssl_context=ssl_context)
+            try:
+                # Request to the server
+                connection.request(method, url, body=body, headers=headers)
+                response = connection.getresponse()
+            except SSL.SSLError, err:
+                # Translate stale login certificate to an auth exception
+                if 'sslv3 alert certificate expired' == str(err):
+                    raise exceptions.ClientCertificateExpiredException(
+                        self.pulp_connection.cert_filename)
+                elif 'certificate verify failed' in str(err):
+                    raise exceptions.CertificateVerificationException()
+                else:
+                    raise exceptions.ConnectionException(None, str(err), None)
+                
+            if response.status != 401:
+                break
 
         # Attempt to deserialize the body (should pass unless the server is busted)
         response_body = response.read()

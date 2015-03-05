@@ -11,6 +11,11 @@ from optparse import OptionParser
 import os
 import stat
 import sys
+try:
+    import kerberos as krb
+    import krbV
+except ImportError:
+    krb = None
 
 from okaara.prompt import COLOR_CYAN, COLOR_LIGHT_CYAN
 
@@ -63,29 +68,46 @@ def main(config, exception_handler_class=ExceptionHandler):
     prompt = _create_prompt(config)
     exception_handler = exception_handler_class(prompt, config)
 
-    # REST Bindings
-    username = options.username
-    password = options.password
-
-    if not username and not password:
-        # Try to get username/password from config if not explicitly set. username and password are
-        # not included by default so we need to catch KeyError Exceptions.
+    for auth_type in ['Kerberos', 'Basic']:
+        if auth_type is 'Kerberos':
+            if krb is not None and has_kerberos_ticket():
+                __, krb_context = krb.authGSSClientInit("HTTP@%s" % config['server']['host'])
+                krb.authGSSClientStep(krb_context, "")
+                negotiate_details = krb.authGSSClientResponse(krb_context)
+                logger.info("KERBEROS selected - %s" % krbV.default_context().default_ccache().principal())
+                username = krbV.default_context().default_ccache().principal()
+                password = None
+            else:
+                continue
+        if auth_type is 'Basic':
+            # REST Bindings
+            username = options.username
+            password = options.password
+    
+            logger.info("BASIC selected")
+    
+            if not username and not password:
+                # Try to get username/password from config if not explicitly set. username and password are
+                # not included by default so we need to catch KeyError Exceptions.
+                try:
+                    username = config['auth']['username']
+                    password = config['auth']['password']
+                except KeyError:
+                    pass
+        
+            if username and not password:
+                prompt_msg = 'Enter password: '
+                password = prompt.prompt_password(_(prompt_msg))
+        
+                if password is prompt.ABORT:
+                    prompt.render_spacer()
+                    prompt.write(_('Login cancelled'))
+                    sys.exit(os.EX_NOUSER)
         try:
-            username = config['auth']['username']
-            password = config['auth']['password']
-        except KeyError:
-            pass
-
-    if username and not password:
-        prompt_msg = 'Enter password: '
-        password = prompt.prompt_password(_(prompt_msg))
-
-        if password is prompt.ABORT:
-            prompt.render_spacer()
-            prompt.write(_('Login cancelled'))
-            sys.exit(os.EX_NOUSER)
-
-    server = _create_bindings(config, logger, username, password)
+            server = _create_bindings(config, logger, username, password)
+            server.server_info.get_types()
+        except Exception:
+            continue
 
     # Client context
     context = ClientContext(server, config, logger, prompt, exception_handler)
@@ -146,6 +168,22 @@ def ensure_user_pulp_dir():
         else:
             sys.stderr.write(_('Failed to access path %(p)s: %(e)s\n\n' % {'p': path, 'e': str(e)}))
             sys.exit(1)
+
+
+def has_kerberos_ticket():
+    """
+    Verify if the user has a valid Kerberos ticket.
+
+    :rtype: boolean
+    """
+    ctx = krbV.default_context()
+    cc = ctx.default_ccache()
+    try:
+        princ = cc.principal()
+        retval = True
+    except krbV.Krb5Error:
+        retval = False
+    return retval
 
 
 def _initialize_logging(config, debug=False):
