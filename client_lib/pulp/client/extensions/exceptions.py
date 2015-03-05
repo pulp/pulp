@@ -125,8 +125,7 @@ class ExceptionHandler:
             self.prompt.render_failure_message(msg)
 
             self.prompt.render_failure_message('   %s' % e.error_message)
-            msg = _('More information can be found in the client log file %(l)s.')
-            msg = msg % {'l': self._log_filename()}
+            msg = _('More information may be found using the -v flag.')
 
         self.prompt.render_failure_message(msg)
         return CODE_BAD_REQUEST
@@ -139,7 +138,7 @@ class ExceptionHandler:
         :type  e: dictionary containing error information.
         """
         malformed_msg = _('Request error does not contain a description, '
-                          'please check client logs for more information.')
+                          'please use -v option for more information.')
         self.prompt.render_failure_message('%s' % (e.get('description', malformed_msg)))
         for suberror in e.get('sub_errors', []):
             self._display_coded_error(suberror)
@@ -196,9 +195,8 @@ class ExceptionHandler:
                 msg += _('Operation: %(o)s') % {'o': r['operation']}
         else:
             msg = _('The requested operation could not execute due to an unexpected '
-                    'conflict on the server. More information can be found in the '
-                    'client log file %(l)s.')
-            msg = msg % {'l': self._log_filename()}
+                    'conflict on the server. More information may be found using the '
+                    '-v flag.')
 
         self.prompt.render_failure_message(msg)
         return CODE_CONFLICT
@@ -229,8 +227,7 @@ class ExceptionHandler:
         self._log_client_exception(e)
 
         msg = _('An error occurred attempting to contact the server. More information '
-                'can be found in the client log file %(l)s.')
-        msg = msg % {'l': self._log_filename()}
+                'may be found using the -v flag.')
 
         self.prompt.render_failure_message(msg)
         return CODE_CONNECTION_EXCEPTION
@@ -328,8 +325,7 @@ class ExceptionHandler:
             msg = msg % data
         else:
             msg = _('An error occurred attempting to contact the server. More information '
-                    'can be found in the client log file %(l)s.')
-            msg = msg % {'l': self._log_filename()}
+                    'may be found using the -v flag.')
 
         self.prompt.render_failure_message(msg)
         return CODE_SOCKET_ERROR
@@ -427,8 +423,7 @@ class ExceptionHandler:
         self._log_client_exception(e)
 
         msg = _('An unexpected error has occurred. More information '
-                'can be found in the client log file %(l)s.')
-        msg = msg % {'l': self._log_filename()}
+                'may be found using the -v flag.')
 
         self.prompt.render_failure_message(msg)
         return CODE_UNEXPECTED

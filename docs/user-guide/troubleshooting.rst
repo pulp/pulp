@@ -110,16 +110,8 @@ Some of Pulp's other processes still log to files. Those file locations are docu
   a stack trace or other information that can help a developer determine what
   went wrong.
 
-~/.pulp/admin.log
-  pulp-admin logs its activity here.
-
 ~/.pulp/consumer.log
   pulp-consumer logs its activity here.
-
-~/.pulp/server_calls.log
-  HTTP requests and responses get logged by the admin client in
-  this file. To enable/disable this, consult the ``[logging]`` section of
-  ``/etc/pulp/admin/admin.conf``.
 
 ~/.pulp/consumer_server_calls.log
   HTTP requests and responses get logged by the consumer client in
