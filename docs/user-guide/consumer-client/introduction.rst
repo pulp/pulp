@@ -38,3 +38,9 @@ general, this will mean with ``root`` privileges. This is easiest with the
  $ sudo pulp-consumer ...
 
 
+Troubleshooting with verbose flag
+---------------------------------
+
+You can run pulp-consumer commands in verbose mode to get additional information
+in case of a failure. Look at the example usage of verbose flag in the
+:ref:`admin client troubleshooting section <client-verbose-flag>`.

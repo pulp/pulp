@@ -22,10 +22,6 @@ DEFAULT = {
         'id_cert_filename': 'user-cert.pem',
         'upload_working_dir': '~/.pulp/uploads',
     },
-    'logging': {
-        'filename': '~/.pulp/admin.log',
-        'call_log_filename': '~/.pulp/server_calls.log',
-    },
     'output': {
         'poll_frequency_in_seconds': '1',
         'enable_color': 'true',
@@ -57,12 +53,6 @@ SCHEMA = (
             ('id_cert_dir', REQUIRED, ANY),
             ('id_cert_filename', REQUIRED, ANY),
             ('upload_working_dir', REQUIRED, ANY),
-        )
-     ),
-    ('logging', REQUIRED,
-        (
-            ('filename', REQUIRED, ANY),
-            ('call_log_filename', OPTIONAL, ANY)
         )
      ),
     ('output', REQUIRED,
