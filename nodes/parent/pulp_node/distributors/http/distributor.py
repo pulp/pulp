@@ -13,6 +13,7 @@
 
 from gettext import gettext as _
 from logging import getLogger
+import os
 
 from pulp.plugins.distributor import Distributor
 from pulp.server.managers import factory
@@ -142,7 +143,8 @@ class NodesHttpDistributor(Distributor):
         section = config.get(protocol)
         alias = section.get('alias')
         base_url = '://'.join((protocol, host))
-        return HttpPublisher(base_url, alias, repo.id)
+        repo_publish_dir = self._get_publish_dir(repo.id, config)
+        return HttpPublisher(base_url, alias, repo.id, repo_publish_dir)
 
     def cancel_publish_repo(self, call_report, call_request):
         pass
@@ -170,6 +172,39 @@ class NodesHttpDistributor(Distributor):
         self._add_importers(repo, config, binding_config or {}, payload)
         self._add_distributors(repo.id, payload)
         return payload
+
+    def distributor_removed(self, repo, config):
+        """
+        Called when a distributor of this type is removed from a repository.
+
+        This will delete any published node data from the filesystem.
+
+        :param repo:    metadata describing the repository
+        :type  repo:    pulp.plugins.model.Repository
+        :param config:  plugin config
+        :type  config:  pulp.plugins.config.PluginCallConfiguration
+        """
+        _LOG.debug(_('removing published node data for repo %s' % repo.id))
+        repo_publish_path = self._get_publish_dir(repo.id, config)
+        os.system('rm -rf %s' % repo_publish_path)
+
+    def _get_publish_dir(self, repo_id, config):
+        """
+        generate the full path where the given repo should be published
+
+        :param repo_id: unique ID for the repository
+        :type  repo_id: str
+        :param config:  plugin config
+        :type  config:  pulp.plugins.config.PluginCallConfiguration
+
+        :return:    full path to the directory where this repo's data
+                    should be published
+        :rtype:     str
+        """
+        protocol = config.get(constants.PROTOCOL_KEYWORD)
+        section = config.get(protocol)
+        url, publish_path = section.get('alias')
+        return os.path.join(publish_path, repo_id)
 
     def _add_repository(self, repo_id, payload):
         """

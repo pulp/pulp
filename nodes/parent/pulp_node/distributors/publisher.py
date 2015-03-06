@@ -88,25 +88,20 @@ class Publisher(object):
 class FilePublisher(Publisher):
     """
     The file-based publisher.
-    :ivar publish_dir: The publish_dir directory for all repositories.
+    :ivar publish_dir: full path to the publish_dir directory for this repository.
     :type publish_dir: str
-    :ivar repo_id: The ID of a repository to be published.
-    :type repo_id: str
     :ivar tmp_dir: The absolute path to the temporary publishing directory.
     :type tmp_dir: str
     :ivar staged: A flag indicating that publishing has been staged and needs commit.
     :type staged: bool
     """
 
-    def __init__(self, publish_dir, repo_id):
+    def __init__(self, publish_dir):
         """
-        :param publish_dir: The publishing root directory.
+        :param publish_dir: The publishing root directory for this repository
         :type publish_dir: str
-        :param repo_id: A repository ID.
-        :type repo_id: str
         """
         self.publish_dir = publish_dir
-        self.repo_id = repo_id
         self.tmp_dir = None
         self.staged = False
 
@@ -121,8 +116,11 @@ class FilePublisher(Publisher):
         :return: The absolute path to the manifest.
         :rtype: str
         """
-        pathlib.mkdir(self.publish_dir)
-        self.tmp_dir = mkdtemp(dir=self.publish_dir)
+        # make the parent dir and a temp dir within it
+        parent_path = os.path.normpath(os.path.join(self.publish_dir, '../'))
+        pathlib.mkdir(parent_path)
+        self.tmp_dir = mkdtemp(dir=parent_path)
+
         with UnitWriter(self.tmp_dir) as writer:
             for unit in units:
                 self.publish_unit(unit)
@@ -162,9 +160,8 @@ class FilePublisher(Publisher):
         if not self.staged:
             # nothing to commit
             return
-        dir_path = pathlib.join(self.publish_dir, self.repo_id)
-        os.system('rm -rf %s' % dir_path)
-        os.rename(self.tmp_dir, dir_path)
+        os.system('rm -rf %s' % self.publish_dir)
+        os.rename(self.tmp_dir, self.publish_dir)
         self.staged = False
 
     def unstage(self):

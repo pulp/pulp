@@ -82,8 +82,9 @@ class TestHttp(TestCase):
         repo_id = 'test_repo'
         base_url = 'file://'
         publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
+        repo_publish_dir = os.path.join(publish_dir, repo_id)
         virtual_host = (publish_dir, publish_dir)
-        with HttpPublisher(base_url, virtual_host, repo_id) as p:
+        with HttpPublisher(base_url, virtual_host, repo_id, repo_publish_dir) as p:
             p.publish(units)
             p.commit()
         # verify
@@ -134,8 +135,9 @@ class TestHttp(TestCase):
         repo_id = 'test_repo'
         base_url = 'file://'
         publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
+        repo_publish_dir = os.path.join(publish_dir, repo_id)
         virtual_host = (publish_dir, publish_dir)
-        p = HttpPublisher(base_url, virtual_host, repo_id)
+        p = HttpPublisher(base_url, virtual_host, repo_id, repo_publish_dir)
         p.publish(units)
         p.unstage()
         # verify
@@ -149,8 +151,9 @@ class TestHttp(TestCase):
         repo_id = 'test_repo'
         base_url = 'file://'
         publish_dir = os.path.join(self.tmpdir, 'nodes/repos')
+        repo_publish_dir = os.path.join(publish_dir, repo_id)
         virtual_host = (publish_dir, publish_dir)
-        with HttpPublisher(base_url, virtual_host, repo_id) as p:
+        with HttpPublisher(base_url, virtual_host, repo_id, repo_publish_dir) as p:
             p.publish(units)
         # verify
         self.assertFalse(os.path.exists(p.tmp_dir))
