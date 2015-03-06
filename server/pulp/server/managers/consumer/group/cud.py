@@ -1,18 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 import logging
 import re
+import sys
 
 from celery import task
 from pymongo.errors import DuplicateKeyError
@@ -27,7 +15,7 @@ from pulp.server.tasks.consumer import bind as bind_task, unbind as unbind_task
 
 logger = logging.getLogger(__name__)
 
-_CONSUMER_GROUP_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$') # letters, numbers, underscore, hyphen
+_CONSUMER_GROUP_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
 
 
 class ConsumerGroupManager(object):
@@ -78,9 +66,7 @@ class ConsumerGroupManager(object):
         try:
             collection.insert(consumer_group, safe=True)
         except DuplicateKeyError:
-            raise pulp_exceptions.PulpCodedValidationException(
-                [PulpCodedException(error_codes.PLP1004, type=ConsumerGroup.collection_name,
-                                    object_id=group_id)])
+            raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
 
         group = collection.find_one({'id': group_id})
         return group
@@ -320,7 +306,7 @@ class ConsumerGroupManager(object):
         :type agent_options: dict
         :param notify_agent: indicates if the agent should be sent a message about the new binding
         :type  notify_agent: bool
-        :param binding_config: configuration options to use when generating the payload for this binding
+        :param binding_config: config options to use when generating the payload for this binding
         :type binding_config: dict
         :return: Details of the subtasks that were executed
         :rtype: TaskResult
@@ -333,8 +319,8 @@ class ConsumerGroupManager(object):
 
         for consumer_id in group['consumer_ids']:
             try:
-                report = bind_task(consumer_id, repo_id, distributor_id, notify_agent, binding_config,
-                                   agent_options)
+                report = bind_task(consumer_id, repo_id, distributor_id, notify_agent,
+                                   binding_config, agent_options)
                 if report.spawned_tasks:
                     additional_tasks.extend(report.spawned_tasks)
             except PulpException, e:
@@ -383,12 +369,12 @@ class ConsumerGroupManager(object):
                 if report:
                     additional_tasks.extend(report.spawned_tasks)
             except PulpException, e:
-                #Log a message so that we can debug but don't throw
+                # Log a message so that we can debug but don't throw
                 logger.warn(e.message)
                 bind_errors.append(e)
             except Exception, e:
                 bind_errors.append(e)
-                #Don't do anything else since we still want to process all the other consumers
+                # Don't do anything else since we still want to process all the other consumers
 
         bind_error = None
         if len(bind_errors) > 0:
@@ -425,13 +411,13 @@ class ConsumerGroupManager(object):
                 group_task = process_method(consumer_id, *args)
                 spawned_tasks.append(group_task)
             except PulpException, e:
-                #Log a message so that we can debug but don't throw
+                # Log a message so that we can debug but don't throw
                 logger.warn(e.message)
                 errors.append(e)
             except Exception, e:
                 logger.exception(e.message)
                 errors.append(e)
-                #Don't do anything else since we still want to process all the other consumers
+                # Don't do anything else since we still want to process all the other consumers
 
         error = None
         if len(errors) > 0:
