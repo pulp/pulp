@@ -301,7 +301,8 @@ class ListRepositoriesCommand(PulpCliCommand):
         self.add_option(PulpCliFlag('--details', d))
 
         d = _('comma-separated list of repository fields; if specified, '
-              'only the given fields will displayed')
+              'only the given fields will be displayed. '
+              'Example: "id,description,display_name,content_unit_counts."')
         self.add_option(PulpCliOption('--fields', d, required=False))
 
         self.supports_all = include_all_flag

@@ -160,9 +160,9 @@ class ListRepositoryGroupsCommand(PulpCliCommand):
         self.add_option(PulpCliFlag('--details', _('if specified, all the repo group information '
                                                    'is displayed')))
         self.add_option(PulpCliOption('--fields', _('comma-separated list of repo group fields; if '
-                                                    'specified, only the given fields will '
-                                                    'displayed'),
-                                      required=False))
+                                                    'specified, only the given fields will be '
+                                                    'displayed. Example: "id,description,'
+                                                    'display_name."'), required=False))
 
     def run(self, **kwargs):
         self.prompt.render_title(_('Repository Groups'))
