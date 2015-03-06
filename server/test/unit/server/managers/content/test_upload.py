@@ -109,6 +109,17 @@ class ContentUploadManagerTests(base.PulpServerTests):
         # Verify
         self.assertTrue(not os.path.exists(uploaded_filename))
 
+    def test_delete_non_existent_upload(self):
+
+        # Setup
+        upload_id = '1234'
+
+        uploaded_filename = self.upload_manager._upload_file_path(upload_id)
+        self.assertFalse(os.path.exists(uploaded_filename))
+
+        # Test
+        self.assertRaises(MissingResource, self.upload_manager.delete_upload, upload_id)
+
     def test_list_upload_ids(self):
 
         # Test - Empty
