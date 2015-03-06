@@ -14,7 +14,7 @@ _FILTERS_DESCRIPTION = _("""filters provided as JSON in Mongo syntax. This will
 override any options specified from the 'Filters' section
 below.""").replace('\n', ' ')
 _FIELDS_DESCRIPTION = _("""comma-separated list of resource fields. Do not
-include spaces. Default is all fields.""".replace('\n', ' '))
+include spaces. Default is all fields. Example: 'id,display_name'""".replace('\n', ' '))
 _SORT_DESCRIPTION = _("""field name, a comma, and either the word "ascending" or
 "descending". The comma and direction are optional, and the direction
 defaults to ascending. Do not put a space before or after the comma. For

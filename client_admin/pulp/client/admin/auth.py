@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 from gettext import gettext as _
 
@@ -95,7 +82,9 @@ class UserSection(PulpCliSection):
         # List Command
         list_command = PulpCliCommand('list', 'lists summary of users registered to the Pulp server', self.list)
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the user information is displayed'))
-        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if specified, only the given fields will displayed', required=False))
+        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if specified, '
+                                                          'only the given fields will be displayed. '
+                                                          'Example: "login,name."', required=False))
         self.add_command(list_command)
         
         # Search Command
@@ -215,7 +204,9 @@ class RoleSection(PulpCliSection):
         # List Command
         list_command = PulpCliCommand('list', 'lists summary of roles on the Pulp server', self.list)
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the role information is displayed'))
-        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; if specified, only the given fields will displayed', required=False))
+        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; if specified, '
+                                                          'only the given fields will be displayed. '
+                                                          'Example: "id,users."', required=False))
         self.add_command(list_command)
         
     def create(self, **kwargs):
