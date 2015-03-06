@@ -1,5 +1,6 @@
 import logging
 import re
+import sys
 
 from celery import task
 from pymongo.errors import DuplicateKeyError
@@ -66,9 +67,7 @@ class ConsumerGroupManager(object):
         try:
             collection.insert(consumer_group, safe=True)
         except DuplicateKeyError:
-            raise pulp_exceptions.PulpCodedValidationException(
-                [PulpCodedException(error_codes.PLP1004, type=ConsumerGroup.collection_name,
-                                    object_id=group_id)])
+            raise pulp_exceptions.DuplicateResource(group_id), None, sys.exc_info()[2]
 
         group = collection.find_one({'id': group_id})
         return group

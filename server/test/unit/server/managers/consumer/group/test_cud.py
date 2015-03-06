@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 import traceback
 import unittest
 
@@ -19,6 +6,7 @@ from mock import patch
 
 from pulp.devel.unit.base import PulpCeleryTaskTests
 from pulp.devel.unit.server import util
+from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
@@ -89,8 +77,8 @@ class ConsumerGroupCUDTests(ConsumerGroupTests):
     def test_create_duplicate_id(self):
         group_id = 'already_exists'
         self.manager.create_consumer_group(group_id)
-        util.assert_validation_exception(self.manager.create_consumer_group, [error_codes.PLP1004],
-                                         group_id)
+        self.assertRaises(pulp_exceptions.DuplicateResource, self.manager.create_consumer_group,
+                          group_id)
 
     def test_create_invalid_id(self):
         group_id = '**invalid/id**'
