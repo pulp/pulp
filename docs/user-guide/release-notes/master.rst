@@ -28,6 +28,13 @@ Deprecation
 Client Changes
 --------------
 
+* Admin and consumer Pulp clients now support -v and -vv flags to get additional
+  information in case of failures. Exceptions raised for CLI and API level
+  failures are not logged to the log files anymore. Instead, you can get the details
+  of the failures on STDERR stream by using verbose flag. You can look at an example
+  of the usage of verbose flag in the
+  :ref:`admin client troubleshooting section <client-verbose-flag>`.
+
 Agent Changes
 -------------
 

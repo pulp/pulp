@@ -88,3 +88,84 @@ under the ``puppet`` command::
 
 As new types are supported, additional root-level sections will be provided in
 their content type bundles.
+
+.. _client-verbose-flag:
+
+Troubleshooting with verbose flag
+---------------------------------
+
+You can run Pulp commands in verbose mode to get additional information in case of a failure.
+Pulp CLI provide -v and -vv options for INFO and DEBUG level information respectively::
+
+ $ pulp-admin --help
+ Usage: pulp-admin [options]
+
+ Options:
+   -h, --help            show this help message and exit
+   -u USERNAME, --username=USERNAME
+                         username for the Pulp server; if used will bypass the
+                         stored certificate and override a username specified
+                         in ~/.pulp/admin.conf
+   -p PASSWORD, --password=PASSWORD
+                         password for the Pulp server; must be used with
+                         --username. if used will bypass the stored certificate
+                         and override a password specified in
+                         ~/.pulp/admin.conf
+   --config=CONFIG       absolute path to the configuration file
+   --map                 prints a map of the CLI sections and commands
+   -v                    enables verbose output; use twice for increased
+                         verbosity with debug information
+
+
+Here is an example of how verbose flag can be used one or more times::
+
+ $ pulp-admin rpm repo create --repo-id test
+ A resource with the ID "test" already exists.
+
+
+ $ pulp-admin -v rpm repo create --repo-id test
+ 2015-03-05 14:10:28,931 - ERROR - Exception occurred:
+        href:      /pulp/api/v2/repositories/
+        method:    POST
+        status:    409
+        error:     Duplicate resource: test
+        traceback: None
+        data:      {u'resource_id': u'test', u'error': {u'code': u'PLP0018', u'data': {u'resource_id': u'test'}, u'description': u'Duplicate resource: test', u'sub_errors': []}}
+
+ A resource with the ID "test" already exists.
+
+
+ $ pulp-admin -vv rpm repo create --repo-id test
+ 2015-03-05 14:12:22,014 - DEBUG - sending POST request to /pulp/api/v2/repositories/
+ 2015-03-05 14:12:22,361 - INFO - POST request to /pulp/api/v2/repositories/ with parameters {"display_name": null, "description": null, "distributors": [{"distributor_id": "yum_distributor", "auto_publish": true, "distributor_config": {"http": false, "relative_url": "test", "https": true}, "distributor_type_id": "yum_distributor"}, {"distributor_id": "export_distributor", "auto_publish": false, "distributor_config": {"http": false, "https": true}, "distributor_type_id": "export_distributor"}], "notes": {"_repo-type": "rpm-repo"}, "importer_type_id": "yum_importer", "importer_config": {}, "id": "test"}
+ 2015-03-05 14:12:22,362 - INFO - Response status : 409
+
+ 2015-03-05 14:12:22,362 - INFO - Response body :
+  {
+   "exception": null,
+   "traceback": null,
+   "_href": "/pulp/api/v2/repositories/",
+   "resource_id": "test",
+   "error_message": "Duplicate resource: test",
+   "http_request_method": "POST",
+   "http_status": 409,
+   "error": {
+     "code": "PLP0018",
+     "data": {
+       "resource_id": "test"
+     },
+     "description": "Duplicate resource: test",
+     "sub_errors": []
+   }
+ }
+
+ 2015-03-05 14:12:22,362 - ERROR - Exception occurred:
+         href:      /pulp/api/v2/repositories/
+         method:    POST
+         status:    409
+         error:     Duplicate resource: test
+         traceback: None
+         data:      {u'resource_id': u'test', u'error': {u'code': u'PLP0018', u'data': {u'resource_id': u'test'}, u'description': u'Duplicate resource: test', u'sub_errors': []}}
+
+ A resource with the ID "test" already exists.
+

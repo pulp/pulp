@@ -208,8 +208,6 @@ remaining in the system.
 
    	The last superuser [admin] cannot be deleted
 
-	More information can be found in the client log file ~/.pulp/admin.log.
-
 Permissions
 -----------
 

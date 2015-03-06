@@ -43,10 +43,6 @@ DEFAULT = {
         'permit': 'false',
         'delay': '3',
     },
-    'logging': {
-        'filename': '~/.pulp/consumer.log',
-        'call_log_filename': '~/.pulp/consumer_server_calls.log',
-    },
     'output': {
         'poll_frequency_in_seconds': '1',
         'enable_color': 'true',
@@ -104,12 +100,6 @@ SCHEMA = (
         (
             ('permit', REQUIRED, BOOL),
             ('delay', REQUIRED, NUMBER),
-        )
-    ),
-    ('logging', REQUIRED,
-        (
-            ('filename', REQUIRED, ANY),
-            ('call_log_filename', OPTIONAL, ANY)
         )
     ),
     ('output', REQUIRED,

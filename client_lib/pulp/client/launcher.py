@@ -45,19 +45,19 @@ def main(config, exception_handler_class=ExceptionHandler):
                       help=_('password for the Pulp server; must be used with --username. '
                              'if used will bypass the stored certificate and override a password '
                              'specified in ~/.pulp/admin.conf'))
-    parser.add_option('--debug', dest='debug', action='store_true', default=False,
-                      help=_('enables debug logging'))
     parser.add_option('--config', dest='config', default=None,
                       help=_('absolute path to the configuration file'))
     parser.add_option('--map', dest='print_map', action='store_true', default=False,
                       help=_('prints a map of the CLI sections and commands'))
+    parser.add_option('-v', dest='verbose', action='count',
+                      help=_('enables verbose output; use twice for increased verbosity with debug information'))
 
     options, args = parser.parse_args()
 
     # Configuration and Logging
     if options.config is not None:
         config.update(Config(options.config))
-    logger = _initialize_logging(config, debug=options.debug)
+    logger = _initialize_logging(verbose=options.verbose)
 
     # General UI pieces
     prompt = _create_prompt(config)
@@ -85,7 +85,7 @@ def main(config, exception_handler_class=ExceptionHandler):
             prompt.write(_('Login cancelled'))
             sys.exit(os.EX_NOUSER)
 
-    server = _create_bindings(config, logger, username, password)
+    server = _create_bindings(config, logger, username, password, verbose=options.verbose)
 
     # Client context
     context = ClientContext(server, config, logger, prompt, exception_handler)
@@ -100,8 +100,8 @@ def main(config, exception_handler_class=ExceptionHandler):
     try:
         extensions_loader.load_extensions(extensions_dir, context, role)
     except extensions_loader.LoadFailed, e:
-        prompt.write(_('The following extensions failed to load: %(f)s' % {'f' : ', '.join(e.failed_packs)}))
-        prompt.write(_('More information on the failures can be found in %(l)s' % {'l' : config['logging']['filename']}))
+        prompt.write(_('The following extensions failed to load: %(f)s' % {'f': ', '.join(e.failed_packs)}))
+        prompt.write(_('More information on the failures may be found by using -v option one or more times'))
         return os.EX_OSFILE
 
     # Launch the appropriate UI (add in shell support here later)
@@ -148,34 +148,27 @@ def ensure_user_pulp_dir():
             sys.exit(1)
 
 
-def _initialize_logging(config, debug=False):
+def _initialize_logging(verbose=None):
     """
-    @return: configured logger
+    @return: configured cli logger
     """
+    cli_log_handler = logging.StreamHandler(sys.stderr)
+    cli_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
-    filename = config['logging']['filename']
-    filename = os.path.expanduser(filename)
+    cli_logger = logging.getLogger('pulp')
+    cli_logger.addHandler(cli_log_handler)
 
-    # Make sure the parent directories for the log files exist
-    dirname = os.path.dirname(filename)
-    if not os.path.exists(dirname):
-        os.makedirs(dirname)
-
-    handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-
-    pulp_log = logging.getLogger('pulp')
-    pulp_log.addHandler(handler)
-
-    if debug:
-        pulp_log.setLevel(logging.DEBUG)
+    if not verbose:
+        cli_logger.setLevel(logging.FATAL)
+    elif verbose == 1:
+        cli_logger.setLevel(logging.INFO)
     else:
-        pulp_log.setLevel(logging.INFO)
+        cli_logger.setLevel(logging.DEBUG)
 
-    return pulp_log
+    return cli_logger
 
 
-def _create_bindings(config, logger, username, password):
+def _create_bindings(config, cli_logger, username, password, verbose=None):
     """
     @return: bindings with a fully configured Pulp connection
     @rtype:  pulp.bindings.bindings.Bindings
@@ -188,36 +181,28 @@ def _create_bindings(config, logger, username, password):
     cert_dir = config['filesystem']['id_cert_dir']
     cert_name = config['filesystem']['id_cert_filename']
 
-    cert_dir = os.path.expanduser(cert_dir) # this will likely be in a user directory
+    cert_dir = os.path.expanduser(cert_dir)  # this will likely be in a user directory
     cert_filename = os.path.join(cert_dir, cert_name)
 
     # If the certificate doesn't exist, don't pass it to the connection creation
     if not os.path.exists(cert_filename):
         cert_filename = None
 
-    call_log = None
-    if config.has_option('logging', 'call_log_filename'):
-        filename = config['logging']['call_log_filename']
-        filename = os.path.expanduser(filename) # also likely in a user dir
+    api_logger = None
+    if verbose and verbose > 1:
+        api_log_handler = logging.StreamHandler(sys.stderr)
+        api_log_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 
-        # Make sure the parent directories for the log files exist
-        dirname = os.path.dirname(filename)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        handler = logging.handlers.RotatingFileHandler(filename, mode='w', maxBytes=1048576, backupCount=2)
-        handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-
-        call_log = logging.getLogger('call_log')
-        call_log.addHandler(handler)
-        call_log.setLevel(logging.INFO)
+        api_logger = logging.getLogger('call_log')
+        api_logger.addHandler(api_log_handler)
+        api_logger.setLevel(logging.INFO)
 
     # Create the connection and bindings
     verify_ssl = config.parse_bool(config['server']['verify_ssl'])
     ca_path = config['server']['ca_path']
     conn = PulpConnection(
         hostname, port, username=username, password=password, cert_filename=cert_filename,
-        logger=logger, api_responses_logger=call_log, verify_ssl=verify_ssl,
+        logger=cli_logger, api_responses_logger=api_logger, verify_ssl=verify_ssl,
         ca_path=ca_path)
     bindings = Bindings(conn)
 

@@ -1,9 +1,11 @@
 """
 This module contains tests for the pulp.client.launcher module.
 """
+import logging
 import os
 import shutil
 import stat
+import sys
 import tempfile
 import unittest
 
@@ -48,6 +50,32 @@ class TestCreateBindings(unittest.TestCase):
 
         self.assertEqual(bindings.bindings.server.verify_ssl, True)
         self.assertEqual(bindings.bindings.server.ca_path, different_path)
+
+    def test_verify_default_logging(self):
+        """
+        Make sure that the None or 1 values for verbose set api_responses_logger to None
+        """
+        bindings = launcher._create_bindings(self.config, None, 'username', 'password')
+        self.assertEqual(bindings.bindings.server.api_responses_logger, None)
+        bindings = launcher._create_bindings(self.config, None, 'username', 'password', verbose=1)
+        self.assertEqual(bindings.bindings.server.api_responses_logger, None)
+
+    def test_verify_debug_logging(self):
+        """
+        Make sure that verbose=2 sets api_responses_logger to correct logger with sys.stderr handler
+        """
+        bindings = launcher._create_bindings(self.config, None, 'username', 'password', verbose=2)
+        api_logger = bindings.bindings.server.api_responses_logger
+        handler = api_logger.handlers[0]
+        self.assertEqual(handler.stream, sys.stderr)
+        self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
+
+    def test_initialize_logging_no_verbose(self):
+        cli_logger = launcher._initialize_logging(verbose=None)
+        self.assertEqual(cli_logger.level, logging.FATAL)
+        handler = cli_logger.handlers[0]
+        self.assertEqual(handler.stream, sys.stderr)
+        self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
 
 
 class TestEnsureUserPulpDir(unittest.TestCase):
