@@ -24,7 +24,7 @@ class HttpPublisher(FilePublisher):
     :type alias: tuple(2)
     """
 
-    def __init__(self, base_url, alias, repo_id):
+    def __init__(self, base_url, alias, repo_id, publish_path):
         """
         :param base_url: The base URL.
         :type base_url: str
@@ -35,7 +35,8 @@ class HttpPublisher(FilePublisher):
         """
         self.base_url = base_url
         self.alias = alias
-        FilePublisher.__init__(self, alias[1], repo_id)
+        self.repo_id = repo_id
+        FilePublisher.__init__(self, publish_path)
 
     def publish(self, units):
         """

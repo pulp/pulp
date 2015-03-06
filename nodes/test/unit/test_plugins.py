@@ -574,6 +574,25 @@ class TestDistributor(PluginTestBase):
             self.assertEqual(created.get('_storage_path'), unit['storage_path'])
             self.assertEqual(unit['type_id'], self.UNIT_TYPE_ID)
 
+    def test_get_publish_dir(self):
+        dist = NodesHttpDistributor()
+        repo = plugin_model.Repository(self.REPO_ID)
+        config = PluginCallConfiguration(self.VALID_CONFIGURATION, {})
+
+        ret = dist._get_publish_dir(repo.id, config)
+
+        self.assertEqual(ret, '/var/www/pulp/nodes/https/repos/%s' % repo.id)
+
+    @patch('os.system', spec_set=True)
+    def test_distributor_removed(self, mock_system):
+        dist = NodesHttpDistributor()
+        repo = plugin_model.Repository(self.REPO_ID)
+        config = PluginCallConfiguration(self.VALID_CONFIGURATION, {})
+
+        dist.distributor_removed(repo, config)
+
+        mock_system.assert_called_once_with('rm -rf /var/www/pulp/nodes/https/repos/%s' % repo.id)
+
 
 class ImporterTest(PluginTestBase):
 
