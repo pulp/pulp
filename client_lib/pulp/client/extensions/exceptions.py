@@ -461,14 +461,6 @@ class ExceptionHandler:
         """
         _logger.exception('Client-side exception occurred')
 
-    def _log_filename(self):
-        """
-        Syntactic sugar for reading the log filename out of the config.
-
-        :return: full path to the log file
-        """
-        return self.config['logging']['filename']
-
     def _certificate_expiration_date(self, full_cert_path):
         """
         Attempts to read and return the expiration date of the certificate at the given

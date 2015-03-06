@@ -101,7 +101,7 @@ def main(config, exception_handler_class=ExceptionHandler):
         extensions_loader.load_extensions(extensions_dir, context, role)
     except extensions_loader.LoadFailed, e:
         prompt.write(_('The following extensions failed to load: %(f)s' % {'f': ', '.join(e.failed_packs)}))
-        prompt.write(_('More information on the failures can be found in %(l)s' % {'l': config['logging']['filename']}))
+        prompt.write(_('More information on the failures may be found by using -v option one or more times'))
         return os.EX_OSFILE
 
     # Launch the appropriate UI (add in shell support here later)
