@@ -241,7 +241,6 @@ class MockDeployer:
         sys.path.insert(0, self.SITE_PACKAGES)
         for handler in (RPM, SRPM, SECTION_MISSING, CLASS_NDEF, NO_MODULE):
             self.__deploy(handler)
-        print 'deployed'
 
     def clean(self):
         shutil.rmtree(self.ROOT, ignore_errors=True)

@@ -13,6 +13,7 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 
 # These paths should all pass PEP-8 checks
 paths_to_check = [
+    'agent',
     'repoauth/',
     'server/pulp/plugins',
     'server/pulp/server/agent/',
