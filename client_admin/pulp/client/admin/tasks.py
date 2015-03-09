@@ -2,8 +2,8 @@ from gettext import gettext as _
 import sys
 
 import pulp.common.tags as tag_utils
+from pulp.bindings.exceptions import PulpServerException
 from pulp.client.extensions.extensions import PulpCliSection
-from pulp.client.extensions.exceptions import PulpServerException
 
 
 # Guidance for render_document_list on how to display task info
@@ -238,7 +238,6 @@ class AllTasksSection(BaseTasksSection):
         """
         tasks = self.context.server.tasks_search.search(fields=self.FIELDS)
         return tasks
-
 
 
 class RepoTasksSection(BaseTasksSection):

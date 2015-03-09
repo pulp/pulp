@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Methods in this module are meant to be passed to Okaara's validator function.
 As such, all methods have no return value. An exception will be raised if
@@ -21,6 +8,7 @@ import re
 from gettext import gettext as _
 
 from pulp.common import dateutils
+
 
 ID_REGEX_ALLOW_DOTS = re.compile(r'^[.\-_A-Za-z0-9]+$')
 ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')
@@ -104,7 +92,9 @@ def id_validator(x):
 
     for input_id in x:
         if ID_REGEX.match(input_id) is None:
-            raise ValueError(_('value must contain only letters, numbers, underscores, and hyphens'))
+            raise ValueError(_('value must contain only letters, numbers, underscores, and '
+                               'hyphens'))
+
 
 def id_validator_allow_dots(x):
     """
@@ -124,4 +114,5 @@ def id_validator_allow_dots(x):
 
     for input_id in x:
         if ID_REGEX_ALLOW_DOTS.match(input_id) is None:
-            raise ValueError(_('value must contain only letters, numbers, underscores, periods and hyphens'))
+            raise ValueError(_('value must contain only letters, numbers, underscores, periods and '
+                               'hyphens'))

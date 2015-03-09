@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains methods suitable for passing to the parse_func parameter of the
 option and flag client classes.
@@ -19,19 +6,18 @@ option and flag client classes.
 from gettext import gettext as _
 
 import isodate
-from okaara.parsers import *
+from okaara import parsers as okaara_parsers
 
 from pulp.client import arg_utils
 from pulp.common import dateutils
 
 
 # Backward compatibility for Pulp parsers that existed before Okaara's implementations
-parse_nonnegative_int = parse_non_negative_int
-parse_optional_nonnegative_int = parse_optional_non_negative_int
-csv = parse_csv_string
+parse_nonnegative_int = okaara_parsers.parse_non_negative_int
+parse_optional_nonnegative_int = okaara_parsers.parse_optional_non_negative_int
+csv = okaara_parsers.parse_csv_string
 
 
-# -- pulp custom parsers ------------------------------------------------------
 def pulp_parse_optional_positive_int(value):
     """
     Returns an int representation of the user entered value. This call does not raise an
@@ -42,7 +28,7 @@ def pulp_parse_optional_positive_int(value):
     :return: integer if a value could be parsed or an empty string if no value was provided
     :rtype: int, str
     """
-    return_value = parse_optional_positive_int(value)
+    return_value = okaara_parsers.parse_optional_positive_int(value)
     if return_value is None:
         return_value = ''
     return return_value
@@ -58,7 +44,7 @@ def pulp_parse_optional_boolean(value):
     :return: bool if a value could be parsed or an empty string if no value was provided
     :rtype: bool, str
     """
-    return_value = parse_optional_boolean(value)
+    return_value = okaara_parsers.parse_optional_boolean(value)
     if return_value is None:
         return_value = ''
     return return_value

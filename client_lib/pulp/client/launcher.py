@@ -49,8 +49,9 @@ def main(config, exception_handler_class=ExceptionHandler):
                       help=_('absolute path to the configuration file'))
     parser.add_option('--map', dest='print_map', action='store_true', default=False,
                       help=_('prints a map of the CLI sections and commands'))
-    parser.add_option('-v', dest='verbose', action='count',
-                      help=_('enables verbose output; use twice for increased verbosity with debug information'))
+    parser.add_option(
+        '-v', dest='verbose', action='count',
+        help=_('enables verbose output; use twice for increased verbosity with debug information'))
 
     options, args = parser.parse_args()
 
@@ -100,8 +101,10 @@ def main(config, exception_handler_class=ExceptionHandler):
     try:
         extensions_loader.load_extensions(extensions_dir, context, role)
     except extensions_loader.LoadFailed, e:
-        prompt.write(_('The following extensions failed to load: %(f)s' % {'f': ', '.join(e.failed_packs)}))
-        prompt.write(_('More information on the failures may be found by using -v option one or more times'))
+        prompt.write(
+            _('The following extensions failed to load: %(f)s' % {'f': ', '.join(e.failed_packs)}))
+        prompt.write(_('More information on the failures may be found by using -v option one or '
+                       'more times'))
         return os.EX_OSFILE
 
     # Launch the appropriate UI (add in shell support here later)

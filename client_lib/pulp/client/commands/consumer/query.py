@@ -1,9 +1,10 @@
 from gettext import gettext as _
 
+from okaara.parsers import parse_positive_int
+
 from pulp.client.commands.criteria import CriteriaCommand
 from pulp.client.commands.options import OPTION_CONSUMER_ID
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliFlag, PulpCliOption
-from pulp.client.parsers import parse_positive_int
 from pulp.client.validators import iso8601_datetime_validator
 
 

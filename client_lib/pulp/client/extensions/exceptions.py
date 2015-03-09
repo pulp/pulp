@@ -12,16 +12,16 @@ to catch and display an exception using the consistent formatting but still
 react to it in the extension itself.
 """
 
-from _socket import gaierror
 import logging
 import os
-from socket import error as socket_error
+from _socket import gaierror
 from gettext import gettext as _
+from socket import error as socket_error
 
 from M2Crypto import X509
 from M2Crypto.SSL.Checker import WrongHost
 
-from pulp.bindings.exceptions import *
+from pulp.bindings import exceptions as bindings_exceptions
 from pulp.client.arg_utils import InvalidConfig
 
 
@@ -71,20 +71,22 @@ class ExceptionHandler:
 
         # Determine which method to call based on exception type
         mappings = (
-            (BadRequestException, self.handle_bad_request),
-            (NotFoundException, self.handle_not_found),
-            (ConflictException, self.handle_conflict),
-            (ConnectionException, self.handle_connection_error),
-            (PermissionsException, self.handle_permission),
+            (bindings_exceptions.BadRequestException, self.handle_bad_request),
+            (bindings_exceptions.NotFoundException, self.handle_not_found),
+            (bindings_exceptions.ConflictException, self.handle_conflict),
+            (bindings_exceptions.ConnectionException, self.handle_connection_error),
+            (bindings_exceptions.PermissionsException, self.handle_permission),
             (InvalidConfig, self.handle_invalid_config),
             (WrongHost, self.handle_wrong_host),
             (gaierror, self.handle_unknown_host),
             (socket_error, self.handle_socket_error),
-            (PulpServerException, self.handle_server_error),
-            (ClientCertificateExpiredException, self.handle_expired_client_cert),
-            (CertificateVerificationException, self.handle_ssl_validation_error),
-            (MissingCAPathException, self.handle_missing_ca_path_exception),
-            (ApacheServerException, self.handle_apache_error),
+            (bindings_exceptions.PulpServerException, self.handle_server_error),
+            (bindings_exceptions.ClientCertificateExpiredException,
+             self.handle_expired_client_cert),
+            (bindings_exceptions.CertificateVerificationException,
+             self.handle_ssl_validation_error),
+            (bindings_exceptions.MissingCAPathException, self.handle_missing_ca_path_exception),
+            (bindings_exceptions.ApacheServerException, self.handle_apache_error),
         )
 
         handle_func = self.handle_unexpected

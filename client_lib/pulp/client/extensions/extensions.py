@@ -2,8 +2,8 @@
 Classes used in the writing of Pulp client extensions.
 """
 
-from gettext import gettext as _
 import os
+from gettext import gettext as _
 
 from okaara.cli import (Section, Command, Option, Flag, OptionGroup,
                         OptionValidationFailed, CommandUsage)
@@ -192,9 +192,8 @@ class PulpCliCommand(Command):
         # refactor Okaara to make this easier to override in a subclass so we
         # can remove the bulk of this method from being copied. jdob, Sep 4, 2012
         missing_required = [
-            o for o in self.all_options() if o.required and (not kwarg_dict.has_key(o.name)
-                                                             or kwarg_dict[o.name] is None
-                                                             or kwarg_dict[o.name] == '')]
+            o for o in self.all_options() if o.required and
+            (o.name not in kwarg_dict or kwarg_dict[o.name] is None or kwarg_dict[o.name] == '')]
         if len(missing_required) > 0:
             raise CommandUsage(missing_required)
 
