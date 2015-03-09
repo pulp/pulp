@@ -83,6 +83,17 @@ You can see the complete list of bugs that were
 Known Issues
 ------------
 
+* An issue in the pulp (gofer) agent plugin *can* cause in-progress RMI requests to be
+  discarded when `goferd` is restarted. Should this occur, an entry is written to the system log
+  on the consumer. On the Pulp server, the associated task will appear to never complete.
+  This has been fixed in Pulp 2.6.1.
+
+* Version 2.5 of the python-gofer-amqp messaging adapter, which is used to support RabbitMQ,
+  contains a regression. It pertains to the reconnect logic. Depending on how a connection
+  error manifests itself, it *can* result in a traceback during reconnect. Should this occur,
+  The logged traceback would contain: `RuntimeError: maximum recursion depth exceeded`.
+  This issue has already been fixed in Gofer upstream and will be included with Pulp 2.6.1.
+
 Client Changes
 --------------
 
