@@ -6,7 +6,6 @@ Contains recurring actions and remote classes.
 import os
 
 from time import sleep
-from threading import Thread
 from gettext import gettext as _
 from logging import getLogger
 
@@ -47,6 +46,13 @@ plugin = Plugin.find(__name__)
 registered = False
 
 
+class ValidateRegistrationFailed(Exception):
+    """
+    The REST call to the server to validate registration failed.
+    """
+    pass
+
+
 @initializer
 def init_plugin():
     """
@@ -55,12 +61,21 @@ def init_plugin():
       1. Update the plugin configuration using the consumer configuration.
       2. Register the consumer certificate bundle path for monitoring.
       3. Start the path monitor.
+      4. Validate registration.
+      5. If registered, update settings.
     """
     path = os.path.join(cfg.filesystem.id_cert_dir, cfg.filesystem.id_cert_filename)
     path_monitor.add(path, certificate_changed)
     path_monitor.start()
-    attach = Attach()
-    attach.start()
+    while True:
+        try:
+            validate_registration()
+            if registered:
+                update_settings()
+            # DONE
+            break
+        except ValidateRegistrationFailed:
+            sleep(60)
 
 
 def validate_registration():
@@ -90,7 +105,7 @@ def validate_registration():
     except Exception, e:
         msg = _('validate registration failed: %(r)s')
         log.warn(msg, {'r': str(e)})
-        raise
+        raise ValidateRegistrationFailed()
 
 
 def update_settings():
@@ -115,13 +130,25 @@ def certificate_changed(path):
     """
     The consumer certificate bundle has changed.
     This indicates a change in registration to pulp.
+      1. Validate registration.
+      2. If registered, attach to the message broker.
+         If not, detach.
     :param path: The absolute path to the changed bundle.
     :type path: str
     """
     log.info(_('changed: %(p)s'), {'p': path})
-    attach = Attach()
-    attach.start()
-    attach.join()
+    while True:
+        try:
+            validate_registration()
+            if registered:
+                update_settings()
+                plugin.attach()
+            else:
+                plugin.detach()
+            # DONE
+            break
+        except ValidateRegistrationFailed:
+            sleep(60)
 
 
 def get_agent_id():
@@ -149,36 +176,6 @@ def get_secret():
     """
     bundle = ConsumerX509Bundle()
     return bundle.uid()
-
-
-class Attach(Thread):
-    """
-    This thread (task) persistently:
-      - validates the registration status
-      - if registered, updates the plugin settings and attach.
-      - if not registered, detach the plugin.
-    The reason for doing this in a thread is that we don't
-    want to block in the initializer.
-    """
-
-    def __init__(self):
-        super(Attach, self).__init__()
-        self.setDaemon(True)
-
-    def run(self):
-        while True:
-            try:
-                validate_registration()
-                if registered:
-                    update_settings()
-                    plugin.attach()
-                else:
-                    plugin.detach()
-                # DONE
-                break
-            except Exception, e:
-                log.warn(str(e))
-                sleep(60)
 
 
 class Authenticator(object):
