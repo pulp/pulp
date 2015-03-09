@@ -6,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 2.5.3
+Version: 2.6.0
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -20,7 +20,6 @@ BuildRequires: python2-devel
 BuildRequires: python-setuptools
 BuildRequires: rpm-python
 Requires: python-%{name} = %{version}
-Requires: python-iniparse
 %if 0%{?systemd}
 BuildRequires: systemd
 Requires(post): systemd
@@ -89,7 +88,7 @@ rm -rf %{buildroot}
 %{python_sitelib}/%{name}/agent/
 %{_bindir}/%{name}d
 %if 0%{?systemd}
-%attr(755,root,root) %{_unitdir}/%{name}d.service
+%attr(644,root,root) %{_unitdir}/%{name}d.service
 %else
 %attr(755,root,root) %{_sysconfdir}/init.d/%{name}d
 %endif
@@ -127,7 +126,6 @@ fi
 %package -n python-%{name}
 Summary: Gofer python lib modules
 Group: Development/Languages
-Obsoletes: %{name}-lib
 BuildRequires: python
 Requires: pam
 %if 0%{?rhel} && 0%{?rhel} < 6
@@ -160,6 +158,9 @@ Group: Development/Languages
 BuildRequires: python
 Requires: python-%{name} = %{version}
 Requires: python-qpid >= 0.18
+%if 0%{?rhel} && 0%{?rhel} < 6
+Requires: python-ssl
+%endif
 
 %description -n python-%{name}-qpid
 Provides the gofer qpid messaging adapter package.
@@ -265,6 +266,20 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Mon Mar 09 2015 Jeff Ortel <jortel@redhat.com> 2.6.0-1
+- Support one-time actions. (jortel@redhat.com)
+- Support authenticator in the plugin descriptor. (jortel@redhat.com)
+- Support plugin monitoring. (jortel@redhat.com)
+- Support dynamic plugin loading, reloading, unloading.
+- Support services in system plugin. (jortel@redhat.com)
+- Support forwarding/accepting. (jortel@redhat.com)
+- Support comprehensive broker connection clean up.
+- Requires: python-ssl only on RHEL 5. (jortel@redhat.com)
+- 1198797 - Fixed recursion in adapter reliability logic. (jortel@redhat.com)
+- Fix not-authenticated error message. (jortel@redhat.com)
+- Fix systemd unit permissions. (jortel@redhat.com)
+- Window deprecated (jortel@redhat.com)
+
 * Fri Feb 20 2015 Jeff Ortel <jortel@redhat.com> 2.5.3-1
 - Broker renamed: Connector. (jortel@redhat.com)
 - Plugin not-found logged and discarded. (jortel@redhat.com)
