@@ -137,3 +137,15 @@ Plugin API Changes
      * Assume that plugin code which is supposed to run later may not run.
 
      * Assume that the previous executions of plugin code may not have run to completion.
+
+Thank You
+---------
+
+Thank you to all of Pulp's contributors, especially these new ones!
+
+- Andrea Giardini
+- Andreas Schieb
+- Ina Panova
+- Michael Moll
+- Patrick Creech
+- Vijaykumar Jain
