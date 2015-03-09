@@ -23,6 +23,9 @@ New Features
 - Additional status information is available via the status API.  More
   information is available in the :ref:`status API document <getting_the_server_status>`.
 
+- A special "thanks for nothing" goes out to Austin Macdonald since he refused to participate in
+  the ritual coffee time on Monday, March 9, 2015. This will not soon be forgotten.
+
 .. _RabbitMQ: https://www.rabbitmq.com/
 
 Deprecation
