@@ -1,4 +1,3 @@
-from threading import Thread
 from unittest import TestCase
 import os
 
@@ -189,7 +188,7 @@ class TestValidateRegistration(PluginTest):
 
         # test
         self.plugin.registered = 123
-        self.assertRaises(ValueError, self.plugin.validate_registration)
+        self.assertRaises(self.plugin.ValidateRegistrationFailed, self.plugin.validate_registration)
 
         # validation
         bindings.assert_called_once_with()
@@ -544,8 +543,9 @@ class TestGetAgentId(PluginTest):
 
 class TestInitialization(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.Attach')
-    def test_init_plugin(self, mock_attach):
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_registered(self, validate, update_settings):
         test_conf = {
             'filesystem': {
                 'id_cert_dir': TEST_ID_CERT_DIR,
@@ -556,14 +556,68 @@ class TestInitialization(PluginTest):
         self.plugin.pulp_conf.update(test_conf)
 
         # test
+        self.plugin.registered = True
         self.plugin.init_plugin()
 
         # validation
-        mock_attach.assert_called_with()
-        mock_attach.return_value.start.assert_called_with()
+        validate.assert_called_once_with()
+        update_settings.assert_called_once_with()
         self.plugin.path_monitor.add.assert_called_with(
             os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.certificate_changed)
         self.plugin.path_monitor.start.assert_called_with()
+
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_not_registered(self, validate, update_settings):
+        test_conf = {
+            'filesystem': {
+                'id_cert_dir': TEST_ID_CERT_DIR,
+                'id_cert_filename': TEST_ID_CERT_FILE
+            }
+        }
+
+        self.plugin.pulp_conf.update(test_conf)
+
+        # test
+        self.plugin.registered = False
+        self.plugin.init_plugin()
+
+        # validation
+        validate.assert_called_once_with()
+        self.plugin.path_monitor.add.assert_called_with(
+            os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.certificate_changed)
+        self.plugin.path_monitor.start.assert_called_with()
+        self.assertFalse(update_settings.called)
+
+    @patch('pulp.agent.gofer.pulpplugin.sleep')
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_validate_failed(self, validate, update_settings, sleep):
+        test_conf = {
+            'filesystem': {
+                'id_cert_dir': TEST_ID_CERT_DIR,
+                'id_cert_filename': TEST_ID_CERT_FILE
+            }
+        }
+
+        validate.side_effect = SideEffect(self.plugin.ValidateRegistrationFailed, None)
+
+        self.plugin.pulp_conf.update(test_conf)
+
+        # test
+        self.plugin.registered = True
+        self.plugin.init_plugin()
+
+        # validation
+        sleep.assert_called_once_with(60)
+        update_settings.assert_called_once_with()
+        self.plugin.path_monitor.add.assert_called_with(
+            os.path.join(TEST_ID_CERT_DIR, TEST_ID_CERT_FILE), self.plugin.certificate_changed)
+        self.plugin.path_monitor.start.assert_called_with()
+        self.assertEqual(validate.call_count, 2)
+
+
+class TestUpdateSettings(PluginTest):
 
     @patch('pulp.agent.gofer.pulpplugin.read_config')
     @patch('pulp.agent.gofer.pulpplugin.get_agent_id')
@@ -607,18 +661,52 @@ class TestInitialization(PluginTest):
 
 class TestCertificateChanged(PluginTest):
 
-    @patch('pulp.agent.gofer.pulpplugin.Attach')
-    def test_called(self, mock_attach):
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_registered(self, validate, update_settings):
         path = 'test-path'
 
         # test
+        self.plugin.registered = True
         self.plugin.certificate_changed(path)
 
         # validation
-        mock_attach.assert_called_with()
-        mock_attach = mock_attach.return_value
-        mock_attach.start.assert_called_with()
-        mock_attach.join.assert_called_with()
+        validate.assert_called_once_with()
+        update_settings.assert_called_once_with()
+        self.plugin.plugin.attach.assert_called_once_with()
+
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_not_registered(self, validate, update_settings):
+        path = 'test-path'
+
+        # test
+        self.plugin.registered = False
+        self.plugin.certificate_changed(path)
+
+        # validation
+        validate.assert_called_once_with()
+        self.plugin.plugin.detach.assert_called_once_with()
+        self.assertFalse(update_settings.called)
+        self.assertFalse(self.plugin.plugin.attach.called)
+
+    @patch('pulp.agent.gofer.pulpplugin.sleep')
+    @patch('pulp.agent.gofer.pulpplugin.update_settings')
+    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
+    def test_validate_failed(self, validate, update_settings, sleep):
+        path = 'test-path'
+
+        validate.side_effect = SideEffect(self.plugin.ValidateRegistrationFailed, None)
+
+        # test
+        self.plugin.registered = True
+        self.plugin.certificate_changed(path)
+
+        # validation
+        update_settings.assert_called_once_with()
+        sleep.assert_called_once_with(60)
+        self.plugin.plugin.attach.assert_called_once_with()
+        self.assertEqual(validate.call_count, 2)
 
 
 class TestProfileAction(PluginTest):
@@ -786,53 +874,3 @@ class TestProfile(PluginTest):
         # validation
         mock_dispatcher().profile.assert_called_with(mock_conduit())
         mock_bindings().profile.send.assert_called_once_with(TEST_CN, 'BB', 5678)
-
-
-class TestAttach(PluginTest):
-
-    def test_init(self):
-        attach = self.plugin.Attach()
-        self.assertTrue(isinstance(attach, Thread))
-
-    @patch('pulp.agent.gofer.pulpplugin.update_settings')
-    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
-    def test_run(self, validate, update_settings):
-
-        # test
-        attach = self.plugin.Attach()
-        attach.run()
-
-        # validation
-        validate.assert_called_with()
-        update_settings.assert_called_with()
-        self.plugin.plugin.attach.assert_called_with()
-
-    @patch('pulp.agent.gofer.pulpplugin.update_settings')
-    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
-    def test_run_not_registered(self, validate, update_settings):
-        self.plugin.registered = False
-
-        # test
-        attach = self.plugin.Attach()
-        attach.run()
-
-        # validation
-        validate.assert_called_with()
-        self.assertFalse(update_settings.called)
-        self.plugin.plugin.detach.assert_called_with()
-
-    @patch('pulp.agent.gofer.pulpplugin.sleep')
-    @patch('pulp.agent.gofer.pulpplugin.update_settings')
-    @patch('pulp.agent.gofer.pulpplugin.validate_registration')
-    def test_run_validate_failed(self, validate, update_settings, sleep):
-        validate.side_effect = SideEffect(ValueError, None)
-
-        # test
-        attach = self.plugin.Attach()
-        attach.run()
-
-        # validation
-        validate.assert_called_with()
-        sleep.assert_called_once_with(60)
-        update_settings.assert_called_with()
-        self.plugin.plugin.attach.assert_called_with()
