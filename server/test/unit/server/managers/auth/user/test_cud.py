@@ -1,19 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
-import base
+from ..... import base
 from pulp.server.auth.ldap_connection import LDAPConnection
 from pulp.server.db.model.auth import User, Role
 from pulp.server.db.model.criteria import Criteria
@@ -37,7 +24,6 @@ class UserManagerTests(base.PulpServerTests):
         self.user_query_manager = manager_factory.user_query_manager()
         self.role_manager = manager_factory.role_manager()
         self.cert_generation_manager = manager_factory.cert_generation_manager()
-
 
     def tearDown(self):
         super(UserManagerTests, self).tearDown()
@@ -76,9 +62,8 @@ class UserManagerTests(base.PulpServerTests):
         clear_txt_pass = 'some password'
 
         # Test
-        user = self.user_manager.create_user(login, clear_txt_pass,
-                                                name = "King of the World",
-                                                roles = ['test-role'])
+        user = self.user_manager.create_user(login, clear_txt_pass, name="King of the World",
+                                             roles=['test-role'])
 
         # Verify
         self.assertTrue(user is not None)
@@ -90,11 +75,11 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'dupe-test'
         clear_txt_pass = 'some password'
-        user = self.user_manager.create_user(login, clear_txt_pass)
+        self.user_manager.create_user(login, clear_txt_pass)
 
         # Test and verify
         try:
-            user = self.user_manager.create_user(login, clear_txt_pass)
+            self.user_manager.create_user(login, clear_txt_pass)
             self.fail('User with an existing login did not raise an exception')
         except exceptions.DuplicateResource, e:
             self.assertTrue(login in e)
@@ -103,14 +88,13 @@ class UserManagerTests(base.PulpServerTests):
         # Setup
         login = 'login-test'
         password = 'some password'
-        user = self.user_manager.create_user(login, password)
+        self.user_manager.create_user(login, password)
 
         # Test
         users = self.user_query_manager.find_all()
 
         # Verify
         self.assertTrue(len(users) == 1)
-
 
     def test_delete(self):
         # Setup
@@ -171,17 +155,19 @@ class UserManagerTests(base.PulpServerTests):
         ldap_connection = LDAPConnection()
         ldap_login = 'test-ldap-login'
         ldap_name = 'test-ldap-name'
-        user = ldap_connection._add_from_ldap(username=ldap_login, userdata=({},{'gecos':ldap_name}))
+        user = ldap_connection._add_from_ldap(username=ldap_login, userdata=({},
+                                              {'gecos': ldap_name}))
         self.assertEqual(user['login'], ldap_login)
         self.assertEqual(user['name'], ldap_name)
 
     def test_add_user_from_ldap_unsupported_gecos(self):
-        # Make sure that if gecos is not a basestring with user's name in it, we default it to user login
-        # without raising any error
+        # Make sure that if gecos is not a basestring with user's name in it, we default it to user
+        # login without raising any error
         ldap_connection = LDAPConnection()
         ldap_login = 'test-ldap-login'
-        ldap_gecos = ['blah','blah']
-        user = ldap_connection._add_from_ldap(username=ldap_login, userdata=({},{'gecos':ldap_gecos}))
+        ldap_gecos = ['blah', 'blah']
+        user = ldap_connection._add_from_ldap(username=ldap_login, userdata=({},
+                                              {'gecos': ldap_gecos}))
         self.assertEqual(user['login'], ldap_login)
         self.assertEqual(user['name'], ldap_login)
 
