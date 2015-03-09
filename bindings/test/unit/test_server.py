@@ -60,7 +60,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
     @mock.patch('pulp.bindings.server.SSL.Context.load_verify_locations')
     @mock.patch('pulp.bindings.server.SSL.Context.set_verify')
     def test_request_verify_ssl_false(self, set_verify, load_verify_locations, request,
-                                           getresponse):
+                                      getresponse):
         """
         Test the request() method when the connection's verify_ssl setting is False.
         """
@@ -93,7 +93,7 @@ class TestHTTPSServerWrapper(unittest.TestCase):
         Test the request() method when the connection's ca_path setting points to a path that isn't
         a directory or a file.
         """
-        ca_path='/does/not/exist/'
+        ca_path = '/does/not/exist/'
         conn = server.PulpConnection('host', ca_path=ca_path)
         wrapper = server.HTTPSServerWrapper(conn)
 
