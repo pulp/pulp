@@ -9,7 +9,7 @@ CELERYBEAT_LOG_LEVEL="INFO"
 # CELERYBEAT_PID_FILE="/var/run/pulp/celerybeat.pid"
 
 # The user that Celerybeat runs as must be able to write to this folder
-CELERYBEAT_OPTS="--workdir=/var/lib/pulp/celery/"
+CELERYBEAT_OPTS="--workdir=/var/run/pulp/"
 
 # Configure Python's encoding for writing all logs, stdout and stderr
 PYTHONIOENCODING="UTF-8"
