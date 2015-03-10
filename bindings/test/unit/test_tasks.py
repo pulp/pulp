@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2014 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains tests for the pulp.bindings.tasks module.
 """
@@ -35,8 +23,8 @@ class TaskSearchAPITests(unittest.TestCase):
     @mock.patch('pulp.bindings.search.SearchAPI.search')
     def test_search(self, mock_search):
         """
-        Test the search method. All it really does is call the superclass search() method, and turn the
-        results into Tasks.
+        Test the search method. All it really does is call the superclass search() method, and turn
+        the results into Tasks.
         """
         connection = mock.MagicMock()
         repo_id = 'some_repo'

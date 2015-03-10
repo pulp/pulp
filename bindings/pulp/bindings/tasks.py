@@ -1,22 +1,10 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 This module contains bindings to the Task APIs.
 """
-import pulp.common.tags as tag_util
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.responses import Task
 from pulp.bindings.search import SearchAPI
+import pulp.common.tags as tag_util
 
 
 class TasksAPI(PulpAPI):
@@ -65,7 +53,8 @@ class TasksAPI(PulpAPI):
         :param tags:              if specified, only tasks that contain all tags in the given
                                   list are returned; None to return all tasks
         :type  tags:              list
-        :return:                  response with a list of Task objects; empty list for no matching tasks
+        :return:                  response with a list of Task objects; empty list for no matching
+                                  tasks
         :rtype:                   Response
         """
         path = '/v2/tasks/'
@@ -130,7 +119,8 @@ class TaskSearchAPI(SearchAPI):
 
     def search(self, **kwargs):
         """
-        Call the superclass search, and intercept the results so that we can turn the items back into Tasks.
+        Call the superclass search, and intercept the results so that we can turn the items back
+        into Tasks.
 
         :param kwargs: Arguments to pass to SearchAPI.search()
         :type  kwargs: dict
