@@ -174,12 +174,12 @@ mkdir -p %{buildroot}/%{_sysconfdir}/default/
 mkdir -p %{buildroot}/%{_sysconfdir}/httpd/conf.d/
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins
 mkdir -p %{buildroot}/%{_usr}/lib/%{name}/plugins/types
-mkdir -p %{buildroot}/%{_var}/lib/%{name}/celery
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/uploads
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/published
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/static
 mkdir -p %{buildroot}/%{_var}/www
 mkdir -p %{buildroot}/%{_var}/cache/%{name}
+mkdir -p %{buildroot}/%{_var}/run/%{name}
 # These directories are used for Nodes
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/nodes/published/http
 mkdir -p %{buildroot}/%{_var}/lib/%{name}/nodes/published/https
@@ -384,13 +384,13 @@ Pulp provides replication, access, and accounting for software repositories.
 # - apache:apache
 %defattr(-,apache,apache,-)
 %dir %{_var}/lib/%{name}
-%{_var}/lib/%{name}/celery
 %{_var}/lib/%{name}/published
 %{_var}/lib/%{name}/static
 %{_var}/lib/%{name}/uploads
 %dir %{_var}/log/%{name}
 %{_var}/www/pub
 %{_var}/cache/%{name}/
+%{_var}/run/%{name}/
 # Install the docs
 %defattr(-,root,root,-)
 %doc README LICENSE COPYRIGHT

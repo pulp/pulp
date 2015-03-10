@@ -5,7 +5,7 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/default/pulp_celerybeat
 User=apache
-WorkingDirectory=/var/lib/pulp/celery/
+WorkingDirectory=/var/run/pulp/
 ExecStart=/usr/bin/celery beat --app=pulp.server.async.celery_instance.celery --scheduler=pulp.server.async.scheduler.Scheduler
 
 [Install]
