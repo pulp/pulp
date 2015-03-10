@@ -246,3 +246,13 @@ Resource names should always start with ``/v2`` and end with a trailing ``/``.  
 following command will add a permission to ``test-user`` to create repositories::
 
     pulp-admin auth permission grant --resource /v2/repositories/ --login test-user -o create 
+
+pulp_workers, pulp_resource_manager, pulp_celerybeat not restarting after upgrade
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When SELinux is Enforcing, the pulp-selinux package is installed. Starting with pulp-selinux-2.5,
+celery processes running as pulp_workers, pulp_celerybeat, and pulp_resource_manager are run in
+celery_t context. On systems using upstart (EL6), if any of these three services remains running
+during the upgrade process,  SELinux will not allow the init script to stop the running service.
+At this point the service needs to be manually killed before a new one is started in the proper
+context.
