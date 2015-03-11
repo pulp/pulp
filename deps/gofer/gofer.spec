@@ -6,7 +6,7 @@
 %endif
 
 Name: gofer
-Version: 2.6.0
+Version: 2.6.1
 Release: 1%{?dist}
 Summary: A lightweight, extensible python agent
 Group:   Development/Languages
@@ -266,6 +266,9 @@ This plug-in provides RMI access to package (RPM) management.
 
 
 %changelog
+* Wed Mar 11 2015 Jeff Ortel <jortel@redhat.com> 2.6.1-1
+- python 2.6 compat. (jortel@redhat.com)
+
 * Mon Mar 09 2015 Jeff Ortel <jortel@redhat.com> 2.6.0-1
 - Support one-time actions. (jortel@redhat.com)
 - Support authenticator in the plugin descriptor. (jortel@redhat.com)
