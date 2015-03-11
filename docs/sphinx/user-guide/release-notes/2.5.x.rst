@@ -101,6 +101,15 @@ You can see the complete list of bugs that were
 Upgrade Instructions for 2.4.x --> 2.5.x
 ----------------------------------------
 
+.. warning::
+  If you have SELinux in Enforcing mode and you forget to stop pulp_workers, pulp_celerybeat, or
+  pulp_resource_manager before upgrade, you will experience `a bug
+  <https://pulp.plan.io/issues/740>`_. Starting with pulp-selinux-2.5, celery processes running as
+  pulp_workers, pulp_celerybeat, and pulp_resource_manager are run in celery_t context. On systems
+  using upstart (EL6), if any of these three services remains running during the upgrade process,
+  SELinux will not allow the init script to stop the running service after an upgrade. At that point
+  the service needs to be manually killed before a new one is started in the proper context.
+
 To upgrade, shut down all Pulp services::
 
     $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl stop $s; done;
