@@ -1,19 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import csv
 
 from pulp.bindings.base import PulpAPI
+
 
 class Operator(object):
     value_parser = str
@@ -59,6 +47,7 @@ class IntOperator(Operator):
 def _csv_parse(x):
     return csv.reader((x,)).next()
 
+
 class CSVOperator(Operator):
     value_parser = _csv_parse
 
@@ -67,17 +56,17 @@ class SearchAPI(PulpAPI):
     # PATH should normally be defined by a subclass
     PATH = None
     _OPERATORS = {
-        'int-eq' : IntOperator(None),
-        'str-eq' : Operator(None),
-        'not' : Operator('$not'),
-        'gt' : IntOperator('$gt'),
-        'lt' : IntOperator('$lt'),
-        'gte' : IntOperator('$gte'),
-        'lte' : IntOperator('$lte'),
-        'match' : Operator('$regex'),
-        'in' : CSVOperator('$in'),
-        'str-gte' : Operator('$gte'),
-        'str-lte' : Operator('$lte'),
+        'int-eq': IntOperator(None),
+        'str-eq': Operator(None),
+        'not': Operator('$not'),
+        'gt': IntOperator('$gt'),
+        'lt': IntOperator('$lt'),
+        'gte': IntOperator('$gte'),
+        'lte': IntOperator('$lte'),
+        'match': Operator('$regex'),
+        'in': CSVOperator('$in'),
+        'str-gte': Operator('$gte'),
+        'str-lte': Operator('$lte'),
     }
     _CRITERIA_ARGS = set(('filters', 'sort', 'limit', 'skip', 'fields'))
     _FILTER_ARGS = set(_OPERATORS.keys())
@@ -103,7 +92,7 @@ class SearchAPI(PulpAPI):
         if filters:
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
-        response = self.server.POST(self.PATH, {'criteria':kwargs})
+        response = self.server.POST(self.PATH, {'criteria': kwargs})
         return response.response_body
 
     def _strip_criteria_kwargs(self, kwargs):

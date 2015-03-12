@@ -15,9 +15,13 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 paths_to_check = [
     'agent',
     'bindings/pulp/bindings/repository.py',
+    'bindings/pulp/bindings/responses.py',
+    'bindings/pulp/bindings/search.py',
     'bindings/pulp/bindings/server.py',
     'bindings/pulp/bindings/tasks.py',
     'bindings/test/unit/test_repository.py',
+    'bindings/test/unit/test_responses.py',
+    'bindings/test/unit/test_search.py',
     'bindings/test/unit/test_server.py',
     'bindings/test/unit/test_tasks.py',
     'repoauth/',
