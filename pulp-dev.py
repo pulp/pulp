@@ -4,7 +4,6 @@
 import optparse
 import os
 import re
-import shutil
 import subprocess
 import sys
 
@@ -38,13 +37,13 @@ DIRS = [
     '/usr/lib/pulp/consumer',
     '/usr/lib/pulp/consumer/extensions',
     '/usr/lib/yum-plugins/',
+    '/var/cache/pulp',
     '/var/lib/pulp',
     '/var/lib/pulp_client',
     '/var/lib/pulp_client/admin',
     '/var/lib/pulp_client/admin/extensions',
     '/var/lib/pulp_client/consumer',
     '/var/lib/pulp_client/consumer/extensions',
-    '/var/cache/pulp',
 ]
 
 # We only support Python >= 2.6 for the server code
@@ -71,6 +70,7 @@ if sys.version_info >= (2, 6):
         '/var/lib/pulp/static',
         '/var/lib/pulp/uploads',
         '/var/log/pulp',
+        '/var/run/pulp',
         '/var/www/pulp',
         '/var/www/.python-eggs',  # needed for older versions of mod_wsgi
     ])
@@ -332,6 +332,7 @@ def install(opts):
         os.system('chown -R apache:apache /var/log/pulp')
         os.system('chown -R apache:apache /var/lib/pulp')
         os.system('chown -R apache:apache /var/cache/pulp')
+        os.system('chown -R apache:apache /var/run/pulp')
 
         # The Celery init script will get angry if /etc/default things aren't root owned
         os.system('chown root:root /etc/default/pulp_celerybeat')
