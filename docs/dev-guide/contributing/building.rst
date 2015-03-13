@@ -8,54 +8,55 @@ Concepts
 ^^^^^^^^
 
 There are some concepts you should internalize before you begin making builds. Koji has a concept
-called tags. A tag is essentially a grouping of package builds, and it maps to a Yum repository.
-Pulp uses one Koji tag per Pulp release stream, per distribution, per architecture. Pulp uses three
-release streams per release, corresponding to development, testing, and production. In Koji, these
-three concepts map to "testing", "beta", and "" (empty string) in our tag names respectively.
-
-This table maps the git branches to their appropriate Koji tags:
-
-+---------------+-----------------------------------+
-| Git Branch    | Koji Tag per <distribution>       |
-+===============+===================================+
-| <X.Y>-dev     | pulp-<X.Y>-testing-<distribution> |
-+---------------+-----------------------------------+
-| <X.Y>-testing | pulp-<X.Y>-beta-<distribution>    |
-+---------------+-----------------------------------+
-| <X.Y>-release | pulp-<X.Y>-<distribution>         |
-+---------------+-----------------------------------+
-
-.. warning::
-
-   Note the potential confusion that the X.Y-testing branch maps to the pulp-X.Y-beta-rhel7 tag, not
-   the pulp-X.Y-testing-rhel7 tag. It could be wise for us to resolve this by renaming our Koji
-   tags to correspond to our dev, testing, and release branch names, but at this time this is how
-   they map.
-
-For example, the 2.4 release stream in Pulp platform has three git branches, 2.4-dev, 2.4-testing,
-and 2.4-release. For RHEL 7, these map to pulp-2.4-testing-rhel7, pulp-2.4-beta-rhel7, and
-pulp-2.4-rhel7, respectively. You can see the full list of Pulp's Koji tags
+called tags. A tag is essentially a grouping of package builds.
+Pulp uses one Koji tag per Pulp X.Y release stream, per distribution, per architecture.
+For example, the 2.6 releases of pulp will build into the pulp-2.6-<distribution> tags in koji.
+You can see the full list of Pulp's Koji tags
 `here <http://koji.katello.org/koji/search?match=glob&type=tag&terms=pulp*>`_.
 
 Another thing to know about Koji is that once a particular NEVRA (Name, Epoch, Version, Release,
 Architecture) is built in Koji, it cannot be built again. However, it can be tagged into multiple
 Koji tags. For example, if ``python-celery-3.1.11-1.el7.x86_64`` is built into the
-``pulp-2.4-beta-rhel7`` tag and you wish to add that exact package in the ``pulp-2.4-rhel7`` tag,
+``pulp-2.4-rhel7`` tag and you wish to add that exact package in the ``pulp-2.5-rhel7`` tag,
 you cannot build it again. Instead, you must tag that package for the new tag. You will see later
 on in this document that Pulp has a tool to help you do this.
+
+Pulp release and testing builds are collections of components that are versioned independently.
+For example, the core Pulp server may be at version 2.6 while pulp_docker may be at version 1.0.
+This assembly is accomplished using release definitions specified in the
+``pulp_packaging/ci/config/releases/<build-name>.yaml`` files. Each file specifies the detail of a
+build that the Pulp build scripts can later assemble. The components within that
+file specify the target koji tag as well as the individual git repositories and branches that
+will be assembled as part of a build. In addition it specifies the directory within
+https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/ where the build results
+will be published.
+
+Because there is no way to automatically determine when a particular component needs a new version,
+or what that version should be, the build-infrastructure assumes that whatever version is specified
+in the rpm spec file is the final version that is required.  If a release build
+of that version has already been built in koji then those RPMs will be used.  Ideally, whenever
+a branch is forked, or the first commit is pushed into a branch after a release build, the version
+should be incremented.
 
 Tools used when building
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Pulp has some wrapper scripts in the ``pulp/rel-eng`` directory to assist with
-builds. These wrapper scripts call `tito <https://github.com/dgoodwin/tito>`_
+Test or release builds (with the exclusion of the signing step) may be performed using
+Jenkins.  There are automated jobs that will run nightly which build repositories that can be used
+for validation.  When those jobs are initiated manually there is a parameter to enable the
+release build process in koji.  If a release build is performed with Jenkins you will still need
+to sign the rpms and manually push them to the final location on fedorapeople.
+
+Pulp has some helper scripts in the
+`pulp_packaging/ci <https://github.com/pulp/pulp_packaging/tree/master/ci>`_ directory to assist
+with builds. These wrapper scripts call `tito <https://github.com/dgoodwin/tito>`_
 and `koji <https://fedoraproject.org/wiki/Koji>`_ to do the actual tagging and
 build work.
 
 Both packages are in Fedora and EPEL so you should not need to install from
-source. Technically you do not need to ever call these scripts directly when
-building pulp, pulp_rpm, pulp_nodes or pulp_puppet. However, some familiarity
-with both tito and koji is good, especially when debugging build issues.
+source. Technically you do not need to ever call these scripts directly.
+However, some familiarity with both tito and koji is good, especially when
+debugging build issues.
 
 What you will need
 ^^^^^^^^^^^^^^^^^^
@@ -79,12 +80,11 @@ If you are interested in building Pulp, it is strongly recommended that you use 
 from your normal development environment to avoid any potential errors such as building in local
 changes, or building the wrong branches. It is also a good idea to use a build host in a location
 with good outbound bandwidth, as the repository publish can be at or over 250 MB. Thus, the first
-step is to make a clean checkout of the three Pulp repositories, and put them somewhere away from
-your other checkouts::
+step is to make a clean checkout of the pulp_packging somewhere away from your other checkouts::
 
     $ mkdir ~/pulp_build
     $ cd ~/pulp_build
-    $ for r in {pulp,pulp_puppet,pulp_rpm}; do git clone git@github.com:pulp/$r.git; done;
+    $ git clone git@github.com:pulp/pulp_packaging.git; done;
 
 The next step is to install and configure the Koji client on your machine. You will need to put the
 Katello CA certificate and your client certificate in your home folder::
@@ -143,7 +143,7 @@ Now you are ready to begin building.
 
 
 Dependencies
----------------------
+------------
 
 Building Dependencies
 ^^^^^^^^^^^^^^^^^^^^^
@@ -169,68 +169,41 @@ tag the git repository with your changes::
     $ tito tag --keep-version
 
 Pay attention to the output of tito here as well. It will instruct you to push your branch and the
-new tag to github.
+new tag to GitHub.
 
 .. warning::
 
    It is very important that you perform the steps that tito instructs you to do. If you do not,
    others will not be able to reproduce the changes you have made!
 
-Now you are ready to submit the build to Koji::
+At this point the dependency will automatically be built during all test builds of Pulp and will
+automatically have a release build performed when the next release build containing this
+dependency is performed.
 
-    $ cd rel-eng/
-    $ ./builder.py --build-dependency <dependency_name> --disable-repo-build <version X.Y> <stream>
+Test Building Pulp and the plugins
+----------------------------------
 
-Substitute your package name, the major and minor version (leave off the point release), and the
-stream you wish to build into. The stream can be "testing", "beta", or "stable". To make the above a
-little more concrete, here is an example for building python-celery into the 2.4 testing (alpha)
-repository::
+Are you ready to build something?  If so, you should `cd` to the ``pulp_packaging/ci``
+directory.  The next step is to perform the build.  There is a helper script that will
+perform the following actions:
 
-    $ ./builder.py --build-dependency python-celery --disable-repo-build 2.4 testing
+#. Load the specified configuration from ``pulp_packaging/ci/config/releases``.
+#. Clone all the required git repositories to the ``working/<repo_name>`` directory.
+#. Check out the appropriate branch for each git repos.
+#. Find all the spec files in the repositories.
+#. Check koji to determine if the version in the spec already exists in koji.
+#. Test build all the packages that do not already exist in koji.
+#. Optionally release build all the packages that do not already exist in koji.
+#. Download the already existing packages from koji.
+#. Download the scratch built packages from koji.
+#. Assemble the repositories for all the associated distributions.
+#. Optionally push the repositories to fedorapeople.
 
-.. note::
-   
-   Keep in mind that Koji does not allow rebuilding any package version that has been successfully
-   built before. Thus, if you have already built python-celery-3.1.11-1.el7.x86_64 in the testing
-   stream and you wish to promote it to the beta stream, you cannot use this command to do that.
-   Read the next section to find out how to do this.
+The ``build-all.py`` script can be used to do all of this.  For example, to perform a test
+build of the 2.6-dev release as specified in ``pulp_packaging/ci/config/releases/2.6-dev.py``
+where the results are not pushed to fedorapeople::
 
-Bringing Builds into New Tags
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you are building in a never-before-used Koji tag, you can use builder.py to tag the correct
-dependencies in automatically::
-
-    $ ./builder.py --update-tag-package-list <version X.Y> <stream>
-
-Continuing on from our earlier example, if everyone was so thrilled with your build of
-python-celery-3.1.11-1.el7.x86_64 that you had tagged into 2.4 testing that they wanted it in the
-2.4 beta stream, all you have to do is this::
-
-    $ ./builder.py --update-tag-package-list 2.4 beta
-
-.. note::
-
-   This command will tag in all packages that builder.py determines are appropriate for X.Y-stream,
-   so don't be surprised if you see it tagging in more packages than just python-celery.
-
-.. note::
-
-   The above command will finish quickly, but it will tell you that you need to manually monitor
-   Koji and wait for the repository building tasks to complete. You can view
-   `active Koji tasks <http://koji.katello.org/koji/tasks>`_. Do not submit any new Koji tasks until
-   these complete.
-
-Building Pulp, RPM Support, and Puppet Support
-----------------------------------------------
-
-Are you ready to build the platform, RPM, and Puppet packages? If so, you should `cd` to the top level
-directory where you have checked out all three of those repositories. Ensure that all three
-repositories have the branches you wish to build checked out. For example, if you are trying to
-build a new 2.4.z beta release, all three repositories should have the 2.4-testing branch checked
-out::
-
-    $ for r in {pulp,pulp_puppet,pulp_rpm}; do pushd $r; git checkout 2.4-testing; git pull; popd; done;
+    $ build-all.py 2.6-dev --disable-push
 
 At this point, you may wish to ensure that the branches are all merged forward to master. This step
 is not strictly required at this point, as we will have to do it again later. However, sometimes
@@ -241,12 +214,6 @@ Here is a quick way to see if everything's been merged forward through to master
 to edit the BRANCHES list so the branch you are releasing from is the first in the list::
 
     $ BRANCHES="2.4-release 2.4-testing 2.4-dev 2.5-testing 2.5-dev"; git log origin/master | fgrep -f <(for b in $BRANCHES; do git log origin/$b | head -n1 | awk '{print $NF}' ; done)
-
-If you are building into a Koji tag that has never been built before, you need to add the Pulp
-packages to that tag. For example, if nobody has ever built Pulp in the ``pulp-2.5-beta-rhel7`` tag
-and your Koji username is ``cduryee``, you should do this::
-
-    $ for x in pulp pulp-puppet pulp-rpm pulp-nodes; do koji -d add-pkg --owner "cduryee" pulp-2.5-beta-rhel7 $x; done
 
 Next it is time to raise the version of the branches. This process is different depending on the
 stream you are building.
@@ -260,59 +227,50 @@ stream you are building.
    follow the
    `Fedora Package Versioning Scheme <http://fedoraproject.org/wiki/Packaging:NamingGuidelines#Package_Versioning>`_.
 
-Beta, Testing, and Release Candidate Tagging
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-These streams can make use of the tagging bash script, ``tag.sh``. The script will ask you to edit
-the changelog entries, tag the git repositories, and push the tags to GitHub.
+Checking the versions that will be built
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+You can use the ``build-all.py`` script to validate versions that will be built/downloaded.
+This can be used to double check to ensure that the correct versions have been set in the spec
+files. This command will exit immediately after displaying the versions.::
 
-For example, to tag 2.4.2-0.3.beta you can do this::
+    $ ./build-all.py 2.6-testing --show-versions
 
-    $ ./pulp/tag.sh -v 2.4.2-0.3.beta
+If one of the versions is not what you expect updated it using the ``update-version.py`` script
+and push the change to GitHub.
 
-Release Tagging
-^^^^^^^^^^^^^^^
-For a release you will need to raise the versions of the setup.py, conf.py, and spec files. Each
-Python package in each Pulp repository has a setup.py. Find each of these, and set its version
-appropriately. Do the same for the conf.py in the ``docs/`` folder for each repository.
+Updating Versions
+^^^^^^^^^^^^^^^^^
+The ``update-version.py`` script will scan a directory and set the versions inside according to
+your specifications.  For example, to if you have been working in the ``/tmp/pulp_build`` directory
+the following command can be used to update pulp_docker from the release candidate to the release
+build version.::
 
-.. note::
+   $ cd /tmp/pulp_build/pulp_packaging/ci/
+   $ ./build-all.py 2.6-testing --show-versions
+   .. Versions displayed ..
+   $ ./update-version.py --update-type stage /tmp/pulp_build/pulp_packaging
 
-   We do not include the release field in the setup.py or conf.py files, so this is only necessary
-   when introducing a new x.y.z version.
-
-Edit the spec file and raise the version and release fields to the desired values. Be sure to add an
-entry to the changelog as well, including any bug fixes that you find in the git log since the last
-build. We do not want to carry lots of old pre-release changelog entries around, so please find the
-changelog entries for the last build in your release stream and group them into the current version
-you are building. This way we can avoid lots of entries for ``0.1.beta``, ``0.2.beta``, etc. that
-all have a bug or two (or none) each. If you are making a release, there should be no changelog
-entries for the pre-release builds included at all. Once you have done this, you can use tito to tag
-the repository for building. You will need to use tito in each of the directories that contain a
-spec file.::
-
-    $ tito tag --keep-version --no-auto-changelog
-
-Pay attention to the instructions from tito, as you will need to push your changes to the upstream Pulp
-repository, as well as the tags that tito generated.
-
+At this point you can inspect the files to ensure the versions are as you expect. The changes
+will still need to be committed and pushed to GitHub before they can be used to build. You can
+rerun the ``build-all.py`` script to check the versions again after your changes have been
+pushed to GitHub.
 
 
 Submit to Koji
 ^^^^^^^^^^^^^^
 We are now prepared to submit the build to Koji. This task is simple::
 
-    $ cd pulp/rel-eng/
-    $ ./builder.py <X.Y> <stream>
-
-To continue with our example of building a new 2.4 beta::
-
-    $ ./builder.py 2.4 beta
+    $ cd pulp_packaging/ci
+    $ ./build-all.py 2.6-testing --release
 
 This command will build SRPMs, upload them to Koji, and monitor the resulting builds. If any of them
 fail, you can view the
 `failed builds <http://koji.katello.org/koji/tasks?state=failed&view=tree&method=all&order=-id>`_ to
 see what went wrong. If the build was successful, it will automatically download the results into a
-new folder called mash that will be a peer to your git checkouts.
+new folder called mash that will be a peer to the ``pulp_packaging`` directory.
+
+At the end it will automatically upload the resulting build to fedorapeople in the directory
+specified in the release config file.
 
 Now is a good time to start our Jenkins builder to run the unit tests in all the supported operating
 systems. You can configure it to run the tests in the git branch that you are building. Make sure
@@ -352,39 +310,6 @@ Here are some guidelines for what to set the URL to:
    2.8 should point back to "1.0-release" for pulp_foo's docs. This ensures a
    consistent experience when users click back and forth between docs.
 
-
-Building Crane
---------------
-
-Crane is built using tito and koji commands and is typically built off of the
-master branch for now. To tag a new build, edit ``python-crane.spec`` to the
-version you'd like, save and push this change to upstream. This typically does
-not require a pull request.
-
-To tag::
-
-   $ tito tag --keep-version
-
-Follow the instructions given by tito on pushing the updated branch and tag. At
-this point tagging is complete and you need to create SRPMs to feed to Koji::
-
-   $ for r in el6 el7 fc20 fc21; do tito build --srpm --dist .$r; done
-
-This will create four SRPMs. Here is how to feed them into Koji::
-
-   $ koji build <tag> <srpm>
-
-Note that you should use the testing tag and then add additional tags later.
-For example, ``koji build pulp-2.5-testing-fedora20
-python-crane-0.2.2-0.3.beta.fc20.src.rpm`` will build crane and associate it
-with the Fedora 20 testing tag. Once you have completed this for all four
-SRPMs, you can associate additional tags if needed::
-
-  $ koji tag-build <tag> <build>
-
-An example of this would be ``koji tag-build pulp-2.5-beta-fedora20
-python-crane-0.2.2-0.3.beta.fc20``. Once this is completed, you can pull down a
-new mash and upload using the instructions below.
 
 Testing the Build
 -----------------
@@ -469,9 +394,9 @@ tell koji to write out the signed RPMs (both commands are run from your mash dir
    $ for r in `find -name "*src.rpm"`; do basename $r; done | sort | uniq | sed s/\.src\.rpm//g > /tmp/builds
    $ for x in `cat /tmp/builds`; do koji write-signed-rpm <SIGNATURE-HASH> $x; done
 
-Sync down your mash one more time (run from the ``pulp/rel-eng`` dir)::
+Sync down your mash one more time (run from the ``pulp_packaging/ci`` dir)::
 
-   $ ./builder.py --disable-build --rpmsig <SIGNATURE-HASH> <version> <release>
+   $ ./build-all.py <release_config> --disable-push --rpmsig <SIGNATURE-HASH>
 
 .. note::
 
