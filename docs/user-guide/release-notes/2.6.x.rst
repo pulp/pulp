@@ -106,7 +106,8 @@ Rest API Changes
 * A new `Task Report` attribute named `worker_name` is introduced that holds the name of the worker
   a task is associated with. Previously the worker name was stored in a `Task Report` attribute
   named `queue`. The `queue` attribute now correctly records the queue a task is put in. The
-  `queue` attribute is deprecated and will be removed from the `Task Report` in Pulp 3.0.0.
+  `queue` attribute is deprecated and will be removed from the `Task Report` in a future Pulp 
+  version.
 
 * The URL for the content catalog entries ``/v2/content/catalog/<source-id>`` is missing
   the trailing '/' and has been deprecated. Support for the URL ``/v2/content/catalog/<source-id>/``
