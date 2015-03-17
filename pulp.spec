@@ -389,6 +389,20 @@ Pulp provides replication, access, and accounting for software repositories.
 %defattr(-,root,root,-)
 %doc README LICENSE COPYRIGHT
 
+%pre server
+# If we are upgrading
+if [ $1 -gt 1 ] ; then
+    %if %{pulp_systemd} == 1
+        /bin/systemctl stop pulp_workers > /dev/null 2>&1
+        /bin/systemctl stop pulp_celerybeat > /dev/null 2>&1
+        /bin/systemctl stop pulp_resource_manager > /dev/null 2>&1
+    %else
+        /sbin/service pulp_workers stop > /dev/null 2>&1
+        /sbin/service pulp_celerybeat stop > /dev/null 2>&1
+        /sbin/service pulp_resource_manager stop > /dev/null 2>&1
+    %endif
+fi
+
 %post server
 
 # RSA key pair
@@ -410,6 +424,20 @@ ln -fs $KEY_PATH_PUB %{_var}/lib/%{name}/static
 if [ $1 -eq 1 ]; # not an upgrade
 then
   pulp-gen-ca-certificate
+fi
+
+%preun server
+# If we are uninstalling
+if [ $1 -eq 0 ] ; then
+    %if %{pulp_systemd} == 1
+        /bin/systemctl stop pulp_workers > /dev/null 2>&1
+        /bin/systemctl stop pulp_celerybeat > /dev/null 2>&1
+        /bin/systemctl stop pulp_resource_manager > /dev/null 2>&1
+    %else
+        /sbin/service pulp_workers stop > /dev/null 2>&1
+        /sbin/service pulp_celerybeat stop > /dev/null 2>&1
+        /sbin/service pulp_resource_manager stop > /dev/null 2>&1
+    %endif
 fi
 
 %if %{pulp_systemd} == 1
