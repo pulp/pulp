@@ -32,10 +32,25 @@ class NotFound(Exception):
     pass
 
 
+class Context(Mock):
+
+    def __init__(self):
+        super(Context, self).__init__()
+        self.address = '123'
+        self.secret = 'test-secret'
+        self.url = 'http://broker.com'
+        self.authenticator = Mock()
+        self.details = {'task_id': '4567'}
+        self.reply_queue = 'pulp.task'
+        self.__enter__ = Mock()
+        self.__exit__ = Mock()
+
+
 class TestConsumerCapability(TestCase):
 
+    @patch('pulp.server.agent.direct.pulpagent.add_connector')
     @patch('pulp.server.agent.direct.pulpagent.Queue')
-    def test_delete_queue(self, queue):
+    def test_delete_queue(self, queue, add_connector):
         url = 'test-url'
         name = 'test-queue'
 
@@ -44,14 +59,16 @@ class TestConsumerCapability(TestCase):
         agent.delete_queue(url, name)
 
         # validation
-        queue.assert_called_once_with(name)
+        add_connector.assert_called_once_with()
+        queue.assert_called_once_with(name, url)
         queue = queue.return_value
-        queue.purge.assert_called_once_with(url)
-        queue.delete.assert_called_once_with(url)
+        queue.purge.assert_called_once_with()
+        queue.delete.assert_called_once_with()
 
+    @patch('pulp.server.agent.direct.pulpagent.add_connector')
     @patch('pulp.server.agent.direct.pulpagent.Queue')
     @patch('pulp.server.agent.direct.pulpagent.NotFound', NotFound)
-    def test_delete_queue_not_found(self, queue):
+    def test_delete_queue_not_found(self, queue, add_connector):
         url = 'test-url'
         name = 'test-queue'
         queue.return_value.purge.side_effect = NotFound
@@ -61,243 +78,201 @@ class TestConsumerCapability(TestCase):
         agent.delete_queue(url, name)
 
         # validation
-        queue.assert_called_once_with(name)
+        add_connector.assert_called_once_with()
+        queue.assert_called_once_with(name, url)
         queue = queue.return_value
-        queue.purge.assert_called_once_with(url)
+        queue.purge.assert_called_once_with()
         self.assertFalse(queue.delete.called)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_unregistered(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
+    def test_unregistered(self, _agent):
+        context = Context()
 
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_consumer = Mock()
-        mock_agent.Consumer = Mock(return_value=mock_consumer)
-
-        # test capability
-
+        # test
         Consumer.unregistered(context)
 
         # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
 
-        mock_gofer_agent.assert_called_with(
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             secret=context.secret,
             authenticator=context.authenticator,
             wait=0)
 
-        mock_consumer.unregistered.assert_called_with()
+        _agent = _agent.return_value
+        _agent.Consumer.return_value.unregistered.assert_called_with()
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_bind(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
-        context.details = {'task_id': '4567'}
-        context.reply_queue = 'pulp.task'
-
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_consumer = Mock()
-        mock_agent.Consumer = Mock(return_value=mock_consumer)
-
+    def test_bind(self, _agent):
+        context = Context()
         bindings = []
         options = {}
 
+        # test
         Consumer.bind(context, bindings, options)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
             data=context.details)
 
-        mock_consumer.bind.assert_called_with(bindings, options)
+        _agent = _agent.return_value
+        _agent.Consumer.return_value.bind.assert_called_with(bindings, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_unbind(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
-        context.details = {'task_id': '4567'}
-        context.reply_queue = 'pulp.task'
-
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_consumer = Mock()
-        mock_agent.Consumer = Mock(return_value=mock_consumer)
-
+    def test_unbind(self, _agent):
+        context = Context()
         bindings = []
         options = {}
 
+        # test
         Consumer.unbind(context, bindings, options)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
             data=context.details)
 
-        mock_consumer.unbind.assert_called_with(bindings, options)
+        _agent = _agent.return_value
+        _agent.Consumer.return_value.unbind.assert_called_with(bindings, options)
 
 
 class TestContentCapability(TestCase):
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_install(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
-        context.details = {'task_id': '4567'}
-        context.reply_queue = 'pulp.task'
-
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_content = Mock()
-        mock_agent.Content = Mock(return_value=mock_content)
-
+    def test_install(self, _agent):
+        context = Context()
         units = []
         options = {}
 
+        # test
         Content.install(context, units, options)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
             data=context.details)
 
-        mock_content.install.assert_called_with(units, options)
+        _agent = _agent.return_value
+        _agent.Content.return_value.install.assert_called_with(units, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_update(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
-        context.details = {'task_id': '4567'}
-        context.reply_queue = 'pulp.task'
-
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_content = Mock()
-        mock_agent.Content = Mock(return_value=mock_content)
-
+    def test_update(self, _agent):
+        context = Context()
         units = []
         options = {}
 
+        # test
         Content.update(context, units, options)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
             data=context.details)
 
-        mock_content.update.assert_called_with(units, options)
+        _agent = _agent.return_value
+        _agent.Content.return_value.update.assert_called_with(units, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_uninstall(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
-        context.details = {'task_id': '4567'}
-        context.reply_queue = 'pulp.task'
-
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_content = Mock()
-        mock_agent.Content = Mock(return_value=mock_content)
-
+    def test_uninstall(self, _agent):
+        context = Context()
         units = []
         options = {}
 
+        # test
         Content.uninstall(context, units, options)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             reply=context.reply_queue,
             secret=context.secret,
             authenticator=context.authenticator,
             data=context.details)
 
-        mock_content.uninstall.assert_called_with(units, options)
+        _agent = _agent.return_value
+        _agent.Content.return_value.uninstall.assert_called_with(units, options)
 
 
 class TestProfileCapability(TestCase):
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_send(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.secret = 'test-secret'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
+    def test_send(self, _agent):
+        context = Context()
 
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_profile = Mock()
-        mock_agent.Profile = Mock(return_value=mock_profile)
-
+        # test
         Profile.send(context)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             secret=context.secret,
             authenticator=context.authenticator)
 
-        mock_profile.send.assert_called_with()
+        _agent = _agent.return_value
+        _agent.Profile.return_value.send.assert_called_with()
 
 
 class TestAdminCapability(TestCase):
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_send(self, mock_gofer_agent):
-        context = Mock()
-        context.route = '123'
-        context.url = 'http://broker.com'
-        context.authenticator = Mock()
-
+    def test_cancel(self, _agent):
+        context = Context()
         task_id = '5678'
-        criteria = {'match': {'task_id': task_id}}
 
-        mock_agent = Mock()
-        mock_gofer_agent.return_value = mock_agent
-        mock_admin = Mock()
-        mock_agent.Admin = Mock(return_value=mock_admin)
-
+        # test
         agent = PulpAgent()
         agent.cancel(context, task_id)
 
-        mock_gofer_agent.assert_called_with(
+        # validation
+        context.__enter__.assert_called_once_with()
+        self.assertTrue(context.__exit__.called)
+
+        _agent.assert_called_with(
             context.url,
-            context.route,
+            context.address,
             authenticator=context.authenticator,
             wait=0)
 
-        mock_admin.cancel.assert_called_with(criteria=criteria)
+        _agent = _agent.return_value
+        _agent.Admin.return_value.cancel.assert_called_with(
+            criteria={'match': {'task_id': task_id}})

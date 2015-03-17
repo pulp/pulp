@@ -26,7 +26,7 @@
 %endif
 
 # Required gofer version
-%global gofer_version 2.5
+%global gofer_version 2.6
 
 
 # ---- Pulp Platform -----------------------------------------------------------
