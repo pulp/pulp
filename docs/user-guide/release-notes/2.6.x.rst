@@ -2,6 +2,18 @@
 Pulp 2.6 Release Notes
 =========================
 
+Pulp 2.6.1
+==========
+
+Bug Fixes
+---------
+
+This is a minor release which contains bug fixes for `these issues <https://pulp.plan.io/issues?utf8=%E2%9C%93&set_filter=1&f%5B%5D=cf_4&op%5Bcf_4%5D=%3D&v%5Bcf_4%5D%5B%5D=2.6.1&f%5B%5D=tracker_id&op%5Btracker_id%5D=%3D&v%5Btracker_id%5D%5B%5D=1&f%5B%5D=&c%5B%5D=project&c%5B%5D=tracker&c%5B%5D=status&c%5B%5D=priority&c%5B%5D=cf_5&c%5B%5D=subject&c%5B%5D=author&c%5B%5D=assigned_to&c%5B%5D=cf_3&group_by=>`_.
+
+One area of improvement relates to upgrades. Starting with 2.6.1, Pulp processes `pulp_workers`,
+`pulp_celerybeat`, and `pulp_resource_manager` are stopped on upgrade or removal of the
+`pulp-server` package. After upgrading, you must restart all Pulp related services.
+
 Pulp 2.6.0
 ===========
 
@@ -24,6 +36,11 @@ New Features
   information is available in the :ref:`status API document <getting_the_server_status>`.
 
 .. _RabbitMQ: https://www.rabbitmq.com/
+
+Bug Fixes
+---------
+
+This release has fixes for `these issues <https://pulp.plan.io/issues?utf8=%E2%9C%93&set_filter=1&f%5B%5D=cf_4&op%5Bcf_4%5D=%3D&v%5Bcf_4%5D%5B%5D=2.6.0&f%5B%5D=tracker_id&op%5Btracker_id%5D=%3D&v%5Btracker_id%5D%5B%5D=1&f%5B%5D=&c%5B%5D=project&c%5B%5D=tracker&c%5B%5D=status&c%5B%5D=priority&c%5B%5D=cf_5&c%5B%5D=subject&c%5B%5D=author&c%5B%5D=assigned_to&c%5B%5D=cf_3&group_by=>`_.
 
 Deprecation
 -----------
@@ -106,7 +123,8 @@ Rest API Changes
 * A new `Task Report` attribute named `worker_name` is introduced that holds the name of the worker
   a task is associated with. Previously the worker name was stored in a `Task Report` attribute
   named `queue`. The `queue` attribute now correctly records the queue a task is put in. The
-  `queue` attribute is deprecated and will be removed from the `Task Report` in Pulp 3.0.0.
+  `queue` attribute is deprecated and will be removed from the `Task Report` in a future Pulp 
+  version.
 
 * The URL for the content catalog entries ``/v2/content/catalog/<source-id>`` is missing
   the trailing '/' and has been deprecated. Support for the URL ``/v2/content/catalog/<source-id>/``
