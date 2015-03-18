@@ -26,4 +26,3 @@ def add_connector():
     connector.ssl.ca_certificate = config.get('messaging', 'cacert')
     connector.ssl.client_certificate = config.get('messaging', 'clientcert')
     connector.add()
-
