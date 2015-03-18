@@ -219,7 +219,7 @@ def uri_path():
     @return: full current URI path
     """
     if _is_django():
-        return unicode(_get_wsgi_environ()['REQUEST_URI'])
+        return unicode(_get_wsgi_environ()['REQUEST_URI']).split("?")[0]
     else:
         return web.http.url(web.ctx.path)
 
