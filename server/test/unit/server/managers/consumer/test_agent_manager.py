@@ -41,7 +41,7 @@ class TestAgentManager(TestCase):
         mock_consumer_manager.get_consumer = Mock(return_value=consumer)
         mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
 
-        mock_context.return_value = Mock(url=url, route=queue)
+        mock_context.return_value = Mock(url=url, address=queue)
 
         # test manager
 
@@ -51,10 +51,14 @@ class TestAgentManager(TestCase):
 
         # validations
 
+        task_tags = [
+            tags.resource_tag(tags.ACTION_AGENT_QUEUE_DELETE, consumer['id'])
+        ]
+
         mock_context.assert_called_with(consumer)
         mock_agent.unregistered.assert_called_with(mock_context.return_value)
         mock_delete_queue.apply_async.assert_called_once_with(
-            args=[url, queue, consumer_id], countdown=QUEUE_DELETE_DELAY)
+            args=[url, queue, consumer_id], countdown=QUEUE_DELETE_DELAY, tags=task_tags)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
     @patch('pulp.server.managers.consumer.agent.TaskStatusManager')
