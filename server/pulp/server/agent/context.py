@@ -14,7 +14,7 @@
 from gofer.messaging import Queue
 
 from pulp.server.agent.auth import Authenticator
-from pulp.server.agent.connector import get_url, add_connector
+from pulp.server.agent.connector import add_connector, get_url
 from pulp.server.agent.direct.services import ReplyHandler
 
 
@@ -32,7 +32,7 @@ class Context(object):
 
     :ivar address: The AMQP address.
         The address has the form: 'pulp.agent.<consumer_id>'.
-    :type address: str
+    :type address: basestring
     :ivar secret: The shared secret which is the DB consumer object's _id.
     :type secret: str
     :ivar url: The broker URL.
@@ -67,6 +67,7 @@ class Context(object):
         Enter the context.
           1. add the configured gofer connector.
           2. declare the agent queue.
+
         :return: self
         :rtype: Context
         """
@@ -75,11 +76,12 @@ class Context(object):
         queue.declare()
         return self
 
-    def __exit__(self, *ignored):
+    def __exit__(self, *args):
         """
         Exit the context.
         Releasing resources such as AMQP connections *could* be done here.
-        :param ignored: Ignored parameters.
-        :type ignored: tuple
+
+        :param args: Unused parameters.
+        :type args: tuple
         """
         pass

@@ -5,7 +5,7 @@ from gofer.messaging import Queue
 from gofer.rmi.async import ReplyConsumer, Listener
 
 from pulp.server.agent.auth import Authenticator
-from pulp.server.agent.connector import get_url, add_connector
+from pulp.server.agent.connector import add_connector, get_url
 from pulp.server.async.task_status_manager import TaskStatusManager
 from pulp.server.managers import factory as managers
 

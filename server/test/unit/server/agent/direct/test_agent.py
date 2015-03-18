@@ -61,9 +61,8 @@ class TestConsumerCapability(TestCase):
         # validation
         add_connector.assert_called_once_with()
         queue.assert_called_once_with(name, url)
-        queue = queue.return_value
-        queue.purge.assert_called_once_with()
-        queue.delete.assert_called_once_with()
+        queue.return_value.purge.assert_called_once_with()
+        queue.return_value.delete.assert_called_once_with()
 
     @patch('pulp.server.agent.direct.pulpagent.add_connector')
     @patch('pulp.server.agent.direct.pulpagent.Queue')
@@ -80,16 +79,15 @@ class TestConsumerCapability(TestCase):
         # validation
         add_connector.assert_called_once_with()
         queue.assert_called_once_with(name, url)
-        queue = queue.return_value
-        queue.purge.assert_called_once_with()
+        queue.return_value.purge.assert_called_once_with()
         self.assertFalse(queue.delete.called)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
-    def test_unregistered(self, _agent):
+    def test_unregister(self, _agent):
         context = Context()
 
         # test
-        Consumer.unregistered(context)
+        Consumer.unregister(context)
 
         # validation
         context.__enter__.assert_called_once_with()
@@ -102,8 +100,7 @@ class TestConsumerCapability(TestCase):
             authenticator=context.authenticator,
             wait=0)
 
-        _agent = _agent.return_value
-        _agent.Consumer.return_value.unregistered.assert_called_with()
+        _agent.return_value.Consumer.return_value.unregister.assert_called_with()
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_bind(self, _agent):
@@ -126,8 +123,7 @@ class TestConsumerCapability(TestCase):
             authenticator=context.authenticator,
             data=context.details)
 
-        _agent = _agent.return_value
-        _agent.Consumer.return_value.bind.assert_called_with(bindings, options)
+        _agent.return_value.Consumer.return_value.bind.assert_called_with(bindings, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_unbind(self, _agent):
@@ -150,8 +146,7 @@ class TestConsumerCapability(TestCase):
             authenticator=context.authenticator,
             data=context.details)
 
-        _agent = _agent.return_value
-        _agent.Consumer.return_value.unbind.assert_called_with(bindings, options)
+        _agent.return_value.Consumer.return_value.unbind.assert_called_with(bindings, options)
 
 
 class TestContentCapability(TestCase):
@@ -177,8 +172,7 @@ class TestContentCapability(TestCase):
             authenticator=context.authenticator,
             data=context.details)
 
-        _agent = _agent.return_value
-        _agent.Content.return_value.install.assert_called_with(units, options)
+        _agent.return_value.Content.return_value.install.assert_called_with(units, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_update(self, _agent):
@@ -201,8 +195,7 @@ class TestContentCapability(TestCase):
             authenticator=context.authenticator,
             data=context.details)
 
-        _agent = _agent.return_value
-        _agent.Content.return_value.update.assert_called_with(units, options)
+        _agent.return_value.Content.return_value.update.assert_called_with(units, options)
 
     @patch('pulp.server.agent.direct.pulpagent.Agent')
     def test_uninstall(self, _agent):
@@ -225,8 +218,7 @@ class TestContentCapability(TestCase):
             authenticator=context.authenticator,
             data=context.details)
 
-        _agent = _agent.return_value
-        _agent.Content.return_value.uninstall.assert_called_with(units, options)
+        _agent.return_value.Content.return_value.uninstall.assert_called_with(units, options)
 
 
 class TestProfileCapability(TestCase):
@@ -248,8 +240,7 @@ class TestProfileCapability(TestCase):
             secret=context.secret,
             authenticator=context.authenticator)
 
-        _agent = _agent.return_value
-        _agent.Profile.return_value.send.assert_called_with()
+        _agent.return_value.Profile.return_value.send.assert_called_with()
 
 
 class TestAdminCapability(TestCase):
@@ -273,6 +264,5 @@ class TestAdminCapability(TestCase):
             authenticator=context.authenticator,
             wait=0)
 
-        _agent = _agent.return_value
-        _agent.Admin.return_value.cancel.assert_called_with(
+        _agent.return_value.Admin.return_value.cancel.assert_called_with(
             criteria={'match': {'task_id': task_id}})

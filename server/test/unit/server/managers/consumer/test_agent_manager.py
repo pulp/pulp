@@ -17,6 +17,7 @@ from unittest import TestCase
 from mock import patch, Mock, ANY
 
 from pulp.common import tags
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
 from pulp.server.managers.consumer.agent import AgentManager, Units
 from pulp.server.managers.consumer.agent import QUEUE_DELETE_DELAY, delete_queue
@@ -47,7 +48,7 @@ class TestAgentManager(TestCase):
 
         agent_manager = AgentManager()
 
-        agent_manager.unregistered(consumer_id)
+        agent_manager.unregister(consumer_id)
 
         # validations
 
@@ -56,7 +57,7 @@ class TestAgentManager(TestCase):
         ]
 
         mock_context.assert_called_with(consumer)
-        mock_agent.unregistered.assert_called_with(mock_context.return_value)
+        mock_agent.unregister.assert_called_with(mock_context.return_value)
         mock_delete_queue.apply_async.assert_called_once_with(
             args=[url, queue, consumer_id], countdown=QUEUE_DELETE_DELAY, tags=task_tags)
 
@@ -584,6 +585,9 @@ class TestAgentManager(TestCase):
 
 
 class TestDeleteQueue(TestCase):
+
+    def test_decorator(self):
+        self.assertTrue(isinstance(delete_queue, Task))
 
     @patch('pulp.server.managers.consumer.agent.AgentManager.delete_queue')
     def test_succeeded(self, delete):

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from mock import patch, Mock
+from mock import patch
 
 from pulp.server.agent.connector import get_url, add_connector
 
@@ -38,7 +38,6 @@ class TestConnector(TestCase):
     def test_add_connector(self, _get_url, _connector):
         add_connector()
         _connector.assert_called_with(_get_url.return_value)
-        _connector = _connector.return_value
-        _connector.add.assert_called_with()
-        self.assertEqual(_connector.ssl.ca_certificate, messaging['cacert'])
-        self.assertEqual(_connector.ssl.client_certificate, messaging['clientcert'])
+        _connector.return_value.add.assert_called_with()
+        self.assertEqual(_connector.return_value.ssl.ca_certificate, messaging['cacert'])
+        self.assertEqual(_connector.return_value.ssl.client_certificate, messaging['clientcert'])

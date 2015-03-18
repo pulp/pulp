@@ -140,7 +140,7 @@ class ConsumerManagerTests(base.PulpServerTests):
             self.assertTrue(['notes'] in e)
             print(e) # for coverage
 
-    @patch('pulp.server.managers.consumer.agent.AgentManager.unregistered')
+    @patch('pulp.server.managers.consumer.agent.AgentManager.unregister')
     def test_unregister_consumer(self, mock_unreg):
         """
         Tests unregistering a consumer under normal circumstances.

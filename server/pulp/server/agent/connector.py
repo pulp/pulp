@@ -6,7 +6,7 @@ from pulp.server.config import config
 def get_url():
     """
     This constructs a gofer 2.x URL and is intended to maintain
-    configuration file backwards compatibility until pulp 3.0
+    configuration file backwards compatibility until future pulp release.
 
     :return: A gofer 2.x broker URL.
     :rtype: str

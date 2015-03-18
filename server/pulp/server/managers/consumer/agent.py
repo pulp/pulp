@@ -50,7 +50,7 @@ class AgentManager(object):
     """
 
     @staticmethod
-    def unregistered(consumer_id):
+    def unregister(consumer_id):
         """
         Notification that a consumer (agent) has
         been unregistered.  This ensure that all registration
@@ -63,7 +63,7 @@ class AgentManager(object):
         consumer = manager.get_consumer(consumer_id)
         context = Context(consumer)
         agent = PulpAgent()
-        agent.consumer.unregistered(context)
+        agent.consumer.unregister(context)
         url = context.url
         name = context.address.split('/')[-1]
         task_tags = [tags.resource_tag(tags.ACTION_AGENT_QUEUE_DELETE, consumer_id)]

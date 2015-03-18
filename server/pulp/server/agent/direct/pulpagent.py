@@ -107,7 +107,7 @@ class Consumer(object):
     """
 
     @staticmethod
-    def unregistered(context):
+    def unregister(context):
         """
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
@@ -122,7 +122,7 @@ class Consumer(object):
                 authenticator=context.authenticator,
                 wait=0)
             consumer = agent.Consumer()
-            consumer.unregistered()
+            consumer.unregister()
 
     @staticmethod
     def bind(context, bindings, options):
