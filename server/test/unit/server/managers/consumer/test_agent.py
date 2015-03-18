@@ -5,12 +5,13 @@ from unittest import TestCase
 from mock import patch, Mock, ANY
 
 from pulp.common import tags
-from pulp.server.managers.consumer.agent import QUEUE_DELETE_DELAY, delete_queue
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
+from pulp.server.managers.consumer.agent import QUEUE_DELETE_DELAY, delete_queue
 from pulp.server.managers.consumer.agent import AgentManager, Units
 
 
@@ -29,20 +30,24 @@ class TestAgentManager(TestCase):
         mock_consumer_manager.get_consumer = Mock(return_value=consumer)
         mock_factory.consumer_manager = Mock(return_value=mock_consumer_manager)
 
-        mock_context.return_value = Mock(url=url, route=queue)
+        mock_context.return_value = Mock(url=url, address=queue)
 
         # test manager
 
         agent_manager = AgentManager()
 
-        agent_manager.unregistered(consumer_id)
+        agent_manager.unregister(consumer_id)
 
         # validations
 
+        task_tags = [
+            tags.resource_tag(tags.ACTION_AGENT_QUEUE_DELETE, consumer['id'])
+        ]
+
         mock_context.assert_called_with(consumer)
-        mock_agent.unregistered.assert_called_with(mock_context.return_value)
+        mock_agent.unregister.assert_called_with(mock_context.return_value)
         mock_delete_queue.apply_async.assert_called_once_with(
-            args=[url, queue, consumer_id], countdown=QUEUE_DELETE_DELAY)
+            args=[url, queue, consumer_id], countdown=QUEUE_DELETE_DELAY, tags=task_tags)
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
     @patch('pulp.server.managers.consumer.agent.TaskStatus')
@@ -544,6 +549,9 @@ class TestAgentManager(TestCase):
 
 
 class TestDeleteQueue(TestCase):
+
+    def test_decorator(self):
+        self.assertTrue(isinstance(delete_queue, Task))
 
     @patch('pulp.server.managers.consumer.agent.AgentManager.delete_queue')
     def test_succeeded(self, delete):

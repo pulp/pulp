@@ -734,14 +734,14 @@ class TestConsumer(PluginTest):
     @patch('pulp.agent.gofer.pulpplugin.Conduit')
     @patch('pulp.agent.gofer.pulpplugin.Dispatcher')
     @patch('pulp.agent.gofer.pulpplugin.ConsumerX509Bundle')
-    def test_unregistered(self, mock_bundle, mock_dispatcher, mock_conduit):
+    def test_unregister(self, mock_bundle, mock_dispatcher, mock_conduit):
         _report = Mock()
         _report.dict = Mock(return_value={'report': 883938})
         mock_dispatcher().clean.return_value = _report
 
         # test
         consumer = self.plugin.Consumer()
-        report = consumer.unregistered()
+        report = consumer.unregister()
 
         # validation
         mock_bundle().delete.assert_called_with()

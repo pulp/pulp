@@ -2,12 +2,12 @@ from datetime import datetime
 from gettext import gettext as _
 from logging import getLogger
 
-from gofer.messaging import Domain, Broker, Queue
+from gofer.messaging import Queue
 from gofer.rmi.async import ReplyConsumer, Listener
 
 from pulp.common import constants, dateutils
 from pulp.server.agent.auth import Authenticator
-from pulp.server.config import config
+from pulp.server.agent.connector import add_connector, get_url
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.managers import factory as managers
 
@@ -26,32 +26,17 @@ class Services(object):
 
     @staticmethod
     def init():
-        url = Services.get_url()
-        broker = Broker(url)
-        broker.ssl.ca_certificate = config.get('messaging', 'cacert')
-        broker.ssl.client_certificate = config.get('messaging', 'clientcert')
-        Domain.broker.add(broker)
-        _logger.info(_('AMQP broker configured: %(b)s'), {'b': broker})
+        add_connector()
 
     @staticmethod
     def start():
-        url = Services.get_url()
+        """
+        Start the agent services.
+        """
+        url = get_url()
         Services.reply_handler = ReplyHandler(url)
         Services.reply_handler.start()
         _logger.info(_('AMQP reply handler started'))
-
-    @staticmethod
-    def get_url():
-        """
-        This constructs a gofer 2.x URL and is intended to maintain
-        configuration file backwards compatibility until pulp 3.0
-
-        :return: A gofer 2.x broker URL.
-        :rtype: str
-        """
-        url = config.get('messaging', 'url')
-        adapter = config.get('messaging', 'transport')
-        return '+'.join((adapter, url))
 
 
 class ReplyHandler(Listener):

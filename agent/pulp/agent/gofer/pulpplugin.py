@@ -353,7 +353,7 @@ class Consumer(object):
     """
 
     @remote(secret=get_secret)
-    def unregistered(self):
+    def unregister(self):
         """
         Notification that the consumer had been unregistered.
         The action is to clean up registration and bind artifacts.

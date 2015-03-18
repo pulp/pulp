@@ -17,10 +17,12 @@ from pulp.plugins.model import Consumer as ProfiledConsumer
 from pulp.plugins.profiler import Profiler, InvalidUnitsRequested
 from pulp.server.agent.context import Context
 from pulp.server.agent.direct.pulpagent import PulpAgent
+from pulp.server.async.tasks import Task
 from pulp.server.db.model.consumer import Bind
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.exceptions import PulpExecutionException, PulpDataException, MissingResource
 from pulp.server.managers import factory as managers
+
 
 QUEUE_DELETE_DELAY = 600  # 10 min.
 QUEUE_DELETE_FAILED = _('queue %(name)s cannot be deleted: %(reason)s')
@@ -36,7 +38,7 @@ class AgentManager(object):
     """
 
     @staticmethod
-    def unregistered(consumer_id):
+    def unregister(consumer_id):
         """
         Notification that a consumer (agent) has
         been unregistered.  This ensure that all registration
@@ -49,10 +51,14 @@ class AgentManager(object):
         consumer = manager.get_consumer(consumer_id)
         context = Context(consumer)
         agent = PulpAgent()
-        agent.consumer.unregistered(context)
+        agent.consumer.unregister(context)
         url = context.url
-        name = context.route.split('/')[-1]
-        delete_queue.apply_async(args=[url, name, consumer_id], countdown=QUEUE_DELETE_DELAY)
+        name = context.address.split('/')[-1]
+        task_tags = [tags.resource_tag(tags.ACTION_AGENT_QUEUE_DELETE, consumer_id)]
+        delete_queue.apply_async(
+            args=[url, name, consumer_id],
+            countdown=QUEUE_DELETE_DELAY,
+            tags=task_tags)
 
     @staticmethod
     def bind(consumer_id, repo_id, distributor_id, options):
@@ -426,7 +432,7 @@ class AgentManager(object):
         agent.delete_queue(url, name)
 
 
-@task
+@task(base=Task)
 def delete_queue(url, name, consumer_id):
     """
     Task to delete the agent queue.
