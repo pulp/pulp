@@ -14,7 +14,8 @@
 from gofer.messaging import Queue
 
 from pulp.server.agent.auth import Authenticator
-from pulp.server.agent.direct.services import Services, ReplyHandler
+from pulp.server.agent.connector import get_url, add_connector
+from pulp.server.agent.direct.services import ReplyHandler
 
 
 class Context(object):
@@ -29,9 +30,9 @@ class Context(object):
     some cases DB entity IDs so we can update the DB based on the result of the
     operation on the agent.
 
-    :ivar route: The AMQP route.
-        The route has the form: 'pulp.agent.<consumer_id>'.
-    :type route: str
+    :ivar address: The AMQP address.
+        The address has the form: 'pulp.agent.<consumer_id>'.
+    :type address: str
     :ivar secret: The shared secret which is the DB consumer object's _id.
     :type secret: str
     :ivar url: The broker URL.
@@ -53,12 +54,32 @@ class Context(object):
             Primarily used to correlate asynchronous replies.
         :type details: dict
         """
-        self.route = 'pulp.agent.%s' % consumer['id']
+        self.address = 'pulp.agent.%s' % consumer['id']
         self.secret = str(consumer['_id'])
-        self.url = Services.get_url()
+        self.url = get_url()
         self.details = details
         self.reply_queue = ReplyHandler.REPLY_QUEUE
         self.authenticator = Authenticator()
         self.authenticator.load()
-        queue = Queue(self.route)
-        queue.declare(self.url)
+
+    def __enter__(self):
+        """
+        Enter the context.
+          1. add the configured gofer connector.
+          2. declare the agent queue.
+        :return: self
+        :rtype: Context
+        """
+        add_connector()
+        queue = Queue(self.address, self.url)
+        queue.declare()
+        return self
+
+    def __exit__(self, *ignored):
+        """
+        Exit the context.
+        Releasing resources such as AMQP connections *could* be done here.
+        :param ignored: Ignored parameters.
+        :type ignored: tuple
+        """
+        pass

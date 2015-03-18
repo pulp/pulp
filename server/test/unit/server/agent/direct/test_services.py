@@ -28,28 +28,17 @@ class Config(object):
 
 class TestServices(TestCase):
 
-    @patch('pulp.server.agent.direct.services.Broker')
-    @patch('pulp.server.agent.direct.services.Services.get_url')
-    @patch('pulp.server.agent.direct.services.config', Config)
-    def test_init(self, get_url, broker):
+    @patch('pulp.server.agent.direct.services.add_connector')
+    def test_init(self, add_connector):
         Services.init()
-        broker.assert_called_with(get_url.return_value)
-        broker = broker.return_value
-        self.assertEqual(broker.ssl.ca_certificate, messaging['cacert'])
-        self.assertEqual(broker.ssl.client_certificate, messaging['clientcert'])
+        add_connector.assert_called_once_with()
 
-    @patch('pulp.server.agent.direct.services.Services.get_url')
+    @patch('pulp.server.agent.direct.services.get_url')
     @patch('pulp.server.agent.direct.services.ReplyHandler')
     def test_start(self, reply_handler, get_url):
         Services.start()
         reply_handler.assert_called_once_with(get_url.return_value)
         reply_handler.return_value.start.assert_called_once_with()
-
-    @patch('pulp.server.agent.direct.services.config', Config)
-    def test_get_url(self):
-        url = messaging['url']
-        adapter = messaging['transport']
-        self.assertEqual('+'.join((adapter, url)), Services.get_url())
 
 
 class TestReplyHandler(TestCase):
