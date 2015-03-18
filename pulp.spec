@@ -815,6 +815,13 @@ Requires(postun): /usr/sbin/semodule
 %description    selinux
 SELinux policy for Pulp's components
 
+%pre selinux
+# Record old version so we can limit which restorecon statement are executed later
+test -e %{_localstatedir}/lib/rpm-state/%{name} || mkdir -p %{_localstatedir}/lib/rpm-state/%{name}
+oldversion=$(semodule -l | grep pulp-server)
+echo ${oldversion:12} > %{_localstatedir}/lib/rpm-state/%{name}/old-version
+
+exit 0
 %post selinux
 # Enable SELinux policy modules
 if /usr/sbin/selinuxenabled ; then
@@ -825,7 +832,8 @@ fi
 # Spacewalk saw same issue and filed BZ here: https://bugzilla.redhat.com/show_bug.cgi?id=505066
 %posttrans selinux
 if /usr/sbin/selinuxenabled ; then
- %{_datadir}/pulp/selinux/server/relabel.sh %{_datadir}
+ cat %{_localstatedir}/lib/rpm-state/%{name}/old-version | xargs %{_datadir}/pulp/selinux/server/relabel.sh
+ rm %{_localstatedir}/lib/rpm-state/%{name}/old-version
 fi
 
 %preun selinux
@@ -833,6 +841,7 @@ fi
 if [ $1 -eq 0 ]; then
 %{_datadir}/pulp/selinux/server/uninstall.sh
 %{_datadir}/pulp/selinux/server/relabel.sh
+rm -r %{_localstatedir}/lib/rpm-state/%{name}
 fi
 exit 0
 
