@@ -77,7 +77,13 @@ After all tasks have been canceled upgrade the packages using:
 
     sudo yum update
 
-After yum completes you should restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
+After yum completes you should migrate the database using:
+
+::
+
+    sudo -u apache pulp-manage-db
+
+After the database migrations finish, restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
 `pulp_resource_manager`.
 
 Bugs
