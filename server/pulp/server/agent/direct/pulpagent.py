@@ -21,6 +21,8 @@ from logging import getLogger
 from gofer.proxy import Agent
 from gofer.messaging import Queue, NotFound
 
+from pulp.server.agent.connector import add_connector
+
 
 log = getLogger(__name__)
 
@@ -66,16 +68,15 @@ class PulpAgent(object):
         :param task_id: The ID of a task associated with an agent request.
         :type task_id: str
         """
-        criteria = {'match': {'task_id': task_id}}
-
-        agent = Agent(
-            context.url,
-            context.route,
-            authenticator=context.authenticator,
-            wait=0)
-
-        admin = agent.Admin()
-        admin.cancel(criteria=criteria)
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                authenticator=context.authenticator,
+                wait=0)
+            admin = agent.Admin()
+            criteria = {'match': {'task_id': task_id}}
+            admin.cancel(criteria=criteria)
 
     @staticmethod
     def delete_queue(url, name):
@@ -86,10 +87,12 @@ class PulpAgent(object):
         :param name: The queue name.
         :type name: str
         """
+        add_connector()
+        queue = Queue(name, url)
+
         try:
-            queue = Queue(name)
-            queue.purge(url)
-            queue.delete(url)
+            queue.purge()
+            queue.delete()
         except NotFound:
             # queue may not exist
             pass
@@ -104,21 +107,22 @@ class Consumer(object):
     """
 
     @staticmethod
-    def unregistered(context):
+    def unregister(context):
         """
         Notification that the consumer has been unregistered.
         Registration artifacts are cleaned up.
         :param context: The call context.
         :type context: pulp.server.agent.context.Context
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator,
-            wait=0)
-        consumer = agent.Consumer()
-        consumer.unregistered()
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator,
+                wait=0)
+            consumer = agent.Consumer()
+            consumer.unregister()
 
     @staticmethod
     def bind(context, bindings, options):
@@ -133,15 +137,16 @@ class Consumer(object):
         :param options: Bind options.
         :type options: dict
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator,
-            reply=context.reply_queue,
-            data=context.details)
-        consumer = agent.Consumer()
-        consumer.bind(bindings, options)
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator,
+                reply=context.reply_queue,
+                data=context.details)
+            consumer = agent.Consumer()
+            consumer.bind(bindings, options)
 
     @staticmethod
     def unbind(context, bindings, options):
@@ -155,15 +160,16 @@ class Consumer(object):
         :param options: Unbind options.
         :type options: dict
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator,
-            reply=context.reply_queue,
-            data=context.details)
-        consumer = agent.Consumer()
-        consumer.unbind(bindings, options)
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator,
+                reply=context.reply_queue,
+                data=context.details)
+            consumer = agent.Consumer()
+            consumer.unbind(bindings, options)
 
 
 class Content(object):
@@ -183,15 +189,16 @@ class Content(object):
         :param options: Install options; based on unit type.
         :type options: dict
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator,
-            reply=context.reply_queue,
-            data=context.details)
-        content = agent.Content()
-        content.install(units, options)
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator,
+                reply=context.reply_queue,
+                data=context.details)
+            content = agent.Content()
+            content.install(units, options)
 
     @staticmethod
     def update(context, units, options):
@@ -205,15 +212,16 @@ class Content(object):
         :param options: Update options; based on unit type.
         :type options: dict
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator,
-            reply=context.reply_queue,
-            data=context.details)
-        content = agent.Content()
-        content.update(units, options)
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator,
+                reply=context.reply_queue,
+                data=context.details)
+            content = agent.Content()
+            content.update(units, options)
 
     @staticmethod
     def uninstall(context, units, options):
@@ -227,15 +235,16 @@ class Content(object):
         :param options: Uninstall options; based on unit type.
         :type options: dict
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator,
-            reply=context.reply_queue,
-            data=context.details)
-        content = agent.Content()
-        content.uninstall(units, options)
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator,
+                reply=context.reply_queue,
+                data=context.details)
+            content = agent.Content()
+            content.uninstall(units, options)
 
 
 class Profile(object):
@@ -250,10 +259,11 @@ class Profile(object):
         :param context: The call context.
         :type context: pulp.server.agent.context.Context
         """
-        agent = Agent(
-            context.url,
-            context.route,
-            secret=context.secret,
-            authenticator=context.authenticator)
-        profile = agent.Profile()
-        profile.send()
+        with context:
+            agent = Agent(
+                context.url,
+                context.address,
+                secret=context.secret,
+                authenticator=context.authenticator)
+            profile = agent.Profile()
+            profile.send()

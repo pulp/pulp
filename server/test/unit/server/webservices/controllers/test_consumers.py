@@ -244,8 +244,8 @@ class ConsumerTest(base.PulpWebserviceTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.unregistered')
-    def test_delete(self, mock_unregistered):
+    @mock.patch('pulp.server.managers.consumer.agent.AgentManager.unregister')
+    def test_delete(self, mock_unregister):
         """
         Tests unregistering an existing consumer.
         """
@@ -260,7 +260,7 @@ class ConsumerTest(base.PulpWebserviceTests):
 
         consumer = Consumer.get_collection().find_one({'id': 'doomed'})
         self.assertTrue(consumer is None)
-        mock_unregistered.assert_called_with(self.CONSUMER_ID)
+        mock_unregister.assert_called_with(self.CONSUMER_ID)
 
     def test_delete_missing_consumer(self):
         """

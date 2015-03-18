@@ -125,7 +125,7 @@ class ConsumerManager(object):
 
         # Notify agent
         agent_consumer = factory.consumer_agent_manager()
-        agent_consumer.unregistered(consumer_id)
+        agent_consumer.unregister(consumer_id)
 
         # remove from consumer groups
         group_manager = factory.consumer_group_manager()
