@@ -692,7 +692,7 @@ class TestOidValidation(unittest.TestCase):
         validator = oid_validation.OidValidator(mock_config)
         result = validator._get_repo_url_prefixes_from_config(mock_config)
 
-        self.assertEquals(result, ["/pulp/repos"])
+        self.assertEquals(result, ["/pulp/repos", "/pulp/ostree/web"])
 
 
 # -- test data ---------------------------------------------------------------------
