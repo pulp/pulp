@@ -198,6 +198,6 @@ class OidValidator:
         try:
             prefixes = config.get('main', 'repo_url_prefixes').split(',')
         except NoOptionError:
-            prefixes = ["/pulp/repos"]
+            prefixes = ["/pulp/repos", "/pulp/ostree/web"]
 
         return prefixes
