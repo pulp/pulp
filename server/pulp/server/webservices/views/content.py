@@ -1,16 +1,21 @@
 from gettext import gettext as _
 
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseNotFound, HttpResponseBadRequest
 from django.views.generic import View
 
 from pulp.common import tags
+from pulp.common.tags import (ACTION_REFRESH_ALL_CONTENT_SOURCES,
+                              ACTION_REFRESH_CONTENT_SOURCE,
+                              RESOURCE_CONTENT_SOURCE)
 from pulp.server import constants
 from pulp.server.auth import authorization
+from pulp.server.content.sources.container import ContentContainer
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.managers import factory
 from pulp.server.managers.content import orphan as content_orphan
+from pulp.server.tasks import content
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
@@ -476,3 +481,134 @@ class UploadResourceView(View):
         upload_manager = factory.content_upload_manager()
         upload_manager.delete_upload(upload_id)
         return generate_json_response(None)
+
+
+class ContentSourceView(View):
+    """
+    View for content sources.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request):
+        """
+        Get all content sources.
+
+        :param request:   WSGI request object, body contains bits to upload
+        :type  request:   django.core.handlers.wsgi.WSGIRequest
+
+        :return: list of sources
+        :rtype:  django.http.HttpResponse
+        """
+        container = ContentContainer()
+        sources = []
+        for source in container.sources.values():
+            d = source.dict()
+            link = {'_href': reverse('content_sources_resource',
+                    kwargs={'source_id': source.id})}
+            d.update(link)
+            sources.append(d)
+        return generate_json_response_with_pulp_encoder(sources)
+
+    @auth_required(authorization.UPDATE)
+    @json_body_allow_empty
+    def post(self, request, action):
+        """
+        Content source actions.
+
+        :param request:   WSGI request object, body contains bits to upload
+        :type  request:   django.core.handlers.wsgi.WSGIRequest
+        :param action: Name of action to perform
+        :type action: str
+        """
+        method = getattr(self, action, None)
+        if method:
+            return method(request)
+        else:
+            return HttpResponseBadRequest('bad request')
+
+    def refresh(self, request):
+        """
+        Refresh all content sources
+
+        :param request:   WSGI request object, body contains bits to upload
+        :type  request:   django.core.handlers.wsgi.WSGIRequest
+        :raises: OperationPostponed when an async operation is performed
+        """
+        container = ContentContainer()
+        content_sources = [tags.resource_tag(RESOURCE_CONTENT_SOURCE, id)
+                           for id in container.sources.keys()]
+        task_tags = [tags.action_tag(ACTION_REFRESH_ALL_CONTENT_SOURCES)] + content_sources
+        task_result = content.refresh_content_sources.apply_async(tags=task_tags)
+        raise OperationPostponed(task_result)
+
+
+class ContentSourceResourceView(View):
+    """
+    View for single content source.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request, source_id):
+        """
+        Get a content source by ID.
+
+        :param request:   WSGI request object, body contains bits to upload
+        :type  request:   django.core.handlers.wsgi.WSGIRequest
+        :param source_id: A content source ID.
+        :type source_id: str
+
+        :raises: MissingResource if source id does not exist
+        :return: requested content source object.
+        :rtype:  django.http.HttpResponse
+        """
+        container = ContentContainer()
+        source = container.sources.get(source_id)
+        if source:
+            d = source.dict()
+            link = {'_href': reverse('content_sources_resource',
+                    kwargs={'source_id': source.id})}
+            d.update(link)
+            return generate_json_response_with_pulp_encoder(d)
+        else:
+            raise MissingResource(source_id=source_id)
+
+    @auth_required(authorization.UPDATE)
+    @json_body_allow_empty
+    def post(self, request, source_id, action):
+        """
+        Single content source actions.
+
+        :param request:   WSGI request object, body contains bits to upload
+        :type  request:   django.core.handlers.wsgi.WSGIRequest
+        :param source_id: A content source ID.
+        :type source_id: str
+        :param action: Name of action to perform
+        :type action: str
+        :raises: MissingResource if source id does not exist
+        """
+        container = ContentContainer()
+        source = container.sources.get(source_id)
+        if source:
+            method = getattr(self, action, None)
+            if method:
+                return method(request, source_id)
+            else:
+                return HttpResponseBadRequest('bad request')
+        else:
+            raise MissingResource(source_id=source_id)
+
+    def refresh(self, request, content_source_id):
+        """
+        Refresh single content source
+
+        :param request:   WSGI request object, body contains bits to upload
+        :type  request:   django.core.handlers.wsgi.WSGIRequest
+        :param content_source_id: A content source ID
+        :type content_source_id: str
+        :raises: OperationPostponed when an async operation is performed
+        """
+        task_tags = [tags.action_tag(ACTION_REFRESH_CONTENT_SOURCE),
+                     tags.resource_tag(RESOURCE_CONTENT_SOURCE, content_source_id)]
+        task_result = content.refresh_content_source.apply_async(
+            tags=task_tags, kwargs={'content_source_id': content_source_id})
+        raise OperationPostponed(task_result)

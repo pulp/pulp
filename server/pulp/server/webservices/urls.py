@@ -8,10 +8,10 @@ from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociat
                                                            ConsumerGroupUnassociateActionView,
                                                            ConsumerGroupView)
 from pulp.server.webservices.views.content import (
-    CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
-    ContentUnitsCollectionView,ContentUnitUserMetadataResourceView,
-    DeleteOrphansActionView, OrphanCollectionView, OrphanResourceView,
-    OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
+    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentTypeResourceView,
+    ContentTypesView, ContentUnitResourceView, ContentUnitsCollectionView,
+    ContentUnitUserMetadataResourceView, DeleteOrphansActionView, OrphanCollectionView,
+    OrphanResourceView, OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
     UploadSegmentResourceView
 )
 from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
@@ -57,6 +57,14 @@ urlpatterns = patterns('',
         name='content_orphan_type_subcollection'),
     url(r'^v2/content/orphans/(?P<content_type>[^/]+)/(?P<unit_id>[^/]+)/$',
         OrphanResourceView.as_view(), name='content_orphan_resource'),
+    url(r'^v2/content/sources/$', ContentSourceView.as_view(),
+        name='content_sources'),
+    url(r'^v2/content/sources/action/(?P<action>[^/]+)/$', ContentSourceView.as_view(),
+        name='content_sources_action'),
+    url(r'^v2/content/sources/(?P<source_id>[^/]+)/action/(?P<action>[^/]+)/$',
+        ContentSourceResourceView.as_view(), name='content_sources_resource_action'),
+    url(r'^v2/content/sources/(?P<source_id>[^/]+)/$', ContentSourceResourceView.as_view(),
+        name='content_sources_resource'),
     url(r'^v2/content/types/$', ContentTypesView.as_view(),
         name='content_types'),
     url(r'^v2/content/types/(?P<type_id>[^/]+)/$', ContentTypeResourceView.as_view(),

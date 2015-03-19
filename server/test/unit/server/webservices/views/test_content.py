@@ -3,16 +3,17 @@ import json
 import mock
 import unittest
 
-from django.http import HttpResponseNotFound
+from django.http import HttpResponseBadRequest, HttpResponseNotFound
 
 from .base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
 from pulp.server import constants
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.webservices.views.content import (
-    CatalogResourceView, ContentTypeResourceView, ContentTypesView, ContentUnitResourceView,
-    ContentUnitsCollectionView, ContentUnitUserMetadataResourceView, DeleteOrphansActionView,
-    OrphanCollectionView, OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView,
-    UploadsCollectionView, UploadSegmentResourceView
+    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentTypeResourceView,
+    ContentTypesView, ContentUnitResourceView, ContentUnitsCollectionView,
+    ContentUnitUserMetadataResourceView, DeleteOrphansActionView, OrphanCollectionView,
+    OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView, UploadsCollectionView,
+    UploadSegmentResourceView
 )
 
 
@@ -643,3 +644,190 @@ class TestUploadResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
         mock_upload_manager.delete_upload.assert_called_once_with('mock_unit')
+
+
+class TestContentSourceView(unittest.TestCase):
+    """
+    Tests for content sources
+    """
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_get_content_source(self, mock_sources, mock_resp):
+        """
+        List all sources
+        """
+        source = mock.MagicMock()
+        source.id = 'my-id'
+        source.dict.return_value = {'source_id': 'my-id'}
+        mock_sources.return_value = {'mock': source}
+
+        request = mock.MagicMock()
+        content_source_view = ContentSourceView()
+        response = content_source_view.get(request)
+
+        mock_resp.assert_called_once_with([{'source_id': 'my-id',
+                                            '_href': '/v2/content/sources/my-id/'}])
+        self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    def test_post_bad_request_content_source(self):
+        """
+        Test content source invalid action
+        """
+        request = mock.MagicMock()
+        request.body = None
+        content_source_view = ContentSourceView()
+        response = content_source_view.post(request, 'no-such-action')
+
+        self.assertTrue(isinstance(response, HttpResponseBadRequest))
+        self.assertEqual(response.status_code, 400)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.webservices.views.content.tags')
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    @mock.patch('pulp.server.webservices.views.content.content.refresh_content_sources')
+    def test_refresh_content_source(self, mock_refresh, mock_sources, mock_tags):
+        """
+        Test refresh content sources
+        """
+        source = mock.MagicMock()
+        source.id = 'some-source'
+        source.dict.return_value = {'source_id': 'some-source'}
+        mock_sources.return_value = {'some-source': source}
+
+        mock_task_tags = [mock_tags.action_tag.return_value, mock_tags.resource_tag.return_value]
+
+        request = mock.MagicMock()
+        request.body = None
+        content_source_view = ContentSourceView()
+        try:
+            content_source_view.post(request, 'refresh')
+        except OperationPostponed, response:
+            pass
+        else:
+            raise AssertionError('OperationPostponed should be raised for asynchronous call.')
+        self.assertEqual(response.http_status_code, 202)
+
+        mock_refresh.apply_async.assert_called_with(tags=mock_task_tags)
+
+
+class TestContentSourceResourceView(unittest.TestCase):
+    """
+    Tests for content sources resource
+    """
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_get_content_source_resource(self, mock_sources, mock_resp):
+        """
+        Get specific content source
+        """
+        source = mock.MagicMock()
+        source.id = 'some-source'
+        source.dict.return_value = {'source_id': 'some-source'}
+        mock_sources.return_value = {'some-source': source}
+
+        request = mock.MagicMock()
+        content_source_view = ContentSourceResourceView()
+        response = content_source_view.get(request, 'some-source')
+
+        mock_resp.assert_called_once_with(
+            {'source_id': 'some-source', '_href': '/v2/content/sources/some-source/'})
+        self.assertTrue(response is mock_resp.return_value)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_READ())
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_get_invalid_content_source_resource(self, mock_sources):
+        """
+        Get invalid content source
+        """
+        mock_sources.return_value = {}
+
+        request = mock.MagicMock()
+        content_source_view = ContentSourceResourceView()
+        try:
+            content_source_view.get(request, 'some-source')
+        except MissingResource, response:
+            pass
+        else:
+            raise AssertionError("MissingResource should be raised with missing resource id")
+        self.assertEqual(response.http_status_code, 404)
+        self.assertEqual(response.error_data['resources'], {'source_id': 'some-source'})
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_post_bad_request_specific_content_source(self, mock_sources):
+        """
+        Test specific content source invalid action
+        """
+        source = mock.MagicMock()
+        source.id = 'some-source'
+        source.dict.return_value = {'source_id': 'some-source'}
+        mock_sources.return_value = {'some-source': source}
+
+        request = mock.MagicMock()
+        request.body = None
+        content_source_view = ContentSourceResourceView()
+        response = content_source_view.post(request, 'some-source', 'no-such-action')
+
+        self.assertTrue(isinstance(response, HttpResponseBadRequest))
+        self.assertEqual(response.status_code, 400)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    def test_refresh_invalid_content_source(self, mock_sources):
+        """
+        Test refresh invalid content source
+        """
+        mock_sources.return_value = {}
+
+        request = mock.MagicMock()
+        request.body = None
+        content_source_view = ContentSourceResourceView()
+        try:
+            content_source_view.post(request, 'some-source', 'refresh')
+        except MissingResource, response:
+            pass
+        else:
+            raise AssertionError("MissingResource should be raised with missing resource id")
+        self.assertEqual(response.http_status_code, 404)
+        self.assertEqual(response.error_data['resources'], {'source_id': 'some-source'})
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.webservices.views.content.tags')
+    @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
+    @mock.patch('pulp.server.webservices.views.content.content.refresh_content_source')
+    def test_refresh_specific_content_source(self, mock_refresh, mock_sources, mock_tags):
+        """
+        Test refresh specific content source
+        """
+        source = mock.MagicMock()
+        source.id = 'some-source'
+        source.dict.return_value = {'source_id': 'some-source'}
+        mock_sources.return_value = {'some-source': source}
+
+        mock_task_tags = [mock_tags.action_tag.return_value, mock_tags.resource_tag.return_value]
+
+        request = mock.MagicMock()
+        request.body = None
+        content_source_view = ContentSourceResourceView()
+        try:
+            content_source_view.post(request, 'some-source', 'refresh')
+        except OperationPostponed, response:
+            pass
+        else:
+            raise AssertionError('OperationPostponed should be raised for asynchronous call.')
+        self.assertEqual(response.http_status_code, 202)
+
+        mock_refresh.apply_async.assert_called_with(
+            tags=mock_task_tags, kwargs={'content_source_id': 'some-source'})

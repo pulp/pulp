@@ -492,3 +492,41 @@ class TestDjangoUsersUrls(unittest.TestCase):
         url = '/v2/users/user_login/'
         url_name = 'user_resource'
         assert_url_match(url, url_name, login='user_login')
+
+
+class TestDjangoContentSourcesUrls(unittest.TestCase):
+    """
+    Tests for content sources.
+    """
+
+    def test_match_content_sources_view(self):
+        """
+        Test url matching for content sources.
+        """
+        url = '/v2/content/sources/'
+        url_name = 'content_sources'
+        assert_url_match(url, url_name)
+
+    def test_match_content_sources_resource(self):
+        """
+        Test the matching for content sources resource.
+        """
+        url = '/v2/content/sources/some-source/'
+        url_name = 'content_sources_resource'
+        assert_url_match(url, url_name, source_id='some-source')
+
+    def test_match_content_sources_refresh_view(self):
+        """
+        Test url matching for content sources refresh.
+        """
+        url = '/v2/content/sources/action/refresh/'
+        url_name = 'content_sources_action'
+        assert_url_match(url, url_name, action='refresh')
+
+    def test_match_content_sources_resource_refresh(self):
+        """
+        Test the matching for content sources resource refresh.
+        """
+        url = '/v2/content/sources/some-source/action/refresh/'
+        url_name = 'content_sources_resource_action'
+        assert_url_match(url, url_name, source_id='some-source', action='refresh')
