@@ -125,8 +125,11 @@ except OSError:
 if LSB_VENDOR not in ('CentOS', 'Fedora', 'RedHatEnterpriseEverything', 'RedHatEnterpriseServer'):
     print 'Your Linux vendor is not supported by this script: %s' % LSB_VENDOR
     sys.exit(1)
-LSB_VERSION = float(subprocess.Popen(['lsb_release', '-sr'],
-                    stdout=subprocess.PIPE).communicate()[0])
+LSB_VERSION = subprocess.Popen(['lsb_release', '-sr'], stdout=subprocess.PIPE).communicate()[0]
+# Fedora will report this an an integer, RHEL 6/7 and CentOS 6 will report as a float, and CentOS 7 will
+# report this as an X.Y.Z. This latter expression requires us to split off the ".Z" if it exists, so
+# that we can cast it to a float
+LSB_VERSION = float('.'.join(LSB_VERSION.split('.')[:2]))
 
 
 def parse_cmdline():
