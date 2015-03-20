@@ -1,18 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-from pulp.bindings.search import SearchAPI
 from pulp.bindings.base import PulpAPI
+from pulp.bindings.search import SearchAPI
 from pulp.common.plugins import distributor_constants
 
 
@@ -53,14 +40,14 @@ class RepoGroupAPI(PulpAPI):
         data = {'id': id,
                 'display_name': display_name,
                 'description': description,
-                'notes': notes,}
+                'notes': notes}
         return self.server.POST(self.PATH, data)
 
     def create_and_configure(self, group_id, display_name, description, notes, distributors=None):
         """
-        Calls the server-side aggregate method for creating a repository group and adding distributors
-        in a single transaction. If an error occurs during the distributor step, all effects on the
-        server from this call will be deleted.
+        Calls the server-side aggregate method for creating a repository group and adding
+        distributors in a single transaction. If an error occurs during the distributor step, all
+        effects on the server from this call will be deleted.
 
         This call has the same effect as calling:
         * RepoGroupAPI.create
@@ -69,19 +56,19 @@ class RepoGroupAPI(PulpAPI):
         The distributor list is optional in this call. If it is not included, this behaves like
         RepoGroupAPI.create
 
-        :param group_id: The group id
-        :type group_id: str
+        :param group_id:     The group id
+        :type  group_id:     str
         :param display_name: The user-friendly name of the group
-        :type display_name: str
-        :param description: A user-friendly description of the group
-        :type description: str
-        :param notes: key-value pairs to programmatically tag the repository
-        :type notes: dict
-        :param distributors: list of dictionaries containing distributor_type_id, repo_plugin_config, and
-                distributor_id
-        :type distributors: list of dict
-        :return: The server response. The response body contains the created repo group.
-        :rtype: pulp.bindings.responses.Response
+        :type  display_name: str
+        :param description:  A user-friendly description of the group
+        :type  description:  str
+        :param notes:        key-value pairs to programmatically tag the repository
+        :type  notes:        dict
+        :param distributors: list of dictionaries containing distributor_type_id,
+                             repo_plugin_config, and distributor_id
+        :type  distributors: list of dict
+        :return:             The server response. The response body contains the created repo group.
+        :rtype:              pulp.bindings.responses.Response
         """
         data = {
             'id': group_id,
@@ -196,7 +183,8 @@ class RepoGroupDistributorAPI(PulpAPI):
 
     def delete(self, group_id, distributor_id):
         """
-        Delete the distributor with the given distributor id if it is associated with the given group id
+        Delete the distributor with the given distributor id if it is associated with the given
+        group id.
 
         :param group_id: The group id to retrieve the distributor for
         :type group_id: str
@@ -240,7 +228,7 @@ class RepoGroupActionAPI(SearchAPI):
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
 
-        response = self.server.POST(path, {'criteria':kwargs})
+        response = self.server.POST(path, {'criteria': kwargs})
         return response.response_body
 
     def unassociate(self, id, **kwargs):
@@ -251,21 +239,22 @@ class RepoGroupActionAPI(SearchAPI):
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
 
-        response = self.server.POST(path, {'criteria':kwargs})
+        response = self.server.POST(path, {'criteria': kwargs})
         return response.response_body
 
     def publish(self, group_id, distributor_id, override_config):
         """
         Publish a repository group using the given distributor
 
-        :param group_id: The group id to retrieve the distributor for
-        :type group_id: str
-        :param distributor_id: The distributor id to retrieve
-        :type distributor_id: str
-        :param override_config: An override configuration dictionary. This is used to override the saved
-            configuration for the distributor and is not saved between calls.
-        :return: The server response
-        :rtype: pulp.bindings.responses.Response
+        :param group_id:        The group id to retrieve the distributor for
+        :type group_id:         str
+        :param distributor_id:  The distributor id to retrieve
+        :type distributor_id:   str
+        :param override_config: An override configuration dictionary. This is used to override the
+                                saved configuration for the distributor and is not saved between
+                                calls.
+        :return:                The server response
+        :rtype:                 pulp.bindings.responses.Response
         """
         path = self.PATH % group_id + 'publish/'
         data = {'id': distributor_id, 'override_config': override_config}
