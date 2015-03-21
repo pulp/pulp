@@ -25,31 +25,37 @@ class RequestException(Exception):
         self.extra_data = response_body
 
     def __str__(self):
-        message_data = {'m' : self.http_request_method,
-                        'h' : self.href,
-                        's' : self.http_status,
-                        'g' : self.error_message}
-        return _('RequestException: %(m)s request on %(h)s failed with %(s)s - %(g)s' % message_data)
+        message_data = {'m': self.http_request_method,
+                        'h': self.href,
+                        's': self.http_status,
+                        'g': self.error_message}
+        return _(
+            'RequestException: %(m)s request on %(h)s failed with %(s)s - %(g)s' % message_data)
 
 
 # Response code = 400
-class BadRequestException(RequestException): pass
+class BadRequestException(RequestException):
+    pass
 
 
 # Response code = 401
-class PermissionsException(RequestException): pass
+class PermissionsException(RequestException):
+    pass
 
 
 # Response code = 404
-class NotFoundException(RequestException): pass
+class NotFoundException(RequestException):
+    pass
 
 
 # Response code = 409
-class ConflictException(RequestException): pass
+class ConflictException(RequestException):
+    pass
 
 
 # Response code >= 500
-class PulpServerException(RequestException): pass
+class PulpServerException(RequestException):
+    pass
 
 
 # Response code >= 500 and not a Pulp formatted error

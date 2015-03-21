@@ -1,18 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from pulp.bindings.base import PulpAPI
 from pulp.bindings.search import SearchAPI
+
 
 # Default for update APIs to differentiate between None and not updating the value
 UNSPECIFIED = object()
@@ -56,7 +44,7 @@ class ConsumerAPI(PulpAPI):
 
     def update(self, id, delta):
         path = self.base_path + "%s/" % id
-        body = {'delta' : delta}
+        body = {'delta': delta}
         return self.server.PUT(path, body)
 
 
@@ -75,27 +63,27 @@ class ConsumerContentAPI(PulpAPI):
     def install(self, id, units, options={}):
         path = self.base_path % id + "install/"
         data = {"units": units,
-                "options": options,}
+                "options": options}
         return self.server.POST(path, data)
 
     def update(self, id, units, options={}):
         path = self.base_path % id + "update/"
         data = {"units": units,
-                "options": options,}
+                "options": options}
         return self.server.POST(path, data)
 
     def uninstall(self, id, units, options={}):
         path = self.base_path % id + "uninstall/"
         data = {"units": units,
-                "options": options,}
+                "options": options}
         return self.server.POST(path, data)
 
 
 class ConsumerContentSchedulesAPI(PulpAPI):
     """
     Connection class to access consumer calls related to scheduled content install/uninstall/update
-    Each function inside the class accepts an additional 'action' parameter. This is to specify a particular
-    schedule action. Possible values are 'install', 'update' and 'uninstall'.
+    Each function inside the class accepts an additional 'action' parameter. This is to specify a
+    particular schedule action. Possible values are 'install', 'update' and 'uninstall'.
     """
     def __init__(self, pulp_connection):
         """
@@ -111,37 +99,36 @@ class ConsumerContentSchedulesAPI(PulpAPI):
     def get_schedule(self, action, consumer_id, schedule_id):
         url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         return self.server.GET(url)
-    
+
     def add_schedule(self, action, consumer_id, schedule, units, failure_threshold=UNSPECIFIED,
                      enabled=UNSPECIFIED, options=UNSPECIFIED):
         url = self.base_path % consumer_id + action + '/'
         body = {
-            'schedule' : schedule,
+            'schedule': schedule,
             'units': units,
-            'failure_threshold' : failure_threshold,
-            'enabled' : enabled,
-            'options': options,
-            }
+            'failure_threshold': failure_threshold,
+            'enabled': enabled,
+            'options': options}
         # Strip out anything that wasn't specified by the caller
         body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
         return self.server.POST(url, body)
- 
+
     def delete_schedule(self, action, consumer_id, schedule_id):
         url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         return self.server.DELETE(url)
 
-    def update_schedule(self, action, consumer_id, schedule_id, schedule=UNSPECIFIED, units=UNSPECIFIED,
-                        failure_threshold=UNSPECIFIED, remaining_runs=UNSPECIFIED, enabled=UNSPECIFIED,
-                        options=UNSPECIFIED):
+    def update_schedule(
+            self, action, consumer_id, schedule_id, schedule=UNSPECIFIED, units=UNSPECIFIED,
+            failure_threshold=UNSPECIFIED, remaining_runs=UNSPECIFIED, enabled=UNSPECIFIED,
+            options=UNSPECIFIED):
         url = self.base_path % consumer_id + action + '/%s/' % schedule_id
         body = {
-            'schedule' : schedule,
+            'schedule': schedule,
             'units': units,
-            'failure_threshold' : failure_threshold,
-            'remaining_runs' : remaining_runs,
-            'enabled' : enabled,
-            'options': options,
-            }
+            'failure_threshold': failure_threshold,
+            'remaining_runs': remaining_runs,
+            'enabled': enabled,
+            'options': options}
         # Strip out anything that wasn't specified by the caller
         body = dict([(k, v) for k, v in body.items() if v is not UNSPECIFIED])
         self.server.PUT(url, body)
@@ -156,17 +143,17 @@ class BindingsAPI(PulpAPI):
         if repo_id:
             path += '%s/' % repo_id
         return self.server.GET(path)
-    
+
     def bind(self, consumer_id, repo_id, distributor_id, notify_agent=True, binding_config=None):
         path = self.BASE_PATH % consumer_id
         data = {
-            'repo_id' :repo_id,
-            'distributor_id' :distributor_id,
+            'repo_id': repo_id,
+            'distributor_id': distributor_id,
             'notify_agent': notify_agent,
             'binding_config': binding_config or {}
         }
         return self.server.POST(path, data)
-    
+
     def unbind(self, consumer_id, repo_id, distributor_id, force=False):
         path = self.BASE_PATH % consumer_id + "%s/" % repo_id + "%s/" % distributor_id
         body = dict(force=force)
@@ -183,7 +170,7 @@ class ProfilesAPI(PulpAPI):
 
     def send(self, id, content_type, profile):
         path = self.BASE_PATH % id
-        data = { 'content_type':content_type, 'profile':profile }
+        data = {'content_type': content_type, 'profile': profile}
         return self.server.POST(path, data)
 
 
@@ -195,7 +182,8 @@ class ConsumerHistoryAPI(PulpAPI):
         super(ConsumerHistoryAPI, self).__init__(pulp_connection)
         self.base_path = "/v2/consumers/%s/history/"
 
-    def history(self, consumer_id, event_type=None, limit=None, sort=None, start_date=None, end_date=None):
+    def history(self, consumer_id, event_type=None, limit=None, sort=None, start_date=None,
+                end_date=None):
         path = self.base_path % consumer_id
         queries = {}
         if event_type:
@@ -209,5 +197,3 @@ class ConsumerHistoryAPI(PulpAPI):
         if end_date:
             queries['end_date'] = end_date
         return self.server.GET(path, queries)
-
-

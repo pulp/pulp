@@ -1,22 +1,9 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import mock
 
-from pulp.bindings.repo_groups import RepoGroupAPI, RepoGroupDistributorAPI, RepoGroupSearchAPI, \
-    RepoGroupActionAPI
+from pulp.bindings.repo_groups import (RepoGroupAPI, RepoGroupDistributorAPI, RepoGroupSearchAPI,
+                                       RepoGroupActionAPI)
 from pulp.common.plugins import distributor_constants
 
 
@@ -37,12 +24,14 @@ class TestRepoGroupAPI(unittest.TestCase):
 
     def test_create(self):
         REPOGROUP = {
-            'id' : 'rg1',
-            'display_name' : 'repo group 1',
-            'description' : 'great group',
-            'notes' : {'awesome' : True}
+            'id': 'rg1',
+            'display_name': 'repo group 1',
+            'description': 'great group',
+            'notes': {'awesome': True}
         }
-        ret = self.api.create(**REPOGROUP)
+
+        self.api.create(**REPOGROUP)
+
         self.api.server.POST.assert_called_once_with(self.api.PATH, REPOGROUP)
 
     def test_create_and_configure(self):
@@ -63,7 +52,8 @@ class TestRepoGroupAPI(unittest.TestCase):
         }
 
         # Test
-        result = self.api.create_and_configure(group_id, display_name, description, notes, distributors)
+        result = self.api.create_and_configure(group_id, display_name, description, notes,
+                                               distributors)
         self.api.server.POST.assert_called_once_with(self.api.PATH, expected_repo_group)
         self.assertEqual(result, self.api.server.POST.return_value)
 
@@ -80,7 +70,7 @@ class TestRepoGroupAPI(unittest.TestCase):
         self.assertEqual(ret, self.api.server.DELETE.return_value)
 
     def test_update(self):
-        DELTA = {'display_name':'foo'}
+        DELTA = {'display_name': 'foo'}
         ret = self.api.update('rg1', DELTA)
         expected_path = self.api.PATH + 'rg1/'
         self.api.server.PUT.assert_called_once_with(expected_path, DELTA)
@@ -186,14 +176,14 @@ class TestRepoGroupActionAPI(unittest.TestCase):
 
     def test_associate(self):
         ret = self.api.associate('rg1', match=[('name', 'foo')])
-        EXPECTED = {'criteria': {'filters': {'name': {'$regex' : 'foo'}}}}
+        EXPECTED = {'criteria': {'filters': {'name': {'$regex': 'foo'}}}}
         self.api.server.POST.assert_called_once_with(
             'v2/repo_groups/rg1/actions/associate/', EXPECTED)
         self.assertEqual(ret, self.api.server.POST.return_value.response_body)
 
     def test_unassociate(self):
         ret = self.api.unassociate('rg1', match=[('name', 'foo')])
-        EXPECTED = {'criteria': {'filters': {'name': {'$regex' : 'foo'}}}}
+        EXPECTED = {'criteria': {'filters': {'name': {'$regex': 'foo'}}}}
         self.api.server.POST.assert_called_once_with(
             'v2/repo_groups/rg1/actions/unassociate/', EXPECTED)
         self.assertEqual(ret, self.api.server.POST.return_value.response_body)
