@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 
 from gettext import gettext as _
-import sys
 
 from okaara.cli import CommandUsage
 
 from pulp.client.extensions.core import COLOR_FAILURE
-from pulp.common import util
-from pulp.common.constants import DISPLAY_UNITS_DEFAULT_MAXIMUM
 from pulp.bindings.exceptions import BadRequestException
 from pulp.client.commands.criteria import UnitAssociationCriteriaCommand
 from pulp.client.commands.options import OPTION_REPO_ID
 from pulp.client.commands.polling import PollingCommand
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
+from pulp.common import util
+from pulp.common.constants import DISPLAY_UNITS_DEFAULT_MAXIMUM
 
 
 DESC_COPY = _('copies modules from one repository into another')
@@ -268,7 +267,7 @@ class UnitCopyCommand(UnitRemoveCommand):
             if 'source_repo_id' in e.extra_data.get('property_names', []):
                 e.extra_data['property_names'].remove('source_repo_id')
                 e.extra_data['property_names'].append('from-repo-id')
-            raise e, None, sys.exc_info()[2]
+            raise
 
     def succeeded(self, task):
         """

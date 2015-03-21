@@ -159,7 +159,7 @@ def _load_pack_modules(extensions_dir):
         try:
             mod = __import__(pack)
             modules.append(mod)
-        except Exception, e:
+        except Exception:
             raise ImportFailed(pack), None, sys.exc_info()[2]
 
     return modules
@@ -189,7 +189,7 @@ def _resolve_order(modules):
     for m in modules:
         try:
             m_priority = int(getattr(m, PRIORITY_VAR))
-        except AttributeError, e:
+        except AttributeError:
             # Priority is optional; the default is applied here
             m_priority = DEFAULT_PRIORITY
 
@@ -225,7 +225,7 @@ def _load_pack(extensions_dir, pack_module, context):
     # Figure out the full package name for the module and import it.
     try:
         init_mod = __import__('%s.%s' % (pack_module.__name__, init_mod_name))
-    except Exception, e:
+    except Exception:
         _logger.exception(_('Could not load initialization module [%(m)s]' % {'m': init_mod_name}))
         raise ImportFailed(pack_module.__name__), None, sys.exc_info()[2]
 
@@ -233,7 +233,7 @@ def _load_pack(extensions_dir, pack_module, context):
     try:
         ui_init_module = getattr(init_mod, init_mod_name)
         init_func = getattr(ui_init_module, 'initialize')
-    except AttributeError, e:
+    except AttributeError:
         _logger.exception(_('Module [%(m)s] does not define the required '
                             'initialize function' % {'m': init_mod_name}))
         raise NoInitFunction(), None, sys.exc_info()[2]
@@ -245,6 +245,6 @@ def _load_pack(extensions_dir, pack_module, context):
 
     try:
         init_func(context_copy)
-    except Exception, e:
+    except Exception:
         _logger.exception(_('Module [%(m)s] could not be initialized' % {'m': init_mod_name}))
         raise InitError(), None, sys.exc_info()[2]

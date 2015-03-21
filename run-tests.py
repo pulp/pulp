@@ -25,6 +25,7 @@ paths_to_check = [
     'bindings/test/unit/test_search.py',
     'bindings/test/unit/test_server.py',
     'bindings/test/unit/test_tasks.py',
+    'client_lib/pulp/',
     'repoauth/',
     'server/pulp/plugins',
     'server/pulp/server/agent/',

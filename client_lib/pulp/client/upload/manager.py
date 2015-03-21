@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Layer on top of the upload APIs to perform many of the common client-side tasks
 around uploading a content unit, such as the ability to resume a cancelled
@@ -22,21 +9,19 @@ import copy
 import errno
 import os
 import pickle
-import sys
 
 from pulp.common.lock import LockFile
 
-# -- constants ----------------------------------------------------------------
 
-DEFAULT_CHUNKSIZE = 1048576 # 1 MB per upload call
+DEFAULT_CHUNKSIZE = 1048576  # 1 MB per upload call
 
-# -- exceptions ---------------------------------------------------------------
 
 class ManagerUninitializedException(Exception):
     """
     Raised in the event the manager is used before it is initialized.
     """
     pass
+
 
 class MissingUploadRequestException(Exception):
     """
@@ -46,11 +31,13 @@ class MissingUploadRequestException(Exception):
     """
     pass
 
+
 class IncompleteUploadException(Exception):
     """
     Raised when attempting to import an upload that has not completed uploading.
     """
     pass
+
 
 class ConcurrentUploadException(Exception):
     """
@@ -58,7 +45,6 @@ class ConcurrentUploadException(Exception):
     """
     pass
 
-# -- classes ------------------------------------------------------------------
 
 class UploadManager(object):
     """
@@ -295,9 +281,9 @@ class UploadManager(object):
         if tracker.source_filename and not tracker.is_finished_uploading:
             raise IncompleteUploadException()
 
-        response = self.bindings.uploads.import_upload(upload_id, tracker.repo_id,
-                   tracker.unit_type_id, tracker.unit_key, tracker.unit_metadata,
-                   tracker.override_config)
+        response = self.bindings.uploads.import_upload(
+            upload_id, tracker.repo_id, tracker.unit_type_id, tracker.unit_key,
+            tracker.unit_metadata, tracker.override_config)
 
         return response
 
@@ -329,7 +315,7 @@ class UploadManager(object):
                 raise
 
         cached_trackers = self._all_tracker_files()
-        copies = [copy.copy(t) for t in cached_trackers] # copy for safety
+        copies = [copy.copy(t) for t in cached_trackers]  # copy for safety
         return copies
 
     def get_upload(self, upload_id):
@@ -344,7 +330,7 @@ class UploadManager(object):
         """
         tracker = self._get_tracker_file_by_id(upload_id)
         if tracker:
-            tracker = copy.copy(tracker) # copy for safety
+            tracker = copy.copy(tracker)  # copy for safety
         return tracker
 
     def delete_upload(self, upload_id, force=False):
@@ -373,17 +359,15 @@ class UploadManager(object):
         # Try to delete the server side upload first. If that fails, the force
         # option can be used to delete the client side tracker anyway.
         try:
-            response = self.bindings.uploads.delete_upload(upload_id)
-        except Exception, e:
+            self.bindings.uploads.delete_upload(upload_id)
+        except Exception:
             # Only raise the server side exception on a force
             if not force:
-                raise e, None, sys.exc_info()[2]
+                raise
 
         # Client Side Clean Up
         self._uncache_tracker_file(tracker)
         tracker.delete()
-
-    # -- tracker utilities ----------------------------------------------------
 
     def _tracker_filename(self, upload_id):
         return os.path.join(self.upload_working_dir, upload_id)
@@ -408,13 +392,13 @@ class UploadTracker(object):
     """
 
     def __init__(self, filename):
-        self.filename = filename # filename of the tracker file itself
+        self.filename = filename  # filename of the tracker file itself
 
         # Upload call information
         self.upload_id = None
-        self.location = None # URL to the upload request on the server
-        self.offset = None # start of next chunk to upload
-        self.source_filename = None # path on disk to the file to upload
+        self.location = None  # URL to the upload request on the server
+        self.offset = None  # start of next chunk to upload
+        self.source_filename = None  # path on disk to the file to upload
 
         # Import call information
         self.repo_id = None

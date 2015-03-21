@@ -1,7 +1,6 @@
 from gettext import gettext as _
 
-from pulp.client import parsers
-from pulp.client import arg_utils
+from pulp.client import arg_utils, parsers
 from pulp.client.extensions.extensions import PulpCliOption, PulpCliOptionGroup
 from pulp.common.plugins import importer_constants as constants
 
@@ -24,8 +23,7 @@ class OptionsBundle(object):
     """
 
     def __init__(self):
-        # -- synchronization options --------------------------------------------------
-
+        # synchronization options
         d = _('URL of the external source repository to sync')
         self.opt_feed = PulpCliOption('--feed', d, required=False)
 
@@ -34,8 +32,7 @@ class OptionsBundle(object):
         self.opt_validate = PulpCliOption('--validate', d, required=False,
                                           parse_func=parsers.pulp_parse_optional_boolean)
 
-        # -- proxy options ------------------------------------------------------------
-
+        # proxy options
         d = _('proxy server url to use')
         self.opt_proxy_host = PulpCliOption('--proxy-host', d, required=False)
 
@@ -49,8 +46,7 @@ class OptionsBundle(object):
         d = _('password used to authenticate with the proxy server')
         self.opt_proxy_pass = PulpCliOption('--proxy-pass', d, required=False)
 
-        # -- throttling options -------------------------------------------------------
-
+        # throttling options
         d = _('maximum bandwidth used per download thread, in bytes/sec, when '
               'synchronizing the repo')
         self.opt_max_speed = PulpCliOption('--max-speed', d, required=False,
@@ -60,8 +56,7 @@ class OptionsBundle(object):
         self.opt_max_downloads = PulpCliOption('--max-downloads', d, required=False,
                                                parse_func=parsers.pulp_parse_optional_positive_int)
 
-        # -- ssl options --------------------------------------------------------------
-
+        # ssl options
         d = _('full path to the CA certificate that should be used to verify the '
               'external repo server\'s SSL certificate')
         self.opt_feed_ca_cert = PulpCliOption('--feed-ca-cert', d, required=False)
@@ -78,8 +73,7 @@ class OptionsBundle(object):
         d = _('full path to the private key for feed_cert')
         self.opt_feed_key = PulpCliOption('--feed-key', d, required=False)
 
-        # -- unit policy --------------------------------------------------------------
-
+        # unit policy
         d = _('if "true", units that were previously in the external feed but are no longer '
               'found will be removed from the repository')
         self.opt_remove_missing = PulpCliOption('--remove-missing', d, required=False,
@@ -330,7 +324,8 @@ class ImporterConfigMixin(object):
         """
         key_tuples = (
             (constants.KEY_UNITS_REMOVE_MISSING, self.options_bundle.opt_remove_missing.keyword),
-            (constants.KEY_UNITS_RETAIN_OLD_COUNT, self.options_bundle.opt_retain_old_count.keyword),
+            (constants.KEY_UNITS_RETAIN_OLD_COUNT,
+             self.options_bundle.opt_retain_old_count.keyword),
         )
 
         config = {}
