@@ -96,7 +96,11 @@ else
         sudo wget -q https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
     fi
     if ! rpm -q epel-release; then
-        sudo rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+        if [ "$(lsb_release -si)" = "CentOS" ]; then
+            sudo yum install -y epel-release
+        else
+            sudo rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
+        fi
     fi
 fi
 sudo yum-config-manager --enable pulp-2.6-beta > /dev/null
@@ -104,7 +108,8 @@ sudo yum-config-manager --enable pulp-2.6-testing > /dev/null
 popd
 
 echo "installing some dev tools"
-sudo yum install -y vim-enhanced python-virtualenvwrapper
+sudo yum install -y vim-enhanced python-virtualenvwrapper bash-completion \
+                    python-django-bash-completion
 
 if ! grep WORKON_HOME ~/.bashrc; then
     echo "Setting up virtualenv"
