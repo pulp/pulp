@@ -35,7 +35,7 @@ from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.controllers import (
-    consumer_groups, consumers, contents, dispatch, repo_groups, repositories, status, users)
+    consumer_groups, consumers, contents, repo_groups, repositories, status)
 from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
 from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
 from pulp.server.webservices.middleware.framework_router import FrameworkRoutingMiddleware
@@ -51,8 +51,6 @@ URLS = (
     '/v2/repo_groups', repo_groups.application,
     '/v2/repositories', repositories.application,
     '/v2/status', status.application,
-    '/v2/tasks', dispatch.task_application,
-    '/v2/users', users.application,
 )
 
 logger = logging.getLogger(__name__)
