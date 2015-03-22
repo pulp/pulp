@@ -1,5 +1,6 @@
 from django.conf.urls import patterns, url
 
+from pulp.server.webservices.views import users, tasks
 from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociateActionView,
                                                            ConsumerGroupBindingView,
                                                            ConsumerGroupBindingsView,
@@ -14,7 +15,6 @@ from pulp.server.webservices.views.content import (
     OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
     UploadSegmentResourceView
 )
-from pulp.server.webservices.views.dispatch import TaskCollectionView, TaskResourceView
 from pulp.server.webservices.views.events import (EventResourceView, EventView)
 from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
                                                        PermissionView, RevokeFromRoleView,
@@ -29,7 +29,6 @@ from pulp.server.webservices.views.repo_groups import (
 from pulp.server.webservices.views.roles import (RoleResourceView, RoleUserView, RoleUsersView,
                                                  RolesView)
 from pulp.server.webservices.views.root_actions import LoginView
-from pulp.server.webservices.views.users import UserResourceView, UsersView
 
 
 urlpatterns = patterns('',
@@ -105,8 +104,11 @@ urlpatterns = patterns('',
     url(r'^v2/roles/(?P<role_id>[^/]+)/$', RoleResourceView.as_view(), name='role_resource'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/users/$', RoleUsersView.as_view(), name='role_users'),
     url(r'^v2/roles/(?P<role_id>[^/]+)/users/(?P<login>[^/]+)/$', RoleUserView.as_view(), name='role_user'),
-    url(r'^v2/tasks/$', TaskCollectionView.as_view(), name='task_collection'),
-    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', TaskResourceView.as_view(), name='task_resource'),
-    url(r'^v2/users/$', UsersView.as_view(), name='users'),
-    url(r'^v2/users/(?P<login>[^/]+)/$', UserResourceView.as_view(), name='user_resource')
+    url(r'^v2/tasks/$', tasks.TaskCollectionView.as_view(), name='task_collection'),
+    url(r'^v2/tasks/search/$', tasks.TaskSearchView.as_view(), name='task_search'),
+    url(r'^v2/tasks/(?P<task_id>[^/]+)/$', tasks.TaskResourceView.as_view(), name='task_resource'),
+    url(r'^v2/users/$', users.UsersView.as_view(), name='users'),
+    url(r'^v2/users/search/$', users.UserSearchView.as_view(),
+        name='user_search'),
+    url(r'^v2/users/(?P<login>[^/]+)/$', users.UserResourceView.as_view(), name='user_resource')
 )

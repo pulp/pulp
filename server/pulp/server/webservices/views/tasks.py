@@ -1,3 +1,6 @@
+"""
+This module contains views related to Pulp's task system models.
+"""
 from datetime import datetime
 
 from django.views.generic import View
@@ -5,11 +8,12 @@ from mongoengine.queryset import DoesNotExist
 
 from pulp.server.async import tasks
 from pulp.server.auth import authorization
-from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.db.model import dispatch
 from pulp.server.db.model.resources import Worker
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder)
 
@@ -28,6 +32,15 @@ def task_serializer(task):
     task.update(serialization.dispatch.spawned_tasks(task))
     task.update(serialization.dispatch.task_result_href(task))
     return task
+
+
+class TaskSearchView(search.SearchView):
+    """
+    This view provides GET and POST searching on TaskStatus objects.
+    """
+    generate_json_response = staticmethod(generate_json_response_with_pulp_encoder)
+    model = dispatch.TaskStatus
+    serializer = staticmethod(task_serializer)
 
 
 class TaskCollectionView(View):
@@ -49,9 +62,9 @@ class TaskCollectionView(View):
         """
         tags = request.GET.getlist('tag')
         if tags:
-            raw_tasks = TaskStatus.objects(tags__all=tags)
+            raw_tasks = dispatch.TaskStatus.objects(tags__all=tags)
         else:
-            raw_tasks = TaskStatus.objects()
+            raw_tasks = dispatch.TaskStatus.objects()
         serialized_task_statuses = [task_serializer(task) for task in raw_tasks]
         return generate_json_response_with_pulp_encoder(serialized_task_statuses)
 
@@ -76,7 +89,7 @@ class TaskResourceView(View):
         :raises MissingResource: if task is not found
         """
         try:
-            task = TaskStatus.objects.get(task_id=task_id)
+            task = dispatch.TaskStatus.objects.get(task_id=task_id)
         except DoesNotExist:
             raise MissingResource(task_id)
 
