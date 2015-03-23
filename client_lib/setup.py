@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='pulp-client-lib',
-    version='2.6.0c10',
+    version='2.6.0',
     license='GPLv2+',
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
