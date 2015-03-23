@@ -2,17 +2,27 @@
 Unauthenticated status API so that other can make sure we're up (to no good).
 """
 
-import web
+from django.views.generic import View
 
 import pulp.server.managers.status as status_manager
-from pulp.server.webservices.controllers.base import JSONController
-
-# status controller ------------------------------------------------------------
+from pulp.server.webservices.views.util import generate_json_response_with_pulp_encoder
 
 
-class StatusController(JSONController):
+class StatusView(View):
+    """
+    View for server status
+    """
 
-    def GET(self):
+    def get(self, request):
+        """
+        Show current status of pulp server.
+
+        :param request: WSGI request object
+        :type request: django.core.handlers.wsgi.WSGIRequest
+
+        :return: Response showing surrent server status
+        :rtype: django.http.HttpResponse
+        """
         pulp_version = status_manager.get_version()
         pulp_db_connection = status_manager.get_mongo_conn_status()
         pulp_messaging_connection = status_manager.get_broker_conn_status()
@@ -30,10 +40,4 @@ class StatusController(JSONController):
                        'messaging_connection': pulp_messaging_connection,
                        'known_workers': pulp_workers}
 
-        return self.ok(status_data)
-
-# web.py application -----------------------------------------------------------
-
-URLS = ('/', StatusController)
-
-application = web.application(URLS, globals())
+        return generate_json_response_with_pulp_encoder(status_data)

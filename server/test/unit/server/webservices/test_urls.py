@@ -492,3 +492,17 @@ class TestDjangoUsersUrls(unittest.TestCase):
         url = '/v2/users/user_login/'
         url_name = 'user_resource'
         assert_url_match(url, url_name, login='user_login')
+
+
+class TestStatusUrl(unittest.TestCase):
+    """
+    Tests for server status url
+    """
+
+    def test_match_users_view(self):
+        """
+        Test url matching for status
+        """
+        url = '/v2/status/'
+        url_name = 'status'
+        assert_url_match(url, url_name)
