@@ -1,14 +1,1 @@
-Pulp Developer Guide
-=======================
-
-.. toctree::
-   :maxdepth: 2
-
-   contributing/index
-   architecture
-   conventions/index
-   policies/index
-   newtypesupport/index
-   integration/index
-   glossary
-   troubleshooting
+.. warning:: The latest documentation has been moved to `https://pulp.readthedocs.org/ <https://pulp.readthedocs.org/>`_.
