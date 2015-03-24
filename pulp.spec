@@ -33,7 +33,7 @@
 
 Name: pulp
 Version: 2.6.1
-Release: 0.1.alpha%{?dist}
+Release: 0.2.beta%{?dist}
 Summary: An application for managing software content
 Group: Development/Languages
 License: GPLv2
