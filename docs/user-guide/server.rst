@@ -11,19 +11,40 @@ that a resource be effectively "locked", pulp will create a task object and put
 it into a queue. Pulp then guarantees that as workers take tasks off the queue,
 only one task will execute at a time for any given resource.
 
-Recovery from Worker Failure
-----------------------------
+Failure and Recovery
+--------------------
 
-If a worker dies unexpectedly, the dispatched Pulp tasks destined for that worker will stall for
-at most six minutes before being cancelled. A monitoring component inside of pulp_celerybeat
-monitors all workers using heartbeats. If a worker does not heartbeat within five minutes, it is
-considered missing. This check occurs once a minute, causing a maximum delay of six minutes
-before a worker is considered missing by Pulp.
+For a recap of Pulp components and the work they are responsible for, read :ref:`components <server-components>`.
 
-A missing worker has all tasks destined for it cancelled, and no new work is assigned to the
-missing worker. This causes new Pulp operations dispatched to continue normally with the other
-available workers. If a worker with the same name is started again after being missing, it is
-added into the pool of workers as any worker starting up normally would.
+* If a ``pulp_worker`` dies, the dispatched Pulp tasks destined for that worker (both the task
+  currently being worked on and queued/related tasks) will not be processed. They will stall for
+  at most six minutes before being cancelled. Status of the tasks is marked as cancelled after
+  5 minutes or in case the worker has been re-started, whichever action occurs first.
+  Cancellation after 5 minutes is dependent on ``pulp_celerybeat`` service running. A monitoring
+  component inside of ``pulp_celerybeat`` monitors all workers' heartbeats. If a worker does not
+  heartbeat within five minutes, it is considered missing. This check occurs once a minute, causing
+  a maximum delay of six minutes before a worker is considered missing and tasks cancelled by Pulp.
+
+  A missing worker has all tasks destined for it cancelled, and no new work is assigned to the
+  missing worker. This causes new Pulp operations dispatched to continue normally with the other
+  available workers. If a worker with the same name is started again after being missing, it is
+  added into the pool of workers as any worker starting up normally would.
+
+* If ``pulp_celerybeat`` dies, and in case then new workers start, they won't be given work. If
+  existing workers stop, Pulp will continue assigning them work. Once restarted, pulp_celerybeat
+  will synchronize with the current state of all workers. Scheduled tasks will not run while
+  pulp_celerybeat is down, but they will instead run when celerybeat is restarted.
+
+* If ``pulp_resource_manager`` dies, the Pulp tasking system will halt. Once restarted it will
+  resume.
+
+* If the webserver dies the API will become unavailable until it is restored.
+
+.. note::
+
+    From Pulp 2.6.0 and further, the /status/ url will show the currenct status of Pulp components.
+    Read more about it here :ref:`status API <getting_the_server_status>`, which includes sample
+    response output.
 
 Backups
 -------
