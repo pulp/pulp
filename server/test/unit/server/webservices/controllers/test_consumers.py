@@ -20,7 +20,7 @@ from pulp.server.db.model.consumer import (Consumer, Bind, RepoProfileApplicabil
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import Repo, RepoDistributor
-from pulp.server.db.model.resources import Worker
+from pulp.server.db.model.workers import Worker
 from pulp.server.exceptions import InvalidValue, OperationPostponed, MissingValue
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.bind import BindManager
@@ -1594,7 +1594,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_regenerate_applicability(self, mock_get_worker_for_reservation):
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
@@ -1606,7 +1606,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_regenerate_applicability_no_consumers(self, mock_get_worker_for_reservation):
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Test
@@ -1616,7 +1616,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_regenerate_applicability_no_bindings(self, mock_get_worker_for_reservation):
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         # Setup
@@ -1651,7 +1651,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertTrue('property_names' in body)
         self.assertTrue(body['property_names'] == ['consumer_criteria'])
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_consumer_regenerate_applicability(self, mock_get_worker_for_reservation):
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()
@@ -1663,7 +1663,7 @@ class TestConsumerApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body.get('spawned_tasks')[0])
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_consumer_regenerate_applicability_no_bindings(self, mock_get_worker_for_reservation):
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
         self.populate()

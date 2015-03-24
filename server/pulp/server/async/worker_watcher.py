@@ -18,9 +18,7 @@ from gettext import gettext as _
 import logging
 
 from pulp.server.async.tasks import _delete_worker
-from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.resources import Worker
-from pulp.server.managers import resources
+from pulp.server.db.model.workers import Worker
 
 
 _logger = logging.getLogger(__name__)
@@ -76,21 +74,14 @@ def handle_worker_heartbeat(event):
     :type event: dict
     """
     event_info = _parse_and_log_event(event)
+    worker = Worker.objects(name=event_info['worker_name']).first()
 
-    find_worker_criteria = Criteria(filters={'_id': event_info['worker_name']},
-                                    fields=('_id', 'last_heartbeat'))
-    find_worker_list = list(resources.filter_workers(find_worker_criteria))
-
-    if find_worker_list:
-        Worker.get_collection().find_and_modify(
-            query={'_id': event_info['worker_name']},
-            update={'$set': {'last_heartbeat': event_info['timestamp']}}
-        )
-    else:
-        new_worker = Worker(event_info['worker_name'], event_info['timestamp'])
+    if not worker:
         msg = _("New worker '%(worker_name)s' discovered") % event_info
         _logger.info(msg)
-        new_worker.save()
+
+    Worker.objects(name=event_info['worker_name']).\
+        update_one(set__last_heartbeat=event_info['timestamp'], upsert=True)
 
 
 def handle_worker_offline(event):

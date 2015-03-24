@@ -1,98 +1,11 @@
 """
 This module contains tests for the pulp.server.db.model.resources module.
 """
-from datetime import datetime
 import mock
 import uuid
 
 from ....base import ResourceReservationTests
 from pulp.server.db.model import resources
-
-
-class TestWorker(ResourceReservationTests):
-    """
-    Test the Worker class.
-    """
-    @mock.patch('pulp.server.db.model.resources.Model.__init__',
-                side_effect=resources.Model.__init__, autospec=True)
-    def test___init__(self, super_init):
-        """
-        Test the __init__() method.
-        """
-        now = datetime.utcnow()
-
-        worker = resources.Worker('some_name', now)
-
-        # The superclass __init__ should have been called
-        super_init.assert_called_once_with(worker)
-        # Make sure the attributes are correct
-        self.assertEqual(worker.name, 'some_name')
-        self.assertEqual(worker.last_heartbeat, now)
-        self.assertEqual('_id' in worker, False)
-        self.assertEqual('id' in worker, False)
-
-    @mock.patch('pulp.server.db.model.resources.Model.__init__',
-                side_effect=resources.Model.__init__, autospec=True)
-    def test___init___defaults(self, super_init):
-        """
-        Test __init__() with default values.
-        """
-        now = datetime.utcnow()
-        worker = resources.Worker('some_name', now)
-
-        # The superclass __init__ should have been called
-        super_init.assert_called_once_with(worker)
-        # Make sure the attributes are correct
-        self.assertEqual(worker.name, 'some_name')
-        self.assertEqual(worker.last_heartbeat, now)
-        self.assertEqual('_id' in worker, False)
-        self.assertEqual('id' in worker, False)
-
-    def test_delete(self):
-        """
-        Test delete().
-        """
-        now = datetime.utcnow()
-        worker = resources.Worker('wont_exist_for_long', now)
-        worker.save()
-        workers_collection = resources.Worker.get_collection()
-        self.assertEqual(workers_collection.find({'_id': 'wont_exist_for_long'}).count(), 1)
-
-        worker.delete()
-
-        self.assertEqual(workers_collection.count(), 0)
-
-    def test_from_bson(self):
-        """
-        Test from_bson().
-        """
-        last_heartbeat = datetime(2013, 12, 16)
-        worker = resources.Worker('a_worker', last_heartbeat)
-        worker.save()
-        workers_collection = resources.Worker.get_collection()
-        worker_bson = workers_collection.find_one({'_id': 'a_worker'})
-
-        # Replace the worker reference with a newly instantiated Worker from our bson
-        worker = resources.Worker.from_bson(worker_bson)
-
-        self.assertEqual(worker.name, 'a_worker')
-        self.assertEqual(worker.last_heartbeat, last_heartbeat)
-
-    def test_save(self):
-        """
-        Test the save() method.
-        """
-        last_heartbeat = datetime(2013, 12, 16)
-
-        worker = resources.Worker('a_worker', last_heartbeat)
-
-        worker.save()
-
-        # Make sure the DB has the correct data
-        workers_collection = resources.Worker.get_collection()
-        self.assertEqual(workers_collection.count(), 1)
-        saved_worker = workers_collection.find_one({'_id': 'a_worker'})
-        self.assertEqual(saved_worker['last_heartbeat'], last_heartbeat)
 
 
 class TestReservedResource(ResourceReservationTests):

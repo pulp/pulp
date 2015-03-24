@@ -5,8 +5,6 @@ from pymongo import DESCENDING, ASCENDING
 from pulp.server.compat import ObjectId
 from pulp.server.db.connection import get_collection
 
-from pulp.server.async.emit import send as send_taskstatus_message
-
 
 _logger = logging.getLogger(__name__)
 
@@ -164,12 +162,40 @@ class CriteriaQuerySet(QuerySet):
 
     def update(self, *args, **kwargs):
         """
-        Send a taskstatus event message and update.
-
         This method emulates post_save() on Documents.
 
-        All params are sent through to the super()'s update() call.
+        It attempts to call post_save() on each Document in the query set. If
+        post_save() does not exist, it will do nothing.
+
         """
         super(CriteriaQuerySet, self).update(*args, **kwargs)
         for doc in self:
-            send_taskstatus_message(doc, routing_key="tasks.%s" % doc['task_id'])
+            try:
+                doc.post_save(type(doc).__name__, doc)
+            except AttributeError:
+                # if post_save() is not defined for this particular document, that's ok
+                pass
+
+    def update_one(self, *args, **kwargs):
+        """
+        Mongoengine 0.7's QuerySet.update_one() does not call update() but
+        instead just makes a slightly different pymongo call[1]. We need to
+        subclass both methods.
+
+        Also, we cannot simply call super()'s update_one here! In Mongoengine
+        0.8, update_one() simply calls update(). This invokes *OUR* update()
+        method since 'self' is this class and not the superclass. This causes
+        the post_save hook to get fired twice. Instead, we call update() with
+        "multi=False" which mimics the behavior of update_one(). In the
+        unlikely event that someone really does want to use "multi", we raise an
+        exception.
+
+        Once we are rid of 0.7 we can get rid of this method entirely.
+
+        [1] http://tinyurl.com/nf7fafy
+
+        """
+        if 'multi' in kwargs:
+            raise NotImplementedError("The 'multi' parameter cannot be set on this method.")
+        kwargs['multi'] = False
+        self.update(*args, **kwargs)

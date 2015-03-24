@@ -1124,12 +1124,27 @@ class TaskStatusTests(base.PulpServerTests):
                  'state': 'running',
                  'progress_report': {'report-id': 'my-progress'}}
 
+        self.assertEquals(len(mock_send.call_args_list), 1)
         TaskStatus.objects(task_id=task_id).update_one(
             set__start_time=delta['start_time'], set__state=delta['state'],
             set__progress_report=delta['progress_report'])
 
         # ensure event was fired for update_one()
-        mock_send.assert_called_once_with(ts, routing_key="tasks.%s" % task_id)
+        self.assertEquals(len(mock_send.call_args_list), 2)
+        mock_send.assert_called_with(ts, routing_key="tasks.%s" % task_id)
+
+    def test_illegal_multi_arg(self):
+        """
+        Test that we receive an exception if we try to use the 'multi' kwarg
+        """
+        task_id = self.get_random_uuid()
+        worker_name = 'special_worker_name'
+        tags = ['test-tag1', 'test-tag2']
+        state = 'waiting'
+        ts = TaskStatus(task_id, worker_name, tags, state)
+        ts.save()
+        self.assertRaises(NotImplementedError, TaskStatus.objects(task_id=task_id).update_one,
+                          multi=True)
 
     @mock.patch('pulp.server.db.model.base.CriteriaQuerySet.find_by_criteria')
     def test_find_by_criteria(self, mock_find_by_criteria):

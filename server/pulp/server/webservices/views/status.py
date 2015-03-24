@@ -29,7 +29,8 @@ class StatusView(View):
 
         # do not ask for the worker list unless we have a DB connection
         if pulp_db_connection['connected']:
-            pulp_workers = [w for w in status_manager.get_workers()]
+            # convert Worker documents to dicts
+            pulp_workers = [w.to_mongo().to_dict() for w in status_manager.get_workers()]
         else:
             pulp_workers = []
 

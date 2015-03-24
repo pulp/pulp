@@ -6,7 +6,7 @@ from mongoengine.queryset import DoesNotExist
 from pulp.server.async import tasks
 from pulp.server.auth import authorization
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import Worker
+from pulp.server.db.model.workers import Worker
 from pulp.server.exceptions import MissingResource
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.decorators import auth_required

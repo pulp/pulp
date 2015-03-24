@@ -29,7 +29,7 @@ from pulp.server.db.model.criteria import UnitAssociationCriteria, Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import (Repo, RepoDistributor, RepoImporter,
                                              RepoPublishResult, RepoSyncResult)
-from pulp.server.db.model.resources import Worker
+from pulp.server.db.model.workers import Worker
 from pulp.server.exceptions import MissingResource, OperationPostponed, PulpException, \
     PulpCodedValidationException
 from pulp.server.managers import factory as manager_factory
@@ -87,7 +87,7 @@ class RepoImportUploadTests(RepoControllersTests):
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     @mock.patch('pulp.server.managers.content.upload.ContentUploadManager.import_uploaded_unit')
     def test_POST_returns_report(self, import_uploaded_unit, mock_get_worker_for_reservation,
                                  mock_uuid, mock_apply_async):
@@ -635,7 +635,7 @@ class RepoImportersTests(RepoPluginsTests):
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_post(self, mock_get_worker_for_reservation, mock_uuid, mock_apply_async):
         """
         Tests adding an importer to a repo.
@@ -661,7 +661,7 @@ class RepoImportersTests(RepoPluginsTests):
         self.assertEqual(call_args, ['gravy', 'dummy-importer'])
         self.assertEqual(call_kwargs, {'repo_plugin_config': {'foo': 'bar'}})
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_post_missing_repo(self, mock_get_worker_for_reservation):
         """
         Tests adding an importer to a repo that doesn't exist.
@@ -687,7 +687,7 @@ class RepoImportersTests(RepoPluginsTests):
         # Verify
         self.assertEqual(400, status)
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_post_bad_request_invalid_data(self, mock_get_worker_for_reservation):
         """
         Tests adding an importer but specifying incorrect metadata.
@@ -705,7 +705,7 @@ class RepoImportersTests(RepoPluginsTests):
 
     @mock.patch('pulp.server.managers.repo.importer.RepoImporterManager.validate_importer_config',
                 side_effect=PulpCodedValidationException())
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_post_bad_request_invalid_config(self, mock_get_worker_for_reservation, mock_validator):
         """
         Tests adding an importer but specifying incorrect metadata.
@@ -761,7 +761,7 @@ class RepoImporterTests(RepoPluginsTests):
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_delete(self, mock_get_worker_for_reservation, mock_uuid, mock_apply_async):
         """
         Tests removing an importer from a repo.
@@ -783,7 +783,7 @@ class RepoImporterTests(RepoPluginsTests):
         call_args = mock_apply_async.call_args[0]
         self.assertTrue([repo_id] in call_args)
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_delete_missing_repo(self, mock_get_worker_for_reservation):
         """
         Tests deleting the importer from a repo that doesn't exist.
@@ -794,7 +794,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_delete_missing_importer(self, mock_get_worker_for_reservation):
         """
         Tests deleting an importer from a repo that doesn't have one.
@@ -809,7 +809,7 @@ class RepoImporterTests(RepoPluginsTests):
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_update_importer_config(self, mock_get_worker_for_reservation, mock_uuid,
                                     mock_apply_async):
         """
@@ -833,7 +833,7 @@ class RepoImporterTests(RepoPluginsTests):
         self.assertTrue(repo_id in call_args)
         self.assertEqual(call_kwargs['importer_config'], {'ice_cream': True})
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_update_missing_repo(self, mock_get_worker_for_reservation):
         """
         Tests updating an importer config on a repo that doesn't exist.
@@ -845,7 +845,7 @@ class RepoImporterTests(RepoPluginsTests):
         # Verify
         self.assertEqual(404, status)
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_update_missing_importer(self, mock_get_worker_for_reservation):
         """
         Tests updating a repo that doesn't have an importer.
@@ -1695,7 +1695,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         for consumer_id in self.CONSUMER_IDS:
             manager.create(consumer_id, 'rpm', self.PROFILE)
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_regenerate_applicability(self, mock_get_worker_for_reservation):
         # Setup
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
@@ -1708,7 +1708,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body['spawned_tasks'][0])
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_regenerate_applicability_no_consumer(self, mock_get_worker_for_reservation):
         # Test
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
@@ -1718,7 +1718,7 @@ class TestRepoApplicabilityRegeneration(base.PulpWebserviceTests):
         self.assertEquals(status, 202)
         self.assertTrue('task_id' in body['spawned_tasks'][0])
 
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_regenerate_applicability_no_bindings(self, mock_get_worker_for_reservation):
         # Setup
         mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())

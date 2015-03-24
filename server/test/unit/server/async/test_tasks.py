@@ -18,7 +18,8 @@ from pulp.common.tags import action_tag
 from pulp.devel.unit.util import compare_dict
 from pulp.server.async import tasks
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import Worker, ReservedResource
+from pulp.server.db.model.resources import ReservedResource
+from pulp.server.db.model.workers import Worker
 from pulp.server.db.reaper import queue_reap_expired_documents
 from pulp.server.exceptions import NoWorkers, PulpException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
@@ -33,12 +34,10 @@ WORKER_3 = 'worker-3'
 class TestQueueReservedTask(ResourceReservationTests):
 
     def setUp(self):
-        self.patch_a = mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation',
-                                  autospec=True)
+        self.patch_a = mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
         self.mock_get_worker_for_reservation = self.patch_a.start()
 
-        self.patch_b = mock.patch('pulp.server.async.tasks.resources.get_unreserved_worker',
-                                  autospec=True)
+        self.patch_b = mock.patch('pulp.server.async.tasks._get_unreserved_worker')
         self.mock_get_unreserved_worker = self.patch_b.start()
 
         self.patch_c = mock.patch('pulp.server.async.tasks.time', autospec=True)
@@ -139,17 +138,11 @@ class TestDeleteWorker(ResourceReservationTests):
         self.patch_d = mock.patch('pulp.server.async.tasks._', autospec=True)
         self.mock_gettext = self.patch_d.start()
 
-        self.patch_e = mock.patch('pulp.server.async.tasks.resources', autospec=True)
-        self.mock_resources = self.patch_e.start()
-
         self.patch_f = mock.patch('pulp.server.async.tasks.Worker', autospec=True)
         self.mock_worker = self.patch_f.start()
 
         self.patch_g = mock.patch('pulp.server.async.tasks.TaskStatus', autospec=True)
         self.mock_task_status = self.patch_g.start()
-
-        self.patch_h = mock.patch('pulp.server.async.tasks.Criteria', autospec=True)
-        self.mock_criteria = self.patch_h.start()
 
         self.patch_i = mock.patch('pulp.server.async.tasks.constants', autospec=True)
         self.mock_constants = self.patch_i.start()
@@ -161,10 +154,8 @@ class TestDeleteWorker(ResourceReservationTests):
         self.patch_b.stop()
         self.patch_c.stop()
         self.patch_d.stop()
-        self.patch_e.stop()
         self.patch_f.stop()
         self.patch_g.stop()
-        self.patch_h.stop()
         self.patch_i.stop()
         super(TestDeleteWorker, self).tearDown()
 
@@ -186,31 +177,25 @@ class TestDeleteWorker(ResourceReservationTests):
         remove = self.mock_reserved_resource.get_collection.return_value.remove
         remove.assert_called_once_with({'worker_name': 'worker1'})
 
-    def test_criteria_to_find_all_worker_is_correct(self):
-        tasks._delete_worker('worker1')
-        self.assertEqual(self.mock_criteria.mock_calls[0], mock.call(filters={'_id': 'worker1'}))
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    def test_removes_the_worker(self, mock_worker_objects):
+        mock_document = mock.Mock()
+        mock_get = mock.Mock()
+        mock_get.get.return_value = [mock_document]
+        mock_worker_objects.return_value = mock_get
 
-    def test_criteria_is_used_in_filter_workers(self):
         tasks._delete_worker('worker1')
-        self.mock_resources.filter_workers.assert_called_once_with(self.mock_criteria.return_value)
 
-    def test_removes_the_worker(self):
-        mock_worker = mock.Mock()
-        self.mock_resources.filter_workers.return_value = tuple([mock_worker])
-        tasks._delete_worker('worker1')
-        mock_worker.delete.assert_called_once_with()
+        mock_document.delete.assert_called_once()
 
-    def test_no_entry_for_worker_does_not_raise_exception(self):
-        self.mock_resources.filter_workers.return_value = []
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    def test_no_entry_for_worker_does_not_raise_exception(self, mock_worker_objects):
+        mock_worker_objects.get.return_value = []
         try:
             tasks._delete_worker('worker1')
         except Exception:
             self.fail('_delete_worker() on a Worker that is not in the database caused an '
                       'Exception')
-
-    def test_makes_worker_object_from_bson(self):
-        tasks._delete_worker('worker1')
-        self.mock_worker.from_bson.assert_called_once_with({'_id': 'worker1'})
 
     def test_cancels_all_found_task_status_objects(self):
         mock_task_id_a = mock.Mock()
@@ -247,11 +232,10 @@ class TestReleaseResource(ResourceReservationTests):
         tasks._release_resource('made_up_resource_id')
 
         # Make sure that the workers collection has not been altered
-        worker_collection = Worker.get_collection()
-        self.assertEqual(worker_collection.count(), 2)
-        worker_1 = worker_collection.find_one({'_id': worker_1.name})
+        self.assertEqual(Worker.objects().count(), 2)
+        worker_1 = Worker.objects().get(name=worker_1.name)
         self.assertTrue(worker_1)
-        worker_2 = worker_collection.find_one({'_id': worker_2.name})
+        worker_2 = Worker.objects().get(name=worker_2.name)
         self.assertTrue(worker_2)
         # Make sure that the reserved resources collection has not been altered
         rrc = ReservedResource.get_collection()
@@ -826,3 +810,96 @@ class TestScheduledTasks(unittest.TestCase):
     def test_monthly_maintenance_apply_async(self, mock_monthly_apply_async):
         queue_monthly_maintenance()
         mock_monthly_apply_async.assert_called_once_with(tags=[action_tag('monthly')])
+
+
+class TestGetWorkerForReservation(ResourceReservationTests):
+
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_existing_reservation_correctly_found(self, mock_reserved_resource,
+                                                  mock_worker_objects):
+        get_collection = mock_reserved_resource.get_collection
+        tasks.get_worker_for_reservation('resource1')
+        get_collection.assert_called_once_with()
+        get_collection.return_value.find_one.assert_called_once_with({'resource_id': 'resource1'})
+
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_correct_worker_returned(self, mock_reserved_resource, mock_worker_objects):
+        find_one = mock_reserved_resource.get_collection.return_value.find_one
+        find_one.return_value = {'worker_name': 'worker1'}
+        mock_worker_objects.return_value.first.return_value = find_one.return_value
+        result = tasks.get_worker_for_reservation('resource1')
+        self.assertTrue(result is find_one.return_value)
+
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_no_workers_raised_if_no_reservations(self, mock_reserved_resource):
+        find_one = mock_reserved_resource.get_collection.return_value.find_one
+        find_one.return_value = False
+        try:
+            tasks.get_worker_for_reservation('resource1')
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
+
+
+class TestGetUnreservedWorker(ResourceReservationTests):
+
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_reserved_resources_queried_correctly(self, mock_reserved_resource):
+        find = mock_reserved_resource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
+        try:
+            tasks._get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
+        mock_reserved_resource.get_collection.assert_called_once_with()
+        find.assert_called_once_with()
+
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_worker_returned_when_one_worker_is_not_reserved(self, mock_reserved_resource,
+                                                             mock_worker_objects):
+        mock_worker_objects.return_value = [{'name': 'a'}, {'name': 'b'}]
+        find = mock_reserved_resource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}]
+        result = tasks._get_unreserved_worker()
+        self.assertEqual(result, {'name': 'b'})
+
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_no_workers_raised_when_all_workers_reserved(self, mock_reserved_resource, mock_worker):
+        mock_worker.objects.return_value = [{'name': 'a'}, {'name': 'b'}]
+        find = mock_reserved_resource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
+        try:
+            tasks._get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
+
+    @mock.patch('pulp.server.async.tasks.Worker.objects')
+    @mock.patch('pulp.server.async.tasks.ReservedResource')
+    def test_no_workers_raised_when_there_are_no_workers(self, mock_reserved_resource, mock_worker):
+        mock_worker.objects.return_value = []
+        find = mock_reserved_resource.get_collection.return_value.find
+        find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
+        try:
+            tasks._get_unreserved_worker()
+        except NoWorkers:
+            pass
+        else:
+            self.fail("NoWorkers() Exception should have been raised.")
+
+    def test_is_worker(self):
+        self.assertTrue(tasks._is_worker("a_worker@some.hostname"))
+
+    def test_is_not_worker_is_scheduler(self):
+        self.assertEquals(tasks._is_worker("scheduler@some.hostname"), False)
+
+    def test_is_not_worker_is_resource_mgr(self):
+        self.assertEquals(tasks._is_worker("resource_manager@some.hostname"), False)

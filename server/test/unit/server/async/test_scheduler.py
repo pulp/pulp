@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import time
 import unittest
 
@@ -7,8 +7,8 @@ import mock
 
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.db.model import dispatch, resources
-from pulp.server.db.model.criteria import Criteria
+from pulp.server.db.model import dispatch
+from pulp.server.db.model.workers import Worker
 from pulp.server.managers.factory import initialize
 
 
@@ -579,31 +579,12 @@ class TestWorkerTimeoutMonitorRun(unittest.TestCase):
 
 
 class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
-    @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
-    def test_calls_filter(self, mock_filter):
-        mock_filter.return_value = []
-
-        scheduler.WorkerTimeoutMonitor().check_workers()
-
-        # verify that filter was called with the right argument
-        self.assertEqual(mock_filter.call_count, 1)
-        self.assertEqual(len(mock_filter.call_args[0]), 1)
-        call_arg = mock_filter.call_args[0][0]
-        self.assertTrue(isinstance(call_arg, Criteria))
-
-        # make sure the timestamp being searched for is within the appropriate timeout,
-        # plus a 1-second grace period to account for execution time of test code.
-        timestamp = call_arg.filters['last_heartbeat']['$lt']
-        self.assertTrue(isinstance(timestamp, datetime))
-        self.assertTrue(datetime.utcnow() - timestamp <
-                        timedelta(scheduler.WorkerTimeoutMonitor.WORKER_TIMEOUT_SECONDS + 1))
-
-    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
-    @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
-    def test_deletes_workers(self, mock_filter, mock_delete_worker):
-        mock_filter.return_value = [
-            resources.Worker('name1', datetime.utcnow()),
-            resources.Worker('name2', datetime.utcnow()),
+    @mock.patch('pulp.server.async.scheduler._delete_worker')
+    @mock.patch('pulp.server.async.scheduler.Worker')
+    def test_deletes_workers(self, mock_worker, mock_delete_worker):
+        mock_worker.objects.return_value = [
+            Worker('name1', datetime.utcnow()),
+            Worker('name2', datetime.utcnow()),
         ]
 
         scheduler.WorkerTimeoutMonitor().check_workers()
