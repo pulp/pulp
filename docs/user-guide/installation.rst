@@ -88,27 +88,18 @@ Repositories
    If you would like to install the RHEL 5 Client for Pulp, please use the
    `RHEL 5 repository <http://repos.fedorapeople.org/repos/pulp/pulp/rhel5-pulp.repo>`_.
 
-2. For RHEL and CentOS systems, the EPEL repositories are required. Following commands will add the
+.. note::
+   The epel-release package is provided in the ``extras`` repositry for RHEL.
+   EPEL additionally requires users of RHEL to enable the ``optional`` repository,
+   once this package is installed. Details are described
+   `here <https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F>`_.
+
+2. For RHEL and CentOS systems, the EPEL repositories are required. Following command will add the
    appropriate repositories for RHEL6 and RHEL7 respectively:
 
-   RHEL6::
+   RHEL::
 
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-
-   RHEL7::
-
-    $ sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-
-.. note::
-   The above EPEL URLs change with each release of the epel-release package. If you receive a 404
-   error when attempting to install the above RPM, point your browser at the directory it is in and
-   look for the updated name of epel-release package.
-
-.. note::
-   EPEL requires users of RHEL 6.x to enable the ``optional`` repository,
-   and users of RHEL 7.x to additionally enable the ``extras`` repository.
-   Details are described
-   `here <https://fedoraproject.org/wiki/EPEL#How_can_I_use_these_extra_packages.3F>`_.
+    $ sudo yum install epel-release
 
 3. For RHEL 5 systems, subscribe to the following RHN channels:
 
