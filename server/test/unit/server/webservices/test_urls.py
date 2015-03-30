@@ -302,6 +302,105 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
                          repo_id='repo1', distributor_id='dist1')
 
 
+class TestDjangoRepositoriesUrls(unittest.TestCase):
+    """
+    Test url matching for repositories urls.
+    """
+
+    def test_match_repos(self):
+        url = '/v2/repositories/'
+        url_name = 'repos'
+        assert_url_match(url, url_name)
+
+    def test_match_repo_content_app_regen(self):
+        url_name = 'repo_content_app_regen'
+        url = '/v2/repositories/actions/content/regenerate_applicability/'
+        assert_url_match(url, url_name)
+
+    def test_match_repo_resource(self):
+        url_name = 'repo_resource'
+        url = '/v2/repositories/mock_repo/'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_importers(self):
+        url_name = 'repo_importers'
+        url = '/v2/repositories/mock_repo/importers/'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_importer_resource(self):
+        url = '/v2/repositories/mock_repo/importers/mock_importer/'
+        url_name = 'repo_importer_resource'
+        assert_url_match(url, url_name, repo_id='mock_repo', importer_id='mock_importer')
+
+    def test_match_repo_sync_schedule_collection(self):
+        url = '/v2/repositories/mock_repo/importers/mock_importer/schedules/sync/'
+        url_name = 'repo_sync_schedules'
+        assert_url_match(url, url_name, repo_id='mock_repo', importer_id='mock_importer')
+
+    def test_match_repo_sync_schedule_resource(self):
+        url = '/v2/repositories/mock_repo/importers/mock_importer/schedules/sync/mock_schedule/'
+        url_name = 'repo_sync_schedule_resource'
+        assert_url_match(url, url_name, repo_id='mock_repo', importer_id='mock_importer',
+                         schedule_id='mock_schedule')
+
+    def test_match_repo_distributors(self):
+        url = '/v2/repositories/mock_repo/distributors/'
+        url_name = 'repo_distributors'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_distributor_resource(self):
+        url = '/v2/repositories/mock_repo/distributors/mock_distributor/'
+        url_name = 'repo_distributor_resource'
+        assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_distributor')
+
+    def test_match_repo_publish_schedules(self):
+        url = '/v2/repositories/mock_repo/distributors/mock_distributor/schedules/publish/'
+        url_name = 'repo_publish_schedules'
+        assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_distributor')
+
+    def test_match_repo_publish_schedule_resource(self):
+        url = '/v2/repositories/mock_repo/distributors/'\
+              'mock_distributor/schedules/publish/mock_schedule/'
+        url_name = 'repo_publish_schedule_resource'
+        assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_distributor',
+                         schedule_id='mock_schedule')
+
+    def test_match_repo_sync_history(self):
+        url = '/v2/repositories/mock_repo/history/sync/'
+        url_name = 'repo_sync_history'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_sync(self):
+        url = '/v2/repositories/mock_repo/actions/sync/'
+        url_name = 'repo_sync'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_publish_history(self):
+        url = '/v2/repositories/mock_repo/history/publish/mock_dist/'
+        url_name = 'repo_publish_history'
+        assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_dist')
+
+    def test_match_repo_publish(self):
+        url = '/v2/repositories/mock_repo/actions/publish/'
+        url_name = 'repo_publish'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_associate(self):
+        url = '/v2/repositories/mock_repo/actions/associate/'
+        url_name = 'repo_associate'
+        assert_url_match(url, url_name, dest_repo_id='mock_repo')
+
+    def test_match_repo_unassociate(self):
+        url = '/v2/repositories/mock_repo/actions/unassociate/'
+        url_name = 'repo_unassociate'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+    def test_match_repo_import_upload(self):
+        url = '/v2/repositories/mock_repo/actions/import_upload/'
+        url_name = 'repo_import_upload'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
+
 class TestDjangoRepoGroupsUrls(unittest.TestCase):
     """
     Test url matching for repo_groups urls
