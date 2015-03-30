@@ -27,12 +27,28 @@ class UserAPI(PulpAPI):
         path = self.base_path
         return self.server.GET(path)
 
-    def create(self, login, password, name=None, roles=None):
+    def create(self, login, password, name=None):
+        """
+        Create a new user
+
+        NOTE: this method used to take an optional "roles" parameter, but it
+        wasn't used on the server side. As of pulp 2.7, the server will complain
+        about unused data being passed, so it's been removed from this method.
+
+        :param login:       username for the new user
+        :type  login:       str
+        :param password:    password for the new user
+        :type  password:    str
+        :param name:        optional human-readable name
+        :type  name:        str
+
+        :return:    response object
+        :rtype:     pulp.bindings.responses.Response
+        """
         path = self.base_path
         userdata = {"login": login,
                     "password": password,
-                    "name": name,
-                    "roles": roles,}
+                    "name": name,}
         return self.server.POST(path, userdata)
 
     def user(self, login):
