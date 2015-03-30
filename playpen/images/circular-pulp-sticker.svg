@@ -14,7 +14,7 @@
    height="450"
    id="svg3828"
    version="1.1"
-   inkscape:version="0.48.0 r9654"
+   inkscape:version="0.91 r13725"
    inkscape:export-filename="/home/duffy/Desktop/pulp-sticker-mock1.png"
    inkscape:export-xdpi="90"
    inkscape:export-ydpi="90"
@@ -305,18 +305,18 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1"
-     inkscape:cx="352.9236"
-     inkscape:cy="136.57649"
+     inkscape:cx="95.4236"
+     inkscape:cy="175.07649"
      inkscape:document-units="in"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g5214"
      showgrid="false"
      units="in"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:window-width="1400"
-     inkscape:window-height="975"
-     inkscape:window-x="0"
-     inkscape:window-y="25"
+     inkscape:window-width="1920"
+     inkscape:window-height="1134"
+     inkscape:window-x="1200"
+     inkscape:window-y="27"
      inkscape:window-maximized="1"
      width="5in" />
   <metadata
@@ -327,7 +327,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -381,16 +381,16 @@
       </g>
       <g
          id="g5147">
-        <path
+        <ellipse
            transform="matrix(1.6276596,0,0,1.5,-78.27128,511.60975)"
-           d="M 290,225.5 C 290,295.91631 237.39346,353 172.5,353 107.60654,353 55,295.91631 55,225.5 55,155.08369 107.60654,98 172.5,98 237.39346,98 290,155.08369 290,225.5 z"
+           id="path4066"
+           style="fill:url(#radialGradient3093);fill-opacity:1;stroke:none"
+           sodipodi:type="arc"
            sodipodi:ry="127.5"
            sodipodi:rx="117.5"
            sodipodi:cy="225.5"
            sodipodi:cx="172.5"
-           id="path4066"
-           style="fill:url(#radialGradient3093);fill-opacity:1;stroke:none"
-           sodipodi:type="arc" />
+           d="M 290,225.5 A 117.5,127.5 0 0 1 172.5,353 117.5,127.5 0 0 1 55,225.5 117.5,127.5 0 0 1 172.5,98 117.5,127.5 0 0 1 290,225.5 Z" />
         <rect
            style="fill:none;stroke:#4e9a06;stroke-width:0;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
            id="rect5145"
@@ -512,26 +512,8 @@
          sodipodi:cy="225.5"
          sodipodi:rx="117.5"
          sodipodi:ry="127.5"
-         d="M 290,225.5 C 290,295.91631 237.39346,353 172.5,353 107.60654,353 55,295.91631 55,225.5 55,155.08369 107.60654,98 172.5,98 237.39346,98 290,155.08369 290,225.5 z"
+         d="M 290,225.5 A 117.5,127.5 0 0 1 172.5,353 117.5,127.5 0 0 1 55,225.5 117.5,127.5 0 0 1 172.5,98 117.5,127.5 0 0 1 290,225.5 Z"
          transform="matrix(-0.70800298,-1.0238535,0.94355124,-0.65247335,109.19813,1174.465)" />
-      <text
-         transform="matrix(0.99996812,-0.00798558,0.00798558,0.99996812,-0.956139,0.3948317)"
-         xml:space="preserve"
-         style="font-size:16.04034996px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:120.00000477%;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;enable-background:new;font-family:Yanone Tagesschrift;-inkscape-font-specification:Yanone Tagesschrift"
-         id="text5060"
-         sodipodi:linespacing="120%"><textPath
-           style="font-size:20px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:120.00000477%;letter-spacing:-0.18540902;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:HVD Comic Serif Pro;-inkscape-font-specification:HVD Comic Serif Pro"
-           id="textPath5104"
-           xlink:href="#path5087">www.pulpproject.org</textPath></text>
-      <text
-         transform="matrix(0.99686754,-0.07908918,0.07908918,0.99686754,-75.837293,18.24896)"
-         xml:space="preserve"
-         style="font-size:16.04034996px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:120.00000477%;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;display:inline;enable-background:new;font-family:Yanone Tagesschrift;-inkscape-font-specification:Yanone Tagesschrift"
-         id="text5109"
-         sodipodi:linespacing="120%"><textPath
-           style="font-size:16.04034996px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:120.00000477%;letter-spacing:-0.18540902;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:HVD Comic Serif Pro;-inkscape-font-specification:HVD Comic Serif Pro"
-           id="textPath5130"
-           xlink:href="#path5125">Juicy software repository management.</textPath></text>
       <path
          sodipodi:type="arc"
          style="fill:none;stroke:none"
@@ -540,8 +522,20 @@
          sodipodi:cy="225.5"
          sodipodi:rx="117.5"
          sodipodi:ry="127.5"
-         d="M 290,225.5 C 290,295.91631 237.39346,353 172.5,353 107.60654,353 55,295.91631 55,225.5 55,155.08369 107.60654,98 172.5,98 237.39346,98 290,155.08369 290,225.5 z"
+         d="M 290,225.5 A 117.5,127.5 0 0 1 172.5,353 117.5,127.5 0 0 1 55,225.5 117.5,127.5 0 0 1 172.5,98 117.5,127.5 0 0 1 290,225.5 Z"
          transform="matrix(-1.2863023,0.11703204,0.10785304,1.1854159,404.76294,569.06679)" />
+      <path
+         d="M 111.4602,988.66804 A 166,166 0 0 0 341.30833,940.89955 166,166 0 0 0 293.5398,711.0514 166,166 0 0 0 63.691665,758.81993 166,166 0 0 0 111.4602,988.66804 Z"
+         id="path3540"
+         inkscape:connector-curvature="0"
+         style="opacity:0.2;fill:none" />
+      <text
+         xml:space="preserve"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:25px;line-height:125%;font-family:'Museo Slab';-inkscape-font-specification:'Museo Slab, Normal';text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
+         id="text3556"
+         sodipodi:linespacing="125%"><textPath
+           xlink:href="#path3540"
+           id="textPath3562">www.pulpproject.org</textPath></text>
     </g>
   </g>
 </svg>
