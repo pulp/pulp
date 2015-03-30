@@ -82,7 +82,7 @@ echo ""
 echo "Please enter the hostname clients will use to connect to the qpid server."
 echo "If not specified, '$HOST' will be used."
 echo ""
-read -sp "Enter a hostname:" ans
+read -p "Enter a hostname:" ans
 if [ "${#ans}" -gt 0 ]
 then
   HOST=$ans
