@@ -1,5 +1,5 @@
 from django.core.urlresolvers import reverse
-from django.http import HttpResponseBadRequest, HttpResponseNotFound
+from django.http import HttpResponseBadRequest
 from django.views.generic import View
 
 from pulp.common import tags
@@ -264,7 +264,7 @@ class ConsumerBindingsView(View):
         :raises OperationPostponed: will dispatch a task if 'notify_agent' is set to True
         :raises InvalidValue: if binding_config is invalid
 
-        :return: Response representing the binding(in case 'notify agent' is set to False) 
+        :return: Response representing the binding(in case 'notify agent' is set to False)
         :rtype: django.http.HttpResponse
         """
 
@@ -445,7 +445,7 @@ class ConsumerContentActionView(View):
 
         :raises OperationPostponed: when an async operation is performed.
         """
- 
+
         agent_manager = factory.consumer_agent_manager()
         task = agent_manager.update_content(consumer_id, units, options)
         raise OperationPostponed(TaskResult.from_task_status_dict(task))
@@ -938,7 +938,7 @@ class ConsumerUnitActionScheduleResourceView(View):
 
     @auth_required(authorization.UPDATE)
     @json_body_allow_empty
-    def put(self, request, consumer_id,  schedule_id):
+    def put(self, request, consumer_id, schedule_id):
         """
         Update a specific schedule <action>.
 
