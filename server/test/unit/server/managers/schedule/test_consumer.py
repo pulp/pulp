@@ -4,7 +4,7 @@ import mock
 
 from pulp.server.db.model.consumer import Consumer
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.exceptions import MissingResource, InvalidValue
+from pulp.server.exceptions import MissingResource, MissingValue, InvalidValue
 from pulp.server.managers.factory import initialize
 from pulp.server.managers.schedule.consumer import (ConsumerScheduleManager, UNIT_INSTALL_ACTION,
                                                     UNIT_UPDATE_ACTION, ACTIONS_TO_TASKS)
@@ -92,7 +92,7 @@ class TestCreate(unittest.TestCase):
 
     @mock.patch('pulp.server.managers.consumer.cud.ConsumerManager.get_consumer')
     def test_validate_units(self, mock_get_consumer):
-        self.assertRaises(MissingResource, self.manager.create_schedule, UNIT_INSTALL_ACTION,
+        self.assertRaises(MissingValue, self.manager.create_schedule, UNIT_INSTALL_ACTION,
                           'consumer1', [], {}, 'PT1M')
 
     @mock.patch.object(ScheduledCall, 'save')

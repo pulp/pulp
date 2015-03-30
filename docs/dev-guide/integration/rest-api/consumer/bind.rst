@@ -120,12 +120,38 @@ Retrieves information on a single binding between a consumer and a repository.
 :sample_response:`200` ::
 
  {
-   "repo_id": "test-repo",
-   "consumer_id": "test-consumer",
-   "_ns": "consumer_bindings",
-   "_id": {"$oid": "5008604be13823703800003e"},
-   "distributor_id": "dist-1",
-   "id": "5008604be13823703800003e"
+    "_href": "/pulp/api/v2/consumers/c2/bindings/xxx/yum_distributor/",
+    "_id": {
+        "$oid": "55097a6045ef4829b243f102"
+    },
+    "_ns": "consumer_bindings",
+    "binding_config": {},
+    "consumer_actions": [
+        {
+            "action": "bind",
+            "id": "d991aef8-cd50-402e-9e1b-84a2729b34a3",
+            "status": "pending",
+            "timestamp": 1426684512.37454
+        }
+    ],
+    "consumer_id": "c2",
+    "deleted": false,
+    "details": {
+        "ca_cert": null,
+        "client_cert": null,
+        "gpg_keys": [],
+        "protocols": [
+            "https"
+        ],
+        "relative_path": "/pulp/repos/xxx",
+        "repo_name": "xxx",
+        "server_name": "example.com"
+    },
+    "distributor_id": "yum_distributor",
+    "id": "55097a6045ef4829b243f102",
+    "notify_agent": true,
+    "repo_id": "xxx",
+    "type_id": "yum_distributor"
  }
 
 
@@ -142,28 +168,82 @@ Retrieves information on all bindings for the specified consumer.
 | :response_list:`_`
 
 * :response_code:`200,if the consumer exists`
+* :response_code:`404,if the given consumer does not exist`
 
 | :return:`an array of database representations of the matching binds`
 
 :sample_response:`200` ::
 
  [
-   {
-     "repo_id": "test-repo",
-     "consumer_id": "test-consumer",
-     " _ns": "consumer_bindings",
-     "_id": {"$oid": "5008604be13823703800003e"},
-     "distributor_id": "dist-1",
-     "id": "5008604be13823703800003e"
-   },
-     "repo_id": "test-repo2",
-     "consumer_id": "test-consumer",
-     " _ns": "consumer_bindings",
-     "_id": {"$oid": "5008604be13823703800003e"},
-     "distributor_id": "dist-1",
-     "id": "5008604be13823703800003e"
-   },
-  ]
+    {
+        "_href": "/pulp/api/v2/consumers/c2/bindings/xxx1/yum_distributor/",
+        "_id": {
+            "$oid": "55097cd045ef4829b081fd28"
+        },
+        "_ns": "consumer_bindings",
+        "binding_config": {},
+        "consumer_actions": [
+            {
+                "action": "bind",
+                "id": "99613d18-1cff-424f-a5dd-9c4357a3f194",
+                "status": "pending",
+                "timestamp": 1426685136.733399
+            }
+        ],
+        "consumer_id": "c2",
+        "deleted": false,
+        "details": {
+            "ca_cert": null,
+            "client_cert": null,
+            "gpg_keys": [],
+            "protocols": [
+                "https"
+            ],
+            "relative_path": "/pulp/repos/xxx1",
+            "repo_name": "xxx1",
+            "server_name": "example.com"
+        },
+        "distributor_id": "yum_distributor",
+        "id": "55097cd045ef4829b081fd28",
+        "notify_agent": true,
+        "repo_id": "xxx1",
+        "type_id": "yum_distributor"
+    },
+    {
+        "_href": "/pulp/api/v2/consumers/c2/bindings/xxx/yum_distributor/",
+        "_id": {
+            "$oid": "55097a6045ef4829b243f102"
+        },
+        "_ns": "consumer_bindings",
+        "binding_config": {},
+        "consumer_actions": [
+            {
+                "action": "bind",
+                "id": "d991aef8-cd50-402e-9e1b-84a2729b34a3",
+                "status": "pending",
+                "timestamp": 1426684512.37454
+            }
+        ],
+        "consumer_id": "c2",
+        "deleted": false,
+        "details": {
+            "ca_cert": null,
+            "client_cert": null,
+            "gpg_keys": [],
+            "protocols": [
+                "https"
+            ],
+            "relative_path": "/pulp/repos/xxx",
+            "repo_name": "xxx",
+            "server_name": "example.com"
+        },
+        "distributor_id": "yum_distributor",
+        "id": "55097a6045ef4829b243f102",
+        "notify_agent": true,
+        "repo_id": "xxx",
+        "type_id": "yum_distributor"
+    }
+ ]
 
 
 Retrieve Binding By Consumer And Repository

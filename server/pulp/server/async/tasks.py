@@ -257,7 +257,7 @@ class TaskResult(object):
         :returns: a TaskResult containing the task in it's spawned_tasks lsit
         :rtype: TaskResult
         """
-        return cls(spawned_tasks=[{'task_id': task_status.get('task_id')}])
+        return cls(spawned_tasks=[{'task_id': task_status.task_id}])
 
     def serialize(self):
         """
