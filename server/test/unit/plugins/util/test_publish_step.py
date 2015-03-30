@@ -1180,12 +1180,16 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         self.assertEqual(self.step.conduit.save_unit.call_count, 0)
         self.assertEqual(self.step.units_to_download, [])
 
-    def test_calls_get_multiple(self, mock_get_multiple):
-        mock_get_multiple.return_value = []
+    @patch('pulp.plugins.util.publish_step.misc.paginate')
+    def test_calls_get_multiple(self, mock_paginate, mock_get_multiple):
+        """
+        ensure that paginate is used
+        """
+        mock_paginate.return_value = []
 
         self.step.process_main()
 
-        mock_get_multiple.assert_called_once_with('fake_unit_type', [], ['foo'])
+        mock_paginate.assert_called_once_with(self.step.parent.available_units, 50)
 
     def test_saves_unit(self, mock_get_multiple):
         mock_get_multiple.return_value = [{'foo': 'a'}]
