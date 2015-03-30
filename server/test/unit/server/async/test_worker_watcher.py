@@ -44,55 +44,48 @@ class TestLogEvent(unittest.TestCase):
 
 
 class TestHandleWorkerHeartbeat(unittest.TestCase):
-    @mock.patch('__builtin__.list', return_value=False)
-    @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher.Criteria')
-    @mock.patch('pulp.server.async.worker_watcher.resources')
-    @mock.patch('pulp.server.async.worker_watcher.Worker')
-    @mock.patch('pulp.server.async.worker_watcher._')
+
     @mock.patch('pulp.server.async.worker_watcher._logger')
-    def test_handle_worker_heartbeat_new(self, mock__logger, mock_gettext, mock_worker,
-                                         mock_resources, mock_criteria,
-                                         mock__parse_and_log_event, mock_list):
-        mock_event = mock.Mock()
-
-        worker_watcher.handle_worker_heartbeat(mock_event)
-
-        event_info = mock__parse_and_log_event.return_value
-        mock__parse_and_log_event.assert_called_with(mock_event)
-        mock_criteria.assert_called_once_with(filters={'_id': event_info['worker_name']},
-                                              fields=('_id', 'last_heartbeat'))
-        mock_resources.filter_workers.assert_called_once(mock_criteria.return_value)
-        mock_worker.assert_called_once_with(event_info['worker_name'], event_info['timestamp'])
-        mock_gettext.assert_called_once_with("New worker '%(worker_name)s' discovered")
-        mock__logger.assert_called_once()
-        mock_worker.return_value.save.assert_called_once_with()
-
-    @mock.patch('__builtin__.list', return_value=True)
-    @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
-    @mock.patch('pulp.server.async.worker_watcher.Criteria')
-    @mock.patch('pulp.server.async.worker_watcher.resources')
     @mock.patch('pulp.server.async.worker_watcher.Worker')
-    @mock.patch('pulp.server.async.worker_watcher._', new=mock.Mock())
-    @mock.patch('pulp.server.async.worker_watcher._logger', new=mock.Mock())
-    def test_handle_worker_heartbeat_update(self, mock_worker, mock_resources,
-                                            mock_criteria,
-                                            mock__parse_and_log_event, mock_list):
+    @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
+    def test_handle_worker_heartbeat_new(self, mock__parse_and_log_event,
+                                         mock_worker, mock_logger):
+        """
+        Ensure that we save a record and log when a new worker comes online.
+        """
+
         mock_event = mock.Mock()
+        mock_worker.objects.return_value.first.return_value = None
+        mock__parse_and_log_event.return_value = {'worker_name': 'fake-worker',
+                                                  'timestamp': '2014-12-08T15:52:29Z',
+                                                  'type': 'fake-type'}
 
         worker_watcher.handle_worker_heartbeat(mock_event)
 
-        event_info = mock__parse_and_log_event.return_value
-        mock__parse_and_log_event.assert_called_with(mock_event)
-        mock_criteria.assert_called_once_with(filters={'_id': event_info['worker_name']},
-                                              fields=('_id', 'last_heartbeat'))
-        mock_resources.filter_workers.assert_called_once(mock_criteria.return_value)
-        mock_worker.get_collection.assert_called_once_with()
-        find_and_modify = mock_worker.get_collection.return_value.find_and_modify
-        find_and_modify.assert_called_once_with(
-            query={'_id': event_info['worker_name']},
-            update={'$set': {'last_heartbeat': event_info['timestamp']}}
-        )
+        mock_worker.objects.return_value.update_one.\
+            assert_called_once_with(set__last_heartbeat='2014-12-08T15:52:29Z', upsert=True)
+        mock_logger.info.assert_called_once_with('New worker \'fake-worker\' discovered')
+
+    @mock.patch('pulp.server.async.worker_watcher._logger')
+    @mock.patch('pulp.server.async.worker_watcher.Worker')
+    @mock.patch('pulp.server.async.worker_watcher._parse_and_log_event')
+    def test_handle_worker_heartbeat_update(self, mock__parse_and_log_event,
+                                            mock_worker, mock_logger):
+        """
+        Ensure that we save a record but don't log when an existing worker is updated.
+        """
+
+        mock_event = mock.Mock()
+        mock_worker.objects.return_value.first.return_value = mock.Mock()
+        mock__parse_and_log_event.return_value = {'worker_name': 'fake-worker',
+                                                  'timestamp': '2014-12-08T15:52:29Z',
+                                                  'type': 'fake-type'}
+
+        worker_watcher.handle_worker_heartbeat(mock_event)
+
+        mock_worker.objects.return_value.update_one.\
+            assert_called_once_with(set__last_heartbeat='2014-12-08T15:52:29Z', upsert=True)
+        self.assertEquals(mock_logger.info.called, False)
 
 
 class TestHandleWorkerOffline(unittest.TestCase):

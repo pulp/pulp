@@ -301,6 +301,7 @@ rm -rf %{buildroot}
 Summary: The pulp platform server
 Group: Development/Languages
 Requires: python-%{name}-common = %{pulp_version}
+Requires  python-blinker
 Requires: python-celery >= 3.1.0
 Requires: python-celery < 3.2.0
 Requires: python-pymongo >= 2.5.2

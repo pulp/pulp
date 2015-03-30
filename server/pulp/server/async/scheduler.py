@@ -16,9 +16,8 @@ from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.tasks import _delete_worker
 from pulp.server.db import connection as db_connection
 from pulp.server.db.connection import retry_decorator
-from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
-from pulp.server.managers import resources
+from pulp.server.db.model.workers import Worker
 from pulp.server.managers.schedule import utils
 
 # The import below is not used in this module, but it needs to be kept here. This module is the
@@ -229,9 +228,7 @@ class WorkerTimeoutMonitor(threading.Thread):
             'Looking for workers missing for more than %s seconds') % self.WORKER_TIMEOUT_SECONDS
         _logger.debug(msg)
         oldest_heartbeat_time = datetime.utcnow() - timedelta(seconds=self.WORKER_TIMEOUT_SECONDS)
-        worker_criteria = Criteria(filters={'last_heartbeat': {'$lt': oldest_heartbeat_time}},
-                                   fields=('_id', 'last_heartbeat'))
-        worker_list = list(resources.filter_workers(worker_criteria))
+        worker_list = Worker.objects(last_heartbeat__lt=oldest_heartbeat_time)
         for worker in worker_list:
             msg = _("Workers '%s' has gone missing, removing from list of workers") % worker.name
             _logger.error(msg)

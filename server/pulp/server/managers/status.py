@@ -6,8 +6,7 @@ from pkg_resources import get_distribution
 
 from pulp.server.async.celery_instance import celery
 from pulp.server.db import connection
-from pulp.server.db.model.criteria import Criteria
-from pulp.server.managers import resources
+from pulp.server.db.model.workers import Worker
 
 
 def get_version():
@@ -23,8 +22,7 @@ def get_workers():
     :returns:          list of workers with their heartbeats
     :rtype:            list
     """
-    empty_criteria = Criteria()
-    return resources.filter_workers(empty_criteria)
+    return Worker.objects()
 
 
 def get_mongo_conn_status():

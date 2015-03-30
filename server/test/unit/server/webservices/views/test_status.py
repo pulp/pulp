@@ -19,9 +19,11 @@ class TestStatusView(unittest.TestCase):
         mock_status.get_version.return_value = {"platform_version": '2.6.1'}
         mock_status.get_mongo_conn_status.return_value = {'connected': True}
         mock_status.get_broker_conn_status.return_value = {'connected': True}
-        mock_status.get_workers.return_value = [{
+        mock_worker = mock.MagicMock()
+        mock_worker.to_mongo.return_value.to_dict.return_value = {
             "last_heartbeat": "2015-03-19T13:55:36Z",
-            "name": "reserved_resource_worker-0@example.com"}]
+            "name": "reserved_resource_worker-0@example.com"}
+        mock_status.get_workers.return_value = [mock_worker]
 
         request = mock.MagicMock()
         status = StatusView()
@@ -65,9 +67,11 @@ class TestStatusView(unittest.TestCase):
         mock_status.get_version.return_value = {"platform_version": '2.6.1'}
         mock_status.get_mongo_conn_status.return_value = {'connected': True}
         mock_status.get_broker_conn_status.return_value = {'connected': False}
-        mock_status.get_workers.return_value = [{
+        mock_worker = mock.MagicMock()
+        mock_worker.to_mongo.return_value.to_dict.return_value = {
             "last_heartbeat": "2015-03-19T13:55:36Z",
-            "name": "reserved_resource_worker-0@example.com"}]
+            "name": "reserved_resource_worker-0@example.com"}
+        mock_status.get_workers.return_value = [mock_worker]
 
         request = mock.MagicMock()
         status = StatusView()

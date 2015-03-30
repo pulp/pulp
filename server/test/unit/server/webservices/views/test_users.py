@@ -22,12 +22,12 @@ class TestUsersView(unittest.TestCase):
         """
         Test users retrieval.
         """
-        users = [{'login': 'test-user', 'name': 'test-user', 'id': '12345'}]
-        mock_factory.user_query_manager.return_value.find_all.return_value = users
-
+        mock_factory.user_query_manager.\
+            return_value.find_all.return_value = [{'login': 'test-user',
+                                                   'name': 'test-user',
+                                                   'id': '12345'}]
         request = mock.MagicMock()
-        users = UsersView()
-        response = users.get(request)
+        response = UsersView().get(request)
 
         expected_cont = [{'_href': '/v2/users/test-user/', 'login': 'test-user',
                          'name': 'test-user'}]

@@ -10,7 +10,7 @@ import mock
 from pulp.devel import dummy_plugins
 from pulp.devel.unit.util import assert_body_matches_async_task
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.db.model.resources import Worker
+from pulp.server.db.model.workers import Worker
 from pulp.server.webservices.controllers.contents import ContentUnitsSearch
 import base
 import pulp.server.managers.factory as manager_factory
@@ -157,7 +157,7 @@ class ImportUnitTests(BaseUploadTest):
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_post(self, mock_get_worker_for_reservation, mock_uuid, mock_apply_async):
         # Setup
         uuid_list = [uuid.uuid4() for i in range(10)]
@@ -191,7 +191,7 @@ class ImportUnitTests(BaseUploadTest):
 
     @mock.patch('celery.Task.apply_async')
     @mock.patch('pulp.server.async.tasks.uuid', autospec=True)
-    @mock.patch('pulp.server.async.tasks.resources.get_worker_for_reservation')
+    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
     def test_post_with_override_config(self, mock_get_worker_for_reservation, mock_uuid,
                                        mock_apply_async):
         # Setup

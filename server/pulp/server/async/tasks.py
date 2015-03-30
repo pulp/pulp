@@ -12,14 +12,14 @@ from celery.signals import worker_init
 from mongoengine.queryset import DoesNotExist
 
 from pulp.common import constants, dateutils
+from pulp.common.constants import SCHEDULER_WORKER_NAME
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
 from pulp.server.exceptions import PulpException, MissingResource
-from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import ReservedResource, Worker
+from pulp.server.db.model.resources import ReservedResource
+from pulp.server.db.model.workers import Worker
 from pulp.server.exceptions import NoWorkers
-from pulp.server.managers import resources
 from pulp.server.managers.repo import _common as common_utils
 
 
@@ -55,14 +55,14 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
     """
     while True:
         try:
-            worker = resources.get_worker_for_reservation(resource_id)
+            worker = get_worker_for_reservation(resource_id)
         except NoWorkers:
             pass
         else:
             break
 
         try:
-            worker = resources.get_unreserved_worker()
+            worker = _get_unreserved_worker()
         except NoWorkers:
             pass
         else:
@@ -84,6 +84,70 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
                                       exchange=DEDICATED_QUEUE_EXCHANGE)
 
 
+def _is_worker(worker_name):
+    """
+    Strip out workers that should never be assigned work. We need to check
+    via "startswith()" since we do not know which host the worker is running on.
+    """
+
+    if worker_name.startswith(SCHEDULER_WORKER_NAME) or \
+       worker_name.startswith(RESOURCE_MANAGER_QUEUE):
+        return False
+    return True
+
+
+def get_worker_for_reservation(resource_id):
+    """
+    Return the Worker instance that is associated with a reservation of type resource_id. If
+    there are no workers with that reservation_id type a pulp.server.exceptions.NoWorkers
+    exception is raised.
+
+    :param resource_id:    The name of the resource you wish to reserve for your task.
+
+    :raises NoWorkers:     If all workers have reserved_resource entries associated with them.
+
+    :type resource_id:     basestring
+    :returns:              The Worker instance that has a reserved_resource entry of type
+                           `resource_id` associated with it.
+    :rtype:                pulp.server.db.model.resources.Worker
+    """
+    reservation = ReservedResource.get_collection().find_one({'resource_id': resource_id})
+    if reservation:
+        return Worker.objects(name=reservation['worker_name']).first()
+    else:
+        raise NoWorkers()
+
+
+def _get_unreserved_worker():
+    """
+    Return the Worker instance that has no reserved_resource entries
+    associated with it. If there are no unreserved workers a
+    pulp.server.exceptions.NoWorkers exception is raised.
+
+    :raises NoWorkers: If all workers have reserved_resource entries associated with them.
+
+    :returns:          The Worker instance that has no reserved_resource
+                       entries associated with it.
+    :rtype:            pulp.server.db.model.resources.Worker
+    """
+
+    # Build a mapping of queue names to Worker objects
+    workers_dict = dict((worker['name'], worker) for worker in Worker.objects())
+    worker_names = workers_dict.keys()
+    reserved_names = [r['worker_name'] for r in ReservedResource.get_collection().find()]
+
+    # Find an unreserved worker using set differences of the names, and filter
+    # out workers that should not be assigned work.
+    # NB: this is a little messy but set comprehensions are in python 2.7+
+    unreserved_workers = set(filter(_is_worker, worker_names)) - set(reserved_names)
+
+    try:
+        return workers_dict[unreserved_workers.pop()]
+    except KeyError:
+        # All workers are reserved
+        raise NoWorkers()
+
+
 def _delete_worker(name, normal_shutdown=False):
     """
     Delete the Worker with _id name from the database, cancel any associated tasks and reservations
@@ -95,8 +159,7 @@ def _delete_worker(name, normal_shutdown=False):
 
     Any tasks associated with this worker are explicitly canceled.
 
-    :param name:            The name of the worker you wish to delete. In the database, the _id
-                            field is the name.
+    :param name:            The name of the worker you wish to delete.
     :type  name:            basestring
     :param normal_shutdown: True if the worker shutdown normally, False otherwise.  Defaults to
                             False.
@@ -108,17 +171,13 @@ def _delete_worker(name, normal_shutdown=False):
         _logger.error(msg)
 
     # Delete the worker document
-    worker_list = list(resources.filter_workers(Criteria(filters={'_id': name})))
-    if len(worker_list) > 0:
-        worker_document = worker_list[0]
-        worker_document.delete()
+    Worker.objects(name=name).delete()
 
     # Delete all reserved_resource documents for the worker
     ReservedResource.get_collection().remove({'worker_name': name})
 
     # Cancel all of the tasks that were assigned to this worker's queue
-    worker = Worker.from_bson({'_id': name})
-    for task_status in TaskStatus.objects(worker_name=worker.name,
+    for task_status in TaskStatus.objects(worker_name=name,
                                           state__in=constants.CALL_INCOMPLETE_STATES):
         cancel(task_status['task_id'])
 
