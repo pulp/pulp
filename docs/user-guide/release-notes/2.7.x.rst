@@ -13,3 +13,17 @@ New Features
 
 - A new event notification framework is available. Please see
   :ref:`the developer documentation <event>` for more detail.
+
+
+Bindings Changes
+----------------
+
+These are changes to the python bindings to pulp's REST API. This does not
+affect most users.
+
+User Create
+~~~~~~~~~~~
+
+The ``roles`` parameter to the user creation method was dropped. It was unused
+on the server side, and as of 2.7.0, the REST API complains about unused data
+passed in a POST request.
