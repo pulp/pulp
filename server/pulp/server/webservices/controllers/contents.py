@@ -1,14 +1,8 @@
-from web.webapi import BadRequest
 import web
 
-from pulp.server.auth.authorization import READ, UPDATE
-from pulp.server.content.sources.container import ContentContainer
+from pulp.server.auth.authorization import READ
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.exceptions import MissingResource, OperationPostponed
 from pulp.server.managers import factory
-from pulp.common.tags import (action_tag, resource_tag, RESOURCE_CONTENT_SOURCE,
-                              ACTION_REFRESH_ALL_CONTENT_SOURCES, ACTION_REFRESH_CONTENT_SOURCE)
-from pulp.server.tasks import content
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.base import JSONController
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -129,103 +123,6 @@ class ContentUnitsSearch(SearchController):
         return self.ok(units)
 
 
-class ContentSourceCollection(JSONController):
-
-    @auth_required(READ)
-    def GET(self):
-        """
-        Get all content sources.
-        :return: List of sources.
-        :rtype: list
-        """
-        container = ContentContainer()
-        sources = []
-        for source in container.sources.values():
-            d = source.dict()
-            href = serialization.link.child_link_obj(source.id)
-            d.update(href)
-            sources.append(d)
-        return self.ok(sources)
-
-    @auth_required(UPDATE)
-    def POST(self, action):
-        """
-        Content source actions.
-        :param action: Name of action to perform
-        :type action: str
-        """
-        method = getattr(self, action, None)
-        if method:
-            return method()
-        else:
-            raise BadRequest()
-
-    def refresh(self):
-        """
-        Refresh all content sources
-
-        """
-        container = ContentContainer()
-        content_sources = [resource_tag(RESOURCE_CONTENT_SOURCE, id)
-                           for id in container.sources.keys()]
-        tags = [action_tag(ACTION_REFRESH_ALL_CONTENT_SOURCES)] + content_sources
-        task_result = content.refresh_content_sources.apply_async(tags=tags)
-        raise OperationPostponed(task_result)
-
-
-class ContentSourceResource(JSONController):
-
-    @auth_required(READ)
-    def GET(self, source_id):
-        """
-        Get a content source by ID.
-        :param source_id: A content source ID.
-        :type source_id: str
-        :return: A content source object.
-        :rtype: dict
-        """
-        container = ContentContainer()
-        source = container.sources.get(source_id)
-        if source:
-            return self.ok(source.dict())
-        else:
-            raise MissingResource(source_id=source_id)
-
-    @auth_required(UPDATE)
-    def POST(self, source_id, action):
-        """
-        Content source actions.
-        """
-        container = ContentContainer()
-        source = container.sources.get(source_id)
-        if source:
-            method = getattr(self, action, None)
-            if method:
-                return method(source_id)
-            else:
-                raise BadRequest()
-        else:
-            raise MissingResource(source_id=source_id)
-
-    def refresh(self, content_source_id):
-        """
-        Refresh content source
-        :param content_source_id: A content source ID
-        :type content_source_id: str
-        :return 202
-        :rtype
-        """
-        tags = [action_tag(ACTION_REFRESH_CONTENT_SOURCE),
-                resource_tag(RESOURCE_CONTENT_SOURCE, content_source_id)]
-        task_result = content.refresh_content_source.apply_async(
-            tags=tags, kwargs={'content_source_id': content_source_id})
-        raise OperationPostponed(task_result)
-
-
-_URLS = ('/units/([^/]+)/search/$', ContentUnitsSearch,
-         '/sources/$', ContentSourceCollection,
-         '/sources/action/(refresh)/$', ContentSourceCollection,
-         '/sources/([^/]+)/$', ContentSourceResource,
-         '/sources/([^/]+)/action/([^/]+)/$', ContentSourceResource)
+_URLS = ('/units/([^/]+)/search/$', ContentUnitsSearch)
 
 application = web.application(_URLS, globals())

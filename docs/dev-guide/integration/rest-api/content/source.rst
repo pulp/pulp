@@ -17,7 +17,7 @@ Get all content sources.
 
 * :response_code:`200, on success`
 
-| :return:`a list of content source objects`
+| :return:`a list of content source objects; empty array if there are none`
 
 :sample_response:`200` ::
 
@@ -49,6 +49,7 @@ Get a content source by ID.
 | :response_list:`_`
 
 * :response_code:`200, on success`
+* :response_code:`404, if source-id does not exist`
 
 | :return:`the requested content source object`
 
@@ -81,7 +82,7 @@ Get all content sources.
 
 * :response_code:`202, on success`
 
-| :return:`a spawned task id`
+| :return:`a` :ref:`call_report`
 
 :sample_response:`202` ::
 
@@ -111,7 +112,7 @@ Get all content sources.
 
 * :response_code:`202, on success`
 
-| :return:`a spawned task id`
+| :return:`a` :ref:`call_report`
 
 :sample_response:`202` ::
 
