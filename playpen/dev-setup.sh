@@ -125,7 +125,8 @@ sudo yum install -y @pulp-server-qpid @pulp-admin @pulp-consumer
 sudo yum remove -y pulp-\* python-pulp\*
 sudo yum install -y git mongodb mongodb-server python-django python-flake8 python-mock \
                     python-mongoengine python-nose python-paste python-pip python-qpid-qmf \
-                    python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
+                    python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store \
+                    python-unittest2
 
 
 mkdir -p $DEVEL_PATH

@@ -21,7 +21,7 @@ from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import ReservedResource
 from pulp.server.db.model.workers import Worker
 from pulp.server.db.reaper import queue_reap_expired_documents
-from pulp.server.exceptions import NoWorkers, PulpException
+from pulp.server.exceptions import NoWorkers, PulpException, PulpCodedException
 from pulp.server.maintenance.monthly import queue_monthly_maintenance
 
 
@@ -613,6 +613,15 @@ class TestTaskApplyAsync(ResourceReservationTests):
         result = task.apply_async(*args, **kwargs)
 
         self.assertEqual(result.tags, ['test_tags'])
+
+
+class TestTaskThrows(unittest.TestCase):
+    """
+    Exceptions listed in the "throws" collection will not have their stack
+    traces get auto-logged by celery.
+    """
+    def test_throws_pulp_coded_exception(self):
+        self.assertTrue(PulpCodedException in tasks.Task.throws)
 
 
 class TestCancel(PulpServerTests):
