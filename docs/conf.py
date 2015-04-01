@@ -262,11 +262,11 @@ intersphinx_mapping = {'pylang': ('http://docs.python.org/2.7/', None),
                        'ostree': ("http://pulp-ostree.readthedocs.org/en/latest/", None),
                        'rpm':    ("http://pulp-rpm.readthedocs.org/en/latest/", None)}
 
-extlinks = {'bz': ('https://bugzilla.redhat.com/show_bug.cgi?id=%s', 'RHBZ #'),
-            'fixedbugs': ('https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED'\
-                          '&bug_status=RELEASE_PENDING&bug_status=CLOSED&classificatio'\
-                          'n=Community&component=API%%2Fintegration&component=async%%2Ft'\
-                          'asks&component=consumers&component=documentation&component='\
-                          'nodes&component=rel-eng&component=user-experience&component'\
-                          '=z_other&list_id=2768089&product=Pulp&query_format=advanced'\
-                          '&target_release=%s', None)}
+extlinks = {'redmine': ('https://pulp.plan.io/issues/%s', '#'),
+            'fixedbugs': ('https://pulp.plan.io/projects/pulp/issues?c%%5B%%5D=tracker&c%%5B%%5D='
+                          'status&c%%5B%%5D=priority&c%%5B%%5D=cf_5&c%%5B%%5D=subject&c%%5B%%5D=a'
+                          'uthor&c%%5B%%5D=assigned_to&c%%5B%%5D=cf_3&f%%5B%%5D=cf_4&f%%5B%%5D=tr'
+                          'acker_id&f%%5B%%5D=&group_by=&op%%5Bcf_4%%5D=%%3D&op%%5Btracker_id%%5D'
+                          '=%%3D&set_filter=1&sort=priority%%3Adesc%%2Ccf_5%%3Adesc%%2Cid%%3Adesc'
+                          '&utf8=%%E2%%9C%%93&v%%5Bcf_4%%5D%%5B%%5D=%s&v%%5Btracker_id%%5D%%5B%%5'
+                          'D=1', 'bugs fixed in ')}
