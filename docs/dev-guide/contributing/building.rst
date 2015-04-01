@@ -505,8 +505,8 @@ output to ensure that it is correct. If it is, run the command again while omitt
    testing or the beta repository (but never the stable repository), and a stable build can go to a
    testing or a stable repository.
 
-If you have published a beta build, you must query Bugzilla for all of our bugs that are in the
-``MODIFIED`` state for the version you have published and move them to ``ON_QA``.
+If you have published a beta build, you must move all issues and stories for the target release
+from ``MODIFIED`` to ``ON_QA``.
 
 After publishing a beta build, email pulp-list@redhat.com to announce the beta. Here is a
 typical email you can use::

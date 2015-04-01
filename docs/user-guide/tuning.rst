@@ -100,7 +100,7 @@ section below for more information.
 
 On the other hand, if you expect to maintain a large set of repositories that
 get synced frequently, you may want to add additional servers for worker
-processes. Worker procseses handle long-running tasks such as content downloads
+processes. Worker processes handle long-running tasks such as content downloads
 from upstream sources and also perform actions like repository metadata
 regeneration on publish. See the "Scaling workers" section below for more
 information.
@@ -122,8 +122,9 @@ and `RabbitMQ <http://www.rabbitmq.com/ha.html>`_.
 
 .. WARNING:: There is a bug in versions of Apache Qpid older than 0.30 that
    involves running out of file descriptors. This is an issue on deployments
-   with large numbers of consumers. See :bz:`1122987` for more information
-   about this and for suggested workarounds.
+   with large numbers of consumers. See
+   `RHBZ #1122987 <https://bugzilla.redhat.com/show_bug.cgi?id=1122987>`_
+   for more information about this and for suggested workarounds.
 
 
 Scaling httpd Servers
@@ -135,7 +136,7 @@ server can respond to. For example, if the Apache `mod_status
 shows that all workers are busy, it may be time to add additional httpd
 servers. Another reason of course would be for redundancy purposes.
 
-.. NOTE:: Pulp iteslf does not provide httpd load balancing capabilities. A
+.. NOTE:: Pulp itself does not provide httpd load balancing capabilities. A
    load balancer or proxy in front of the Pulp httpd tier will need to be
    installed and configured.
 
