@@ -81,20 +81,34 @@ Editing the Docs
 The Pulp docs support `intersphinx <http://sphinx-doc.org/ext/intersphinx.html>`_
 and `extlinks <http://sphinx-doc.org/ext/extlinks.html>`_.
 
-To refer to a document in a plugin or platform, you can do something like so:::
+To refer to a document in a plugin or platform, you can do something like so::
 
      :ref:`installation <platform:server_installation>`
 
 This will create a link to the correct reference in the platform docs.
 
-You can use the extlinks extension to create links to bugzilla. For example:::
+Use the ``:redmine:`` directive to easily create links to Pulp issues. For
+example::
 
-     :bz:`123456`
+     :redmine:`123`
 
-Will create a link like this: :bz:`123456`. There is also a ``:fixedbugs:``
-directive to find all bugs related to a particular version of Pulp. This is
-useful in release notes.
+Creates a link to issue 123 like this: :redmine:`123`. You can also set the
+text for the link using this syntax::
 
+     :redmine:`my new link text <123>`
+
+Which creates this link: :redmine:`my new link text <123>` There is also a
+``:fixedbugs:`` directive to link to all bugs for a specific version of Pulp.
+This is useful in release notes. For example::
+
+     :fixedbugs:`2.6.0`
+
+Create a link to bugs fixed in 2.6.0 like this: :fixedbugs:`2.6.0`. This can
+have its link text set using the syntax::
+
+     :fixedbugs:`these great bugs were fixed <2.6.0>`
+
+Which creates this link: :fixedbugs:`these great bugs were fixed <2.6.0>`
 
 Building the Docs
 -----------------
