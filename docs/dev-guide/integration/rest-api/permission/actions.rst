@@ -18,7 +18,7 @@ Grants permissions to a user.
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully granted to the user`
-* :response_code:`404,if any of the parameters are invalid`
+* :response_code:`400,if any of the parameters are invalid or missing`
 
 | :return:`null`
 
@@ -48,7 +48,7 @@ Revokes permissions from a user.
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully revoked from the user`
-* :response_code:`404,if any of the parameters are invalid`
+* :response_code:`400,if any of the parameters are invalid or missing`
 
 | :return:`null`
 
@@ -79,7 +79,7 @@ Note that users added to the role after granting permissions will inherit these 
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully granted to the role`
-* :response_code:`404,if any of the parameters are invalid`
+* :response_code:`400,if any of the parameters are invalid or missing`
 
 | :return:`null`
 
@@ -110,7 +110,7 @@ granted by other roles as well.
 | :response_list:`_`
 
 * :response_code:`200,if permissions were successfully revoked from the role`
-* :response_code:`404,if any of the parameters are invalid`
+* :response_code:`400,if any of the parameters are invalid or missing`
 
 | :return:`null`
 
@@ -121,7 +121,3 @@ granted by other roles as well.
   "resource": "/v2/repositories/", 
   "role_id": "test-role"
  }
-
-
-
-
