@@ -40,7 +40,11 @@ POODLE attack.
 Bugs
 ----
 You can see the complete list of bugs that were
-:fixedbugs:`fixed in Pulp 2.4.3 <2.4.3>`.
+`fixed in Pulp 2.4.3 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=
+RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component
+=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&
+component=user-experience&component=z_other&list_id=3361792&product=Pulp&query_format=advanced&
+target_release=2.4.3>`_.
 
 Upgrade Instructions for 2.4.2 --> 2.4.3
 ----------------------------------------
@@ -77,7 +81,7 @@ Rest API Changes
 ----------------
 
 * Certain API calls under ``/consumers/`` related to repo binding would
-  :bz:`erroneously return full task information <1130119>`.
+  `erroneously return full task information <https://bugzilla.redhat.com/show_bug.cgi?id=1130119>`_.
   This has been corrected; these calls now only return the task's ID.
 
 Upgrade Instructions for 2.4.1 --> 2.4.2
@@ -96,7 +100,11 @@ Pulp 2.4.1
 Bugs
 ----
 You can see the complete list of bugs that were
-:fixedbugs:`fixed in Pulp 2.4.1 <2.4.1>`.
+`fixed in Pulp 2.4.1 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=
+RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&
+component=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=
+rel-eng&component=user-experience&component=z_other&list_id=3361792&product=Pulp&query_format=
+advanced&target_release=2.4.1>`_.
 
 Backwards Incompatible Changes
 ------------------------------
@@ -224,20 +232,24 @@ Agent Changes
 Bugs
 ----
 You can see the complete list of bugs that were
-:bz:`fixed in Pulp 2.4.0 <2.4.0>`.
+`fixed in Pulp 2.4.0 <https://bugzilla.redhat.com/buglist.cgi?bug_status=VERIFIED&bug_status=
+RELEASE_PENDING&bug_status=CLOSED&classification=Community&component=API%2Fintegration&component
+=async%2Ftasks&component=consumers&component=documentation&component=nodes&component=rel-eng&
+component=user-experience&component=z_other&list_id=3361792&product=Pulp&query_format=advanced&
+target_release=2.4.0>`_.
 
 Known Issues
 ------------
 
-* There was :bz:`one regression <1128292>` discovered during
-  the 2.4.0 QE cycle that has not been resolved as of the release. The 2.4.0 distributor publishes
-  groups in a slightly different way than Anaconda expects during interactive kickstarting. This
-  causes no groups to be chosen by default during the package group selection installation step. The
-  Pulp team decided to release 2.4.0 anyway, as the workaround is for users to simply make sure to
-  select at least one package group during the installation. Automated kickstarts are not affected by
-  this issue.
+* There was `one regression <https://bugzilla.redhat.com/show_bug.cgi?id=1128292>`_ discovered
+  during the 2.4.0 QE cycle that has not been resolved as of the release. The 2.4.0 distributor
+  publishes groups in a slightly different way than Anaconda expects during interactive
+  kickstarting. This causes no groups to be chosen by default during the package group selection
+  installation step. The Pulp team decided to release 2.4.0 anyway, as the workaround is for users
+  to simply make sure to select at least one package group during the installation. Automated
+  kickstarts are not affected by this issue.
 
-* There is a :bz:`configuration bug <1132609>` related to
+* There is a `configuration bug <https://bugzilla.redhat.com/show_bug.cgi?id=1132609>`_ related to
   using MongoDB with authenticated database users. The error presents itself during syncs and other
   task-related operations. A workaround is documented in comment #1 of the bug.
 

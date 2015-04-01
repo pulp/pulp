@@ -423,7 +423,8 @@ class TestDatabaseAuthentication(unittest.TestCase):
                                                               connection.MONGO_MINIMUM_VERSION}
         config.config.set('database', 'username', 'admin')
         config.config.set('database', 'password', '')
-        self.assertRaises(Exception, connection.initialize)
+        # ensure no exception is raised (redmine #708)
+        connection.initialize()
 
     @patch('pulp.server.db.connection.mongoengine')
     def test_initialize_password_no_username(self, mock_mongoengine):

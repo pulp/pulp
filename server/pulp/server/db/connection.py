@@ -84,13 +84,13 @@ def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_
         # attempt to authenticate to the database
         username = config.config.get('database', 'username')
         password = config.config.get('database', 'password')
-        if username and password:
+        if username:
             _logger.debug(_('Attempting username and password authentication.'))
             connection_kwargs['username'] = username
             connection_kwargs['password'] = password
-        elif (username and not password) or (password and not username):
-            raise Exception(_("The server config specified username/password authentication but "
-                            "is missing either the username or the password"))
+        elif password and not username:
+            raise Exception(_("The server config specified a database password, but is "
+                              "missing a database username."))
 
         shadow_connection_kwargs = copy.deepcopy(connection_kwargs)
         if connection_kwargs.get('password'):
