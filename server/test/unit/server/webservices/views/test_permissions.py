@@ -4,13 +4,13 @@ import unittest
 import mock
 
 from base import assert_auth_EXECUTE, assert_auth_READ
-from pulp.server.exceptions import InvalidValue
+from pulp.server.exceptions import MissingValue
 from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
                                                        PermissionView, RevokeFromRoleView,
-                                                       RevokeFromUserView)
+                                                       RevokeFromUserView, _validate_params)
 
 
-class TestPermissionsiew(unittest.TestCase):
+class TestPermissionsView(unittest.TestCase):
     """
     Test permissions view.
     """
@@ -95,19 +95,18 @@ class TestGrantToUserView(unittest.TestCase):
                 new=assert_auth_EXECUTE())
     def test_grant_to_user_invalid_param(self):
         """
-        Test grant permissions to user with invalid params.
+        Test grant permissions to user with missing required params.
         """
         request = mock.MagicMock()
         request.body = json.dumps({'operations': ['READ'], 'resource': '/v2/some/'})
         grant = GrantToUserView()
         try:
             grant.post(request)
-        except InvalidValue, response:
-            pass
+        except MissingValue, response:
+            self.assertEqual(response.http_status_code, 400)
+            self.assertEqual(response.error_data['property_names'], ['login'])
         else:
-            raise AssertionError("InvalidValue should be raised with invalid params")
-        self.assertEqual(response.http_status_code, 400)
-        self.assertEqual(response.error_data['property_names'], ['login'])
+            raise AssertionError("MissingValue should be raised with missing params")
 
 
 class TestRevokeFromUserView(unittest.TestCase):
@@ -136,6 +135,23 @@ class TestRevokeFromUserView(unittest.TestCase):
         mock_factory.permission_manager.return_value.revoke.assert_called_once_with(
             '/v2/some/', 'test', [0])
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    def test_revoke_from_user_invalid_param(self):
+        """
+        Test revoke permissions from user with missing required params.
+        """
+        request = mock.MagicMock()
+        request.body = json.dumps({'operations': ['READ'], 'resource': '/v2/some/'})
+        revoke = RevokeFromUserView()
+        try:
+            revoke.post(request)
+        except MissingValue, response:
+            self.assertEqual(response.http_status_code, 400)
+            self.assertEqual(response.error_data['property_names'], ['login'])
+        else:
+            raise AssertionError("MissingValue should be raised with missing params")
+
 
 class TestGrantToRoleView(unittest.TestCase):
     """
@@ -163,6 +179,23 @@ class TestGrantToRoleView(unittest.TestCase):
         mock_factory.role_manager.return_value.add_permissions_to_role.assert_called_once_with(
             'test', '/v2/some/', [0])
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    def test_grant_to_role_invalid_param(self):
+        """
+        Test grant permissions to role with missing required params.
+        """
+        request = mock.MagicMock()
+        request.body = json.dumps({'operations': ['READ'], 'resource': '/v2/some/'})
+        grant = GrantToRoleView()
+        try:
+            grant.post(request)
+        except MissingValue, response:
+            self.assertEqual(response.http_status_code, 400)
+            self.assertEqual(response.error_data['property_names'], ['role_id'])
+        else:
+            raise AssertionError("MissingValue should be raised with missing params")
+
 
 class TestRevokeFromRoleView(unittest.TestCase):
     """
@@ -189,3 +222,37 @@ class TestRevokeFromRoleView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
         mock_factory.role_manager.return_value.remove_permissions_from_role.assert_called_once_with(
             'test', '/v2/some/', [0])
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_EXECUTE())
+    def test_revoke_from_role_invalid_param(self):
+        """
+        Test revoke permissions from role with missing required params.
+        """
+        request = mock.MagicMock()
+        request.body = json.dumps({'operations': ['READ'], 'resource': '/v2/some/'})
+        revoke = RevokeFromRoleView()
+        try:
+            revoke.post(request)
+        except MissingValue, response:
+            self.assertEqual(response.http_status_code, 400)
+            self.assertEqual(response.error_data['property_names'], ['role_id'])
+        else:
+            raise AssertionError("MissingValue should be raised with missing params")
+
+
+class Test__validate_params(unittest.TestCase):
+
+    def test_validate_params(self):
+        """
+        Test the missing value is raised if some required params are missing.
+        """
+
+        params = {'login': None, 'resource': None, 'role_id': 'some_role'}
+        try:
+            _validate_params(params)
+        except MissingValue, response:
+            self.assertEqual(response.http_status_code, 400)
+            self.assertEqual(response.error_data['property_names'], ['login', 'resource'])
+        else:
+            raise AssertionError("MissingValue should be raised with missing params")
