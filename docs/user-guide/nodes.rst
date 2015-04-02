@@ -133,6 +133,13 @@ To install *Nodes* child support, follow the instructions below.
    in ``/etc/pulp/server.conf`` on the parent node. The *user_id* must be updated as needed to match
    a user with administration privileges on the parent node.
 
+.. warning::
+
+   The keys in ``[parent_oauth]`` are ``key`` and ``secret``, whereas the values in the
+   ``[oauth]`` section are ``oauth_key`` and ``oauth_secret``. If you copy and paste from one
+   to another without altering the names of the keys then the child node will not be able to
+   communicate with the parent node.
+
 ::
 
  [oauth]
