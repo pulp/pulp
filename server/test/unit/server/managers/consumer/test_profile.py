@@ -4,7 +4,7 @@ import pymongo
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.profiler import Profiler
-from pulp.server.db.model.consumer import Consumer, UnitProfile
+from pulp.server.db.model.consumer import Consumer, ConsumerHistoryEvent, UnitProfile
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.cud import ConsumerManager
@@ -127,6 +127,24 @@ class ProfileManagerTests(base.PulpServerTests):
         self.assertEquals(profiles[0]['profile'], self.PROFILE_2)
         expected_hash = UnitProfile.calculate_hash(self.PROFILE_2)
         self.assertEqual(profiles[0]['profile_hash'], expected_hash)
+
+    def test_update_with_consumer_history(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_profile_manager()
+        manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_1)
+        # Test
+        manager.update(self.CONSUMER_ID, self.TYPE_1, self.PROFILE_2)
+        # Verify
+        collection = ConsumerHistoryEvent.get_collection()
+        history = collection.find_one({'consumer_id': self.CONSUMER_ID,
+                                       'type': 'unit_profile_changed',
+                                       'details': {'profile_content_type': self.TYPE_1}})
+        self.assertTrue(history is not None)
+        self.assertEqual(history['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(history['type'], 'unit_profile_changed')
+        self.assertEqual(history['originator'], 'SYSTEM')
+        self.assertEqual(history['details'], {'profile_content_type': self.TYPE_1})
 
     def test_update_calls_profiler_update_profile(self):
         """

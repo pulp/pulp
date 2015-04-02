@@ -231,6 +231,8 @@ class TestAgentManager(TestCase):
         mock_context.assert_called_with(consumer, task_id=task_id, consumer_id=consumer['id'])
         mock_profiler.install_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.install.assert_called_with(mock_context.return_value, [unit], options)
+        mock_factory.consumer_history_manager().record_event.assert_called_with(
+            consumer['id'], 'content_unit_installed', {'units': [unit]})
 
     @patch('pulp.server.managers.consumer.agent.uuid4')
     @patch('pulp.server.managers.consumer.agent.TaskStatus')
@@ -335,6 +337,8 @@ class TestAgentManager(TestCase):
         mock_task_status.assert_called_with(task_id, 'agent', tags=task_tags)
         mock_profiler.uninstall_units.assert_called_with(consumer, [unit], options, {}, ANY)
         mock_agent.uninstall.assert_called_with(mock_context.return_value, [unit], options)
+        mock_factory.consumer_history_manager().record_event.assert_called_with(
+            consumer['id'], 'content_unit_uninstalled', {'units': [unit]})
 
     @patch('pulp.server.managers.consumer.agent.managers')
     @patch('pulp.server.managers.consumer.agent.Context')

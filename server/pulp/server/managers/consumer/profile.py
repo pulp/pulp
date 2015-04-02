@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 Contains profile management classes
 """
@@ -74,6 +62,10 @@ class ProfileManager(object):
             p = UnitProfile(consumer_id, content_type, profile)
         collection = UnitProfile.get_collection()
         collection.save(p, safe=True)
+        history_manager = factory.consumer_history_manager()
+        history_manager.record_event(
+            consumer_id,
+            'unit_profile_changed', {'profile_content_type': content_type})
         return p
 
     @staticmethod

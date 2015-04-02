@@ -165,6 +165,10 @@ class ConsumerGroupManager(object):
                 {'id': group_id},
                 {'$addToSet': {'consumer_ids': {'$each': consumer_ids}}},
                 safe=True)
+        details = {'group_id': group_id}
+        for consumer_id in consumer_ids:
+            manager_factory.consumer_history_manager().record_event(consumer_id,
+                                                                    'added_to_group', details)
 
     @staticmethod
     def unassociate(group_id, criteria):
@@ -184,6 +188,10 @@ class ConsumerGroupManager(object):
                 {'id': group_id},
                 {'$pullAll': {'consumer_ids': consumer_ids}},
                 safe=True)
+        details = {'group_id': group_id}
+        for consumer_id in consumer_ids:
+            manager_factory.consumer_history_manager().record_event(consumer_id,
+                                                                    'removed_from_group', details)
 
     def add_notes(self, group_id, notes):
         """
