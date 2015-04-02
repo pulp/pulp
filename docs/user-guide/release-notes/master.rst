@@ -22,6 +22,12 @@ New Features
   writeable by user `apache`. If running with SELinux in Enforcing mode, the path also needs to
   have `system_u:object_r:pulp_var_cache_t` security context.
 
+* The repo authentication functionality previously associated with pulp_rpm has
+  been moved to platform. This makes it available for other plugins to use.
+
+* A new event notification framework is available. Please see
+  :ref:`the developer documentation <event>` for more detail.
+
 Deprecation
 -----------
 
@@ -54,6 +60,16 @@ Rest API Changes
 
 Binding API Changes
 -------------------
+
+These are changes to the python bindings to pulp's REST API. This does not
+affect most users.
+
+User Create
+~~~~~~~~~~~
+
+The ``roles`` parameter to the user creation method was dropped. It was unused
+on the server side, and as of 2.7.0, the REST API complains about unused data
+passed in a POST request.
 
 Plugin API Changes
 ------------------
