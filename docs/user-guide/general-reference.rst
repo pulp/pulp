@@ -142,7 +142,7 @@ The output of the usage text for that command is as follows::
               after the comma. For multiple fields, use this option multiple
               times. Each one will be applied in the order supplied.
   --fields  - comma-separated list of resource fields. Do not include spaces.
-              Default is all fields.
+              Default is all fields. Example: 'id,display_name'
 
  Filters
   These are basic filtering options that will be AND'd together. These will be
