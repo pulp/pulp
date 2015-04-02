@@ -75,8 +75,9 @@ bindings are waiting for that remote action to take place.
 
     Available Arguments:
 
-      --fields   - comma-separated list of consumer fields; if specified only the
-                   given fields will be displayed. Example: "id,display_name"
+      --fields   - comma-separated list of consumer fields; Example:
+                   "id,display_name". If specified, only the given fields will be
+                   displayed.
       --bindings - if specified, the bindings information is displayed
       --details  - if specified, all of the consumer information is displayed
 
