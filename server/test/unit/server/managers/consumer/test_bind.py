@@ -3,7 +3,7 @@ from mock import patch
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.db.model.consumer import Consumer, Bind
+from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repository import Repo, RepoDistributor
 from pulp.server.exceptions import MissingResource, InvalidValue
@@ -22,6 +22,11 @@ class BindManagerTests(base.PulpServerTests):
     BINDING_CONFIG = {'a': 'a'}
 
     QUERY = dict(consumer_id=CONSUMER_ID, repo_id=REPO_ID, distributor_id=DISTRIBUTOR_ID)
+    DETAILS = {'repo_id': REPO_ID, 'distributor_id': DISTRIBUTOR_ID}
+    QUERY1 = dict(consumer_id=CONSUMER_ID, originator='SYSTEM', type='repo_bound',
+                  details=DETAILS)
+    QUERY2 = dict(consumer_id=CONSUMER_ID, originator='SYSTEM', type='repo_unbound',
+                  details=DETAILS)
 
     # The methods that use these expect strings, not ints
     ACTION_IDS = '1 2 3 4 5 6 7 8 9'.split()
@@ -32,6 +37,7 @@ class BindManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
+        ConsumerHistoryEvent.get_collection().remove()
         plugin_api._create_manager()
         mock_plugins.install()
 
@@ -41,6 +47,7 @@ class BindManagerTests(base.PulpServerTests):
         Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
+        ConsumerHistoryEvent.get_collection().remove()
         mock_plugins.reset()
 
     def populate(self):
@@ -75,6 +82,22 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
+    def test_bind_consumer_history(self):
+        # Setup
+        self.populate()
+        # Test
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        # Verify
+        collection = ConsumerHistoryEvent.get_collection()
+        history = collection.find_one(self.QUERY1)
+        self.assertTrue(history is not None)
+        self.assertEqual(history['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(history['type'], 'repo_bound')
+        self.assertEqual(history['originator'], 'SYSTEM')
+        self.assertEqual(history['details'], self.DETAILS)
+
     def test_bind_non_bool_notify(self):
         # Setup
         self.populate()
@@ -107,6 +130,23 @@ class BindManagerTests(base.PulpServerTests):
         bind = collection.find_one(bind_id)
         self.assertTrue(bind is not None)
         self.assertTrue(bind['deleted'])
+
+    def test_unbind_consumer_history(self):
+        # Setup
+        self.populate()
+        manager = factory.consumer_bind_manager()
+        manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
+                     self.NOTIFY_AGENT, self.BINDING_CONFIG)
+        # Test
+        manager.unbind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
+        # Verify
+        collection = ConsumerHistoryEvent.get_collection()
+        history = collection.find_one(self.QUERY2)
+        self.assertTrue(history is not None)
+        self.assertEqual(history['consumer_id'], self.CONSUMER_ID)
+        self.assertEqual(history['type'], 'repo_unbound')
+        self.assertEqual(history['originator'], 'SYSTEM')
+        self.assertEqual(history['details'], self.DETAILS)
 
     def test_get_bind(self):
         # Setup

@@ -9,7 +9,7 @@ from pulp.devel.unit.server import util
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.consumer import Consumer, ConsumerGroup
+from pulp.server.db.model.consumer import Consumer, ConsumerGroup, ConsumerHistoryEvent
 from pulp.server.exceptions import MissingResource, PulpException, error_codes
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.consumer.group import cud
@@ -192,6 +192,25 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
         group = self.collection.find_one({'id': group_id})
         self.assertTrue(consumer['id'] in group['consumer_ids'])
 
+    def test_add_single_consumer_history(self):
+        group_id = 'test_group'
+        self.manager.create_consumer_group(group_id)
+        group = self.collection.find_one({'id': group_id})
+
+        consumer = self._create_consumer('test_consumer')
+        self.assertFalse(consumer['id'] in group['consumer_ids'])
+        criteria = Criteria(filters={'id': consumer['id']}, fields=['id'])
+        self.manager.associate(group_id, criteria)
+
+        collection = ConsumerHistoryEvent.get_collection()
+        history = collection.find_one({'consumer_id': 'test_consumer', 'type': 'added_to_group',
+                                       'details': {'group_id': group_id}})
+        self.assertTrue(history is not None)
+        self.assertEqual(history['consumer_id'], 'test_consumer')
+        self.assertEqual(history['type'], 'added_to_group')
+        self.assertEqual(history['originator'], 'SYSTEM')
+        self.assertEqual(history['details'], {'group_id': group_id})
+
     def test_remove_single(self):
         group_id = 'test_group'
         consumer = self._create_consumer('test_consumer')
@@ -205,6 +224,25 @@ class ConsumerGroupMembershipTests(ConsumerGroupTests):
 
         group = self.collection.find_one({'id': group_id})
         self.assertFalse(consumer['id'] in group['consumer_ids'])
+
+    def test_remove_single_consumer_history(self):
+        group_id = 'test_group'
+        self.manager.create_consumer_group(group_id)
+        group = self.collection.find_one({'id': group_id})
+
+        consumer = self._create_consumer('test_consumer')
+        self.assertFalse(consumer['id'] in group['consumer_ids'])
+        criteria = Criteria(filters={'id': consumer['id']}, fields=['id'])
+        self.manager.unassociate(group_id, criteria)
+
+        collection = ConsumerHistoryEvent.get_collection()
+        history = collection.find_one({'consumer_id': 'test_consumer', 'type': 'removed_from_group',
+                                       'details': {'group_id': group_id}})
+        self.assertTrue(history is not None)
+        self.assertEqual(history['consumer_id'], 'test_consumer')
+        self.assertEqual(history['type'], 'removed_from_group')
+        self.assertEqual(history['originator'], 'SYSTEM')
+        self.assertEqual(history['details'], {'group_id': group_id})
 
     @patch('pulp.server.managers.factory.consumer_agent_manager')
     def test_unregister(self, unused):

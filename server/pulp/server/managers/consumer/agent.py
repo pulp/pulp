@@ -207,6 +207,8 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.install(context, units, options)
+        history_manager = managers.consumer_history_manager()
+        history_manager.record_event(consumer_id, 'content_unit_installed', {'units': units})
         return task
 
     @staticmethod
@@ -295,6 +297,8 @@ class AgentManager(object):
         context = Context(consumer, task_id=task_id, consumer_id=consumer_id)
         agent = PulpAgent()
         agent.content.uninstall(context, units, options)
+        history_manager = managers.consumer_history_manager()
+        history_manager.record_event(consumer_id, 'content_unit_uninstalled', {'units': units})
         return task
 
     def cancel_request(self, consumer_id, task_id):
