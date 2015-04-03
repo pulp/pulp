@@ -1,0 +1,17 @@
+Pulp 2.5.3
+==========
+This release fixes `#1185367 <https://bugzilla.redhat.com/show_bug.cgi?id=1185367>`_
+
+To upgrade, shut down all Pulp services::
+
+    $ for s in {goferd,pulp_celerybeat,pulp_resource_manager,pulp_workers,httpd}; do sudo systemctl stop $s; done;
+
+Next, update the packages::
+
+    $ sudo yum update
+
+Run the pulp-manage-db script as the apache user::
+
+    $ sudo -u apache pulp-manage-db
+
+Once `pulp-manage-db` is finished, start all Pulp services.
