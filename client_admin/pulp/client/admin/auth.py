@@ -99,9 +99,10 @@ class UserSection(PulpCliSection):
                                       'server', self.list)
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the user information '
                                             'is displayed'))
-        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; if '
-                                              'specified, only the given fields will displayed. '
-                                              'Example: "login,name."', required=False))
+        list_command.add_option(PulpCliOption('--fields', 'comma-separated list of user fields; '
+                                                          'Example: "login,name". If specified, '
+                                                          'only the given fields will be '
+                                                          'displayed.', required=False))
         self.add_command(list_command)
 
         # Search Command
@@ -248,8 +249,9 @@ class RoleSection(PulpCliSection):
         list_command.add_option(PulpCliFlag('--details', 'if specified, all the role information '
                                             'is displayed'))
         list_command.add_option(PulpCliOption('--fields', 'comma-separated list of role fields; '
-                                              'if specified, only the given fields will displayed. '
-                                              'Example: "id,users."', required=False))
+                                                          'Example: "id,users". If specified, only '
+                                                          'the given fields will be displayed.',
+                                                          required=False))
         self.add_command(list_command)
 
     def create(self, **kwargs):
