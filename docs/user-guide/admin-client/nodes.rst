@@ -39,8 +39,9 @@ The ``node list`` command may be used to list child :term:`nodes<node>`.
 
  Available Arguments:
 
-  --fields   - comma-separated list of consumer fields; if specified only the
-               given fields will be displayed
+  --fields   - comma-separated list of consumer fields; Example:
+               "id,display_name". If specified, only the given fields will be
+               displayed.
   --bindings - if specified, the bindings information is displayed
   --details  - if specified, all of the consumer information is displayed
 
@@ -119,8 +120,9 @@ the ``node repo list`` command.
 
   --details - if specified, detailed configuration information is displayed for
               each repository
-  --fields  - comma-separated list of repository fields; if specified, only the
-              given fields will displayed
+  --fields  - comma-separated list of repository fields; Example:
+              "id,description,display_name,content_unit_counts". If
+              specified, only the given fields will be displayed.
   --all, -a - if specified, information on all Pulp repositories, regardless of
               type, will be displayed
 

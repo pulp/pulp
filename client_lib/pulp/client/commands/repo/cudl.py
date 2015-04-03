@@ -300,9 +300,9 @@ class ListRepositoriesCommand(PulpCliCommand):
         d = _('if specified, detailed configuration information is displayed for each repository')
         self.add_option(PulpCliFlag('--details', d))
 
-        d = _('comma-separated list of repository fields; if specified, '
-              'only the given fields will be displayed. '
-              'Example: "id,description,display_name,content_unit_counts."')
+        d = _('comma-separated list of repository fields; '
+              'Example: "id,description,display_name,content_unit_counts". '
+              'If specified, only the given fields will be displayed.')
         self.add_option(PulpCliOption('--fields', d, required=False))
 
         self.supports_all = include_all_flag

@@ -150,8 +150,8 @@ class ConsumerHistoryCommand(PulpCliCommand):
 # options and flags ------------------------------------------------------------
 
 OPTION_FIELDS = PulpCliOption('--fields',
-                              _('comma-separated list of consumer fields; if specified only the'
-                                ' given fields will be displayed. Example: "id,display_name".'),
+                              _('comma-separated list of consumer fields; Example: "id,display_name".'
+                                ' If specified, only the given fields will be displayed.'),
                               required=False)
 
 OPTION_EVENT_TYPE = PulpCliOption('--event-type',
