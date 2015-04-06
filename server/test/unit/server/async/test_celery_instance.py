@@ -140,6 +140,40 @@ class TestCeleryInstanceSSLConfig(unittest.TestCase):
             celery_instance.configure_SSL()
             mock_celery.conf.update.assert_called_once_with(BROKER_USE_SSL=EXPECTED_BROKER_USE_SSL)
 
+    @mock.patch('pulp.server.async.celery_instance.celery')
+    @mock.patch('pulp.server.async.celery_instance.config.getboolean')
+    def test_configure_SSL_when_broker_login_method_present(self, mock_getboolean, mock_celery):
+        """
+        Make sure that the Celery config has BROKER_LOGIN_METHOD set if given in the configuration.
+        """
+        mock_getboolean.return_value = True
+        mock_cacert = mock.Mock()
+        mock_keyfile = mock.Mock()
+        mock_certfile = mock.Mock()
+
+        CONFIG_OVERRIDE = {
+            'tasks': {
+                'cacert': mock_cacert,
+                'keyfile': mock_keyfile,
+                'certfile': mock_certfile,
+                'cert_reqs': ssl.CERT_REQUIRED,
+                'broker_login_method': 'EXTERNAL'}
+        }
+
+        EXPECTED_BROKER_USE_SSL = {
+            'ca_certs': mock_cacert,
+            'keyfile': mock_keyfile,
+            'certfile': mock_certfile,
+            'cert_reqs': ssl.CERT_REQUIRED,
+        }
+
+        custom_fake_get = partial(fake_get, CONFIG_OVERRIDE)
+
+        with mock.patch('pulp.server.async.celery_instance.config.get', new=custom_fake_get):
+            celery_instance.configure_SSL()
+            mock_celery.conf.update.assert_called_once_with(BROKER_USE_SSL=EXPECTED_BROKER_USE_SSL)
+            mock_celery.conf.update.assert_called_once_with(BROKER_LOGIN_METHOD='EXTERNAL')
+
 
 class TestMongoBackendConfig(unittest.TestCase):
 
