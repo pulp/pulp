@@ -296,6 +296,19 @@ class PollingCommand(PulpCliCommand):
         msg = _('Task Succeeded')
         self.prompt.render_success_message(msg, tag='succeeded')
 
+    def _render_coded_error(self, e):
+        """
+        Recursively render a coded error and the errors contained by it.
+
+        :param e: error to display
+        :type  e: dictionary containing error information.
+        """
+        malformed_msg = _('Request error does not contain a description; '
+                          'please check client logs for more information.')
+        self.prompt.render_failure_message(e.get('description', malformed_msg))
+        for suberror in e.get('sub_errors', []):
+            self._render_coded_error(suberror)
+
     def failed(self, task):
         """
         Called when a task has completed with a status indicating that it failed.
@@ -306,11 +319,10 @@ class PollingCommand(PulpCliCommand):
         """
         msg = _('Task Failed')
         self.prompt.render_failure_message(msg, tag='failed')
-        if task and task.exception:
+        if task and task.error:
+            self._render_coded_error(task.error)
+        elif task and task.exception:
             self.prompt.render_failure_message(task.exception, tag='failed_exception')
-        elif task and task.error and 'description' in task.error:
-            self.context.prompt.render_failure_message(task.error['description'],
-                                                       tag='error_message')
 
     def cancelled(self, task):
         """

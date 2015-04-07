@@ -60,7 +60,8 @@ class TestPerformUploadCommand(base.PulpClientTests):
             'task_id': '123456', 'tags': [], 'start_time': datetime.datetime.now(),
             'finish_time': datetime.datetime.now() + datetime.timedelta(seconds=10),
             'state': responses.STATE_ERROR, 'progress_report': {}, 'result': None,
-            'exception': None, 'traceback': None, 'error': 'An error message.', 'spawned_tasks': []}
+            'exception': None, 'traceback': None, 'error': {'description': 'error_message'},
+            'spawned_tasks': []}
         response = mock.MagicMock()
         response.response_body = responses.Task(response_body)
         response.is_async = mock.MagicMock(return_value=False)
@@ -73,7 +74,8 @@ class TestPerformUploadCommand(base.PulpClientTests):
 
         command.perform_upload(self.context, upload_manager, upload_ids, user_input)
 
-        render_failure_message.assert_called_once_with('Task Failed', tag='failed')
+        render_failure_message.assert_has_calls([mock.call('Task Failed', tag='failed'),
+                                                 mock.call('error_message')])
 
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_failure_message')
     @mock.patch('pulp.client.extensions.core.PulpPrompt.write')
