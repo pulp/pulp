@@ -125,9 +125,21 @@ class PermissionManagerTests(base.PulpServerTests):
         o = authorization.READ
         try:
             self.permission_manager.revoke(r, login, [o])
+        except exceptions.InvalidValue, e:
+            self.assertTrue('login' in str(e))
+        else:
             self.fail('Non-existing user permission revoke did not raise an exception')
-        except exceptions.MissingResource, e:
-            self.assertTrue(login in str(e))
+
+    def test_non_existing_user_permission_grant(self):
+        login = 'non-existing-user-login'
+        r = self._create_resource()
+        o = authorization.READ
+        try:
+            self.permission_manager.grant(r, login, [o])
+        except exceptions.InvalidValue, e:
+            self.assertTrue('login' in str(e))
+        else:
+            self.fail('Non-existing user permission grant did not raise an exception')
 
     def test_parent_permissions(self):
         u = self._create_user()

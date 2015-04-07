@@ -162,7 +162,7 @@ class ListRepositoryGroupsCommand(PulpCliCommand):
         self.add_option(PulpCliOption('--fields', _('comma-separated list of repo group fields; '
                                                     'Example: "id,description". If specified, '
                                                     'only the given fields will be displayed.'),
-                                                     required=False))
+                                      required=False))
 
     def run(self, **kwargs):
         self.prompt.render_title(_('Repository Groups'))

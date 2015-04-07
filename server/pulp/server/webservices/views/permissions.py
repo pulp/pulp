@@ -71,9 +71,9 @@ class GrantToUserView(View):
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
 
-        _check_invalid_params({'login': login,
-                               'resource': resource,
-                               'operation_names': operation_names})
+        _validate_params({'login': login,
+                          'resource': resource,
+                          'operation_names': operation_names})
 
         # Grant permission synchronously
         permission_manager = factory.permission_manager()
@@ -104,9 +104,9 @@ class RevokeFromUserView(View):
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
 
-        _check_invalid_params({'login': login,
-                               'resource': resource,
-                               'operation_names': operation_names})
+        _validate_params({'login': login,
+                          'resource': resource,
+                          'operation_names': operation_names})
 
         permission_manager = factory.permission_manager()
         operations = permission_manager.operation_names_to_values(operation_names)
@@ -136,9 +136,9 @@ class GrantToRoleView(View):
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
 
-        _check_invalid_params({'role_id': role_id,
-                               'resource': resource,
-                               'operation_names': operation_names})
+        _validate_params({'role_id': role_id,
+                          'resource': resource,
+                          'operation_names': operation_names})
 
         # Grant permission synchronously
         role_manager = factory.role_manager()
@@ -171,9 +171,9 @@ class RevokeFromRoleView(View):
         resource = params.get('resource', None)
         operation_names = params.get('operations', None)
 
-        _check_invalid_params({'role_id': role_id,
-                               'resource': resource,
-                               'operation_names': operation_names})
+        _validate_params({'role_id': role_id,
+                          'resource': resource,
+                          'operation_names': operation_names})
 
         role_manager = factory.role_manager()
         permission_manager = factory.permission_manager()
@@ -182,18 +182,18 @@ class RevokeFromRoleView(View):
         return generate_json_response(remove_perm)
 
 
-def _check_invalid_params(params):
+def _validate_params(params):
     """
-    Raise InvalidValue if any of the params are None.
+    Raise MissingValue if any of the required params are None.
 
     :param params: parameters to be checked
     :type: dict
-    :raises: InvalidValue if some params are None
+    :raises: MissingValue if some params are None
     """
-    invalid_values = []
+    missing_values = []
     for key, value in params.items():
         if value is None:
-            invalid_values.append(key)
+            missing_values.append(key)
 
-    if invalid_values:
-        raise pulp_exceptions.InvalidValue(invalid_values)
+    if missing_values:
+        raise pulp_exceptions.MissingValue(missing_values)

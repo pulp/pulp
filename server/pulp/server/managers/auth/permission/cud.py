@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains the manager class and exceptions for operations surrounding the creation,
 update, and deletion on a Pulp Role.
@@ -43,7 +30,8 @@ class PermissionManager(object):
         :type  resource_uri: str
 
         :raises DuplicateResource: if there is already a permission with the requested resource
-        :raises InvalidValue: if any of the fields are unacceptable
+        :return: The created object
+        :rtype: dict
         """
 
         existing_permission = Permission.get_collection().find_one({'resource': resource_uri})
@@ -69,8 +57,8 @@ class PermissionManager(object):
         :param delta: A dict containing update keywords.
         :type delta: dict
 
-        :return: The updated object
-        :rtype: dict
+        :raises MissingResource: if the permission does not exist
+        :raises PulpDataException: if some usupported keys were specified
         """
 
         # Check whether the permission exists
@@ -122,6 +110,8 @@ class PermissionManager(object):
         :type login: str
         :param operations:list of allowed operations being granted
         :type operations: list or tuple of integers
+
+        :raises InvalidValue: if some params are invalid
         """
         # we don't grant permissions to the system
         if login == system.SYSTEM_LOGIN:
@@ -129,7 +119,7 @@ class PermissionManager(object):
 
         user = User.get_collection().find_one({'login': login})
         if user is None:
-            raise MissingResource(user=login)
+            raise InvalidValue(['login'])
 
         # Make sure resource is a valid string or unicode
         if not isinstance(resource, basestring):
@@ -161,6 +151,8 @@ class PermissionManager(object):
         :type  login:      str
         :param operations: list of allowed operations being revoked
         :type  operations: list or tuple of integers
+
+        :raises InvalidValue: if some params are invalid
         """
         permission_query_manager = factory.permission_query_manager()
         # we don't revoke permissions from the system
@@ -169,7 +161,7 @@ class PermissionManager(object):
 
         user = User.get_collection().find_one({'login': login})
         if user is None:
-            raise MissingResource(user=login)
+            raise InvalidValue(['login'])
 
         permission = Permission.get_collection().find_one({'resource': resource})
         if permission is None:

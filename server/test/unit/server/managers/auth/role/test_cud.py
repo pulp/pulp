@@ -203,3 +203,25 @@ class RoleManagerTests(base.PulpServerTests):
     def test_get_role_bad_role(self):
         # Test
         self.assertEquals(self.role_manager.get_role('potato'), None)
+
+    def test_non_existing_role_permission_revoke(self):
+        role_id = 'non-existing-role'
+        r = self._create_resource()
+        o = authorization.READ
+        try:
+            self.role_manager.remove_permissions_from_role(role_id, r, [o])
+        except InvalidValue, e:
+            self.assertTrue('role_id' in str(e))
+        else:
+            self.fail('Non-existing role_id revoke did not raise an exception')
+
+    def test_non_existing_role_permission_grant(self):
+        role_id = 'non-existing-role'
+        r = self._create_resource()
+        o = authorization.READ
+        try:
+            self.role_manager.add_permissions_to_role(role_id, r, [o])
+        except InvalidValue, e:
+            self.assertTrue('role_id' in str(e))
+        else:
+            self.fail('Non-existing role_id grant did not raise an exception')
