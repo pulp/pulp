@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 """
 Contains the manager class and exceptions for operations surrounding the creation,
 update, and deletion on a Pulp Role.
@@ -50,6 +38,9 @@ class RoleManager(object):
         :type  description:       str
         :raise DuplicateResource: if there is already a role with the requested name
         :raise InvalidValue:      if any of the fields are unacceptable
+
+        :return: The created object
+        :rtype: dict
         """
         existing_role = Role.get_collection().find_one({'id': role_id})
         if existing_role is not None:
@@ -83,6 +74,9 @@ class RoleManager(object):
         :rtype:                   dict
         :raise MissingResource:   if the given role does not exist
         :raise PulpDataException: if update keyword  is not supported
+
+        :return: The updated object
+        :rtype: dict
         """
         delta.pop('id', None)
 
@@ -116,6 +110,7 @@ class RoleManager(object):
         :type  role_id:         str
         :raise InvalidValue:    if any of the fields are unacceptable
         :raise MissingResource: if the given role does not exist
+        :raise PulpDataException: if role is a superuser role
         """
         # Raise exception if role id is invalid
         if role_id is None or not isinstance(role_id, basestring):
@@ -157,14 +152,15 @@ class RoleManager(object):
         :type  resource:        str
         :param operations:      list or tuple
         :type  operations:      list of allowed operations being granted
-        :raise MissingResource: if the given role does not exist
+        :raise InvalidValue: if some params are invalid
+        :raise PulpDataException: if role is a superuser role
         """
         if role_id == SUPER_USER_ROLE:
             raise PulpDataException(_('super-users role cannot be changed'))
 
         role = Role.get_collection().find_one({'id': role_id})
         if role is None:
-            raise MissingResource(role_id)
+            raise InvalidValue(['role_id'])
         if not role['permissions']:
             role['permissions'] = []
 
@@ -201,14 +197,15 @@ class RoleManager(object):
         :type  resource:        str
         :param operations:      list or tuple
         :type  operations:      list of allowed operations being revoked
-        :raise MissingResource: if the given role does not exist
+        :raise InvalidValue: if some params are invalid
+        :raise PulpDataException: if role is a superuser role
         """
         if role_id == SUPER_USER_ROLE:
             raise PulpDataException(_('super-users role cannot be changed'))
 
         role = Role.get_collection().find_one({'id': role_id})
         if role is None:
-            raise MissingResource(role_id)
+            raise InvalidValue(['role_id'])
 
         resource_permission = {}
         current_ops = []
@@ -248,7 +245,8 @@ class RoleManager(object):
         :type  role_id:         str
         :param login:           login of user
         :type  login:           str
-        :raise MissingResource: if the given role or user does not exist
+        :raise MissingResource: if the given role does not exist
+        :raise InvalidValue: if some params are invalid
         """
         role = Role.get_collection().find_one({'id': role_id})
         if role is None:
