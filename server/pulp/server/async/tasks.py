@@ -331,6 +331,7 @@ class Task(CeleryTask, ReservedTaskMixin):
     behavior into each Pulp task, including management of resource locking.
     """
     throws = (PulpCodedException,)
+
     def apply_async(self, *args, **kwargs):
         """
         A wrapper around the Celery apply_async method. It allows us to accept a few more
@@ -448,7 +449,8 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
         if isinstance(exc, PulpCodedException):
-            _logger.info(_('Task failed : [%(task_id)s] : %(msg)s') % {'task_id': task_id, 'msg': str(exc)})
+            _logger.info(_('Task failed : [%(task_id)s] : %(msg)s') %
+                         {'task_id': task_id, 'msg': str(exc)})
             _logger.debug(traceback.format_exc())
         else:
             _logger.info(_('Task failed : [%s]') % task_id)
