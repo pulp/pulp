@@ -817,11 +817,19 @@ class TestStopLogging(unittest.TestCase):
     """
     Test the stop_logging() function.
     """
+
+    @mock.patch('pulp.server.logs.logging.getLogger')
     @mock.patch('pulp.server.logs.logging.shutdown')
-    def test_stop_logging(self, shutdown):
+    def test_stop_logging(self, shutdown, get_logger):
         """
-        Make sure that stop_logging() calls logging.shutdown().
+        Make sure that stop_logging() calls logging.shutdown() and
+        the handlers are cleared.
         """
+        get_logger.return_value.handlers = [1, 2, 3]
+
+        # test
         logs.stop_logging()
 
+        # validation
         shutdown.assert_called_once_with()
+        self.assertEqual(get_logger.return_value.handlers, [])
