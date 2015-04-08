@@ -1130,7 +1130,7 @@ class RepoAssociate(View):
                 invalid_criteria.add_child_exception(e)
                 raise invalid_criteria
         else:
-            criteria = None
+            raise pulp_exceptions.MissingValue('criteria')
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, dest_repo_id),
                      tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, source_repo_id),
@@ -1170,7 +1170,7 @@ class RepoUnassociate(View):
                 invalid_criteria.add_child_exception(e)
                 raise invalid_criteria
         else:
-            criteria = None
+            raise pulp_exceptions.MissingValue('criteria')
 
         task_tags = [tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
                      tags.action_tag('unassociate')]

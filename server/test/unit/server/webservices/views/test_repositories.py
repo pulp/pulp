@@ -1812,13 +1812,13 @@ class TestRepoAssociate(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.repositories.UnitAssociationCriteria.from_client_input')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_post_minimal(self, mock_factory, mock_get_repo, mock_associate, mock_tags):
+    def test_post_minimal(self, mock_factory, mock_crit, mock_associate, mock_tags):
         """
         Test that a task is created with the minimal body params.
         """
 
         mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({'source_repo_id': 'mock_source_repo'})
+        mock_request.body = json.dumps({'criteria': 'mock_crit', 'source_repo_id': 'mock_source'})
         repo_associate = RepoAssociate()
 
         try:
@@ -1831,8 +1831,8 @@ class TestRepoAssociate(unittest.TestCase):
         task_tags = [mock_tags.resource_tag(), mock_tags.resource_tag(), mock_tags.action_tag()]
         mock_associate.apply_async_with_reservation.assert_called_once_with(
             mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_dest_repo',
-            ['mock_source_repo', 'mock_dest_repo'],
-            {'criteria': None, 'import_config_override': None},
+            ['mock_source', 'mock_dest_repo'],
+            {'criteria': mock_crit.return_value, 'import_config_override': None},
             tags=task_tags
         )
         self.assertEqual(response.http_status_code, 202)
@@ -1916,6 +1916,28 @@ class TestRepoAssociate(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertTrue(response.error_code is error_codes.PLP0015)
 
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
+    def test_post_missing_criteria(self, mock_factory):
+        """
+        Test that a 400 is thrown when the source repo is not passed.
+        """
+
+        mock_request = mock.MagicMock()
+        mock_request.body = json.dumps({'source_repo_id': 'mock_source_repo', 'no_crit': 'oops'})
+        repo_associate = RepoAssociate()
+
+        try:
+            repo_associate.post(mock_request, 'mock_dest_repo')
+        except pulp_exceptions.MissingValue, response:
+            pass
+        else:
+            raise AssertionError('MissingValue should be raised if criteria not in body')
+
+        self.assertEqual(response.http_status_code, 400)
+        self.assertTrue(response.error_code is error_codes.PLP0016)
+
 
 class TestRepoUnunassociate(unittest.TestCase):
     """
@@ -1936,7 +1958,7 @@ class TestRepoUnunassociate(unittest.TestCase):
         """
 
         mock_request = mock.MagicMock()
-        mock_request.body = json.dumps({})
+        mock_request.body = json.dumps({'criteria': 'mock_criteria'})
         repo_unassociate = RepoUnassociate()
 
         try:
@@ -1949,7 +1971,7 @@ class TestRepoUnunassociate(unittest.TestCase):
         task_tags = [mock_tags.resource_tag(), mock_tags.action_tag()]
         mock_unassociate.apply_async_with_reservation.assert_called_once_with(
             mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', [
-                'mock_repo', None, mock_unit.OWNER_TYPE_USER,
+                'mock_repo', mock_crit(), mock_unit.OWNER_TYPE_USER,
                 mock_factory.principal_manager().get_principal()[0]
             ],
             tags=task_tags
@@ -1978,6 +2000,27 @@ class TestRepoUnunassociate(unittest.TestCase):
 
         self.assertEqual(response.http_status_code, 400)
         self.assertTrue(response.error_code is error_codes.PLP0015)
+
+    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+                new=assert_auth_UPDATE())
+    def test_post_missing_criteria(self):
+        """
+        Test that a helpful exception is thrown when criteria is not passed in the body.
+        """
+
+        mock_request = mock.MagicMock()
+        mock_request.body = json.dumps({})
+        repo_unassociate = RepoUnassociate()
+
+        try:
+            repo_unassociate.post(mock_request, 'mock_repo')
+        except pulp_exceptions.MissingValue, response:
+            pass
+        else:
+            raise AssertionError('MissingValue should be raised if criteria was not passed')
+
+        self.assertEqual(response.http_status_code, 400)
+        self.assertTrue(response.error_code is error_codes.PLP0016)
 
 
 class TestRepoImportUpload(unittest.TestCase):
