@@ -43,7 +43,7 @@ class TestTaskSearchView(unittest.TestCase):
         """
         Ensure that the TaskSearchView class has the correct class attributes.
         """
-        self.assertEqual(TaskSearchView.generate_json_response,
+        self.assertEqual(TaskSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
         self.assertEqual(TaskSearchView.model, dispatch.TaskStatus)
         self.assertEqual(TaskSearchView.serializer, task_serializer)

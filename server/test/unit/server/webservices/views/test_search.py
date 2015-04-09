@@ -141,13 +141,13 @@ class TestSearchView(unittest.TestCase):
             FakeSearchView.model.objects.find_by_criteria.mock_calls[0][1][0]['filters'],
             {'money': {'$gt': 1000000}})
 
-    def test__generate_response_with_custom_generate_json_response_handler(self):
+    def test__generate_response_with_custom_response_builder(self):
         """
         Test the _generate_response() method for the case where the SearchView is configured to
-        use a custom generate_json_response function.
+        use a custom response_builder function.
         """
         class FakeSearchView(search.SearchView):
-            generate_json_response = mock.MagicMock(return_value=42)
+            response_builder = mock.MagicMock(return_value=42)
             model = mock.MagicMock()
 
         query = {'filters': {'money': {'$gt': 1000000}}}
@@ -161,7 +161,7 @@ class TestSearchView(unittest.TestCase):
         self.assertEqual(
             FakeSearchView.model.objects.find_by_criteria.mock_calls[0][1][0]['filters'],
             {'money': {'$gt': 1000000}})
-        FakeSearchView.generate_json_response.assert_called_once_with(['big money', 'bigger money'])
+        FakeSearchView.response_builder.assert_called_once_with(['big money', 'bigger money'])
 
     def test__generate_response_with_dumb_model(self):
         """

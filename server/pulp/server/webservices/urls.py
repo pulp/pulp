@@ -17,7 +17,7 @@ from pulp.server.webservices.views.consumers import (ConsumerBindingsView,
                                                      UnitUpdateSchedulesView,
                                                      UnitUpdateScheduleResourceView)
 
-from pulp.server.webservices.views import users, tasks
+from pulp.server.webservices.views import tasks, users
 from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociateActionView,
                                                            ConsumerGroupBindingView,
                                                            ConsumerGroupBindingsView,

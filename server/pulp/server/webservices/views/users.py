@@ -39,7 +39,7 @@ class UserSearchView(search.SearchView):
     """
     This view provides GET and POST searching on User objects.
     """
-    generate_json_response = staticmethod(generate_json_response_with_pulp_encoder)
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
     manager = query.UserQueryManager()
     serializer = staticmethod(serialize)
 

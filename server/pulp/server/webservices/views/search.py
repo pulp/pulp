@@ -1,9 +1,7 @@
 """
-This module contains search View superclasses. Your code should subclass these to achieve maximum
-searching capability.
+This module contains the SearchView superclass. Your view code should subclass this to create a
+search view for a specific model.
 """
-import json
-
 from django.views import generic
 
 from pulp.server import exceptions
@@ -15,36 +13,37 @@ from pulp.server.webservices.views import util
 
 class SearchView(generic.View):
     """
-    This class is meant to be subclassed by views that need to provide search functionality on Pulp
-    models. In most cases, it should be possible for the subclasses to define only a few class
+    This class is meant to be subclassed by views that need to provide search functionality on a
+    Pulp model. In most cases, it should be possible for the subclasses to define only a few class
     variables. Subclasses must define at least one of these two class attributes:
 
     0) If the SearchView is for searching a MongoEngine model, model should be defined.
     1) If it's for an "old-style" model, manager must be defined.
 
-    :cvar    generate_json_response: The function that should be used to turn the search results
-                                     into a JSON serialized Django Response object. If not defined,
-                                     this defaults to
-                                     pulp.server.webservices.views.util.generate_json_response.
-    :vartype generate_json_response: staticmethod
-    :cvar    manager:                Define this class attribute if you are making a SearchView for
-                                     a model that has not yet been converted to MongoEngine. It
-                                     should represent an instance of the Model's manager class,
-                                     which must have a find_by_criteria() method.
-    :vartype manager:                object
-    :cvar    model:                  Define this class attribute if you are making a SearchView for
-                                     a MongoEngine Document. The model must have a meta class
-                                     attribute defined with the 'queryset_class' key indexing
-                                     pulp.server.db.model.base.CriteriaQuerySet, so that the
-                                     Document's QuerySet will have a find_by_criteria() method.
-    :vartype model:                  mongoengine.Document
-    :cvar    serializer:             If your view needs to modify the QuerySet results before they
-                                     are returned to the caller, you can define this attribute. It
-                                     should be set to a function that accepts a single object, and
-                                     returns a single object.
-    :vartype serializer:             staticmethod
+    :cvar    response_builder: The function that should be used to turn the search results
+                               into a JSON serialized Django Response object. If not defined,
+                               this defaults to
+                               pulp.server.webservices.views.util.generate_json_response.
+    :vartype response_builder: staticmethod
+    :cvar    manager:          Define this class attribute if you are making a SearchView for
+                               a model that has not yet been converted to MongoEngine. It
+                               should represent an instance of the Model's manager class,
+                               which must have a find_by_criteria() method.
+    :vartype manager:          object
+    :cvar    model:            Define this class attribute if you are making a SearchView for
+                               a MongoEngine Document. The model must have a meta class
+                               attribute defined with the 'queryset_class' key indexing
+                               pulp.server.db.model.base.CriteriaQuerySet, so that the
+                               Document's QuerySet will have a find_by_criteria() method.
+    :vartype model:            mongoengine.Document
+    :cvar    serializer:       If your view needs to modify the QuerySet results before they
+                               are returned to the caller, you can define this attribute. It
+                               should be set to a function that accepts a single object, and
+                               returns a single object.
+    :vartype serializer:       staticmethod
     """
-    generate_json_response = staticmethod(util.generate_json_response)
+
+    response_builder = staticmethod(util.generate_json_response)
 
     @auth_required(authorization.READ)
     def get(self, request):
@@ -65,6 +64,7 @@ class SearchView(generic.View):
         return self._generate_response(query)
 
     @auth_required(authorization.READ)
+    @util.json_body_required
     def post(self, request):
         """
         Search for objects using an HTTP POST request.
@@ -73,12 +73,12 @@ class SearchView(generic.View):
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :return:        HttpReponse containing a list of objects that were matched by the request
         :rtype:         django.http.HttpResponse
-        """
-        query = json.loads(request.body)
 
+        :raises MissingValue: if required param `criteria` is not passed in the body.
+        """
         try:
             # Retrieve the criteria from the POST data
-            query = query['criteria']
+            query = request.body_as_json['criteria']
         except KeyError:
             raise exceptions.MissingValue(['criteria'])
 
@@ -118,4 +118,4 @@ class SearchView(generic.View):
         if hasattr(cls, 'serializer'):
             results = [cls.serializer(r) for r in results]
 
-        return cls.generate_json_response(results)
+        return cls.response_builder(results)

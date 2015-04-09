@@ -48,7 +48,7 @@ class TestUserSearchView(unittest.TestCase):
         """
         Assert that the class attributes are set correctly.
         """
-        self.assertEqual(UserSearchView.generate_json_response,
+        self.assertEqual(UserSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
         self.assertTrue(isinstance(UserSearchView.manager, query.UserQueryManager))
         self.assertEqual(UserSearchView.serializer, users.serialize)

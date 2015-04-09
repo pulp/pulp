@@ -38,7 +38,7 @@ class TaskSearchView(search.SearchView):
     """
     This view provides GET and POST searching on TaskStatus objects.
     """
-    generate_json_response = staticmethod(generate_json_response_with_pulp_encoder)
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
     model = dispatch.TaskStatus
     serializer = staticmethod(task_serializer)
 
