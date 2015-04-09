@@ -26,15 +26,15 @@ from gettext import gettext as _
 
 from celery import task
 
-from pulp.common import dateutils, constants
+from pulp.common import dateutils, error_codes, constants
 from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
 from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
+from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue, \
+    PulpCodedException
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
 from pulp.server.async.tasks import register_sigterm_handler, Task
@@ -125,6 +125,11 @@ class RepoPublishManager(object):
             publish_repo = register_sigterm_handler(
                 distributor_instance.publish_repo, distributor_instance.cancel_publish_repo)
             publish_report = publish_repo(transfer_repo, conduit, call_config)
+            if publish_report is not None and hasattr(publish_report, 'success_flag') \
+                    and not publish_report.success_flag:
+                raise PulpCodedException(error_code=error_codes.PLP0034,
+                                         repository_id=repo_id, distributor_id=distributor_id)
+
         except Exception, e:
             publish_end_timestamp = _now_timestamp()
 
@@ -140,8 +145,6 @@ class RepoPublishManager(object):
                 publish_start_timestamp, publish_end_timestamp, e, sys.exc_info()[2])
             publish_result_coll.save(result, safe=True)
 
-            logger.exception(
-                _('Exception caught from plugin during publish for repo [%(r)s]' % {'r': repo_id}))
             raise
 
         publish_end_timestamp = _now_timestamp()
