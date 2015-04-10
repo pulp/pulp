@@ -10,7 +10,7 @@ REST API
    repo/index
    repo/groups/index
    content/index
-   dispatch/index
+   tasks
    event/index
    user/index
    role/index

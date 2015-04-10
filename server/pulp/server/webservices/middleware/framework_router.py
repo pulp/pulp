@@ -48,11 +48,6 @@ class FrameworkRoutingMiddleware(object):
             else:
                 return self._handle_with_webpy(environ, start_response)
 
-        # /tasks/search/ is blocked, so we need that url to go to webpy even though it matches
-        # /tasks/<task_id>/ in django urls.
-        if environ['PATH_INFO'] == '/v2/tasks/search/':
-            return self._handle_with_webpy(environ, start_response)
-
         # This is the start of the default behavior
         try:
             resolve(environ['PATH_INFO'], urlconf='pulp.server.webservices.urls')

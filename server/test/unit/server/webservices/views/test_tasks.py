@@ -1,15 +1,20 @@
+"""
+This module contains tests for the pulp.server.webservices.views.tasks module.
+"""
 import mock
 import unittest
 
 from mongoengine.queryset import DoesNotExist
 
 from .base import assert_auth_DELETE, assert_auth_READ
+from pulp.server.db.model import dispatch
 from pulp.server.exceptions import MissingResource
-from pulp.server.webservices.views.dispatch import (TaskCollectionView, TaskResourceView,
-                                                    task_serializer)
+from pulp.server.webservices.views import util
+from pulp.server.webservices.views.tasks import (TaskCollectionView, TaskResourceView,
+                                                 TaskSearchView, task_serializer)
 
 
-@mock.patch('pulp.server.webservices.views.dispatch.serialization')
+@mock.patch('pulp.server.webservices.views.tasks.serialization')
 def test_task_serializer(mock_seralization):
     """
     Test task_serializer helper function.
@@ -30,6 +35,20 @@ def test_task_serializer(mock_seralization):
                              "Task: {}, \nExpected Task: {}".format(serialized_task, expected_task))
 
 
+class TestTaskSearchView(unittest.TestCase):
+    """
+    Test the TaskSearchView class.
+    """
+    def test_class_attribute(self):
+        """
+        Ensure that the TaskSearchView class has the correct class attributes.
+        """
+        self.assertEqual(TaskSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertEqual(TaskSearchView.model, dispatch.TaskStatus)
+        self.assertEqual(TaskSearchView.serializer, task_serializer)
+
+
 class TestTaskCollection(unittest.TestCase):
     """
     Tests for TaskCollectionView.
@@ -37,9 +56,9 @@ class TestTaskCollection(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.dispatch.task_serializer')
-    @mock.patch('pulp.server.webservices.views.dispatch.TaskStatus')
-    @mock.patch('pulp.server.webservices.views.dispatch.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.tasks.task_serializer')
+    @mock.patch('pulp.server.webservices.views.tasks.dispatch.TaskStatus')
+    @mock.patch('pulp.server.webservices.views.tasks.generate_json_response_with_pulp_encoder')
     def test_get_task_collection(self, mock_resp, mock_task_status, mock_task_serializer):
         """
         Test get task_collection with tags.
@@ -60,9 +79,9 @@ class TestTaskCollection(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.dispatch.task_serializer')
-    @mock.patch('pulp.server.webservices.views.dispatch.TaskStatus')
-    @mock.patch('pulp.server.webservices.views.dispatch.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.tasks.task_serializer')
+    @mock.patch('pulp.server.webservices.views.tasks.dispatch.TaskStatus')
+    @mock.patch('pulp.server.webservices.views.tasks.generate_json_response_with_pulp_encoder')
     def test_get_task_collection_no_tags(self, mock_resp, mock_task_status, mock_task_serializer):
         """
         Test get task_collection with no tags.
@@ -89,10 +108,10 @@ class TestTaskResource(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.dispatch.Worker')
-    @mock.patch('pulp.server.webservices.views.dispatch.task_serializer')
-    @mock.patch('pulp.server.webservices.views.dispatch.TaskStatus')
-    @mock.patch('pulp.server.webservices.views.dispatch.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.tasks.Worker')
+    @mock.patch('pulp.server.webservices.views.tasks.task_serializer')
+    @mock.patch('pulp.server.webservices.views.tasks.dispatch.TaskStatus')
+    @mock.patch('pulp.server.webservices.views.tasks.generate_json_response_with_pulp_encoder')
     def test_get_task_resource(self, mock_resp, mock_task_status, mock_task_serial, mock_worker):
         """
         Test get task_resource with an existing task.
@@ -116,7 +135,7 @@ class TestTaskResource(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.dispatch.TaskStatus')
+    @mock.patch('pulp.server.webservices.views.tasks.dispatch.TaskStatus')
     def test_get_task_resource_invalid_task(self, mock_task_status):
         """
         Test get task_resource with an non-existing task.
@@ -138,8 +157,8 @@ class TestTaskResource(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.dispatch.tasks')
-    @mock.patch('pulp.server.webservices.views.dispatch.generate_json_response')
+    @mock.patch('pulp.server.webservices.views.tasks.tasks')
+    @mock.patch('pulp.server.webservices.views.tasks.generate_json_response')
     def test_delete_task_resource(self, mock_resp, mock_task):
         """
         View should dispatch a task.cancel with the task id.
