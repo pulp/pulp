@@ -63,6 +63,11 @@ These inputs are as follows:
      the generated client certificates used by the Qpid broker, the Pulp server and the
      consumer. All keys and certificates are stored in the NSS database.
 
+ *The Qpid server hostname*
+     A server certificate will be generated for use by the Qpid broker. This needs to match
+     the exact hostname that clients will use to connect. Pressing <enter> will default to
+     the fully qualified domain name of the system, or the hostname if the fqdn is not set.
+
 The following is an example of running the script:
 
 ::
@@ -86,6 +91,13 @@ The following is an example of running the script:
   Please specify a CA.  Generated if not specified.
 
   Enter a path:
+
+  Please enter the hostname clients will use to connect to the qpid server.
+  If not specified, 'localhost' will be used.
+
+  Enter a hostname:
+
+  Using hostname: [localhost]
 
   Password file created.
 
@@ -134,12 +146,12 @@ The following is an example of running the script:
 
   ...
   [messaging]
-  url: ssl://<host>:5671
+  url: ssl://localhost:5671
   cacert: /etc/pki/pulp/qpid/ca.crt
   clientcert: /etc/pki/pulp/qpid/client.crt
 
   [tasks]
-  broker_url: qpid://<host>:5671/
+  broker_url: qpid://localhost:5671/
   celery_require_ssl: true
   cacert: /etc/pki/pulp/qpid/ca.crt
   keyfile: /etc/pki/pulp/qpid/client.crt
@@ -150,10 +162,22 @@ The following is an example of running the script:
 
   ...
   [messaging]
-  scheme: ssl
-  port: 5671
-  cacert: /etc/pki/pulp/qpid/ca.crt
-  clientcert: /etc/pki/pulp/qpid/client.crt
+  scheme=ssl
+  port=5671
+  cacert=/etc/pki/pulp/qpid/ca.crt
+  clientcert=/etc/pki/pulp/qpid/client.crt
+
+
+  NOTES:
+    [1] The location for qpidd.conf depends on the version of Qpid installed.
+        For 0.24+: /etc/qpid/qpidd.conf.
+        For all earlier versions: /etc/qpidd.conf.
+
+    [2] The /etc/pki/pulp/qpid/ca.crt and /etc/pki/pulp/qpid/client.crt certificates will
+        need to be manually copied to each consumer.
+
+    [3] The /etc/pki/pulp/qpid/ca.crt and /etc/pki/pulp/qpid/client.crt certificates will
+        need to be manually copied to each worker.
 
 
 The following directory and files are created by the script:
