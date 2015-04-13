@@ -27,7 +27,7 @@ class TestSearchView(unittest.TestCase):
 
         request = mock.MagicMock()
         # Simulate an empty POST body
-        request.GET = {'field': ['name', 'id'], 'filters': ['{"name":"admin"}']}
+        request.GET = {'field': ['name', 'id'], 'filters': '{"name":"admin"}'}
         view = FakeSearchView()
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
@@ -44,9 +44,9 @@ class TestSearchView(unittest.TestCase):
         # strings. Please modify these assertions to have the correct behavior.
         # https://pulp.plan.io/issues/312
         _generate_response.assert_called_once_with(
-            {'fields': ['name', 'id'], 'filters': ['{"name":"admin"}']})
+            {'fields': ['name', 'id'], 'filters': {"name": "admin"}})
         from_client_input.assert_called_once_with(
-            {'fields': ['name', 'id'], 'filters': ['{"name":"admin"}']})
+            {'fields': ['name', 'id'], 'filters': {"name": "admin"}})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -60,7 +60,7 @@ class TestSearchView(unittest.TestCase):
 
         request = mock.MagicMock()
         # Simulate an empty POST body
-        request.GET = {'filters': ['{"name":"admin"}']}
+        request.GET = {'filters': '{"name":"admin"}'}
         view = FakeSearchView()
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
@@ -76,8 +76,8 @@ class TestSearchView(unittest.TestCase):
         # because the get() handler should have deserialized the filters instead of leaving them as
         # strings. Please modify these assertions to have the correct behavior.
         # https://pulp.plan.io/issues/312
-        _generate_response.assert_called_once_with({'filters': ['{"name":"admin"}']})
-        from_client_input.assert_called_once_with({'filters': ['{"name":"admin"}']})
+        _generate_response.assert_called_once_with({'filters': {"name": "admin"}})
+        from_client_input.assert_called_once_with({'filters': {"name": "admin"}})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
