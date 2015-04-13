@@ -177,7 +177,7 @@ class RepoUnitAssociationQueryTests(RepoControllersTests):
             'type_ids': ['rpm'],
             'filters': {
                 'unit': {'key': {'$in': 'zsh'}},
-                'association': {'owner_type': 'importer'}
+                'association': {'some_field': 'some_value'}
             },
             'sort': {
                 'unit': [['name', 'ascending'], ['version', '-1']],

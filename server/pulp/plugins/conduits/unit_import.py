@@ -31,8 +31,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
     the instance will take care of it itself.
     """
 
-    def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id,
-                 association_owner_type, association_owner_id):
+    def __init__(self, source_repo_id, dest_repo_id, source_importer_id, dest_importer_id):
         """
         :param source_repo_id: ID of the repository from which units are being copied
         :type  source_repo_id: str
@@ -42,27 +41,17 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
         :type  source_importer_id: str
         :param dest_importer_id:  ID of the importer on the destination repository
         :type  dest_importer_id: str
-        :param association_owner_type: distinguishes the owner when creating an
-               association through this conduit
-        :type  association_owner_type: str
-        :param association_owner_id: specific ID of the owner when creating an
-               association through this conduit
-        :type  association_owner_id: str
         """
         ImporterScratchPadMixin.__init__(self, dest_repo_id, dest_importer_id)
         RepoScratchPadMixin.__init__(self, dest_repo_id, ImporterConduitException)
         SearchUnitsMixin.__init__(self, ImporterConduitException)
-        AddUnitMixin.__init__(self, dest_repo_id, dest_importer_id, association_owner_type,
-                              association_owner_id)
+        AddUnitMixin.__init__(self, dest_repo_id, dest_importer_id)
 
         self.source_repo_id = source_repo_id
         self.dest_repo_id = dest_repo_id
 
         self.source_importer_id = source_importer_id
         self.dest_importer_id = dest_importer_id
-
-        self.association_owner_type = association_owner_type
-        self.association_owner_id = association_owner_id
 
         self.__association_manager = manager_factory.repo_unit_association_manager()
         self.__association_query_manager = manager_factory.repo_unit_association_query_manager()
@@ -87,8 +76,7 @@ class ImportUnitConduit(ImporterScratchPadMixin, RepoScratchPadMixin,
 
         try:
             self.__association_manager.associate_unit_by_id(
-                self.dest_repo_id, unit.type_id, unit.id, self.association_owner_type,
-                self.association_owner_id)
+                self.dest_repo_id, unit.type_id, unit.id)
             return unit
         except Exception, e:
             _logger.exception(_('Content unit association failed [%s]' % str(unit)))

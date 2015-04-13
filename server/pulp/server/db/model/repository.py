@@ -215,13 +215,6 @@ class RepoContentUnit(Model):
     @ivar unit_type_id: identifies the type of content unit being associated
     @type unit_type_id: str
 
-    @ivar owner_type: distinguishes between importer and user initiated associations;
-                      must be one of the OWNER_TYPE_* constants in this class
-    @type owner_type: str
-
-    @ivar owner_id: ID of the importer or user who created the association
-    @type owner_id: str
-
     @ivar created: iso8601 formatted timestamp indicating when the association was first created
     @type created: str
 
@@ -234,8 +227,8 @@ class RepoContentUnit(Model):
 
     # Make sure you understand how the order of these affects mongo before
     # modifying the following index
-    unique_indices = (('repo_id', 'unit_type_id', 'unit_id', 'owner_type', 'owner_id'),)
-    search_indices = (('repo_id', 'unit_type_id', 'owner_type'),
+    unique_indices = (('repo_id', 'unit_type_id', 'unit_id'),)
+    search_indices = (('repo_id', 'unit_type_id'),
                       # default sort order on get_units query, do not remove
                       ('unit_type_id', 'created'),
                       'unit_id')
@@ -243,17 +236,13 @@ class RepoContentUnit(Model):
     OWNER_TYPE_IMPORTER = 'importer'
     OWNER_TYPE_USER = 'user'
 
-    def __init__(self, repo_id, unit_id, unit_type_id, owner_type, owner_id):
+    def __init__(self, repo_id, unit_id, unit_type_id):
         super(RepoContentUnit, self).__init__()
 
         # Mapping Identity Information
         self.repo_id = repo_id
         self.unit_id = unit_id
         self.unit_type_id = unit_type_id
-
-        # Association Metadata
-        self.owner_type = owner_type
-        self.owner_id = owner_id
 
         # store time in UTC
         utc_timestamp = dateutils.now_utc_timestamp()

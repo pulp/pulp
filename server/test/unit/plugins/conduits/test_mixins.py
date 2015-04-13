@@ -555,11 +555,8 @@ class AddUnitMixinTests(unittest.TestCase):
 
         self.repo_id = 'add-repo'
         self.importer_id = 'add-importer'
-        self.association_owner_type = 'importer'
-        self.association_owner_id = 'imp-id'
 
-        self.mixin = mixins.AddUnitMixin(self.repo_id, self.importer_id,
-                                         self.association_owner_type, self.association_owner_id)
+        self.mixin = mixins.AddUnitMixin(self.repo_id, self.importer_id)
 
     @mock.patch('pulp.server.managers.content.query.ContentQueryManager.'
                 'request_content_unit_file_path')

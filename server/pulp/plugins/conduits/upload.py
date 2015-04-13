@@ -5,9 +5,7 @@ from pulp.plugins.conduits.mixins import (
 
 class UploadConduit(AddUnitMixin, SingleRepoUnitsMixin, SearchUnitsMixin):
 
-    def __init__(self, repo_id, importer_id, association_owner_type,
-                 association_owner_id):
-        AddUnitMixin.__init__(self, repo_id, importer_id,
-                              association_owner_type, association_owner_id)
+    def __init__(self, repo_id, importer_id):
+        AddUnitMixin.__init__(self, repo_id, importer_id)
         SingleRepoUnitsMixin.__init__(self, repo_id, ImporterConduitException)
         SearchUnitsMixin.__init__(self, ImporterConduitException)

@@ -35,7 +35,6 @@ from pulp.plugins.conduits.mixins import (
     ImporterScratchPadMixin, SingleRepoUnitsMixin, StatusMixin,
     SearchUnitsMixin)
 from pulp.plugins.model import SyncReport
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 import pulp.server.managers.factory as manager_factory
 
 
@@ -56,11 +55,10 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
+    def __init__(self, repo_id, importer_id):
         RepoScratchPadMixin.__init__(self, repo_id, ImporterConduitException)
         ImporterScratchPadMixin.__init__(self, repo_id, importer_id)
-        AddUnitMixin.__init__(self, repo_id, importer_id, association_owner_type,
-                              association_owner_id)
+        AddUnitMixin.__init__(self, repo_id, importer_id)
         SingleRepoUnitsMixin.__init__(self, repo_id, ImporterConduitException)
         StatusMixin.__init__(self, importer_id, ImporterConduitException)
         SearchUnitsMixin.__init__(self, ImporterConduitException)
@@ -98,7 +96,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
 
         try:
             self._association_manager.unassociate_unit_by_id(
-                self.repo_id, unit.type_id, unit.id, OWNER_TYPE_IMPORTER, self.association_owner_id)
+                self.repo_id, unit.type_id, unit.id)
             self._removed_count += 1
         except Exception, e:
             _logger.exception(_('Content unit unassociation failed'))
@@ -115,9 +113,7 @@ class RepoSyncConduit(RepoScratchPadMixin, ImporterScratchPadMixin, AddUnitMixin
         :type  search_dicts: list of dicts
         """
         unit_ids = self._content_query_manager.get_content_unit_ids(unit_type_id, search_dicts)
-        self._association_manager.associate_all_by_ids(self.repo_id, unit_type_id, unit_ids,
-                                                       self.association_owner_type,
-                                                       self.association_owner_id)
+        self._association_manager.associate_all_by_ids(self.repo_id, unit_type_id, unit_ids)
 
     def build_success_report(self, summary, details):
         """

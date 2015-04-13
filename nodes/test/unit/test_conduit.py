@@ -9,7 +9,6 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from mock import Mock
 from base import ServerTests
 from operator import itemgetter
 
@@ -67,9 +66,7 @@ def add_units(num_units=10):
             manager.associate_unit_by_id(
                 REPO_ID,
                 type_id,
-                unit_id,
-                RepoContentUnit.OWNER_TYPE_IMPORTER,
-                constants.HTTP_IMPORTER)
+                unit_id)
             units.append(unit)
             n += 1
     return units

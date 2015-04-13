@@ -14,7 +14,6 @@ from pulp.server.db.model.repository import Repo, RepoImporter
 from pulp.server.exceptions import (MissingResource, PulpDataException, PulpExecutionException,
                                     InvalidValue)
 from pulp.server.managers.content.upload import ContentUploadManager
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
 import pulp.server.managers.factory as manager_factory
 
 
@@ -205,8 +204,6 @@ class ContentUploadManagerTests(base.PulpServerTests):
         conduit = call_args[5]
         self.assertTrue(isinstance(conduit, UploadConduit))
         self.assertEqual(call_args[5].repo_id, 'repo-u')
-        self.assertEqual(conduit.association_owner_type, OWNER_TYPE_USER)
-        self.assertEqual(conduit.association_owner_id, fake_user.login)
 
         # Clean up
         mock_plugins.MOCK_IMPORTER.upload_unit.return_value = None
