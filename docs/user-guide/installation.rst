@@ -201,15 +201,6 @@ Server
 
     $ sudo yum groupinstall pulp-server-qpid
 
-   .. warning::
-      The Pulp team believes that Pulp's webserver and Celery workers can be deployed across several
-      machines (with load balancing for the HTTP requests), but this has not been formally tested by
-      our Quality Engineering team. We encourage feedback if you have tried this, positive or
-      negative. If you wish to try this, each host that participates in the distributed Pulp
-      application will need to have access to a shared /var/lib/pulp filesystem, including the web
-      servers and the task workers. It is important that the httpd and celery processes are run by
-      users with identical UIDs and GIDs for permissions on the shared filesystem.
-
    .. note::
       For RabbitMQ installations, install Pulp server without any Qpid specific libraries using
       ``sudo yum groupinstall pulp-server``. You may need to install additional RabbitMQ
@@ -289,10 +280,9 @@ Server
    once each (i.e., do not enable either of these on any more than one Pulp server).
 
    .. warning::
-      
+
       ``pulp_celerybeat`` and ``pulp_resource_manager`` must both be singletons, so be sure that you
-      only enable each of these on one host if you are experimenting with Pulp's untested HA
-      deployment. They do not have to run on the same host, however.
+      only enable each of these on one host if you are Pulp's clustered deployment.
 
    On some Pulp system, configure, start and enable the Celerybeat process. This process performs a
    job similar to a cron daemon for Pulp. Edit ``/etc/default/pulp_celerybeat`` to your liking, and

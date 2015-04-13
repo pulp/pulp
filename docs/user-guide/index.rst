@@ -9,6 +9,7 @@ Contents:
    introduction
    release-notes/index
    installation
+   scaling
    tuning
    broker-settings
    server
