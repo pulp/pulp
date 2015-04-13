@@ -9,6 +9,9 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
                                     OperationPostponed, UnsupportedValue)
 from pulp.server.managers import factory
+from pulp.server.managers.consumer import bind
+from pulp.server.managers.consumer import profile
+from pulp.server.managers.consumer import query as query_manager
 from pulp.server.managers.consumer.applicability import (regenerate_applicability_for_consumers,
                                                          retrieve_consumer_applicability)
 from pulp.server.managers.schedule.consumer import (UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION,
@@ -16,12 +19,87 @@ from pulp.server.managers.schedule.consumer import (UNIT_INSTALL_ACTION, UNIT_UN
 from pulp.server.tasks import consumer as consumer_task
 from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices import serialization
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (_ensure_input_encoding,
                                                 generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
                                                 json_body_required,
                                                 json_body_allow_empty)
+
+
+def add_link(consumer):
+    """
+    Add link to the consumer object.
+
+    :param consumer: consumer object
+    :type consumer: dict
+
+    :return: link containing the href
+    :rtype: dict
+    """
+
+    link = {'_href': reverse('consumer_resource',
+            kwargs={'consumer_id': consumer['id']})}
+    consumer.update(link)
+    return link
+
+
+def add_link_profile(consumer):
+    """
+    Add link to the consumer profile object.
+
+    :param consumer: consumer profile object
+    :type consumer: dict
+
+    :return: link containing the href
+    :rtype: dict
+    """
+
+    link = {'_href': reverse('consumer_profile_resource',
+            kwargs={'consumer_id': consumer['consumer_id'],
+                    'content_type': consumer['content_type']})}
+    consumer.update(link)
+    return link
+
+
+def add_link_schedule(schedule, action_type, consumer_id):
+    """
+    Add link to the schedule object.
+
+    :param schedule: schedule object
+    :type schedule: dict
+    :param action_type: action type to perform
+    :type action_type: str
+    :param consumer_id: id of the consumer
+    :type consumer_id: str
+
+    :return: link containing the href
+    :rtype: dict
+    """
+
+    action = action_type.split("_")[-1]
+    link = {'_href': reverse('schedule_content_%s_resource' % action,
+            kwargs={'consumer_id': consumer_id,
+                    'schedule_id': schedule['_id']})}
+    schedule.update(link)
+    return link
+
+
+def scheduled_unit_management_obj(scheduled_call):
+    """
+    Modify scheduled unit management object.
+
+    :param scheduled_call: scheduled unit manag. object
+    :type scheduled_call: dict
+
+    :return: updated scheduled unit manag. object
+    :rtype: updated scheduled unit manag. object
+    """
+
+    scheduled_call['options'] = scheduled_call['kwargs']['options']
+    scheduled_call['units'] = scheduled_call['kwargs']['units']
+    return scheduled_call
 
 
 def expand_consumers(options, consumers):
@@ -196,6 +274,53 @@ class ConsumerResourceView(View):
         consumer = manager.update(consumer_id, delta)
         add_link(consumer)
         return generate_json_response_with_pulp_encoder(consumer)
+
+
+class ConsumerSearchView(search.SearchView):
+    """
+    This view provides GET and POST searching for Consumers.
+    """
+    optional_fields = ['details', 'bindings']
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
+    manager = query_manager.ConsumerQueryManager()
+
+    @classmethod
+    def get_results(cls, query, search_method, options, *args):
+        """
+        This overrides the base class implementation so we can include optional information.
+
+        :param query: The criteria that should be used to search for objects
+        :type  query: dict
+        :param search_method: function that should be used to search
+        :type  search_method: func
+        :param options: additional options for including extra data. In this case, this can contain
+                        only 'details' and 'bindings' as keys.
+        :type  options: dict
+
+        :return: results, expanded and serialized
+        :rtype:  list
+        """
+        results = list(search_method(query))
+        results = expand_consumers(options, results)
+        for consumer in results:
+            add_link(consumer)
+        return results
+
+
+class ConsumerBindingSearchView(search.SearchView):
+    """
+    This view provides GET and POST searching for Consumer Bindings.
+    """
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
+    manager = bind.BindManager()
+
+
+class ConsumerProfileSearchView(search.SearchView):
+    """
+    This view provides GET and POST searching for Consumer Profiles.
+    """
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
+    manager = profile.ProfileManager()
 
 
 class ConsumerBindingsView(View):
@@ -546,8 +671,8 @@ class ConsumerProfilesView(View):
 
         manager = factory.consumer_profile_manager()
         profiles = manager.get_profiles(consumer_id)
-        for profile in profiles:
-            add_link_profile(profile)
+        for consumer_profile in profiles:
+            add_link_profile(consumer_profile)
         return generate_json_response_with_pulp_encoder(profiles)
 
     @auth_required(authorization.CREATE)
@@ -1033,77 +1158,3 @@ class UnitUninstallScheduleResourceView(ConsumerUnitActionScheduleResourceView):
     """
 
     ACTION = UNIT_UNINSTALL_ACTION
-
-
-def add_link(consumer):
-    """
-    Add link to the consumer object.
-
-    :param consumer: consumer object
-    :type consumer: dict
-
-    :return: link containing the href
-    :rtype: dict
-    """
-
-    link = {'_href': reverse('consumer_resource',
-            kwargs={'consumer_id': consumer['id']})}
-    consumer.update(link)
-    return link
-
-
-def add_link_profile(consumer):
-    """
-    Add link to the consumer profile object.
-
-    :param consumer: consumer profile object
-    :type consumer: dict
-
-    :return: link containing the href
-    :rtype: dict
-    """
-
-    link = {'_href': reverse('consumer_profile_resource',
-            kwargs={'consumer_id': consumer['consumer_id'],
-                    'content_type': consumer['content_type']})}
-    consumer.update(link)
-    return link
-
-
-def add_link_schedule(schedule, action_type, consumer_id):
-    """
-    Add link to the schedule object.
-
-    :param schedule: schedule object
-    :type schedule: dict
-    :param action_type: action type to perform
-    :type action_type: str
-    :param consumer_id: id of the consumer
-    :type consumer_id: str
-
-    :return: link containing the href
-    :rtype: dict
-    """
-
-    action = action_type.split("_")[-1]
-    link = {'_href': reverse('schedule_content_%s_resource' % action,
-            kwargs={'consumer_id': consumer_id,
-                    'schedule_id': schedule['_id']})}
-    schedule.update(link)
-    return link
-
-
-def scheduled_unit_management_obj(scheduled_call):
-    """
-    Modify scheduled unit management object.
-
-    :param scheduled_call: scheduled unit manag. object
-    :type scheduled_call: dict
-
-    :return: updated scheduled unit manag. object
-    :rtype: updated scheduled unit manag. object
-    """
-
-    scheduled_call['options'] = scheduled_call['kwargs']['options']
-    scheduled_call['units'] = scheduled_call['kwargs']['units']
-    return scheduled_call
