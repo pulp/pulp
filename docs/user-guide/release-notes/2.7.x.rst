@@ -1,0 +1,65 @@
+=======================
+Pulp 2.7 Release Notes
+=======================
+
+Pulp 2.7.0
+==========
+
+New Features
+------------
+
+- Pulp now allows users to add their own :ref:`content authentication mechanisms <content_auth_mechanisms>`.
+
+Deprecation
+-----------
+
+.. _2.6.x_upgrade_to_2.7.0:
+
+Upgrade Instructions for 2.6.x --> 2.7.0
+-----------------------------------------
+
+All services should be stopped. At that point you can issue an upgrade via:
+
+::
+
+    sudo yum update
+
+After yum completes you should migrate the database using:
+
+::
+
+    sudo -u apache pulp-manage-db
+
+After the database migrations finish, restart `httpd`, `pulp_workers`, `pulp_celerybeat`, and
+`pulp_resource_manager`.
+
+Bugs
+----
+
+This release has fixes for :fixedbugs:`these issues <2.7.0>`.
+
+Known Issues
+------------
+
+* None at this time.
+
+Client Changes
+--------------
+
+Agent Changes
+-------------
+
+Rest API Changes
+----------------
+
+Binding API Changes
+-------------------
+
+Plugin API Changes
+------------------
+
+Thank You
+---------
+
+Thank you to all of Pulp's contributors, especially these new ones!
+
