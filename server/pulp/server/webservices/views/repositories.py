@@ -10,10 +10,12 @@ from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
+from pulp.server.managers.repo import query as repo_query
 from pulp.server.managers.repo import importer as repo_importer_manager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.tasks import repository as repo_tasks
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.schedule import ScheduleResource
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
@@ -79,45 +81,43 @@ def _convert_repo_dates_to_strings(repo):
         repo['last_unit_removed'] = dateutils.format_iso8601_datetime(new_date)
 
 
+def _process_repos(repos, details, importers, distributors):
+    """
+    Apply standard processing to a collection of repositories being returned to a client. Adds
+    the object link and optionally adds related importers and distributors.
+
+    :param repos: collection of repositories
+    :type  repos: list, tuple
+    :param importers: if True, adds related importers under the attribute "importers".
+    :type  importers: bool
+    :param distributors: if True, adds related distributors under the attribute "distributors"
+    :type  distributors: bool
+
+    :return: the same list that was passed in, just for convenience. The list itself is not
+             modified- only its members are modified in-place.
+    :rtype:  list of Repo instances
+    """
+    if details.lower() == 'true':
+        importers = distributors = 'true'
+    if importers.lower() == 'true':
+        _merge_related_objects(
+            'importers', manager_factory.repo_importer_manager(), repos)
+    if distributors.lower() == 'true':
+        _merge_related_objects(
+            'distributors', manager_factory.repo_distributor_manager(), repos)
+    for repo in repos:
+        repo['_href'] = reverse('repo_resource', kwargs={'repo_id': repo['id']})
+        _convert_repo_dates_to_strings(repo)
+        # Remove internally used scratchpad from repo details
+        if 'scratchpad' in repo:
+            del repo['scratchpad']
+    return repos
+
+
 class ReposView(View):
     """
     View for all repos.
     """
-
-    @staticmethod
-    def _process_repos(repos, importers=False, distributors=False):
-        """
-        Apply standard processing to a collection of repositories being returned to a client. Adds
-        the object link and optionally adds related importers and distributors.
-
-        :param repos: collection of repositories
-        :type  repos: list, tuple
-        :param importers: if True, adds related importers under the attribute "importers".
-        :type  importers: bool
-        :param distributors: if True, adds related distributors under the attribute "distributors"
-        :type  distributors: bool
-
-        :return: the same list that was passed in, just for convenience. The list itself is not
-                 modified- only its members are modified in-place.
-        :rtype:  list of Repo instances
-        """
-
-        if importers:
-            _merge_related_objects(
-                'importers', manager_factory.repo_importer_manager(), repos)
-        if distributors:
-            _merge_related_objects(
-                'distributors', manager_factory.repo_distributor_manager(), repos)
-
-        for repo in repos:
-            repo['_href'] = reverse('repo_resource', kwargs={'repo_id': repo['id']})
-            _convert_repo_dates_to_strings(repo)
-
-            # Remove internally used scratchpad from repo details
-            if 'scratchpad' in repo:
-                del repo['scratchpad']
-
-        return repos
 
     @auth_required(authorization.READ)
     def get(self, request):
@@ -133,12 +133,13 @@ class ReposView(View):
 
         all_repos = list(RepoModel.get_collection().find(projection={'scratchpad': 0}))
 
-        details = request.GET.get('details', 'false').lower() == 'true'
-        include_importers = request.GET.get('importers', 'false').lower() == 'true' or details
-        include_distributors = request.GET.get('distributors', 'false').lower() == 'true' or details
+        details = request.GET.get('details', 'false')
+        include_importers = request.GET.get('importers', 'false')
+        include_distributors = request.GET.get('distributors', 'false')
 
-        self._process_repos(
+        _process_repos(
             all_repos,
+            details,
             include_importers,
             include_distributors
         )
@@ -282,6 +283,53 @@ class RepoResourceView(View):
 
         result = task_result.serialize()
         return generate_json_response_with_pulp_encoder(result)
+
+
+class RepoSearch(search.SearchView):
+    manager = repo_query.RepoQueryManager()
+    optional_fields = ['details', 'importers', 'distributors']
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
+
+    @classmethod
+    def get_results(cls, query, search_method, options, *args, **kwargs):
+        """
+        This overrides the base class's implementation so we can expand the consumers based
+        on the options passed in.
+        """
+        results = list(search_method(query))
+        details = options.get('details', 'false')
+        importers = options.get('importers', 'false')
+        distributors = options.get('distributors', 'false')
+        return _process_repos(results, details, importers, distributors)
+
+
+class RepoUnitSearch(search.SearchView):
+
+    @classmethod
+    def _generate_response(cls, query, options, *args, **kwargs):
+        """
+        Perform the database query using the given search data, and return the resuls as a JSON
+        serialized HttpReponse object.
+
+        :param query: The criteria that should be used to search for objects
+        :type  query: dict
+        :return:      The serialized search results in an HttpReponse
+        :rtype:       django.http.HttpResponse
+        """
+        repo_id = kwargs.get('repo_id')
+        repo_query_manager = manager_factory.repo_query_manager()
+        repo = repo_query_manager.find_by_id(repo_id)
+        if repo is None:
+            raise pulp_exceptions.MissingResource(repo_id=repo_id)
+
+        criteria = UnitAssociationCriteria.from_client_input(query)
+        manager = manager_factory.repo_unit_association_query_manager()
+        if criteria.type_ids is not None and len(criteria.type_ids) == 1:
+            type_id = criteria.type_ids[0]
+            units = manager.get_units_by_type(repo_id, type_id, criteria=criteria)
+        else:
+            units = manager.get_units_across_types(repo_id, criteria=criteria)
+        return generate_json_response_with_pulp_encoder(units)
 
 
 class RepoImportersView(View):

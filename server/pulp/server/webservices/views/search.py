@@ -46,9 +46,23 @@ class SearchView(generic.View):
     """
 
     response_builder = staticmethod(util.generate_json_response)
+    optional_fields = []
+
+    @classmethod
+    def _parse_args(cls, args):
+        """
+        Separate
+        """
+        search_params = dict(args)
+        options = {}
+        for field in cls.optional_fields:
+            if search_params.get(field):
+                options[field] = search_params.pop(field)
+
+        return search_params, options
 
     @auth_required(authorization.READ)
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         """
         Search for objects using an HTTP GET request.
 
@@ -57,18 +71,18 @@ class SearchView(generic.View):
         :return:        HttpReponse containing a list of objects that were matched by the request
         :rtype:         django.http.HttpResponse
         """
-        query = dict(request.GET)
+        query, options = self._parse_args(request.GET)
         query['filters'] = json.loads(request.GET.get('filters'))
 
         fields = query.pop('field', '')
         if fields:
             query['fields'] = fields
 
-        return self._generate_response(query)
+        return self._generate_response(query, options, *args, **kwargs)
 
     @auth_required(authorization.READ)
     @util.json_body_required
-    def post(self, request):
+    def post(self, request, *args, **kwargs):
         """
         Search for objects using an HTTP POST request.
 
@@ -79,16 +93,17 @@ class SearchView(generic.View):
 
         :raises MissingValue: if required param `criteria` is not passed in the body.
         """
+        search_params, options = self._parse_args(request.body_as_json)
         try:
             # Retrieve the criteria from the POST data
-            query = request.body_as_json['criteria']
+            query = search_params['criteria']
         except KeyError:
             raise exceptions.MissingValue(['criteria'])
 
-        return self._generate_response(query)
+        return self._generate_response(query, options, *args, **kwargs)
 
     @classmethod
-    def _generate_response(cls, query):
+    def _generate_response(cls, query, options, *args, **kwargs):
         """
         Perform the database query using the given search data, and return the resuls as a JSON
         serialized HttpReponse object.
@@ -99,7 +114,6 @@ class SearchView(generic.View):
         :rtype:       django.http.HttpResponse
         """
         query = criteria.Criteria.from_client_input(query)
-
         if query.fields:
             if 'id' not in query.fields:
                 query.fields.append('id')
@@ -115,10 +129,15 @@ class SearchView(generic.View):
             search_method = cls.model.objects.find_by_criteria
         else:
             search_method = cls.manager.find_by_criteria
+        return cls.response_builder(cls.get_results(query, search_method, options, *args, **kwargs))
 
+    @classmethod
+    def get_results(cls, query, search_method, options, *args, **kwargs):
+        """
+        This is designed to search using the class's search method and serialize the results. This
+        method can be overriden to account for the need to modify all results post search.
+        """
         results = search_method(query)
-
         if hasattr(cls, 'serializer'):
             results = [cls.serializer(r) for r in results]
-
-        return cls.response_builder(results)
+        return results

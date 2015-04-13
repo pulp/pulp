@@ -8,12 +8,19 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup as RepoGroupModel
 from pulp.server.managers import factory as managers_factory
+from pulp.server.managers.repo.group import query as repo_group_query
 from pulp.server.managers.repo.group.publish import publish as repo_group_publish
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (
     generate_json_response, generate_json_response_with_pulp_encoder, generate_redirect_response,
     json_body_allow_empty, json_body_required
 )
+
+
+def _add_group_link(repo_group):
+    repo_group['_href'] = reverse('repo_group_resource', kwargs={'repo_group_id': repo_group['id']})
+    return repo_group
 
 
 class RepoGroupsView(View):
@@ -35,10 +42,7 @@ class RepoGroupsView(View):
 
         collection = RepoGroupModel.get_collection()
         cursor = collection.find({})
-        groups = []
-        for group in cursor:
-            group['_href'] = reverse('repo_group_resource', kwargs={'repo_group_id': group['id']})
-            groups.append(group)
+        groups = [_add_group_link(group) for group in cursor]
         return generate_json_response_with_pulp_encoder(groups)
 
     @auth_required(authorization.CREATE)
@@ -71,7 +75,7 @@ class RepoGroupsView(View):
         args = [group_id, display_name, description, repo_ids, notes]
         kwargs = {'distributor_list': distributors}
         group = manager.create_and_configure_repo_group(*args, **kwargs)
-        group['_href'] = reverse('repo_group_resource', kwargs={'repo_group_id': group['id']})
+        group = _add_group_link(group)
         group['distributors'] = distributors or []
         response = generate_json_response_with_pulp_encoder(group)
         return generate_redirect_response(response, group['_href'])
@@ -100,8 +104,7 @@ class RepoGroupResourceView(View):
         group = collection.find_one({'id': repo_group_id})
         if group is None:
             raise pulp_exceptions.MissingResource(repo_group=repo_group_id)
-        group['_href'] = reverse('repo_group_resource',
-                                 kwargs={'repo_group_id': repo_group_id})
+        group = _add_group_link(group)
         return generate_json_response_with_pulp_encoder(group)
 
     @auth_required(authorization.DELETE)
@@ -138,9 +141,14 @@ class RepoGroupResourceView(View):
         update_data = request.body_as_json
         manager = managers_factory.repo_group_manager()
         group = manager.update_repo_group(repo_group_id, **update_data)
-        group['_href'] = reverse('repo_group_resource',
-                                 kwargs={'repo_group_id': repo_group_id})
+        group = _add_group_link(group)
         return generate_json_response_with_pulp_encoder(group)
+
+
+class RepoGroupSearch(search.SearchView):
+    serializer = staticmethod(_add_group_link)
+    manager = repo_group_query.RepoGroupQueryManager()
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
 
 class RepoGroupAssociateView(View):
