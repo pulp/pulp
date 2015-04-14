@@ -22,14 +22,14 @@ You can `file a new bug or feature request <https://pulp.plan.io/projects/pulp/i
 
 .. warning::
   Security related bugs need to be marked as private when reported. Use the
-  private checkbox (top right) for this. Consider also setting the tag 'Security'.
+  private checkbox (top right) for this.
 
 If you are filing an issue or defect, select ``Issue`` as the *Tracker*. If you
 are filing a feature request, select ``Story``.
 
 Fill in the *Subject* and *Description*. Leave the status at ``NEW``. Please
 select the closest corresponding *Category*, if any. Select the *Severity* field
-and any tags based on your best judgement.
+and any *Tags* based on your best judgement.
 
 Use the *Version* field to indicate which Pulp version you are using. It has an entry
 for each Pulp release (2.0.6, 2.0.7, 2.1.0, etc.). If a bug is found when running
@@ -101,9 +101,6 @@ Documentation      The bug/story itself is documentation related.
 EasyFix            A bug that is simple to fix, at least in theory.
 Groomed            Usually reserved for stories to indicate they have enough
                    detail to be actionable.
-Reopened           This should only be set if a bug is closed and then reopened.
-Security           Security related bug/story. Usually these should also be
-                   marked as private.
 Sprint Candidate   Usually reserved for stories. It indicates a story is ready to
                    go on the short list of stories to work on soon.
 ================   ===============================================================
