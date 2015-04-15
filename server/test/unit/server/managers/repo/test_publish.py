@@ -4,14 +4,14 @@ import signal
 import mock
 
 from .... import base
-from pulp.common import dateutils, constants
+from pulp.common import dateutils, constants, error_codes
 from pulp.common.tags import resource_tag, RESOURCE_REPOSITORY_TYPE, action_tag
 from pulp.devel import mock_plugins
 from pulp.plugins.loader.exceptions import PluginNotFound
 from pulp.plugins.model import PublishReport
 from pulp.server.async import tasks
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoPublishResult
-from pulp.server.exceptions import InvalidValue, MissingResource
+from pulp.server.exceptions import InvalidValue, MissingResource, PulpCodedException
 import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.distributor as distributor_manager
 import pulp.server.managers.repo.publish as publish_manager
@@ -130,24 +130,26 @@ class RepoSyncManagerTests(base.PulpServerTests):
             False, 'Summary of the publish', 'Details of the publish')
 
         # Test
-        report = self.publish_manager.publish('repo-1', 'dist-1', None)
+        try:
+            self.publish_manager.publish('repo-1', 'dist-1', None)
+            self.fail("This should have raised a PulpCodedException")
+        except PulpCodedException, data_exception:
+            self.assertEquals(data_exception.error_code, error_codes.PLP0034)
 
         # Verify
         entries = list(RepoPublishResult.get_collection().find({'repo_id': 'repo-1'}))
         self.assertEqual(1, len(entries))
 
-        for check_me in entries[0], report:
-            self.assertEqual('repo-1', check_me['repo_id'])
-            self.assertEqual('dist-1', check_me['distributor_id'])
-            self.assertEqual('mock-distributor', check_me['distributor_type_id'])
-            self.assertTrue(check_me['started'] is not None)
-            self.assertTrue(check_me['completed'] is not None)
-            self.assertEqual(RepoPublishResult.RESULT_FAILED, check_me['result'])
-            self.assertTrue(check_me['summary'] is not None)
-            self.assertTrue(check_me['details'] is not None)
-            self.assertTrue(check_me['error_message'] is None)
-            self.assertTrue(check_me['exception'] is None)
-            self.assertTrue(check_me['traceback'] is None)
+        check_me = entries[0]
+        self.assertEqual('repo-1', check_me['repo_id'])
+        self.assertEqual('dist-1', check_me['distributor_id'])
+        self.assertEqual('mock-distributor', check_me['distributor_type_id'])
+        self.assertTrue(check_me['started'] is not None)
+        self.assertTrue(check_me['completed'] is not None)
+        self.assertEqual(RepoPublishResult.RESULT_ERROR, check_me['result'])
+        self.assertTrue(check_me['error_message'] is not None)
+        self.assertTrue(check_me['exception'] is not None)
+        self.assertTrue(check_me['traceback'] is not None)
 
         # Cleanup
         mock_plugins.reset()
