@@ -6,15 +6,16 @@ from cStringIO import StringIO
 import os
 
 from mock import call, inPy3k, MagicMock, patch
+from mongoengine.queryset import DoesNotExist
 
 from ... import base
 from pulp.common.compat import all, json
 from pulp.server.db import manage
 from pulp.server.db.migrate import models
 from pulp.server.db.model.migration_tracker import MigrationTracker
-from pulp.server.managers.migration_tracker import DoesNotExist, MigrationTrackerManager
 import pulp.plugins.types.database as types_db
 import migration_packages.a
+import migration_packages.b
 import migration_packages.duplicate_versions
 import migration_packages.platform
 import migration_packages.raise_exception
@@ -96,7 +97,7 @@ class MigrationTest(base.PulpServerTests):
     def clean(self):
         super(MigrationTest, self).clean()
         # Make sure each test doesn't have any lingering MigrationTrackers
-        MigrationTracker.get_collection().remove({})
+        MigrationTracker.objects().delete()
 
 
 class TestManageDB(MigrationTest):
@@ -191,7 +192,7 @@ class TestManageDB(MigrationTest):
         getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        self.assertEquals(MigrationTracker.objects().count(), 0)
         # Make sure that our mock works. There are four valid packages.
         self.assertEquals(len(models.get_migration_packages()), 4)
         # Set all versions to ridiculously high values
@@ -227,7 +228,7 @@ class TestManageDB(MigrationTest):
         getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        self.assertEquals(MigrationTracker.objects().count(), 0)
         # Make sure that our mock works. There are three valid packages.
         self.assertEquals(len(models.get_migration_packages()), 4)
         # Set all versions back to 0
@@ -285,7 +286,7 @@ class TestManageDB(MigrationTest):
         way.
         """
         # Make sure we start out with a clean slate
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        self.assertEquals(MigrationTracker.objects().count(), 0)
         # Make sure that our mock works. There are four valid packages.
         self.assertEquals(len(models.get_migration_packages()), 4)
         manage.main()
@@ -362,7 +363,7 @@ class TestManageDB(MigrationTest):
         getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        self.assertEquals(MigrationTracker.objects().count(), 0)
         # Make sure that our mock works. There are three valid packages.
         self.assertEquals(len(models.get_migration_packages()), 4)
         # Set all versions back to 0
@@ -413,7 +414,7 @@ class TestManageDB(MigrationTest):
         getLogger.return_value = logger
 
         # Make sure we start out with a clean slate
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
+        self.assertEquals(MigrationTracker.objects().count(), 0)
         # Make sure that our mock works. There are three valid packages.
         self.assertEquals(len(models.get_migration_packages()), 4)
         # Set all versions back to 0
@@ -522,6 +523,25 @@ class TestMigrationPackage(MigrationTest):
         self.assertEquals(mp._migration_tracker.name, 'unit.server.db.migration_packages.z')
         # By default, MigrationPackages should start at version 0
         self.assertEquals(mp._migration_tracker.version, 0)
+
+    @patch('pulp.server.db.migrate.models.MigrationTracker')
+    def test__init__2(self, mock_tracker):
+        """
+        Test package does not exist.
+        """
+        mock_tracker.objects.return_value.get.side_effect = DoesNotExist()
+        models.MigrationPackage(migration_packages.b)
+        self.assertEqual(mock_tracker.return_value.save.call_count, 1)
+
+    @patch('pulp.server.db.migrate.models.MigrationTracker')
+    def test__init__3(self, mock_tracker):
+        """
+        Test package exists.
+        """
+        mock_some = MagicMock()
+        mock_tracker.objects.return_value.get = mock_some
+        models.MigrationPackage(migration_packages.a)
+        self.assertEqual(mock_tracker.return_value.save.call_count, 0)
 
     def test_apply_migration(self):
         mp = models.MigrationPackage(migration_packages.z)
@@ -717,96 +737,6 @@ class TestMigrationPackage(MigrationTest):
     def test___str__(self):
         mp = models.MigrationPackage(migration_packages.z)
         self.assertEqual(str(mp), 'unit.server.db.migration_packages.z')
-
-
-class TestMigrationTracker(MigrationTest):
-    def test___init__(self):
-        mt = MigrationTracker('meaning_of_life', 42)
-        self.assertEquals(mt.name, 'meaning_of_life')
-        self.assertEquals(mt.version, 42)
-
-    def test_save(self):
-        # Make sure we are starting off clean
-        self.assertEquals(MigrationTracker.get_collection().find({}).count(), 0)
-        # Instantiate a MigrationTracker
-        mt = MigrationTracker('meaning_of_life', 41)
-        # At this point there should not be a MigrationTracker in the database
-        self.assertEquals(mt.get_collection().find({}).count(), 0)
-        # saving the mt should add it to the DB
-        mt.save()
-        self.assertEquals(mt.get_collection().find({}).count(), 1)
-        mt_bson = mt.get_collection().find_one({'name': 'meaning_of_life'})
-        self.assertEquals(mt_bson['name'], 'meaning_of_life')
-        self.assertEquals(mt_bson['version'], 41)
-        # now let's update the version to 42, the correct meaning of life
-        mt.version = 42
-        mt.save()
-        # see if the updated meaning of life made it to the DB
-        self.assertEquals(mt.get_collection().find({}).count(), 1)
-        mt_bson = mt.get_collection().find_one({'name': 'meaning_of_life'})
-        self.assertEquals(mt_bson['name'], 'meaning_of_life')
-        self.assertEquals(mt_bson['version'], 42)
-
-
-class TestMigrationTrackerManager(MigrationTest):
-    def setUp(self):
-        super(self.__class__, self).setUp()
-        self.mtm = MigrationTrackerManager()
-
-    def test___init__(self):
-        self.assertEquals(self.mtm._collection, MigrationTracker.get_collection())
-
-    def test_create(self):
-        mt = self.mtm.create('first_prime', 2)
-        self.assertEquals(mt.name, 'first_prime')
-        self.assertEquals(mt.version, 2)
-        # Make sure the DB got to the correct state
-        self.assertEquals(mt.get_collection().find({}).count(), 1)
-        mt_bson = mt.get_collection().find_one({'name': 'first_prime'})
-        self.assertEquals(mt_bson['name'], 'first_prime')
-        self.assertEquals(mt_bson['version'], 2)
-
-    def test_get(self):
-        self.mtm.create('only_even_prime', 2)
-        mt = self.mtm.get('only_even_prime')
-        self.assertEquals(mt.name, 'only_even_prime')
-        self.assertEquals(mt.version, 2)
-        # Now try to get one that doesn't exist
-        try:
-            self.mtm.get("doesn't exist")
-            self.fail("The get() should have raised DoesNotExist, but did not.")
-        except DoesNotExist:
-            # This is the expected behavior
-            pass
-
-    def test_get_or_create(self):
-        # Insert one for getting
-        self.mtm.create('smallest_perfect_number', 6)
-        # Now get or create it with an incorrect version. The incorrect version should not be set
-        mt = self.mtm.get_or_create('smallest_perfect_number', defaults={'version': 7})
-        self.assertEquals(mt.name, 'smallest_perfect_number')
-        self.assertEquals(mt.version, 6)  # not 7
-        mt_bson = mt.get_collection().find_one({'name': 'smallest_perfect_number'})
-        self.assertEquals(mt_bson['name'], 'smallest_perfect_number')
-        self.assertEquals(mt_bson['version'], 6)
-        # This will cause a create
-        self.assertEquals(mt.get_collection().find({'name': 'x^y=y^x'}).count(), 0)
-        # 16 is the only number for which x^y = y^x, where x != y
-        mt = self.mtm.get_or_create('x^y=y^x', defaults={'version': 16})
-        self.assertEquals(mt.get_collection().find({'name': 'x^y=y^x'}).count(), 1)
-        self.assertEquals(mt.name, 'x^y=y^x')
-        self.assertEquals(mt.version, 16)
-        mt_bson = mt.get_collection().find_one({'name': 'x^y=y^x'})
-        self.assertEquals(mt_bson['name'], 'x^y=y^x')
-        self.assertEquals(mt_bson['version'], 16)
-        # Let's use get_or_create without defaults
-        mt = self.mtm.get_or_create('None')
-        self.assertEquals(mt.get_collection().find({'name': 'None'}).count(), 1)
-        self.assertEquals(mt.name, 'None')
-        self.assertEquals(mt.version, None)
-        mt_bson = mt.get_collection().find_one({'name': 'None'})
-        self.assertEquals(mt_bson['name'], 'None')
-        self.assertEquals(mt_bson['version'], None)
 
 
 class TestMigrationUtils(MigrationTest):

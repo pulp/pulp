@@ -5,8 +5,10 @@ import re
 
 import pkg_resources
 
+from mongoengine.queryset import DoesNotExist
+
 from pulp.common.compat import iter_modules
-from pulp.server.managers.migration_tracker import MigrationTrackerManager
+from pulp.server.db.model.migration_tracker import MigrationTracker
 import pulp.server.db.migrations
 
 
@@ -119,12 +121,14 @@ class MigrationPackage(object):
         :type  python_package: package
         """
         self._package = python_package
-        migration_tracker_manager = MigrationTrackerManager()
         # This is an object representation of the DB object that keeps track of the migration
         # version that has been applied
-        self._migration_tracker = migration_tracker_manager.get_or_create(
-            name=self.name,
-            defaults={'version': 0})
+
+        try:
+            self._migration_tracker = MigrationTracker.objects().get(name=self.name)
+        except DoesNotExist:
+            self._migration_tracker = MigrationTracker(name=self.name)
+            self._migration_tracker.save()
 
         # Calculate the latest available version
         available_versions = self.available_versions

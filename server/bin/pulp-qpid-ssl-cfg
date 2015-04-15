@@ -14,7 +14,11 @@
 #
 
 DIR="/tmp/tmp$RANDOM"
-HOST=`hostname`
+HOST=`hostname -f`
+if [ -z "$HOST" ]
+then
+  HOST=`hostname`
+fi
 PWDFILE="password"
 SEEDFILE="seed"
 INST_DIR='/etc/pki/pulp/qpid'
@@ -38,7 +42,7 @@ echo ""
 read -p "Enter a directory [$INST_DIR]:" ans
 if [ "${#ans}" -gt 0 ]
 then
-  INST_DIR=$ans
+  INST_DIR=`readlink -f "$ans"`
 fi
 echo $INST_DIR
 
@@ -72,6 +76,19 @@ then
   done
   echo "Using CA key: $CA_KEY_PATH"
 fi
+
+# prompt user for this server's hostname, defaulting to the local fqdn
+echo ""
+echo "Please enter the hostname clients will use to connect to the qpid server."
+echo "If not specified, '$HOST' will be used."
+echo ""
+read -p "Enter a hostname:" ans
+if [ "${#ans}" -gt 0 ]
+then
+  HOST=$ans
+fi
+echo ""
+echo "Using hostname: [$HOST]"
 
 # create temporary db directory
 rm -rf $DIR
@@ -229,12 +246,12 @@ echo "Recommended properties in /etc/pulp/server.conf:"
 echo "
 ...
 [messaging]
-url: ssl://<host>:5671
+url: ssl://$HOST:5671
 cacert: $INST_DIR/ca.crt
 clientcert: $INST_DIR/client.crt
 
 [tasks]
-broker_url: qpid://<host>:5671/
+broker_url: qpid://$HOST:5671/
 celery_require_ssl: true
 cacert: /etc/pki/pulp/qpid/ca.crt
 keyfile: /etc/pki/pulp/qpid/client.crt
