@@ -64,18 +64,25 @@ configure rsyslogd to match Pulp's messages. Pulp prefixes all of its log messag
 aid in matching its messages in the logging daemon.
 
 If you wish to match Pulp messages and have them logged to a different file than
-``/var/log/messages``, you may adjust your ``/etc/rsyslog.conf`` file. You should find the line for
-logging to ``/var/log/messages`` and add ``pulp.none`` to the list of its matches. This will
-prevent Pulp logs from going to that file. After that, you can add a line to capture the Pulp
-messages and send them to a file::
+``/var/log/messages``, you can edit ``/etc/rsyslog.conf`` and add a filter. This example
+logs Pulp messages to ``/var/log/pulp.log``::
 
-    pulp.*  /var/log/pulp.log
+ #### RULES ####
+
+ :programname, startswith, "pulp" -/var/log/pulp.log
+ & ~
+
+To support logging Pulp messages to a file *and* filtering by severity, the filter will need
+be expressed in RainerScript. The following example will log Pulp messages with a severity of
+informational(3), critical(2), alert(1) and emergency(0) to ``/var/log/pulp.log``::
+
+ #### RULES ####
+
+ if $programname startswith 'pulp' and $syslogseverity <= '3' then /var/log/pulp.log
+ if $programname startswith 'pulp' then ~
 
 .. note::
-
-   The text after ``pulp.`` in this config file sets the log level that you wish rsyslog to filter.
-   For example, ``pulp.debug`` would set the log level to debug for Pulp messages. ``pulp.*``
-   captures all messages, and ``pulp.none`` discards all messages.
+  See RFC-5424 for syslog severity levels.
 
 Why Syslog?
 ^^^^^^^^^^^
