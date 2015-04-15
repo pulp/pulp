@@ -1,16 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
+import errno
 import inspect
+import os
 import unittest
 
 import mock
@@ -21,8 +11,8 @@ from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
+from pulp.server.managers.content.upload import ContentUploadManager
 
-# constants --------------------------------------------------------------------
 
 TYPE_1_DEF = model.TypeDefinition('type-1', 'Type 1', 'Test Definition One',
                                   ['key-1'], ['search-1'], [])
@@ -50,7 +40,6 @@ TYPE_2_UNITS = [
     {'key-2a': 'B',
      'key-2b': 'C'}]
 
-# content manager base tests class ---------------------------------------------
 
 class PulpContentTests(base.PulpServerTests):
 
@@ -64,7 +53,6 @@ class PulpContentTests(base.PulpServerTests):
         super(PulpContentTests, self).clean()
         database.clean()
 
-# cud unit tests ---------------------------------------------------------------
 
 class PulpContentCUDTests(PulpContentTests):
 
@@ -109,7 +97,6 @@ class PulpContentCUDTests(PulpContentTests):
         parent = self.query_manager.get_content_unit_by_id(TYPE_2_DEF.id, parent_id)
         self.assertEqual(len(parent['_%s_references' % TYPE_1_DEF.id]), 0)
 
-# query unit tests -------------------------------------------------------------
 
 class PulpContentQueryTests(PulpContentTests):
 
@@ -181,7 +168,7 @@ class PulpContentQueryTests(PulpContentTests):
     def __test_keys_dicts_query(self):
         # XXX this test proves my multi-dict query wrong, need to fix it
         new_unit = {'key-2a': 'B', 'key-2b': 'B'}
-        unit_id = self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, new_unit)
+        self.cud_manager.add_content_unit(TYPE_2_DEF.id, None, new_unit)
         keys_dicts = TYPE_2_UNITS[1:3]
         units = self.query_manager.get_multiple_units_by_keys_dicts(TYPE_2_DEF.id, keys_dicts)
         self.assertEqual(len(units), 2)
@@ -218,3 +205,39 @@ class TestGetContentUnitIDs(unittest.TestCase):
         list(ret)
         expected_spec = {'$or': ({'a': 'foo'}, {'a': 'bar'})}
         mock_find.assert_called_once_with(expected_spec, fields=['_id'])
+
+
+class TestContentUploadManager(unittest.TestCase):
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_removes_file(self, mock_os, mock__upload_file_path):
+        my_upload_id = 'asdf'
+        ContentUploadManager().delete_upload(my_upload_id)
+        mock__upload_file_path.assert_called_once_with(my_upload_id)
+        mock_os.remove.assert_called_once_with(mock__upload_file_path.return_value)
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_silences_ENOENT_error(self, mock_os, mock__upload_file_path):
+        my_upload_id = 'asdf'
+        mock_os.remove.side_effect = OSError(errno.ENOENT, os.strerror(errno.ENOENT))
+        try:
+            ContentUploadManager().delete_upload(my_upload_id)
+        except Exception:
+            self.fail('An Exception should not have been raised.')
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_allows_non_ENOENT_OSErrors_to_raise(self, mock_os,
+                                                               mock__upload_file_path):
+        my_upload_id = 'asdf'
+        mock_os.remove.side_effect = OSError(errno.EISDIR, os.strerror(errno.EISDIR))
+        self.assertRaises(OSError, ContentUploadManager().delete_upload, my_upload_id)
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_allows_non_OSErrors_to_raise(self, mock_os, mock__upload_file_path):
+        my_upload_id = 'asdf'
+        mock_os.remove.side_effect = ValueError()
+        self.assertRaises(ValueError, ContentUploadManager().delete_upload, my_upload_id)
