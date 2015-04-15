@@ -183,20 +183,6 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
 
         self.assertEqual(self.mock_renderer.display_report.call_count, 0)
 
-    def test_progress_failed_task(self):
-        """
-        Test the progress() method when the Task failed. In this case, the
-        error will be rendered by the generic failure handler.
-        """
-        progress_report = {'some': 'data'}
-        task = responses.Task({'progress_report': progress_report})
-        task.state = responses.STATE_ERROR
-        spinner = mock.MagicMock()
-
-        self.command.progress(task, spinner)
-
-        self.assertEqual(self.mock_renderer.display_report.call_count, 0)
-
     def test_structure(self):
         # Ensure all of the expected options are there
         found_option_keywords = set([o.keyword for o in self.command.options])

@@ -154,6 +154,8 @@ class RepoSyncManager(object):
                 repo_id, repo_importer['id'], repo_importer['importer_type_id'],
                 sync_start_timestamp, sync_end_timestamp, e, sys.exc_info()[2])
 
+            _logger.exception(
+                _('Exception caught from plugin during sync for repo [%(r)s]' % {'r': repo_id}))
             raise
 
         else:

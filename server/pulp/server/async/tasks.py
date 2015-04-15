@@ -3,7 +3,6 @@ from gettext import gettext as _
 import logging
 import signal
 import time
-import traceback
 import uuid
 
 from celery import task, Task as CeleryTask, current_task
@@ -16,8 +15,7 @@ from pulp.common import constants, dateutils
 from pulp.common.constants import SCHEDULER_WORKER_NAME
 from pulp.server.async.celery_instance import celery, RESOURCE_MANAGER_QUEUE, \
     DEDICATED_QUEUE_EXCHANGE
-from pulp.server.exceptions import PulpException, MissingResource, \
-    PulpCodedException
+from pulp.server.exceptions import PulpException, MissingResource
 from pulp.server.db.model.dispatch import TaskStatus
 from pulp.server.db.model.resources import ReservedResource
 from pulp.server.db.model.workers import Worker
@@ -330,8 +328,6 @@ class Task(CeleryTask, ReservedTaskMixin):
     This is a custom Pulp subclass of the Celery Task object. It allows us to inject some custom
     behavior into each Pulp task, including management of resource locking.
     """
-    throws = (PulpCodedException,)
-
     def apply_async(self, *args, **kwargs):
         """
         A wrapper around the Celery apply_async method. It allows us to accept a few more
@@ -448,13 +444,7 @@ class Task(CeleryTask, ReservedTaskMixin):
         :param kwargs:  Original keyword arguments for the executed task.
         :param einfo:   celery's ExceptionInfo instance, containing serialized traceback.
         """
-        if isinstance(exc, PulpCodedException):
-            _logger.info(_('Task failed : [%(task_id)s] : %(msg)s') %
-                         {'task_id': task_id, 'msg': str(exc)})
-            _logger.debug(traceback.format_exc())
-        else:
-            _logger.info(_('Task failed : [%s]') % task_id)
-            # celery will log the traceback
+        _logger.debug("Task failed : [%s]" % task_id)
         if not self.request.called_directly:
             now = datetime.now(dateutils.utc_tz())
             finish_time = dateutils.format_iso8601_datetime(now)
