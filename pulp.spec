@@ -610,6 +610,9 @@ A collection of components that are common between the pulp server and client.
 %package -n python-pulp-devel
 Summary: Pulp devel python packages
 Group: Development/Languages
+%if 0%{?rhel} == 6
+Requires: python-unittest2
+%endif
 
 %description -n python-pulp-devel
 A collection of tools used for developing & testing Pulp plugins
