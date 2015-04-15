@@ -80,6 +80,10 @@ PLP0029 = Error("PLP0029",
 PLP0030 = Error("PLP0030", _("Authentication with username %(user)s failed: invalid username or password"), ['user'])
 PLP0031 = Error("PLP0031", _("Content source %(id)s could not be found at %(url)s"), ['id', 'url'])
 PLP0032 = Error("PLP0032", _("Task %(task_id)s encountered one or more failures during execution."), ['task_id'])
+PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a failed response when "
+                             "publishing repository %(repository_id)s."),
+                ['distributor_id', 'repository_id'])
+
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific
 # error message nested inside of it.
