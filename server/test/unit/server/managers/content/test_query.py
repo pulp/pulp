@@ -1,4 +1,6 @@
+import errno
 import inspect
+import os
 import unittest
 
 import mock
@@ -6,6 +8,7 @@ import mock
 from pulp.server.db.connection import PulpCollection
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.content.query import ContentQueryManager
+from pulp.server.managers.content.upload import ContentUploadManager
 from test_cud import PulpContentTests, TYPE_1_DEF, TYPE_1_UNITS, TYPE_2_DEF, TYPE_2_UNITS
 
 

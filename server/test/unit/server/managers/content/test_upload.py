@@ -1,5 +1,9 @@
+import errno
 import os
 import shutil
+
+import unittest
+import mock
 
 from .... import base
 from pulp.devel import mock_plugins
@@ -9,6 +13,7 @@ from pulp.server.db.model.auth import User
 from pulp.server.db.model.repository import Repo, RepoImporter
 from pulp.server.exceptions import (MissingResource, PulpDataException, PulpExecutionException,
                                     InvalidValue)
+from pulp.server.managers.content.upload import ContentUploadManager
 from pulp.server.managers.repo.unit_association import OWNER_TYPE_USER
 import pulp.server.managers.factory as manager_factory
 
@@ -118,7 +123,10 @@ class ContentUploadManagerTests(base.PulpServerTests):
         self.assertFalse(os.path.exists(uploaded_filename))
 
         # Test
-        self.assertRaises(MissingResource, self.upload_manager.delete_upload, upload_id)
+        try:
+            self.upload_manager.delete_upload(upload_id)
+        except Exception:
+            self.fail('An Exception should not have been raised.')
 
     def test_list_upload_ids(self):
 
@@ -247,3 +255,39 @@ class ContentUploadManagerTests(base.PulpServerTests):
 
         # Verify
         self.assertTrue(os.path.exists(upload_storage_dir))
+
+
+class TestContentUploadManager(unittest.TestCase):
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_removes_file(self, mock_os, mock__upload_file_path):
+        my_upload_id = 'asdf'
+        ContentUploadManager().delete_upload(my_upload_id)
+        mock__upload_file_path.assert_called_once_with(my_upload_id)
+        mock_os.remove.assert_called_once_with(mock__upload_file_path.return_value)
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_silences_ENOENT_error(self, mock_os, mock__upload_file_path):
+        my_upload_id = 'asdf'
+        mock_os.remove.side_effect = OSError(errno.ENOENT, os.strerror(errno.ENOENT))
+        try:
+            ContentUploadManager().delete_upload(my_upload_id)
+        except Exception:
+            self.fail('An Exception should not have been raised.')
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_allows_non_ENOENT_OSErrors_to_raise(self, mock_os,
+                                                               mock__upload_file_path):
+        my_upload_id = 'asdf'
+        mock_os.remove.side_effect = OSError(errno.EISDIR, os.strerror(errno.EISDIR))
+        self.assertRaises(OSError, ContentUploadManager().delete_upload, my_upload_id)
+
+    @mock.patch.object(ContentUploadManager, '_upload_file_path')
+    @mock.patch('pulp.server.managers.content.upload.os')
+    def test_delete_upload_allows_non_OSErrors_to_raise(self, mock_os, mock__upload_file_path):
+        my_upload_id = 'asdf'
+        mock_os.remove.side_effect = ValueError()
+        self.assertRaises(ValueError, ContentUploadManager().delete_upload, my_upload_id)
