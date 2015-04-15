@@ -136,6 +136,9 @@ create_default_dir() {
             chgrp "$CELERYBEAT_GROUP" "$1"
             maybe_die "Couldn't change group of $1"
         fi
+        echo "- Restoring context of $1 to 'pulp_var_run_t'"
+        restorecon /var/run/pulp
+        maybe_die "Couldn't restore context of $1"
     fi
 }
 

@@ -209,6 +209,8 @@ cp server/etc/default/systemd_pulp_resource_manager %{buildroot}/%{_sysconfdir}/
 cp server/etc/default/systemd_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
 mkdir -p %{buildroot}/%{_usr}/lib/systemd/system/
 cp server/usr/lib/systemd/system/* %{buildroot}/%{_usr}/lib/systemd/system/
+mkdir -p %{buildroot}/%{_usr}/lib/tmpfiles.d/
+cp server/usr/lib/tmpfiles.d/* %{buildroot}/%{_usr}/lib/tmpfiles.d/
 %endif
 
 # Pulp Web Services
@@ -374,6 +376,8 @@ Pulp provides replication, access, and accounting for software repositories.
 %{_usr}/lib/systemd/system/*
 %defattr(755,root,root,-)
 %{_libexecdir}/pulp-manage-workers
+%defattr(-,root,root,-)
+%{_usr}/lib/tmpfiles.d/
 %endif
 # 640 root:apache
 %defattr(640,root,apache,-)
