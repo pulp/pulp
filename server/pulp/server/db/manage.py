@@ -12,6 +12,7 @@ from pulp.plugins.loader.api import load_content_types
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
+from pulp.server.db.model import dispatch, workers
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 from pulp.server.managers.auth.user.cud import UserManager
@@ -98,9 +99,23 @@ def migrate_database(options):
             error_message = error_message % {'m': migration.name}
             _logger.critical(error_message)
             raise
+    if not options.dry_run:
+        ensure_database_indexes()
 
     if options.dry_run and unperformed_migrations:
         raise UnperformedMigrationException
+
+
+def ensure_database_indexes():
+    """
+    Ensure that the minimal required indexes have been created for all collections.
+
+    Pre-mongoengine collections are updated by the base model class every time they are initialized.
+    MongoEngine based models require a manual check as they will only create indexes if the
+    collection does not already exist.
+    """
+    dispatch.TaskStatus.ensure_indexes()
+    workers.Worker.ensure_indexes()
 
 
 def main():

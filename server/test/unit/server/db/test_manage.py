@@ -104,6 +104,18 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
+    @patch.object(manage, 'dispatch')
+    @patch.object(manage, 'workers')
+    def test_ensure_index(self, mock_workers, mock_dispatch):
+        """
+        Make sure that the ensure_indexes method is called for all
+        the appropriate platform models
+        """
+        manage.ensure_database_indexes()
+        self.assertTrue(mock_dispatch.TaskStatus.ensure_indexes.called)
+        self.assertTrue(mock_workers.Worker.ensure_indexes.called)
+
+    @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
     @patch('pulp.server.db.manage.factory')
@@ -115,7 +127,7 @@ class TestManageDB(MigrationTest):
     @patch('sys.argv', ["pulp-manage-db"])
     @patch.object(models.MigrationPackage, 'apply_migration')
     def test_admin_is_ensured(self, apply_migration, ensure_admin, ensure_super_user_role,
-                              getLogger, factory, fileConfig):
+                              getLogger, factory, fileConfig, ensure_db_indexes):
         """
         pulp-manage-db is responsible for making sure the admin user and role are in place. This
         test makes sure the manager methods that do that are called.
@@ -441,6 +453,7 @@ class TestManageDB(MigrationTest):
         self.assertEquals(0, mock_ensure_admin.call_count)
         self.assertEquals(0, mock_ensure_super_role.call_count)
 
+    @patch.object(manage, 'ensure_database_indexes')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
@@ -450,7 +463,7 @@ class TestManageDB(MigrationTest):
     @patch('pulp.server.db.manage.parse_args', autospec=True)
     @patch('logging.config.fileConfig')
     def test_dry_run_no_changes(self, mock_file_config, mock_parse_args, mocked_apply_migration,
-                                mock_entry, getLogger):
+                                mock_entry, getLogger, mock_ensure_indexes):
         logger = MagicMock()
         getLogger.return_value = logger
         mock_args = Namespace(dry_run=True, test=False)
@@ -459,16 +472,21 @@ class TestManageDB(MigrationTest):
         # Test that when dry run is on, it returns 1 if migrations remain
         exit_code = manage.main()
         self.assertEqual(exit_code, 1)
+        self.assertFalse(mock_ensure_indexes.called)
 
         # Actually apply the migrations
         mock_args.dry_run = False
+        mock_ensure_indexes.reset_mock()
         exit_code = manage.main()
         self.assertEqual(exit_code, 0)
+        self.assertTrue(mock_ensure_indexes.called)
 
         # Perform another dry run and check the return value is now 0
         mock_args.dry_run = True
+        mock_ensure_indexes.reset_mock()
         exit_code = manage.main()
         self.assertEquals(exit_code, 0)
+        self.assertFalse(mock_ensure_indexes.called)
 
 
 class TestMigrationModule(MigrationTest):
