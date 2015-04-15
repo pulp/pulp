@@ -67,8 +67,7 @@ class SyncPublishCommand(polling.PollingCommand):
         :param spinner: Not used by this method, but the superclass will give it to us
         :type  spinner: okaara.progress.Spinner
         """
-        # if the task failed, the failure handler will render the error message
-        if task.progress_report is not None and not task.was_failure():
+        if task.progress_report is not None:
             self.renderer.display_report(task.progress_report)
 
     def task_header(self, task):
