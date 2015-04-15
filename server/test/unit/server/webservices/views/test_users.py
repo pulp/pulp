@@ -1,12 +1,57 @@
+"""
+This module contains tests for the pulp.server.webservices.views.users module.
+"""
 import json
 import unittest
 
 import mock
+from bson import objectid
 
 from base import (assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE)
 from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue
-from pulp.server.webservices.views import users
-from pulp.server.webservices.views.users import (UserResourceView, UsersView)
+from pulp.server.managers.auth.user import query
+from pulp.server.webservices.views import users, util
+from pulp.server.webservices.views.users import (UserResourceView, UserSearchView, UsersView)
+
+
+class TestSerialize(unittest.TestCase):
+    """
+    This class contains tests for the serialize() function.
+    """
+    @mock.patch('pulp.server.webservices.views.users._add_link', side_effect=users._add_link)
+    @mock.patch('pulp.server.webservices.views.users._process_dictionary_against_whitelist',
+                side_effect=users._process_dictionary_against_whitelist)
+    def test_serialize(self, _process_dictionary_against_whitelist, _add_link):
+        """
+        Test operation of the serialize() function.
+        """
+        user = {
+            '_id': objectid.ObjectId('54d950aeae7e1d0a0cc47aa6'), 'name': 'admin',
+            'roles': ['super-users'], '_ns': 'users', 'login': 'admin',
+            'password': '/NVf1/LCwqo=,pZTWY7wgoXDtkYi9QlXgZUAWT...eae7e1d0a0cc47aa6'}
+
+        new_user = users.serialize(user)
+
+        expected_user = {
+            '_id': objectid.ObjectId('54d950aeae7e1d0a0cc47aa6'), 'name': 'admin',
+            'roles': ['super-users'], '_ns': 'users', 'login': 'admin', '_href': '/v2/users/admin/'}
+        self.assertEqual(new_user, expected_user)
+        _process_dictionary_against_whitelist.assert_called_once_with(user, users.USER_WHITELIST)
+        _add_link.assert_called_once_with(user)
+
+
+class TestUserSearchView(unittest.TestCase):
+    """
+    Assert correct configuration of the UserSearchView class.
+    """
+    def test_class_attributes(self):
+        """
+        Assert that the class attributes are set correctly.
+        """
+        self.assertEqual(UserSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertTrue(isinstance(UserSearchView.manager, query.UserQueryManager))
+        self.assertEqual(UserSearchView.serializer, users.serialize)
 
 
 class TestUsersView(unittest.TestCase):
@@ -22,15 +67,15 @@ class TestUsersView(unittest.TestCase):
         """
         Test users retrieval.
         """
-        mock_factory.user_query_manager.\
-            return_value.find_all.return_value = [{'login': 'test-user',
-                                                   'name': 'test-user',
-                                                   'id': '12345'}]
+        existing_users = [{'login': 'test-user', 'name': 'test-user', 'id': '12345'}]
+        mock_factory.user_query_manager.return_value.find_all.return_value = existing_users
+
         request = mock.MagicMock()
-        response = UsersView().get(request)
+        view = UsersView()
+        response = view.get(request)
 
         expected_cont = [{'_href': '/v2/users/test-user/', 'login': 'test-user',
-                         'name': 'test-user'}]
+                          'name': 'test-user'}]
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
@@ -99,7 +144,7 @@ class TestUsersView(unittest.TestCase):
         Test that the reverse works correctly.
         """
         user = {'login': 'user1'}
-        link = users.add_link(user)
+        link = users._add_link(user)
         href = {'_href': '/v2/users/user1/'}
         expected_cont = {'login': 'user1', '_href': '/v2/users/user1/'}
         self.assertEqual(link, href)
