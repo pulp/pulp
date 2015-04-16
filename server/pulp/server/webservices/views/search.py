@@ -2,6 +2,8 @@
 This module contains the SearchView superclass. Your view code should subclass this to create a
 search view for a specific model.
 """
+import json
+
 from django.views import generic
 
 from pulp.server import exceptions
@@ -56,6 +58,7 @@ class SearchView(generic.View):
         :rtype:         django.http.HttpResponse
         """
         query = dict(request.GET)
+        query['filters'] = json.loads(request.GET.get('filters'))
 
         fields = query.pop('field', '')
         if fields:
