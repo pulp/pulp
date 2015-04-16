@@ -211,7 +211,7 @@ Server
 
    * **email** if you intend to have the server send email (off by default)
    * **database** if your database resides on a different host or port. It is strongly recommended
-                  that you set ssl and verify_ssl to True.
+     that you set ssl and verify_ssl to True.
    * **messaging** if your message broker for communication between Pulp components is on a
      different host or if you want to use SSL. For more information on this section refer to the
      :ref:`Pulp Broker Settings Guide <pulp-broker-settings>`.
