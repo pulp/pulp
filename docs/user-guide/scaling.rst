@@ -267,6 +267,15 @@ certificate presented by the `Pulp clustered server` as it is accessed
 through the load balancer.
 
 
+Clustered Logging
+^^^^^^^^^^^^^^^^^
+
+Pulp logs in the same way on a clustered server as it does for a single
+server. For more information on how Pulp logs, see :ref:`logging`. To setup
+remote logging and aggregation, refer to the documentation for the log daemon
+running on your system.
+
+
 Consumer Settings
 ^^^^^^^^^^^^^^^^^
 
