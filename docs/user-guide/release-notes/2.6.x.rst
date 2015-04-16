@@ -181,6 +181,7 @@ Thank You
 
 Thank you to all of Pulp's contributors, especially these new ones!
 
+- Adam D.
 - Andrea Giardini
 - Andreas Schieb
 - Ina Panova
