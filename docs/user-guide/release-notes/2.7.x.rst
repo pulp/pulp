@@ -57,6 +57,8 @@ Binding API Changes
 
 Plugin API Changes
 ------------------
+* The undocumented fields 'owner_type' and 'owner_id' have been removed from the
+  'repo_content_units' collection.
 
 Thank You
 ---------

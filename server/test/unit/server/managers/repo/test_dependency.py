@@ -55,8 +55,8 @@ class DependencyManagerTests(base.PulpServerTests):
                                                                        {'key-1': 'v2'})
 
         association_manager = manager_factory.repo_unit_association_manager()
-        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1, 'user', 'admin')
-        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2, 'user', 'admin')
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1)
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2)
 
         # Test
         result = self.manager.resolve_dependencies_by_units(self.repo_id, [], {})
@@ -96,8 +96,8 @@ class DependencyManagerTests(base.PulpServerTests):
                                                                        {'key-1': 'dep-1'})
 
         association_manager = manager_factory.repo_unit_association_manager()
-        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1, 'user', 'admin')
-        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2, 'user', 'admin')
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_1)
+        association_manager.associate_unit_by_id(self.repo_id, 'type-1', unit_id_2)
 
         criteria = UnitAssociationCriteria(type_ids=['type-1'], unit_filters={'key-1': 'unit-id-1'})
 

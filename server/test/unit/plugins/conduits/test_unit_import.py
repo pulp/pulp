@@ -15,12 +15,9 @@ class ImportUnitConduitTests(base.PulpServerTests):
         self.dest_repo_id = 'dest-repo'
         self.source_importer_id = 'source-imp'
         self.dest_importer_id = 'dest-imp'
-        self.association_owner_type = 'ass-type'
-        self.association_owner_id = 'ass-id'
 
         self.conduit = unit_import.ImportUnitConduit(
-            self.source_repo_id, self.dest_repo_id, self.source_importer_id, self.dest_importer_id,
-            self.association_owner_type, self.association_owner_id)
+            self.source_repo_id, self.dest_repo_id, self.source_importer_id, self.dest_importer_id)
 
     def test_mixin_structure(self):
         base_classes = unit_import.ImportUnitConduit.__bases__

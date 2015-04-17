@@ -45,7 +45,7 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
         self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', {})
-        self.conduit = RepoSyncConduit('repo-1', 'test-importer', 'importer', 'importer-id')
+        self.conduit = RepoSyncConduit('repo-1', 'test-importer')
 
     def tearDown(self):
         super(RepoSyncConduitTests, self).tearDown()
@@ -147,5 +147,4 @@ class RepoSyncConduitTests(base.PulpServerTests):
         mock_id = mock.Mock()
         self.conduit._content_query_manager.get_content_unit_ids.return_value = [mock_id]
         self.conduit.associate_existing('fake-type', [mock_unit_key])
-        mock_am.associate_all_by_ids.assert_called_once_with('repo-1', 'fake-type', [mock_id],
-                                                             'importer', 'importer-id')
+        mock_am.associate_all_by_ids.assert_called_once_with('repo-1', 'fake-type', [mock_id])

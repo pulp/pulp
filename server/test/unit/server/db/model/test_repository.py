@@ -10,8 +10,7 @@ REPOSITORY = 'pulp.server.db.model.repository'
 
 class TestRepoContentUnit(unittest.TestCase):
     def setUp(self):
-        self.unit = RepoContentUnit('repo1', 'unit1', 'rpm',
-                                    RepoContentUnit.OWNER_TYPE_IMPORTER, 'owner1')
+        self.unit = RepoContentUnit('repo1', 'unit1', 'rpm')
 
     def test_utc_in_iso8601(self):
         # make sure the ISO8601 serialization includes the UTC timezone
@@ -32,11 +31,8 @@ class TestRepoContentUnitInit(unittest.TestCase):
         self.mock_repo_id = mock.Mock()
         self.mock_unit_id = mock.Mock()
         self.mock_unit_type_id = mock.Mock()
-        self.mock_owner_type = mock.Mock()
-        self.mock_owner_id = mock.Mock()
         self.repo_content_unit = RepoContentUnit(self.mock_repo_id, self.mock_unit_id,
-                                                 self.mock_unit_type_id, self.mock_owner_type,
-                                                 self.mock_owner_id)
+                                                 self.mock_unit_type_id)
 
     def tearDown(self):
         self.patch_a.stop()
@@ -53,12 +49,6 @@ class TestRepoContentUnitInit(unittest.TestCase):
 
     def test_repo_content_unit___init___stores_unit_type_id(self):
         self.assertTrue(self.repo_content_unit.unit_type_id is self.mock_unit_type_id)
-
-    def test_repo_content_unit___init___stores_owner_type(self):
-        self.assertTrue(self.repo_content_unit.owner_type is self.mock_owner_type)
-
-    def test_repo_content_unit___init___stores_owner_id(self):
-        self.assertTrue(self.repo_content_unit.owner_id is self.mock_owner_id)
 
     def test_repo_content_unit___init___generates_8601_utc_timestamp(self):
         self.mock_dateutils.now_utc_timestamp.assert_called_once_with()

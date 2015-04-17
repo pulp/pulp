@@ -63,9 +63,7 @@ def gen_buttload_of_content_units(content_type_id, content_root, num_units):
 def associate_content_unit_with_repo(content_unit):
     repo_content_unit = RepoContentUnit(PHONY_REPO_ID,
                                         content_unit['_id'],
-                                        content_unit['_content_type_id'],
-                                        RepoContentUnit.OWNER_TYPE_USER,
-                                        PHONY_USER_ID)
+                                        content_unit['_content_type_id'])
     collection = RepoContentUnit.get_collection()
     collection.insert(repo_content_unit, safe=True)
 

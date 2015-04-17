@@ -325,9 +325,7 @@ class ImporterStrategy(object):
                     metadata={},
                     storage_path=None,
                     created=None,
-                    updated=None,
-                    owner_type=unit['owner_type'],
-                    owner_id=unit['owner_id'])
+                    updated=None)
                 _unit.id = unit['unit_id']
                 request.conduit.remove_unit(_unit)
             except Exception:

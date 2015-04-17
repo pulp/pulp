@@ -80,8 +80,6 @@ class UnitsIterator:
             storage_path=storage_path,
             relative_path=relative_path,
             last_updated=last_updated,
-            owner_type=unit.get('owner_type'),
-            owner_id=unit.get('owner_id'),
             metadata=metadata)
 
     @staticmethod

@@ -8,7 +8,6 @@ from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
 from pulp.server.managers import factory
-from pulp.server.managers.repo.unit_association import OWNER_TYPE_IMPORTER
 
 
 class BaseProfilerConduitTests(base.PulpServerTests):
@@ -88,9 +87,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
             manager.associate_unit_by_id(
                 self.REPO_ID,
                 typedef.id,
-                unit_id,
-                OWNER_TYPE_IMPORTER,
-                'test-importer')
+                unit_id)
             self.UNIT_ID += 1
 
     def populate_profile(self):
