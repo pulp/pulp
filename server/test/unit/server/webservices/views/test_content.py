@@ -9,8 +9,8 @@ from .base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, asse
 from pulp.server import constants
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.webservices.views.content import (
-    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentTypeResourceView,
-    ContentTypesView, ContentUnitResourceView, ContentUnitsCollectionView,
+    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentUnitSearch,
+    ContentTypeResourceView, ContentTypesView, ContentUnitResourceView, ContentUnitsCollectionView,
     ContentUnitUserMetadataResourceView, DeleteOrphansActionView, OrphanCollectionView,
     OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView, UploadsCollectionView,
     UploadSegmentResourceView
@@ -346,6 +346,55 @@ class TestContentTypesView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
 
 
+class TestContentUnitSearch(unittest.TestCase):
+
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    @mock.patch('pulp.server.webservices.views.content.Criteria')
+    def test_add_repo_memberships_empty(self, mock_crit, mock_factory):
+        # make sure it doesn't do a search for associations if there are no
+        # units found
+        mock_find = mock_factory.repo_unit_association_query_manager().find_by_criteria
+        ContentUnitSearch()._add_repo_memberships([], 'rpm')
+        self.assertEqual(mock_find.call_count, 0)
+
+    @mock.patch('pulp.server.webservices.views.content.factory')
+    def test_add_repo_memberships_(self, mock_factory):
+        mock_find = mock_factory.repo_unit_association_query_manager().find_by_criteria
+        mock_find.return_value = [{'repo_id': 'repo1', 'unit_id': 'unit1'}]
+        units = [{'_id': 'unit1'}]
+        ret = ContentUnitSearch()._add_repo_memberships(units, 'rpm')
+        self.assertEqual(mock_find.call_count, 1)
+        self.assertEqual(len(ret), 1)
+        self.assertEqual(ret[0].get('repository_memberships'), ['repo1'])
+
+    @mock.patch('pulp.server.webservices.views.content.ContentUnitSearch._add_repo_memberships')
+    @mock.patch('pulp.server.webservices.views.content._process_content_unit')
+    def test_get_results_without_repos(self, mock_process, mock_add_repo):
+        content_search = ContentUnitSearch()
+        mock_query = mock.MagicMock()
+        mock_search = mock.MagicMock(return_value=['result_1', 'result_2'])
+        serialized_results = content_search.get_results(mock_query, mock_search, {},
+                                                        type_id='mock_type')
+        mock_process.assert_has_calls([mock.call('result_1', 'mock_type'),
+                                       mock.call('result_2', 'mock_type')])
+        self.assertEqual(len(serialized_results), 2)
+        self.assertEqual(mock_add_repo.call_count, 0)
+
+    @mock.patch('pulp.server.webservices.views.content.ContentUnitSearch._add_repo_memberships')
+    @mock.patch('pulp.server.webservices.views.content._process_content_unit')
+    def test_get_results_with_repos(self, mock_process, mock_add_repo):
+        content_search = ContentUnitSearch()
+        mock_query = mock.MagicMock()
+        mock_search = mock.MagicMock(return_value=['result_1', 'result_2'])
+        serialized_results = content_search.get_results(
+            mock_query, mock_search, {'include_repos': 'true'}, type_id='mock_type'
+        )
+        mock_process.assert_has_calls([mock.call('result_1', 'mock_type'),
+                                       mock.call('result_2', 'mock_type')])
+        self.assertEqual(len(serialized_results), 2)
+        mock_add_repo.assert_called_once_with([mock_process(), mock_process()], 'mock_type')
+
+
 class TestContentUnitResourceView(unittest.TestCase):
     """
     Tests for views of a single conttent unit.
@@ -405,11 +454,12 @@ class TestContentUnitsCollectionView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.content.reverse')
     @mock.patch('pulp.server.webservices.views.content.serialization')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_units_collection_view(self, mock_factory, mock_resp,
-                                               mock_serialization):
+                                               mock_serialization, mock_reverse):
         """
         View should return a response that contains a list of dicts, one for each content unit.
         """
@@ -426,13 +476,13 @@ class TestContentUnitsCollectionView(unittest.TestCase):
         mock_serialization.content.content_unit_obj.side_effect = identity
         mock_serialization.content.content_unit_child_link_objs.return_value = 'child'
         request = mock.MagicMock()
-        request.get_full_path.return_value = '/mock/path/'
+        mock_reverse.return_value = '/mock/path/'
 
         content_units_collection_view = ContentUnitsCollectionView()
         response = content_units_collection_view.get(request, {'content_type': 'mock_type'})
 
-        expected_content = [{'_id': 'unit_1', '_href': '/mock/path/unit_1/', 'children': 'child'},
-                            {'_id': 'unit_2', '_href': '/mock/path/unit_2/', 'children': 'child'}]
+        expected_content = [{'_id': 'unit_1', '_href': '/mock/path/', 'children': 'child'},
+                            {'_id': 'unit_2', '_href': '/mock/path/', 'children': 'child'}]
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
@@ -471,6 +521,7 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_unit_user_metadata_resource_no_unit(self, mock_factory, mock_resp):
         """
+        kkkk
         View should return a response not found and a helpful message when unit is not found.
         """
         request = mock.MagicMock()

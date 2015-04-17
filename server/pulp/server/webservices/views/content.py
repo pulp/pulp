@@ -14,15 +14,27 @@ from pulp.server.content.sources.container import ContentContainer
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.managers import factory
+from pulp.server.managers.content import query as content_query
 from pulp.server.managers.content import orphan as content_orphan
 from pulp.server.tasks import content
 from pulp.server.webservices import serialization
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
                                                 json_body_allow_empty,
                                                 json_body_required)
+
+
+def _process_content_unit(content_unit, content_type):
+    unit = serialization.content.content_unit_obj(content_unit)
+    unit['_href'] = reverse(
+        'content_unit_resource',
+        kwargs={'type_id': content_type, 'unit_id': content_unit['_id']}
+    )
+    unit.update({'children': serialization.content.content_unit_child_link_objs(unit)})
+    return unit
 
 
 class OrphanCollectionView(View):
@@ -268,6 +280,57 @@ class ContentTypesView(View):
         return generate_json_response(collection)
 
 
+class ContentUnitSearch(search.SearchView):
+
+    optional_fields = ['include_repos']
+    manager = content_query.ContentQueryManager()
+
+    @staticmethod
+    def _add_repo_memberships(units, type_id):
+        """
+        For a list of units, find what repos each is a member of, and add a list
+        of repo_ids to each unit.
+
+        :param units:   list of unit documents
+        :type  units:   list of dicts
+        :param type_id: content type id
+        :type  type_id: str
+        :return:    same list of units that was passed in, only for convenience.
+                    units are modified in-place
+        """
+        # quick return if there is nothing to do
+        if not units:
+            return units
+
+        unit_ids = [unit['_id'] for unit in units]
+        criteria = Criteria(
+            filters={'unit_id': {'$in': unit_ids}, 'unit_type_id': type_id},
+            fields=('repo_id', 'unit_id')
+        )
+        associations = factory.repo_unit_association_query_manager().find_by_criteria(criteria)
+        unit_ids = None
+        criteria = None
+        association_map = {}
+        for association in associations:
+            association_map.setdefault(association['unit_id'], set()).add(
+                association['repo_id'])
+
+        for unit in units:
+            unit['repository_memberships'] = list(association_map.get(unit['_id'], []))
+        return units
+
+    @classmethod
+    def get_results(cls, query, search_method, options, *args, **kwargs):
+        """
+        """
+        type_id = kwargs['type_id']
+        units = list(search_method(type_id, query))
+        units = [_process_content_unit(unit, type_id) for unit in units]
+        if options.get('include_repos', 'false').lower() == "true":
+            cls._add_repo_memberships(units, type_id)
+        return units
+
+
 class ContentUnitResourceView(View):
     """
     View for individual content units.
@@ -320,14 +383,7 @@ class ContentUnitsCollectionView(View):
         """
         cqm = factory.content_query_manager()
         all_units = cqm.find_by_criteria(type_id, Criteria())
-        all_processed_units = []
-        for unit in all_units:
-            unit = serialization.content.content_unit_obj(unit)
-            unit.update({'_href': '/'.join([request.get_full_path().rstrip('/'),
-                                            unit['_id'], ''])})
-            unit.update({'children': serialization.content.content_unit_child_link_objs(unit)})
-            all_processed_units.append(unit)
-
+        all_processed_units = [_process_content_unit(unit, type_id) for unit in all_units]
         return generate_json_response_with_pulp_encoder(all_processed_units)
 
 

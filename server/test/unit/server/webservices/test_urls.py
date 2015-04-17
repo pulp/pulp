@@ -236,6 +236,14 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
         url_name = 'consumer_group'
         assert_url_match(url, url_name)
 
+    def test_match_consumer_group_search_view(self):
+        """
+        Test url matching for consumer_group_search
+        """
+        url = '/v2/consumer_groups/search/'
+        url_name = 'consumer_group_search'
+        assert_url_match(url, url_name)
+
     def test_match_consumer_group_resource_view(self):
         """
         Test url matching for single consumer_group
@@ -598,7 +606,7 @@ class TestStatusUrl(unittest.TestCase):
     Tests for server status url
     """
 
-    def test_match_users_view(self):
+    def test_match_status_view(self):
         """
         Test url matching for status
         """
@@ -627,6 +635,30 @@ class TestDjangoConsumersUrls(unittest.TestCase):
         url = '/v2/consumers/test-consumer/'
         url_name = 'consumer_resource'
         assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_search_view(self):
+        """
+        Test url matching for consumer search.
+        """
+        url = '/v2/consumers/search/'
+        url_name = 'consumer_search'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_binding_search_view(self):
+        """
+        Test url matching for consumer binding search.
+        """
+        url = '/v2/consumers/binding/search/'
+        url_name = 'consumer_binding_search'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_profile_search_view(self):
+        """
+        Test url matching for consumer profile search.
+        """
+        url = '/v2/consumers/profile/search/'
+        url_name = 'consumer_profile_search'
+        assert_url_match(url, url_name)
 
     def test_match_consumer_profiles_view(self):
         """

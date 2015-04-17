@@ -38,13 +38,10 @@ class TestSearchView(unittest.TestCase):
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["big money", "bigger money"]')
         self.assertEqual(results.status_code, 200)
-        # This is actually a bug, but the intention of this Django port was to behave exactly like
-        # The webpy handlers did, bugs included. When #312 is fixed, the tests below should fail,
-        # because the get() handler should have deserialized the filters instead of leaving them as
-        # strings. Please modify these assertions to have the correct behavior.
-        # https://pulp.plan.io/issues/312
+
         _generate_response.assert_called_once_with(
-            {'fields': ['name', 'id'], 'filters': {"name": "admin"}})
+            {'fields': ['name', 'id'], 'filters': {"name": "admin"}}, {})
+
         from_client_input.assert_called_once_with(
             {'fields': ['name', 'id'], 'filters': {"name": "admin"}})
 
@@ -76,7 +73,7 @@ class TestSearchView(unittest.TestCase):
         # because the get() handler should have deserialized the filters instead of leaving them as
         # strings. Please modify these assertions to have the correct behavior.
         # https://pulp.plan.io/issues/312
-        _generate_response.assert_called_once_with({'filters': {"name": "admin"}})
+        _generate_response.assert_called_once_with({'filters': {"name": "admin"}}, {})
         from_client_input.assert_called_once_with({'filters': {"name": "admin"}})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
@@ -101,7 +98,7 @@ class TestSearchView(unittest.TestCase):
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["big money", "bigger money"]')
         self.assertEqual(results.status_code, 200)
-        _generate_response.assert_called_once_with({'filters': {'money': {'$gt': 1000000}}})
+        _generate_response.assert_called_once_with({'filters': {'money': {'$gt': 1000000}}}, {})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -120,6 +117,31 @@ class TestSearchView(unittest.TestCase):
         except exceptions.MissingValue, e:
             self.assertEqual(e.property_names, ['criteria'])
 
+    def test__parse_args_no_optional_fields(self):
+        """
+        Test that options are an empty dict and args are full when optional fields are not set.
+        """
+        class FakeSearchView(search.SearchView):
+            pass
+
+        fake_search = FakeSearchView()
+        search_params, options = fake_search._parse_args({'non-optional': 'field'})
+        self.assertEqual(search_params, {'non-optional': 'field'})
+        self.assertEqual(options, {})
+
+    def test__parse_args_with_optional_fields(self):
+        """
+        Test that options are populated and optianl fields are removed from args.
+        """
+        class FakeSearchView(search.SearchView):
+            optional_fields = ['optional']
+
+        fake_search = FakeSearchView()
+        search_params, options = fake_search._parse_args({'optional': 'field',
+                                                          'non-optional': 'field'})
+        self.assertEqual(search_params, {'non-optional': 'field'})
+        self.assertEqual(options, {'optional': 'field'})
+
     def test__generate_response_no_fields(self):
         """
         Test that _generate_response() works correctly when the query does not contain fields.
@@ -130,7 +152,7 @@ class TestSearchView(unittest.TestCase):
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
-        results = FakeSearchView._generate_response(query)
+        results = FakeSearchView._generate_response(query, {})
 
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["big money", "bigger money"]')
@@ -153,7 +175,7 @@ class TestSearchView(unittest.TestCase):
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
-        results = FakeSearchView._generate_response(query)
+        results = FakeSearchView._generate_response(query, {})
 
         self.assertEqual(results, 42)
         self.assertEqual(
@@ -174,7 +196,7 @@ class TestSearchView(unittest.TestCase):
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.manager.find_by_criteria.return_value = ['big money', 'bigger money']
 
-        results = FakeSearchView._generate_response(query)
+        results = FakeSearchView._generate_response(query, {})
 
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["big money", "bigger money"]')
@@ -196,7 +218,7 @@ class TestSearchView(unittest.TestCase):
         query = {'filters': {'money': {'$gt': 1000000}}, 'fields': ['cash', 'id']}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
-        results = FakeSearchView._generate_response(query)
+        results = FakeSearchView._generate_response(query, {})
 
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["big money", "bigger money"]')
@@ -219,7 +241,7 @@ class TestSearchView(unittest.TestCase):
         query = {'filters': {'money': {'$gt': 1000000}}, 'fields': ['cash']}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
-        results = FakeSearchView._generate_response(query)
+        results = FakeSearchView._generate_response(query, {})
 
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["big money", "bigger money"]')
@@ -243,7 +265,7 @@ class TestSearchView(unittest.TestCase):
         query = {'filters': {'money': {'$gt': 1000000}}}
         FakeSearchView.model.objects.find_by_criteria.return_value = ['big money', 'bigger money']
 
-        results = FakeSearchView._generate_response(query)
+        results = FakeSearchView._generate_response(query, {})
 
         self.assertEqual(type(results), http.HttpResponse)
         self.assertEqual(results.content, '["biggest money", "unreal money"]')
