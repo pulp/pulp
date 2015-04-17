@@ -55,6 +55,8 @@ allow celery_t pulp_tmp_t:file manage_file_perms;
 files_tmp_filetrans(celery_t, pulp_tmp_t, file)
 
 allow celery_t pulp_var_run_t:file manage_file_perms;
+# dir access needed when celery searches for existing pid files on startup
+allow celery_t pulp_var_run_t:dir manage_dir_perms;
 files_pid_filetrans(celery_t, pulp_var_run_t, file)
 
 

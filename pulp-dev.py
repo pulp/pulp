@@ -244,6 +244,9 @@ def get_paths_to_copy():
         paths.append({'source': 'server/usr/lib/systemd/system/pulp_workers.service',
                       'destination': '/etc/systemd/system/pulp_workers.service', 'owner': 'root',
                       'group': 'root', 'mode': '644', 'overwrite': True})
+        paths.append({'source': 'server/usr/lib/tmpfiles.d/pulp.conf',
+                      'destination': '/etc/tmpfiles.d/pulp.conf', 'owner': 'root',
+                      'group': 'root', 'mode': '644', 'overwrite': True})
 
     for path in paths:
         path['source'] = os.path.join(ROOT_DIR, path['source'])
