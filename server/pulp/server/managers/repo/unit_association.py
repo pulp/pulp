@@ -22,21 +22,12 @@ import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo._common as common_utils
 
 
-# Shadowed here to remove the need for the caller to import RepoContentUnit
-# to get access to them
-OWNER_TYPE_IMPORTER = RepoContentUnit.OWNER_TYPE_IMPORTER
-OWNER_TYPE_USER = RepoContentUnit.OWNER_TYPE_USER
-
-_OWNER_TYPES = (OWNER_TYPE_IMPORTER, OWNER_TYPE_USER)
-
 # Valid sort strings
 SORT_TYPE_ID = 'type_id'
-SORT_OWNER_TYPE = 'owner_type'
-SORT_OWNER_ID = 'owner_id'
 SORT_CREATED = 'created'
 SORT_UPDATED = 'updated'
 
-_VALID_SORTS = (SORT_TYPE_ID, SORT_OWNER_TYPE, SORT_OWNER_ID, SORT_CREATED, SORT_UPDATED)
+_VALID_SORTS = (SORT_TYPE_ID, SORT_CREATED, SORT_UPDATED)
 
 SORT_ASCENDING = pymongo.ASCENDING
 SORT_DESCENDING = pymongo.DESCENDING
@@ -53,8 +44,7 @@ class RepoUnitAssociationManager(object):
     been created outside of this manager.
     """
 
-    def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type,
-                             owner_id, update_repo_metadata=True):
+    def associate_unit_by_id(self, repo_id, unit_type_id, unit_id, update_repo_metadata=True):
         """
         Creates an association between the given repository and content unit.
 
@@ -75,14 +65,6 @@ class RepoUnitAssociationManager(object):
         @param unit_id: uniquely identifies the unit within the given type
         @type  unit_id: str
 
-        @param owner_type: category of the caller making the association;
-                           must be one of the OWNER_* variables in this module
-        @type  owner_type: str
-
-        @param owner_id: identifies the caller making the association, either
-                         the importer ID or user login
-        @type  owner_id: str
-
         @param update_repo_metadata: if True, updates the unit association count
                                   after the new association is made. The last
                                   unit added field will also be updated.  Set this
@@ -93,9 +75,6 @@ class RepoUnitAssociationManager(object):
 
         @raise InvalidType: if the given owner type is not of the valid enumeration
         """
-
-        if owner_type not in _OWNER_TYPES:
-            raise exceptions.InvalidValue(['owner_type'])
 
         # If the association already exists, no need to do anything else
         spec = {'repo_id': repo_id,
@@ -111,7 +90,7 @@ class RepoUnitAssociationManager(object):
                                                                            unit_type_id)
 
         # Create the database entry
-        association = RepoContentUnit(repo_id, unit_id, unit_type_id, owner_type, owner_id)
+        association = RepoContentUnit(repo_id, unit_id, unit_type_id)
         RepoContentUnit.get_collection().save(association, safe=True)
 
         manager = manager_factory.repo_manager()
@@ -123,7 +102,7 @@ class RepoUnitAssociationManager(object):
             # update the record for the last added field
             manager.update_last_unit_added(repo_id)
 
-    def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id):
+    def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list):
         """
         Creates multiple associations between the given repo and content units.
 
@@ -137,14 +116,6 @@ class RepoUnitAssociationManager(object):
 
         @param unit_id_list: list or generator of unique identifiers for units within the given type
         @type  unit_id_list: list or generator of str
-
-        @param owner_type: category of the caller making the association;
-                           must be one of the OWNER_* variables in this module
-        @type  owner_type: str
-
-        @param owner_id: identifies the caller making the association, either
-                         the importer ID or user login
-        @type  owner_id: str
 
         :return:    number of new units added to the repo
         :rtype:     int
@@ -160,7 +131,7 @@ class RepoUnitAssociationManager(object):
         for unit_id in unit_id_list:
             if not RepoUnitAssociationManager.association_exists(repo_id, unit_id, unit_type_id):
                 unique_count += 1
-            self.associate_unit_by_id(repo_id, unit_type_id, unit_id, owner_type, owner_id, False)
+            self.associate_unit_by_id(repo_id, unit_type_id, unit_id, False)
 
         # update the count of associated units on the repo object
         if unique_count:
@@ -258,10 +229,8 @@ class RepoUnitAssociationManager(object):
 
         call_config = PluginCallConfiguration(plugin_config, dest_repo_importer['config'],
                                               import_config_override)
-        login = manager_factory.principal_manager().get_principal()['login']
         conduit = ImportUnitConduit(
-            source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'],
-            RepoContentUnit.OWNER_TYPE_USER, login)
+            source_repo_id, dest_repo_id, source_repo_importer['id'], dest_repo_importer['id'])
 
         try:
             copied_units = importer_instance.import_units(
@@ -276,8 +245,7 @@ class RepoUnitAssociationManager(object):
             logger.exception(msg)
             raise exceptions.PulpExecutionException(), None, sys.exc_info()[2]
 
-    def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, owner_type, owner_id,
-                               notify_plugins=True):
+    def unassociate_unit_by_id(self, repo_id, unit_type_id, unit_id, notify_plugins=True):
         """
         Removes the association between a repo and the given unit. Only the
         association made by the given owner will be removed. It is possible the
@@ -295,22 +263,14 @@ class RepoUnitAssociationManager(object):
         @param unit_id: uniquely identifies the unit within the given type
         @type  unit_id: str
 
-        @param owner_type: category of the caller who created the association;
-                           must be one of the OWNER_* variables in this module
-        @type  owner_type: str
-
-        @param owner_id: identifies the caller who created the association, either
-                         the importer ID or user login
-        @type  owner_id: str
-
         @param notify_plugins: if true, relevant plugins will be informed of the
                removal
         @type  notify_plugins: bool
         """
-        return self.unassociate_all_by_ids(repo_id, unit_type_id, [unit_id], owner_type, owner_id,
+        return self.unassociate_all_by_ids(repo_id, unit_type_id, [unit_id],
                                            notify_plugins=notify_plugins)
 
-    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list, owner_type, owner_id,
+    def unassociate_all_by_ids(self, repo_id, unit_type_id, unit_id_list,
                                notify_plugins=True):
         """
         Removes the association between a repo and a number of units. Only the
@@ -326,14 +286,6 @@ class RepoUnitAssociationManager(object):
         @param unit_id_list: list of unique identifiers for units within the given type
         @type  unit_id_list: list of str
 
-        @param owner_type: category of the caller who created the association;
-                           must be one of the OWNER_* variables in this module
-        @type  owner_type: str
-
-        @param owner_id: identifies the caller who created the association, either
-                         the importer ID or user login
-        @type  owner_id: str
-
         @param notify_plugins: if true, relevant plugins will be informed of the
                removal
         @type  notify_plugins: bool
@@ -342,21 +294,17 @@ class RepoUnitAssociationManager(object):
         criteria = UnitAssociationCriteria(type_ids=[unit_type_id],
                                            association_filters=association_filters)
 
-        return self.unassociate_by_criteria(repo_id, criteria, owner_type, owner_id,
+        return self.unassociate_by_criteria(repo_id, criteria,
                                             notify_plugins=notify_plugins)
 
     @staticmethod
-    def unassociate_by_criteria(repo_id, criteria, owner_type, owner_id, notify_plugins=True):
+    def unassociate_by_criteria(repo_id, criteria, notify_plugins=True):
         """
         Unassociate units that are matched by the given criteria.
 
         :param repo_id:        identifies the repo
         :type  repo_id:        str
         :param criteria:
-        :param owner_type:     category of the caller who created the association
-        :type  owner_type:     str
-        :param owner_id:       identifies the call who created the association
-        :type  owner_id:       str
         :param notify_plugins: if true, relevant plugins will be informed of the removal
         :type  notify_plugins: bool
         """

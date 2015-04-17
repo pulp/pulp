@@ -392,7 +392,7 @@ class AddUnitMixin(object):
     the instance will take care of it itself.
     """
 
-    def __init__(self, repo_id, importer_id, association_owner_type, association_owner_id):
+    def __init__(self, repo_id, importer_id):
         """
         @param repo_id: identifies the repo being synchronized
         @type  repo_id: str
@@ -400,23 +400,12 @@ class AddUnitMixin(object):
         @param importer_id: identifies the importer performing the sync
         @type  importer_id: str
 
-        @param association_owner_type: type used when creating associations;
-               set to either importer or user depending on what call is being
-               made into the importer
-        @type  association_owner_type: str
-
-        @param association_owner_id: ID of the association owner
-        @type  association_owner_id: str
         """
         self.repo_id = repo_id
         self.importer_id = importer_id
-        self.association_owner_type = association_owner_type
-        self.association_owner_id = association_owner_id
 
         self._added_count = 0
         self._updated_count = 0
-
-        self._association_owner_id = association_owner_id
 
     def init_unit(self, type_id, unit_key, metadata, relative_path):
         """
@@ -499,8 +488,7 @@ class AddUnitMixin(object):
 
             # Associate it with the repo
             association_manager.associate_unit_by_id(
-                self.repo_id, unit.type_id, unit.id, self.association_owner_type,
-                self.association_owner_id)
+                self.repo_id, unit.type_id, unit.id)
 
             return unit
         except Exception, e:

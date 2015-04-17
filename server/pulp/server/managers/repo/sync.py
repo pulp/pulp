@@ -20,7 +20,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import SyncReport
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import register_sigterm_handler, Task, TaskResult
-from pulp.server.db.model.repository import Repo, RepoContentUnit, RepoImporter, RepoSyncResult
+from pulp.server.db.model.repository import Repo, RepoImporter, RepoSyncResult
 from pulp.server.exceptions import MissingResource, PulpExecutionException, InvalidValue
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo import _common as common_utils
@@ -79,8 +79,7 @@ class RepoSyncManager(object):
         repo_importer = importer_manager.get_importer(repo_id)
 
         # Assemble the data needed for the sync
-        conduit = RepoSyncConduit(repo_id, repo_importer['id'], RepoContentUnit.OWNER_TYPE_IMPORTER,
-                                  repo_importer['id'])
+        conduit = RepoSyncConduit(repo_id, repo_importer['id'])
 
         call_config = PluginCallConfiguration(importer_config, repo_importer['config'],
                                               sync_config_override)

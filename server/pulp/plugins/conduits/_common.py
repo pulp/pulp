@@ -84,11 +84,9 @@ def to_plugin_associated_unit(pulp_unit, type_def):
     unit_id = pulp_unit.pop('unit_id', None)
     created = pulp_unit.pop('created', None)
     updated = pulp_unit.pop('updated', None)
-    owner_type = pulp_unit.pop('owner_type', None)
-    owner_id = pulp_unit.pop('owner_id', None)
 
     u = AssociatedUnit(type_def['id'], unit_key, pulp_unit['metadata'], storage_path,
-                       created, updated, owner_type, owner_id)
+                       created, updated)
     u.id = unit_id
 
     return u

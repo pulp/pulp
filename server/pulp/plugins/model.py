@@ -191,14 +191,11 @@ class AssociatedUnit(Unit):
     Adds association metadata on top of normal unit data.
     """
 
-    def __init__(self, type_id, unit_key, metadata, storage_path, created, updated,
-                 owner_type, owner_id):
+    def __init__(self, type_id, unit_key, metadata, storage_path, created, updated):
         Unit.__init__(self, type_id, unit_key, metadata, storage_path)
 
         self.created = created
         self.updated = updated
-        self.owner_type = owner_type
-        self.owner_id = owner_id
 
 
 class SyncReport(object):

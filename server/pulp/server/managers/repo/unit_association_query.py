@@ -11,12 +11,10 @@ from pulp.server.db.model.repository import RepoContentUnit
 
 # Valid sort strings
 SORT_TYPE_ID = 'type_id'
-SORT_OWNER_TYPE = 'owner_type'
-SORT_OWNER_ID = 'owner_id'
 SORT_CREATED = 'created'
 SORT_UPDATED = 'updated'
 
-_VALID_SORTS = (SORT_TYPE_ID, SORT_OWNER_TYPE, SORT_OWNER_ID, SORT_CREATED, SORT_UPDATED)
+_VALID_SORTS = (SORT_TYPE_ID, SORT_CREATED, SORT_UPDATED)
 
 SORT_ASCENDING = pymongo.ASCENDING
 SORT_DESCENDING = pymongo.DESCENDING

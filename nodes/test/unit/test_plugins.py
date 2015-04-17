@@ -252,9 +252,7 @@ class PluginTestBase(WebTest):
             manager.associate_unit_by_id(
                 self.REPO_ID,
                 self.UNIT_TYPE_ID,
-                unit_id,
-                RepoContentUnit.OWNER_TYPE_IMPORTER,
-                constants.HTTP_IMPORTER)
+                unit_id)
             units.append(unit)
         return units
 
@@ -671,8 +669,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
@@ -717,8 +713,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
@@ -759,8 +753,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
@@ -802,8 +794,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
@@ -844,8 +834,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
@@ -894,8 +882,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
@@ -940,8 +926,6 @@ class ImporterTest(PluginTestBase):
         configuration = PluginCallConfiguration(configuration, {})
         conduit = RepoSyncConduit(
             self.REPO_ID,
-            constants.HTTP_IMPORTER,
-            RepoContentUnit.OWNER_TYPE_IMPORTER,
             constants.HTTP_IMPORTER)
         pulp_conf.set('server', 'storage_dir', self.childfs)
         importer.sync_repo(repo, conduit, configuration)
