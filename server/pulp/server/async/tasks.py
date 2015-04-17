@@ -113,7 +113,7 @@ def get_worker_for_reservation(resource_id):
                            `resource_id` associated with it.
     :rtype:                pulp.server.db.model.resources.Worker
     """
-    reservation = ReservedResource.get_collection().find_one({'resource_id': resource_id})
+    reservation = ReservedResource.objects(resource_id=resource_id).first()
     if reservation:
         return Worker.objects(name=reservation['worker_name']).first()
     else:
@@ -136,7 +136,7 @@ def _get_unreserved_worker():
     # Build a mapping of queue names to Worker objects
     workers_dict = dict((worker['name'], worker) for worker in Worker.objects())
     worker_names = workers_dict.keys()
-    reserved_names = [r['worker_name'] for r in ReservedResource.get_collection().find()]
+    reserved_names = [r['worker_name'] for r in ReservedResource.objects.all()]
 
     # Find an unreserved worker using set differences of the names, and filter
     # out workers that should not be assigned work.
@@ -176,7 +176,7 @@ def _delete_worker(name, normal_shutdown=False):
     Worker.objects(name=name).delete()
 
     # Delete all reserved_resource documents for the worker
-    ReservedResource.get_collection().remove({'worker_name': name})
+    ReservedResource.objects(worker_name=name).delete()
 
     # Cancel all of the tasks that were assigned to this worker's queue
     for task_status in TaskStatus.objects(worker_name=name,
@@ -199,7 +199,7 @@ def _release_resource(task_id):
     :param task_id: The UUID of the task that requested the reservation
     :type  task_id: basestring
     """
-    ReservedResource.get_collection().remove({'_id': task_id})
+    ReservedResource.objects(task_id=task_id).delete()
 
 
 class TaskResult(object):
