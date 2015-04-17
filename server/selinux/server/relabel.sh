@@ -20,4 +20,5 @@ fi
 if [[ $1 < '2.7.0' ]]
 then
     /sbin/restorecon -i -R /var/cache/pulp
+    /sbin/restorecon -i -R /var/run/pulp
 fi
