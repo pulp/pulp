@@ -1,14 +1,3 @@
-# Copyright (c) 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from copy import deepcopy
 import base64
 import os
@@ -38,6 +27,7 @@ from pulp.server.webservices.middleware.postponed import PostponedOperationMiddl
 SerialNumber.PATH = '/tmp/sn.dat'
 
 DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../data/'))
+
 
 def load_test_config():
     if not os.path.exists('/tmp/pulp'):
@@ -73,7 +63,7 @@ class PulpServerTests(unittest.TestCase):
     def setUp(self):
         super(PulpServerTests, self).setUp()
         self._mocks = {}
-        self.config = PulpServerTests.CONFIG # shadow for simplicity
+        self.config = PulpServerTests.CONFIG  # shadow for simplicity
         self.clean()
 
     def tearDown(self):
@@ -134,7 +124,7 @@ class PulpWebserviceTests(PulpServerTests):
         http.request_info = request_info
 
         base64string = base64.encodestring('%s:%s' % ('ws-user', 'ws-user'))[:-1]
-        PulpWebserviceTests.HEADERS = {'Authorization' : 'Basic %s' % base64string}
+        PulpWebserviceTests.HEADERS = {'Authorization': 'Basic %s' % base64string}
 
     @classmethod
     def tearDownClass(cls):
@@ -270,5 +260,5 @@ class RecursiveUnorderedListComparisonMixin(object):
 class ResourceReservationTests(PulpServerTests):
     def tearDown(self):
         Worker.objects().delete()
-        ReservedResource.get_collection().remove()
+        ReservedResource.objects.delete()
         TaskStatus.objects().delete()

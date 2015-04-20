@@ -173,9 +173,9 @@ class TestDeleteWorker(ResourceReservationTests):
 
     def test_removes_all_associated_reserved_resource_entries(self):
         tasks._delete_worker('worker1')
-        self.assertTrue(self.mock_reserved_resource.get_collection.called)
-        remove = self.mock_reserved_resource.get_collection.return_value.remove
-        remove.assert_called_once_with({'worker_name': 'worker1'})
+        self.assertTrue(self.mock_reserved_resource.objects.called)
+        remove = self.mock_reserved_resource.objects.return_value.delete
+        remove.assert_called_once_with()
 
     @mock.patch('pulp.server.async.tasks.Worker.objects')
     def test_removes_the_worker(self, mock_worker_objects):
@@ -222,9 +222,9 @@ class TestReleaseResource(ResourceReservationTests):
         worker_2 = Worker(WORKER_2, datetime.utcnow())
         worker_2.save()
         # Set up two resource reservations, using our workers from above
-        reserved_resource_1 = ReservedResource(uuid.uuid4(), worker_1.name, 'resource_1')
+        reserved_resource_1 = ReservedResource(str(uuid.uuid4()), worker_1.name, 'resource_1')
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource(uuid.uuid4(), worker_2.name, 'resource_2')
+        reserved_resource_2 = ReservedResource(str(uuid.uuid4()), worker_2.name, 'resource_2')
         reserved_resource_2.save()
 
         # This should not raise any Exception, but should also not alter either the Worker
@@ -238,12 +238,11 @@ class TestReleaseResource(ResourceReservationTests):
         worker_2 = Worker.objects().get(name=worker_2.name)
         self.assertTrue(worker_2)
         # Make sure that the reserved resources collection has not been altered
-        rrc = ReservedResource.get_collection()
-        self.assertEqual(rrc.count(), 2)
-        rr_1 = rrc.find_one({'_id': reserved_resource_1.task_id})
+        self.assertEqual(ReservedResource.objects.count(), 2)
+        rr_1 = ReservedResource.objects.get(task_id=reserved_resource_1.task_id)
         self.assertEqual(rr_1['worker_name'], reserved_resource_1.worker_name)
         self.assertEqual(rr_1['resource_id'], 'resource_1')
-        rr_2 = rrc.find_one({'_id': reserved_resource_2.task_id})
+        rr_2 = ReservedResource.objects.get(task_id=reserved_resource_2.task_id)
         self.assertEqual(rr_2['worker_name'], reserved_resource_2.worker_name)
         self.assertEqual(rr_2['resource_id'], 'resource_2')
 
@@ -259,18 +258,17 @@ class TestReleaseResource(ResourceReservationTests):
         worker_2 = Worker(WORKER_2, now)
         worker_2.save()
         # Set up two reserved resources
-        reserved_resource_1 = ReservedResource(uuid.uuid4(), worker_1.name, 'resource_1')
+        reserved_resource_1 = ReservedResource(str(uuid.uuid4()), worker_1.name, 'resource_1')
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource(uuid.uuid4(), worker_2.name, 'resource_2')
+        reserved_resource_2 = ReservedResource(str(uuid.uuid4()), worker_2.name, 'resource_2')
         reserved_resource_2.save()
 
         # This should remove resource_2 from the _resource_map.
         tasks._release_resource(reserved_resource_2.task_id)
 
         # resource_2 should have been removed from the database
-        rrc = ReservedResource.get_collection()
-        self.assertEqual(rrc.count(), 1)
-        rr_1 = rrc.find_one({'_id': reserved_resource_1.task_id})
+        self.assertEqual(ReservedResource.objects.count(), 1)
+        rr_1 = ReservedResource.objects.get(task_id=reserved_resource_1.task_id)
         self.assertEqual(rr_1['worker_name'], reserved_resource_1.worker_name)
         self.assertEqual(rr_1['resource_id'], 'resource_1')
 
@@ -827,15 +825,15 @@ class TestGetWorkerForReservation(ResourceReservationTests):
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_existing_reservation_correctly_found(self, mock_reserved_resource,
                                                   mock_worker_objects):
-        get_collection = mock_reserved_resource.get_collection
+        get_objects = mock_reserved_resource.objects
         tasks.get_worker_for_reservation('resource1')
-        get_collection.assert_called_once_with()
-        get_collection.return_value.find_one.assert_called_once_with({'resource_id': 'resource1'})
+        get_objects.assert_called_once_with(resource_id='resource1')
+        get_objects.return_value.first.assert_called_once_with()
 
     @mock.patch('pulp.server.async.tasks.Worker.objects')
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_correct_worker_returned(self, mock_reserved_resource, mock_worker_objects):
-        find_one = mock_reserved_resource.get_collection.return_value.find_one
+        find_one = mock_reserved_resource.objects.return_value.first
         find_one.return_value = {'worker_name': 'worker1'}
         mock_worker_objects.return_value.first.return_value = find_one.return_value
         result = tasks.get_worker_for_reservation('resource1')
@@ -843,7 +841,7 @@ class TestGetWorkerForReservation(ResourceReservationTests):
 
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_no_workers_raised_if_no_reservations(self, mock_reserved_resource):
-        find_one = mock_reserved_resource.get_collection.return_value.find_one
+        find_one = mock_reserved_resource.objects.return_value.first
         find_one.return_value = False
         try:
             tasks.get_worker_for_reservation('resource1')
@@ -857,7 +855,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
 
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_reserved_resources_queried_correctly(self, mock_reserved_resource):
-        find = mock_reserved_resource.get_collection.return_value.find
+        find = mock_reserved_resource.objects.all
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
         try:
             tasks._get_unreserved_worker()
@@ -865,7 +863,6 @@ class TestGetUnreservedWorker(ResourceReservationTests):
             pass
         else:
             self.fail("NoWorkers() Exception should have been raised.")
-        mock_reserved_resource.get_collection.assert_called_once_with()
         find.assert_called_once_with()
 
     @mock.patch('pulp.server.async.tasks.Worker.objects')
@@ -873,8 +870,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
     def test_worker_returned_when_one_worker_is_not_reserved(self, mock_reserved_resource,
                                                              mock_worker_objects):
         mock_worker_objects.return_value = [{'name': 'a'}, {'name': 'b'}]
-        find = mock_reserved_resource.get_collection.return_value.find
-        find.return_value = [{'worker_name': 'a'}]
+        mock_reserved_resource.objects.all.return_value = [{'worker_name': 'a'}]
         result = tasks._get_unreserved_worker()
         self.assertEqual(result, {'name': 'b'})
 
@@ -882,7 +878,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_no_workers_raised_when_all_workers_reserved(self, mock_reserved_resource, mock_worker):
         mock_worker.objects.return_value = [{'name': 'a'}, {'name': 'b'}]
-        find = mock_reserved_resource.get_collection.return_value.find
+        find = mock_reserved_resource.objects
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
         try:
             tasks._get_unreserved_worker()
@@ -895,7 +891,7 @@ class TestGetUnreservedWorker(ResourceReservationTests):
     @mock.patch('pulp.server.async.tasks.ReservedResource')
     def test_no_workers_raised_when_there_are_no_workers(self, mock_reserved_resource, mock_worker):
         mock_worker.objects.return_value = []
-        find = mock_reserved_resource.get_collection.return_value.find
+        find = mock_reserved_resource.objects
         find.return_value = [{'worker_name': 'a'}, {'worker_name': 'b'}]
         try:
             tasks._get_unreserved_worker()
