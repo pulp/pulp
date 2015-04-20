@@ -12,7 +12,7 @@ from pulp.plugins.loader.api import load_content_types
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
-from pulp.server.db.model import dispatch, workers
+from pulp.server.db.model import dispatch, resources, workers
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 from pulp.server.managers.auth.user.cud import UserManager
@@ -116,6 +116,7 @@ def ensure_database_indexes():
     """
     dispatch.TaskStatus.ensure_indexes()
     workers.Worker.ensure_indexes()
+    resources.ReservedResource.ensure_indexes()
 
 
 def main():

@@ -105,9 +105,10 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
+    @patch.object(manage, 'resources')
     @patch.object(manage, 'dispatch')
     @patch.object(manage, 'workers')
-    def test_ensure_index(self, mock_workers, mock_dispatch):
+    def test_ensure_index(self, mock_workers, mock_dispatch, mock_resources):
         """
         Make sure that the ensure_indexes method is called for all
         the appropriate platform models
@@ -115,6 +116,7 @@ class TestManageDB(MigrationTest):
         manage.ensure_database_indexes()
         self.assertTrue(mock_dispatch.TaskStatus.ensure_indexes.called)
         self.assertTrue(mock_workers.Worker.ensure_indexes.called)
+        self.assertTrue(mock_resources.ReservedResource.ensure_indexes.called)
 
     @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')
