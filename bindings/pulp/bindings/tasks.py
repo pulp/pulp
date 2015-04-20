@@ -64,7 +64,7 @@ class TasksAPI(PulpAPI):
 
         tasks = []
         # sort based on id, which is chronological in mongo
-        for doc in sorted(response.response_body, key=lambda x: x['id']['$oid']):
+        for doc in sorted(response.response_body, key=lambda x: x['id']):
             tasks.append(Task(doc))
 
         response.response_body = tasks
@@ -127,4 +127,4 @@ class TaskSearchAPI(SearchAPI):
         """
         tasks = super(TaskSearchAPI, self).search(**kwargs)
 
-        return [Task(task) for task in tasks]
+        return [Task(task) for task in sorted(tasks, key=lambda x: x['id'])]

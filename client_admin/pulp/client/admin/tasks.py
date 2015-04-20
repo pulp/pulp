@@ -3,7 +3,8 @@ import sys
 
 import pulp.common.tags as tag_utils
 from pulp.bindings.exceptions import PulpServerException
-from pulp.client.extensions.extensions import PulpCliSection
+from pulp.client import parsers
+from pulp.client.extensions.extensions import PulpCliSection, PulpCliFlag, PulpCliOption
 
 
 # Guidance for render_document_list on how to display task info
@@ -31,6 +32,15 @@ class BaseTasksSection(PulpCliSection):
     to provide consistent functionality for a subset of tasks.
     """
 
+    all_flag = PulpCliFlag('--all',  _('if specified, all tasks in all states are shown'),
+                           aliases=['-a'])
+    state_option = PulpCliOption('--state',
+                                 _('comma-separated list of tasks states desired to be '
+                                   'shown. Example: "running,waiting,canceled,successful,failed". '
+                                   'Do not include spaces'), aliases=['-s'], required=False,
+                                 parse_func=parsers.csv)
+
+
     def __init__(self, context, name, description):
         PulpCliSection.__init__(self, name, description)
         self.context = context
@@ -39,7 +49,7 @@ class BaseTasksSection(PulpCliSection):
         # can manipulate them if necessary
 
         self.list_command = self.create_command(
-            'list', _('lists tasks queued or running in the server'), self.list
+            'list', _('lists tasks queued (waiting) or running on the server'), self.list
         )
 
         self.cancel_command = self.create_command('cancel', _('cancel one or more tasks'),
@@ -60,6 +70,11 @@ class BaseTasksSection(PulpCliSection):
         """
 
         self.context.prompt.render_title('Tasks')
+
+        if kwargs.get(self.all_flag.keyword) and kwargs.get(self.state_option.keyword):
+            msg = _('These arguments cannot be used together')
+            self.context.prompt.render_failure_message(msg)
+            return
 
         task_objects = self.retrieve_tasks(**kwargs)
 
@@ -231,12 +246,27 @@ class BaseTasksSection(PulpCliSection):
 class AllTasksSection(BaseTasksSection):
     FIELDS = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
 
+    def __init__(self, context, name, description):
+        BaseTasksSection.__init__(self, context, name, description)
+
+        self.list_command.add_option(self.all_flag)
+
+        self.list_command.add_option(self.state_option)
+
     def retrieve_tasks(self, **kwargs):
         """
         :return:    list of pulp.bindings.responses.Task instances
         :rtype:     list
         """
-        tasks = self.context.server.tasks_search.search(fields=self.FIELDS)
+
+        if kwargs.get(self.all_flag.keyword):
+            tasks = self.context.server.tasks_search.search(fields=self.FIELDS)
+        elif kwargs.get(self.state_option.keyword):
+            tasks = self.context.server.tasks_search.search(
+                filters={'state': {'$in': kwargs[self.state_option.keyword]}}, fields=self.FIELDS)
+        else:
+            tasks = self.context.server.tasks_search.search(
+                filters={'state': {'$in': ['running', 'waiting']}}, fields=self.FIELDS)
         return tasks
 
 
