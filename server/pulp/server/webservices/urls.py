@@ -26,11 +26,10 @@ from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociat
                                                            ConsumerGroupUnassociateActionView,
                                                            ConsumerGroupView)
 from pulp.server.webservices.views.content import (
-    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentTypeResourceView,
-    ContentTypesView, ContentUnitResourceView, ContentUnitsCollectionView,
-    ContentUnitUserMetadataResourceView, DeleteOrphansActionView, OrphanCollectionView,
-    OrphanResourceView, OrphanTypeSubCollectionView, UploadsCollectionView, UploadResourceView,
-    UploadSegmentResourceView
+    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentUnitResourceView,
+    ContentUnitsCollectionView, ContentUnitUserMetadataResourceView, DeleteOrphansActionView,
+    OrphanCollectionView, OrphanResourceView, OrphanTypeSubCollectionView, UploadsCollectionView,
+    UploadResourceView, UploadSegmentResourceView
 )
 from pulp.server.webservices.views.events import (EventResourceView, EventView)
 from pulp.server.webservices.views.permissions import (GrantToRoleView, GrantToUserView,
@@ -124,10 +123,6 @@ urlpatterns = patterns('',
         ContentSourceResourceView.as_view(), name='content_sources_resource_action'),
     url(r'^v2/content/sources/(?P<source_id>[^/]+)/$', ContentSourceResourceView.as_view(),
         name='content_sources_resource'),
-    url(r'^v2/content/types/$', ContentTypesView.as_view(),
-        name='content_types'),
-    url(r'^v2/content/types/(?P<type_id>[^/]+)/$', ContentTypeResourceView.as_view(),
-        name='content_type_resource'),
     url(r'^v2/content/units/(?P<type_id>[^/]+)/$', ContentUnitsCollectionView.as_view(),
         name='content_units_collection'),
     url(r'^v2/content/units/(?P<type_id>[^/]+)/(?P<unit_id>[^/]+)/$',
