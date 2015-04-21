@@ -1,0 +1,19 @@
+From 46be66b913c30aedb1d5017441f1df5ff96a0370 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Mon, 20 Apr 2015 17:10:16 -0400
+Subject: [PATCH] Removes ordereddict as a 2.6 dep. The rpm still requires it.
+
+---
+ requirements/py26.txt | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/requirements/py26.txt b/requirements/py26.txt
+index 1807d7c..ed3fe37 100644
+--- a/requirements/py26.txt
++++ b/requirements/py26.txt
+@@ -1,2 +1 @@
+ importlib
+-ordereddict
+-- 
+1.9.3
+
