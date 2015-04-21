@@ -39,7 +39,7 @@ class PollingCommandTests(base.PulpClientTests):
         command = PollingCommand('poll', 'desc', noop, self.context)
 
         # Verify
-        self.assertEqual(.5, command.poll_frequency_in_seconds)  # from test-override-admin.conf
+        self.assertEqual(.5, command.poll_frequency_in_seconds)  # from defaults
 
     @mock.patch('time.sleep')
     def test_poll_single_task(self, mock_sleep):
