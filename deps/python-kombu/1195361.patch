@@ -1,0 +1,105 @@
+From f032b227747bc6ac3df27bc1866cf8e65a24f759 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Fri, 20 Feb 2015 11:59:54 -0500
+Subject: [PATCH] Fixes close bug where the connection was not being closed
+
+---
+ kombu/tests/transport/test_qpid.py | 19 ++++++++++++-------
+ kombu/transport/qpid.py            | 25 ++++++++++++++-----------
+ 2 files changed, 26 insertions(+), 18 deletions(-)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index 5f53c2f..222f9b3 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -441,6 +441,16 @@ class TestConnectionGetQpidConnection(ConnectionTestBase):
+ 
+ @case_no_python3
+ @case_no_pypy
++class TestConnectionClose(ConnectionTestBase):
++
++    def test_connection_close(self):
++        self.conn._qpid_conn = Mock()
++        self.conn.close()
++        self.conn._qpid_conn.close.assert_called_once_with()
++
++
++@case_no_python3
++@case_no_pypy
+ class TestConnectionCloseChannel(ConnectionTestBase):
+ 
+     def setUp(self):
+@@ -1993,16 +2003,11 @@ class TestTransport(ExtraAssertionsMixin, Case):
+         self.mock_client = Mock()
+ 
+     def test_close_connection(self):
+-        """Test that close_connection calls close on each channel in the
+-        list of channels on the connection object."""
++        """Test that close_connection calls close on the connection."""
+         my_transport = Transport(self.mock_client)
+         mock_connection = Mock()
+-        mock_channel_1 = Mock()
+-        mock_channel_2 = Mock()
+-        mock_connection.channels = [mock_channel_1, mock_channel_2]
+         my_transport.close_connection(mock_connection)
+-        mock_channel_1.close.assert_called_with()
+-        mock_channel_2.close.assert_called_with()
++        mock_connection.close.assert_called_once_with()
+ 
+     def test_default_connection_params(self):
+         """Test that the default_connection_params are correct"""
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index a3b0a4c..fb240ad 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -928,7 +928,7 @@ class Channel(base.StdChannel):
+             self.connection._callbacks.pop(queue, None)
+ 
+     def close(self):
+-        """Close Channel and all associated messages.
++        """Cancel all associated messages and close the Channel.
+ 
+         This cancels all consumers by calling :meth:`basic_cancel` for each
+         known consumer_tag. It also closes the self._broker sessions. Closing
+@@ -1272,6 +1272,14 @@ class Connection(object):
+         """
+         return self._qpid_conn
+ 
++    def close(self):
++        """Close the connection
++
++        Closing the connection will close all associated session, senders, or
++        receivers used by the Connection.
++        """
++        self._qpid_conn.close()
++
+     def close_channel(self, channel):
+         """Close a Channel.
+ 
+@@ -1620,18 +1628,13 @@ class Transport(base.Transport):
+         return conn
+ 
+     def close_connection(self, connection):
+-        """Close the :class:`Connection` object, and all associated
+-        :class:`Channel` objects.
+-
+-        Iterates through all :class:`Channel` objects associated with the
+-        :class:`Connection`, pops them from the list of channels, and calls
+-        :meth:Channel.close` on each.
++        """
++        Close the :class:`Connection` object.
+ 
+-        :param connection: The Connection that should be closed
+-        :type connection: Connection
++        :param connection: The Connection that should be closed.
++        :type connection: :class:`kombu.transport.qpid.Connection`
+         """
+-        for channel in connection.channels:
+-                channel.close()
++        connection.close()
+ 
+     def drain_events(self, connection, timeout=0, **kwargs):
+         """Handle and call callbacks for all ready Transport messages.
+-- 
+1.9.3
+
