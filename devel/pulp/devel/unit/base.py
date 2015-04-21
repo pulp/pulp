@@ -12,17 +12,49 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import logging
-import os
 import unittest
 
 import mock
 import okaara.prompt
 
 from pulp.bindings.bindings import Bindings
-from pulp.bindings.server import  PulpConnection
+from pulp.bindings.server import PulpConnection
 from pulp.client.extensions.core import ClientContext, PulpPrompt, PulpCli
 from pulp.client.extensions.exceptions import ExceptionHandler
 from pulp.common.config import Config
+
+
+# Copy the config here from pulp.client.admin.config so we don't have to start an import chain
+# that pulls in NamedTuple in tests on Python 2.4
+DEFAULT_CONFIG = {
+    'server': {
+        'host': 'localhost.localdomain',
+        'port': '443',
+        'api_prefix': '/pulp/api',
+        'verify_ssl': 'true',
+        'ca_path': '/etc/pki/tls/certs/ca-bundle.crt',
+        'upload_chunk_size': '1048576',
+    },
+    'client': {
+        'role': 'admin'
+    },
+    'filesystem': {
+        'extensions_dir': '/usr/lib/pulp/admin/extensions',
+        'id_cert_dir': '/tmp/pulp_test',
+        'id_cert_filename': 'user-cert.pem',
+        'upload_working_dir': '/tmp/pulp_test/uploads',
+    },
+    'logging': {
+        'filename': '/tmp/pulp_test/admin.log',
+        'call_log_filename': '/tmp/pulp_test/server_calls.log',
+    },
+    'output': {
+        'poll_frequency_in_seconds': '.5',
+        'enable_color': 'true',
+        'wrap_to_terminal': 'false',
+        'wrap_width': '80',
+    },
+}
 
 
 class PulpClientTests(unittest.TestCase):
@@ -33,8 +65,7 @@ class PulpClientTests(unittest.TestCase):
     def setUp(self):
         super(PulpClientTests, self).setUp()
 
-        config_filename = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../../../data/test-override-admin.conf')
-        self.config = Config(config_filename)
+        self.config = Config(DEFAULT_CONFIG)
 
         self.server_mock = mock.Mock()
         self.pulp_connection = PulpConnection('', server_wrapper=self.server_mock)
