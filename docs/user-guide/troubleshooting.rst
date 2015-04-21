@@ -63,19 +63,12 @@ wish to filter Pulp's log messages out and place them into a separate file, you 
 configure rsyslogd to match Pulp's messages. Pulp prefixes all of its log messages with "pulp" to
 aid in matching its messages in the logging daemon.
 
+.. _RSyslog: http://www.rsyslog.com/
+
 If you wish to match Pulp messages and have them logged to a different file than
-``/var/log/messages``, you may adjust your ``/etc/rsyslog.conf`` file. You should find the line for
-logging to ``/var/log/messages`` and add ``pulp.none`` to the list of its matches. This will
-prevent Pulp logs from going to that file. After that, you can add a line to capture the Pulp
-messages and send them to a file::
-
-    pulp.*  /var/log/pulp.log
-
-.. note::
-
-   The text after ``pulp.`` in this config file sets the log level that you wish rsyslog to filter.
-   For example, ``pulp.debug`` would set the log level to debug for Pulp messages. ``pulp.*``
-   captures all messages, and ``pulp.none`` discards all messages.
+``/var/log/messages``, you may adjust your ``/etc/rsyslog.conf``. See RSyslog_ for
+details. An alternative could be to use ``tail`` and ``grep`` to view Pulp messages logged to
+``/var/log/messages``.
 
 Why Syslog?
 ^^^^^^^^^^^
