@@ -12,6 +12,7 @@ from pulp.plugins.loader.api import load_content_types
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
+from pulp.server.db import model
 from pulp.server.db.model import dispatch, resources, workers
 from pulp.server.managers import factory
 from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
@@ -114,6 +115,7 @@ def ensure_database_indexes():
     MongoEngine based models require a manual check as they will only create indexes if the
     collection does not already exist.
     """
+    model.RepositoryContentUnit.ensure_indexes()
     dispatch.TaskStatus.ensure_indexes()
     workers.Worker.ensure_indexes()
     resources.ReservedResource.ensure_indexes()
