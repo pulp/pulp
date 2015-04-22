@@ -116,6 +116,7 @@ def ensure_database_indexes():
     collection does not already exist.
     """
     model.RepositoryContentUnit.ensure_indexes()
+    model.Repository.ensure_indexes()
     dispatch.TaskStatus.ensure_indexes()
     workers.Worker.ensure_indexes()
     resources.ReservedResource.ensure_indexes()
