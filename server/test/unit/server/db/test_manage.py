@@ -112,6 +112,7 @@ class TestManageDB(MigrationTest):
         the appropriate platform models
         """
         manage.ensure_database_indexes()
+        self.assertTrue(mock_model.Repository.ensure_indexes.called)
         self.assertTrue(mock_model.RepositoryContentUnit.ensure_indexes.called)
         self.assertTrue(mock_model.ReservedResource.ensure_indexes.called)
         self.assertTrue(mock_model.TaskStatus.ensure_indexes.called)
