@@ -238,7 +238,7 @@ class ReservedTaskMixin(object):
         try:
             async_result = self.apply_async(*args, **kwargs)
         finally:
-            _queue_release_resource.apply_async((resource_id,), queue=queue,
+            _queue_release_resource.apply_async((resource_id,), queue=queue[:-3],
                                                 exchange=DEDICATED_QUEUE_EXCHANGE)
 
         return async_result
