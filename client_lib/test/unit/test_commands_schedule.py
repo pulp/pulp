@@ -1,26 +1,15 @@
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import copy
+
 import mock
 
 from pulp.bindings.responses import Response
-from pulp.client.extensions.core import TAG_FAILURE, TAG_SUCCESS, TAG_PARAGRAPH
 from pulp.client.commands import schedule as commands
 from pulp.client.commands.options import OPTION_REPO_ID
+from pulp.client.extensions.core import TAG_FAILURE, TAG_SUCCESS, TAG_PARAGRAPH
 from pulp.devel.unit import base
 
-# -- constants ----------------------------------------------------------------
 
-EXAMPLE_SCHEDULE_LIST =  [
+EXAMPLE_SCHEDULE_LIST = [
     {
         "next_run": "2012-05-31T00:00:00Z",
         "_id": "4fba4c7fba35be0be4000046",
@@ -32,7 +21,8 @@ EXAMPLE_SCHEDULE_LIST =  [
         "override_config": {},
         "remaining_runs": None,
         "consecutive_failures": 0,
-        "_href": "/pulp/api/v2/repositories/ks/importers/yum_importer/sync_schedules/4fba4c7fba35be0be4000046/"
+        "_href": "/pulp/api/v2/repositories/ks/importers/yum_importer/sync_schedules/"
+                 "4fba4c7fba35be0be4000046/"
     },
     {
         "next_run": "2012-06-30T00:00:00Z",
@@ -45,7 +35,8 @@ EXAMPLE_SCHEDULE_LIST =  [
         "override_config": {},
         "remaining_runs": None,
         "consecutive_failures": 0,
-        "_href": "/pulp/api/v2/repositories/ks/importers/yum_importer/sync_schedules/4fba4c8dba35be0be4000050/"
+        "_href": "/pulp/api/v2/repositories/ks/importers/yum_importer/sync_schedules/"
+                 "4fba4c8dba35be0be4000050/"
     },
     {
         "next_run": "2012-05-22T00:00:00Z",
@@ -58,18 +49,19 @@ EXAMPLE_SCHEDULE_LIST =  [
         "override_config": {},
         "remaining_runs": None,
         "consecutive_failures": 0,
-        "_href": "/pulp/api/v2/repositories/ks/importers/yum_importer/sync_schedules/4fba4ca0ba35be0be4000055/"
+        "_href": "/pulp/api/v2/repositories/ks/importers/yum_importer/sync_schedules/"
+                 "4fba4ca0ba35be0be4000055/"
     }
 ]
 
-# -- test cases ---------------------------------------------------------------
 
 class TestListScheduleCommand(base.PulpClientTests):
 
     def test_list(self):
         # Setup
         strategy = mock.Mock()
-        strategy.retrieve_schedules.return_value = Response(200, copy.deepcopy(EXAMPLE_SCHEDULE_LIST))
+        strategy.retrieve_schedules.return_value = Response(200,
+                                                            copy.deepcopy(EXAMPLE_SCHEDULE_LIST))
 
         list_command = commands.ListScheduleCommand(self.context, strategy, 'list', 'list')
         list_command.create_option('--extra', 'extra')
@@ -94,7 +86,8 @@ class TestListScheduleCommand(base.PulpClientTests):
     def test_list_details(self):
         # Setup
         strategy = mock.Mock()
-        strategy.retrieve_schedules.return_value = Response(200, copy.deepcopy(EXAMPLE_SCHEDULE_LIST))
+        strategy.retrieve_schedules.return_value = Response(
+            200, copy.deepcopy(EXAMPLE_SCHEDULE_LIST))
 
         list_command = commands.ListScheduleCommand(self.context, strategy, 'list', 'list')
         self.cli.add_command(list_command)
@@ -114,6 +107,7 @@ class TestListScheduleCommand(base.PulpClientTests):
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[1]['first_run'] in first_runs)
         self.assertTrue(EXAMPLE_SCHEDULE_LIST[2]['first_run'] in first_runs)
 
+
 class TestCreateCommand(base.PulpClientTests):
 
     def test_add(self):
@@ -126,7 +120,8 @@ class TestCreateCommand(base.PulpClientTests):
         self.cli.add_command(create_command)
 
         # Test
-        self.cli.run('add --schedule 2012-05-22T00:00:00/P1D --failure-threshold 10 --extra foo'.split())
+        self.cli.run(
+            'add --schedule 2012-05-22T00:00:00/P1D --failure-threshold 10 --extra foo'.split())
 
         # Verify
         args = strategy.create_schedule.call_args[0]
@@ -159,6 +154,7 @@ class TestCreateCommand(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[1])
 
+
 class TestDeleteCommand(base.PulpClientTests):
 
     def test_delete(self):
@@ -182,6 +178,7 @@ class TestDeleteCommand(base.PulpClientTests):
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
 
+
 class TestUpdateCommand(base.PulpClientTests):
 
     def test_update(self):
@@ -194,7 +191,8 @@ class TestUpdateCommand(base.PulpClientTests):
         self.cli.add_command(update_command)
 
         # Test
-        self.cli.run('update --schedule-id foo --schedule 2012-05-22T00:00:00/P1D --failure-threshold 1 --enabled true --extra bar'.split())
+        self.cli.run('update --schedule-id foo --schedule 2012-05-22T00:00:00/P1D '
+                     '--failure-threshold 1 --enabled true --extra bar'.split())
 
         # Verify
         args = strategy.update_schedule.call_args[0]
@@ -211,6 +209,7 @@ class TestUpdateCommand(base.PulpClientTests):
 
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
+
 
 class TestNextRunCommand(base.PulpClientTests):
 

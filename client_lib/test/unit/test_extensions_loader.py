@@ -1,23 +1,11 @@
-# Copyright (c) 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import sys
 import unittest
 
 import mock
 
-from pulp.client.extensions import loader
+from pulp.client.extensions import decorator, loader
 from pulp.client.extensions.core import PulpCli, PulpPrompt, ClientContext
-from pulp.client.extensions import decorator
 
 
 TEST_DIRS_ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'data',
@@ -85,7 +73,6 @@ class ExtensionLoaderTests(unittest.TestCase):
         self.assertEqual('ext4', sorted_modules[5][loader._MODULES][1].__name__)
         self.assertEqual('ext2', sorted_modules[7][loader._MODULES][0].__name__)
 
-
     def test_load_extensions_bad_dir(self):
         """
         Tests loading extensions on a directory that doesn't exist.
@@ -94,7 +81,7 @@ class ExtensionLoaderTests(unittest.TestCase):
             loader.load_extensions('fake_dir', self.context, 'admin')
         except loader.InvalidExtensionsDirectory, e:
             self.assertEqual(e.dir, 'fake_dir')
-            print(e) # for coverage
+            self.assertEqual(str(e), 'Inaccessible or missing extensions directory [fake_dir]')
 
     # prevent entry points from being loaded
     @mock.patch('pkg_resources.iter_entry_points', return_value=())
@@ -115,7 +102,8 @@ class ExtensionLoaderTests(unittest.TestCase):
         except loader.LoadFailed, e:
             self.assertEqual(1, len(e.failed_packs))
             self.assertTrue('not_python_module' in e.failed_packs)
-            print(e) # for coverage
+            self.assertEqual(str(e),
+                             'The following extension packs failed to load: [not_python_module]')
 
     def test_load_no_init_module(self):
         """
@@ -136,7 +124,8 @@ class ExtensionLoaderTests(unittest.TestCase):
             sys.path.append(INDIVIDUAL_FAIL_DIR)
         mod = __import__('init_error')
 
-        self.assertRaises(loader.InitError, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
+        self.assertRaises(loader.InitError, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod,
+                          self.context)
 
     def test_load_no_init_function(self):
         """
@@ -146,7 +135,8 @@ class ExtensionLoaderTests(unittest.TestCase):
             sys.path.append(INDIVIDUAL_FAIL_DIR)
         mod = __import__('no_init_function')
 
-        self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod, self.context)
+        self.assertRaises(loader.NoInitFunction, loader._load_pack, INDIVIDUAL_FAIL_DIR, mod,
+                          self.context)
 
     @mock.patch('pkg_resources.iter_entry_points', autospec=True)
     def test_load_entry_points(self, mock_iter):
@@ -163,7 +153,7 @@ class ExtensionLoaderTests(unittest.TestCase):
 
     @mock.patch('pkg_resources.iter_entry_points', autospec=True)
     def test_entry_point_priority(self, mock_iter):
-    # Make sure we load extensions in the correct order based on priority.
+        # Make sure we load extensions in the correct order based on priority.
         class MockLoad(object):
             """
             Used to determine in what order the load() methods were called.
@@ -189,7 +179,6 @@ class ExtensionLoaderTests(unittest.TestCase):
         loader.load_extensions(EMPTY_SET, context, 'admin')
 
         self.assertEqual(len(order_of_calling), 3)
-        print order_of_calling
         self.assertEqual([load.i for load in order_of_calling], [2, 1, 3])
 
     def test_priority_decorator(self):

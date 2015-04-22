@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 
 from pulp.client.commands.repo import importer_config
@@ -80,7 +68,8 @@ class ImporterConfigMixinTests(base.PulpClientTests):
     # -- populate tests -------------------------------------------------------
 
     def test_populate_sync_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_SYNC][0]
+        group = [g for g in self.mixin.option_groups
+                 if g.name == importer_config.GROUP_NAME_SYNC][0]
         options = group.options
 
         self.assertEqual(2, len(options))
@@ -98,7 +87,8 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(options[3], self.mixin.options_bundle.opt_feed_key)
 
     def test_populate_proxy_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_PROXY][0]
+        group = [g for g in self.mixin.option_groups
+                 if g.name == importer_config.GROUP_NAME_PROXY][0]
         options = group.options
 
         self.assertEqual(4, len(options))
@@ -108,20 +98,19 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(options[3], self.mixin.options_bundle.opt_proxy_pass)
 
     def test_populate_throttling_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_THROTTLING][0]
+        group = [g for g in self.mixin.option_groups
+                 if g.name == importer_config.GROUP_NAME_THROTTLING][0]
         options = group.options
 
         self.assertEqual(2, len(options))
         self.assertEqual(options[0], self.mixin.options_bundle.opt_max_downloads)
         self.assertEqual(options[1], self.mixin.options_bundle.opt_max_speed)
 
-    # -- parse tests ----------------------------------------------------------
-
     def test_parse_sync_group(self):
         # Setup
         user_input = {
-            self.mixin.options_bundle.opt_feed.keyword : 'feed-1',
-            self.mixin.options_bundle.opt_validate.keyword : True,
+            self.mixin.options_bundle.opt_feed.keyword: 'feed-1',
+            self.mixin.options_bundle.opt_validate.keyword: True,
         }
 
         # Test
@@ -135,10 +124,13 @@ class ImporterConfigMixinTests(base.PulpClientTests):
     def test_parse_ssl_group(self):
         # Setup
         user_input = {
-            self.mixin.options_bundle.opt_feed_ca_cert.keyword : os.path.join(FILES_DIR, 'ca_cert.crt'),
-            self.mixin.options_bundle.opt_verify_feed_ssl.keyword : True,
-            self.mixin.options_bundle.opt_feed_cert.keyword : os.path.join(FILES_DIR, 'client_cert.crt'),
-            self.mixin.options_bundle.opt_feed_key.keyword : os.path.join(FILES_DIR, 'client_key.crt'),
+            self.mixin.options_bundle.opt_feed_ca_cert.keyword: os.path.join(FILES_DIR,
+                                                                             'ca_cert.crt'),
+            self.mixin.options_bundle.opt_verify_feed_ssl.keyword: True,
+            self.mixin.options_bundle.opt_feed_cert.keyword: os.path.join(FILES_DIR,
+                                                                          'client_cert.crt'),
+            self.mixin.options_bundle.opt_feed_key.keyword: os.path.join(FILES_DIR,
+                                                                         'client_key.crt'),
         }
 
         # Test
@@ -154,10 +146,10 @@ class ImporterConfigMixinTests(base.PulpClientTests):
     def test_parse_proxy_group(self):
         # Setup
         user_input = {
-            self.mixin.options_bundle.opt_proxy_host.keyword : 'host-1',
-            self.mixin.options_bundle.opt_proxy_port.keyword : 80,
-            self.mixin.options_bundle.opt_proxy_user.keyword : 'user-1',
-            self.mixin.options_bundle.opt_proxy_pass.keyword : 'pass-1',
+            self.mixin.options_bundle.opt_proxy_host.keyword: 'host-1',
+            self.mixin.options_bundle.opt_proxy_port.keyword: 80,
+            self.mixin.options_bundle.opt_proxy_user.keyword: 'user-1',
+            self.mixin.options_bundle.opt_proxy_pass.keyword: 'pass-1',
         }
 
         # Test
@@ -173,8 +165,8 @@ class ImporterConfigMixinTests(base.PulpClientTests):
     def test_parse_throttling(self):
         # Setup
         user_input = {
-            self.mixin.options_bundle.opt_max_speed.keyword : 1024,
-            self.mixin.options_bundle.opt_max_downloads.keyword : 4,
+            self.mixin.options_bundle.opt_max_speed.keyword: 1024,
+            self.mixin.options_bundle.opt_max_downloads.keyword: 4,
         }
 
         # Test

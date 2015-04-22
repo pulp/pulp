@@ -68,14 +68,16 @@ class TestCreateBindings(unittest.TestCase):
         api_logger = bindings.bindings.server.api_responses_logger
         handler = api_logger.handlers[0]
         self.assertEqual(handler.stream, sys.stderr)
-        self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
+        self.assertEqual(handler.formatter._fmt,
+                         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
 
     def test_initialize_logging_no_verbose(self):
         cli_logger = launcher._initialize_logging(verbose=None)
         self.assertEqual(cli_logger.level, logging.FATAL)
         handler = cli_logger.handlers[0]
         self.assertEqual(handler.stream, sys.stderr)
-        self.assertEqual(handler.formatter._fmt, logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
+        self.assertEqual(handler.formatter._fmt,
+                         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')._fmt)
 
 
 class TestEnsureUserPulpDir(unittest.TestCase):

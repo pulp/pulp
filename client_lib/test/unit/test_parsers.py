@@ -1,17 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import isodate
@@ -32,7 +18,7 @@ class TestBackwardsCompatibility(unittest.TestCase):
 class TestNotes(unittest.TestCase):
     def test_valid(self):
         ret = parsers.parse_notes(['a=z', 'b=y'])
-        self.assertEqual(ret, {'a' : 'z', 'b' : 'y'})
+        self.assertEqual(ret, {'a': 'z', 'b': 'y'})
 
     def test_invalid(self):
         self.assertRaises(ValueError, parsers.parse_notes, 'foo')
