@@ -343,7 +343,7 @@ class TestTask(ResourceReservationTests):
                                                   queue=tasks.RESOURCE_MANAGER_QUEUE)
         apply_async.assert_called_once_with(task, *some_args, **some_kwargs)
         _queue_release_resource.apply_async.assert_called_once_with((expected_resource_id,),
-                                                                    queue=WORKER_1_QUEUE,
+                                                                    queue=WORKER_1,
                                                                     exchange='C.dq')
 
     @mock.patch('pulp.server.async.tasks.Task.request')
