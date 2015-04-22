@@ -289,8 +289,12 @@ class ContentQueryManager(object):
 
         unit_path = os.path.join(self.get_root_content_dir(content_type), relative_path)
         unit_dir = os.path.dirname(unit_path)
-        if not os.path.exists(unit_dir):
+        try:
             os.makedirs(unit_dir)
+        except OSError, e:
+            if e.errno != errno.EEXIST:
+                    raise
+
         return unit_path
 
 # utility methods --------------------------------------------------------------
