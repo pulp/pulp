@@ -1,5 +1,4 @@
 import errno
-import inspect
 import os
 import unittest
 
