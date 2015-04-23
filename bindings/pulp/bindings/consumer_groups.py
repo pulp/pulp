@@ -1,18 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-from pulp.bindings.search import SearchAPI
 from pulp.bindings.base import PulpAPI
+from pulp.bindings.search import SearchAPI
 
 
 class ConsumerGroupAPI(PulpAPI):
@@ -52,7 +39,7 @@ class ConsumerGroupAPI(PulpAPI):
         data = {'id': consumer_group_id,
                 'display_name': display_name,
                 'description': description,
-                'notes': notes,}
+                'notes': notes}
         return self.server.POST(self.PATH, data)
 
     def consumer_group(self, consumer_group_id):
@@ -134,7 +121,7 @@ class ConsumerGroupActionAPI(SearchAPI):
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
 
-        response = self.server.POST(path, {'criteria':kwargs})
+        response = self.server.POST(path, {'criteria': kwargs})
         return response.response_body
 
     def unassociate(self, consumer_group_id, **kwargs):
@@ -158,7 +145,7 @@ class ConsumerGroupActionAPI(SearchAPI):
             kwargs['filters'] = filters
         self._strip_criteria_kwargs(kwargs)
 
-        response = self.server.POST(path, {'criteria':kwargs})
+        response = self.server.POST(path, {'criteria': kwargs})
         return response.response_body
 
 
@@ -184,7 +171,7 @@ class ConsumerGroupBindAPI(PulpAPI):
         :type distributor_id: basestring
         """
         path = self.PATH % (consumer_group_id)
-        data = {'repo_id' : repo_id, 'distributor_id' : distributor_id}
+        data = {'repo_id': repo_id, 'distributor_id': distributor_id}
         response = self.server.POST(path, data)
         return response
 
@@ -217,17 +204,17 @@ class ConsumerGroupContentAPI(PulpAPI):
     def install(self, consumer_group_id, units, options):
         path = self.PATH % consumer_group_id + 'install/'
         data = {"units": units,
-                "options": options,}
+                "options": options}
         return self.server.POST(path, data)
 
     def update(self, consumer_group_id, units, options):
         path = self.PATH % consumer_group_id + 'update/'
         data = {"units": units,
-                "options": options,}
+                "options": options}
         return self.server.POST(path, data)
 
     def uninstall(self, consumer_group_id, units, options):
         path = self.PATH % consumer_group_id + 'uninstall/'
         data = {"units": units,
-                "options": options,}
+                "options": options}
         return self.server.POST(path, data)

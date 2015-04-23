@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including implied
-# warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR
-# PURPOSE. You should have received a copy of GPLv2 along with this software;
-# if not, see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import mock
@@ -78,15 +66,14 @@ class TestRemoveBulk(unittest.TestCase):
 
     def test_dicts_have_extra_keys(self):
         self.assertRaises(ValueError, self.api.remove_bulk,
-            [{'content_type_id' : 'foo', 'unit_id' : 'bar', 'x' : 'y'}])
+                          [{'content_type_id': 'foo', 'unit_id': 'bar', 'x': 'y'}])
 
     def test_success(self):
-        specs = [{'content_type_id' : 'foo', 'unit_id' : 'bar'}]
+        specs = [{'content_type_id': 'foo', 'unit_id': 'bar'}]
         ret = self.api.remove_bulk(specs)
 
         body = json.dumps(specs)
-        self.api.server.POST.assert_called_once_with(self.api.DELETE_BULK_PATH,
-        body)
+        self.api.server.POST.assert_called_once_with(self.api.DELETE_BULK_PATH, body)
 
         self.assertEqual(ret, self.api.server.POST.return_value)
 
