@@ -120,8 +120,6 @@ if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
 fi
 
 echo -e '\n\nDone. You should be able to run 'pulp-admin' successfully! Here are some tips:\n'
-echo -e "\t* If this is your first time running this script, you should source your .bashrc file:\n"
-echo -e "\t\t$ . ~/.bashrc"
 echo -e "\n\t* Your code is all checked out inside of ~/devel/."
 echo -e "\n\t* The default username:password is admin:admin. When your session expires, you can log"
 echo -e "\t  in again with pulp-admin login -u admin"
