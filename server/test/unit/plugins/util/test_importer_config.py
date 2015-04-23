@@ -276,6 +276,71 @@ class ProxyPasswordTests(unittest.TestCase):
             self.assertTrue('int' in e[0])
 
 
+class BasicAuthUsernameTests(unittest.TestCase):
+
+    def test_valid(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_BASIC_AUTH_PASS: 'basicpw',
+                                              importer_constants.KEY_BASIC_AUTH_USER: 'basicuser'})
+        importer_config.validate_basic_auth_username(config)
+        # no exception should be raised
+
+    def test_optional(self):
+        config = PluginCallConfiguration({}, {})
+        importer_config.validate_basic_auth_username(config)
+        # no exception should be raised
+
+    def test_password_no_username(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_BASIC_AUTH_PASS: 'basicpw'})
+        try:
+            importer_config.validate_basic_auth_username(config)
+            self.fail()
+        except ValueError, e:
+            self.assertTrue(importer_constants.KEY_BASIC_AUTH_USER in e[0])
+            self.assertTrue(importer_constants.KEY_BASIC_AUTH_PASS in e[0])
+
+    def test_username_is_non_string(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_BASIC_AUTH_USER: 185})
+        try:
+            importer_config.validate_basic_auth_username(config)
+            self.fail()
+        except ValueError, e:
+            self.assertTrue('int' in e[0])
+
+
+class BasicAuthPasswordTests(unittest.TestCase):
+
+    def test_valid(self):
+        config = PluginCallConfiguration(
+            {},
+            {importer_constants.KEY_BASIC_AUTH_PASS: 'basicpw',
+             importer_constants.KEY_BASIC_AUTH_USER: 'basicuser'})
+        importer_config.validate_basic_auth_password(config)
+        # no exception should be raised
+
+    def test_optional(self):
+        config = PluginCallConfiguration({}, {})
+        importer_config.validate_basic_auth_password(config)
+        # no exception should be raised
+
+    def test_username_no_password(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_BASIC_AUTH_USER: 'user-1'})
+        try:
+            importer_config.validate_basic_auth_password(config)
+            self.fail()
+        except ValueError, e:
+            self.assertTrue(importer_constants.KEY_BASIC_AUTH_USER in e[0])
+            self.assertTrue(importer_constants.KEY_BASIC_AUTH_PASS in e[0])
+
+    def test_password_is_non_string(self):
+        config = PluginCallConfiguration({}, {importer_constants.KEY_BASIC_AUTH_PASS: 7,
+                                              importer_constants.KEY_BASIC_AUTH_USER: 'user-1'})
+        try:
+            importer_config.validate_basic_auth_password(config)
+            self.fail()
+        except ValueError, e:
+            self.assertTrue('int' in e[0])
+
+
 class SSLValidationFlagTests(unittest.TestCase):
 
     @mock.patch('pulp.plugins.util.importer_config._run_validate_is_non_required_bool')

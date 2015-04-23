@@ -79,7 +79,9 @@ class TestDescriptor(TestCase):
             constants.PROXY_URL: 'proxy-url',
             constants.PROXY_PORT: '5000',
             constants.PROXY_USERID: 'proxy-userid',
-            constants.PROXY_PASSWORD: 'proxy-password'
+            constants.PROXY_PASSWORD: 'proxy-password',
+            constants.BASIC_AUTH_USERID: 'basic_auth-userid',
+            constants.BASIC_AUTH_PASSWORD: 'basic_auth-password'
         }
         conf = nectar_config(descriptor)
         self.assertEqual(conf.max_concurrent, 10)
@@ -92,3 +94,5 @@ class TestDescriptor(TestCase):
         self.assertEqual(conf.proxy_port, 5000)
         self.assertEqual(conf.proxy_username, descriptor[constants.PROXY_USERID])
         self.assertEqual(conf.proxy_password, descriptor[constants.PROXY_PASSWORD])
+        self.assertEqual(conf.basic_auth_username, descriptor[constants.BASIC_AUTH_USERID])
+        self.assertEqual(conf.basic_auth_password, descriptor[constants.BASIC_AUTH_PASSWORD])
