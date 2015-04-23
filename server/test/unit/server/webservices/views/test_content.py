@@ -9,11 +9,10 @@ from .base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, asse
 from pulp.server import constants
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.webservices.views.content import (
-    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentTypeResourceView,
-    ContentTypesView, ContentUnitResourceView, ContentUnitsCollectionView,
-    ContentUnitUserMetadataResourceView, DeleteOrphansActionView, OrphanCollectionView,
-    OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView, UploadsCollectionView,
-    UploadSegmentResourceView
+    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentUnitResourceView,
+    ContentUnitsCollectionView, ContentUnitUserMetadataResourceView, DeleteOrphansActionView,
+    OrphanCollectionView, OrphanTypeSubCollectionView, OrphanResourceView, UploadResourceView,
+    UploadsCollectionView, UploadSegmentResourceView
 )
 
 
@@ -261,87 +260,6 @@ class TestCatalogResourceView(unittest.TestCase):
         response = catalog_resource_view.delete(request, 'mock_id')
 
         expected_content = {'deleted': 82}
-        mock_resp.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_resp.return_value)
-
-
-class TestContentTypeResourceView(unittest.TestCase):
-    """
-    Test views of a specific content type.
-    """
-
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.content.serialization')
-    @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_type_resource_view_valid_content_type(self, mock_factory,
-                                                               mock_serialization, mock_resp):
-        """
-        View should return a response containing a serialized dict for the given contentent type.
-        """
-        mock_cqm = mock.MagicMock()
-        mock_cqm.get_content_type.return_value = 'Not None'
-        mock_factory.content_query_manager.return_value = mock_cqm
-        mock_serialization.content.content_type_obj.return_value = {}
-        request = mock.MagicMock()
-        request.get_full_path.return_value = '/mock/path/'
-
-        content_type_resource_view = ContentTypeResourceView()
-        response = content_type_resource_view.get(request, 'mock_type')
-
-        expected_content = {'actions': {'_href': '/mock/path/actions/'},
-                            'content_units': {'_href': '/mock/path/units/'}}
-
-        mock_resp.assert_called_once_with(expected_content)
-        self.assertTrue(response is mock_resp.return_value)
-
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
-    @mock.patch('pulp.server.webservices.views.content.serialization')
-    @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_type_resource_view_invalid_type(self, mock_factory,
-                                                         mock_serialization, mock_resp):
-        """
-        View should return a response that contains a message about the missing content.
-        """
-        mock_cqm = mock.MagicMock()
-        mock_cqm.get_content_type.return_value = None
-        mock_factory.content_query_manager.return_value = mock_cqm
-        request = mock.MagicMock()
-
-        content_type_resource_view = ContentTypeResourceView()
-        response = content_type_resource_view.get(request, 'invalid_type')
-
-        msg = _('No content type resource: invalid_type')
-        mock_resp.assert_called_once_with(msg, response_class=HttpResponseNotFound)
-        self.assertTrue(response is mock_resp.return_value)
-
-
-class TestContentTypesView(unittest.TestCase):
-    """
-    Tests for views of all content types.
-    """
-
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.content.generate_json_response')
-    @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_types_view(self, mock_factory, mock_resp):
-        """
-        View should return a response that contains a list of dicts, one for each content type.
-        """
-        mock_cqm = mock.MagicMock()
-        mock_cqm.list_content_types.return_value = ['rpm', 'other']
-        mock_factory.content_query_manager.return_value = mock_cqm
-        request = mock.MagicMock()
-
-        content_types_view = ContentTypesView()
-        response = content_types_view.get(request)
-
-        expected_content = [{'_href': '/v2/content/types/rpm/', 'content_type': 'rpm'},
-                            {'_href': '/v2/content/types/other/', 'content_type': 'other'}]
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 

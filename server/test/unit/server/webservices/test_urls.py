@@ -66,22 +66,6 @@ class TestDjangoContentUrls(unittest.TestCase):
         url_name = 'content_orphan_collection'
         assert_url_match(url, url_name)
 
-    def test_match_content_type_resource(self):
-        """
-        Test the url matching for content_type_resource.
-        """
-        url = '/v2/content/types/mock-type/'
-        url_name = 'content_type_resource'
-        assert_url_match(url, url_name, type_id='mock-type')
-
-    def test_match_content_types(self):
-        """
-        Test the url matching for content_types.
-        """
-        url = '/v2/content/types/'
-        url_name = 'content_types'
-        assert_url_match(url, url_name)
-
     def test_match_content_units_collection(self):
         """
         Test the url matching for content_units_collection.
