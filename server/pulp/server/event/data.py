@@ -5,7 +5,7 @@ Contains DTOs to describe events.
 from mongoengine.queryset import DoesNotExist
 import celery
 
-from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.db.model import TaskStatus
 
 
 # These types are used to form AMQP message topic names, so they must be

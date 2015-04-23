@@ -8,7 +8,7 @@ import mock
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.db.model import dispatch
-from pulp.server.db.model.workers import Worker
+from pulp.server.db.model import Worker
 from pulp.server.managers.factory import initialize
 
 

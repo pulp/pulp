@@ -8,6 +8,7 @@ import mock
 
 from ... import base
 from pulp.server.compat import ObjectId
+from pulp.server.db import model
 from pulp.server.db import reaper
 from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, repository
 from pulp.server.db.model.consumer import ConsumerHistoryEvent
@@ -23,7 +24,7 @@ class TestReaperCollectionConfig(unittest.TestCase):
         Test that the expected key-value pairs exist in the reaper collection to timedelta mapping.
         """
         collections_to_reap = [dispatch.ArchivedCall,
-                               dispatch.TaskStatus,
+                               model.TaskStatus,
                                consumer.ConsumerHistoryEvent,
                                repository.RepoSyncResult,
                                repository.RepoPublishResult,
@@ -33,7 +34,7 @@ class TestReaperCollectionConfig(unittest.TestCase):
             self.assertTrue(key in reaper._COLLECTION_TIMEDELTAS)
         # Also check the values.
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.ArchivedCall], 'archived_calls')
-        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[dispatch.TaskStatus], 'task_status_history')
+        self.assertEqual(reaper._COLLECTION_TIMEDELTAS[model.TaskStatus], 'task_status_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[consumer.ConsumerHistoryEvent],
                          'consumer_history')
         self.assertEqual(reaper._COLLECTION_TIMEDELTAS[repository.RepoSyncResult],
@@ -87,8 +88,8 @@ class TestReapInheritance(unittest.TestCase):
         reaper._COLLECTION_TIMEDELTAS, so each of those should be asserted as inheriting from
         ReaperMixin.
         """
-        for model in reaper._COLLECTION_TIMEDELTAS.keys():
-            self.assertTrue(issubclass(model, ReaperMixin))
+        for model_class in reaper._COLLECTION_TIMEDELTAS.keys():
+            self.assertTrue(issubclass(model_class, ReaperMixin))
 
 
 class TestReapExpiredDocuments(base.PulpServerTests):

@@ -6,6 +6,7 @@ from celery import task
 from pulp.common.tags import action_tag
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import Task
+from pulp.server.db import model
 from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, repository
 
 
@@ -15,7 +16,7 @@ from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, 
 # Task to determine how old documents should be (in days) before they are removed.
 _COLLECTION_TIMEDELTAS = {
     dispatch.ArchivedCall: 'archived_calls',
-    dispatch.TaskStatus: 'task_status_history',
+    model.TaskStatus: 'task_status_history',
     consumer.ConsumerHistoryEvent: 'consumer_history',
     repository.RepoSyncResult: 'repo_sync_history',
     repository.RepoPublishResult: 'repo_publish_history',
@@ -45,8 +46,8 @@ def reap_expired_documents():
     number of days as the argument.
     """
     _logger.info(_('The reaper task is cleaning out old documents from the database.'))
-    for model, config_name in _COLLECTION_TIMEDELTAS.items():
+    for model_class, config_name in _COLLECTION_TIMEDELTAS.items():
         # Get the config for how old documents should be before they are reaped.
         config_days = pulp_config.config.getfloat('data_reaping', config_name)
-        model.reap_old_documents(config_days)
+        model_class.reap_old_documents(config_days)
     _logger.info(_('The reaper task has completed.'))
