@@ -1,15 +1,16 @@
 import mock
 
 from pulp.common import tags
-from pulp.devel.unit.util import compare_dict
 from pulp.bindings.responses import STATE_FINISHED, Task
+from pulp.client.commands.options import (OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES,
+                                          OPTION_REPO_ID)
 from pulp.client.commands.polling import PollingCommand, FLAG_BACKGROUND
 from pulp.client.commands.repo import cudl
-from pulp.client.commands.options import OPTION_DESCRIPTION, OPTION_NAME, OPTION_NOTES, OPTION_REPO_ID
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_TITLE
 from pulp.common.compat import json
 from pulp.devel.unit import base
 from pulp.devel.unit.task_simulator import TaskSimulator
+from pulp.devel.unit.util import compare_dict
 
 
 class CreateRepositoryCommandTests(base.PulpClientTests):
@@ -382,7 +383,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         url = self.server_mock.request.call_args[0][1]
         self.assertTrue('/repositories/' in url)
         self.assertTrue('importers=True' in url)
-        self.assertTrue('distributors=True' in  url)
+        self.assertTrue('distributors=True' in url)
 
         render_kwargs = mock_call.call_args[1]
         expected = ['id', 'display_name', 'description', 'content_unit_counts',
@@ -463,7 +464,7 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
 
         # Verify
         url = self.server_mock.request.call_args[0][1]
-        self.assertTrue('/repositories/zoo-repo/' in  url)
+        self.assertTrue('/repositories/zoo-repo/' in url)
         render_kwargs = mock_call.call_args[1]
         expected_filters = ['display_name', 'id']
 
@@ -560,4 +561,5 @@ class ListRepositoriesCommandTests(base.PulpClientTests):
         self.command.run(**data)
 
         # Verify
-        render_failure_message.assert_called_once_with('The summary and details views cannot be used together')
+        render_failure_message.assert_called_once_with(
+            'The summary and details views cannot be used together')

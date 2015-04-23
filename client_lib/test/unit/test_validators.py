@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 from pulp.client import validators
@@ -63,7 +50,7 @@ class TestIso8601DateTime(unittest.TestCase):
         validators.iso8601_datetime_validator('2013-06-02T12:00:00-23:00')
 
     def test_invalid_datetime(self):
-        #Incomplete date
+        # Incomplete date
         self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-02')
         # Illegal month
         self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-13-01T12:00:00Z')
@@ -76,7 +63,8 @@ class TestIso8601DateTime(unittest.TestCase):
         # Illegal second
         self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-03T12:00:61Z')
         # Illegal timezone
-        self.assertRaises(ValueError, validators.iso8601_datetime_validator, '2013-06-03T12:00:61-25:00')
+        self.assertRaises(ValueError, validators.iso8601_datetime_validator,
+                          '2013-06-03T12:00:61-25:00')
         self.assertRaises(ValueError, validators.iso8601_datetime_validator, '')
 
 
@@ -89,8 +77,9 @@ class TestIso8601Interval(unittest.TestCase):
         validators.interval_iso6801_validator('P1Y6M0DT0H0M/2011-12-06T12:00:00Z')
 
     def test_invalid_intervals(self):
-        self.assertRaises(ValueError,
-                          validators.interval_iso6801_validator, '2010-06-06T12:00:00Z/P-1Y0M0DT0H0M')
+        self.assertRaises(
+            ValueError,
+            validators.interval_iso6801_validator, '2010-06-06T12:00:00Z/P-1Y0M0DT0H0M')
         self.assertRaises(ValueError, validators.interval_iso6801_validator, '')
 
 

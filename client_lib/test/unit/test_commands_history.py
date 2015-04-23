@@ -1,20 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import mock
 
-from pulp.client.commands.repo import history
 from pulp.client.commands.options import OPTION_REPO_ID
+from pulp.client.commands.repo import history
 from pulp.devel.unit import base
 
 
@@ -37,8 +24,9 @@ class SyncHistoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure the correct options are present
         found_options = set(self.command.options)
-        expected_options = set((OPTION_REPO_ID, history.OPTION_LIMIT, history.OPTION_SORT,
-                               history.OPTION_START_DATE, history.OPTION_END_DATE, history.FLAG_DETAILS))
+        expected_options = set(
+            (OPTION_REPO_ID, history.OPTION_LIMIT, history.OPTION_SORT,
+             history.OPTION_START_DATE, history.OPTION_END_DATE, history.FLAG_DETAILS))
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -75,8 +63,9 @@ class SyncHistoryCommandTests(base.PulpClientTests):
 
         # Assert that render_document_list was called with the correct items, filter, and order
         render_kwargs = mock_render_doc_list.call_args[1]
-        expected_filter = expected_order = ['repo_id', 'result', 'started', 'completed', 'added_count',
-                                            'removed_count', 'updated_count']
+        expected_filter = expected_order = [
+            'repo_id', 'result', 'started', 'completed', 'added_count',
+            'removed_count', 'updated_count']
         self.assertEqual(expected_filter.sort(), render_kwargs['filters'].sort())
         self.assertEqual(expected_order, render_kwargs['order'])
         self.assertEqual([], mock_render_doc_list.call_args[0][1])
@@ -140,9 +129,10 @@ class PublishHistoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure the correct options are present
         found_options = set(self.command.options)
-        expected_options = set((OPTION_REPO_ID, history.OPTION_DISTRIBUTOR_ID, history.OPTION_LIMIT,
-                                history.OPTION_SORT, history.OPTION_START_DATE, history.OPTION_END_DATE,
-                                history.FLAG_DETAILS))
+        expected_options = set(
+            (OPTION_REPO_ID, history.OPTION_DISTRIBUTOR_ID, history.OPTION_LIMIT,
+             history.OPTION_SORT, history.OPTION_START_DATE, history.OPTION_END_DATE,
+             history.FLAG_DETAILS))
         self.assertEqual(found_options, expected_options)
 
         # Ensure the correct method is wired up
@@ -172,7 +162,8 @@ class PublishHistoryCommandTests(base.PulpClientTests):
         self.assertEqual(1, mock_render_doc_list.call_count)
         self.assertEqual(expected_filters, render_kwargs['filters'])
         self.assertEqual(expected_order, render_kwargs['order'])
-        self.assertEqual([], mock_render_doc_list.call_args[0][1])  # Check items arg is an empty list
+        # Check items arg is an empty list
+        self.assertEqual([], mock_render_doc_list.call_args[0][1])
         self.assertEqual(1, len(self.prompt.get_write_tags()))
 
     @mock.patch('pulp.bindings.repository.RepositoryHistoryAPI.publish_history', autospec=True)
@@ -206,7 +197,8 @@ class PublishHistoryCommandTests(base.PulpClientTests):
     def test_run_without_details(self, mock_render_doc_list):
         self.command.run(**self.arguments)
 
-        # Assert that render_doc_list was called with a filter that doesn't have 'details' and 'summary'
+        # Assert that render_doc_list was called with a filter that doesn't have 'details' and
+        # 'summary'
         render_kwargs = mock_render_doc_list.call_args[1]
         self.assertFalse('details' and 'summary' in render_kwargs['filters'])
         self.assertFalse('details' and 'summary' in render_kwargs['order'])

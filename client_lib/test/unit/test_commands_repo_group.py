@@ -1,18 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 from pulp.client.commands.options import (OPTION_GROUP_ID, OPTION_REPO_ID,
-    OPTION_DESCRIPTION, OPTION_NOTES, OPTION_NAME, FLAG_ALL)
+                                          OPTION_DESCRIPTION, OPTION_NOTES, OPTION_NAME, FLAG_ALL)
 from pulp.client.commands.repo import group
 from pulp.client.extensions.core import TAG_SUCCESS, TAG_DOCUMENT, TAG_TITLE, TAG_FAILURE
 from pulp.common.compat import json
@@ -28,7 +15,8 @@ class CreateRepositoryGroupCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure the proper options
         expected_options = set([OPTION_GROUP_ID, OPTION_NAME, OPTION_DESCRIPTION, OPTION_NOTES])
-        non_repo_id_options = set([o for o in self.command.options if o.name != OPTION_REPO_ID.name])
+        non_repo_id_options = set(
+            [o for o in self.command.options if o.name != OPTION_REPO_ID.name])
         self.assertEqual(expected_options, non_repo_id_options)
 
         # Ensure the correct method is wired up
@@ -41,10 +29,10 @@ class CreateRepositoryGroupCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            OPTION_NAME.keyword : 'Group',
-            OPTION_DESCRIPTION.keyword : 'Description',
-            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
+            OPTION_GROUP_ID.keyword: 'test-group',
+            OPTION_NAME.keyword: 'Group',
+            OPTION_DESCRIPTION.keyword: 'Description',
+            OPTION_NOTES.keyword: {'a': 'a', 'b': 'b'},
         }
 
         self.server_mock.request.return_value = 201, {}
@@ -61,7 +49,7 @@ class CreateRepositoryGroupCommandTests(base.PulpClientTests):
         self.assertEqual(body['id'], 'test-group')
         self.assertEqual(body['display_name'], 'Group')
         self.assertEqual(body['description'], 'Description')
-        self.assertEqual(body['notes'], {'a' : 'a', 'b' : 'b'})
+        self.assertEqual(body['notes'], {'a': 'a', 'b': 'b'})
 
         self.assertEqual(1, len(self.prompt.get_write_tags()))
         self.assertEqual(TAG_SUCCESS, self.prompt.get_write_tags()[0])
@@ -89,7 +77,7 @@ class DeleteRepositoryGroupCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
+            OPTION_GROUP_ID.keyword: 'test-group',
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -109,7 +97,7 @@ class DeleteRepositoryGroupCommandTests(base.PulpClientTests):
     def test_run_not_found(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
+            OPTION_GROUP_ID.keyword: 'test-group',
         }
 
         self.server_mock.request.return_value = 404, {}
@@ -144,10 +132,10 @@ class UpdateRepositoryGroupCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            OPTION_NAME.keyword : 'Group',
-            OPTION_DESCRIPTION.keyword : 'Description',
-            OPTION_NOTES.keyword : {'a' : 'a', 'b' : 'b'},
+            OPTION_GROUP_ID.keyword: 'test-group',
+            OPTION_NAME.keyword: 'Group',
+            OPTION_DESCRIPTION.keyword: 'Description',
+            OPTION_NOTES.keyword: {'a': 'a', 'b': 'b'},
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -167,12 +155,12 @@ class UpdateRepositoryGroupCommandTests(base.PulpClientTests):
         self.assertTrue('display-name' not in delta)
         self.assertEqual(delta['display_name'], 'Group')
         self.assertEqual(delta['description'], 'Description')
-        self.assertEqual(delta['notes'], {'a' : 'a', 'b' : 'b'})
+        self.assertEqual(delta['notes'], {'a': 'a', 'b': 'b'})
 
     def test_run_not_found(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
+            OPTION_GROUP_ID.keyword: 'test-group',
         }
 
         self.server_mock.request.return_value = 404, {}
@@ -207,11 +195,11 @@ class ListRepositoryGroupsCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            'details' : True,
-            'fields' : 'display_name'
+            'details': True,
+            'fields': 'display_name'
         }
 
-        self.server_mock.request.return_value = 200, [{'id' : 'a'}]
+        self.server_mock.request.return_value = 200, [{'id': 'a'}]
 
         # Test
         self.command.run(**data)
@@ -230,8 +218,8 @@ class ListRepositoryGroupsCommandTests(base.PulpClientTests):
     def test_run_not_found(self):
         # Setup
         data = {
-            'details' : True,
-            'fields' : 'display_name'
+            'details': True,
+            'fields': 'display_name'
         }
 
         self.server_mock.request.return_value = 200, []
@@ -263,7 +251,7 @@ class SearchRepositoryGroupsCommandTests(base.PulpClientTests):
 
     def test_run(self):
         # Setup
-        self.server_mock.request.return_value = 200, [{'a' : 'a', 'b' : 'b'}]
+        self.server_mock.request.return_value = 200, [{'a': 'a', 'b': 'b'}]
 
         # Test
         self.command.run()
@@ -301,12 +289,12 @@ class ListRepositoryGroupMembersCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
+            OPTION_GROUP_ID.keyword: 'test-group',
         }
 
         return_values = [
-            (200, [{'repo_ids' : ['repo-1']}]), # return from search groups call
-            (200, [{'id' : 'a'}]), # return from the repo search call
+            (200, [{'repo_ids': ['repo-1']}]),  # return from search groups call
+            (200, [{'id': 'a'}]),  # return from the repo search call
         ]
 
         self.server_mock.request.side_effect = return_values
@@ -334,7 +322,7 @@ class ListRepositoryGroupMembersCommandTests(base.PulpClientTests):
         self.assertTrue(url.endswith('/repositories/search/'))
 
         body = json.loads(call_args[0][2])
-        self.assertEqual(body['criteria']['filters']['id'], {'$in' : ['repo-1']})
+        self.assertEqual(body['criteria']['filters']['id'], {'$in': ['repo-1']})
 
         # Output
         self.assertEqual(2, len(self.prompt.get_write_tags()))
@@ -343,9 +331,7 @@ class ListRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
     def test_run_no_group(self):
         # Setup
-        data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-        }
+        data = {OPTION_GROUP_ID.keyword: 'test-group'}
 
         self.server_mock.request.return_value = 200, []
 
@@ -372,12 +358,10 @@ class ListRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
     def test_run_no_members(self):
         # Setup
-        data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            }
+        data = {OPTION_GROUP_ID.keyword: 'test-group'}
 
         return_values = [
-            (200, [{'repo_ids' : []}]), # return from search groups call
+            (200, [{'repo_ids': []}]),  # return from search groups call
         ]
 
         self.server_mock.request.side_effect = return_values
@@ -422,7 +406,7 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
     def test_requires_criteria_arg(self):
         # make sure it requires at least one matching arg
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
+            OPTION_GROUP_ID.keyword: 'test-group',
         }
         self.command.run(**data)
 
@@ -430,9 +414,9 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
     def test_adds_repo_to_search(self):
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : False,
-            OPTION_REPO_ID.keyword : ['repo1']
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: False,
+            OPTION_REPO_ID.keyword: ['repo1']
         }
         self.server_mock.request.return_value = 200, {}
 
@@ -445,9 +429,9 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
     def test_repo_id_and_all(self):
         # --all should not prevent other filters from being added.
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : True,
-            OPTION_REPO_ID.keyword : ['repo1']
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: True,
+            OPTION_REPO_ID.keyword: ['repo1']
         }
         self.server_mock.request.return_value = 200, {}
 
@@ -459,10 +443,10 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
     def test_repo_id_and_match(self):
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : False,
-            OPTION_REPO_ID.keyword : ['repo1'],
-            'match' : [('id', 'repo.+')]
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: False,
+            OPTION_REPO_ID.keyword: ['repo1'],
+            'match': [('id', 'repo.+')]
         }
         self.server_mock.request.return_value = 200, {}
 
@@ -480,9 +464,9 @@ class AddRepositoryGroupMembersCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : True,
-            OPTION_REPO_ID.keyword : None
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: True,
+            OPTION_REPO_ID.keyword: None
         }
 
         self.server_mock.request.return_value = 200, {}
@@ -521,18 +505,17 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
     def test_requires_criteria_arg(self):
         # make sure it requires at least one matching arg
-        data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-        }
+        data = {OPTION_GROUP_ID.keyword: 'test-group'}
+
         self.command.run(**data)
 
         self.assertTrue(TAG_FAILURE in self.prompt.get_write_tags())
 
     def test_adds_repo_to_search(self):
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : False,
-            OPTION_REPO_ID.keyword : ['repo1']
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: False,
+            OPTION_REPO_ID.keyword: ['repo1']
         }
         self.server_mock.request.return_value = 200, {}
 
@@ -545,9 +528,9 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
     def test_repo_id_and_all(self):
         # --all should not prevent other filters from being added.
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : False,
-            OPTION_REPO_ID.keyword : ['repo1']
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: False,
+            OPTION_REPO_ID.keyword: ['repo1']
         }
         self.server_mock.request.return_value = 200, {}
 
@@ -559,10 +542,10 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
 
     def test_repo_id_and_match(self):
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : False,
-            OPTION_REPO_ID.keyword : ['repo1'],
-            'match' : [('id', 'repo.+')]
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: False,
+            OPTION_REPO_ID.keyword: ['repo1'],
+            'match': [('id', 'repo.+')]
         }
         self.server_mock.request.return_value = 200, {}
 
@@ -580,9 +563,9 @@ class RemoveRepositoryGroupMembersCommandTests(base.PulpClientTests):
     def test_run(self):
         # Setup
         data = {
-            OPTION_GROUP_ID.keyword : 'test-group',
-            FLAG_ALL.keyword : True,
-            OPTION_REPO_ID.keyword : None
+            OPTION_GROUP_ID.keyword: 'test-group',
+            FLAG_ALL.keyword: True,
+            OPTION_REPO_ID.keyword: None
         }
 
         self.server_mock.request.return_value = 200, {}

@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Testing this stuff is a nightmare. To ease the pain, these tests only cover the
 commands themselves and ensure they call into the status rendering module. The
@@ -64,8 +51,9 @@ class GetRepoTasksTests(unittest.TestCase):
         self.assertEqual(tasks, [a_task])
         expected_repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
         expected_action_tag = tags.action_tag(tags.ACTION_PUBLISH_TYPE)
-        expected_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
-                                                'tags': {'$all': [expected_repo_tag, expected_action_tag]}}}
+        expected_search_criteria = {
+            'filters': {'state': {'$nin': responses.COMPLETED_STATES},
+                        'tags': {'$all': [expected_repo_tag, expected_action_tag]}}}
         context.server.tasks_search.search.assert_called_once_with(**expected_search_criteria)
 
     def test_sync_action(self):
@@ -83,8 +71,9 @@ class GetRepoTasksTests(unittest.TestCase):
         self.assertEqual(tasks, [a_task])
         expected_repo_tag = tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id)
         expected_action_tag = tags.action_tag(tags.ACTION_SYNC_TYPE)
-        expected_search_criteria = {'filters': {'state': {'$nin': responses.COMPLETED_STATES},
-                                                'tags': {'$all': [expected_repo_tag, expected_action_tag]}}}
+        expected_search_criteria = {
+            'filters': {'state': {'$nin': responses.COMPLETED_STATES},
+                        'tags': {'$all': [expected_repo_tag, expected_action_tag]}}}
         context.server.tasks_search.search.assert_called_once_with(**expected_search_criteria)
 
     def test_unsupported_action(self):
@@ -135,8 +124,10 @@ class SyncPublishCommandTests(base.PulpClientTests):
         method = None
         context = mock.MagicMock()
         renderer = mock.MagicMock()
-        # Because the SyncPublishCommand does not have a run() method, we need to make and test a subclass of
-        # it that has a run() method to ensure that method defaults to run() when is is None.
+
+        # Because the SyncPublishCommand does not have a run() method, we need to make and test a
+        # subclass of it that has a run() method to ensure that method defaults to run() when is is
+        # None.
         class TestSubclass(sp.SyncPublishCommand):
             def run(self):
                 pass
@@ -200,7 +191,8 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
     def test_structure(self):
         # Ensure all of the expected options are there
         found_option_keywords = set([o.keyword for o in self.command.options])
-        expected_option_keywords = set([options.OPTION_REPO_ID.keyword, polling.FLAG_BACKGROUND.keyword])
+        expected_option_keywords = set([options.OPTION_REPO_ID.keyword,
+                                        polling.FLAG_BACKGROUND.keyword])
         self.assertEqual(found_option_keywords, expected_option_keywords)
 
         # Ensure the correct method is wired up
@@ -218,7 +210,7 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when there is not an existing sync Task on the server.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword : repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
@@ -246,7 +238,7 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when there is an existing sync Task on the server.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword : repo_id, polling.FLAG_BACKGROUND.keyword: False}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: False}
         # Simulate a task already running
         task_data = copy.copy(CALL_REPORT_TEMPLATE)
         task_data['state'] = 'running'
@@ -275,7 +267,7 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
         Test the run() method when the --bg flag is set.
         """
         repo_id = 'test-repo'
-        data = {options.OPTION_REPO_ID.keyword : repo_id, polling.FLAG_BACKGROUND.keyword: True}
+        data = {options.OPTION_REPO_ID.keyword: repo_id, polling.FLAG_BACKGROUND.keyword: True}
         # No tasks are running
         mock_search.return_value = []
         # responses.Response from the sync call
@@ -295,8 +287,8 @@ class RunSyncRepositoryCommandTests(base.PulpClientTests):
 
     def test_task_header(self):
         """
-        The task_header() method only passes to avoid the superclass's behavior, so this test just gets us to
-        100% coverage.
+        The task_header() method only passes to avoid the superclass's behavior, so this test just
+        gets us to 100% coverage.
         """
         self.command.task_header(mock.MagicMock())
 
@@ -387,20 +379,25 @@ class RunPublishRepositoryCommandTests(base.PulpClientTests):
     def setUp(self):
         super(RunPublishRepositoryCommandTests, self).setUp()
         self.mock_renderer = mock.MagicMock()
-        self.command = sp.RunPublishRepositoryCommand(self.context, self.mock_renderer, distributor_id='yum_distributor')
+        self.command = sp.RunPublishRepositoryCommand(self.context, self.mock_renderer,
+                                                      distributor_id='yum_distributor')
         self.sample_option1 = PulpCliOption('--sample-option1', "sample_option1", required=False)
         self.sample_option2 = PulpCliOption('--sample-option2', "sample_option2", required=False)
         self.additional_publish_options = [self.sample_option1, self.sample_option2]
 
     def test_structure(self):
         # Ensure all of the expected options are there
-        self.command = sp.RunPublishRepositoryCommand(self.context, self.mock_renderer, distributor_id='yum_distributor',
-                                                      override_config_options=self.additional_publish_options)
+        self.command = sp.RunPublishRepositoryCommand(
+            self.context, self.mock_renderer, distributor_id='yum_distributor',
+            override_config_options=self.additional_publish_options)
         found_option_keywords = set([o.keyword for o in self.command.options])
-        found_group_option_keywords = set([o.keyword for o in self.command.option_groups[0].options])
+        found_group_option_keywords = set(
+            [o.keyword for o in self.command.option_groups[0].options])
 
-        expected_option_keywords = set([options.OPTION_REPO_ID.keyword, polling.FLAG_BACKGROUND.keyword])
-        expected_group_option_keywords = set([self.sample_option1.keyword, self.sample_option2.keyword])
+        expected_option_keywords = set([options.OPTION_REPO_ID.keyword,
+                                        polling.FLAG_BACKGROUND.keyword])
+        expected_group_option_keywords = set([self.sample_option1.keyword,
+                                              self.sample_option2.keyword])
 
         self.assertEqual(found_option_keywords, expected_option_keywords)
         self.assertEqual(found_group_option_keywords, expected_group_option_keywords)

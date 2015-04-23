@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
 import unittest
 
 import mock
@@ -21,6 +8,7 @@ from pulp.client.commands.options import OPTION_CONSUMER_ID
 from pulp.client.commands.polling import PollingCommand
 from pulp.devel.unit import base
 from pulp.devel.unit.task_simulator import TaskSimulator
+
 
 # We can't use the standard json lib from pulp.server.compat
 # because pulp.server.compat can not be imported with python 2.4
@@ -167,7 +155,7 @@ class InstallCommandTests(base.PulpClientTests):
         sim = TaskSimulator()
         sim.install(self.bindings)
 
-        fake_progress_report = {'steps' : [('name', 'status')], 'details' : {}}
+        fake_progress_report = {'steps': [('name', 'status')], 'details': {}}
 
         sim.add_task_state('1', STATE_FINISHED, progress_report=fake_progress_report)
 
@@ -212,7 +200,7 @@ class UpdateCommandTests(base.PulpClientTests):
         sim = TaskSimulator()
         sim.install(self.bindings)
 
-        fake_progress_report = {'steps' : [('name', 'status')], 'details' : {}}
+        fake_progress_report = {'steps': [('name', 'status')], 'details': {}}
 
         sim.add_task_state('1', STATE_FINISHED, progress_report=fake_progress_report)
         self.server_mock.request.return_value = 201, POSTPONED_TASK
@@ -233,7 +221,6 @@ class UpdateCommandTests(base.PulpClientTests):
         body = json.loads(self.server_mock.request.call_args[0][2])
 
         self.assertEqual(body['units'], [{'type_id': 'rpm', 'unit_key': {'name': 'test-unit'}}])
-
 
 
 class UnistallCommandTests(base.PulpClientTests):
@@ -257,7 +244,7 @@ class UnistallCommandTests(base.PulpClientTests):
         sim = TaskSimulator()
         sim.install(self.bindings)
 
-        fake_progress_report = {'steps' : [('name', 'status')], 'details' : {}}
+        fake_progress_report = {'steps': [('name', 'status')], 'details': {}}
 
         sim.add_task_state('1', STATE_FINISHED, progress_report=fake_progress_report)
 
@@ -279,5 +266,3 @@ class UnistallCommandTests(base.PulpClientTests):
         body = json.loads(self.server_mock.request.call_args[0][2])
 
         self.assertEqual(body['units'], [])
-
-

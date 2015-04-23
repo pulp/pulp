@@ -1,17 +1,17 @@
 """
 This module contains tests for the pulp.client.extensions.exceptions module.
 """
-from _socket import gaierror
 import os
+from _socket import gaierror
 from socket import error as socket_error
 
-from M2Crypto.SSL.Checker import WrongHost
 import mock
+from M2Crypto.SSL.Checker import WrongHost
 
 import pulp.bindings.exceptions as exceptions
-from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
 import pulp.client.extensions.exceptions as handler
 from pulp.client.arg_utils import InvalidConfig
+from pulp.client.extensions.core import TAG_FAILURE, TAG_PARAGRAPH
 from pulp.devel.unit import base
 
 
@@ -55,7 +55,8 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
-        code = self.exception_handler.handle_exception(exceptions.NotFoundException({'resources' : {'repo_id' : 'foo'}}))
+        code = self.exception_handler.handle_exception(
+            exceptions.NotFoundException({'resources': {'repo_id': 'foo'}}))
         self.assertEqual(code, handler.CODE_NOT_FOUND)
         self.assertEqual(2, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
@@ -85,7 +86,8 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
         self.prompt.tags = []
 
-        code = self.exception_handler.handle_exception(exceptions.ApacheServerException('Test Message'))
+        code = self.exception_handler.handle_exception(exceptions.ApacheServerException(
+            'Test Message'))
         self.assertEqual(code, handler.CODE_APACHE_SERVER_EXCEPTION)
         self.assertEqual(1, len(self.prompt.tags))
         self.assertEqual(TAG_FAILURE, self.prompt.get_write_tags()[0])
@@ -121,7 +123,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         """
 
         # Test
-        e = exceptions.BadRequestException({'property_names' : ['foo']})
+        e = exceptions.BadRequestException({'property_names': ['foo']})
         code = self.exception_handler.handle_bad_request(e)
 
         # Verify
@@ -135,7 +137,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         """
 
         # Test
-        e = exceptions.BadRequestException({'missing_property_names' : ['foo']})
+        e = exceptions.BadRequestException({'missing_property_names': ['foo']})
         code = self.exception_handler.handle_bad_request(e)
 
         # Verify
@@ -198,7 +200,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
     def test_not_found(self):
 
         # Test
-        e = exceptions.NotFoundException({'resources' : {'repo_id' : 'foo'}})
+        e = exceptions.NotFoundException({'resources': {'repo_id': 'foo'}})
         code = self.exception_handler.handle_not_found(e)
 
         # Verify
@@ -211,7 +213,7 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         """
 
         # Test
-        e = exceptions.ConflictException({'resource_id' : 'foo'})
+        e = exceptions.ConflictException({'resource_id': 'foo'})
         code = self.exception_handler.handle_conflict(e)
 
         # Verify
@@ -225,8 +227,8 @@ class ExceptionsLoaderTest(base.PulpClientTests):
         """
 
         # Test
-        reasons = [ {'resource_id' : 'foo', 'resource_type' : 'bar', 'operation' : 'baz'}]
-        e = exceptions.ConflictException({'reasons' : reasons})
+        reasons = [{'resource_id': 'foo', 'resource_type': 'bar', 'operation': 'baz'}]
+        e = exceptions.ConflictException({'reasons': reasons})
         code = self.exception_handler.handle_conflict(e)
 
         # Verify
