@@ -1,5 +1,7 @@
 import copy
 
+import mock
+
 import base_builtins
 
 from pulp.bindings.exceptions import NotFoundException, PulpServerException
@@ -57,28 +59,99 @@ class AllTasksTests(base_builtins.PulpClientTests):
 
         self.all_tasks_section = tasks.AllTasksSection(self.context, 'tasks', 'desc')
 
-    def test_list_no_tasks(self):
+    @mock.patch('pulp.bindings.search.SearchAPI.search')
+    def test_list_no_tasks(self, mock_search):
         # Setup
-        self.server_mock.request.return_value = (200, [])
+        data = {
+            'all': False,
+            'state': None
+        }
+        mock_search.return_value = []
 
         # Test
-        self.all_tasks_section.list()
+        self.all_tasks_section.list(**data)
 
         # Verify correct output
         self.assertTrue('No tasks found\n' in self.recorder.lines)
 
-    def test_list(self):
+    @mock.patch('pulp.bindings.search.SearchAPI.search')
+    def test_list(self, mock_search):
         # Setup
-        self.server_mock.request.return_value = (200, [copy.copy(EXAMPLE_LIST_REPORT)])
+        data = {
+            'all': False,
+            'state': None
+        }
+
+        mock_search.return_value = [copy.copy(EXAMPLE_LIST_REPORT)]
 
         # Test
-        self.all_tasks_section.list()
+        self.all_tasks_section.list(**data)
 
         # Verify - As long as the parsing in the above call didn't fail, this
         # test is happy. Quick check to make sure at least something was displayed
         # to the user.
         self.assertTrue('No tasks found\n' not in self.recorder.lines)
         self.assertTrue('Result:           Incomplete\n' not in self.recorder.lines)
+
+    @mock.patch('pulp.bindings.search.SearchAPI.search')
+    def test_list_all(self, mock_search):
+        # Setup
+        data = {
+            'all': True,
+            'state': None
+        }
+
+        # Test
+        self.all_tasks_section.list(**data)
+
+        # Verify
+        mock_search.assert_called_once_with(fields=('tags', 'task_id', 'state', 'start_time',
+                                                    'finish_time'))
+
+    @mock.patch('pulp.bindings.search.SearchAPI.search')
+    def test_list_default(self, mock_search):
+        # Setup
+        data = {
+            'all': False,
+            'state': None
+        }
+
+        # Test
+        self.all_tasks_section.list(**data)
+
+        # Verify
+        fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
+        filters = {'state': {'$in': ['running', 'waiting']}}
+        mock_search.assert_called_once_with(fields=fields, filters=filters)
+
+    @mock.patch('pulp.bindings.search.SearchAPI.search')
+    def test_list_state(self, mock_search):
+        # Setup
+        data = {
+            'all': False,
+            'state': 'canceled,error'
+        }
+
+        # Test
+        self.all_tasks_section.list(**data)
+
+        # Verify
+        fields = ('tags', 'task_id', 'state', 'start_time', 'finish_time')
+        filters = {'state': {'$in': 'canceled,error'}}
+        mock_search.assert_called_once_with(fields=fields, filters=filters)
+
+    def test_list_all_state(self):
+        # Setup
+        data = {
+            'all': True,
+            'state': 'canceled,error'
+        }
+
+        # Test
+        self.all_tasks_section.list(**data)
+
+        # Verify
+        self.assertTrue('These arguments cannot be used together\n' in self.recorder.lines)
 
     def test_details(self):
         # Setup
