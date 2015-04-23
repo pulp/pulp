@@ -207,67 +207,6 @@ class CatalogResourceView(View):
         return generate_json_response(deleted_info)
 
 
-class ContentTypeResourceView(View):
-    """
-    View for a single content type.
-    """
-
-    @auth_required(authorization.READ)
-    def get(self, request, type_id):
-        """
-        Return a response containing a dict with info about a content type.
-
-        :param request: WSGI request object
-        :type  request: django.core.handlers.wsgi.WSGIRequest
-        :param type_id: type of content unit
-        :type  type_id: str
-
-        :return: response containing a dict that contains info about a content type or
-                 404 response if the specified content type is not found.
-        :rtype : django.http.HttpResponse or HttpResponseNotFound
-        """
-        cqm = factory.content_query_manager()
-        content_type = cqm.get_content_type(type_id)
-        if content_type is None:
-            msg = _('No content type resource: %(r)s') % {'r': type_id}
-            return generate_json_response(msg, response_class=HttpResponseNotFound)
-        resource = serialization.content.content_type_obj(content_type)
-        # These urls are not valid endpoints but are left here for for semantic versioning.
-        # BZ - 1187287
-        links = {
-            'actions': {'_href': '/'.join([request.get_full_path().rstrip('/'), 'actions/'])},
-            'content_units': {'_href': '/'.join([request.get_full_path().rstrip('/'), 'units/'])}
-        }
-        resource.update(links)
-        return generate_json_response_with_pulp_encoder(resource)
-
-
-class ContentTypesView(View):
-    """
-    View for all content types.
-    """
-
-    @auth_required(authorization.READ)
-    def get(self, request):
-        """
-        Returns a response continaing a list of dicts, one for each available content type.
-
-        :param request: WSGI request object
-        :type  request: django.core.handlers.wsgi.WSGIRequest
-
-        :return: response containing a serialized list dicts, one for each content type
-        :rtype : django.http.HttpResponse
-        """
-        collection = []
-        cqm = factory.content_query_manager()
-        type_ids = cqm.list_content_types()
-        for type_id in type_ids:
-            link = {'_href': reverse('content_type_resource', kwargs={'type_id': type_id})}
-            link.update({'content_type': type_id})
-            collection.append(link)
-        return generate_json_response(collection)
-
-
 class ContentUnitResourceView(View):
     """
     View for individual content units.
