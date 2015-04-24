@@ -12,9 +12,7 @@ from pulp.server import config
 from pulp.server.async import celery_instance
 from pulp.server.db import connection
 from pulp.server.db.model.auth import User
-from pulp.server.db.model.dispatch import TaskStatus
-from pulp.server.db.model.resources import ReservedResource
-from pulp.server.db.model.workers import Worker
+from pulp.server.db.model import TaskStatus, ReservedResource, Worker
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber

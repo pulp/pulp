@@ -1,6 +1,5 @@
 from datetime import datetime
 import calendar
-import copy
 import isodate
 import logging
 import pickle
@@ -10,14 +9,10 @@ from bson import ObjectId
 from celery import beat
 from celery.schedules import schedule as CelerySchedule
 from celery.utils.timeutils import timedelta_seconds
-from mongoengine import DictField, Document, DynamicField, ListField, StringField
-from mongoengine import signals
 
-from pulp.common import constants, dateutils
+from pulp.common import dateutils
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.async.emit import send as send_taskstatus_message
-from pulp.server.db.model.base import Model, CriteriaQuerySet
-from pulp.server.db.model.fields import ISO8601StringField
+from pulp.server.db.model.base import Model
 from pulp.server.db.model.reaper_base import ReaperMixin
 from pulp.server.managers import factory
 
@@ -494,116 +489,3 @@ class ArchivedCall(Model, ReaperMixin):
         self.timestamp = dateutils.now_utc_timestamp()
         self.call_request_string = str(call_request)
         self.serialized_call_report = call_report.serialize()
-
-
-class TaskStatus(Document, ReaperMixin):
-    """
-    Represents a task.
-    This inherits from mongoengine.Document and defines the schema for the documents
-    in task_status collection. The documents in this collection may be reaped,
-    so it inherits from ReaperMixin.
-
-    :ivar task_id:     identity of the task this status corresponds to
-    :type task_id:     basestring
-    :ivar worker_name: The name of the worker that the Task is in
-    :type worker_name: basestring
-    :ivar tags:        custom tags on the task
-    :type tags:        list
-    :ivar state:       state of callable in its lifecycle
-    :type state:       basestring
-    :ivar error: Any errors or collections of errors that occurred while this task was running
-    :type error: dict (created from a PulpException)
-    :ivar spawned_tasks: List of tasks that were spawned during the running of this task
-    :type spawned_tasks: list of str
-    :ivar progress_report: A report containing information about task's progress
-    :type progress_report: dict
-    :ivar task_type:   the fully qualified (package/method) type of the task
-    :type task_type:   basestring
-    :ivar start_time:  ISO8601 representation of the time the task started executing
-    :type start_time:  basestring
-    :ivar finish_time: ISO8601 representation of the time the task completed
-    :type finish_time: basestring
-    :ivar result:      return value of the callable, if any
-    :type result:      any
-    :ivar exception:   Deprecated. This is always None.
-    :type exception:   None
-    :ivar traceback:   Deprecated. This is always None.
-    :type traceback:   None
-    """
-    task_id = StringField(unique=True, required=True)
-    worker_name = StringField()
-    tags = ListField(StringField())
-    state = StringField(choices=constants.CALL_STATES, default=constants.CALL_WAITING_STATE)
-    error = DictField(default=None)
-    spawned_tasks = ListField(StringField())
-    progress_report = DictField()
-    task_type = StringField()
-    start_time = ISO8601StringField()
-    finish_time = ISO8601StringField()
-    result = DynamicField()
-
-    # These are deprecated, and will always be None
-    exception = StringField()
-    traceback = StringField()
-
-    # For backward compatibility
-    _ns = StringField(default='task_status')
-
-    meta = {'collection': 'task_status',
-            'indexes': ['-task_id', '-tags', '-state'],
-            'allow_inheritance': False,
-            'queryset_class': CriteriaQuerySet}
-
-    def save_with_set_on_insert(self, fields_to_set_on_insert):
-        """
-        Save the current state of the TaskStatus to the database, using an upsert operation.
-        The upsert operation will only set those fields if this becomes an insert operation,
-        otherwise those fields will be ignored. This also validates the fields according to the
-        schema above.
-
-        This is required because the current mongoengine version we are using does not support
-        upsert with set_on_insert through mongoengine queries. Once we update to the version
-        which supports this, this method can be deleted and it's usages can be replaced
-        with mongoengine upsert queries.
-
-        :param fields_to_set_on_insert: A list of field names that should be updated with Mongo's
-                                        $setOnInsert operator.
-        :type  fields_to_set_on_insert: list
-        """
-        # If fields_to_set_on_insert is None or empty, just save
-        if not fields_to_set_on_insert:
-            self.save()
-            return
-
-        # This will be used in place of superclass' save method, so we need to call validate()
-        # explicitly.
-        self.validate()
-
-        stuff_to_update = dict(copy.deepcopy(self._data))
-
-        # Let's pop the $setOnInsert attributes out of the copy of self so that we can pass the
-        # remaining attributes to the $set operator in the query below.
-        set_on_insert = {}
-        for field in fields_to_set_on_insert:
-            set_on_insert[field] = stuff_to_update.pop(field)
-        task_id = stuff_to_update.pop('task_id')
-
-        update = {'$set': stuff_to_update,
-                  '$setOnInsert': set_on_insert}
-        TaskStatus._get_collection().update({'task_id': task_id}, update, upsert=True)
-
-    @classmethod
-    def post_save(cls, sender, document, **kwargs):
-        """
-        Send a taskstatus message on save.
-
-        :param sender: class of sender (unused)
-        :type  sender: class
-        :param document: mongoengine document
-        :type  document: mongoengine.Document
-
-        """
-        send_taskstatus_message(document, routing_key="tasks.%s" % document['task_id'])
-
-
-signals.post_save.connect(TaskStatus.post_save, sender=TaskStatus)

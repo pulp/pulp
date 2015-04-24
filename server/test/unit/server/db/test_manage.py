@@ -12,7 +12,7 @@ from ... import base
 from pulp.common.compat import all, json
 from pulp.server.db import manage
 from pulp.server.db.migrate import models
-from pulp.server.db.model.migration_tracker import MigrationTracker
+from pulp.server.db.model import MigrationTracker
 import pulp.plugins.types.database as types_db
 import migration_packages.a
 import migration_packages.b
@@ -105,20 +105,17 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
-    @patch.object(manage, 'resources')
-    @patch.object(manage, 'dispatch')
-    @patch.object(manage, 'workers')
     @patch.object(manage, 'model')
-    def test_ensure_index(self, mock_model, mock_workers, mock_dispatch, mock_resources):
+    def test_ensure_index(self, mock_model):
         """
         Make sure that the ensure_indexes method is called for all
         the appropriate platform models
         """
         manage.ensure_database_indexes()
-        self.assertTrue(mock_dispatch.TaskStatus.ensure_indexes.called)
-        self.assertTrue(mock_workers.Worker.ensure_indexes.called)
         self.assertTrue(mock_model.RepositoryContentUnit.ensure_indexes.called)
-        self.assertTrue(mock_resources.ReservedResource.ensure_indexes.called)
+        self.assertTrue(mock_model.ReservedResource.ensure_indexes.called)
+        self.assertTrue(mock_model.TaskStatus.ensure_indexes.called)
+        self.assertTrue(mock_model.Worker.ensure_indexes.called)
 
     @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')

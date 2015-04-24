@@ -10,9 +10,8 @@ from pulp.common.util import encode_unicode
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import TaskResult
-from pulp.server.db.model import dispatch
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
-from pulp.server.db.model.workers import Worker
+from pulp.server.db.model import Worker, TaskStatus
 from pulp.server.tasks import repository
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
@@ -40,7 +39,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         Repo.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoDistributor.get_collection().remove()
-        dispatch.TaskStatus.objects().delete()
+        TaskStatus.objects().delete()
 
     @mock.patch('pulp.server.db.model.repository.Repo.get_collection')
     @mock.patch('pulp.server.db.model.repository.RepoContentUnit.get_collection')
@@ -494,7 +493,7 @@ class RepoManagerTests(base.ResourceReservationTests):
         self.assertEqual(dist_2['config'], {'key-d2': 'orig-2'})
 
         # There should have been a spawned task for the new distributor config
-        expected_task_id = dispatch.TaskStatus.objects.get(
+        expected_task_id = TaskStatus.objects.get(
             tags='pulp:repository_distributor:dist-1')['task_id']
         self.assertEqual(result.spawned_tasks, [{'task_id': expected_task_id}])
 

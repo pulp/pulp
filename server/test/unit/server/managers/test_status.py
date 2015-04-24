@@ -14,7 +14,7 @@ class StatusManagerTests(PulpServerTests):
 
         self.assertEquals(status_manager.get_version(), {'platform_version': '1.2.3'})
 
-    @patch('pulp.server.db.model.workers.Worker.objects')
+    @patch('pulp.server.db.model.Worker.objects')
     def test_get_workers(self, mock_worker_objects):
         mock_worker_objects.return_value = [{"last_heartbeat": "123456", "name": "some_worker_1"},
                                             {"last_heartbeat": "123456", "name": "some_worker_2"}]

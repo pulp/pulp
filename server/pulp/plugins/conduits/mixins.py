@@ -7,7 +7,7 @@ from pymongo.errors import DuplicateKeyError
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
 from pulp.server.async.tasks import get_current_task_id
-from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.db.model import TaskStatus
 from pulp.server.exceptions import MissingResource
 import pulp.plugins.conduits._common as common_utils
 import pulp.server.managers.factory as manager_factory

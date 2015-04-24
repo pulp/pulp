@@ -1,7 +1,7 @@
 import mock
 
 from .... import base
-from pulp.server.db.model.dispatch import TaskStatus
+from pulp.server.db.model import TaskStatus
 from pulp.server.db.model.event import EventListener
 from pulp.server.event import data as event_data, http
 from pulp.server.exceptions import InvalidValue, MissingResource

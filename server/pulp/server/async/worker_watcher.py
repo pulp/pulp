@@ -18,7 +18,7 @@ from gettext import gettext as _
 import logging
 
 from pulp.server.async.tasks import _delete_worker
-from pulp.server.db.model.workers import Worker
+from pulp.server.db.model import Worker
 
 
 _logger = logging.getLogger(__name__)
