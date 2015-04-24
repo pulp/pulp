@@ -240,6 +240,9 @@ Server
 
         `SSLProtocol all -SSLv2 -SSLv3`
 
+  .. warning::
+     It is recommended that the web server only serves Pulp services.
+
 #. Start Apache httpd and set it to start on boot. For Upstart based systems::
 
     $ sudo service httpd start
