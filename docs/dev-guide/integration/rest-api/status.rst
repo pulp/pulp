@@ -11,9 +11,12 @@ An unauthenticated resource that shows the current status of the Pulp server. A
 want to examine ``pulp_messaging_connection``, ``pulp_database_connection``
 and ``known_workers`` to get more detailed status information.
 
-Note that this API is meant to provide an "at-a-glance" status to aid debugging
-of a Pulp deployment, and is not meant to replace monitoring of Pulp components
-in a production environment.
+.. warning:: Clustered Pulp installations have additional monitoring concerns.
+    See :ref:`clustered_monitoring` for more information.
+
+.. note:: This API is meant to provide an "at-a-glance" status to aid debugging
+    of a Pulp deployment, and is not meant to replace monitoring of Pulp
+    components in a production environment.
 
 A healthy Pulp installation will contain exactly one record for
 "resource_manager" and "scheduler" in the worker list, and one or more
