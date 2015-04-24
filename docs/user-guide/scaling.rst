@@ -248,23 +248,27 @@ should be set, at a minimum, for correct Pulp clustering operation.
 Load Balancing Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To effectively handle inbound HTTP/HTTPS requests to `Pulp clustered servers`
-running ``httpd``, a load balancer should be used. Configuring a load
-balancer is beyond the scope of the Pulp documentation, but there are a few
-recommendations.
+To effectively handle inbound HTTP/HTTPS requests to `Pulp clustered
+servers` running ``httpd``, load balancing of some sort should be
+used. `Pulp clustered servers` not running ``httpd`` do not need to be
+involved in load balancing. Configuring load balancing is beyond the
+scope of Pulp documentation, but there are a few recommendations.
 
-Pulp defaults to using SSL for webserver traffic so the easiest thing is to
-use a TCP based load balancer. `HAProxy`_ has been tested with a clustered
-Pulp installation, but any TCP load balancer should work.
+One option is to use a dedicated load balancer. Pulp defaults to using SSL
+for webserver traffic, so an easy thing is to use a TCP based load
+balancer. `HAProxy`_ has been tested with a clustered Pulp installation,
+but any TCP load balancer should work.
 
-With TCP load balancing, all `Pulp clustered servers` need to have ``httpd``
-configured with the same certificate. That certificate needs to have the CN
-set to the hostname or IP of the load balancer. This configuration ensures
-that the load balancer passes traffic to the Pulp webservers, but that the
-client and server will negotiate a SSL connection directly. By setting the CN
-to the hostname or IP of the load balancer, the client will trust the
-certificate presented by the `Pulp clustered server` as it is accessed
-through the load balancer.
+Another option is to use DNS based load balancing. Community users have
+reported this works, but it has not been explicitly tested by Pulp
+developers.
+
+With either load balancing technique, all `Pulp clustered servers`
+running ``httpd`` need to be configured with SSL certificates which
+have the CN set to the hostname of the TCP load balancer or the DNS
+record providing load balancing. This ensures that as traffic arrives
+at Pulp webservers, clients will trust the certificate presented by
+the `Pulp clustered server`.
 
 
 Clustered Logging
@@ -276,6 +280,22 @@ remote logging and aggregation, refer to the documentation for the log daemon
 running on your system.
 
 
+.. _clustered_monitoring:
+
+Cluster Monitoring
+^^^^^^^^^^^^^^^^^^
+
+A clustered deployment can be monitored with the techniques described in
+:ref:`getting_the_server_status`.
+
+.. warning:: Information provided by the ``/status/`` API call does not
+    include ``httpd`` status information. It is recommended that each
+    `Pulp clustered server` acting as a webserver have its ``/status/``
+    API queried directly. If queried through the load balancer, the
+    request may route to ``httpd`` servers in unexpected ways. See
+    issue :redmine:`915` for more information.
+
+
 Consumer Settings
 ^^^^^^^^^^^^^^^^^
 
@@ -284,7 +304,7 @@ environment. At a minimum there are two areas of
 ``/etc/pulp/consumer/consumer.conf`` which need updating.
 
 * The ``host`` value in the ``[server]`` needs to be updated with the
-  load balancer's hostname or IP. This causes web requests from consumers
+  load balancer's hostname. This causes web requests from consumers
   to flow through the load balancer.
 
 * The ``[messaging]`` section needs to be updated to use the same AMQP bus as
@@ -292,6 +312,22 @@ environment. At a minimum there are two areas of
 
 .. warning:: Machines acting as a `Pulp clustered nodes` cannot be registered
     as a consumer until :redmine:`859` is resolved.
+
+
+Pulp Admin Settings
+^^^^^^^^^^^^^^^^^^^
+
+When using a clustered deployment, it is recommended to configure
+``pulp-admin`` to connect to the load balancer hostname. To do this, add
+the following snippet to ``~/.pulp/admin.conf``
+
+::
+
+    [server]
+    host: example.com
+
+    # This example assumes example.com is your load balancer or DNS record
+    # providing load balancing
 
 
 Sharing with NFS
