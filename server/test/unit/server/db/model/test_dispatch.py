@@ -17,9 +17,10 @@ import mock
 
 from .... import base
 from pulp.common import constants, dateutils
+from pulp.server.db.model import TaskStatus
 from pulp.server.db.model.auth import User
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.dispatch import TaskStatus, ScheduledCall, ScheduleEntry
+from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
 from pulp.server.managers.factory import initialize
 
 
@@ -1023,7 +1024,7 @@ class TaskStatusTests(base.PulpServerTests):
         self.assertEqual([], task_statuses[0]['tags'])
         self.assertEqual('waiting', task_statuses[0]['state'])
 
-    @mock.patch('pulp.server.db.model.dispatch.send_taskstatus_message')
+    @mock.patch('pulp.server.db.model.send_taskstatus_message')
     def test_save_task_status_fires_notification(self, mock_send):
         """
         Test that saving a TaskStatus fires an event notification.
@@ -1105,7 +1106,7 @@ class TaskStatusTests(base.PulpServerTests):
         self.assertEqual(task_status['progress_report'], delta['progress_report'])
         self.assertEqual(task_status['worker_name'], worker_name)
 
-    @mock.patch('pulp.server.db.model.dispatch.send_taskstatus_message')
+    @mock.patch('pulp.server.db.model.send_taskstatus_message')
     def test_task_status_update_fires_notification(self, mock_send):
         """
         Test that update_one() also fires a notification.

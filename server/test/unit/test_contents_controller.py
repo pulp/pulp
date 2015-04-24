@@ -10,7 +10,7 @@ import mock
 from pulp.devel import dummy_plugins
 from pulp.devel.unit.util import assert_body_matches_async_task
 from pulp.server.db.model.repository import Repo, RepoImporter
-from pulp.server.db.model.workers import Worker
+from pulp.server.db.model import Worker
 from pulp.server.webservices.controllers.contents import ContentUnitsSearch
 import base
 import pulp.server.managers.factory as manager_factory

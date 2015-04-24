@@ -779,7 +779,7 @@ class StatusMixinTests(unittest.TestCase):
     def setUp(self):
         manager_factory.initialize()
 
-    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
+    @mock.patch('pulp.server.db.model.TaskStatus.objects')
     @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
     def test_set_progress(self, mock_get_task_id, mock_task_status_objects):
         # Setup
@@ -800,7 +800,7 @@ class StatusMixinTests(unittest.TestCase):
         test_task_documents.update_one.assert_called_with(
             set__progress_report={'test-report': 'status'})
 
-    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
+    @mock.patch('pulp.server.db.model.TaskStatus.objects')
     @mock.patch('pulp.plugins.conduits.mixins.get_current_task_id')
     def test_set_progress_no_task(self, mock_get_task_id, mock_task_status_objects):
         # Setup
@@ -814,7 +814,7 @@ class StatusMixinTests(unittest.TestCase):
         # Verify
         self.assertFalse(mock_task_status_objects.called)
 
-    @mock.patch('pulp.server.db.model.dispatch.TaskStatus.objects')
+    @mock.patch('pulp.server.db.model.TaskStatus.objects')
     def test_set_progress_with_exception(self, mock_call):
         # Setup
         self.report_id = 'test-report'
