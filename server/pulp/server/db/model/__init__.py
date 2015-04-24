@@ -1,11 +1,16 @@
 import copy
+import errno
 import logging
+import os
+import shutil
+import uuid
 
 from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntField,
                          ListField, StringField)
 from mongoengine import signals
 
-from pulp.common import constants
+from pulp.common import constants, dateutils, error_codes
+from pulp.server import config, exceptions
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.model.base import CriteriaQuerySet
 from pulp.server.db.model.fields import ISO8601StringField
@@ -307,3 +312,129 @@ class TaskStatus(Document, ReaperMixin):
 
 
 signals.post_save.connect(TaskStatus.post_save, sender=TaskStatus)
+
+
+class ContentUnit(Document):
+    """
+    The base class for all content units.
+
+    All classes inheriting from this class must override the unit_type_id and _ns to ensure
+    they are populated properly.
+
+    :ivar id: content unit id
+    :type id: mongoengine.StringField
+    :ivar last_updated: last time this unit was updated (since epoch, zulu time)
+    :type last_updated: mongoengine.IntField
+    :ivar user_metadata: Bag of User supplied data to go along with this unit
+    :type user_metadata: mongoengine.DictField
+    :ivar storage_path: Location on disk where the content associated with this unit lives
+    :type storage_path: mongoengine.StringField
+
+    :ivar _ns: (Deprecated), Contains the name of the collection this model represents
+    :type _ns: mongoengine.StringField
+    :ivar unit_type_id: content unit type
+    :type unit_type_id: mongoengine.StringField
+    """
+
+    id = StringField(primary_key=True)
+    last_updated = IntField(db_field='_last_updated', required=True)
+    user_metadata = DictField(db_field='pulp_user_metadata')
+    storage_path = StringField(db_field='_storage_path')
+
+    # For backward compatibility
+    _ns = StringField(required=True)
+    unit_type_id = StringField(db_field='_content_type_id', required=True)
+
+    meta = {
+        'abstract': True,
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(ContentUnit, self).__init__(*args, **kwargs)
+        self._source_location = None
+        self._relative_path = None
+
+    @classmethod
+    def post_init_signal(cls, sender, document):
+        """
+        The signal that is triggered before a unit is initialized
+
+        This is used to validate that the unit_key_fields attribute is set properly
+
+        :param sender: sender class
+        :type sender: object
+        :param document: Document that sent the signal
+        :type document: ContentUnit
+        :raises: PLP0035 if the unit_key_fields attribute has not been defined
+        """
+        if not hasattr(document, 'unit_key_fields'):
+            class_name = type(document).__name__
+            raise exceptions.PulpCodedException(error_codes.PLP0035, class_name=class_name)
+
+    @classmethod
+    def pre_save_signal(cls, sender, document, **kwargs):
+        """
+        The signal that is triggered before a unit is saved, this is used to
+        support the legacy behavior of generating the unit id and setting
+        the last_updated timestamp
+
+        :param sender: sender class
+        :type sender: object
+        :param document: Document that sent the signal
+        :type document: ContentUnit
+        """
+        if not document.id:
+            document.id = str(uuid.uuid4())
+        document.last_updated = dateutils.now_utc_timestamp()
+
+        # If content was set on this unit, copy the content into place
+        if document._source_location and document._relative_path:
+            server_storage_dir = config.config.get('server', 'storage_dir')
+            platform_storage_dir = os.path.join(server_storage_dir, 'content',
+                                                document.unit_type_id)
+            target_location = os.path.join(platform_storage_dir, document._relative_path)
+            # Make if source is a directory, recursively copy it, otherwise copy the file
+            if os.path.isdir(document._source_location):
+                shutil.copytree(document._source_location, target_location)
+            else:
+                check_dir = os.path.dirname(target_location)
+                try:
+                    os.makedirs(check_dir)
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
+                shutil.copy(document._source_location, target_location)
+
+    def set_content(self, source_location, relative_path):
+        """
+        Store the source of the content for the unit and the relative path
+        where it should be stored within the plugin content directory.
+
+        :param source_location: The absolute path to the content in the plugin working directory.
+        :type source_location: str
+        :param relative_path: The relative path where the content should be stored inside the
+                              content type specific content folder
+        :type relative_path: str
+
+        :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
+                                    PLP0037 if the relative_path is not included
+        """
+        if not os.path.exists(source_location):
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
+                                                source_location=source_location)
+        if relative_path is None or relative_path.strip() == '':
+            raise exceptions.PulpCodedException(error_code=error_codes.PLP0037)
+
+        self._source_location = source_location
+        self._relative_path = relative_path
+
+    def get_repositories(self):
+        """
+        Get an iterable of Repository models for all the repositories that contain this unit
+
+        :return: Repositories that contain this content unit
+        :rtype: iterable of Repository
+        """
+        content_list = RepositoryContentUnit.objects(unit_id=self.id)
+        id_list = [item.repo_id for item in content_list]
+        return Repository.objects(repo_id__in=id_list)
