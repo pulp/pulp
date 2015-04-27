@@ -154,6 +154,7 @@ array is returned in the case where there are no repositories.
 | :permission:`read`
 | :param_list:`post`
 
+* :param:`?details,bool,shortcut to include "importers" and "distributors"`
 * :param:`?importers,bool,include the "importers" attribute on each repository`
 * :param:`?distributors,bool,include the "distributors" attribute on each repository`
 

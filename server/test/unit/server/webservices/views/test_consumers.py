@@ -7,16 +7,23 @@ from django.http import HttpResponseBadRequest
 from base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
                                     OperationPostponed, UnsupportedValue)
+from pulp.server.managers.consumer import bind
+from pulp.server.managers.consumer import profile
+from pulp.server.managers.consumer import query
 from pulp.server.webservices.views import consumers
+from pulp.server.webservices.views import util
 from pulp.server.webservices.views.consumers import (ConsumersView, ConsumerBindingsView,
                                                      ConsumerBindingResourceView,
+                                                     ConsumerBindingSearchView,
                                                      ConsumerContentActionView,
                                                      ConsumerContentApplicabilityView,
                                                      ConsumerContentApplicRegenerationView,
                                                      ConsumerHistoryView, ConsumerProfilesView,
                                                      ConsumerProfileResourceView,
+                                                     ConsumerProfileSearchView,
                                                      ConsumerResourceView,
                                                      ConsumerResourceContentApplicRegenerationView,
+                                                     ConsumerSearchView,
                                                      UnitInstallSchedulesView,
                                                      UnitInstallScheduleResourceView)
 
@@ -400,6 +407,37 @@ class TestConsumerResourceView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
 
 
+class TestConsumerSearchView(unittest.TestCase):
+    """
+    Test the ConsumerSearchView.
+    """
+    def test_class_attributes(self):
+        """
+        Ensure that the ConsumerSearchView has the correct class attributes.
+        """
+        self.assertEqual(ConsumerSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertEqual(ConsumerSearchView.optional_fields, ['details', 'bindings'])
+        self.assertTrue(isinstance(ConsumerSearchView.manager, query.ConsumerQueryManager))
+
+    @mock.patch('pulp.server.webservices.views.consumers.add_link')
+    @mock.patch('pulp.server.webservices.views.consumers.expand_consumers')
+    def test_get_results(self, mock_expand, mock_add_link):
+        """
+        Test that results are expanded and serialized.
+        """
+        query = mock.MagicMock()
+        search_method = mock.MagicMock()
+        mock_expand.return_value = ['result_1', 'result_2']
+        options = {'mock': 'options'}
+
+        consumer_search = ConsumerSearchView()
+        serialized_results = consumer_search.get_results(query, search_method, options)
+        mock_expand.assert_called_once_with({'mock': 'options'}, list(search_method.return_value))
+        mock_add_link.assert_has_calls([mock.call('result_1'), mock.call('result_2')])
+        self.assertEqual(serialized_results, mock_expand.return_value)
+
+
 class TestConsumerBindingsView(unittest.TestCase):
     """
     Represents consumers binding.
@@ -429,6 +467,19 @@ class TestConsumerBindingsView(unittest.TestCase):
 
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
+
+
+class TestConsumerBindingSearchView(unittest.TestCase):
+    """
+    Test the ConsumerBindingSearchView.
+    """
+    def test_class_attributes(self):
+        """
+        Ensure that the ConsumerBindingSearchView has the correct class attributes.
+        """
+        self.assertEqual(ConsumerBindingSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertTrue(isinstance(ConsumerBindingSearchView.manager, bind.BindManager))
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -1007,6 +1058,19 @@ class TestConsumerProfilesView(unittest.TestCase):
             raise AssertionError("MissingValue should be raised with missing param")
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['content_type'])
+
+
+class TestConsumerProfileSearchView(unittest.TestCase):
+    """
+    Test the ConsumerProfileSearchView.
+    """
+    def test_class_attributes(self):
+        """
+        Ensure that the ConsumerProfileSearchView has the correct class attributes.
+        """
+        self.assertEqual(ConsumerProfileSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertTrue(isinstance(ConsumerProfileSearchView.manager, profile.ProfileManager))
 
 
 class TestConsumerProfileResourceView(unittest.TestCase):

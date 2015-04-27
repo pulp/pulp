@@ -74,6 +74,14 @@ class TestDjangoContentUrls(unittest.TestCase):
         url_name = 'content_units_collection'
         assert_url_match(url, url_name, type_id='mock-type')
 
+    def test_match_content_unit_search(self):
+        """
+        Test the url matching for content_unit_search.
+        """
+        url = '/v2/content/units/mock-type/search/'
+        url_name = 'content_unit_search'
+        assert_url_match(url, url_name, type_id='mock-type')
+
     def test_match_content_unit_resource(self):
         """
         Test url matching for content_unit_resource.
@@ -220,6 +228,14 @@ class TestDjangoConsumerGroupsUrls(unittest.TestCase):
         url_name = 'consumer_group'
         assert_url_match(url, url_name)
 
+    def test_match_consumer_group_search_view(self):
+        """
+        Test url matching for consumer_group_search
+        """
+        url = '/v2/consumer_groups/search/'
+        url_name = 'consumer_group_search'
+        assert_url_match(url, url_name)
+
     def test_match_consumer_group_resource_view(self):
         """
         Test url matching for single consumer_group
@@ -292,57 +308,106 @@ class TestDjangoRepositoriesUrls(unittest.TestCase):
     """
 
     def test_match_repos(self):
+        """
+        Test url matching for repos.
+        """
         url = '/v2/repositories/'
         url_name = 'repos'
         assert_url_match(url, url_name)
 
+    def test_match_repo_search(self):
+        """
+        Test url matching for repo_search.
+        """
+        url = '/v2/repositories/search/'
+        url_name = 'repo_search'
+        assert_url_match(url, url_name)
+
     def test_match_repo_content_app_regen(self):
+        """
+        Test url matching for repo_content_app_regen.
+        """
         url_name = 'repo_content_app_regen'
         url = '/v2/repositories/actions/content/regenerate_applicability/'
         assert_url_match(url, url_name)
 
     def test_match_repo_resource(self):
+        """
+        Test url matching for repo_resource.
+        """
         url_name = 'repo_resource'
         url = '/v2/repositories/mock_repo/'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
+    def test_match_repo_unit_search(self):
+        """
+        Test url matching for repo_unit_search.
+        """
+        url_name = 'repo_unit_search'
+        url = '/v2/repositories/mock_repo/search/units/'
+        assert_url_match(url, url_name, repo_id='mock_repo')
+
     def test_match_repo_importers(self):
+        """
+        Test url matching for repo_importers.
+        """
         url_name = 'repo_importers'
         url = '/v2/repositories/mock_repo/importers/'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
     def test_match_repo_importer_resource(self):
+        """
+        Test url matching for repo_importer_resource.
+        """
         url = '/v2/repositories/mock_repo/importers/mock_importer/'
         url_name = 'repo_importer_resource'
         assert_url_match(url, url_name, repo_id='mock_repo', importer_id='mock_importer')
 
     def test_match_repo_sync_schedule_collection(self):
+        """
+        Test url matching for repo_sync_schedules.
+        """
         url = '/v2/repositories/mock_repo/importers/mock_importer/schedules/sync/'
         url_name = 'repo_sync_schedules'
         assert_url_match(url, url_name, repo_id='mock_repo', importer_id='mock_importer')
 
     def test_match_repo_sync_schedule_resource(self):
+        """
+        Test url matching for repo_sync_schedule_resource.
+        """
         url = '/v2/repositories/mock_repo/importers/mock_importer/schedules/sync/mock_schedule/'
         url_name = 'repo_sync_schedule_resource'
         assert_url_match(url, url_name, repo_id='mock_repo', importer_id='mock_importer',
                          schedule_id='mock_schedule')
 
     def test_match_repo_distributors(self):
+        """
+        Test url matching for repo_distributors.
+        """
         url = '/v2/repositories/mock_repo/distributors/'
         url_name = 'repo_distributors'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
     def test_match_repo_distributor_resource(self):
+        """
+        Test url matching for repo_distributor_resource.
+        """
         url = '/v2/repositories/mock_repo/distributors/mock_distributor/'
         url_name = 'repo_distributor_resource'
         assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_distributor')
 
     def test_match_repo_publish_schedules(self):
+        """
+        Test url matching for repo_publish_schedules.
+        """
         url = '/v2/repositories/mock_repo/distributors/mock_distributor/schedules/publish/'
         url_name = 'repo_publish_schedules'
         assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_distributor')
 
     def test_match_repo_publish_schedule_resource(self):
+        """
+        Test url matching for repo_publish_schedule_resource.
+        """
         url = '/v2/repositories/mock_repo/distributors/'\
               'mock_distributor/schedules/publish/mock_schedule/'
         url_name = 'repo_publish_schedule_resource'
@@ -350,36 +415,57 @@ class TestDjangoRepositoriesUrls(unittest.TestCase):
                          schedule_id='mock_schedule')
 
     def test_match_repo_sync_history(self):
+        """
+        Test url matching for repo_sync_history.
+        """
         url = '/v2/repositories/mock_repo/history/sync/'
         url_name = 'repo_sync_history'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
     def test_match_repo_sync(self):
+        """
+        Test url matching for repo_sync.
+        """
         url = '/v2/repositories/mock_repo/actions/sync/'
         url_name = 'repo_sync'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
     def test_match_repo_publish_history(self):
+        """
+        Test url matching for repo_publish_history.
+        """
         url = '/v2/repositories/mock_repo/history/publish/mock_dist/'
         url_name = 'repo_publish_history'
         assert_url_match(url, url_name, repo_id='mock_repo', distributor_id='mock_dist')
 
     def test_match_repo_publish(self):
+        """
+        Test url matching for repo_publish.
+        """
         url = '/v2/repositories/mock_repo/actions/publish/'
         url_name = 'repo_publish'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
     def test_match_repo_associate(self):
+        """
+        Test url matching for repo_associate.
+        """
         url = '/v2/repositories/mock_repo/actions/associate/'
         url_name = 'repo_associate'
         assert_url_match(url, url_name, dest_repo_id='mock_repo')
 
     def test_match_repo_unassociate(self):
+        """
+        Test url matching for repo_unassociate.
+        """
         url = '/v2/repositories/mock_repo/actions/unassociate/'
         url_name = 'repo_unassociate'
         assert_url_match(url, url_name, repo_id='mock_repo')
 
     def test_match_repo_import_upload(self):
+        """
+        Test url matching for repo_import_upload.
+        """
         url = '/v2/repositories/mock_repo/actions/import_upload/'
         url_name = 'repo_import_upload'
         assert_url_match(url, url_name, repo_id='mock_repo')
@@ -393,6 +479,12 @@ class TestDjangoRepoGroupsUrls(unittest.TestCase):
         """Test url matching for repo_groups."""
         url = '/v2/repo_groups/'
         url_name = 'repo_groups'
+        assert_url_match(url, url_name)
+
+    def test_match_repo_group_search(self):
+        """Test url matching for repo_group_search."""
+        url = '/v2/repo_groups/search/'
+        url_name = 'repo_group_search'
         assert_url_match(url, url_name)
 
     def test_match_repo_group_resource(self):
@@ -447,6 +539,14 @@ class TestDjangoTasksUrls(unittest.TestCase):
         url = '/v2/tasks/test-task/'
         url_name = 'task_resource'
         assert_url_match(url, url_name, task_id='test-task')
+
+    def test_match_task_search(self):
+        """
+        Test the matching for task_resource.
+        """
+        url = '/v2/tasks/search/'
+        url_name = 'task_search'
+        assert_url_match(url, url_name)
 
 
 class TestDjangoRolesUrls(unittest.TestCase):
@@ -568,6 +668,14 @@ class TestDjangoUsersUrls(unittest.TestCase):
         url_name = 'users'
         assert_url_match(url, url_name)
 
+    def test_match_user_search_view(self):
+        """
+        Test url matching for user search.
+        """
+        url = '/v2/users/search/'
+        url_name = 'user_search'
+        assert_url_match(url, url_name)
+
     def test_match_user_resource(self):
         """
         Test the matching for user resource.
@@ -582,7 +690,7 @@ class TestStatusUrl(unittest.TestCase):
     Tests for server status url
     """
 
-    def test_match_users_view(self):
+    def test_match_status_view(self):
         """
         Test url matching for status
         """
@@ -604,6 +712,14 @@ class TestDjangoConsumersUrls(unittest.TestCase):
         url_name = 'consumers'
         assert_url_match(url, url_name)
 
+    def test_match_consumer_search(self):
+        """
+        Test url matching for consumer_search.
+        """
+        url = '/v2/consumers/search/'
+        url_name = 'consumer_search'
+        assert_url_match(url, url_name)
+
     def test_match_consumer_resource_view(self):
         """
         Test url matching for consumer resource.
@@ -611,6 +727,30 @@ class TestDjangoConsumersUrls(unittest.TestCase):
         url = '/v2/consumers/test-consumer/'
         url_name = 'consumer_resource'
         assert_url_match(url, url_name, consumer_id='test-consumer')
+
+    def test_match_consumer_search_view(self):
+        """
+        Test url matching for consumer search.
+        """
+        url = '/v2/consumers/search/'
+        url_name = 'consumer_search'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_binding_search_view(self):
+        """
+        Test url matching for consumer binding search.
+        """
+        url = '/v2/consumers/binding/search/'
+        url_name = 'consumer_binding_search'
+        assert_url_match(url, url_name)
+
+    def test_match_consumer_profile_search_view(self):
+        """
+        Test url matching for consumer profile search.
+        """
+        url = '/v2/consumers/profile/search/'
+        url_name = 'consumer_profile_search'
+        assert_url_match(url, url_name)
 
     def test_match_consumer_profiles_view(self):
         """

@@ -9,13 +9,14 @@ from .base import (assert_auth_CREATE, assert_auth_DELETE, assert_auth_EXECUTE, 
                    assert_auth_UPDATE)
 from pulp.common import constants, dateutils, error_codes
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.webservices.views import repositories
+from pulp.server.managers.repo import query as repo_query
+from pulp.server.webservices.views import repositories, util
 from pulp.server.webservices.views.repositories import(
     ContentApplicabilityRegenerationView, RepoAssociate, RepoDistributorResourceView,
     RepoDistributorsView, RepoImportUpload, RepoImporterResourceView, RepoImportersView,
     RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView, RepoPublishSchedulesView,
-    RepoResourceView, RepoSync, RepoSyncHistory, RepoSyncScheduleResourceView,
-    RepoSyncSchedulesView, RepoUnassociate, ReposView
+    RepoResourceView, RepoSearch, RepoSync, RepoSyncHistory, RepoSyncScheduleResourceView,
+    RepoSyncSchedulesView, RepoUnassociate, RepoUnitSearch, ReposView
 )
 
 
@@ -117,8 +118,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        repos_view = ReposView()
-        repos_view._process_repos(mock_repos, False, False)
+        repositories._process_repos(mock_repos, 'false', 'false', 'false')
         mock_rev.assert_has_calls(
             [mock.call('repo_resource', kwargs={'repo_id': 'mock1'}),
              mock.call('repo_resource', kwargs={'repo_id': 'mock2'})]
@@ -139,8 +139,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        repos_view = ReposView()
-        repos_view._process_repos(mock_repos, True, True)
+        repositories._process_repos(mock_repos, 'true', 'false', 'false')
         mock_merge.assert_has_calls(
             [mock.call('importers', mock_factory.repo_importer_manager(), mock_repos),
              mock.call('distributors', mock_factory.repo_distributor_manager(), mock_repos)]
@@ -162,8 +161,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1', 'scratchpad': 'should be removed'}, {'id': 'mock2'}]
-        repos_view = ReposView()
-        repos_view._process_repos(mock_repos, False, False)
+        repositories._process_repos(mock_repos, 'false', 'false', 'false')
         mock_rev.assert_has_calls(
             [mock.call('repo_resource', kwargs={'repo_id': 'mock1'}),
              mock.call('repo_resource', kwargs={'repo_id': 'mock2'})]
@@ -177,7 +175,7 @@ class TestReposView(unittest.TestCase):
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_no_options(self, mock_collection, mock_process, mock_resp):
         """
@@ -191,13 +189,13 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         response = repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, False, False)
+        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'false')
         mock_resp.assert_called_once_with(mock_collection().find.return_value)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_with_details(self, mock_collection, mock_process):
         """
@@ -211,11 +209,11 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, True, True)
+        mock_process.assert_called_once_with(mock_repos, 'true', 'false', 'false')
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_with_false(self, mock_collection, mock_process):
         """
@@ -232,11 +230,11 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, False, False)
+        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'false')
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_with_uppercase_boolean(self, mock_collection, mock_process):
         """
@@ -250,11 +248,11 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, True, True)
+        mock_process.assert_called_once_with(mock_repos, 'True', 'false', 'false')
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_with_invalid_boolean(self, mock_collection, mock_process):
         """
@@ -268,11 +266,11 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, False, False)
+        mock_process.assert_called_once_with(mock_repos, 'yes', 'false', 'false')
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_with_importers(self, mock_collection, mock_process):
         """
@@ -286,11 +284,11 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, True, False)
+        mock_process.assert_called_once_with(mock_repos, 'false', 'true', 'false')
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.repositories.ReposView._process_repos')
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
     @mock.patch('pulp.server.webservices.views.repositories.RepoModel.get_collection')
     def test_get_repos_with_distributors(self, mock_collection, mock_process):
         """
@@ -304,7 +302,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, False, True)
+        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'true')
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -670,6 +668,90 @@ class TestRepoResourceView(unittest.TestCase):
         mock_manager.update_repo_and_plugins.assert_called_once_with(
             'mock_repo', None, None, 'distributor_data'
         )
+
+
+class TestRepoSearch(unittest.TestCase):
+    """
+    Tests for RepoSearch.
+    """
+
+    def test_class_attributes(self):
+        """
+        Ensure that class attributes are set correctly.
+        """
+        repo_search = RepoSearch()
+        self.assertTrue(isinstance(repo_search.manager, repo_query.RepoQueryManager))
+        self.assertEqual(repo_search.optional_fields, ['details', 'importers', 'distributors'])
+        self.assertEqual(repo_search.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+
+    @mock.patch('pulp.server.webservices.views.repositories._process_repos')
+    def test_get_results(self, mock_process):
+        """
+        Test that optional arguments and the data are properly passed to _process_repos.
+        """
+        mock_search = mock.MagicMock(return_value=[])
+        mock_query = mock.MagicMock()
+        options = {'details': 'mock_deets', 'importers': 'mock_imp', 'distributors': 'mock_dist'}
+        repo_search = RepoSearch()
+        content = repo_search.get_results(mock_query, mock_search, options)
+        self.assertEqual(content, mock_process.return_value)
+        mock_process.assert_called_once_with([], 'mock_deets', 'mock_imp', 'mock_dist')
+
+
+class TestRepoUnitSearch(unittest.TestCase):
+    """
+    Tests for RepoUnitSearch.
+    """
+
+    @mock.patch('pulp.server.webservices.views.repositories.manager_factory.repo_query_manager')
+    def test__generate_response_missing_repo(self, mock_rqm):
+        """
+        Assert that MissingResource is raised if the provided repo does not exist.
+        """
+        mock_rqm().find_by_id.return_value = None
+        repo_unit_search = RepoUnitSearch()
+        self.assertRaises(pulp_exceptions.MissingResource, repo_unit_search._generate_response,
+                          "", "", {}, type_id='fake_repo')
+
+    @mock.patch(
+        'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.repositories.manager_factory.'
+                'repo_unit_association_query_manager')
+    @mock.patch('pulp.server.webservices.views.repositories.UnitAssociationCriteria')
+    @mock.patch('pulp.server.webservices.views.repositories.manager_factory.repo_query_manager')
+    def test__generate_response_one_type(self, mock_rqm, mock_crit, mock_uqm, mock_resp):
+        """
+        Test that responses are created using `get_units_by_type` if there is only one type.
+        """
+        mock_rqm().find_by_id.return_value = 'exists'
+        criteria = mock_crit.from_client_input.return_value
+        criteria.type_ids = ['one_type']
+        repo_unit_search = RepoUnitSearch()
+        repo_unit_search._generate_response('mock_q', {}, repo_id='mock_repo')
+        mock_crit.from_client_input.assert_called_once_with('mock_q')
+        mock_uqm().get_units_by_type.assert_called_once_with('mock_repo', 'one_type',
+                                                             criteria=criteria)
+        mock_resp.assert_called_once_with(mock_uqm().get_units_by_type.return_value)
+
+    @mock.patch(
+        'pulp.server.webservices.views.repositories.generate_json_response_with_pulp_encoder')
+    @mock.patch('pulp.server.webservices.views.repositories.manager_factory.'
+                'repo_unit_association_query_manager')
+    @mock.patch('pulp.server.webservices.views.repositories.UnitAssociationCriteria')
+    @mock.patch('pulp.server.webservices.views.repositories.manager_factory.repo_query_manager')
+    def test__generate_response_multiple_types(self, mock_rqm, mock_crit, mock_uqm, mock_resp):
+        """
+        Test that responses are created using `get_units_across_types` if there are multiple types.
+        """
+        mock_rqm().find_by_id.return_value = 'exists'
+        criteria = mock_crit.from_client_input.return_value
+        criteria.type_ids = ['one_type', 'two_types']
+        repo_unit_search = RepoUnitSearch()
+        repo_unit_search._generate_response('mock_q', {}, repo_id='mock_repo')
+        mock_crit.from_client_input.assert_called_once_with('mock_q')
+        mock_uqm().get_units_across_types.assert_called_once_with('mock_repo', criteria=criteria)
+        mock_resp.assert_called_once_with(mock_uqm().get_units_across_types.return_value)
 
 
 class TestRepoImportersView(unittest.TestCase):

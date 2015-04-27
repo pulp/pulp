@@ -7,11 +7,15 @@ from django.http import HttpResponseBadRequest
 from base import (assert_auth_CREATE, assert_auth_READ, assert_auth_UPDATE, assert_auth_DELETE,
                   assert_auth_EXECUTE)
 from pulp.server.exceptions import InvalidValue, MissingResource, MissingValue, OperationPostponed
-from pulp.server.webservices.views.consumer_groups import (ConsumerGroupAssociateActionView,
+from pulp.server.managers.consumer.group import query
+from pulp.server.webservices.views import util
+from pulp.server.webservices.views.consumer_groups import (serialize,
+                                                           ConsumerGroupAssociateActionView,
                                                            ConsumerGroupBindingView,
                                                            ConsumerGroupBindingsView,
                                                            ConsumerGroupContentActionView,
                                                            ConsumerGroupResourceView,
+                                                           ConsumerGroupSearchView,
                                                            ConsumerGroupUnassociateActionView,
                                                            ConsumerGroupView,)
 
@@ -191,6 +195,23 @@ class TestconsumerGroupResourceView(unittest.TestCase):
 
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
+
+
+class TestConsumerGroupSearchView(unittest.TestCase):
+    """
+    Tests for ConsumerGroupSearchView.
+    """
+
+    def test_class_attributes(self):
+        """
+        Ensure that class attributes are set correctly.
+        """
+        consumer_group_search = ConsumerGroupSearchView()
+        self.assertTrue(isinstance(consumer_group_search.manager, query.ConsumerGroupQueryManager))
+        self.assertEqual(consumer_group_search.optional_fields, [])
+        self.assertEqual(consumer_group_search.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
+        self.assertEqual(consumer_group_search.serializer, serialize)
 
 
 class TestConsumerGroupAssociateActionView(unittest.TestCase):
