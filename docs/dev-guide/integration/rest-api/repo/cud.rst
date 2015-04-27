@@ -22,7 +22,7 @@ Repository IDs must be unique across all repositories in the server.
 * :param:`?description,string,user-friendly text describing the repository's contents`
 * :param:`?notes,object,key-value pairs to programmatically tag the repository`
 * :param:`?importer_type_id,string,type id of importer being associated with the repository`
-* :param:`?importer_config,object,configuration the repository will use to drive the behavior of the importer`
+* :param:`?importer_config,object,configuration the repository will use to drive the behavior of the importer. Note that proxy_password and basic_auth_password will be returned as '*****' for security purposes.`
 * :param:`?distributors,array,array of objects containing values of distributor_type_id, repo_plugin_config, auto_publish, and distributor_id`
 
 | :response_list:`_`
@@ -308,6 +308,10 @@ Update the configuration for an :term:`importer` that has already been associate
 repository.
 
 Any importer configuration value that is not specified remains unchanged.
+
+Note that the importer's ``proxy_password`` and ``basic_auth_password`` fields
+will be returned as ``*****`` if they are populated. This is done for security
+purposes.
 
 | :method:`put`
 | :path:`/v2/repositories/<repo_id>/importers/<importer_id>/`

@@ -264,6 +264,60 @@ def validate_proxy_password(config):
         raise ValueError(msg)
 
 
+def validate_basic_auth_username(config):
+    """
+    The basic_auth_username is optional. If it is set, this method will ensure
+    that it is a string, and it will also ensure that the basic_auth_password is set.
+
+    :param config: The configuration object that we are validating.
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    """
+    basic_auth_username = config.get(importer_constants.KEY_BASIC_AUTH_USER)
+    # basic_auth username is not required unless the password is set
+    if basic_auth_username is None and config.get(importer_constants.KEY_BASIC_AUTH_PASS) is None:
+        return
+    elif basic_auth_username is None:
+        # If basic_auth_password is set, basic_auth_username must also be set
+        msg = _('The configuration parameter <%(password_name)s> requires the <%(username_name)s> '
+                'parameter to also be set.')
+        msg = msg % {'password_name': importer_constants.KEY_BASIC_AUTH_PASS,
+                     'username_name': importer_constants.KEY_BASIC_AUTH_USER}
+        raise ValueError(msg)
+
+    if not isinstance(basic_auth_username, basestring):
+        msg = _('The configuration parameter <%(name)s> should be a string, but it was %(type)s.')
+        msg = msg % {'name': importer_constants.KEY_BASIC_AUTH_USER,
+                     'type': type(basic_auth_username)}
+        raise ValueError(msg)
+
+
+def validate_basic_auth_password(config):
+    """
+    The basic_auth password setting is optional. However, if it is set, it must
+    be a string. Also, if it is set, user must also be set.
+
+    :param config: The configuration object that we are validating.
+    :type config: pulp.plugins.config.PluginCallConfiguration
+    """
+    basic_auth_password = config.get(importer_constants.KEY_BASIC_AUTH_PASS)
+    if basic_auth_password is None and config.get(importer_constants.KEY_BASIC_AUTH_USER) is None:
+        return  # optional
+    elif basic_auth_password is None:
+        # If basic_auth_password is set, basic_auth_username must also be set
+        msg = _('The configuration parameter <%(username_name)s> requires the <%(password_name)s> '
+                'parameter to also be set.')
+        msg = msg % {'password_name': importer_constants.KEY_BASIC_AUTH_PASS,
+                     'username_name': importer_constants.KEY_BASIC_AUTH_USER}
+        raise ValueError(msg)
+
+    if not isinstance(basic_auth_password, basestring):
+        msg = _('The configuration parameter <%(basic_auth_password_name)s> should be a string, '
+                'but it was %(type)s.')
+        msg = msg % {'basic_auth_password_name': importer_constants.KEY_BASIC_AUTH_PASS,
+                     'type': type(basic_auth_password)}
+        raise ValueError(msg)
+
+
 def validate_validate_downloads(config):
     """
     This (humorously named) method will validate the optional config option called
@@ -367,6 +421,8 @@ VALIDATIONS = (
     validate_proxy_port,
     validate_proxy_username,
     validate_proxy_password,
+    validate_basic_auth_username,
+    validate_basic_auth_password,
     validate_validate_downloads,
     validate_remove_missing,
     validate_retain_old_count,

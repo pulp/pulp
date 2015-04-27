@@ -57,6 +57,10 @@ are supported:
      An optional proxy userid.
  - **proxy_password** <str>
      An optional proxy password.
+ - **basic_auth_username** <str>
+     An optional basic auth username.
+ - **basic_auth_password** <str>
+     An optional basic auth password.
 
 Example:
  

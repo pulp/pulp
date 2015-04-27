@@ -44,6 +44,9 @@ def importer_config_to_nectar_config(importer_config):
         (constants.KEY_PROXY_USER, 'proxy_username'),
         (constants.KEY_PROXY_PASS, 'proxy_password'),
 
+        (constants.KEY_BASIC_AUTH_USER, 'basic_auth_username'),
+        (constants.KEY_BASIC_AUTH_PASS, 'basic_auth_password'),
+
         (constants.KEY_MAX_DOWNLOADS, 'max_concurrent'),
         (constants.KEY_MAX_SPEED, 'max_speed'),
     )

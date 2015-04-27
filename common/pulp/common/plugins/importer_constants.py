@@ -54,6 +54,14 @@ KEY_PROXY_USER = 'proxy_username'
 # Password for an authenticated proxy server
 KEY_PROXY_PASS = 'proxy_password'
 
+# -- basic auth
+
+# Username for basic auth downloads
+KEY_BASIC_AUTH_USER = 'basic_auth_username'
+
+# Password for basic auth downloads
+KEY_BASIC_AUTH_PASS = 'basic_auth_password'
+
 # -- throttling ---------------------------------------------------------------
 
 # Number of concurrent downloads to run
