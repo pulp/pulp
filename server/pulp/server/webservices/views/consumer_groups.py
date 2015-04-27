@@ -8,12 +8,28 @@ from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.group.cud import bind, unbind
+from pulp.server.managers.consumer.group import query
 from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
                                                 json_body_allow_empty,
                                                 json_body_required)
+
+
+def serialize(group):
+    """
+    Creates an href to the consumer group and adds it to the consumer group.
+
+    :param group: Cosumer group to serialize
+    :type  group: dict
+    """
+    group['_href'] = reverse(
+        'consumer_group_resource',
+        kwargs={'consumer_group_id': group['id']}
+    )
+    return group
 
 
 class ConsumerGroupView(View):
@@ -33,12 +49,7 @@ class ConsumerGroupView(View):
         """
         collection = ConsumerGroup.get_collection()
         cursor = collection.find({})
-        groups = []
-        for group in cursor:
-            link = {"_href": reverse('consumer_group_resource',
-                    kwargs={'consumer_group_id': group['id']})}
-            group.update(link)
-            groups.append(group)
+        groups = [serialize(group) for group in cursor]
         return generate_json_response_with_pulp_encoder(groups)
 
     @auth_required(authorization.CREATE)
@@ -97,10 +108,7 @@ class ConsumerGroupResourceView(View):
         group = collection.find_one({'id': consumer_group_id})
         if group is None:
             raise pulp_exceptions.MissingResource(consumer_group=consumer_group_id)
-        link = {"_href": reverse('consumer_group_resource',
-                kwargs={'consumer_group_id': group['id']})}
-        group.update(link)
-        return generate_json_response_with_pulp_encoder(group)
+        return generate_json_response_with_pulp_encoder(serialize(group))
 
     @auth_required(authorization.DELETE)
     def delete(self, request, consumer_group_id):
@@ -134,10 +142,16 @@ class ConsumerGroupResourceView(View):
         update_data = request.body_as_json
         manager = factory.consumer_group_manager()
         group = manager.update_consumer_group(consumer_group_id, **update_data)
-        link = {"_href": reverse('consumer_group_resource',
-                kwargs={'consumer_group_id': group['id']})}
-        group.update(link)
-        return generate_json_response_with_pulp_encoder(group)
+        return generate_json_response_with_pulp_encoder(serialize(group))
+
+
+class ConsumerGroupSearchView(search.SearchView):
+    """
+    This view provides GET and POST searching on Consumer Groups.
+    """
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
+    manager = query.ConsumerGroupQueryManager()
+    serializer = staticmethod(serialize)
 
 
 class ConsumerGroupAssociateActionView(View):

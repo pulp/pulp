@@ -215,12 +215,12 @@ class TestRepoGroupResourceView(unittest.TestCase):
         mock_req.body = json.dumps({'mock': 'body'})
         mock_rev.return_value = '/mock/path/'
         mock_manager = mock_factory.repo_group_manager.return_value
-        mock_manager.update_repo_group.return_value = {'mock': 'group'}
+        mock_manager.update_repo_group.return_value = {'mock': 'group', 'id': 'test'}
 
         repo_group_resource = RepoGroupResourceView()
         response = repo_group_resource.put(mock_req, 'mock_id')
 
-        mock_resp.assert_called_once_with({'mock': 'group', '_href': '/mock/path/'})
+        mock_resp.assert_called_once_with({'mock': 'group', '_href': '/mock/path/', 'id': 'test'})
         mock_manager.update_repo_group.assert_called_once_with('mock_id', mock='body')
         self.assertTrue(response is mock_resp.return_value)
 
