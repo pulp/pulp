@@ -21,7 +21,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 | :method:`post`
 | :path:`/v2/consumer_groups/<group_id>/actions/content/install/`
-| :permission:`create`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`units,array,array of content units to install`
@@ -72,7 +72,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 | :method:`post`
 | :path:`/v2/consumer_groups/<group_id>/actions/content/update/`
-| :permission:`create`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`units,array,array of content units to update`
@@ -125,7 +125,7 @@ content are handler specific.  The options drive how the handler performs the op
 
 | :method:`post`
 | :path:`/v2/consumer_groups/<group_id>/actions/content/uninstall/`
-| :permission:`create`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`units,array,array of content units to uninstall`

@@ -199,7 +199,7 @@ class ConsumerGroupContentActionView(View):
     Views for content manipulation on consumer group.
     """
 
-    @auth_required(authorization.CREATE)
+    @auth_required(authorization.EXECUTE)
     @json_body_allow_empty
     def post(self, request, consumer_group_id, action):
         """
