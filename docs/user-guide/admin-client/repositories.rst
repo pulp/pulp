@@ -115,6 +115,9 @@ deletion and then check the status of that task.
   Task Id:     2d4fc3da-7ad7-448c-a9dd-78e79f71ef2f
 
 
+
+.. _admin-client-list-repos:
+
 List
 ----
 
