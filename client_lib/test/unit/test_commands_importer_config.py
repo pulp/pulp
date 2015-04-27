@@ -29,13 +29,14 @@ class MixinTest(PulpCliCommand, importer_config.ImporterConfigMixin):
     """
 
     def __init__(self, options_bundle=None, include_sync=True, include_ssl=True, include_proxy=True,
-                 include_throttling=True, include_unit_policy=True):
+                 include_throttling=True, include_unit_policy=True, include_basic_auth=True):
         PulpCliCommand.__init__(self, 'mixin', '', self.run)
         importer_config.ImporterConfigMixin.__init__(self,
                                                      options_bundle=options_bundle,
                                                      include_sync=include_sync,
                                                      include_ssl=include_ssl,
                                                      include_proxy=include_proxy,
+                                                     include_basic_auth=include_basic_auth,
                                                      include_throttling=include_throttling,
                                                      include_unit_policy=include_unit_policy)
 
@@ -65,16 +66,18 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         tested separately.
         """
 
-        self.assertEqual(5, len(self.mixin.option_groups))
+        self.assertEqual(6, len(self.mixin.option_groups))
         group_names = [g.name for g in self.mixin.option_groups]
         expected_names = [importer_config.GROUP_NAME_SYNC, importer_config.GROUP_NAME_SSL,
                           importer_config.GROUP_NAME_PROXY, importer_config.GROUP_NAME_THROTTLING,
-                          importer_config.GROUP_NAME_UNIT_POLICY]
+                          importer_config.GROUP_NAME_UNIT_POLICY,
+                          importer_config.GROUP_NAME_BASIC_AUTH]
         self.assertEqual(set(group_names), set(expected_names))
 
     def test_groups_no_includes(self):
         self.mixin = MixinTest(include_sync=False, include_ssl=False, include_proxy=False,
-                               include_throttling=False, include_unit_policy=False)
+                               include_throttling=False, include_unit_policy=False,
+                               include_basic_auth=False)
         self.assertEqual(0, len(self.mixin.option_groups))
 
     # -- populate tests -------------------------------------------------------
@@ -106,6 +109,14 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(options[1], self.mixin.options_bundle.opt_proxy_port)
         self.assertEqual(options[2], self.mixin.options_bundle.opt_proxy_user)
         self.assertEqual(options[3], self.mixin.options_bundle.opt_proxy_pass)
+
+    def test_populate_basic_auth_group(self):
+        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_BASIC_AUTH][0]
+        options = group.options
+
+        self.assertEqual(2, len(options))
+        self.assertEqual(options[0], self.mixin.options_bundle.opt_basic_auth_user)
+        self.assertEqual(options[1], self.mixin.options_bundle.opt_basic_auth_pass)
 
     def test_populate_throttling_group(self):
         group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_THROTTLING][0]

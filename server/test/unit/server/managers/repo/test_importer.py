@@ -422,7 +422,8 @@ class RepoManagerTests(base.PulpServerTests):
 
         # Setup
         self.repo_manager.create_repo('trance')
-        importer_config = {'volume': 'two'}
+        importer_config = {'volume': 'two', 'proxy_password': 'secret',
+                           'basic_auth_password': 'secret'}
         self.importer_manager.set_importer('trance', 'mock-importer', importer_config)
 
         # Test
@@ -432,7 +433,9 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertTrue(importer is not None)
         self.assertEqual(importer['id'], 'mock-importer')
         self.assertEqual(importer['repo_id'], 'trance')
-        self.assertEqual(importer['config'], importer_config)
+        self.assertEqual(importer['config']['volume'], 'two')
+        self.assertEqual(importer['config']['proxy_password'], '*****')
+        self.assertEqual(importer['config']['basic_auth_password'], '*****')
 
     def test_get_importer_missing_repo(self):
         """
@@ -549,3 +552,39 @@ class RepoManagerTests(base.PulpServerTests):
     def test_find_by_repo_list_no_scheduled_sync(self, mock_get_collection):
         self.importer_manager.find_by_repo_list(['repo-1'])
         self.assertFalse(mock_get_collection.return_value.find.called)
+
+    def test_sanitize_passwords_none(self):
+        """
+        Ensure we don't break when sanitizing None.
+        """
+        result = self.importer_manager._sanitize_passwords(None)
+        self.assertEquals(result, None)
+
+    def test_sanitize_passwords_no_passwords(self):
+        """
+        Pass non-password fields through
+        """
+        importer = {'some_key': 'some_value', 'config': {'conf1': 'value1'}}
+        result = self.importer_manager._sanitize_passwords(importer)
+        self.assertEquals(result, importer)
+
+    def test_sanitize_passwords(self):
+        """
+        reset passwords to '*****'
+        """
+        importer = {'some_key': 'some_value', 'config': {'proxy_password': 'secret!',
+                                                         'basic_auth_password': 'secret!',
+                                                         'not_a_password': 'hello'}}
+        result = self.importer_manager._sanitize_passwords(importer)
+        self.assertEquals(result['some_key'], 'some_value')
+        self.assertEquals(result['config']['proxy_password'], '*****')
+        self.assertEquals(result['config']['basic_auth_password'], '*****')
+        self.assertEquals(result['config']['not_a_password'], 'hello')
+
+    def test_sanitize_passwords_empty_pw(self):
+        """
+        Do not change the empty string to '*****'
+        """
+        importer = {'some_key': 'some_value', 'config': {'proxy_password': None}}
+        result = self.importer_manager._sanitize_passwords(importer)
+        self.assertEquals(result['config']['proxy_password'], None)

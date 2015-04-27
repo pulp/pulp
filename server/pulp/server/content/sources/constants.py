@@ -21,6 +21,8 @@ PROXY_URL = 'proxy_url'
 PROXY_PORT = 'proxy_port'
 PROXY_USERID = 'proxy_username'
 PROXY_PASSWORD = 'proxy_password'
+BASIC_AUTH_USERID = 'basic_auth_username'
+BASIC_AUTH_PASSWORD = 'basic_auth_password'
 HEADERS = 'headers'
 
 # format: <property>, <nectar-property>, <conversion-function>
@@ -35,6 +37,8 @@ NECTAR_PROPERTIES = (
     (PROXY_PORT, 'proxy_port', int),
     (PROXY_USERID, 'proxy_username', str),
     (PROXY_PASSWORD, 'proxy_password', str),
+    (BASIC_AUTH_USERID, 'basic_auth_username', str),
+    (BASIC_AUTH_PASSWORD, 'basic_auth_password', str),
     (HEADERS, 'headers', str),
 )
 

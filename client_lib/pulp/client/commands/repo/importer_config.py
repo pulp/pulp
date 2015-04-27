@@ -9,6 +9,7 @@ GROUP_NAME_SYNC = _('Synchronization')
 GROUP_NAME_THROTTLING = _('Throttling')
 GROUP_NAME_SSL = _('Feed SSL')
 GROUP_NAME_PROXY = _('Feed Proxy')
+GROUP_NAME_BASIC_AUTH = _('Basic Authentication')
 GROUP_NAME_UNIT_POLICY = _('Repository Content Behavior')
 
 
@@ -45,6 +46,15 @@ class OptionsBundle(object):
 
         d = _('password used to authenticate with the proxy server')
         self.opt_proxy_pass = PulpCliOption('--proxy-pass', d, required=False)
+
+        # basic auth options
+        # NB: the option presented to the user is 'basicauth' but internally we
+        # call it 'basic_auth'
+        d = _('username used to authenticate with sync location via HTTP basic auth')
+        self.opt_basic_auth_user = PulpCliOption('--basicauth-user', d, required=False)
+
+        d = _('password used to authenticate with sync location via HTTP basic auth')
+        self.opt_basic_auth_pass = PulpCliOption('--basicauth-pass', d, required=False)
 
         # throttling options
         d = _('maximum bandwidth used per download thread, in bytes/sec, when '
@@ -122,6 +132,7 @@ class ImporterConfigMixin(object):
                  include_sync=True,
                  include_ssl=True,
                  include_proxy=True,
+                 include_basic_auth=False,
                  include_throttling=True,
                  include_unit_policy=True):
 
@@ -133,6 +144,7 @@ class ImporterConfigMixin(object):
         self.sync_group = PulpCliOptionGroup(GROUP_NAME_SYNC)
         self.ssl_group = PulpCliOptionGroup(GROUP_NAME_SSL)
         self.proxy_group = PulpCliOptionGroup(GROUP_NAME_PROXY)
+        self.basic_auth_group = PulpCliOptionGroup(GROUP_NAME_BASIC_AUTH)
         self.throttling_group = PulpCliOptionGroup(GROUP_NAME_THROTTLING)
         self.unit_policy_group = PulpCliOptionGroup(GROUP_NAME_UNIT_POLICY)
 
@@ -147,6 +159,10 @@ class ImporterConfigMixin(object):
         if include_proxy:
             self.populate_proxy_group()
             self.add_option_group(self.proxy_group)
+
+        if include_basic_auth:
+            self.populate_basic_auth_group()
+            self.add_option_group(self.basic_auth_group)
 
         if include_throttling:
             self.populate_throttling_group()
@@ -184,6 +200,14 @@ class ImporterConfigMixin(object):
         self.proxy_group.add_option(self.options_bundle.opt_proxy_user)
         self.proxy_group.add_option(self.options_bundle.opt_proxy_pass)
 
+    def populate_basic_auth_group(self):
+        """
+        Adds options to the basic_auth group. This is only called if the include_basic_auth flag is
+        set to True in the constructor.
+        """
+        self.basic_auth_group.add_option(self.options_bundle.opt_basic_auth_user)
+        self.basic_auth_group.add_option(self.options_bundle.opt_basic_auth_pass)
+
     def populate_throttling_group(self):
         """
         Adds options to the throttling group. This is only called if the include_throttling flag is
@@ -219,6 +243,7 @@ class ImporterConfigMixin(object):
         config = {}
         config.update(self.parse_sync_group(user_input))
         config.update(self.parse_ssl_group(user_input))
+        config.update(self.parse_basic_auth_group(user_input))
         config.update(self.parse_proxy_group(user_input))
         config.update(self.parse_throttling_group(user_input))
         config.update(self.parse_unit_policy(user_input))
@@ -289,6 +314,27 @@ class ImporterConfigMixin(object):
             (constants.KEY_PROXY_PORT, self.options_bundle.opt_proxy_port.keyword),
             (constants.KEY_PROXY_USER, self.options_bundle.opt_proxy_user.keyword),
             (constants.KEY_PROXY_PASS, self.options_bundle.opt_proxy_pass.keyword),
+        )
+
+        config = {}
+        for config_key, input_key in key_tuples:
+            safe_parse(user_input, config, input_key, config_key)
+        return config
+
+    def parse_basic_auth_group(self, user_input):
+        """
+        Reads any basic auth config options from the user input and packages them into
+        the Pulp standard importer config format.
+
+        :param user_input: keyword arguments from the CLI framework containing user input
+        :type  user_input: dict
+
+        :return: suitable representation of the config that can be stored on the repo
+        :rtype:  dict
+        """
+        key_tuples = (
+            (constants.KEY_BASIC_AUTH_USER, self.options_bundle.opt_basic_auth_user.keyword),
+            (constants.KEY_BASIC_AUTH_PASS, self.options_bundle.opt_basic_auth_pass.keyword),
         )
 
         config = {}

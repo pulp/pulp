@@ -21,6 +21,9 @@ class ConfigTranslationTests(unittest.TestCase):
             constants.KEY_PROXY_USER: 'user',
             constants.KEY_PROXY_PASS: 'pass',
 
+            constants.KEY_BASIC_AUTH_USER: 'basicuser',
+            constants.KEY_BASIC_AUTH_PASS: 'basicpass',
+
             constants.KEY_MAX_DOWNLOADS: 10,
             constants.KEY_MAX_SPEED: 1024,
         }
@@ -38,6 +41,8 @@ class ConfigTranslationTests(unittest.TestCase):
         self.assertEqual(download_config.proxy_port, 8080)
         self.assertEqual(download_config.proxy_username, 'user')
         self.assertEqual(download_config.proxy_password, 'pass')
+        self.assertEqual(download_config.basic_auth_username, 'basicuser')
+        self.assertEqual(download_config.basic_auth_password, 'basicpass')
         self.assertEqual(download_config.max_concurrent, 10)
         self.assertEqual(download_config.max_speed, 1024)
 

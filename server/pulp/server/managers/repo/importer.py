@@ -4,6 +4,7 @@ import sys
 
 from celery import task
 from pulp.common import error_codes
+from pulp.common.plugins.importer_constants import KEY_PROXY_PASS, KEY_BASIC_AUTH_PASS
 
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
@@ -34,7 +35,7 @@ class RepoImporterManager(object):
         if importer is None:
             raise MissingResource(repository=repo_id)
 
-        return importer
+        return self._sanitize_passwords(importer)
 
     def get_importers(self, repo_id):
         """
@@ -52,7 +53,7 @@ class RepoImporterManager(object):
             raise MissingResource(repo_id)
 
         importers = list(RepoImporter.get_collection().find({'repo_id': repo_id}))
-        return importers
+        return [self._sanitize_passwords(x) for x in importers]
 
     @staticmethod
     def find_by_repo_list(repo_id_list):
@@ -71,7 +72,7 @@ class RepoImporterManager(object):
         projection = {'scratchpad': 0}
         importers = list(RepoImporter.get_collection().find(spec, projection))
 
-        return importers
+        return [RepoImporterManager._sanitize_passwords(x) for x in importers]
 
     @staticmethod
     def set_importer(repo_id, importer_type_id, repo_plugin_config):
@@ -131,7 +132,7 @@ class RepoImporterManager(object):
         importer = RepoImporter(repo_id, importer_id, importer_type_id, clean_config)
         importer_coll.save(importer, safe=True)
 
-        return importer
+        return RepoImporterManager._sanitize_passwords(importer)
 
     @staticmethod
     def validate_importer_config(repo_id, importer_type_id, importer_config):
@@ -296,7 +297,7 @@ class RepoImporterManager(object):
         repo_importer['config'] = merged_config
         importer_coll.save(repo_importer, safe=True)
 
-        return repo_importer
+        return RepoImporterManager._sanitize_passwords(repo_importer)
 
     def get_importer_scratchpad(self, repo_id):
         """
@@ -345,6 +346,32 @@ class RepoImporterManager(object):
         # Update
         repo_importer['scratchpad'] = contents
         importer_coll.save(repo_importer, safe=True)
+
+    @staticmethod
+    def _sanitize_passwords(importer):
+        """
+        Return a sanitized importer.
+
+        This method replaces passwords with '*****'.
+
+        :return: a repo importer
+        :rtype:  pulp.server.db.model.repository.RepoImporter
+
+        """
+
+        # an empty record is already free of passwords:)
+        if not importer:
+            return
+
+        if 'config' in importer and importer['config']:
+            if KEY_PROXY_PASS in importer['config'] and \
+                    importer['config'][KEY_PROXY_PASS] is not None:
+                importer['config'][KEY_PROXY_PASS] = '*****'
+            if KEY_BASIC_AUTH_PASS in importer['config'] and \
+                    importer['config'][KEY_BASIC_AUTH_PASS] is not None:
+                importer['config'][KEY_BASIC_AUTH_PASS] = '*****'
+
+        return importer
 
 
 remove_importer = task(RepoImporterManager.remove_importer, base=Task, ignore_result=True)

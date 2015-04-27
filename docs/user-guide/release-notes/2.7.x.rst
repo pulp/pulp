@@ -33,6 +33,14 @@ New Features
 * Pulp workers now perform heartbeats every 30 seconds instead of every two
   seconds. See :redmine:`808` for more detail.
 
+- Pulp now supports using basic authentication when syncing repositories. This
+  can be enabled via ``--basicauth-user`` and ``--basicauth-pass`` when
+  creating or updating repositories. Note that this also requires support in the
+  plugin; currently only pulp_rpm supports this option.
+
+- Pulp no longer returns proxy passwords or basic authentication passwords when
+  viewing importer configurations.  Instead, ``*****`` is returned.
+
 Deprecation
 -----------
 
