@@ -7,7 +7,7 @@ Resource IDs
 ------------
 
 All resource ID values must contain only letters, numbers, underscores,
-and hyphens.
+periods, and hyphens.
 
 .. _date-and-time:
 
