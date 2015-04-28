@@ -3,15 +3,14 @@
 import os
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'I_am_a_secret_that_is_never_used_meaningfully_by_pulp'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-TEMPLATE_DEBUG = True
+TEMPLATE_DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
