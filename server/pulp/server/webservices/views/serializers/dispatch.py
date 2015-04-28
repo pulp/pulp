@@ -1,28 +1,10 @@
-from pulp.server.webservices.serialization.link import link_obj
+from pulp.server.webservices.views.serializers.link import link_obj
 
 
 def task_result_href(task):
     if task.get('task_id'):
         return {'_href': '/pulp/api/v2/tasks/%s/' % task['task_id']}
     return {}
-
-
-def task_href(call_report):
-    if call_report.call_request_id is None:
-        return {}
-    return {'_href': '/pulp/api/v2/tasks/%s/' % call_report.call_request_id}
-
-
-def task_group_href(call_report):
-    if call_report.call_request_group_id is None:
-        return {}
-    return {'_href': '/pulp/api/v2/task_groups/%s/' % call_report.call_request_group_id}
-
-
-def scheduled_unit_management_obj(scheduled_call):
-    scheduled_call['options'] = scheduled_call['kwargs']['options']
-    scheduled_call['units'] = scheduled_call['kwargs']['units']
-    return scheduled_call
 
 
 def spawned_tasks(task):
@@ -65,4 +47,3 @@ def task_status(task):
     task_dict['id'] = str(task['id'])
 
     return task_dict
-

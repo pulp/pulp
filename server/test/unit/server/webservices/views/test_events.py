@@ -12,7 +12,7 @@ class TestEventView(unittest.TestCase):
     Test events view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.events.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.events.factory')
@@ -31,7 +31,7 @@ class TestEventView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.events.generate_redirect_response')
     @mock.patch('pulp.server.webservices.views.events.generate_json_response_with_pulp_encoder')
@@ -60,7 +60,7 @@ class TestEventResourceView(unittest.TestCase):
     Test event resource view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.events.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.events.factory')
@@ -80,7 +80,7 @@ class TestEventResourceView(unittest.TestCase):
         mock_factory.event_listener_manager.return_value.get.assert_called_once_with('12345')
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.events.generate_json_response')
     @mock.patch('pulp.server.webservices.views.events.factory')
@@ -98,7 +98,7 @@ class TestEventResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.events.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.events.factory')

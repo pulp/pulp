@@ -4,7 +4,7 @@ from django.views.generic import View
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.managers import factory
-from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,

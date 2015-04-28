@@ -25,7 +25,7 @@ class TestconsumerGroupView(unittest.TestCase):
     Test consumer groups view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
@@ -47,7 +47,7 @@ class TestconsumerGroupView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.generate_redirect_response')
     @mock.patch(
@@ -69,7 +69,7 @@ class TestconsumerGroupView(unittest.TestCase):
         mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
         self.assertTrue(response is mock_redirect.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_create_consumer_group_invalid_param(self):
         """
@@ -87,7 +87,7 @@ class TestconsumerGroupView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['invalid_param'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_create_consumer_group_missing_param(self):
         """
@@ -111,7 +111,7 @@ class TestconsumerGroupResourceView(unittest.TestCase):
     Test consumer groups resource view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.generate_json_response')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
@@ -132,7 +132,7 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
@@ -154,7 +154,7 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumer_groups.ConsumerGroup.get_collection')
     def test_get_invalid_consumer_group_resource(self, mock_collection):
@@ -175,7 +175,7 @@ class TestconsumerGroupResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'consumer_group': 'nonexistent_id'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch(
         'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
@@ -219,7 +219,7 @@ class TestConsumerGroupAssociateActionView(unittest.TestCase):
     Tests consumer group membership.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch(
         'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
@@ -245,7 +245,7 @@ class TestConsumerGroupUnassociateActionView(unittest.TestCase):
     Tests consumer group membership.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch(
         'pulp.server.webservices.views.consumer_groups.generate_json_response_with_pulp_encoder')
@@ -271,7 +271,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
     Represents consumer group binding.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_verify_group_resources_repo(self, mock_factory):
@@ -293,7 +293,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['repo_id'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_verify_group_resources_distributor(self, mock_f):
@@ -315,7 +315,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['distributor_id'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_verify_group_resources_group(self, mock_f):
@@ -337,7 +337,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'group_id': 'test-group'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.bind')
     @mock.patch('pulp.server.webservices.views.consumer_groups.verify_group_resources')
@@ -353,7 +353,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         bind_args_tuple = ('test-group', 'xxx', 'yyy', True, None, {})
         mock_bind.apply_async.assert_called_once_with(bind_args_tuple)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.verify_group_resources')
     def test_create_binding_with_missing_group_id(self, mock_resources):
@@ -373,7 +373,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'group_id': 'nonexistent_id'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.verify_group_resources')
     def test_create_binding_with_missing_repo_id(self, mock_resources):
@@ -393,7 +393,7 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['repo_id'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.verify_group_resources')
     def test_create_binding_with_invalid_param(self, mock_resources):
@@ -418,7 +418,7 @@ class TestConsumerGroupBindingView(unittest.TestCase):
     """
     Represents a specific consumer group binding.
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.unbind')
     @mock.patch('pulp.server.webservices.views.consumer_groups.verify_group_resources')
@@ -434,7 +434,7 @@ class TestConsumerGroupBindingView(unittest.TestCase):
         unbind_args_tuple = ("consumer_group_id", "repo_id", "distributor_id", {})
         mock_unbind.apply_async.assert_called_once_with(unbind_args_tuple)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.verify_group_resources')
     def test_delete_non_existent_binding(self, mock_resources):
@@ -459,7 +459,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
     Test Consumer group content manipulation.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_consumer_group_bad_request_content(self):
         """
@@ -472,7 +472,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
         self.assertEqual(response.status_code, 400)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_consumer_group_content_install(self, mock_factory):
@@ -488,7 +488,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         mock_factory.consumer_group_manager().install_content.assert_called_once_with(
             'my-group', [], {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_consumer_group_content_update(self, mock_factory):
@@ -504,7 +504,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         mock_factory.consumer_group_manager().update_content.assert_called_once_with(
             'my-group', [], {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_consumer_group_content_uninstall(self, mock_factory):

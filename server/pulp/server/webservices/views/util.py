@@ -1,15 +1,32 @@
+from datetime import datetime
+from functools import wraps
+
 import functools
 import json
 import sys
-from functools import wraps
 
 from django.http import HttpResponse
 from django.utils.encoding import iri_to_uri
 
-from pulp.common import error_codes
+from pulp.common import dateutils, error_codes
 from pulp.common.util import decode_unicode, encode_unicode
+from pulp.server.compat import json_util
 from pulp.server.exceptions import PulpCodedValidationException, InputEncodingError
-from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
+
+
+def pulp_json_encoder(obj):
+    """
+    Specialized json encoding.
+    :param obj: An object to be encoded.
+
+    :return: The encoded object.
+    :rtype: str
+    """
+
+    if isinstance(obj, datetime):
+        dt = obj.replace(tzinfo=dateutils.utc_tz())
+        return dateutils.format_iso8601_datetime(dt)
+    return json_util.default(obj)
 
 
 def generate_json_response(content=None, response_class=HttpResponse, default=None,
@@ -30,6 +47,7 @@ def generate_json_response(content=None, response_class=HttpResponse, default=No
     :return               : response containing the serialized content
     :rtype                : HttpResponse or subclass
     """
+
     json_obj = json.dumps(content, default=default)
     return response_class(json_obj, content_type=content_type)
 
@@ -62,6 +80,7 @@ def _ensure_input_encoding(input):
 
     :return: input data with strings encoded as utf-8
     """
+
     if isinstance(input, (list, set, tuple)):
         return [_ensure_input_encoding(i) for i in input]
     if isinstance(input, dict):

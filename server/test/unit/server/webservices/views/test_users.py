@@ -59,7 +59,7 @@ class TestUsersView(unittest.TestCase):
     Test userss view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.users.factory')
@@ -79,7 +79,7 @@ class TestUsersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.users.generate_redirect_response')
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
@@ -102,7 +102,7 @@ class TestUsersView(unittest.TestCase):
         mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
         self.assertTrue(response is mock_redirect.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_create_missing_login(self):
         """
@@ -120,7 +120,7 @@ class TestUsersView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['login'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_create_invalid_param(self):
         """
@@ -156,7 +156,7 @@ class TestUserResourceView(unittest.TestCase):
     Test user resource view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.users.factory')
@@ -176,7 +176,7 @@ class TestUserResourceView(unittest.TestCase):
         mock_f.user_query_manager.return_value.find_by_login.assert_called_once_with('test-user')
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.users.factory')
     def test_get_invalid_user(self, mock_factory):
@@ -197,7 +197,7 @@ class TestUserResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'resource_id': 'nonexistent_login'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.users.Permission.get_collection')
     @mock.patch('pulp.server.webservices.views.users.generate_json_response')
@@ -217,7 +217,7 @@ class TestUserResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.users.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.users.factory')

@@ -21,8 +21,8 @@ INSTALLED_APPS = (
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.http.ConditionalGetMiddleware',
-    'pulp.server.webservices.middleware.exception.DjangoExceptionHandlerMiddleware',
-    'pulp.server.webservices.middleware.postponed.DjangoPostponedOperationMiddleware',
+    'pulp.server.webservices.middleware.exception.ExceptionHandlerMiddleware',
+    'pulp.server.webservices.middleware.postponed.PostponedOperationMiddleware',
     'django.middleware.common.CommonMiddleware',
 )
 

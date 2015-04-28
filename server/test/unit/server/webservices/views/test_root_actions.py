@@ -13,7 +13,7 @@ class TestLoginView(unittest.TestCase):
     Tests for login view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.root_actions.factory')
     def test_login(self, mock_factory):

@@ -1,27 +1,6 @@
 import logging
 import sys
 
-
-def _handle_with_processors(self):
-    """
-    This keeps the web.py wsgi app from trying to handle otherwise unhandled
-    exceptions and lets Pulp error handling middleware handle them instead
-    This exists here as it is the first place that Pulp imports web.py, so all
-    web.py applications will be instantiated *after* their base class is patched
-    """
-    def process(processors):
-        if processors:
-            p, processors = processors[0], processors[1:]
-            return p(lambda: process(processors))
-        else:
-            return self.handle()
-    return process(self.processors)
-
-
-import web
-
-web.application.handle_with_processors = _handle_with_processors
-
 from pulp.server import config  # automatically loads config
 from pulp.server import logs
 
@@ -34,28 +13,42 @@ from pulp.server import initialization
 from pulp.server.agent.direct.services import Services as AgentServices
 from pulp.server.debugging import StacktraceDumper
 from pulp.server.db.migrate import models as migration_models
-from pulp.server.webservices.controllers import (
-    consumer_groups, consumers, contents, repo_groups, repositories)
-from pulp.server.webservices.middleware.exception import ExceptionHandlerMiddleware
-from pulp.server.webservices.middleware.postponed import PostponedOperationMiddleware
-from pulp.server.webservices.middleware.framework_router import FrameworkRoutingMiddleware
+from pulp.server.webservices.http import _thread_local
 from pulp.server.webservices.wsgi import application as django_application
 
 # constants and application globals --------------------------------------------
 
-URLS = (
-    # Please keep the following in alphabetical order.
-    '/v2/consumer_groups', consumer_groups.application,
-    '/v2/consumers', consumers.application,
-    '/v2/content', contents.application,
-    '/v2/repo_groups', repo_groups.application,
-    '/v2/repositories', repositories.application,
-)
 
 logger = logging.getLogger(__name__)
 _IS_INITIALIZED = False
 
 STACK_TRACER = None
+
+
+class SaveEnvironWSGIHandler(object):
+    """
+    A WSGI handler called before Django which saves a reference to environ in http._thread_local.
+    This saved reference is accessed throughout the Pulp codebase. For more info on how WSGI is
+    implemented in Python see [0].
+
+    [0]: https://www.python.org/dev/peps/pep-3333/
+    """
+
+    def __init__(self, django_wsgi):
+        """
+        Initializes a SaveEnvironWSGIHandler object with an django_wsgi handler.
+
+        :param django_wsgi: A WSGI object for Django
+        :type django_wsgi: A WSGI compatible object
+        """
+        self.django_wsgi = django_wsgi
+
+    def __call__(self, environ, start_response):
+        """
+        A WSGI handler that saves a reference to environ in http._thread_local
+        """
+        _thread_local.wsgi_environ = environ
+        return self.django_wsgi(environ, start_response)
 
 
 def _initialize_pulp():
@@ -106,14 +99,9 @@ def _initialize_pulp():
 def wsgi_application():
     """
     Application factory to create, configure, and return a WSGI application
-    using the web.py framework and custom Pulp middleware.
+    using the django framework and custom Pulp middleware.
     @return: wsgi application callable
     """
-    webpy_application = web.subdir_application(URLS).wsgifunc()
-    webpy_stack_components = [webpy_application, PostponedOperationMiddleware, ExceptionHandlerMiddleware]
-    webpy_stack = reduce(lambda a, m: m(a), webpy_stack_components)
-
-    app = FrameworkRoutingMiddleware(webpy_stack, django_application)
 
     # The following intentionally don't raise the exception. The logging writes
     # to both error_log and pulp.log. Raising the exception caused it to be
@@ -144,4 +132,4 @@ def wsgi_application():
     logger.info('The Pulp server has been successfully initialized')
     logger.info('*************************************************************')
 
-    return app
+    return SaveEnvironWSGIHandler(django_application)

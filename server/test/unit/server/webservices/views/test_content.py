@@ -21,7 +21,7 @@ class TestOrphanCollectionView(unittest.TestCase):
     Tests for views for all orphaned content.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.reverse')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
@@ -56,7 +56,7 @@ class TestOrphanCollectionView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
     def test_delete_orphan_collection_view(self, mock_orphan_manager):
@@ -77,7 +77,7 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
     Tests for views of orphans limited by type.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.reverse')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
@@ -103,7 +103,7 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -123,7 +123,7 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
     def test_delete_orphan_type_subcollection(self, mock_orphan_manager):
@@ -146,7 +146,7 @@ class TestOrphanResourceView(unittest.TestCase):
     Tests for views of a specific orphan.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -168,7 +168,7 @@ class TestOrphanResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
     def test_delete_orphan_resource(self, mock_orphan_manager):
@@ -192,7 +192,7 @@ class TestDeleteOrphansActionView(unittest.TestCase):
     Tests for the Delete Orphans Action view, deprecated in 2.4.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
     @mock.patch('pulp.server.webservices.views.content.tags')
@@ -212,7 +212,7 @@ class TestDeleteOrphansActionView(unittest.TestCase):
             [{'fake': 'json'}], tags=['mock_action_tag', 'mock_resource_tag']
         )
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
     @mock.patch('pulp.server.webservices.views.content.tags')
@@ -241,7 +241,7 @@ class TestCatalogResourceView(unittest.TestCase):
     Tests for the catalog resource view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -331,12 +331,12 @@ class TestContentUnitResourceView(unittest.TestCase):
     Tests for views of a single conttent unit.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.content.serialization')
+    @mock.patch('pulp.server.webservices.views.content.serial_content')
     @mock.patch('pulp.server.webservices.views.content.factory')
-    def test_get_content_unit_resource_view(self, mock_factory, mock_serialization,
+    def test_get_content_unit_resource_view(self, mock_factory, mock_serializers,
                                             mock_resp):
         """
         Test ContentUnitResourceView when the requested unit is found.
@@ -347,8 +347,8 @@ class TestContentUnitResourceView(unittest.TestCase):
         mock_factory.content_query_manager.return_value = mock_cqm
         request = mock.MagicMock()
 
-        mock_serialization.content.content_unit_obj.return_value = {}
-        mock_serialization.content.content_unit_child_link_objs.return_value = {'child': 1}
+        mock_serializers.content_unit_obj.return_value = {}
+        mock_serializers.content_unit_child_link_objs.return_value = {'child': 1}
 
         content_unit_resource_view = ContentUnitResourceView()
         response = content_unit_resource_view.get(request, 'mock_type', 'mock_unit')
@@ -357,7 +357,7 @@ class TestContentUnitResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -383,14 +383,14 @@ class TestContentUnitsCollectionView(unittest.TestCase):
     Tests for content units of a particular type.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.reverse')
-    @mock.patch('pulp.server.webservices.views.content.serialization')
+    @mock.patch('pulp.server.webservices.views.content.serial_content')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_units_collection_view(self, mock_factory, mock_resp,
-                                               mock_serialization, mock_rev):
+                                               mock_serializers, mock_rev):
         """
         View should return a response that contains a list of dicts, one for each content unit.
         """
@@ -404,8 +404,8 @@ class TestContentUnitsCollectionView(unittest.TestCase):
         mock_cqm = mock.MagicMock()
         mock_cqm.find_by_criteria.return_value = [{'_id': 'unit_1'}, {'_id': 'unit_2'}]
         mock_factory.content_query_manager.return_value = mock_cqm
-        mock_serialization.content.content_unit_obj.side_effect = identity
-        mock_serialization.content.content_unit_child_link_objs.return_value = 'child'
+        mock_serializers.content_unit_obj.side_effect = identity
+        mock_serializers.content_unit_child_link_objs.return_value = 'child'
         request = mock.MagicMock()
 
         content_units_collection_view = ContentUnitsCollectionView()
@@ -422,9 +422,9 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
     Tests for ContentUnitUserMetadataResourceView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.content.serialization')
+    @mock.patch('pulp.server.webservices.views.content.serial_content')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_get_content_unit_user_metadata_resource(self, mock_factory, mock_resp, mock_serial):
@@ -434,18 +434,18 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
         mock_unit = {constants.PULP_USER_METADATA_FIELDNAME: 'mock_metadata'}
         mock_cqm = mock_factory.content_query_manager()
         mock_cqm.get_content_unit_by_id.return_value = mock_unit
-        mock_serial.content.content_unit_obj.return_value = 'mock_serial_metadata'
+        mock_serial.content_unit_obj.return_value = 'mock_serial_metadata'
         request = mock.MagicMock()
 
         metadata_resource = ContentUnitUserMetadataResourceView()
         response = metadata_resource.get(request, 'mock_type', 'mock_unit')
 
-        mock_serial.content.content_unit_obj.assert_called_once_with('mock_metadata')
+        mock_serial.content_unit_obj.assert_called_once_with('mock_metadata')
         expected_content = 'mock_serial_metadata'
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -464,7 +464,7 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(msg, HttpResponseNotFound)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -484,7 +484,7 @@ class TestContentUnitUserMetadataResourceView(unittest.TestCase):
         mock_resp.assert_called_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -510,7 +510,7 @@ class TestUploadsCollectionView(unittest.TestCase):
     Tests for views of all uploads.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -530,7 +530,7 @@ class TestUploadsCollectionView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.content.generate_redirect_response')
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
@@ -564,7 +564,7 @@ class TestUploadSegmentResourceView(unittest.TestCase):
     Tests for views for uploads to a specific id.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -584,7 +584,7 @@ class TestUploadSegmentResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.factory')
     def test_put_upload_segment_resource_bad_offset(self, mock_factory):
@@ -606,7 +606,7 @@ class TestUploadResourceView(unittest.TestCase):
     Tests for views of a single upload.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response')
     @mock.patch('pulp.server.webservices.views.content.factory')
@@ -630,7 +630,7 @@ class TestContentSourceView(unittest.TestCase):
     """
     Tests for content sources
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
@@ -651,7 +651,7 @@ class TestContentSourceView(unittest.TestCase):
                                             '_href': '/v2/content/sources/my-id/'}])
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     def test_post_bad_request_content_source(self):
         """
@@ -665,7 +665,7 @@ class TestContentSourceView(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
         self.assertEqual(response.status_code, 400)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.tags')
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
@@ -700,7 +700,7 @@ class TestContentSourceResourceView(unittest.TestCase):
     Tests for content sources resource
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.content.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
@@ -721,7 +721,7 @@ class TestContentSourceResourceView(unittest.TestCase):
             {'source_id': 'some-source', '_href': '/v2/content/sources/some-source/'})
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
     def test_get_invalid_content_source_resource(self, mock_sources):
@@ -741,7 +741,7 @@ class TestContentSourceResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'source_id': 'some-source'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
     def test_post_bad_request_specific_content_source(self, mock_sources):
@@ -761,7 +761,7 @@ class TestContentSourceResourceView(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
         self.assertEqual(response.status_code, 400)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
     def test_refresh_invalid_content_source(self, mock_sources):
@@ -782,7 +782,7 @@ class TestContentSourceResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'source_id': 'some-source'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.content.tags')
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')

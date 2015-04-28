@@ -17,9 +17,9 @@ from pulp.server.managers.consumer.applicability import (regenerate_applicabilit
 from pulp.server.managers.schedule.consumer import (UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION,
                                                     UNIT_UPDATE_ACTION)
 from pulp.server.tasks import consumer as consumer_task
-from pulp.server.webservices.controllers.decorators import auth_required
-from pulp.server.webservices import serialization
 from pulp.server.webservices.views import search
+from pulp.server.webservices.views.decorators import auth_required
+from pulp.server.webservices.views.serializers import binding as serial_binding
 from pulp.server.webservices.views.util import (_ensure_input_encoding,
                                                 generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
@@ -135,7 +135,7 @@ def expand_consumers(options, consumers):
             lst.append(b)
         for c in consumers:
             c['bindings'] = [
-                serialization.binding.serialize(b, False) for b in collated.get(c['id'], [])
+                serial_binding.serialize(b, False) for b in collated.get(c['id'], [])
             ]
     return consumers
 
@@ -368,7 +368,7 @@ class ConsumerBindingsView(View):
 
         manager = factory.consumer_bind_manager()
         bindings = manager.find_by_consumer(consumer_id, repo_id)
-        bindings = [serialization.binding.serialize(b) for b in bindings]
+        bindings = [serial_binding.serialize(b) for b in bindings]
         return generate_json_response_with_pulp_encoder(bindings)
 
     @auth_required(authorization.CREATE)
@@ -439,7 +439,7 @@ class ConsumerBindingResourceView(View):
 
         manager = factory.consumer_bind_manager()
         bind = manager.get_bind(consumer_id, repo_id, distributor_id)
-        serialized_bind = serialization.binding.serialize(bind)
+        serialized_bind = serial_binding.serialize(bind)
         return generate_json_response_with_pulp_encoder(serialized_bind)
 
     @auth_required(authorization.DELETE)

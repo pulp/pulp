@@ -10,8 +10,8 @@ from pulp.server.db.model.repo_group import RepoGroup as RepoGroupModel
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.repo.group import query as repo_group_query
 from pulp.server.managers.repo.group.publish import publish as repo_group_publish
-from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views import search
+from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (
     generate_json_response, generate_json_response_with_pulp_encoder, generate_redirect_response,
     json_body_allow_empty, json_body_required

@@ -14,7 +14,7 @@ class TestRolesView(unittest.TestCase):
     Test roles view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
@@ -38,7 +38,7 @@ class TestRolesView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.roles.generate_redirect_response')
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
@@ -66,7 +66,7 @@ class TestRoleResourceView(unittest.TestCase):
     Test role resource view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
@@ -90,7 +90,7 @@ class TestRoleResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.factory')
     def test_get_nonexistent_role(self, mock_factory):
@@ -112,7 +112,7 @@ class TestRoleResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'resource_id': 'nonexistent_id'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response')
     @mock.patch('pulp.server.webservices.views.roles.factory')
@@ -130,7 +130,7 @@ class TestRoleResourceView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
         mock_factory.role_manager.return_value.delete_role.assert_called_once_with('test-role')
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
@@ -156,7 +156,7 @@ class TestRoleUsersView(unittest.TestCase):
     Test users membership within a role.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.roles.factory')
@@ -175,7 +175,7 @@ class TestRoleUsersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response')
     @mock.patch('pulp.server.webservices.views.roles.factory')
@@ -193,7 +193,7 @@ class TestRoleUsersView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     def test_add_invalid_user_to_role(self):
         """
@@ -219,7 +219,7 @@ class TestRoleUserView(unittest.TestCase):
     Test single user membership within a role.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.roles.generate_json_response')
     @mock.patch('pulp.server.webservices.views.roles.factory')

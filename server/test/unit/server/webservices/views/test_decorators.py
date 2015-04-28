@@ -1,14 +1,14 @@
 """
-This module contains tests for the pulp.server.webservices.controllers.decorators module.
+This module contains tests for the pulp.server.webservices.views.decorators module.
 """
 import mock
 
 from .... import base
 from pulp.server.exceptions import PulpCodedAuthenticationException
-from pulp.server.webservices.controllers import decorators
+from pulp.server.webservices.views import decorators
 
 
-class TestAuthenticationMethods(base.PulpWebserviceTests):
+class TestAuthenticationMethods(base.PulpServerTests):
     """
     This class tests the authentication methods
     """
@@ -67,7 +67,7 @@ class TestAuthenticationMethods(base.PulpWebserviceTests):
 
     @mock.patch('pulp.server.webservices.http.resource_path', autospec=True)
     @mock.patch('pulp.server.managers.factory.principal_manager', autospec=True)
-    @mock.patch('pulp.server.webservices.controllers.decorators.check_preauthenticated')
+    @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated')
     @mock.patch('pulp.server.managers.auth.user.query.UserQueryManager.is_superuser',
                 return_value=False)
     @mock.patch('pulp.server.managers.auth.user.query.UserQueryManager.is_authorized',
@@ -83,15 +83,15 @@ class TestAuthenticationMethods(base.PulpWebserviceTests):
 
     @mock.patch('pulp.server.webservices.http.resource_path', autospec=True)
     @mock.patch('pulp.server.managers.factory.principal_manager', autospec=True)
-    @mock.patch('pulp.server.webservices.controllers.decorators.consumer_cert_authentication',
+    @mock.patch('pulp.server.webservices.views.decorators.consumer_cert_authentication',
                 return_value='gob')
-    @mock.patch('pulp.server.webservices.controllers.decorators.user_cert_authentication',
+    @mock.patch('pulp.server.webservices.views.decorators.user_cert_authentication',
                 return_value=None)
-    @mock.patch('pulp.server.webservices.controllers.decorators.password_authentication',
+    @mock.patch('pulp.server.webservices.views.decorators.password_authentication',
                 return_value=None)
-    @mock.patch('pulp.server.webservices.controllers.decorators.check_preauthenticated',
+    @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated',
                 return_value=None)
-    @mock.patch('pulp.server.webservices.controllers.decorators.is_consumer_authorized',
+    @mock.patch('pulp.server.webservices.views.decorators.is_consumer_authorized',
                 return_value=False)
     def test_auth_decorator_consumer_not_authorized(self, mock_is_authorized, *unused_mocks):
         """
@@ -104,7 +104,7 @@ class TestAuthenticationMethods(base.PulpWebserviceTests):
 
     @mock.patch('pulp.server.webservices.http.resource_path', autospec=True)
     @mock.patch('pulp.server.managers.factory.principal_manager', autospec=True)
-    @mock.patch('pulp.server.webservices.controllers.decorators.check_preauthenticated')
+    @mock.patch('pulp.server.webservices.views.decorators.check_preauthenticated')
     @mock.patch('pulp.server.managers.auth.user.query.UserQueryManager.is_authorized',
                 return_value=False)
     def test_auth_decorator_not_authorized(self, mock_is_authorized, *unused_mocks):

@@ -1,24 +1,13 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import httplib
 
 from mock import patch, Mock
 
-from pulp.common.plugins import importer_constants
 from pulp.common.bundle import Bundle
+from pulp.common.plugins import importer_constants
 
-from base import WebTest, Response, Task, TaskResult
-from pulp_node.handlers.model import Repository
+from base import Response, ServerTests, Task, TaskResult
 from pulp_node import constants
+from pulp_node.handlers.model import Repository
 
 
 PULP_ID = 'pulp_1'
@@ -38,7 +27,7 @@ NODE_CERTIFICATE = """
 PARENT_SETTINGS = {constants.NODE_CERTIFICATE: NODE_CERTIFICATE}
 
 
-class TestModel(WebTest):
+class TestModel(ServerTests):
 
     def setUp(self):
         super(self.__class__, self).setUp()

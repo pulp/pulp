@@ -10,9 +10,9 @@ from pulp.server.async import tasks
 from pulp.server.auth import authorization
 from pulp.server.db.model import Worker, TaskStatus
 from pulp.server.exceptions import MissingResource
-from pulp.server.webservices import serialization
-from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views import search
+from pulp.server.webservices.views.decorators import auth_required
+from pulp.server.webservices.views.serializers import dispatch as serial_dispatch
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder)
 
@@ -27,9 +27,9 @@ def task_serializer(task):
     :return: the same task modified for use by the API
     :rtype: dict
     """
-    task = serialization.dispatch.task_status(task)
-    task.update(serialization.dispatch.spawned_tasks(task))
-    task.update(serialization.dispatch.task_result_href(task))
+    task = serial_dispatch.task_status(task)
+    task.update(serial_dispatch.spawned_tasks(task))
+    task.update(serial_dispatch.task_result_href(task))
     return task
 
 
