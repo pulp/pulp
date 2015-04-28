@@ -355,6 +355,17 @@ class ContentUnit(Document):
         self._relative_path = None
 
     @classmethod
+    def attach_signals(cls):
+        """
+        Attach the signals to this class.
+
+        This is provided as a class method so it can be called on subclasses
+        and all the correct signals will be applied.
+        """
+        signals.post_init.connect(cls.post_init_signal, sender=cls)
+        signals.pre_save.connect(cls.pre_save_signal, sender=cls)
+
+    @classmethod
     def post_init_signal(cls, sender, document):
         """
         The signal that is triggered before a unit is initialized
