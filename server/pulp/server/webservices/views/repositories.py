@@ -12,6 +12,7 @@ from pulp.server.managers.consumer.applicability import regenerate_applicability
 from pulp.server.managers.content.upload import import_uploaded_unit
 from pulp.server.managers.repo import query as repo_query
 from pulp.server.managers.repo import importer as repo_importer_manager
+from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.tasks import repository as repo_tasks
 from pulp.server.webservices.controllers.decorators import auth_required
@@ -722,6 +723,15 @@ class RepoDistributorsView(View):
         )
         response = generate_json_response_with_pulp_encoder(distributor)
         return generate_redirect_response(response, distributor['_href'])
+
+
+class RepoDistributorsSearchView(search.SearchView):
+    """
+    Distributor search view.
+    """
+
+    manager = RepoDistributorManager()
+    response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
 
 class RepoDistributorResourceView(View):

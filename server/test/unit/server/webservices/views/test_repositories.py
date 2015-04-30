@@ -5,18 +5,20 @@ import unittest
 import json
 import mock
 
-from .base import (assert_auth_CREATE, assert_auth_DELETE, assert_auth_EXECUTE, assert_auth_READ,
-                   assert_auth_UPDATE)
+from base import (
+    assert_auth_CREATE, assert_auth_DELETE, assert_auth_EXECUTE, assert_auth_READ,
+    assert_auth_UPDATE
+)
 from pulp.common import constants, dateutils, error_codes
 from pulp.server import exceptions as pulp_exceptions
-from pulp.server.managers.repo import query as repo_query
-from pulp.server.webservices.views import repositories, util
+from pulp.server.managers.repo import query as repo_query, distributor
+from pulp.server.webservices.views import repositories, util, search
 from pulp.server.webservices.views.repositories import(
     ContentApplicabilityRegenerationView, RepoAssociate, RepoDistributorResourceView,
-    RepoDistributorsView, RepoImportUpload, RepoImporterResourceView, RepoImportersView,
-    RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView, RepoPublishSchedulesView,
-    RepoResourceView, RepoSearch, RepoSync, RepoSyncHistory, RepoSyncScheduleResourceView,
-    RepoSyncSchedulesView, RepoUnassociate, RepoUnitSearch, ReposView
+    RepoDistributorsView, RepoDistributorsSearchView, RepoImportUpload, RepoImporterResourceView,
+    RepoImportersView, RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView,
+    RepoPublishSchedulesView, RepoResourceView, RepoSearch, RepoSync, RepoSyncHistory,
+    RepoSyncScheduleResourceView, RepoSyncSchedulesView, RepoUnassociate, RepoUnitSearch, ReposView
 )
 
 
@@ -1270,6 +1272,17 @@ class TestRepoDistributorsView(unittest.TestCase):
         mock_resp.assert_called_once_with(mock_dist)
         mock_redir.assert_called_once_with(mock_resp.return_value, mock_rev.return_value)
         self.assertTrue(response is mock_redir.return_value)
+
+
+class TestRepoDistributorsSearchView(unittest.TestCase):
+
+    def test_view(self):
+        view = RepoDistributorsSearchView()
+        self.assertTrue(isinstance(view, search.SearchView))
+        self.assertTrue(isinstance(RepoDistributorsSearchView.manager,
+                                   distributor.RepoDistributorManager))
+        self.assertEqual(RepoDistributorsSearchView.response_builder,
+                         util.generate_json_response_with_pulp_encoder)
 
 
 class TestRepoDistributorResourceView(unittest.TestCase):

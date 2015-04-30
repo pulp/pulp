@@ -57,15 +57,15 @@ class RepoPublishConduitTests(base.PulpServerTests):
         self.assertTrue(unpublished is None)
 
         # Setup - Previous publish
-        last_publish = datetime.datetime.now()
+        last_publish = datetime.datetime(2015, 4, 29, 20, 23, 56, 0)
         repo_dist = RepoDistributor.get_collection().find_one({'repo_id': 'repo-1'})
-        repo_dist['last_publish'] = dateutils.format_iso8601_datetime(last_publish)
+        repo_dist['last_publish'] = last_publish
         RepoDistributor.get_collection().save(repo_dist, safe=True)
 
         # Test - Last publish
         found = self.conduit.last_publish()
         self.assertTrue(isinstance(found, datetime.datetime))  # check returned format
-        self.assertEqual(repo_dist['last_publish'], dateutils.format_iso8601_datetime(found))
+        self.assertEqual(repo_dist['last_publish'], found)
 
     @mock.patch('pulp.server.managers.repo.publish.RepoPublishManager.last_publish')
     def test_last_publish_with_error(self, mock_call):

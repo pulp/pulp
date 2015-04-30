@@ -50,7 +50,7 @@ from pulp.server.webservices.views.repo_groups import (
     RepoGroupUnassociateView
 )
 from pulp.server.webservices.views.repositories import(
-    ContentApplicabilityRegenerationView, RepoDistributorResourceView,
+    ContentApplicabilityRegenerationView, RepoDistributorResourceView, RepoDistributorsSearchView,
     RepoDistributorsView, RepoAssociate, RepoImporterResourceView, RepoImportersView,
     RepoImportUpload, RepoPublish, RepoPublishHistory, RepoPublishScheduleResourceView,
     RepoPublishSchedulesView, RepoResourceView, RepoSearch, RepoSync, RepoSyncHistory,
@@ -150,6 +150,8 @@ urlpatterns = patterns('',
         name='content_upload_resource'),
     url(r'^v2/content/uploads/(?P<upload_id>[^/]+)/(?P<offset>[^/]+)/$',
         UploadSegmentResourceView.as_view(), name='content_upload_segment_resource'),
+    url(r'^v2/distributors/search/$', RepoDistributorsSearchView.as_view(),
+        name='distributor_search'),
     url(r'^v2/events/$', EventView.as_view(), name='events'),
     url(r'^v2/events/(?P<event_listener_id>[^/]+)/$', EventResourceView.as_view(), name='event_resource'),
     url(r'^v2/permissions/$', PermissionView.as_view(), name='permissions'),
