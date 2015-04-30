@@ -36,13 +36,12 @@ package version. Do not use the deprecated ``api_version`` record.
 | :response_list:`_`
 
     * :response_code:`200, pulp server is up and running`
-    * :response_code:`500, pulp server is down and the administrator should be notified`
 
 | :return:`JSON document showing current server status`
 
 :sample_response:`200` ::
 
-{
+ {
     "api_version": "2",
     "database_connection": {
         "connected": true
@@ -67,4 +66,4 @@ package version. Do not use the deprecated ``api_version`` record.
     "versions": {
         "platform_version": "2.6.0"
     }
-}
+ }
