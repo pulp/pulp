@@ -83,7 +83,7 @@ class PublishStepStatusRenderer(StatusRenderer):
             return
 
         step.processed = step_details[reporting_constants.PROGRESS_NUM_PROCESSED_KEY]
-        step.details = step_details[reporting_constants.PROGRESS_DETAILS_KEY]
+        step.details = step_details.get(reporting_constants.PROGRESS_DETAILS_KEY, None)
         if not step.details:
             step.details = None
 
