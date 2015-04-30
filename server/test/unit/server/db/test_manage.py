@@ -105,18 +105,22 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
+    @patch.object(manage, 'PluginManager')
     @patch.object(manage, 'model')
-    def test_ensure_index(self, mock_model):
+    def test_ensure_index(self, mock_model, mock_plugin_manager):
         """
         Make sure that the ensure_indexes method is called for all
         the appropriate platform models
         """
+        test_model = MagicMock()
+        mock_plugin_manager.return_value.unit_models.itervalues.return_value = [test_model]
         manage.ensure_database_indexes()
         self.assertTrue(mock_model.Repository.ensure_indexes.called)
         self.assertTrue(mock_model.RepositoryContentUnit.ensure_indexes.called)
         self.assertTrue(mock_model.ReservedResource.ensure_indexes.called)
         self.assertTrue(mock_model.TaskStatus.ensure_indexes.called)
         self.assertTrue(mock_model.Worker.ensure_indexes.called)
+        test_model.ensure_indexes.assert_called_once_with()
 
     @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')

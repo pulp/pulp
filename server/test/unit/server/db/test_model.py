@@ -55,6 +55,18 @@ class TestContentUnit(unittest.TestCase):
     def test_meta_abstract(self):
         self.assertEquals(model.ContentUnit._meta['abstract'], True)
 
+    @patch('pulp.server.db.model.signals')
+    def test_attach_signals(self, mock_signals):
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+
+        ContentUnitHelper.attach_signals()
+
+        mock_signals.post_init.connect.assert_called_once_with(ContentUnitHelper.post_init_signal,
+                                                               sender=ContentUnitHelper)
+        mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
+                                                              sender=ContentUnitHelper)
+
     def test_post_init_signal_with_unit_key_fields_defined(self):
         """
         Test the init signal handler that validates the existence of the

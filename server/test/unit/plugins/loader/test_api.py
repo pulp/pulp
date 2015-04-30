@@ -252,3 +252,56 @@ class TestAPI(unittest.TestCase):
     def test_finalize(self):
         api.finalize()
         self.assertEqual(api._MANAGER, None)
+
+
+class TestAPIModels(unittest.TestCase):
+
+    @mock.patch('pulp.plugins.loader.api._is_initialized')
+    @mock.patch('pulp.plugins.loader.api._MANAGER')
+    def test_get_unit_model_by_id(self, mock_manager, mock_is_initialized):
+        mock_is_initialized.return_value = True
+        mock_manager.unit_models.get.return_value = 'apples'
+        return_val = api.get_unit_model_by_id('foo')
+        self.assertEquals(return_val, 'apples')
+        mock_manager.unit_models.get.assert_called_once_with('foo')
+
+    @mock.patch('pulp.plugins.loader.api._is_initialized')
+    @mock.patch('pulp.plugins.loader.api._MANAGER')
+    def test_list_unit_models(self, mock_manager, mock_is_initialized):
+        mock_is_initialized.return_value = True
+        mock_manager.unit_models = {'foo': 'apples', 'bar': 'pears'}
+        return_val = api.list_unit_models()
+        self.assertEquals(return_val, ['foo', 'bar'])
+
+
+class TestAPIContentTypes(unittest.TestCase):
+
+    @mock.patch('pulp.plugins.loader.api.database')
+    @mock.patch('pulp.plugins.loader.api._is_initialized')
+    @mock.patch('pulp.plugins.loader.api._MANAGER')
+    def test_list_content_types(self, mock_manager, mock_is_initialized, mock_db):
+        mock_is_initialized.return_value = True
+        mock_manager.unit_models = {'foo': 'apples', 'bar': 'pears'}
+        mock_db.all_type_ids.return_value = ['baz', 'qux']
+        return_val = api.list_content_types()
+        self.assertEquals(return_val, ['foo', 'bar', 'baz', 'qux'])
+
+    @mock.patch('pulp.plugins.loader.api.database')
+    @mock.patch('pulp.plugins.loader.api._is_initialized')
+    @mock.patch('pulp.plugins.loader.api._MANAGER')
+    def test_list_content_types_no_legacy(self, mock_manager, mock_is_initialized, mock_db):
+        mock_is_initialized.return_value = True
+        mock_manager.unit_models = {'foo': 'apples', 'bar': 'pears'}
+        mock_db.all_type_ids.return_value = []
+        return_val = api.list_content_types()
+        self.assertEquals(return_val, ['foo', 'bar'])
+
+    @mock.patch('pulp.plugins.loader.api.database')
+    @mock.patch('pulp.plugins.loader.api._is_initialized')
+    @mock.patch('pulp.plugins.loader.api._MANAGER')
+    def test_list_content_types_no_models(self, mock_manager, mock_is_initialized, mock_db):
+        mock_is_initialized.return_value = True
+        mock_manager.unit_models = {}
+        mock_db.all_type_ids.return_value = ['baz', 'quux']
+        return_val = api.list_content_types()
+        self.assertEquals(return_val, ['baz', 'quux'])

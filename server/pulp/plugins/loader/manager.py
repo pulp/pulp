@@ -2,11 +2,19 @@ from gettext import gettext as _
 from pprint import pformat
 import copy
 import logging
+import pkg_resources
 
+from mongoengine import signals
+
+from pulp.common import error_codes
 from pulp.plugins.loader import exceptions as loader_exceptions
+from pulp.server.db.model import ContentUnit
+from pulp.server.exceptions import PulpCodedException
 
 
 _logger = logging.getLogger(__name__)
+
+ENTRY_POINT_UNIT_MODELS = 'pulp.unit_models'
 
 
 class PluginManager(object):
@@ -22,6 +30,45 @@ class PluginManager(object):
         self.importers = _PluginMap()
         self.profilers = _PluginMap()
         self.catalogers = _PluginMap()
+        self.unit_models = dict()
+
+        # Load the unit models
+        self._load_unit_models()
+
+    def _load_unit_models(self):
+        """"
+        Load all of the Unit Models from the ENTRY_POINT_UNIT_MODELS entry point
+
+        Attach the signals to the models here since the mongoengine signals will not be
+        sent correctly if they are attached to the base class.
+
+        :raises: PLP0038 if two models are defined with the same id
+        :raises: PLP0039 if a model is not a subclass of ContentUnit
+        """
+        _logger.debug(_("Loading Unit Models"))
+        for entry_point in pkg_resources.iter_entry_points(ENTRY_POINT_UNIT_MODELS):
+            msg = _('Loading unit model: %s' % str(entry_point))
+            _logger.info(msg)
+            model_id = entry_point.name
+            model_class = entry_point.load()
+            class_name = model_class.__class__.__module__ + "." + model_class.__class__.__name__
+            if not issubclass(model_class, ContentUnit):
+                raise PulpCodedException(error_code=error_codes.PLP0039,
+                                         model_id=model_id,
+                                         model_class=class_name)
+
+            if model_id in self.unit_models:
+                raise PulpCodedException(error_code=error_codes.PLP0038,
+                                         model_id=model_id,
+                                         model_class=class_name)
+            self.unit_models[model_id] = model_class
+
+            # Attach all the signals
+            model_class.attach_signals()
+            signals.post_init.connect(model_class.post_init_signal, sender=model_class)
+            signals.pre_save.connect(model_class.pre_save_signal, sender=model_class)
+
+        _logger.debug(_("Unit Model Loading Completed"))
 
 
 class _PluginMap(object):

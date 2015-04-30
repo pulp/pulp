@@ -40,6 +40,7 @@ def initialize(validate=True):
     if _is_initialized():
         return
 
+    # Initialize the plugin manager, this includes initialization of the unit_model entry point
     _create_manager()
 
     plugin_entry_points = (
@@ -81,7 +82,21 @@ def list_content_types():
     :rtype: list of str
     """
     assert _is_initialized()
-    return database.all_type_ids()
+    types_list = _MANAGER.unit_models.keys()
+    legacy_types = database.all_type_ids()
+    types_list.extend(legacy_types)
+    return types_list
+
+
+def list_unit_models():
+    """
+    Get the id's of the supported unit_models.
+
+    :return: list of unit model content type IDs
+    :rtype: list of str
+    """
+    assert _is_initialized()
+    return _MANAGER.unit_models.keys()
 
 
 def list_group_distributors():
@@ -281,6 +296,20 @@ def is_valid_cataloger(cataloger_id):
 
 
 # plugin api -------------------------------------------------------------------
+
+def get_unit_model_by_id(model_id):
+    """
+    Get the ContentUnit model class that corresponds to the given id.
+
+    :param model_id: id of the model
+    :type model_id: str
+
+    :return: the Model class or None
+    :rtype: pulp.server.db.model.ContentUnit
+    """
+    assert _is_initialized()
+    return _MANAGER.unit_models.get(model_id)
+
 
 def get_distributor_by_id(distributor_id):
     """

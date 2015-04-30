@@ -9,6 +9,7 @@ import sys
 import traceback
 
 from pulp.plugins.loader.api import load_content_types
+from pulp.plugins.loader.manager import PluginManager
 from pulp.server import logs
 from pulp.server.db import connection
 from pulp.server.db.migrate import models
@@ -119,6 +120,11 @@ def ensure_database_indexes():
     model.ReservedResource.ensure_indexes()
     model.TaskStatus.ensure_indexes()
     model.Worker.ensure_indexes()
+
+    # Load all the model classes that the server knows about and ensure their inexes as well
+    plugin_manager = PluginManager()
+    for model_class in plugin_manager.unit_models.itervalues():
+        model_class.ensure_indexes()
 
 
 def main():
