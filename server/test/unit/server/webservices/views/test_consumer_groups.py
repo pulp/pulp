@@ -460,7 +460,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
     """
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     def test_consumer_group_bad_request_content(self):
         """
         Test consumer group invalid content action.
@@ -473,7 +473,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_consumer_group_content_install(self, mock_factory):
         """
@@ -489,7 +489,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
             'my-group', [], {})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_consumer_group_content_update(self, mock_factory):
         """
@@ -505,7 +505,7 @@ class TestConsumerGroupContentActionView(unittest.TestCase):
             'my-group', [], {})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
     def test_consumer_group_content_uninstall(self, mock_factory):
         """

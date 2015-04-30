@@ -488,7 +488,7 @@ class ConsumerContentActionView(View):
     Views for content manipulation on the consumer.
     """
 
-    @auth_required(authorization.CREATE)
+    @auth_required(authorization.EXECUTE)
     @json_body_required
     def post(self, request, consumer_id, action):
         """

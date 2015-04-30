@@ -21,7 +21,7 @@ performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/install/`
-| :permission:`create`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`units,array,array of content units to install`
@@ -73,7 +73,7 @@ performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/update/`
-| :permission:`create`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`units,array,array of content units to update`
@@ -122,7 +122,7 @@ performs the operation.
 
 | :method:`post`
 | :path:`/v2/consumers/<consumer_id>/actions/content/uninstall/`
-| :permission:`create`
+| :permission:`execute`
 | :param_list:`post`
 
 * :param:`units,array,array of content units to uninstall`

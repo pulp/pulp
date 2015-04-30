@@ -4,7 +4,8 @@ import unittest
 import mock
 from django.http import HttpResponseBadRequest
 
-from base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
+from base import (assert_auth_CREATE, assert_auth_DELETE, assert_auth_EXECUTE, assert_auth_READ,
+                  assert_auth_UPDATE)
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
                                     OperationPostponed, UnsupportedValue)
 from pulp.server.managers.consumer import bind
@@ -755,7 +756,7 @@ class TestConsumerContentActionView(unittest.TestCase):
     """
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     def test_consumer_bad_request_content(self):
         """
         Test consumer invalid content action.
@@ -768,7 +769,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_cons(self, mock_consumer):
         """
@@ -788,7 +789,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.error_data['resources'], {'consumer_id': 'my-consumer'})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_units(self, mock_consumer):
         """
@@ -808,7 +809,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.error_data['property_names'], ['units'])
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_options(self, mock_consumer):
         """
@@ -828,7 +829,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.error_data['property_names'], ['options'])
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
     def test_consumer_content_install(self, mock_factory, mock_consumer):
@@ -846,7 +847,7 @@ class TestConsumerContentActionView(unittest.TestCase):
             'my-consumer', [], {})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
     def test_consumer_content_update(self, mock_factory, mock_consumer):
@@ -864,7 +865,7 @@ class TestConsumerContentActionView(unittest.TestCase):
             'my-consumer', [], {})
 
     @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
-                new=assert_auth_CREATE())
+                new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
     def test_consumer_content_uninstall(self, mock_factory, mock_consumer):
