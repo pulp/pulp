@@ -101,7 +101,8 @@ class ImporterConfigMixinTests(base.PulpClientTests):
         self.assertEqual(options[3], self.mixin.options_bundle.opt_proxy_pass)
 
     def test_populate_basic_auth_group(self):
-        group = [g for g in self.mixin.option_groups if g.name == importer_config.GROUP_NAME_BASIC_AUTH][0]
+        group = [g for g in self.mixin.option_groups
+                 if g.name == importer_config.GROUP_NAME_BASIC_AUTH][0]
         options = group.options
 
         self.assertEqual(2, len(options))
