@@ -105,9 +105,10 @@ class TestManageDB(MigrationTest):
         super(self.__class__, self).clean()
         types_db.clean()
 
+    @patch.object(manage, '_ensure_indexes')
     @patch.object(manage, 'PluginManager')
     @patch.object(manage, 'model')
-    def test_ensure_index(self, mock_model, mock_plugin_manager):
+    def test_ensure_database_indexes(self, mock_model, mock_plugin_manager, mock_ensure):
         """
         Make sure that the ensure_indexes method is called for all
         the appropriate platform models
@@ -115,12 +116,34 @@ class TestManageDB(MigrationTest):
         test_model = MagicMock()
         mock_plugin_manager.return_value.unit_models.itervalues.return_value = [test_model]
         manage.ensure_database_indexes()
-        self.assertTrue(mock_model.Repository.ensure_indexes.called)
-        self.assertTrue(mock_model.RepositoryContentUnit.ensure_indexes.called)
-        self.assertTrue(mock_model.ReservedResource.ensure_indexes.called)
-        self.assertTrue(mock_model.TaskStatus.ensure_indexes.called)
-        self.assertTrue(mock_model.Worker.ensure_indexes.called)
-        test_model.ensure_indexes.assert_called_once_with()
+        expected = [call(mock_model.RepositoryContentUnit),
+                    call(mock_model.Repository),
+                    call(mock_model.ReservedResource),
+                    call(mock_model.TaskStatus),
+                    call(mock_model.Worker),
+                    call(test_model)]
+        self.assertEquals(mock_ensure.call_args_list, expected)
+
+    def test_ensure_indexes_old_style(self):
+        """
+        Test the old style mongoengine index assertion where ensure_index is defined
+        on the queryset
+        """
+        class ModelHelper(object):
+            def __init__(self):
+                self.objects = MagicMock()
+        mock_model = ModelHelper()
+        manage._ensure_indexes(mock_model)
+        mock_model.objects._ensure_indexes.assert_called_once_with()
+
+    def test_ensure_indexes_new_style(self):
+        """
+        Test the new style mongoengine index assertion where ensure_index is defined
+        on the Document
+        """
+        mock_model = MagicMock()
+        manage._ensure_indexes(mock_model)
+        mock_model.ensure_indexes.assert_called_once_with()
 
     @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')
