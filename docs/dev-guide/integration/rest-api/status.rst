@@ -41,29 +41,29 @@ package version. Do not use the deprecated ``api_version`` record.
 
 :sample_response:`200`::
 
-  {
-      "api_version": "2",
-      "database_connection": {
-          "connected": true
-      },
-      "known_workers": [
-          {
-              "last_heartbeat": "2015-01-02T20:39:58Z",
-              "name": "scheduler@status-info-net0.default.virt"
-          },
-          {
-              "last_heartbeat": "2015-01-02T20:40:34Z",
-              "name": "reserved_resource_worker-0@status-info-net0.default.virt"
-          },
-          {
-              "last_heartbeat": "2015-01-02T20:40:36Z",
-              "name": "resource_manager@status-info-net0.default.virt"
-          }
-      ],
-      "messaging_connection": {
-          "connected": true
-      },
-      "versions": {
-          "platform_version": "2.6.0"
-      }
-  }
+ {
+    "api_version": "2",
+    "database_connection": {
+        "connected": true
+    },
+    "known_workers": [
+        {
+            "last_heartbeat": "2015-01-02T20:39:58Z",
+            "name": "scheduler@status-info-net0.default.virt"
+        },
+        {
+            "last_heartbeat": "2015-01-02T20:40:34Z",
+            "name": "reserved_resource_worker-0@status-info-net0.default.virt"
+        },
+        {
+            "last_heartbeat": "2015-01-02T20:40:36Z",
+            "name": "resource_manager@status-info-net0.default.virt"
+        }
+    ],
+    "messaging_connection": {
+        "connected": true
+    },
+    "versions": {
+        "platform_version": "2.6.0"
+    }
+ }
