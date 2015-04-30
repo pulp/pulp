@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from ...base import PulpServerTests
+from ... import base
 from pulp.plugins.conduits.cataloger import CatalogerConduit
 from pulp.server.db.model.content import ContentCatalog
 
@@ -10,7 +10,7 @@ SOURCE_ID = 'test'
 EXPIRES = 3600
 
 
-class TestCatalogerConduit(PulpServerTests):
+class TestCatalogerConduit(base.PulpServerTests):
 
     def setUp(self):
         super(TestCatalogerConduit, self).setUp()

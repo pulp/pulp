@@ -20,6 +20,10 @@ class InitializationException(Exception):
 
 
 def initialize():
+    """
+    This function performs common initialization tasks that all of our processes need to perform. It
+    starts the database connection, initializes the plugin API, and starts the manager factory.
+    """
     global _IS_INITIALIZED
     if _IS_INITIALIZED:
         return
@@ -31,7 +35,7 @@ def initialize():
     try:
         plugin_api.initialize()
     except Exception, e:
-        msg  = _(
+        msg = _(
             'One or more plugins failed to initialize. If a new type has been added, '
             'run pulp-manage-db to load the type into the database and restart the application. '
             'Error message: %s')

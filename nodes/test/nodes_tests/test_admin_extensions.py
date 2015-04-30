@@ -1,42 +1,21 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-import os
-import sys
-
 from mock import patch, Mock, call
-
-from base import ClientTests, Response, Task
-
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)) + "/../../child")
 
 from pulp.agent.lib.report import ContentReport
 from pulp.common.constants import PRIMARY_ID
 from pulp.server.content.sources.model import DownloadReport, DownloadDetails
 
+from base import ClientTests, Response
 from pulp_node.extensions.admin.commands import *
 from pulp_node.extensions.admin.rendering import ProgressTracker
 from pulp_node.error import *
 from pulp_node.reports import RepositoryReport
 from pulp_node.handlers.reports import SummaryReport
 
-# --- IDs --------------------------------------------------------------------
 
 NODE_ID = 'test.redhat.com'
 REPOSITORY_ID = 'test_repository'
 MAX_BANDWIDTH = 12345
 MAX_CONCURRENCY = 54321
-
-
-# --- binding mocks ----------------------------------------------------------
 
 REPO_ENABLED_CHECK = 'pulp_node.extensions.admin.commands.repository_enabled'
 NODE_ACTIVATED_CHECK = 'pulp_node.extensions.admin.commands.node_activated'
@@ -54,7 +33,6 @@ UNBIND_API = 'pulp.bindings.consumer.BindingsAPI.unbind'
 POLLING_API = 'pulp.client.commands.polling.PollingCommand.poll'
 
 
-# --- responses --------------------------------------------------------------
 
 CONSUMERS_ONLY = [
     {'notes': {}}
@@ -106,8 +84,6 @@ UPDATE_REPORT = {
     }
 }
 
-
-# --- tests ------------------------------------------------------------------
 
 class TestListCommands(ClientTests):
 
@@ -319,8 +295,8 @@ class TestEnableCommands(ClientTests):
         # Verify
         self.assertTrue(OPTION_REPO_ID in command.options)
         mock_binding.assert_called_with(REPOSITORY_ID,  constants.HTTP_DISTRIBUTOR)
-        
-        
+
+
 class TestBindCommands(ClientTests):
 
     @patch(NODE_ACTIVATED_CHECK, return_value=True)

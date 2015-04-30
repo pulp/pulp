@@ -1,36 +1,15 @@
 from copy import deepcopy
-import os
 import unittest
 
 import mock
 
-from pulp.server import config
 from pulp.server.async import celery_instance
-from pulp.server.db import connection
 from pulp.server.db.model import TaskStatus, ReservedResource, Worker
-from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 
 
 SerialNumber.PATH = '/tmp/sn.dat'
-
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../data/'))
-
-
-def load_test_config():
-    if not os.path.exists('/tmp/pulp'):
-        os.makedirs('/tmp/pulp')
-
-    override_file = os.path.join(DATA_DIR, 'test-override-pulp.conf')
-    stop_logging()
-    try:
-        config.add_config_file(override_file)
-    except RuntimeError:
-        pass
-    start_logging()
-
-    return config.config
 
 
 class PulpServerTests(unittest.TestCase):
@@ -39,12 +18,8 @@ class PulpServerTests(unittest.TestCase):
     in nearly all cases outside of the controllers.
     """
 
-    CONFIG = None
-
     @classmethod
     def setUpClass(cls):
-        PulpServerTests.CONFIG = load_test_config()
-        connection.initialize()
         manager_factory.initialize()
         # This will make Celery tasks run synchronously
         celery_instance.celery.conf.CELERY_ALWAYS_EAGER = True
@@ -52,7 +27,6 @@ class PulpServerTests(unittest.TestCase):
     def setUp(self):
         super(PulpServerTests, self).setUp()
         self._mocks = {}
-        self.config = PulpServerTests.CONFIG  # shadow for simplicity
         self.clean()
 
     def tearDown(self):

@@ -8,8 +8,8 @@ import logging
 
 from pymongo import ASCENDING
 
+from pulp.server.db import connection
 from pulp.server.db.model.content import ContentType
-import pulp.server.db.connection as pulp_db
 
 
 TYPE_COLLECTION_PREFIX = 'units_'
@@ -130,7 +130,7 @@ def clean():
 
     # Search the database instead of just going on what's in the type listing
     # just in case they got out of sync
-    database = pulp_db.get_database()
+    database = connection.get_database()
     all_collection_names = database.collection_names()
     type_collection_names = [
         n for n in all_collection_names if n.startswith(TYPE_COLLECTION_PREFIX)]
@@ -153,7 +153,7 @@ def type_units_collection(type_id):
     @rtype:  L{pymongo.collection.Collection}
     """
     collection_name = unit_collection_name(type_id)
-    collection = pulp_db.get_collection(collection_name, create=False)
+    collection = connection.get_collection(collection_name, create=False)
     return collection
 
 
@@ -254,11 +254,11 @@ def _create_or_update_type(type_def):
     :rtype:  None
     """
     # Make sure a collection exists for the type
-    database = pulp_db.get_database()
+    database = connection.get_database()
     collection_name = unit_collection_name(type_def.id)
 
     if collection_name not in database.collection_names():
-        pulp_db.get_collection(collection_name, create=True)
+        connection.get_collection(collection_name, create=True)
 
     # Add or update an entry in the types list
     content_type_collection = ContentType.get_collection()
@@ -276,7 +276,7 @@ def _create_or_update_type(type_def):
 def _update_indexes(type_def, unique):
 
     collection_name = unit_collection_name(type_def.id)
-    collection = pulp_db.get_collection(collection_name, create=False)
+    collection = connection.get_collection(collection_name, create=False)
 
     if unique:
         index_list = [type_def.unit_key]  # treat the key as a compound key
@@ -317,7 +317,7 @@ def _update_search_indexes(type_def):
 
 def _drop_indexes(type_def):
     collection_name = unit_collection_name(type_def.id)
-    collection = pulp_db.get_collection(collection_name, create=False)
+    collection = connection.get_collection(collection_name, create=False)
     collection.drop_indexes()
 
 

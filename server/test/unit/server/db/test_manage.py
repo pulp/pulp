@@ -148,6 +148,7 @@ class TestManageDB(MigrationTest):
     @patch.object(manage, 'ensure_database_indexes')
     @patch('logging.config.fileConfig')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.manage.factory')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
@@ -157,7 +158,7 @@ class TestManageDB(MigrationTest):
     @patch('sys.argv', ["pulp-manage-db"])
     @patch.object(models.MigrationPackage, 'apply_migration')
     def test_admin_is_ensured(self, apply_migration, ensure_admin, ensure_super_user_role,
-                              getLogger, factory, fileConfig, ensure_db_indexes):
+                              getLogger, factory, initialize, fileConfig, ensure_db_indexes):
         """
         pulp-manage-db is responsible for making sure the admin user and role are in place. This
         test makes sure the manager methods that do that are called.
@@ -184,6 +185,8 @@ class TestManageDB(MigrationTest):
         # Also, make sure the factory was initialized
         factory.initialize.assert_called_once_with()
 
+        initialize.assert_called_once_with(max_timeout=1)
+
     @patch('logging.config.fileConfig')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pulp.server.db.manage._auto_manage_db')
@@ -208,11 +211,12 @@ class TestManageDB(MigrationTest):
 
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('logging.config.fileConfig')
-    def test_current_version_too_high(self, mocked_file_config, getLogger):
+    def test_current_version_too_high(self, mocked_file_config, initialize, getLogger):
         """
         Set the current package version higher than latest available version, then sit back and eat
         popcorn.
@@ -232,22 +236,25 @@ class TestManageDB(MigrationTest):
         self.assertEqual(error_code, os.EX_DATAERR)
 
         # There should have been a critical log about the Exception
-        expected_messages = ('The database for migration package unit.server.db.migration_packages.'
-                             'platform is at version 9999999, which is larger than the latest '
-                             'version available, 1.')
+        expected_messages = (
+            'The database for migration package unit.server.db.migration_packages.'
+            'platform is at version 9999999, which is larger than the latest version available, 1.')
         critical_messages = ''.join([mock_call[1][0] for mock_call in logger.critical.mock_calls])
         for msg in expected_messages:
             self.assertTrue(msg in critical_messages)
+
+        initialize.assert_called_once_with(max_timeout=1)
 
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('logging.config.fileConfig')
-    def test_migrate(self, mock_file_config, mocked_apply_migration, getLogger):
+    def test_migrate(self, mock_file_config, initialize, mocked_apply_migration, getLogger):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get
         called in the correct order.
@@ -268,8 +275,9 @@ class TestManageDB(MigrationTest):
 
         # There should have been a critical log about the Exception
         expected_messages = (
-            'Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
-            'failed.\n\nHalting migrations due to a migration failure.',
+            'Applying migration '
+            'unit.server.db.migration_packages.raise_exception.0002_oh_no failed.\n\n'
+            'Halting migrations due to a migration failure.',
             "Bet you didn\'t see this coming."
         )
         critical_messages = ''.join([mock_call[1][0] for mock_call in logger.critical.mock_calls])
@@ -299,6 +307,8 @@ class TestManageDB(MigrationTest):
                 # raise_exception should cause the migrations to stop
                 self.assertEqual(package.current_version, 0)
 
+        initialize.assert_called_once_with(max_timeout=1)
+
     @patch('sys.stderr')
     @patch('sys.stdout')
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
@@ -307,8 +317,9 @@ class TestManageDB(MigrationTest):
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('pulp.server.db.manage._logger')
     @patch('pulp.server.db.manage._start_logging')
-    def test_migrate_with_new_packages(self, start_logging_mock, logger_mock, mocked_stdout,
-                                       mocked_stderr):
+    @patch('pulp.server.db.manage.connection.initialize')
+    def test_migrate_with_new_packages(self, initialize, start_logging_mock, logger_mock,
+                                       mocked_stdout, mocked_stderr):
         """
         Adding new packages to a system that doesn't have any trackers should advance
         each package to the latest available version, applying all migrate() functions along the
@@ -330,13 +341,17 @@ class TestManageDB(MigrationTest):
                 # All other packages should reach their top versions
                 self.assertEqual(package.current_version, package.latest_available_version)
 
+        initialize.assert_called_once_with(max_timeout=1)
+
     @patch('pulp.plugins.types.database._drop_indexes')
     @patch('__builtin__.open', mock_open(read_data=_test_type_json))
     @patch('os.listdir', return_value=['test_type.json'])
     @patch('sys.argv', ["pulp-manage-db"])
     @patch('sys.stdout', MagicMock())
     @patch('pulp.server.db.manage._start_logging')
-    def test_pulp_manage_db_loads_types(self, start_logging_mock, listdir_mock, mock_drop_indices):
+    @patch('pulp.server.db.manage.connection.initialize')
+    def test_pulp_manage_db_loads_types(self, initialize, start_logging_mock, listdir_mock,
+                                        mock_drop_indices):
         """
         Test calling pulp-manage-db imports types on a clean types database.
         """
@@ -373,15 +388,19 @@ class TestManageDB(MigrationTest):
         self.assertEqual(indexes.keys(), [u'_id_', u'attribute_1_1_attribute_2_1_attribute_3_1',
                                           u'attribute_1_1', u'attribute_3_1'])
 
+        initialize.assert_called_once_with(max_timeout=1)
+
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--test"])
     @patch('logging.config.fileConfig')
-    def test_migrate_with_test_flag(self, mock_file_config, mocked_apply_migration, getLogger):
+    def test_migrate_with_test_flag(self, mock_file_config, initialize, mocked_apply_migration,
+                                    getLogger):
         """
         Let's set all the packages to be at version 0, and then check that the migrations get called
         in the correct order. We will also set the --test flag and ensure that the migration
@@ -403,8 +422,9 @@ class TestManageDB(MigrationTest):
 
         # There should have been a critical log about the Exception
         expected_messages = (
-            'Applying migration unit.server.db.migration_packages.raise_exception.0002_oh_no '
-            'failed.\n\nHalting migrations due to a migration failure.',
+            'Applying migration '
+            'unit.server.db.migration_packages.raise_exception.0002_oh_no failed.\n\n'
+            'Halting migrations due to a migration failure.',
             'Bet you didn\'t see this coming.'
         )
         critical_messages = [mock_call[1][0] for mock_call in logger.critical.mock_calls]
@@ -427,15 +447,19 @@ class TestManageDB(MigrationTest):
         for package in models.get_migration_packages():
             self.assertEqual(package.current_version, 0)
 
+        initialize.assert_called_once_with(max_timeout=1)
+
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points', iter_entry_points)
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('sys.argv', ["pulp-manage-db", "--dry-run"])
     @patch('logging.config.fileConfig')
-    def test_migrate_with_dry_run_flag(self, mock_file_config, mocked_apply_migration, getLogger):
+    def test_migrate_with_dry_run_flag(self, mock_file_config, initialize, mocked_apply_migration,
+                                       getLogger):
         """
         Test that when a dry run is performed, no migrations actually occur.
         """
@@ -460,6 +484,9 @@ class TestManageDB(MigrationTest):
         for package in models.get_migration_packages():
             self.assertEqual(package.current_version, 0)
 
+        initialize.assert_called_once_with(max_timeout=1)
+
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.manage.RoleManager.ensure_super_user_role')
     @patch('pulp.server.db.manage.UserManager.ensure_admin')
     @patch('pulp.server.db.manage.logging.getLogger')
@@ -471,7 +498,7 @@ class TestManageDB(MigrationTest):
     @patch('sys.argv', ["pulp-manage-db", "--dry-run"])
     @patch('logging.config.fileConfig')
     def test_admin_creation_dry_run(self, mock_file_config, mocked_apply_migration, getLogger,
-                                    mock_ensure_admin, mock_ensure_super_role):
+                                    mock_ensure_admin, mock_ensure_super_role, initialize):
         logger = MagicMock()
         getLogger.return_value = logger
 
@@ -482,18 +509,20 @@ class TestManageDB(MigrationTest):
         # Make sure the admin user and role creation methods were not called
         self.assertEquals(0, mock_ensure_admin.call_count)
         self.assertEquals(0, mock_ensure_super_role.call_count)
+        initialize.assert_called_once_with(max_timeout=1)
 
     @patch.object(manage, 'ensure_database_indexes')
     @patch('pulp.server.db.manage.logging.getLogger')
     @patch.object(models.MigrationPackage, 'apply_migration',
                   side_effect=models.MigrationPackage.apply_migration, autospec=True)
     @patch('pkg_resources.iter_entry_points')
+    @patch('pulp.server.db.manage.connection.initialize')
     @patch('pulp.server.db.migrate.models.pulp.server.db.migrations',
            migration_packages.platform)
     @patch('pulp.server.db.manage.parse_args', autospec=True)
     @patch('logging.config.fileConfig')
-    def test_dry_run_no_changes(self, mock_file_config, mock_parse_args, mocked_apply_migration,
-                                mock_entry, getLogger, mock_ensure_indexes):
+    def test_dry_run_no_changes(self, mock_file_config, mock_parse_args, initialize,
+                                mocked_apply_migration, mock_entry, getLogger, mock_ensure_indexes):
         logger = MagicMock()
         getLogger.return_value = logger
         mock_args = Namespace(dry_run=True, test=False)
@@ -503,20 +532,25 @@ class TestManageDB(MigrationTest):
         exit_code = manage.main()
         self.assertEqual(exit_code, 1)
         self.assertFalse(mock_ensure_indexes.called)
+        initialize.assert_called_once_with(max_timeout=1)
 
         # Actually apply the migrations
         mock_args.dry_run = False
         mock_ensure_indexes.reset_mock()
+        initialize.reset_mock()
         exit_code = manage.main()
         self.assertEqual(exit_code, 0)
         self.assertTrue(mock_ensure_indexes.called)
+        initialize.assert_called_once_with(max_timeout=1)
 
         # Perform another dry run and check the return value is now 0
         mock_args.dry_run = True
         mock_ensure_indexes.reset_mock()
+        initialize.reset_mock()
         exit_code = manage.main()
         self.assertEquals(exit_code, 0)
         self.assertFalse(mock_ensure_indexes.called)
+        initialize.assert_called_once_with(max_timeout=1)
 
 
 class TestMigrationModule(MigrationTest):
@@ -527,7 +561,8 @@ class TestMigrationModule(MigrationTest):
 
     def test___init__(self):
         mm = models.MigrationModule('unit.server.db.migration_packages.z.0002_test')
-        self.assertEquals(mm._module.__name__, 'unit.server.db.migration_packages.z.0002_test')
+        self.assertEquals(mm._module.__name__,
+                          'unit.server.db.migration_packages.z.0002_test')
         self.assertEquals(mm.version, 2)
         # It should have a migrate attribute that is callable
         self.assertTrue(hasattr(mm.migrate, '__call__'))
@@ -607,8 +642,9 @@ class TestMigrationPackage(MigrationTest):
             mp.apply_migration(mm_v3)
             self.fail('Applying migration 3 should have raised an Exception, but it did not.')
         except Exception, e:
-            expected_msg = ('Cannot apply migration unit.server.db.migration_packages.z.0003_test,'
-                            ' because the next migration version is 2.')
+            expected_msg = (
+                'Cannot apply migration unit.server.db.migration_packages.z.0003_test,'
+                ' because the next migration version is 2.')
             self.assertEquals(str(e), expected_msg)
         self.assertEquals(mm_v3.migrate.called, False)
         # The MP should still be at v1
@@ -690,16 +726,18 @@ class TestMigrationPackage(MigrationTest):
         # They actually get logged twice each, once for when we initialized the MP, and the other
         # when we retrieved the migrations
         log_mock.assert_has_calls([
-            call('The module unit.server.db.migration_packages.z.0004_doesnt_have_migrate doesn\'t '
-                 'have a migrate function. It will be ignored.'),
+            call('The module unit.server.db.migration_packages.z.0004_doesnt_have_migrate '
+                 'doesn\'t have a migrate function. It will be ignored.'),
             call('The module '
-                 'unit.server.db.migration_packages.z.doesnt_conform_to_naming_convention doesn\'t '
-                 'conform to the migration package naming conventions. It will be ignored.'),
-            call('The module unit.server.db.migration_packages.z.0004_doesnt_have_migrate doesn\'t '
-                 'have a migrate function. It will be ignored.'),
+                 'unit.server.db.migration_packages.z.doesnt_conform_to_naming_convention '
+                 'doesn\'t conform to the migration package naming conventions. It will be '
+                 'ignored.'),
+            call('The module unit.server.db.migration_packages.z.0004_doesnt_have_migrate '
+                 'doesn\'t have a migrate function. It will be ignored.'),
             call('The module '
-                 'unit.server.db.migration_packages.z.doesnt_conform_to_naming_convention doesn\'t '
-                 'conform to the migration package naming conventions. It will be ignored.')])
+                 'unit.server.db.migration_packages.z.doesnt_conform_to_naming_convention '
+                 'doesn\'t conform to the migration package naming conventions. It will be '
+                 'ignored.')])
 
     def test_unapplied_migrations(self):
         mp = models.MigrationPackage(migration_packages.z)
@@ -720,8 +758,8 @@ class TestMigrationPackage(MigrationTest):
         """
         error_message = (
             '0 is a reserved migration version number, but the module '
-            'unit.server.db.migration_packages.version_zero.0000_not_allowed has been assigned '
-            'that version.')
+            'unit.server.db.migration_packages.version_zero.0000_not_allowed has been '
+            'assigned that version.')
         try:
             models.MigrationPackage(migration_packages.version_zero)
             self.fail('The MigrationPackage.DuplicateVersions exception should have been raised, '
@@ -791,7 +829,8 @@ class TestMigrationUtils(MigrationTest):
         # Make sure that the packages are sorted correctly, with platform first
         self.assertEquals(packages[0].name, 'unit.server.db.migration_packages.platform')
         self.assertEquals(packages[1].name, 'unit.server.db.migration_packages.a')
-        self.assertEquals(packages[2].name, 'unit.server.db.migration_packages.raise_exception')
+        self.assertEquals(packages[2].name,
+                          'unit.server.db.migration_packages.raise_exception')
         self.assertEquals(packages[3].name, 'unit.server.db.migration_packages.z')
         # Assert that we logged the duplicate version exception and the version gap exception
         expected_log_calls = [call('There are two migration modules that share version 2 in '

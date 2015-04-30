@@ -3,6 +3,7 @@ from unittest import TestCase
 import logging
 import mock
 import os
+import unittest
 import shutil
 
 import okaara
@@ -24,7 +25,7 @@ from pulp.server.managers.auth.cert.cert_generator import SerialNumber
 SerialNumber.PATH = '/tmp/sn.dat'
 
 
-class ServerTests(TestCase):
+class ServerTests(unittest.TestCase):
 
     TMP_ROOT = '/tmp/pulp/nodes'
 
@@ -46,18 +47,7 @@ class ServerTests(TestCase):
         if not os.path.exists(storage_dir):
             os.makedirs(storage_dir)
         shutil.rmtree(storage_dir+'/*', ignore_errors=True)
-        name = pulp_conf.get('database', 'name')
-        connection.initialize(name)
         managers.initialize()
-
-    @classmethod
-    def tearDownClass(cls):
-        name = pulp_conf.get('database', 'name')
-        db = pymongo.database.Database(connection._CONNECTION, name)
-        for name in db.collection_names():
-            if name[:7] == 'system.':
-                continue
-            db.drop_collection(name)
 
     def setUp(self):
         QueuedCall.get_collection().remove()

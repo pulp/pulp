@@ -30,13 +30,24 @@ _logger = logging.getLogger(__name__)
 
 def initialize(name=None, seeds=None, max_pool_size=None, replica_set=None, max_timeout=32):
     """
-    Initialize the connection pool and top-level database for pulp.
+    Initialize the connection pool and top-level database for pulp. Calling this more than once will
+    raise a RuntimeError.
 
-    :param max_timeout: the maximum number of seconds to wait between
-                        connection retries
-    :type  max_timeout: int
+    :param max_timeout:   the maximum number of seconds to wait between
+                          connection retries
+    :type  max_timeout:   int
+    :raises RuntimeError: This Exception is raised if initialize is called more than once
     """
     global _CONNECTION, _DATABASE
+
+    # We do not allow a second call to initialize(), as mongoengine.connect() will cache the last
+    # initialized connection for all calls. Thus, any process that attempts to call initialize()
+    # again might alter which database all further queries are made against. By raising this
+    # Exception, we can ensure that only one database connection is established per process which
+    # will help us to ensure that the connection does not get overridden later.
+    if _CONNECTION or _DATABASE:
+        raise RuntimeError("The database is already initialized. It is an error to call this "
+                           "function a second time.")
 
     try:
         connection_kwargs = {}
@@ -226,9 +237,6 @@ class PulpCollection(Collection):
             cursor.limit(criteria.limit)
 
         return cursor
-
-
-# -- public --------------------------------------------------------------------
 
 
 def get_collection(name, create=False):

@@ -1,7 +1,43 @@
 import os
 import unittest
+
 import mock
+
+from pulp.server import config
 from pulp.server.db import connection
+from pulp.server.logs import start_logging, stop_logging
+
+
+DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../test/data/'))
+
+
+def drop_database():
+    """
+    Drop the database so that the next test run starts with a clean database.
+    """
+    connection._CONNECTION.drop_database(connection._DATABASE.name)
+
+
+def start_database_connection():
+    """
+    Start the database connection, if it is not already established.
+    """
+    # It's important to only call this once during the process
+    if not connection._CONNECTION:
+        _load_test_config()
+        connection.initialize()
+
+
+def _load_test_config():
+    """
+    Load the test database configuration information.
+    """
+    override_file = os.path.join(DATA_DIR, 'test-override-pulp.conf')
+    stop_logging()
+
+    config.add_config_file(override_file)
+
+    start_logging()
 
 
 class PulpWebservicesTests(unittest.TestCase):
@@ -11,7 +47,6 @@ class PulpWebservicesTests(unittest.TestCase):
     """
 
     def setUp(self):
-        connection.initialize()
         self.patch1 = mock.patch('pulp.server.webservices.views.decorators.'
                                  'check_preauthenticated')
         self.patch2 = mock.patch('pulp.server.webservices.views.decorators.'

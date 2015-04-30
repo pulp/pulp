@@ -1,22 +1,10 @@
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import os
 import shutil
-
-from unittest import TestCase
-from mock import Mock, patch
 from tempfile import mkdtemp
+from unittest import TestCase
 from uuid import uuid4
 
+from mock import Mock, patch
 from pulp.plugins.model import Unit
 from pulp.server.config import config as pulp_conf
 
@@ -154,7 +142,7 @@ class TestBase(TestCase):
         self.assertEqual(request.summary.errors[0].error_id, UnitDownloadError.ERROR_ID)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._unit_inventory')
-    @patch('test_importer_strategies.TestConduit.save_unit', ValueError())
+    @patch.object(TestConduit, 'save_unit', ValueError())
     def test_add_unit_exception(self, *unused):
         # Setup
         request = self.request()
@@ -166,7 +154,7 @@ class TestBase(TestCase):
         self.assertEqual(request.summary.errors[0].error_id, AddUnitError.ERROR_ID)
 
     @patch('pulp_node.importers.strategies.ImporterStrategy._unit_inventory')
-    @patch('test_importer_strategies.TestConduit.remove_unit', ValueError())
+    @patch.object(TestConduit, 'remove_unit', ValueError())
     def test_delete_units_exception(self, *unused):
         # Setup
         request = self.request()

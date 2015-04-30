@@ -7,13 +7,9 @@ from bson import ObjectId
 import mock
 
 from pulp.server import exceptions
-from pulp.server.db.connection import initialize
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.managers.schedule import utils
-
-
-initialize(name='pulp_unittest')
 
 
 class TestGet(unittest.TestCase):

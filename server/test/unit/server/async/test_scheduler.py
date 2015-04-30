@@ -309,6 +309,7 @@ class TestSchedulerSetupSchedule(unittest.TestCase):
         self.assertTrue(scheduler.Scheduler._mongo_initialized)
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled', return_value=[])
     def test_loads_app_schedules(self, mock_get_enabled):
         sched_instance = scheduler.Scheduler()
@@ -321,6 +322,7 @@ class TestSchedulerSetupSchedule(unittest.TestCase):
             self.assertTrue(isinstance(sched_instance._schedule.get(key), ScheduleEntry))
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled')
     def test_loads_db_schedules(self, mock_get_enabled):
         mock_get_enabled.return_value = SCHEDULES
@@ -342,9 +344,14 @@ class TestSchedulerSetupSchedule(unittest.TestCase):
 
 class TestSchedulerScheduleChanged(unittest.TestCase):
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled')
     @mock.patch('pulp.server.managers.schedule.utils.get_updated_since')
     def test_count_changed(self, mock_updated_since, mock_get_enabled):
+        """
+        This test ensures that if the number of enabled schedules changes, the schedule_changed
+        property returns True.
+        """
         mock_updated_since.return_value.count.return_value = 0
         mock_get_enabled.return_value = SCHEDULES
         sched_instance = scheduler.Scheduler()
@@ -355,6 +362,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
         self.assertTrue(sched_instance.schedule_changed is True)
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled')
     @mock.patch('pulp.server.managers.schedule.utils.get_updated_since')
     def test_new_updated(self, mock_updated_since, mock_get_enabled):
@@ -368,6 +376,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
         self.assertTrue(sched_instance.schedule_changed is True)
 
     @mock.patch('threading.Thread', new=mock.MagicMock())
+    @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('pulp.server.managers.schedule.utils.get_enabled')
     @mock.patch('pulp.server.managers.schedule.utils.get_updated_since')
     def test_no_changes(self, mock_updated_since, mock_get_enabled):
@@ -383,6 +392,7 @@ class TestSchedulerScheduleChanged(unittest.TestCase):
 
 
 class TestSchedulerSchedule(unittest.TestCase):
+    @mock.patch('pulp.server.async.scheduler.Scheduler._mongo_initialized', True)
     @mock.patch('threading.Thread', new=mock.MagicMock())
     @mock.patch.object(scheduler.Scheduler, 'get_schedule')
     def test_schedule_is_None(self, mock_get_schedule):

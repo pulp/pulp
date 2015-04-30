@@ -1,22 +1,17 @@
 import logging
 import sys
 
-from pulp.server import config  # automatically loads config
-from pulp.server import logs
-
-# We need to read the config, start the logging, and initialize the db
-# connection prior to any other imports, since some of the imports will invoke
+# We need to read the config prior to any other imports, since some of the imports will invoke
 # setup methods.
-logs.start_logging()
-from pulp.server import initialization
-
+from pulp.server import config  # automatically loads config
+from pulp.server import initialization, logs
 from pulp.server.agent.direct.services import Services as AgentServices
-from pulp.server.debugging import StacktraceDumper
+# Even though this import does not get used anywhere, we must import it for the Celery
+# application to be initialized.
+from pulp.server.async import app as celery_app  # noqa
 from pulp.server.db.migrate import models as migration_models
 from pulp.server.webservices.http import _thread_local
 from pulp.server.webservices.wsgi import application as django_application
-
-# constants and application globals --------------------------------------------
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +46,10 @@ class SaveEnvironWSGIHandler(object):
         return self.django_wsgi(environ, start_response)
 
 
-def _initialize_pulp():
+def _initialize_web_services():
+    """
+    This function initializes Pulp for webservices.
+    """
 
     # This initialization order is very sensitive, and each touches a number of
     # sub-systems in pulp. If you get this wrong, you will have pulp tripping
@@ -61,11 +59,11 @@ def _initialize_pulp():
     if _IS_INITIALIZED:
         return
 
-    # Even though this import does not get used anywhere, we must import it for the Celery
-    # application to be initialized. Also, this import cannot happen in the usual PEP-8 location,
-    # as it calls initialization code at the module level. Calling that code at the module level
-    # is necessary for the Celery application to initialize.
-    from pulp.server.async import app
+    logs.start_logging()
+
+    # Run the common initialization code that all processes should share. This will start the
+    # database connection, initialize plugins, and initialize the manager factory.
+    initialization.initialize()
 
     # configure agent services
     AgentServices.init()
@@ -115,7 +113,7 @@ def wsgi_application():
     # jdob, Nov 21, 2012
 
     try:
-        _initialize_pulp()
+        _initialize_web_services()
     except initialization.InitializationException, e:
         logger.fatal('*************************************************************')
         logger.fatal('The Pulp server failed to start due to the following reasons:')

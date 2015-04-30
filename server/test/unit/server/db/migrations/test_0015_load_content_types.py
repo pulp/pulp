@@ -1,19 +1,14 @@
 """
 This module contains tests for pulp.server.db.migrations.0015_load_content_types.
 """
-import unittest
 from cStringIO import StringIO
-from pulp.common.compat import json
+import unittest
 
 from mock import inPy3k, MagicMock, patch
 
+from pulp.common.compat import json
 from pulp.server.db.migrate.models import _import_all_the_way
 import pulp.plugins.types.database as types_db
-
-from pulp.server.db.connection import initialize
-
-
-initialize(name='pulp_unittest')
 
 
 # This is used for mocking
