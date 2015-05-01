@@ -53,11 +53,12 @@ class RepoSyncManagerTests(base.PulpServerTests):
         mock_publish_task.assert_called_with(RESOURCE_REPOSITORY_TYPE, repo_id, tags=tags,
                                              kwargs=kwargs)
 
+    @mock.patch('pulp.server.managers.repo.publish.datetime')
     @mock.patch('pulp.server.managers.repo._common.get_working_directory',
                 return_value="/var/cache/pulp/mock_worker/mock_task_id")
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_started')
     @mock.patch('pulp.server.managers.event.fire.EventFireManager.fire_repo_publish_finished')
-    def test_publish(self, mock_finished, mock_started, mock_get_working_directory):
+    def test_publish(self, mock_finished, mock_started, mock_get_working_directory, dt):
         """
         Tests publish under normal conditions when everything is configured
         correctly.
@@ -70,6 +71,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
                                                  False, distributor_id='dist-1')
         self.distributor_manager.add_distributor('repo-1', 'mock-distributor-2', publish_config,
                                                  False, distributor_id='dist-2')
+        dt.utcnow.return_value = 1234
 
         # Test
         self.publish_manager.publish('repo-1', 'dist-1', None)
@@ -80,7 +82,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         repo_distributor = RepoDistributor.get_collection().find_one({'repo_id': 'repo-1',
                                                                       'id': 'dist-1'})
         self.assertTrue(repo_distributor['last_publish'] is not None)
-        self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
+        self.assertEqual(repo_distributor['last_publish'], dt.utcnow.return_value)
 
         #   History
         entries = list(RepoPublishResult.get_collection().find({'repo_id': 'repo-1'}))
@@ -266,7 +268,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
             {'repo_id': 'gonna-bail', 'id': 'bad-dist'})
 
         self.assertTrue(repo_distributor is not None)
-        self.assertTrue(assert_last_sync_time(repo_distributor['last_publish']))
+        self.assertEqual(repo_distributor['last_publish'], None)
 
         entries = list(RepoPublishResult.get_collection().find({'repo_id': 'gonna-bail'}))
         self.assertEqual(1, len(entries))
@@ -337,24 +339,25 @@ class RepoSyncManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_DISTRIBUTOR.publish_repo.side_effect = None
 
-    def test_last_publish(self):
+    @mock._patch_object(RepoDistributor, 'get_collection')
+    def test_last_publish(self, get_collection):
         """
         Tests retrieving the last publish instance.
         """
-
-        # Setup
-        expected = datetime.datetime(year=2020, month=4, day=12, hour=0, minute=23)
-        date_str = dateutils.format_iso8601_datetime(expected)
-
-        dist = RepoDistributor('repo-1', 'dist-1', 'type-1', None, True)
-        dist['last_publish'] = date_str
-        RepoDistributor.get_collection().save(dist)
+        repo_id = 'repo-1'
+        distributor_id = 'dist-1'
+        last_publish = 1234
+        collection = mock.Mock()
+        collection.find_one.return_value = {'last_publish': last_publish}
+        get_collection.return_value = collection
 
         # Test
-        last = self.publish_manager.last_publish('repo-1', 'dist-1')
+        last = self.publish_manager.last_publish(repo_id, distributor_id)
 
         # Verify
-        self.assertEqual(expected, last)
+        get_collection.assert_called_once_with()
+        collection.find_one.assert_called_once_with({'repo_id': repo_id, 'id': distributor_id})
+        self.assertEqual(last_publish, last)
 
     def test_last_publish_never_published(self):
         """

@@ -89,6 +89,19 @@ class RepoDistributorManager(object):
         return list(RepoDistributor.get_collection().find(spec, projection))
 
     @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Find distributors by criteria.
+
+        :param criteria: The search criteria.
+        :type criteria: pulp.server.db.model.criteria.Criteria
+        :return: list of: RepoDistributor
+        :rtype: list
+        """
+        collection = RepoDistributor.get_collection()
+        return collection.query(criteria)
+
+    @staticmethod
     def add_distributor(repo_id, distributor_type_id, repo_plugin_config,
                         auto_publish, distributor_id=None):
         """

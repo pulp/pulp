@@ -712,3 +712,17 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         self.distributor_manager.find_by_repo_list(['repo-1'])
         self.assertTrue(mock_get_collection.return_value.find.called)
         mock_get_collection.return_value.find.assert_called_once_with(EXPECT, PROJECTION)
+
+    @mock.patch.object(RepoDistributor, 'get_collection')
+    def test_find_by_criteria(self, get_collection):
+        criteria = mock.Mock()
+        collection = mock.Mock()
+        get_collection.return_value = collection
+
+        # test
+        result = self.distributor_manager.find_by_criteria(criteria)
+
+        # validation
+        get_collection.assert_called_once_with()
+        collection.query.assert_called_once_with(criteria)
+        self.assertEqual(result, collection.query.return_value)
