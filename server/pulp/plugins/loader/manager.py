@@ -4,8 +4,6 @@ import copy
 import logging
 import pkg_resources
 
-from mongoengine import signals
-
 from pulp.common import error_codes
 from pulp.plugins.loader import exceptions as loader_exceptions
 from pulp.server.db.model import ContentUnit
@@ -65,8 +63,6 @@ class PluginManager(object):
 
             # Attach all the signals
             model_class.attach_signals()
-            signals.post_init.connect(model_class.post_init_signal, sender=model_class)
-            signals.pre_save.connect(model_class.pre_save_signal, sender=model_class)
 
         _logger.debug(_("Unit Model Loading Completed"))
 
