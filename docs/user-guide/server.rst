@@ -142,7 +142,7 @@ Plugins
 Many Pulp plugins support these settings in their config files. Rather than documenting these
 settings in each project repeatedly, the commonly accepted key-value pairs are documented below.
 
-.. _importer-config:
+.. _importer_settings:
 
 Importers
 ~~~~~~~~~
