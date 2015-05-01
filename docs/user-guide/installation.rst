@@ -25,9 +25,9 @@ Supported Operating Systems
 ---------------------------
 Server
 
-* RHEL 6 & 7
+* RHEL Server 6 & 7
 * Fedora 19 & 20
-* CentOS 6 & 7
+* CentOS Server 6 & 7
 
 Consumer
 
