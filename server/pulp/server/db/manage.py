@@ -115,16 +115,34 @@ def ensure_database_indexes():
     MongoEngine based models require a manual check as they will only create indexes if the
     collection does not already exist.
     """
-    model.RepositoryContentUnit.ensure_indexes()
-    model.Repository.ensure_indexes()
-    model.ReservedResource.ensure_indexes()
-    model.TaskStatus.ensure_indexes()
-    model.Worker.ensure_indexes()
+
+    _ensure_indexes(model.RepositoryContentUnit)
+    _ensure_indexes(model.Repository)
+    _ensure_indexes(model.ReservedResource)
+    _ensure_indexes(model.TaskStatus)
+    _ensure_indexes(model.Worker)
 
     # Load all the model classes that the server knows about and ensure their inexes as well
     plugin_manager = PluginManager()
     for model_class in plugin_manager.unit_models.itervalues():
+        _ensure_indexes(model_class)
+
+
+def _ensure_indexes(model_class):
+    """
+    Internal helper method to support to support both the old and new mongoengine style
+    of ensuring indexes on a document model
+
+    :param model_class: document model
+    :type model_class: mongoenigne.Document
+    """
+    if hasattr(model_class, 'ensure_indexes'):
         model_class.ensure_indexes()
+    else:
+        # Using a private method as there is no public method to access
+        # the index list in mongoengine 0.7.10, as soon as we can update
+        # the mongoengine dependency on all platforms this should be removed.
+        model_class.objects._ensure_indexes()
 
 
 def main():
