@@ -423,3 +423,51 @@ Retrieves a single :term:`distributors <distributor>` associated with a reposito
    "id": "dist_1"
  }
 
+Advanced Search for Distributors
+--------------------------------
+
+Please see :ref:`search_api` for more details on how to perform these searches.
+
+Returns information on distributors in the Pulp server that match your search
+parameters. It is worth noting that this call will never return a 404; an empty
+array is returned in the case where there are no distributors.
+
+| :method:`post`
+| :path:`/v2/distributors/search/`
+| :permission:`read`
+| :param_list:`post`
+
+| :response_list:`_`
+
+* :response_code:`200,containing the array of distributors`
+
+| :return:`a list of distributor objects`
+
+:sample_response:`200` ::
+
+    [
+      {
+        "repo_id": "el7",
+        "last_publish": "2015-04-28T18:19:01Z",
+        "auto_publish": null,
+        "scheduled_publishes": [],
+        "distributor_type_id": "ostree_web_distributor",
+        "scratchpad": null,
+        "config": {
+          "relative_path": "/opt/content/ostree/el7"
+        },
+        "id": "ostree_web_distributor_name_cli"
+      },
+      {
+        "repo_id": "el6",
+        "last_publish": "2015-5-28T18:18:01Z",
+        "auto_publish": null,
+        "scheduled_publishes": [],
+        "distributor_type_id": "ostree_web_distributor",
+        "scratchpad": null,
+        "config": {
+          "relative_path": "/opt/content/ostree/el6"
+        },
+        "id": "ostree_web_distributor_name_cli"
+      }
+    ]
