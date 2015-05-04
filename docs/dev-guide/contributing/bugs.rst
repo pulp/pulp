@@ -35,6 +35,8 @@ Use the *Version* field to indicate which Pulp version you are using. It has an 
 for each Pulp release (2.0.6, 2.0.7, 2.1.0, etc.). If a bug is found when running
 from source instead of a released version, the value ``master`` should be selected.
 
+Use the *OS* field to indicate which Operating System the bug was discovered on.
+
 You can also upload attachments, but please only upload relevant data. For
 example, if you have an entire log which contains some errors, please trim it
 to just the relevant portions and upload those.
