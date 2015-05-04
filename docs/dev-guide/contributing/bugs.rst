@@ -101,10 +101,6 @@ Tag Name           Usage
 ================   ===============================================================
 Documentation      The bug/story itself is documentation related.
 EasyFix            A bug that is simple to fix, at least in theory.
-Groomed            Usually reserved for stories to indicate they have enough
-                   detail to be actionable.
-Sprint Candidate   Usually reserved for stories. It indicates a story is ready to
-                   go on the short list of stories to work on soon.
 ================   ===============================================================
 
 You may occasionally see discussion in #pulp or on the mailing list about "bug
