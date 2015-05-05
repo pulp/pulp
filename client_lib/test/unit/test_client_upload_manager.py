@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import errno
 import math
 import os
@@ -23,7 +10,6 @@ from pulp.bindings.exceptions import NotFoundException
 from pulp.bindings.responses import Response
 import pulp.client.upload.manager as upload_util
 
-# -- constants ----------------------------------------------------------------
 
 MOCK_UPLOAD_ID = 'ABC123'
 MOCK_LOCATION = '/v2/uploads/%s/' % MOCK_UPLOAD_ID
@@ -31,7 +17,6 @@ MOCK_LOCATION = '/v2/uploads/%s/' % MOCK_UPLOAD_ID
 TEST_RPM_FILENAME = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                                  '../data/pulp-test-package-0.3.1-1.fc11.x86_64.rpm')
 
-# -- tests --------------------------------------------------------------------
 
 class UploadManagerTests(unittest.TestCase):
 
@@ -59,8 +44,6 @@ class UploadManagerTests(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(self.upload_working_dir):
             shutil.rmtree(self.upload_working_dir)
-
-    # -- test cases -----------------------------------------------------------
 
     def test_init_with_defaults(self):
         context = mock.MagicMock()
@@ -141,7 +124,8 @@ class UploadManagerTests(unittest.TestCase):
         self.upload_manager.initialize()
 
         # Test
-        upload_id = self.upload_manager.initialize_upload('fn-1', 'repo-1', 'type-1', {'k1' : 'v1'}, {})
+        upload_id = self.upload_manager.initialize_upload('fn-1', 'repo-1', 'type-1', {'k1': 'v1'},
+                                                          {})
 
         # Verify
 
@@ -168,7 +152,7 @@ class UploadManagerTests(unittest.TestCase):
         self.assertEqual(tracker.source_filename, 'fn-1')
         self.assertEqual(tracker.repo_id, 'repo-1')
         self.assertEqual(tracker.unit_type_id, 'type-1')
-        self.assertEqual(tracker.unit_key, {'k1' : 'v1'})
+        self.assertEqual(tracker.unit_key, {'k1': 'v1'})
         self.assertEqual(tracker.unit_metadata, {})
         self.assertEqual(tracker.override_config, None)
 
@@ -178,8 +162,8 @@ class UploadManagerTests(unittest.TestCase):
         test_override_config = {'test-key': 'test-value'}
 
         # Test
-        upload_id = self.upload_manager.initialize_upload('fn-1', 'repo-1', 'type-1', {'k1' : 'v1'}, {},
-                                                          test_override_config)
+        upload_id = self.upload_manager.initialize_upload('fn-1', 'repo-1', 'type-1', {'k1': 'v1'},
+                                                          {}, test_override_config)
 
         # Verify
 
@@ -206,15 +190,17 @@ class UploadManagerTests(unittest.TestCase):
         self.assertEqual(tracker.source_filename, 'fn-1')
         self.assertEqual(tracker.repo_id, 'repo-1')
         self.assertEqual(tracker.unit_type_id, 'type-1')
-        self.assertEqual(tracker.unit_key, {'k1' : 'v1'})
+        self.assertEqual(tracker.unit_key, {'k1': 'v1'})
         self.assertEqual(tracker.unit_metadata, {})
         self.assertEqual(tracker.override_config, test_override_config)
 
     def test_upload_single_pass(self):
         # Setup
-        self.upload_manager.chunk_size = upload_util.DEFAULT_CHUNKSIZE * 10 # way higher than needed
+        # way higher than needed
+        self.upload_manager.chunk_size = upload_util.DEFAULT_CHUNKSIZE * 10
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload(TEST_RPM_FILENAME, 'repo-1', 'type-1', {'k' : 'v'}, 'm-1')
+        upload_id = self.upload_manager.initialize_upload(TEST_RPM_FILENAME, 'repo-1', 'type-1',
+                                                          {'k': 'v'}, 'm-1')
 
         mock_callback = mock.Mock()
 
@@ -251,7 +237,8 @@ class UploadManagerTests(unittest.TestCase):
         # Setup
         self.upload_manager.chunk_size = 100
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload(TEST_RPM_FILENAME, 'repo-1', 'type-1', {'k' : 'v'}, 'm-1')
+        upload_id = self.upload_manager.initialize_upload(TEST_RPM_FILENAME, 'repo-1', 'type-1',
+                                                          {'k': 'v'}, 'm-1')
 
         mock_callback = mock.Mock()
 
@@ -305,18 +292,20 @@ class UploadManagerTests(unittest.TestCase):
     def test_upload_concurrent_upload(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload(TEST_RPM_FILENAME, 'repo-1', 'type-1', {'k' : 'v'}, 'm-1')
+        upload_id = self.upload_manager.initialize_upload(TEST_RPM_FILENAME, 'repo-1',
+                                                          'type-1', {'k': 'v'}, 'm-1')
 
         tracker = self.upload_manager._get_tracker_file_by_id(upload_id)
         tracker.is_running = True
 
         # Test
-        self.assertRaises(upload_util.ConcurrentUploadException, self.upload_manager.upload, upload_id)
+        self.assertRaises(upload_util.ConcurrentUploadException, self.upload_manager.upload,
+                          upload_id)
 
     def test_delete_upload(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k' : 'v'}, 'm')
+        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k': 'v'}, 'm')
 
         tf_filename = self.upload_manager._tracker_filename(upload_id)
         self.assertTrue(os.path.exists(tf_filename))
@@ -325,13 +314,13 @@ class UploadManagerTests(unittest.TestCase):
         self.upload_manager.delete_upload(upload_id)
 
         # Verify
-        self.assertTrue(not os.path.exists(tf_filename)) # filesystem
-        self.assertTrue(self.upload_manager._get_tracker_file_by_id(upload_id) is None) # in memory
+        self.assertTrue(not os.path.exists(tf_filename))  # filesystem
+        self.assertTrue(self.upload_manager._get_tracker_file_by_id(upload_id) is None)  # in memory
 
     def test_delete_upload_with_server_exception(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k' : 'v'}, 'm')
+        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k': 'v'}, 'm')
 
         self.mock_upload_bindings.delete_upload.side_effect = NotFoundException({})
 
@@ -349,7 +338,7 @@ class UploadManagerTests(unittest.TestCase):
     def test_delete_upload_with_server_exception_and_force(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k' : 'v'}, 'm')
+        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k': 'v'}, 'm')
 
         self.mock_upload_bindings.delete_upload.side_effect = NotFoundException({})
 
@@ -365,13 +354,14 @@ class UploadManagerTests(unittest.TestCase):
     def test_delete_in_progress_upload(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k' : 'v'}, 'm')
+        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k': 'v'}, 'm')
 
         tracker = self.upload_manager._get_tracker_file_by_id(upload_id)
         tracker.is_running = True
 
         # Test
-        self.assertRaises(upload_util.ConcurrentUploadException, self.upload_manager.delete_upload, upload_id)
+        self.assertRaises(upload_util.ConcurrentUploadException, self.upload_manager.delete_upload,
+                          upload_id)
 
         # Verify
         tf_filename = self.upload_manager._tracker_filename(upload_id)
@@ -383,10 +373,10 @@ class UploadManagerTests(unittest.TestCase):
     def test_import_upload(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k' : 'v'}, 'm')
+        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k': 'v'}, 'm')
 
         tracker = self.upload_manager._get_tracker_file_by_id(upload_id)
-        tracker.is_finished_uploading = True # simulate the upload completion
+        tracker.is_finished_uploading = True  # simulate the upload completion
 
         # Test
         response = self.upload_manager.import_upload(upload_id)
@@ -400,16 +390,17 @@ class UploadManagerTests(unittest.TestCase):
         self.assertEqual(args[0], upload_id)
         self.assertEqual(args[1], 'r')
         self.assertEqual(args[2], 't')
-        self.assertEqual(args[3], {'k' : 'v'})
+        self.assertEqual(args[3], {'k': 'v'})
         self.assertEqual(args[4], 'm')
 
     def test_import_upload_incomplete_upload(self):
         # Setup
         self.upload_manager.initialize()
-        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k' : 'v'}, 'm')
+        upload_id = self.upload_manager.initialize_upload('f', 'r', 't', {'k': 'v'}, 'm')
 
         # Test
-        self.assertRaises(upload_util.IncompleteUploadException, self.upload_manager.import_upload, upload_id)
+        self.assertRaises(upload_util.IncompleteUploadException, self.upload_manager.import_upload,
+                          upload_id)
 
         # Verify
         self.assertEqual(0, self.mock_upload_bindings.import_upload.call_count)
@@ -419,19 +410,20 @@ class UploadManagerTests(unittest.TestCase):
         self.upload_manager.initialize()
 
         # Test
-        self.assertRaises(upload_util.MissingUploadRequestException, self.upload_manager.upload, 'i')
-        self.assertRaises(upload_util.MissingUploadRequestException, self.upload_manager.import_upload, 'i')
-        self.assertRaises(upload_util.MissingUploadRequestException, self.upload_manager.delete_upload, 'i')
-
-    # -- mock configuration utilities -----------------------------------------
+        self.assertRaises(upload_util.MissingUploadRequestException, self.upload_manager.upload,
+                          'i')
+        self.assertRaises(upload_util.MissingUploadRequestException,
+                          self.upload_manager.import_upload, 'i')
+        self.assertRaises(upload_util.MissingUploadRequestException,
+                          self.upload_manager.delete_upload, 'i')
 
     def _mock_initialize_upload(self):
         """
         Configures the mock bindings to return a valid upload ID.
         """
         body = {
-            'upload_id' : MOCK_UPLOAD_ID,
-            '_href' : MOCK_LOCATION,
+            'upload_id': MOCK_UPLOAD_ID,
+            '_href': MOCK_LOCATION,
         }
         self.mock_upload_bindings.initialize_upload.return_value = Response(201, body)
 
