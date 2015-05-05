@@ -9,7 +9,7 @@ from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory
 from pulp.server.managers.consumer.group.cud import bind, unbind
 from pulp.server.managers.consumer.group import query
-from pulp.server.webservices.controllers.decorators import auth_required
+from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views import search
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,

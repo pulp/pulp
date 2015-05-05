@@ -8,7 +8,7 @@ def _assert_auth_decorator_general(required_operation):
 
     This is a helper method to make it easier to mock the @auth_required
     decorator. The returned function should be used to mock the
-    pulp.server.webservices.controllers.decorators._verify_auth function
+    pulp.server.webservices.views.decorators._verify_auth function
     which is called as part of the @auth_required decorator codepath.
 
     An AssertionError will be raised if the @auth_required decorator is not

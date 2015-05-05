@@ -9,8 +9,8 @@ from pulp.server.auth import authorization
 from pulp.server.db.model.auth import Permission
 from pulp.server.managers import factory
 from pulp.server.managers.auth.user import query
-from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views import search
+from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,

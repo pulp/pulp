@@ -1,9 +1,5 @@
 """
-This module contains decorators for web.py class methods.
-
-It is important that these decorators only be used on methods of
-pulp.server.webservices.controllers.base.JSONController classes, it is assumed
-that certain other methods will exist.
+This module contains decorators for Pulp views.
 """
 
 import logging
@@ -172,7 +168,7 @@ def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
 
     if super_user_only and not user_query_manager.is_superuser(userid):
         raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026, user=userid,
-                                                       operation=OPERATION_NAMES[operation])
+                                               operation=OPERATION_NAMES[operation])
     # if the operation is None, don't check authorization
     elif operation is not None:
         if is_consumer:
@@ -181,15 +177,15 @@ def _verify_auth(self, operation, super_user_only, method, *args, **kwargs):
                 principal_manager.set_principal()
             else:
                 raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                               user=userid,
-                                                               operation=OPERATION_NAMES[operation])
+                                                       user=userid,
+                                                       operation=OPERATION_NAMES[operation])
         elif user_query_manager.is_authorized(http.resource_path(), userid, operation):
             user = user_query_manager.find_by_login(userid)
             principal_manager.set_principal(user)
         else:
             raise PulpCodedAuthenticationException(error_code=error_codes.PLP0026,
-                                                           user=userid,
-                                                           operation=OPERATION_NAMES[operation])
+                                                   user=userid,
+                                                   operation=OPERATION_NAMES[operation])
 
     # Authentication and authorization succeeded. Call method and then clear principal.
     value = method(self, *args, **kwargs)

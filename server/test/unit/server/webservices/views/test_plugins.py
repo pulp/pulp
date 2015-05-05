@@ -14,7 +14,7 @@ class TestDistributorResourceView(unittest.TestCase):
     Tests for views for a single distributor.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
@@ -36,7 +36,7 @@ class TestDistributorResourceView(unittest.TestCase):
         mock_serial.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_serial.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.factory')
     def test_get_distributor_resource_with_nonexistent_distributor(self, mock_factory):
@@ -66,7 +66,7 @@ class TestDistributorsView(unittest.TestCase):
     """
     Tests for views for all distributors.
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
@@ -96,7 +96,7 @@ class TestImporterResourceView(unittest.TestCase):
     Tests for the views of a single importer.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
@@ -117,7 +117,7 @@ class TestImporterResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.factory')
     def test_get_importer_resource_view_nonexistent_importer(self, mock_factory):
@@ -147,7 +147,7 @@ class TestImportersView(unittest.TestCase):
     Tests for views for all importers.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
@@ -175,7 +175,7 @@ class TestTypeResourceView(unittest.TestCase):
     Tests for the views for a single plugin type.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.plugins.factory')
@@ -195,7 +195,7 @@ class TestTypeResourceView(unittest.TestCase):
         expected_content = {'id': 'mock_type_2', '_href': '/mock/path/'}
         mock_resp.assert_called_once_with(expected_content)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.factory')
     def test_get_type_resource_view_nonexistent_type(self, mock_factory):
@@ -225,7 +225,7 @@ class TestTypesView(unittest.TestCase):
     Tests for the views for all plugin types.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.plugins.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.plugins.factory')

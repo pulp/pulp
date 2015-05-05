@@ -9,7 +9,7 @@ from copy import deepcopy
 from unittest import TestCase
 
 from mock import Mock, patch
-from base import WebTest
+from base import ServerTests
 
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.config import DownloaderConfig
@@ -139,7 +139,7 @@ class AgentConduit(Conduit):
 # --- testing base classes ---------------------------------------------------
 
 
-class PluginTestBase(WebTest):
+class PluginTestBase(ServerTests):
 
     REPO_ID = 'test-repo'
     UNIT_TYPE_ID = 'rpm'
@@ -163,7 +163,7 @@ class PluginTestBase(WebTest):
         return tmp_dir
 
     def setUp(self):
-        WebTest.setUp(self)
+        ServerTests.setUp(self)
         self.parentfs = self.tmpdir('parent-')
         self.childfs = self.tmpdir('child-')
         self.alias = (self.parentfs, self.parentfs)
@@ -183,7 +183,7 @@ class PluginTestBase(WebTest):
         plugin_api._MANAGER.profilers.add_plugin(constants.PROFILER_ID, NodeProfiler, {})
 
     def tearDown(self):
-        WebTest.tearDown(self)
+        ServerTests.tearDown(self)
         shutil.rmtree(self.parentfs)
         shutil.rmtree(self.childfs)
         Consumer.get_collection().remove()

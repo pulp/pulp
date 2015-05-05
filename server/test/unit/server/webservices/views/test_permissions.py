@@ -15,7 +15,7 @@ class TestPermissionsView(unittest.TestCase):
     Test permissions view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.permissions.generate_json_response_with_pulp_encoder')
@@ -40,7 +40,7 @@ class TestPermissionsView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.permissions.generate_json_response_with_pulp_encoder')
@@ -70,7 +70,7 @@ class TestGrantToUserView(unittest.TestCase):
     """
     Test grant permission to user.
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.permissions.generate_json_response')
     @mock.patch('pulp.server.webservices.views.permissions.factory')
@@ -91,7 +91,7 @@ class TestGrantToUserView(unittest.TestCase):
         mock_factory.permission_manager.return_value.grant.assert_called_once_with(
             '/v2/some/', 'test', [0])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     def test_grant_to_user_invalid_param(self):
         """
@@ -114,7 +114,7 @@ class TestRevokeFromUserView(unittest.TestCase):
     Test revoke permission from user.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.permissions.generate_json_response')
     @mock.patch('pulp.server.webservices.views.permissions.factory')
@@ -135,7 +135,7 @@ class TestRevokeFromUserView(unittest.TestCase):
         mock_factory.permission_manager.return_value.revoke.assert_called_once_with(
             '/v2/some/', 'test', [0])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     def test_revoke_from_user_invalid_param(self):
         """
@@ -158,7 +158,7 @@ class TestGrantToRoleView(unittest.TestCase):
     Test grant permission to role.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.permissions.generate_json_response')
     @mock.patch('pulp.server.webservices.views.permissions.factory')
@@ -179,7 +179,7 @@ class TestGrantToRoleView(unittest.TestCase):
         mock_factory.role_manager.return_value.add_permissions_to_role.assert_called_once_with(
             'test', '/v2/some/', [0])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     def test_grant_to_role_invalid_param(self):
         """
@@ -202,7 +202,7 @@ class TestRevokeFromRoleView(unittest.TestCase):
     Test revoke permission from role.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.permissions.generate_json_response')
     @mock.patch('pulp.server.webservices.views.permissions.factory')
@@ -223,7 +223,7 @@ class TestRevokeFromRoleView(unittest.TestCase):
         mock_factory.role_manager.return_value.remove_permissions_from_role.assert_called_once_with(
             'test', '/v2/some/', [0])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     def test_revoke_from_role_invalid_param(self):
         """

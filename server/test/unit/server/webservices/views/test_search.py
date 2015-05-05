@@ -15,7 +15,7 @@ class TestSearchView(unittest.TestCase):
     """
     Test the SearchView class.
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.search.criteria.Criteria.from_client_input')
     def test_get_with_fields(self, from_client_input):
@@ -45,7 +45,7 @@ class TestSearchView(unittest.TestCase):
         from_client_input.assert_called_once_with(
             {'fields': ['name', 'id'], 'filters': {"name": "admin"}})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.search.criteria.Criteria.from_client_input')
     def test_get_without_fields(self, from_client_input):
@@ -76,7 +76,7 @@ class TestSearchView(unittest.TestCase):
         _generate_response.assert_called_once_with({'filters': {"name": "admin"}}, {})
         from_client_input.assert_called_once_with({'filters': {"name": "admin"}})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     def test_post(self):
         """
@@ -100,7 +100,7 @@ class TestSearchView(unittest.TestCase):
         self.assertEqual(results.status_code, 200)
         _generate_response.assert_called_once_with({'filters': {'money': {'$gt': 1000000}}}, {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     def test_post_missing_criteria(self):
         """

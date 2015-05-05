@@ -309,7 +309,6 @@ Requires: python-celery < 3.2.0
 Requires: python-pymongo >= 2.5.2
 Requires: python-mongoengine >= 0.7.10
 Requires: python-setuptools
-Requires: python-webpy
 Requires: python-oauth2 >= 1.5.211
 Requires: python-httplib2
 Requires: python-isodate >= 0.5.0-1.pulp

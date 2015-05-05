@@ -9,8 +9,8 @@ from django.views import generic
 from pulp.server import exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model import criteria
-from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views import util
+from pulp.server.webservices.views.decorators import auth_required
 
 
 class SearchView(generic.View):

@@ -32,7 +32,7 @@ class Test_expand_consumers(unittest.TestCase):
     """
     Test that using query params will expand proper consumer info.
     """
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_bind_manager')
     def test_expand_consumers(self, mock_factory, mock_serial):
         """
@@ -42,8 +42,9 @@ class Test_expand_consumers(unittest.TestCase):
         consumers_list = [{'id': 'c1'}]
         bindings = [{'consumer_id': 'c1', 'repo_id': 'repo1', 'distributor_id': 'dist1'}]
         mock_factory.return_value.find_by_criteria.return_value = bindings
-        mock_serial.return_value = {'consumer_id': 'c1', 'repo_id': 'repo1',
-                                    'distributor_id': 'dist1', '_href': '/some/c1/some_bind/'}
+        mock_serial.serialize.return_value = {'consumer_id': 'c1', 'repo_id': 'repo1',
+                                              'distributor_id': 'dist1',
+                                              '_href': '/some/c1/some_bind/'}
 
         cons = consumers.expand_consumers(options, consumers_list)
         expected_cons = [{'id': 'c1', 'bindings': [{'consumer_id': 'c1', 'repo_id': 'repo1',
@@ -56,7 +57,7 @@ class TestConsumersView(unittest.TestCase):
     Test consumers view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.expand_consumers')
     @mock.patch(
@@ -81,9 +82,9 @@ class TestConsumersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -95,7 +96,7 @@ class TestConsumersView(unittest.TestCase):
         resp = [{'id': 'foo', 'display_name': 'bar'}]
         consumer_mock.find_all.return_value = resp
         mock_factory.consumer_query_manager.return_value = consumer_mock
-        mock_serial.return_value = []
+        mock_serial.serialize.return_value = []
         mock_factory.consumer_bind_manager.return_value.find_by_criteria.return_value = []
 
         request = mock.MagicMock()
@@ -108,7 +109,7 @@ class TestConsumersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -131,9 +132,9 @@ class TestConsumersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -145,7 +146,7 @@ class TestConsumersView(unittest.TestCase):
         resp = [{'id': 'foo', 'display_name': 'bar'}]
         consumer_mock.find_all.return_value = resp
         mock_factory.consumer_query_manager.return_value = consumer_mock
-        mock_serial.return_value = []
+        mock_serial.serialize.return_value = []
         mock_factory.consumer_bind_manager.return_value.find_by_criteria.return_value = []
 
         request = mock.MagicMock()
@@ -158,7 +159,7 @@ class TestConsumersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -181,7 +182,7 @@ class TestConsumersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -204,7 +205,7 @@ class TestConsumersView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.generate_redirect_response')
     @mock.patch(
@@ -229,7 +230,7 @@ class TestConsumersView(unittest.TestCase):
                                               expected_cont['consumer']['_href'])
         self.assertTrue(response is mock_redirect.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_create_consumer_missing_param(self):
         """
@@ -253,7 +254,7 @@ class TestConsumerResourceView(unittest.TestCase):
     Test consumer resource view.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -274,7 +275,7 @@ class TestConsumerResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(None)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -295,9 +296,9 @@ class TestConsumerResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -306,7 +307,7 @@ class TestConsumerResourceView(unittest.TestCase):
         Test single consumer retrieval with query param details true
         """
         mock_factory.consumer_manager.return_value.get_consumer.return_value = {'id': 'foo'}
-        mock_serial.return_value = []
+        mock_serial.serialize.return_value = []
         mock_factory.consumer_bind_manager.return_value.find_by_criteria.return_value = []
 
         request = mock.MagicMock()
@@ -319,9 +320,9 @@ class TestConsumerResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -330,7 +331,7 @@ class TestConsumerResourceView(unittest.TestCase):
         Test single consumer retrieval with query param bindings true
         """
         mock_factory.consumer_manager.return_value.get_consumer.return_value = {'id': 'foo'}
-        mock_serial.return_value = []
+        mock_serial.serialize.return_value = []
         mock_factory.consumer_bind_manager.return_value.find_by_criteria.return_value = []
 
         request = mock.MagicMock()
@@ -343,7 +344,7 @@ class TestConsumerResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -364,7 +365,7 @@ class TestConsumerResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -385,7 +386,7 @@ class TestConsumerResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -442,9 +443,9 @@ class TestConsumerBindingsView(unittest.TestCase):
     """
     Represents consumers binding.
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -455,8 +456,9 @@ class TestConsumerBindingsView(unittest.TestCase):
         mock_factory.consumer_manager.return_value.get_consumer.return_value = {'id': 'foo'}
         bindings = [{'repo_id': 'some-repo', 'consumer_id': 'foo'}]
         mock_factory.consumer_bind_manager.return_value.find_by_consumer.return_value = bindings
-        mock_serial.return_value = {'consumer_id': 'foo', 'repo_id': 'some-repo',
-                                    '_href': '/v2/consumers/foo/bindings/some-repo/dist1/'}
+        serial_resp = {'consumer_id': 'foo', 'repo_id': 'some-repo',
+                       '_href': '/v2/consumers/foo/bindings/some-repo/dist1/'}
+        mock_serial.serialize.return_value = serial_resp
 
         request = mock.MagicMock()
         consumer_bindings = ConsumerBindingsView()
@@ -481,9 +483,9 @@ class TestConsumerBindingSearchView(unittest.TestCase):
                          util.generate_json_response_with_pulp_encoder)
         self.assertTrue(isinstance(ConsumerBindingSearchView.manager, bind.BindManager))
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -495,8 +497,9 @@ class TestConsumerBindingSearchView(unittest.TestCase):
         bindings = [{'repo_id': 'some-repo', 'consumer_id': 'foo'}]
         mock_factory.consumer_bind_manager.return_value.find_by_consumer.return_value = bindings
         mock_factory.repo_query_manager.return_value.find_by_id.return_value = 'some-repo'
-        mock_serial.return_value = {'consumer_id': 'foo', 'repo_id': 'some-repo',
-                                    '_href': '/v2/consumers/foo/bindings/some-repo/'}
+        serial_resp = {'consumer_id': 'foo', 'repo_id': 'some-repo',
+                       '_href': '/v2/consumers/foo/bindings/some-repo/'}
+        mock_serial.serialize.return_value = serial_resp
 
         request = mock.MagicMock()
         consumer_bindings = ConsumerBindingsView()
@@ -508,7 +511,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.factory')
     def test_get_consumer_bindings_invalid_consumer(self, mock_factory):
@@ -529,7 +532,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'consumer_id': 'nonexistent_id'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.factory')
     def test_get_consumer_bindings_invalid_repo(self, mock_factory):
@@ -550,7 +553,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'repo_id': 'some-repo'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.consumer_task.bind')
     def test_create_binding_async(self, mock_bind):
@@ -563,7 +566,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
         self.assertRaises(OperationPostponed, consumer_bindings.post, request, 'test-consumer')
         mock_bind.assert_called_once_with('test-consumer', 'xxx', 'yyy', True, {}, {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -588,7 +591,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
 
         mock_bind.assert_called_once_with('foo', 'xxx', 'yyy', 'false', {}, {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_create_binding_with_invalid_binding_config(self):
         """
@@ -611,9 +614,9 @@ class TestConsumerBindingResourceView(unittest.TestCase):
     """
     Represents consumers binding resource.
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.serialization.binding.serialize')
+    @mock.patch('pulp.server.webservices.views.consumers.serial_binding')
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_bind_manager')
@@ -623,8 +626,9 @@ class TestConsumerBindingResourceView(unittest.TestCase):
         """
         bind_resp = {'repo_id': 'some-repo', 'consumer_id': 'foo'}
         mock_factory.return_value.get_bind.return_value = bind_resp
-        mock_serial.return_value = {'consumer_id': 'foo', 'repo_id': 'some-repo',
-                                    '_href': '/v2/consumers/foo/bindings/some-repo/dist1/'}
+        serial_resp = {'consumer_id': 'foo', 'repo_id': 'some-repo',
+                       '_href': '/v2/consumers/foo/bindings/some-repo/dist1/'}
+        mock_serial.serialize.return_value = serial_resp
 
         request = mock.MagicMock()
         consumer_binding = ConsumerBindingResourceView()
@@ -636,7 +640,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumers.consumer_task.unbind')
     def test_delete_binding_async_no_force(self, mock_unbind):
@@ -651,7 +655,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
                           "consumer_id", "repo_id", "distributor_id")
         mock_unbind.assert_called_once_with("consumer_id", "repo_id", "distributor_id", {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumers.consumer_task.force_unbind')
     def test_delete_binding_async_yes_force(self, mock_unbind):
@@ -665,7 +669,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
                           "consumer_id", "repo_id", "distributor_id")
         mock_unbind.assert_called_once_with("consumer_id", "repo_id", "distributor_id", {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -689,7 +693,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
 
         mock_unbind.assert_called_once_with('foo', 'some-repo', 'dist1', {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -712,7 +716,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
         mock_unbind.assert_called_once_with('foo', 'some-repo', 'dist1', {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     def test_delete_binding_invalid_force_type(self):
         """
@@ -730,7 +734,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['force'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     def test_delete_binding_invalid_options_type(self):
         """
@@ -754,7 +758,7 @@ class TestConsumerContentActionView(unittest.TestCase):
     Test Consumer content manipulation.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_consumer_bad_request_content(self):
         """
@@ -767,7 +771,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
         self.assertEqual(response.status_code, 400)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_cons(self, mock_consumer):
@@ -787,7 +791,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'consumer_id': 'my-consumer'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_units(self, mock_consumer):
@@ -807,7 +811,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['units'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_content_install_missing_options(self, mock_consumer):
@@ -827,7 +831,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['options'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
@@ -845,7 +849,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         mock_factory.return_value.install_content.assert_called_once_with(
             'my-consumer', [], {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
@@ -863,7 +867,7 @@ class TestConsumerContentActionView(unittest.TestCase):
         mock_factory.return_value.update_content.assert_called_once_with(
             'my-consumer', [], {})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_agent_manager')
@@ -887,7 +891,7 @@ class TestConsumerHistoryView(unittest.TestCase):
     Test Consumer history view
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -911,7 +915,7 @@ class TestConsumerHistoryView(unittest.TestCase):
         mock_resp.assert_called_once_with({'mock': 'some-history'})
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -935,7 +939,7 @@ class TestConsumerHistoryView(unittest.TestCase):
         mock_resp.assert_called_once_with({'mock': 'some-history'})
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -959,7 +963,7 @@ class TestConsumerHistoryView(unittest.TestCase):
         mock_resp.assert_called_once_with([])
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_manager')
     def test_consumer_history_with_nonint_limit(self, mock_consumer):
@@ -986,7 +990,7 @@ class TestConsumerProfilesView(unittest.TestCase):
     """
     Represents consumers profiles
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -1011,7 +1015,7 @@ class TestConsumerProfilesView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.generate_redirect_response')
     @mock.patch(
@@ -1037,7 +1041,7 @@ class TestConsumerProfilesView(unittest.TestCase):
         mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
         self.assertTrue(response is mock_redirect.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_profile_manager')
     def test_create_consumer_profile_missing_param(self, mock_profile):
@@ -1077,7 +1081,7 @@ class TestConsumerProfileResourceView(unittest.TestCase):
     """
     Represents consumers profile resource
     """
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -1100,7 +1104,7 @@ class TestConsumerProfileResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -1124,7 +1128,7 @@ class TestConsumerProfileResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response')
@@ -1149,7 +1153,7 @@ class TestConsumerQueryContentApplicabilityView(unittest.TestCase):
     Represents consumers content applicability
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.ConsumerContentApplicabilityView')
     def test_query_consumer_content_applic_bad_request(self, mock_criteria_types):
@@ -1165,7 +1169,7 @@ class TestConsumerQueryContentApplicabilityView(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
         self.assertEqual(response.status_code, 400)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -1231,7 +1235,7 @@ class TestConsumerContentApplicabilityView(unittest.TestCase):
     Represents consumers content applicability regeneration
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_post_consumer_content_applic_regen_no_criteria(self):
         """
@@ -1249,7 +1253,7 @@ class TestConsumerContentApplicabilityView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['consumer_criteria'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_post_consumer_content_applic_regen_invalid_criteria(self):
         """
@@ -1267,7 +1271,7 @@ class TestConsumerContentApplicabilityView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertEqual(response.error_data['property_names'], ['consumer_criteria'])
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.tags')
     @mock.patch('pulp.server.webservices.views.consumers.Criteria.from_client_input')
@@ -1299,7 +1303,7 @@ class TestConsumerResourceContentApplicabilityView(unittest.TestCase):
     Represents consumer content applicability regeneration
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_query_manager')
     def test_post_consumer_resource_content_applic_regen_no_consumer(self, mock_consumer):
@@ -1319,7 +1323,7 @@ class TestConsumerResourceContentApplicabilityView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'consumer_id': 'c1'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.tags')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_query_manager')
@@ -1354,7 +1358,7 @@ class TestConsumerUnitActionSchedulesView(unittest.TestCase):
     Test consumer schedule actions
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -1383,7 +1387,7 @@ class TestConsumerUnitActionSchedulesView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.factory')
     def test_get_schedules_missing_consumer(self, mock_factory):
@@ -1404,7 +1408,7 @@ class TestConsumerUnitActionSchedulesView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'consumer_id': 'test-consumer'})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.generate_redirect_response')
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
@@ -1436,7 +1440,7 @@ class TestConsumerUnitActionSchedulesView(unittest.TestCase):
         mock_redirect.assert_called_once_with(mock_resp.return_value, expected_cont['_href'])
         self.assertTrue(response is mock_redirect.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_schedule_manager')
     def test_create_schedules_unsupported_params(self, mock_consumer):
@@ -1461,7 +1465,7 @@ class TestConsumerUnitActionScheduleResourceView(unittest.TestCase):
     Test consumer schedule actions
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -1488,7 +1492,7 @@ class TestConsumerUnitActionScheduleResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
@@ -1512,7 +1516,7 @@ class TestConsumerUnitActionScheduleResourceView(unittest.TestCase):
         mock_factory.consumer_schedule_manager.return_value.get.assert_called_once_with(
             'test-consumer', 'scheduled_unit_install')
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_schedule_manager')
@@ -1540,7 +1544,7 @@ class TestConsumerUnitActionScheduleResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_cont)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.consumers.generate_json_response')
     @mock.patch('pulp.server.webservices.views.consumers.factory.consumer_schedule_manager')
