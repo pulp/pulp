@@ -41,6 +41,9 @@ New Features
 - Pulp no longer returns proxy passwords or basic authentication passwords when
   viewing importer configurations.  Instead, ``*****`` is returned.
 
+* Added ``/v2/distributors/search/`` REST API endpoint to support distributor searches.
+
+
 Deprecation
 -----------
 

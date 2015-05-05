@@ -35,6 +35,8 @@ Use the *Version* field to indicate which Pulp version you are using. It has an 
 for each Pulp release (2.0.6, 2.0.7, 2.1.0, etc.). If a bug is found when running
 from source instead of a released version, the value ``master`` should be selected.
 
+Use the *OS* field to indicate which Operating System the bug was discovered on.
+
 You can also upload attachments, but please only upload relevant data. For
 example, if you have an entire log which contains some errors, please trim it
 to just the relevant portions and upload those.
@@ -99,10 +101,6 @@ Tag Name           Usage
 ================   ===============================================================
 Documentation      The bug/story itself is documentation related.
 EasyFix            A bug that is simple to fix, at least in theory.
-Groomed            Usually reserved for stories to indicate they have enough
-                   detail to be actionable.
-Sprint Candidate   Usually reserved for stories. It indicates a story is ready to
-                   go on the short list of stories to work on soon.
 ================   ===============================================================
 
 You may occasionally see discussion in #pulp or on the mailing list about "bug

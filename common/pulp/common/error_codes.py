@@ -43,7 +43,7 @@ PLP0007 = Error("PLP0007",
                   "bindings associated with it."),
                 ['repo_id'])
 PLP0008 = Error("PLP0008",
-                _("Error raising error %(code).  "
+                _("Error raising error %(code)s.  "
                   "The field [%(field)s] was not included in the error_data."),
                 ['code', 'field'])
 PLP0009 = Error("PLP0009", _("Missing resource(s): %(resources)s"), ['resources'])
@@ -84,6 +84,17 @@ PLP0033 = Error("PLP0033", _("Working Directory requested outside of asynchronou
 PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a failed response when "
                              "publishing repository %(repository_id)s."),
                 ['distributor_id', 'repository_id'])
+PLP0035 = Error("PLP0035", _("The ContentUnit model class %(class_name)s failed to define the "
+                             "attribute unit_key_fields"), ['class_name'])
+PLP0036 = Error("PLP0036", _("The source_location: %(source_location) specified for the content unit is invalid."),
+                ['source_location'])
+PLP0037 = Error("PLP0037", _("The relative_path specified for the content unit is empty."), [])
+PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
+                             "%(model_class)s failed to register. Another model has already "
+                             "been registered with the same id."), ['model_id', 'model_class'])
+PLP0039 = Error("PLP0039", _("The unit model with the id %(model_id)s failed to register. The "
+                             "class %(model_class)s is not a subclass of ContentUnit."),
+                ['model_id', 'model_class'])
 
 # Create a section for general validation errors (PLP1000 - PLP2999)
 # Validation problems should be reported with a general PLP1000 error with a more specific

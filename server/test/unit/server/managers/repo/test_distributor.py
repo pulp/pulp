@@ -229,9 +229,6 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         except Exception:
             pass
 
-        # Cleanup
-        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
-
     def test_add_distributor_invalid_config(self):
         """
         Tests the correct error is raised when the distributor is handed an invalid configuration.
@@ -409,17 +406,13 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         distributor = self.distributor_manager.add_distributor('elf', 'mock-distributor', {}, True)
         dist_id = distributor['id']
 
-        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = Exception()
-
-        # Test
-        try:
-            self.distributor_manager.update_distributor_config('elf', dist_id, {})
-            self.fail('Exception expected')
-        except exceptions.PulpDataException:
+        class TestException(Exception):
             pass
 
-        # Cleanup
-        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = TestException()
+
+        self.assertRaises(TestException, self.distributor_manager.update_distributor_config,
+                          'elf', dist_id, {})
 
     def test_update_invalid_config(self):
         """
@@ -712,3 +705,17 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         self.distributor_manager.find_by_repo_list(['repo-1'])
         self.assertTrue(mock_get_collection.return_value.find.called)
         mock_get_collection.return_value.find.assert_called_once_with(EXPECT, PROJECTION)
+
+    @mock.patch.object(RepoDistributor, 'get_collection')
+    def test_find_by_criteria(self, get_collection):
+        criteria = mock.Mock()
+        collection = mock.Mock()
+        get_collection.return_value = collection
+
+        # test
+        result = self.distributor_manager.find_by_criteria(criteria)
+
+        # validation
+        get_collection.assert_called_once_with()
+        collection.query.assert_called_once_with(criteria)
+        self.assertEqual(result, collection.query.return_value)

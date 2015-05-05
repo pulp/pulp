@@ -89,6 +89,19 @@ class RepoDistributorManager(object):
         return list(RepoDistributor.get_collection().find(spec, projection))
 
     @staticmethod
+    def find_by_criteria(criteria):
+        """
+        Find distributors by criteria.
+
+        :param criteria: The search criteria.
+        :type criteria: pulp.server.db.model.criteria.Criteria
+        :return: list of: RepoDistributor
+        :rtype: list
+        """
+        collection = RepoDistributor.get_collection()
+        return collection.query(criteria)
+
+    @staticmethod
     def add_distributor(repo_id, distributor_type_id, repo_plugin_config,
                         auto_publish, distributor_id=None):
         """
@@ -295,22 +308,15 @@ class RepoDistributorManager(object):
         transfer_repo = common_utils.to_transfer_repo(repo)
         config_conduit = RepoConfigConduit(distributor_type_id)
 
-        try:
-            result = distributor_instance.validate_config(transfer_repo, call_config,
-                                                          config_conduit)
+        result = distributor_instance.validate_config(transfer_repo, call_config,
+                                                      config_conduit)
 
-            # For backward compatibility with plugins that don't yet return the tuple
-            if isinstance(result, bool):
-                valid_config = result
-                message = None
-            else:
-                valid_config, message = result
-        except Exception, e:
-            msg = _('Exception raised from distributor [%(d)s] while validating config for repo '
-                    '[%(r)s]')
-            msg = msg % {'d': distributor_type_id, 'r': repo_id}
-            _logger.exception(msg)
-            raise PulpDataException(e.args), None, sys.exc_info()[2]
+        # For backward compatibility with plugins that don't yet return the tuple
+        if isinstance(result, bool):
+            valid_config = result
+            message = None
+        else:
+            valid_config, message = result
 
         if not valid_config:
             raise PulpDataException(message)

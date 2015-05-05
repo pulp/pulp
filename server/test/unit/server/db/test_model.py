@@ -1,17 +1,235 @@
 """
 Tests for the pulp.server.db.model module.
 """
+import os
+import shutil
+from tempfile import mkdtemp
+
+from mock import patch
+
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 
-
 from mongoengine import DateTimeField, DictField, Document, IntField, StringField
 
+from pulp.common import error_codes
+from pulp.devel.unit.util import touch
+from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
 from pulp.server.db.model.base import CriteriaQuerySet
 from pulp.server.db.model.fields import ISO8601StringField
+
+
+class TestContentUnit(unittest.TestCase):
+    """
+    Test ContentUnit model
+    """
+
+    def setUp(self):
+        self.working_dir = mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.working_dir, ignore_errors=True)
+
+    def test_model_fields(self):
+        self.assertTrue(isinstance(model.ContentUnit.id, StringField))
+        self.assertTrue(model.ContentUnit.id.primary_key)
+
+        self.assertTrue(isinstance(model.ContentUnit.last_updated, IntField))
+        self.assertTrue(model.ContentUnit.last_updated.required)
+        self.assertEquals(model.ContentUnit.last_updated.db_field, '_last_updated')
+
+        self.assertTrue(isinstance(model.ContentUnit.user_metadata, DictField))
+        self.assertEquals(model.ContentUnit.user_metadata.db_field, 'pulp_user_metadata')
+
+        self.assertTrue(isinstance(model.ContentUnit.storage_path, StringField))
+        self.assertEquals(model.ContentUnit.storage_path.db_field, '_storage_path')
+
+        self.assertTrue(isinstance(model.ContentUnit._ns, StringField))
+        self.assertTrue(model.ContentUnit._ns)
+        self.assertTrue(isinstance(model.ContentUnit.unit_type_id, StringField))
+        self.assertTrue(model.ContentUnit.unit_type_id)
+
+    def test_meta_abstract(self):
+        self.assertEquals(model.ContentUnit._meta['abstract'], True)
+
+    @patch('pulp.server.db.model.signals')
+    def test_attach_signals(self, mock_signals):
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+
+        ContentUnitHelper.attach_signals()
+
+        mock_signals.post_init.connect.assert_called_once_with(ContentUnitHelper.post_init_signal,
+                                                               sender=ContentUnitHelper)
+        mock_signals.pre_save.connect.assert_called_once_with(ContentUnitHelper.pre_save_signal,
+                                                              sender=ContentUnitHelper)
+
+    def test_post_init_signal_with_unit_key_fields_defined(self):
+        """
+        Test the init signal handler that validates the existence of the
+        unit_key_fields list
+        """
+        class ContentUnitHelper(model.ContentUnit):
+            unit_key_fields = ['id']
+
+        model.ContentUnit.post_init_signal({}, ContentUnitHelper())
+
+    def test_post_init_signal_without_unit_key_fields_defined(self):
+        """
+        Test the init signal handler that raises an exception if the unit_key_fields list
+        has not been defined.
+        """
+        try:
+            model.ContentUnit.post_init_signal({}, {})
+            self.fail("Previous call should have raised a PulpCodedException")
+        except PulpCodedException, raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0035)
+
+    @patch('pulp.server.db.model.dateutils.now_utc_timestamp')
+    def test_pre_save_signal(self, mock_now_utc):
+        """
+        Test the pre_save signal handler
+        """
+        class ContentUnitHelper(model.ContentUnit):
+            id = None
+            last_updated = None
+
+        mock_now_utc.return_value = 'foo'
+        helper = ContentUnitHelper()
+        helper.last_updated = 50
+
+        model.ContentUnit.pre_save_signal({}, helper)
+
+        self.assertIsNotNone(helper.id)
+
+        # make sure the last updated time has been updated
+        self.assertEquals(helper.last_updated, 'foo')
+
+    def test_pre_save_signal_leaves_existing_id(self):
+        """
+        Test the pre_save signal handler leaves an existing id on an object in place
+        """
+        class ContentUnitHelper(model.ContentUnit):
+            id = None
+            last_updated = None
+
+        helper = ContentUnitHelper()
+        helper.id = "foo"
+
+        model.ContentUnit.pre_save_signal({}, helper)
+
+        # make sure the id wasn't replaced
+        self.assertEquals(helper.id, 'foo')
+
+    def test_set_content(self):
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+        helper = ContentUnitHelper()
+        helper.set_content(self.working_dir, 'apples')
+        self.assertEquals(helper._source_location, self.working_dir)
+        self.assertEquals(helper._relative_path, 'apples')
+
+    def test_set_content_bad_source_location(self):
+        """
+        Test that the appropriate exception is raised when set_content
+        is called with a non existent source_location
+        """
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+        helper = ContentUnitHelper()
+        try:
+            helper.set_content(os.path.join(self.working_dir, 'foo'), 'apples')
+            self.fail("Previous call should have raised a PulpCodedException")
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0036)
+
+    def test_set_content_no_relative_path(self):
+        """
+        Test that the appropriate exception is raised when set_content
+        is called with None for the relative_path
+        """
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+        helper = ContentUnitHelper()
+        try:
+            helper.set_content(self.working_dir, None)
+            self.fail("Previous call should have raised a PulpCodedException")
+        except PulpCodedException, raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0037)
+
+    def test_set_content_empty_relative_path(self):
+        """
+        Test that the appropriate exception is raised when set_content
+        is called with an empty relative_path
+        """
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+        helper = ContentUnitHelper()
+        try:
+            helper.set_content(self.working_dir, '  ')
+            self.fail("Previous call should have raised a PulpCodedException")
+        except PulpCodedException as raised_error:
+            self.assertEquals(raised_error.error_code, error_codes.PLP0037)
+
+    @patch('pulp.server.db.model.config')
+    def test_pre_save_signal_directory_content(self, mock_config):
+        source_dir = os.path.join(self.working_dir, 'src')
+        target_dir = os.path.join(self.working_dir, 'target')
+        os.mkdir(source_dir)
+        os.mkdir(target_dir)
+        mock_config.config.get.return_value = target_dir
+        # create something in the source directory to test the copy
+        touch(os.path.join(source_dir, 'foo', 'bar'))
+
+        class ContentUnitHelper(model.ContentUnit):
+            unit_type_id = 'foo_unit'
+        foo = ContentUnitHelper()
+        foo.set_content(source_dir, 'apples')
+        model.ContentUnit.pre_save_signal(object(), foo)
+        full_path = os.path.join(target_dir, 'content', 'foo_unit', 'apples', 'foo', 'bar')
+        self.assertTrue(os.path.exists(full_path))
+
+    @patch('pulp.server.db.model.config')
+    def test_pre_save_signal_file_content(self, mock_config):
+        source_dir = os.path.join(self.working_dir, 'src')
+        target_dir = os.path.join(self.working_dir, 'target')
+        os.mkdir(source_dir)
+        os.mkdir(target_dir)
+        mock_config.config.get.return_value = target_dir
+        # create something in the source directory to test the copy
+        source_file = os.path.join(source_dir, 'bar')
+        touch(source_file)
+
+        class ContentUnitHelper(model.ContentUnit):
+            unit_type_id = 'foo_unit'
+            pass
+        foo = ContentUnitHelper()
+        foo.set_content(source_file, 'foo/bar')
+        model.ContentUnit.pre_save_signal(object(), foo)
+        full_path = os.path.join(target_dir, 'content', 'foo_unit', 'foo', 'bar')
+        self.assertTrue(os.path.exists(full_path))
+
+    @patch('pulp.server.db.model.Repository.objects')
+    @patch('pulp.server.db.model.RepositoryContentUnit.objects')
+    def test_get_repositories(self, mock_rcu_query, mock_repository_query):
+        class ContentUnitHelper(model.ContentUnit):
+            pass
+
+        c1 = model.RepositoryContentUnit(repo_id='repo1')
+        c2 = model.RepositoryContentUnit(repo_id='repo2')
+
+        mock_rcu_query.return_value = [c1, c2]
+        mock_repository_query.return_value = ['apples']
+
+        unit = ContentUnitHelper(id='foo_id')
+
+        self.assertEquals(unit.get_repositories(), ['apples'])
+
+        mock_rcu_query.assert_called_once_with(unit_id='foo_id')
+        mock_repository_query.assert_called_once_with(repo_id__in=['repo1', 'repo2'])
 
 
 class TestRepositoryContentUnit(unittest.TestCase):

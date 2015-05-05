@@ -249,6 +249,10 @@ def reset():
     MOCK_PROFILER.reset_mock()
     MOCK_PROFILER_RPM.reset_mock()
 
+    # Reset does not remove side_effects
+    MOCK_DISTRIBUTOR.validate_config.side_effect = None
+    MOCK_DISTRIBUTOR_2.validate_config.side_effect = None
+
     # Undo the monkey patch
     plugin_api.get_distributor_by_id = _ORIG_GET_DISTRIBUTOR_BY_ID
     plugin_api.get_group_distributor_by_id = _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID

@@ -7,6 +7,8 @@ import isodate
 import logging
 import sys
 import traceback
+
+from datetime import datetime
 from gettext import gettext as _
 
 from celery import task
@@ -120,7 +122,6 @@ class RepoPublishManager(object):
             # Reload the distributor in case the scratchpad is set by the plugin
             repo_distributor = distributor_coll.find_one(
                 {'repo_id': repo_id, 'id': distributor_id})
-            repo_distributor['last_publish'] = publish_end_timestamp
             distributor_coll.save(repo_distributor, safe=True)
 
             # Add a publish history entry for the run
@@ -137,7 +138,7 @@ class RepoPublishManager(object):
 
         # Reload the distributor in case the scratchpad is set by the plugin
         repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
-        repo_distributor['last_publish'] = _now_timestamp()
+        repo_distributor['last_publish'] = datetime.utcnow()
         distributor_coll.save(repo_distributor, safe=True)
 
         # Add a publish entry
@@ -230,22 +231,11 @@ class RepoPublishManager(object):
         @raise MissingResource: if there is no distributor identified by the
                 given repo ID and distributor ID
         """
-
-        # Validation
-        coll = RepoDistributor.get_collection()
-        repo_distributor = coll.find_one({'repo_id': repo_id, 'id': distributor_id})
-
-        if repo_distributor is None:
+        collection = RepoDistributor.get_collection()
+        distributor = collection.find_one({'repo_id': repo_id, 'id': distributor_id})
+        if distributor is None:
             raise MissingResource(repo_id)
-
-        # Convert to datetime instance
-        date_str = repo_distributor['last_publish']
-
-        if date_str is None:
-            return date_str
-        else:
-            instance = dateutils.parse_iso8601_datetime(date_str)
-            return instance
+        return distributor['last_publish']
 
     def publish_history(self, repo_id, distributor_id, limit=None, sort=constants.SORT_DESCENDING,
                         start_date=None, end_date=None):
