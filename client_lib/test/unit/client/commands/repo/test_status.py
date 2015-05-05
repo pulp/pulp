@@ -123,3 +123,11 @@ class TestPublishStepStatusRenderer(unittest.TestCase):
         self.renderer.render_step = Mock(side_effect=status.CancelException())
         self.renderer.display_report({'foo': ['bar']})
         self.assertTrue(self.prompt.render_failure_message.called)
+
+    def test_render_step_missing_details(self):
+        """
+        Test that no exception is raised when PROGRESS_DETAILS_KEY is missing.
+        """
+        self.step[reporting_constants.PROGRESS_STATE_KEY] = reporting_constants.STATE_RUNNING
+        del self.step[reporting_constants.PROGRESS_DETAILS_KEY]
+        self.renderer.render_step(self.step)
