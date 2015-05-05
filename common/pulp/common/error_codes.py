@@ -43,7 +43,7 @@ PLP0007 = Error("PLP0007",
                   "bindings associated with it."),
                 ['repo_id'])
 PLP0008 = Error("PLP0008",
-                _("Error raising error %(code).  "
+                _("Error raising error %(code)s.  "
                   "The field [%(field)s] was not included in the error_data."),
                 ['code', 'field'])
 PLP0009 = Error("PLP0009", _("Missing resource(s): %(resources)s"), ['resources'])
