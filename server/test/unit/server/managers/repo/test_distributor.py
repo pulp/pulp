@@ -229,9 +229,6 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         except Exception:
             pass
 
-        # Cleanup
-        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
-
     def test_add_distributor_invalid_config(self):
         """
         Tests the correct error is raised when the distributor is handed an invalid configuration.
@@ -409,17 +406,13 @@ class RepoDistributorManagerTests(base.PulpServerTests):
         distributor = self.distributor_manager.add_distributor('elf', 'mock-distributor', {}, True)
         dist_id = distributor['id']
 
-        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = Exception()
-
-        # Test
-        try:
-            self.distributor_manager.update_distributor_config('elf', dist_id, {})
-            self.fail('Exception expected')
-        except exceptions.PulpDataException:
+        class TestException(Exception):
             pass
 
-        # Cleanup
-        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = None
+        mock_plugins.MOCK_DISTRIBUTOR.validate_config.side_effect = TestException()
+
+        self.assertRaises(TestException, self.distributor_manager.update_distributor_config,
+                          'elf', dist_id, {})
 
     def test_update_invalid_config(self):
         """

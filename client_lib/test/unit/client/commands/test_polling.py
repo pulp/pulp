@@ -311,6 +311,36 @@ class PollingCommandTests(base.PulpClientTests):
                          ]
         self.assertEqual(set(expected_tags), set(self.prompt.get_write_tags()))
 
+    @mock.patch('pulp.client.commands.polling.PollingCommand._render_coded_error')
+    def test_failed_task_calls__render_coded_error(self, mock_render_coded):
+        """
+        When a task fails, it should call _render_coded_error to render the error and suberrors.
+        """
+        mock_task = mock.MagicMock()
+        mock_task.error = {'description': 'this is a test of the emergency broadcast system'}
+        self.command.failed(mock_task)
+        mock_render_coded.assert_called_once_with(mock_task.error)
+
+    def test__render_coded_error_called_recursively(self):
+        """
+        Pass an error with sub_errors, they should all be rendered.
+        """
+        mock_error = {'description': 'this is a test of the emergency broadcast system',
+                      'sub_errors': [{'description': 'beep1'}, {'description': 'beep2'}]}
+
+        # Though a context manager would be prefered, this pattern is necessary to run on python 2.4
+        old_prompt = self.command.prompt
+        try:
+            self.command.prompt = mock.MagicMock()
+            self.command._render_coded_error(mock_error)
+            self.command.prompt.render_failure_message.assert_has_calls([
+                mock.call('this is a test of the emergency broadcast system'),
+                mock.call('beep1'),
+                mock.call('beep2'),
+            ])
+        finally:
+            self.command.prompt = old_prompt
+
     def test_cancelled_task(self):
         """
         Task Count: 1
