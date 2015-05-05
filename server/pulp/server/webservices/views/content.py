@@ -17,9 +17,9 @@ from pulp.server.managers import factory
 from pulp.server.managers.content import query as content_query
 from pulp.server.managers.content import orphan as content_orphan
 from pulp.server.tasks import content
-from pulp.server.webservices import serialization
-from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views import search
+from pulp.server.webservices.views.decorators import auth_required
+from pulp.server.webservices.views.serializers import content as serial_content
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,
                                                 generate_redirect_response,
@@ -39,12 +39,12 @@ def _process_content_unit(content_unit, content_type):
     :return: serialized unit
     :rtype:  dict
     """
-    unit = serialization.content.content_unit_obj(content_unit)
+    unit = serial_content.content_unit_obj(content_unit)
     unit['_href'] = reverse(
         'content_unit_resource',
         kwargs={'type_id': content_type, 'unit_id': content_unit['_id']}
     )
-    unit.update({'children': serialization.content.content_unit_child_link_objs(unit)})
+    unit.update({'children': serial_content.content_unit_child_link_objs(unit)})
     return unit
 
 
@@ -311,8 +311,8 @@ class ContentUnitResourceView(View):
             msg = _('No content unit resource: %(r)s') % {'r': unit_id}
             return generate_json_response(msg, response_class=HttpResponseNotFound)
 
-        resource = serialization.content.content_unit_obj(unit)
-        resource.update({'children': serialization.content.content_unit_child_link_objs(resource)})
+        resource = serial_content.content_unit_obj(unit)
+        resource.update({'children': serial_content.content_unit_child_link_objs(resource)})
         return generate_json_response_with_pulp_encoder(resource)
 
 
@@ -365,7 +365,7 @@ class ContentUnitUserMetadataResourceView(View):
             msg = _('No content unit resource: %(r)s') % {'r': unit_id}
             return generate_json_response(msg, HttpResponseNotFound)
 
-        resource = serialization.content.content_unit_obj(
+        resource = serial_content.content_unit_obj(
             unit[constants.PULP_USER_METADATA_FIELDNAME])
         return generate_json_response(resource)
 

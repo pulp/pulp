@@ -5,10 +5,10 @@ import unittest
 from django.http import HttpResponse, HttpResponseNotFound
 
 from pulp.server.exceptions import InputEncodingError, PulpCodedValidationException
-from pulp.server.webservices.controllers.base import json_encoder as pulp_json_encoder
 from pulp.server.webservices.views import util
 from pulp.server.webservices.views.util import (json_body_allow_empty,
-                                                json_body_required)
+                                                json_body_required,
+                                                pulp_json_encoder)
 
 
 class TestResponseGenerators(unittest.TestCase):

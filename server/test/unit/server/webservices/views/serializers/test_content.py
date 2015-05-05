@@ -4,14 +4,14 @@ from unittest import TestCase
 from mock import patch
 
 from pulp.common import dateutils
-from pulp.server.webservices.serialization import content, db
+from pulp.server.webservices.views.serializers import content, db
 
 LAST_UPDATED = '_last_updated'
 
 
 class TestSerialization(TestCase):
 
-    @patch('pulp.server.webservices.serialization.db.scrub_mongo_fields',
+    @patch('pulp.server.webservices.views.serializers.db.scrub_mongo_fields',
            wraps=db.scrub_mongo_fields)
     def test_serialization(self, mock):
         dt = datetime(2012, 10, 24, 10, 20, tzinfo=dateutils.utc_tz())

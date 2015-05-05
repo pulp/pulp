@@ -15,8 +15,8 @@ from pulp.server.managers.repo import importer as repo_importer_manager
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.tasks import repository as repo_tasks
-from pulp.server.webservices.controllers.decorators import auth_required
 from pulp.server.webservices.views import search
+from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.schedule import ScheduleResource
 from pulp.server.webservices.views.util import (generate_json_response,
                                                 generate_json_response_with_pulp_encoder,

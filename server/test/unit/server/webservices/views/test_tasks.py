@@ -14,20 +14,20 @@ from pulp.server.webservices.views.tasks import (TaskCollectionView, TaskResourc
                                                  TaskSearchView, task_serializer)
 
 
-@mock.patch('pulp.server.webservices.views.tasks.serialization')
+@mock.patch('pulp.server.webservices.views.tasks.serial_dispatch')
 def test_task_serializer(mock_seralization):
     """
     Test task_serializer helper function.
     """
-    mock_seralization.dispatch.task_status.return_value = {'status': 'mock'}
-    mock_seralization.dispatch.spawned_tasks.return_value = {'spawned_task': 'mock'}
-    mock_seralization.dispatch.task_result_href.return_value = {'_href': '/mock/path/'}
+    mock_seralization.task_status.return_value = {'status': 'mock'}
+    mock_seralization.spawned_tasks.return_value = {'spawned_task': 'mock'}
+    mock_seralization.task_result_href.return_value = {'_href': '/mock/path/'}
 
-    task = {'id': 'mock_task'}
+    task = {'task_id': 'mock_task'}
     serialized_task = task_serializer(task)
-    mock_seralization.dispatch.task_status.assert_called_once()
-    mock_seralization.dispatch.spawned_tasks.assert_called_once()
-    mock_seralization.dispatch.task_result_href.assert_called_once()
+    mock_seralization.task_status.assert_called_once()
+    mock_seralization.spawned_tasks.assert_called_once()
+    mock_seralization.task_result_href.assert_called_once()
 
     expected_task = {'status': 'mock', 'spawned_task': 'mock', '_href': '/mock/path/'}
     if serialized_task != expected_task:
@@ -54,7 +54,7 @@ class TestTaskCollection(unittest.TestCase):
     Tests for TaskCollectionView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.tasks.task_serializer')
     @mock.patch('pulp.server.webservices.views.tasks.TaskStatus')
@@ -77,7 +77,7 @@ class TestTaskCollection(unittest.TestCase):
         mock_task_serializer.assert_has_calls([mock.call('mock_1'), mock.call('mock_2')])
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.tasks.task_serializer')
     @mock.patch('pulp.server.webservices.views.tasks.TaskStatus')
@@ -106,7 +106,7 @@ class TestTaskResource(unittest.TestCase):
     View for a single task.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.tasks.Worker')
     @mock.patch('pulp.server.webservices.views.tasks.task_serializer')
@@ -133,7 +133,7 @@ class TestTaskResource(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.tasks.TaskStatus')
     def test_get_task_resource_invalid_task(self, mock_task_status):
@@ -155,7 +155,7 @@ class TestTaskResource(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data, {'resources': {'resource_id': 'mock_task'}})
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.tasks.tasks')
     @mock.patch('pulp.server.webservices.views.tasks.generate_json_response')

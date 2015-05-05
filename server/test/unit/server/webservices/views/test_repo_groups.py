@@ -18,7 +18,7 @@ class TestRepoGroupsView(unittest.TestCase):
     Tests for RepoGroupsView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch('pulp.server.webservices.views.repo_groups.RepoGroupModel.get_collection')
@@ -40,7 +40,7 @@ class TestRepoGroupsView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch(
         'pulp.server.webservices.views.repo_groups.generate_json_response_with_pulp_encoder')
@@ -65,7 +65,7 @@ class TestRepoGroupsView(unittest.TestCase):
         mock_redir.assert_called_once_with(mock_resp.return_value, expected_content['_href'])
         self.assertTrue(response is mock_redir.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch(
         'pulp.server.webservices.views.repo_groups.generate_json_response_with_pulp_encoder')
@@ -94,7 +94,7 @@ class TestRepoGroupsView(unittest.TestCase):
         mock_redir.assert_called_once_with(mock_resp.return_value, expected_data['_href'])
         self.assertTrue(response is mock_redir.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_post_repo_groups_extra_data(self):
         """
@@ -114,7 +114,7 @@ class TestRepoGroupsView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 400)
         self.assertTrue(response.error_code is error_codes.PLP0015)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     def test_post_repo_groups_missing_id(self):
         """
@@ -141,7 +141,7 @@ class TestRepoGroupResourceView(unittest.TestCase):
     Tests for RepoGroupResourceView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch(
@@ -162,7 +162,7 @@ class TestRepoGroupResourceView(unittest.TestCase):
         mock_resp.assert_called_once_with(expected_content)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.repo_groups.RepoGroupModel')
     def test_get_repo_group_resource_not_found(self, mock_model):
@@ -183,7 +183,7 @@ class TestRepoGroupResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertTrue(response.error_code is error_codes.PLP0009)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.repo_groups.generate_json_response')
     @mock.patch('pulp.server.webservices.views.repo_groups.managers_factory')
@@ -201,7 +201,7 @@ class TestRepoGroupResourceView(unittest.TestCase):
         mock_manager.delete_repo_group.assert_called_once_with('mock_id')
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch(
@@ -230,7 +230,7 @@ class TestRepoGroupAssociateView(unittest.TestCase):
     Tests for RepoGroupAssociateView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.repo_groups.generate_json_response')
     @mock.patch('pulp.server.webservices.views.repo_groups.RepoGroupModel')
@@ -260,7 +260,7 @@ class TestRepoGroupUnassociateView(unittest.TestCase):
     Tests for RepoGroupUnassociateView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.repo_groups.generate_json_response')
     @mock.patch('pulp.server.webservices.views.repo_groups.RepoGroupModel')
@@ -290,7 +290,7 @@ class TestRepoGroupDistributorsView(unittest.TestCase):
     Tests for RepoGroupDistributorsView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch(
@@ -314,7 +314,7 @@ class TestRepoGroupDistributorsView(unittest.TestCase):
         self.assertTrue(response is mock_resp.return_value)
         mock_dist_manager.find_distributors.assert_called_once_with('mock_group_id')
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch('pulp.server.webservices.views.repo_groups.generate_redirect_response')
@@ -352,7 +352,7 @@ class TestRepoGroupDistributorResourceView(unittest.TestCase):
     Tests for RepoGroupDistributorResourceView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch(
@@ -375,7 +375,7 @@ class TestRepoGroupDistributorResourceView(unittest.TestCase):
         mock_dist_manager.get_distributor.assert_called_once_with('group_id', 'dist_id')
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch('pulp.server.webservices.views.repo_groups.generate_json_response')
@@ -396,7 +396,7 @@ class TestRepoGroupDistributorResourceView(unittest.TestCase):
             'group_id', 'dist_id', force=True)
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repo_groups.reverse')
     @mock.patch(
@@ -421,7 +421,7 @@ class TestRepoGroupDistributorResourceView(unittest.TestCase):
             'group_id', 'dist_id', 'mock_conf')
         self.assertTrue(response is mock_resp.return_value)
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.webservices.views.repo_groups.generate_json_response')
     @mock.patch('pulp.server.webservices.views.repo_groups.managers_factory')
@@ -452,7 +452,7 @@ class TestRepoGroupPublishView(unittest.TestCase):
     Tests for RepoGroupPublishView.
     """
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     @mock.patch('pulp.server.webservices.views.repo_groups.tags')
     @mock.patch('pulp.server.webservices.views.repo_groups.repo_group_publish')
@@ -485,7 +485,7 @@ class TestRepoGroupPublishView(unittest.TestCase):
             tags=mock_task_tags
         )
 
-    @mock.patch('pulp.server.webservices.controllers.decorators._verify_auth',
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_EXECUTE())
     def test_post_repo_group_publish_missing_distributor_id(self):
         """
