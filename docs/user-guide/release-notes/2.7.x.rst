@@ -60,6 +60,15 @@ Deprecation
 Upgrade Instructions for 2.6.x --> 2.7.0
 -----------------------------------------
 
+.. warning::
+
+   This release adjusts the default 'server_name' in `/etc/pulp/server.conf` to be the fully
+   qualified domain name (FQDN), but previous releases on some platforms may have used the short
+   hostname. Similarly, this release adjusts the pulp-gen-ca-certificate tool to use the FQDN as
+   the `CN` in a certificate it generates. As a result of this change, you may experience a
+   hostname mismatch when you run Pulp. If you experience that issue, you can either set the value
+   of 'server_name' in /etc/pulp/server.conf or regenerate your certificate using pulp-gen-ca-certificate.
+
 All services should be stopped. At that point you can issue an upgrade via:
 
 ::
