@@ -69,18 +69,18 @@ class ConsumerListCommand(PulpCliCommand):
         if not bindings:
             return
 
-        confirmed = []
-        unconfirmed = []
+        confirmed = set()
+        unconfirmed = set()
 
         for binding in bindings:
             repo_id = binding['repo_id']
 
             if binding['deleted'] or len(binding['consumer_actions']):
-                unconfirmed.append(repo_id)
+                unconfirmed.add(repo_id)
             else:
-                confirmed.append(repo_id)
+                confirmed.add(repo_id)
 
-        consumer['bindings'] = {'confirmed': confirmed, 'unconfirmed': unconfirmed}
+        consumer['bindings'] = {'confirmed': list(confirmed), 'unconfirmed': list(unconfirmed)}
 
 
 class ConsumerSearchCommand(CriteriaCommand):

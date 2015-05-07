@@ -44,20 +44,37 @@ CONSUMERS_AND_NODES = [
 ]
 
 NODES_WITH_BINDINGS = [
-    {'notes': {constants.NODE_NOTE_KEY: True},
-     'bindings': [
-         {'repo_id': 'r1',
-          'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}}
-     ]},
-    {'notes': {constants.NODE_NOTE_KEY: True},
-     'bindings': [
-         {'repo_id': 'r2',
-          'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}},
-         {'repo_id': 'r3',
-          'binding_config': {}},  # not node binding
-         {'repo_id': 'r4',
-          'binding_config': {}},  # not node binding
-     ]},
+    {
+        'notes': {constants.NODE_NOTE_KEY: True},
+        'bindings': [
+            {
+                'repo_id': 'r1',
+                'type_id': constants.HTTP_DISTRIBUTOR,
+                'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY}
+            }
+        ]
+    },
+    {
+        'notes': {constants.NODE_NOTE_KEY: True},
+        'bindings': [
+            {
+                'repo_id': 'r2',
+                'type_id': constants.HTTP_DISTRIBUTOR,
+                'binding_config': {constants.STRATEGY_KEYWORD: constants.DEFAULT_STRATEGY},
+            },
+            {
+                'repo_id': 'r3',
+                'type_id': 'other',
+                'binding_config': {},  # not node binding
+            },
+            {
+                'repo_id': 'r4',
+                'type_id': 'other',
+                'binding_config': {},  # not node binding
+
+            },
+        ]
+    },
 ]
 
 ALL_REPOSITORIES = [{'id': REPOSITORY_ID}, ]
