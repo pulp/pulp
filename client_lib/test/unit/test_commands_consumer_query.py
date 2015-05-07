@@ -79,6 +79,37 @@ class ListCommandTests(base.PulpClientTests):
         self.assertTrue(url.find('bindings=True') > 0)
         self.assertTrue(url.find('details=False') > 0)
 
+    def test_format_bindings(self):
+        bindings = [
+            {'repo_id': 'r1', 'deleted': False, 'consumer_actions': []},
+            {'repo_id': 'r1', 'deleted': False, 'consumer_actions': []},
+            {'repo_id': 'r2', 'deleted': False, 'consumer_actions': []},
+            {'repo_id': 'r3', 'deleted': True, 'consumer_actions': []},
+            {'repo_id': 'r4', 'deleted': False, 'consumer_actions': []},
+            {'repo_id': 'r5', 'deleted': False, 'consumer_actions': ['1234']},
+        ]
+        consumer = {
+            'bindings': bindings
+        }
+
+        # test
+        self.command.format_bindings(consumer)
+
+        # validation
+        self.assertEqual(sorted(consumer['bindings']['confirmed']), ['r1', 'r2', 'r4'])
+        self.assertEqual(sorted(consumer['bindings']['unconfirmed']), ['r3', 'r5'])
+
+    def test_format_bindings_none(self):
+        consumer = {
+            'bindings': []
+        }
+
+        # test
+        self.command.format_bindings(consumer)
+
+        # validation
+        self.assertEqual(sorted(consumer['bindings']), [])
+
 
 class SearchCommandTests(base.PulpClientTests):
 

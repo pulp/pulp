@@ -177,9 +177,13 @@ class NodeListCommand(ConsumerListCommand):
     def format_bindings(self, consumer):
         formatted = {}
         key = 'bindings'
-        for b in consumer.get(key, []):
-            repo_id = b['repo_id']
-            strategy = b['binding_config'].get('strategy', constants.DEFAULT_STRATEGY)
+        for binding in consumer.get(key, []):
+            repo_id = binding['repo_id']
+            type_id = binding['type_id']
+            if type_id not in constants.ALL_DISTRIBUTORS:
+                # nodes only
+                continue
+            strategy = binding['binding_config'].get('strategy', constants.DEFAULT_STRATEGY)
             repo_ids = formatted.get(strategy)
             if repo_ids is None:
                 repo_ids = []
