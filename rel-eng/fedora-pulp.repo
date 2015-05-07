@@ -16,38 +16,6 @@ enabled=0
 skip_if_unavailable=1
 gpgcheck=0
 
-# Version 2.4 Beta Builds
-[pulp-2.4-beta]
-name=Pulp 2.4 Beta Builds
-baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/beta/2.4/fedora-$releasever/$basearch/
-enabled=0
-skip_if_unavailable=1
-gpgcheck=0
-
-# Version 2.4 Testing Builds
-[pulp-2.4-testing]
-name=Pulp 2.4 Testing Builds
-baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.4/fedora-$releasever/$basearch/
-enabled=0
-skip_if_unavailable=1
-gpgcheck=0
-
-# Version 2.5 Beta Builds
-[pulp-2.5-beta]
-name=Pulp 2.5 Beta Builds
-baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/beta/2.5/fedora-$releasever/$basearch/
-enabled=0
-skip_if_unavailable=1
-gpgcheck=0
-
-# Version 2.5 Testing Builds
-[pulp-2.5-testing]
-name=Pulp 2.5 Testing Builds
-baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.5/fedora-$releasever/$basearch/
-enabled=0
-skip_if_unavailable=1
-gpgcheck=0
-
 # Version 2.6 Beta Builds
 [pulp-2.6-beta]
 name=Pulp 2.6 Beta Builds
@@ -60,6 +28,14 @@ gpgcheck=0
 [pulp-2.6-testing]
 name=Pulp 2.6 Testing Builds
 baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/2.6/fedora-$releasever/$basearch/
+enabled=0
+skip_if_unavailable=1
+gpgcheck=0
+
+# Version 2.7 Testing Builds
+[pulp-2.7-testing]
+name=Pulp 2.7 Testing Builds
+baseurl=https://repos.fedorapeople.org/repos/pulp/pulp/testing/automation/2.7/dev/fedora-$releasever/$basearch/
 enabled=0
 skip_if_unavailable=1
 gpgcheck=0
