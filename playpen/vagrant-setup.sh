@@ -60,14 +60,18 @@ fi
 echo "installing RPMs"
 sudo yum install -y @pulp-server-qpid @pulp-admin @pulp-consumer
 sudo yum remove -y pulp-\* python-pulp\*
-sudo yum install -y git mongodb mongodb-server python-django python-flake8 python-mock \
-                    python-mongoengine python-nose python-paste python-pip python-qpid-qmf \
-                    python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store \
-                    python-unittest2
+sudo yum install -y git mongodb mongodb-server python-debian python-django python-glanceclient \
+                    python-keystoneclient python-mongoengine python-paste python-qpid-qmf \
+                    python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
 
+echo "Starting services, this may take a few minutes due to mongodb journal allocation"
+for s in qpidd mongod; do
+  sudo systemctl enable $s
+  sudo systemctl start $s
+done
 
 pushd devel
-for r in {pulp,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
+for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
   if [ -d $r ]; then
     echo "installing $r dev code"
     pushd $r
@@ -75,8 +79,11 @@ for r in {pulp,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pu
     ! mkvirtualenv --system-site-packages $r
     workon $r
     setvirtualenvproject
-    deactivate
+    # Install dependencies for automated tests
+    pip install -r test_requirements.txt
     sudo python ./pulp-dev.py -I
+    ./run-tests.py -x --enable-coverage
+    deactivate
     popd
   fi
 done
@@ -89,17 +96,11 @@ fi
 echo "Adjusting facls for apache"
 setfacl -m user:apache:rwx /home/vagrant
 
-echo "Starting services, this may take a few minutes due to mongodb journal allocation"
-for s in qpidd goferd mongod; do
-  sudo systemctl enable $s
-  sudo systemctl start $s
-done
-
 echo "populating mongodb"
 sudo -u apache pulp-manage-db
 
 echo "Starting more services"
-for s in httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
+for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
   sudo systemctl enable $s
   sudo systemctl start $s
 done
@@ -119,7 +120,9 @@ if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
     pulp-admin rpm repo sync run --repo-id zoo
 fi
 
-echo -e '\n\nDone. You should be able to run 'pulp-admin' successfully! Here are some tips:\n'
+echo -e '\n\nDone. Your development environment was provisioned successfully! Here are some tips:\n'
+echo -e "\t* You can ssh into your vagrant environment like this:\n"
+echo -e "\t\t$ vagrant ssh"
 echo -e "\n\t* Your code is all checked out inside of ~/devel/."
 echo -e "\n\t* The default username:password is admin:admin. When your session expires, you can log"
 echo -e "\t  in again with pulp-admin login -u admin"
