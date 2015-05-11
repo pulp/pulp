@@ -22,6 +22,7 @@ Source0:        http://pypi.python.org/packages/source/k/%{srcname}/%{srcname}-%
 Patch0:         1212200.patch
 Patch1:         1182322.patch
 Patch2:         1195361.patch
+Patch3:         476.patch
 BuildArch:      noarch
 
 BuildRequires:  python2-devel
@@ -120,6 +121,7 @@ This subpackage is for python3
 
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 
 # manage requirements on rpm base
 sed -i 's/>=1.0.13,<1.1.0/>=1.3.0/' requirements/default.txt
