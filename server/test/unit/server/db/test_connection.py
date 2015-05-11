@@ -3,6 +3,7 @@ import unittest
 
 from mock import patch, Mock, call
 
+from pulp.devel import mock_config
 from pulp.server import config
 from pulp.server.db import connection
 
@@ -12,11 +13,6 @@ class MongoEngineConnectionError(Exception):
 
 
 class TestDatabaseSeeds(unittest.TestCase):
-
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabaseSeeds, self).tearDown()
 
     def test_seeds_default(self):
         self.assertEqual(config._default_values['database']['seeds'], 'localhost:27017')
@@ -59,12 +55,12 @@ class TestDatabaseSeeds(unittest.TestCase):
         mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
                                                          host='firsthost', port=1234)
 
+    @mock_config.patch({'database': {'seeds': 'firsthost:1234,secondhost:5678'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
     def test_seeds_from_config(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'seeds', 'firsthost:1234,secondhost:5678')
 
         connection.initialize()
 
@@ -75,11 +71,6 @@ class TestDatabaseSeeds(unittest.TestCase):
 
 
 class TestDatabaseName(unittest.TestCase):
-
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabaseName, self).tearDown()
 
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
@@ -119,11 +110,6 @@ class TestDatabaseName(unittest.TestCase):
 
 class TestDatabaseReplicaSet(unittest.TestCase):
 
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabaseReplicaSet, self).tearDown()
-
     def test_replica_set_default_does_not_exist(self):
         self.assertRaises(NoOptionError, config.config.get, 'database', 'replica_set')
 
@@ -144,6 +130,8 @@ class TestDatabaseReplicaSet(unittest.TestCase):
             database, host=host, max_pool_size=max_pool_size, port=port,
             replicaset=mock_replica_set)
 
+    @mock_config.patch({'database': {'replica_set': 'real_replica_set', 'name': 'nbachamps',
+                                     'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -152,9 +140,6 @@ class TestDatabaseReplicaSet(unittest.TestCase):
         Assert that replica set configuration defaults to the configured value if not provided.
         """
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'replica_set', 'real_replica_set')
-        config.config.set('database', 'name', 'nbachamps')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -165,11 +150,6 @@ class TestDatabaseReplicaSet(unittest.TestCase):
 
 
 class TestDatabaseMaxPoolSize(unittest.TestCase):
-
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabaseMaxPoolSize, self).tearDown()
 
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
@@ -208,11 +188,6 @@ class TestDatabaseMaxPoolSize(unittest.TestCase):
 
 
 class TestDatabase(unittest.TestCase):
-
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabase, self).tearDown()
 
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
@@ -294,21 +269,15 @@ class TestDatabase(unittest.TestCase):
 
 class TestDatabaseSSL(unittest.TestCase):
 
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabaseSSL, self).tearDown()
-
     def test_ssl_off_by_default(self):
         self.assertEqual(config.config.getboolean('database', 'ssl'), False)
 
+    @mock_config.patch({'database': {'ssl': 'false', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
     def test_ssl_is_skipped_if_off(self, mock_mongoengine):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'ssl', 'false')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -317,15 +286,14 @@ class TestDatabaseSSL(unittest.TestCase):
         mock_mongoengine.connect.assert_called_once_with(database, max_pool_size=max_pool_size,
                                                          host='champs.example.com', port=27018)
 
+    @mock_config.patch({'database': {'verify_ssl': 'true',
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
     def test_ssl_is_configured_with_verify_ssl_on(self, mock_mongoengine, mock_ssl):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'verify_ssl', 'true')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -337,15 +305,14 @@ class TestDatabaseSSL(unittest.TestCase):
             database, max_pool_size=max_pool_size, ssl=True, ssl_cert_reqs=ssl_cert_reqs,
             ssl_ca_certs=ssl_ca_certs, host='champs.example.com', port=27018)
 
+    @mock_config.patch({'database': {'verify_ssl': 'false',
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
     def test_ssl_is_configured_with_verify_ssl_off(self, mock_mongoengine, mock_ssl):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'verify_ssl', 'false')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -357,16 +324,14 @@ class TestDatabaseSSL(unittest.TestCase):
             database, max_pool_size=max_pool_size, ssl=True, ssl_cert_reqs=ssl_cert_reqs,
             ssl_ca_certs=ssl_ca_certs, host='champs.example.com', port=27018)
 
+    @mock_config.patch({'database': {'ssl_keyfile': 'keyfilepath', 'verify_ssl': 'false',
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
     def test_ssl_is_configured_with_ssl_keyfile(self, mock_mongoengine, mock_ssl):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'ssl_keyfile', 'keyfilepath')
-        config.config.set('database', 'verify_ssl', 'false')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -379,16 +344,14 @@ class TestDatabaseSSL(unittest.TestCase):
             ssl_ca_certs=ssl_ca_certs, ssl_keyfile='keyfilepath', host='champs.example.com',
             port=27018)
 
+    @mock_config.patch({'database': {'ssl_certfile': 'certfilepath', 'verify_ssl': 'false',
+                                     'ssl': 'true', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.ssl')
     @patch('pulp.server.db.connection.mongoengine')
     def test_ssl_is_configured_with_ssl_certfile(self, mock_mongoengine, mock_ssl):
         mock_mongoengine.connect.return_value.server_info.return_value = {'version': '2.6.0'}
-        config.config.set('database', 'ssl_certfile', 'certfilepath')
-        config.config.set('database', 'verify_ssl', 'false')
-        config.config.set('database', 'ssl', 'true')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -446,11 +409,9 @@ class TestDatabaseVersion(unittest.TestCase):
 
 class TestDatabaseAuthentication(unittest.TestCase):
 
-    def tearDown(self):
-        # Reload the configuration so that things are cleaned up properly
-        config.load_configuration()
-        super(TestDatabaseAuthentication, self).tearDown()
-
+    @mock_config.patch(
+        {'database': {'name': 'nbachamps', 'username': 'larrybird',
+                      'password': 'celtics1981', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -462,10 +423,6 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               connection.MONGO_MINIMUM_VERSION}
-        config.config.set('database', 'name', 'nbachamps')
-        config.config.set('database', 'username', 'larrybird')
-        config.config.set('database', 'password', 'celtics1981')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -473,6 +430,9 @@ class TestDatabaseAuthentication(unittest.TestCase):
             'nbachamps', username='larrybird', host='champs.example.com',
             password='celtics1981', max_pool_size=10, port=27018)
 
+    @mock_config.patch(
+        {'database': {'name': 'nbachamps', 'username': 'larrybird',
+                      'password': 'celtics1981', 'seeds': 'champs.example.com:27018'}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection._logger.debug')
@@ -484,10 +444,6 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               connection.MONGO_MINIMUM_VERSION}
-        config.config.set('database', 'name', 'nbachamps')
-        config.config.set('database', 'username', 'larrybird')
-        config.config.set('database', 'password', 'celtics1981')
-        config.config.set('database', 'seeds', 'champs.example.com:27018')
 
         connection.initialize()
 
@@ -501,6 +457,7 @@ class TestDatabaseAuthentication(unittest.TestCase):
             call('Querying the database to validate the connection.')]
         mock_log.assert_has_calls(expected_calls)
 
+    @mock_config.patch({'database': {'username': '', 'password': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -512,13 +469,12 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               connection.MONGO_MINIMUM_VERSION}
-        config.config.set('database', 'username', '')
-        config.config.set('database', 'password', '')
 
         connection.initialize()
 
         self.assertFalse(connection._DATABASE.authenticate.called)
 
+    @mock_config.patch({'database': {'username': 'admin', 'password': ''}})
     @patch('pulp.server.db.connection._CONNECTION', None)
     @patch('pulp.server.db.connection._DATABASE', None)
     @patch('pulp.server.db.connection.mongoengine')
@@ -529,19 +485,17 @@ class TestDatabaseAuthentication(unittest.TestCase):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               connection.MONGO_MINIMUM_VERSION}
-        config.config.set('database', 'username', 'admin')
-        config.config.set('database', 'password', '')
 
         # ensure no exception is raised (redmine #708)
         connection.initialize()
 
+    @mock_config.patch({'database': {'username': '', 'password': 'foo'}})
     @patch('pulp.server.db.connection.mongoengine')
     def test_initialize_password_no_username(self, mock_mongoengine):
         mock_mongoengine_instance = mock_mongoengine.connect.return_value
         mock_mongoengine_instance.server_info.return_value = {"version":
                                                               connection.MONGO_MINIMUM_VERSION}
-        config.config.set('database', 'username', '')
-        config.config.set('database', 'password', 'foo')
+
         self.assertRaises(Exception, connection.initialize)
 
     @patch('pulp.server.db.connection.OperationFailure', new=MongoEngineConnectionError)

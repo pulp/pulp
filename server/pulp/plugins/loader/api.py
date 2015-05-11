@@ -72,8 +72,6 @@ def finalize():
     assert _is_initialized()
     _MANAGER = None
 
-# query api --------------------------------------------------------------------
-
 
 def list_content_types():
     """
