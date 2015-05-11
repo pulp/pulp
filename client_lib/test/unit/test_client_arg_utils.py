@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 import mock
 
@@ -19,8 +6,8 @@ from pulp.client import arg_utils
 
 class TestConvertRemovedOptions(unittest.TestCase):
     """
-    Tests pulp.client.arg_utils.convert_removed_options, which strips out any keys with a None value,
-    and then converts any keys with a value of "" to None
+    Tests pulp.client.arg_utils.convert_removed_options, which strips out any keys with a None
+    value, and then converts any keys with a value of "" to None
     """
 
     def test_non_empty_values(self):
@@ -51,8 +38,8 @@ class TestConvertRemovedOptions(unittest.TestCase):
 
 class TestConvertBooleanArguments(unittest.TestCase):
     """
-    Tests pulp.client.arg_utils.convert_boolean_arguments, which takes a list or tuple of keys, and an
-    args dict, which is then converted from strings to boolean values
+    Tests pulp.client.arg_utils.convert_boolean_arguments, which takes a list or tuple of keys, and
+    an args dict, which is then converted from strings to boolean values
     """
 
     def test_valid_input(self):
@@ -96,14 +83,16 @@ class TestConvertBooleanArguments(unittest.TestCase):
         args = {'key1': 'maybe', 'key2': 'truish'}
 
         # Assert InvalidConfig is raised
-        self.assertRaises(arg_utils.InvalidConfig, arg_utils.convert_boolean_arguments, key_list, args)
+        self.assertRaises(arg_utils.InvalidConfig, arg_utils.convert_boolean_arguments, key_list,
+                          args)
 
 
 class TestConvertFileContents(unittest.TestCase):
     """
     This class tests the pulp.client.arg_utils.convert_file_contents function, which takes a list or
     tuple of keys to read in as files and a dict of key-value pairs to convert (may include keys not
-    in the file_keys list). The file is then written to the value of the dict for each key in the list.
+    in the file_keys list). The file is then written to the value of the dict for each key in the
+    list.
     """
 
     @mock.patch('__builtin__.open', autospec=True)
@@ -172,8 +161,8 @@ class TestConvertFileContents(unittest.TestCase):
 
 class TestArgToBool(unittest.TestCase):
     """
-    This class tests the pulp.client.arg_utils.arg_to_bool function, which takes a str and returns the
-    bool equivalent, or None if it is not True or False.
+    This class tests the pulp.client.arg_utils.arg_to_bool function, which takes a str and returns
+    the bool equivalent, or None if it is not True or False.
     """
 
     def test_true(self):
@@ -203,8 +192,8 @@ class TestArgToBool(unittest.TestCase):
 
 class TestArgsToNotesDict(unittest.TestCase):
     """
-    This class tests the pulp.client.arg_utils.args_to_notes_dict function, which takes a list of notes
-    in the format 'key=value' and a boolean which determines whether None is a valid value
+    This class tests the pulp.client.arg_utils.args_to_notes_dict function, which takes a list of
+    notes in the format 'key=value' and a boolean which determines whether None is a valid value
     """
 
     def test_include_none_true(self):
