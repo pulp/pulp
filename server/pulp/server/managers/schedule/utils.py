@@ -98,7 +98,9 @@ def delete(schedule_id):
     try:
         spec = {'_id': ObjectId(schedule_id)}
     except InvalidId:
-        raise exceptions.InvalidValue(['schedule_id'])
+        # During schedule deletion, MissingResource should be raised even if
+        # schedule_id is invalid object_id.
+        raise exceptions.MissingResource(schedule_id=schedule_id)
 
     schedule = ScheduledCall.get_collection().find_and_modify(
         query=spec, remove=True, safe=True)
@@ -147,7 +149,9 @@ def update(schedule_id, delta):
     try:
         spec = {'_id': ObjectId(schedule_id)}
     except InvalidId:
-        raise exceptions.InvalidValue(['schedule_id'])
+        # During schedule update, MissingResource should be raised even if
+        # schedule_id is invalid object_id.
+        raise exceptions.MissingResource(schedule_id=schedule_id)
     schedule = ScheduledCall.get_collection().find_and_modify(
         query=spec, update={'$set': delta}, safe=True, new=True)
     if schedule is None:
