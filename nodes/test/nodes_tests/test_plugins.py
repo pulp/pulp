@@ -22,8 +22,10 @@ from pulp_node.importers.http.importer import NodesHttpImporter, entry_point as 
 from pulp_node.profilers.nodes import NodeProfiler, entry_point as profiler_entry_point
 from pulp_node.handlers.handler import NodeHandler, RepositoryHandler
 
+from pulp.devel import mock_config
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
+from pulp.server import config as pulp_conf
 from pulp.server.db import connection
 from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
@@ -38,7 +40,6 @@ from pulp.common.plugins import importer_constants
 from pulp.common.config import Config
 from pulp.server.managers import factory as managers
 from pulp.server.content.sources.model import Request as DownloadRequest
-from pulp.server.config import config as pulp_conf
 from pulp.agent.lib.conduit import Conduit
 from pulp_node.manifest import Manifest, RemoteManifest, MANIFEST_FILE_NAME, UNITS_FILE_NAME
 from pulp_node.handlers.strategies import Mirror, Additive
@@ -136,9 +137,6 @@ class AgentConduit(Conduit):
         return self.node_id
 
 
-# --- testing base classes ---------------------------------------------------
-
-
 class PluginTestBase(ServerTests):
 
     REPO_ID = 'test-repo'
@@ -201,15 +199,16 @@ class PluginTestBase(ServerTests):
     def populate(self):
         # make content/ dir.
         os.makedirs(os.path.join(self.parentfs, 'content'))
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        # create repo
-        manager = managers.repo_manager()
-        manager.create_repo(
-            self.REPO_ID, display_name=REPO_NAME, description=REPO_DESCRIPTION, notes=REPO_NOTES)
-        manager.set_repo_scratchpad(self.REPO_ID, REPO_SCRATCHPAD)
-        # add units
-        units = self.add_units(0, self.NUM_UNITS)
-        self.units = units
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            # create repo
+            manager = managers.repo_manager()
+            manager.create_repo(
+                self.REPO_ID, display_name=REPO_NAME, description=REPO_DESCRIPTION, notes=REPO_NOTES)
+            manager.set_repo_scratchpad(self.REPO_ID, REPO_SCRATCHPAD)
+            # add units
+            units = self.add_units(0, self.NUM_UNITS)
+            self.units = units
 
     def node_configuration(self):
         path = os.path.join(self.parentfs, 'node.crt')
@@ -220,7 +219,7 @@ class PluginTestBase(ServerTests):
 
     def add_units(self, begin, end):
         units = []
-        storage_dir = os.path.join(pulp_conf.get('server', 'storage_dir'), 'content')
+        storage_dir = os.path.join(pulp_conf.config.get('server', 'storage_dir'), 'content')
         if not os.path.exists(storage_dir):
             os.makedirs(storage_dir)
         for n in range(begin, end):
@@ -503,14 +502,16 @@ class TestDistributor(PluginTestBase):
     def test_payload(self):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
+
         # Test
-        dist = NodesHttpDistributor()
-        repo = Repository(self.REPO_ID)
-        payload = dist.create_consumer_payload(repo, self.dist_conf(), {})
-        f = open('/tmp/payload', 'w+')
-        f.write(repr(payload['importers']))
-        f.close()
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            payload = dist.create_consumer_payload(repo, self.dist_conf(), {})
+            f = open('/tmp/payload', 'w+')
+            f.write(repr(payload['importers']))
+            f.close()
+
         # Verify
         distributors = payload['distributors']
         importers = payload['importers']
@@ -527,34 +528,35 @@ class TestDistributor(PluginTestBase):
     def test_publish(self):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        # Test
-        dist = NodesHttpDistributor()
-        repo = Repository(self.REPO_ID)
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, self.dist_conf())
-        # Verify
-        conf = DownloaderConfig()
-        downloader = LocalFileDownloader(conf)
-        pub = dist.publisher(repo, self.dist_conf())
-        url = pathlib.url_join(pub.base_url, pub.manifest_path())
-        working_dir = self.childfs
-        manifest = RemoteManifest(url, downloader, working_dir)
-        manifest.fetch()
-        manifest.fetch_units()
-        units = [u for u, r in manifest.get_units()]
-        self.assertEqual(len(units), self.NUM_UNITS)
-        for n in range(0, self.NUM_UNITS):
-            unit = units[n]
-            created = self.units[n]
-            for p, v in unit['unit_key'].items():
-                self.assertEqual(created[p], v)
-            for p, v in unit['metadata'].items():
-                if p in ('_ns', '_content_type_id'):
-                    continue
-                self.assertEqual(created[p], v)
-            self.assertEqual(created.get('_storage_path'), unit['storage_path'])
-            self.assertEqual(unit['type_id'], self.UNIT_TYPE_ID)
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            # Test
+            dist = NodesHttpDistributor()
+            repo = Repository(self.REPO_ID)
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, self.dist_conf())
+            # Verify
+            conf = DownloaderConfig()
+            downloader = LocalFileDownloader(conf)
+            pub = dist.publisher(repo, self.dist_conf())
+            url = pathlib.url_join(pub.base_url, pub.manifest_path())
+            working_dir = self.childfs
+            manifest = RemoteManifest(url, downloader, working_dir)
+            manifest.fetch()
+            manifest.fetch_units()
+            units = [u for u, r in manifest.get_units()]
+            self.assertEqual(len(units), self.NUM_UNITS)
+            for n in range(0, self.NUM_UNITS):
+                unit = units[n]
+                created = self.units[n]
+                for p, v in unit['unit_key'].items():
+                    self.assertEqual(created[p], v)
+                for p, v in unit['metadata'].items():
+                    if p in ('_ns', '_content_type_id'):
+                        continue
+                    self.assertEqual(created[p], v)
+                self.assertEqual(created.get('_storage_path'), unit['storage_path'])
+                self.assertEqual(unit['type_id'], self.UNIT_TYPE_ID)
 
     def test_get_publish_dir(self):
         dist = NodesHttpDistributor()
@@ -643,163 +645,170 @@ class ImporterTest(PluginTestBase):
         self.populate()
         max_concurrency = 5
         max_bandwidth = 12345
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        cfg = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, cfg)
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        self.define_plugins()
-        # Test
-        importer = NodesHttpImporter()
-        publisher = dist.publisher(repo, cfg)
-        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-            importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
-            importer_constants.KEY_MAX_SPEED: max_bandwidth,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        units = conduit.get_units()
-        self.assertEquals(len(units), self.NUM_UNITS)
-        mock_importer_config_to_nectar_config = mocks[0]
-        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            cfg = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+            self.define_plugins()
+            # Test
+            importer = NodesHttpImporter()
+            publisher = dist.publisher(repo, cfg)
+            manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+                importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
+                importer_constants.KEY_MAX_SPEED: max_bandwidth,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            units = conduit.get_units()
+            self.assertEquals(len(units), self.NUM_UNITS)
+            mock_importer_config_to_nectar_config = mocks[0]
+            mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.manifest.RemoteManifest.fetch_units')
     def test_import_cached_manifest_matched(self, mock_fetch, *unused):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        configuration = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, configuration)
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        self.define_plugins()
-        publisher = dist.publisher(repo, configuration)
-        manifest_path = publisher.manifest_path()
-        units_path = os.path.join(os.path.dirname(manifest_path), UNITS_FILE_NAME)
-        manifest = Manifest(manifest_path)
-        manifest.read()
-        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
-        shutil.copy(units_path, os.path.join(working_dir, UNITS_FILE_NAME))
-        # Test
-        importer = NodesHttpImporter()
-        manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        units = conduit.get_units()
-        self.assertEquals(len(units), self.NUM_UNITS)
-        self.assertFalse(mock_fetch.called)
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            configuration = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, configuration)
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+            self.define_plugins()
+            publisher = dist.publisher(repo, configuration)
+            manifest_path = publisher.manifest_path()
+            units_path = os.path.join(os.path.dirname(manifest_path), UNITS_FILE_NAME)
+            manifest = Manifest(manifest_path)
+            manifest.read()
+            shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+            shutil.copy(units_path, os.path.join(working_dir, UNITS_FILE_NAME))
+            # Test
+            importer = NodesHttpImporter()
+            manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            units = conduit.get_units()
+            self.assertEquals(len(units), self.NUM_UNITS)
+            self.assertFalse(mock_fetch.called)
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     def test_import_cached_manifest_missing_units(self, *unused):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        configuration = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, configuration)
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        self.define_plugins()
-        publisher = dist.publisher(repo, configuration)
-        manifest_path = publisher.manifest_path()
-        manifest = Manifest(manifest_path)
-        manifest.read()
-        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
-        # Test
-        importer = NodesHttpImporter()
-        manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        units = conduit.get_units()
-        self.assertEquals(len(units), self.NUM_UNITS)
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            configuration = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, configuration)
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+            self.define_plugins()
+            publisher = dist.publisher(repo, configuration)
+            manifest_path = publisher.manifest_path()
+            manifest = Manifest(manifest_path)
+            manifest.read()
+            shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+            # Test
+            importer = NodesHttpImporter()
+            manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            units = conduit.get_units()
+            self.assertEquals(len(units), self.NUM_UNITS)
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     def test_import_cached_manifest_units_invalid(self, *unused):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        configuration = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, configuration)
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        self.define_plugins()
-        publisher = dist.publisher(repo, configuration)
-        manifest_path = publisher.manifest_path()
-        manifest = Manifest(manifest_path)
-        manifest.read()
-        shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
-        with open(os.path.join(working_dir, UNITS_FILE_NAME), 'w+') as fp:
-            fp.write('invalid-units')
-        # Test
-        importer = NodesHttpImporter()
-        manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        units = conduit.get_units()
-        self.assertEquals(len(units), self.NUM_UNITS)
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            configuration = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, configuration)
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+            self.define_plugins()
+            publisher = dist.publisher(repo, configuration)
+            manifest_path = publisher.manifest_path()
+            manifest = Manifest(manifest_path)
+            manifest.read()
+            shutil.copy(manifest_path, os.path.join(working_dir, MANIFEST_FILE_NAME))
+            with open(os.path.join(working_dir, UNITS_FILE_NAME), 'w+') as fp:
+                fp.write('invalid-units')
+            # Test
+            importer = NodesHttpImporter()
+            manifest_url = pathlib.url_join(publisher.base_url, manifest_path)
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            units = conduit.get_units()
+            self.assertEquals(len(units), self.NUM_UNITS)
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
@@ -807,41 +816,43 @@ class ImporterTest(PluginTestBase):
     def test_import_unit_files_already_exist(self, *mocks):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        cfg = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, cfg)
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        self.define_plugins()
-        parent_content = os.path.join(self.parentfs, 'content')
-        child_content = os.path.join(self.childfs, 'content')
-        shutil.copytree(parent_content, child_content)
-        # Test
-        importer = NodesHttpImporter()
-        publisher = dist.publisher(repo, cfg)
-        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        units = conduit.get_units()
-        self.assertEquals(len(units), self.NUM_UNITS)
-        mock_importer_config_to_nectar_config = mocks[0]
-        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            cfg = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+            self.define_plugins()
+            parent_content = os.path.join(self.parentfs, 'content')
+            child_content = os.path.join(self.childfs, 'content')
+            shutil.copytree(parent_content, child_content)
+            # Test
+            importer = NodesHttpImporter()
+            publisher = dist.publisher(repo, cfg)
+            manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            units = conduit.get_units()
+            self.assertEquals(len(units), self.NUM_UNITS)
+            mock_importer_config_to_nectar_config = mocks[0]
+            mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
@@ -849,47 +860,49 @@ class ImporterTest(PluginTestBase):
     def test_import_unit_files_already_exist_size_mismatch(self, *mocks):
         # Setup
         self.populate()
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        cfg = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, cfg)
-        Repo.get_collection().remove()
-        RepoDistributor.get_collection().remove()
-        RepoContentUnit.get_collection().remove()
-        unit_db.clean()
-        self.define_plugins()
-        parent_content = os.path.join(self.parentfs, 'content')
-        child_content = os.path.join(self.childfs, 'content')
-        shutil.copytree(parent_content, child_content)
-        for fn in os.listdir(child_content):
-            path = os.path.join(child_content, fn)
-            if os.path.isdir(path):
-                continue
-            with open(path, 'w') as fp:
-                fp.truncate()
-        # Test
-        importer = NodesHttpImporter()
-        publisher = dist.publisher(repo, cfg)
-        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        units = conduit.get_units()
-        self.assertEquals(len(units), self.NUM_UNITS)
-        mock_importer_config_to_nectar_config = mocks[0]
-        mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            cfg = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            Repo.get_collection().remove()
+            RepoDistributor.get_collection().remove()
+            RepoContentUnit.get_collection().remove()
+            unit_db.clean()
+            self.define_plugins()
+            parent_content = os.path.join(self.parentfs, 'content')
+            child_content = os.path.join(self.childfs, 'content')
+            shutil.copytree(parent_content, child_content)
+            for fn in os.listdir(child_content):
+                path = os.path.join(child_content, fn)
+                if os.path.isdir(path):
+                    continue
+                with open(path, 'w') as fp:
+                    fp.truncate()
+            # Test
+            importer = NodesHttpImporter()
+            publisher = dist.publisher(repo, cfg)
+            manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            units = conduit.get_units()
+            self.assertEquals(len(units), self.NUM_UNITS)
+            mock_importer_config_to_nectar_config = mocks[0]
+            mock_importer_config_to_nectar_config.assert_called_with(configuration.flatten())
 
     @patch('pulp_node.importers.http.importer.Downloader', LocalFileDownloader)
     @patch('pulp_node.importers.http.importer.importer_config_to_nectar_config',
@@ -899,36 +912,38 @@ class ImporterTest(PluginTestBase):
         self.populate()
         max_concurrency = 5
         max_bandwidth = 12345
-        pulp_conf.set('server', 'storage_dir', self.parentfs)
-        dist = NodesHttpDistributor()
-        working_dir = os.path.join(self.childfs, 'working_dir')
-        os.makedirs(working_dir)
-        repo = Repository(self.REPO_ID, working_dir)
-        cfg = self.dist_conf()
-        conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
-        dist.publish_repo(repo, conduit, cfg)
-        # make the published unit have a newer _last_updated.
-        collection = connection.get_collection(unit_db.unit_collection_name(self.UNIT_TYPE_ID))
-        unit = collection.find_one({'N': 0})
-        unit['age'] = 84
-        unit['_last_updated'] -= 1
-        collection.update({'N': 0}, unit, safe=True)
-        # Test
-        importer = NodesHttpImporter()
-        publisher = dist.publisher(repo, cfg)
-        manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
-        configuration = {
-            constants.MANIFEST_URL_KEYWORD: manifest_url,
-            constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
-            importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
-            importer_constants.KEY_MAX_SPEED: max_bandwidth,
-        }
-        configuration = PluginCallConfiguration(configuration, {})
-        conduit = RepoSyncConduit(
-            self.REPO_ID,
-            constants.HTTP_IMPORTER)
-        pulp_conf.set('server', 'storage_dir', self.childfs)
-        importer.sync_repo(repo, conduit, configuration)
-        # Verify
-        unit = collection.find_one({'N': 0})
-        self.assertEqual(unit['age'], 42)
+
+        with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
+            dist = NodesHttpDistributor()
+            working_dir = os.path.join(self.childfs, 'working_dir')
+            os.makedirs(working_dir)
+            repo = Repository(self.REPO_ID, working_dir)
+            cfg = self.dist_conf()
+            conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
+            dist.publish_repo(repo, conduit, cfg)
+            # make the published unit have a newer _last_updated.
+            collection = connection.get_collection(unit_db.unit_collection_name(self.UNIT_TYPE_ID))
+            unit = collection.find_one({'N': 0})
+            unit['age'] = 84
+            unit['_last_updated'] -= 1
+            collection.update({'N': 0}, unit, safe=True)
+            # Test
+            importer = NodesHttpImporter()
+            publisher = dist.publisher(repo, cfg)
+            manifest_url = pathlib.url_join(publisher.base_url, publisher.manifest_path())
+            configuration = {
+                constants.MANIFEST_URL_KEYWORD: manifest_url,
+                constants.STRATEGY_KEYWORD: constants.MIRROR_STRATEGY,
+                importer_constants.KEY_MAX_DOWNLOADS: max_concurrency,
+                importer_constants.KEY_MAX_SPEED: max_bandwidth,
+            }
+            configuration = PluginCallConfiguration(configuration, {})
+            conduit = RepoSyncConduit(
+                self.REPO_ID,
+                constants.HTTP_IMPORTER)
+
+        with mock_config.patch({'server': {'storage_dir': self.childfs}}):
+            importer.sync_repo(repo, conduit, configuration)
+            # Verify
+            unit = collection.find_one({'N': 0})
+            self.assertEqual(unit['age'], 42)

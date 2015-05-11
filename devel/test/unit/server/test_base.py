@@ -1,12 +1,12 @@
 """
 This module contains tests for pulp.devel.unit.server.base.
 """
-import os
 import unittest
 
 import mock
 
 from pulp.devel.unit.server import base
+from pulp.server import config
 
 
 class DropDatabaseTestCase(unittest.TestCase):
@@ -24,23 +24,44 @@ class DropDatabaseTestCase(unittest.TestCase):
         _CONNECTION.drop_database.assert_called_once_with(_DATABASE.name)
 
 
+class EnforceConfigTestCase(unittest.TestCase):
+    """
+    This class contains tests for the _enforce_config() function.
+    """
+    def test_raises_exception(self):
+        """
+        Ensure that _enforce_config raises an Exception.
+        """
+        self.assertRaises(Exception, base._enforce_config)
+
+
 class LoadTestConfigTestCase(unittest.TestCase):
     """
     This class contains tests for the _load_test_config() function.
     """
-    @mock.patch('pulp.devel.unit.server.base.config.add_config_file')
+    @mock.patch('pulp.devel.unit.server.base.config.config.set')
     @mock.patch('pulp.devel.unit.server.base.stop_logging')
     @mock.patch('pulp.devel.unit.server.base.start_logging')
-    def test_load_test_config(self, start_logging, stop_logging, add_config_file):
+    def test_load_test_config(self, start_logging, stop_logging, config_set):
         """
         Assert correct operation of the function.
         """
         base._load_test_config()
 
-        add_config_file.assert_called_once_with(
-            os.path.join(base.DATA_DIR, 'test-override-pulp.conf'))
+        # Logging should have been started and stopped
         start_logging.assert_called_once_with()
         stop_logging.assert_called_once_with()
+
+        # Ensure that the correct settings have been put into place
+        self.assertEqual(
+            [c[1] for c in config_set.mock_calls],
+            [('database', 'name', 'pulp_unittest'), ('server', 'storage_dir', '/tmp/pulp')])
+
+        # Ensure that the config doesn't allow tampering
+        self.assertTrue(config.config.set is base._enforce_config)
+        self.assertTrue(config.load_configuration is base._enforce_config)
+        self.assertTrue(config.__setattr__ is base._enforce_config)
+        self.assertTrue(config.config.__setattr__ is base._enforce_config)
 
 
 class StartDatabaseConnectionTestCase(unittest.TestCase):

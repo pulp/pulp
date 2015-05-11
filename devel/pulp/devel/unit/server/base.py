@@ -8,9 +8,6 @@ from pulp.server.db import connection
 from pulp.server.logs import start_logging, stop_logging
 
 
-DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../../test/data/'))
-
-
 def drop_database():
     """
     Drop the database so that the next test run starts with a clean database.
@@ -28,14 +25,36 @@ def start_database_connection():
         connection.initialize()
 
 
+def _enforce_config(*args, **kwargs):
+    """
+    Raise an Exception that tells developers to mock the config rather than trying to change the
+    real config.
+
+    :param args:   Unused
+    :type  args:   list
+    :param kwargs: Unused
+    :type  kwargs: dict
+
+    :raises:       Exception
+    """
+    raise Exception("Do not change the config during test runs! Please use "
+                    "pulp.devel.mock_config.patch instead.")
+
+
 def _load_test_config():
     """
     Load the test database configuration information.
     """
-    override_file = os.path.join(DATA_DIR, 'test-override-pulp.conf')
     stop_logging()
 
-    config.add_config_file(override_file)
+    config.config.set('database', 'name', 'pulp_unittest')
+    config.config.set('server', 'storage_dir', '/tmp/pulp')
+
+    # Prevent the tests from altering the config so that nobody accidentally makes global changes
+    config.config.set = _enforce_config
+    config.load_configuration = _enforce_config
+    config.__setattr__ = _enforce_config
+    config.config.__setattr__ = _enforce_config
 
     start_logging()
 
