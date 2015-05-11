@@ -217,7 +217,11 @@ class TestDelete(unittest.TestCase):
         mock_get_collection.assert_called_once_with()
 
     def test_invalid_schedule_id(self):
-        self.assertRaises(exceptions.InvalidValue, utils.delete, 'notavalidid')
+        """
+        make sure that during deletion of schedule MissingResource is raised
+        even if the schedule_id is not a valid object_id
+        """
+        self.assertRaises(exceptions.MissingResource, utils.delete, 'notavalidid')
 
 
 class TestDeleteByResource(unittest.TestCase):
@@ -305,7 +309,8 @@ class TestUpdate(unittest.TestCase):
         self.assertEqual(mock_find.call_count, 1)
 
     def test_invalid_schedule_id(self):
-        self.assertRaises(exceptions.InvalidValue, utils.update, 'notavalidid', {'enabled': True})
+        self.assertRaises(exceptions.MissingResource, utils.update, 'notavalidid',
+                          {'enabled': True})
 
 
 class TestResetFailureCount(unittest.TestCase):
@@ -335,6 +340,10 @@ class TestResetFailureCount(unittest.TestCase):
         mock_get_collection.assert_called_once_with()
 
     def test_invalid_schedule_id(self):
+        """
+        make sure that during update of schedule MissingResource is raised
+        even if the schedule_id is not a valid object_id
+        """
         self.assertRaises(exceptions.InvalidValue, utils.reset_failure_count, 'notavalidid')
 
 
