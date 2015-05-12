@@ -124,7 +124,7 @@ def force_unbind(consumer_id, repo_id, distributor_id, options):
     return response
 
 
-@celery.task(base=Task)
+@celery.task(base=Task, name='pulp.server.tasks.consumer.install_content')
 def install_content(consumer_id, units, options):
     """
     Install units on a consumer
@@ -142,7 +142,7 @@ def install_content(consumer_id, units, options):
     return agent_manager.install_content(consumer_id, units, options)
 
 
-@celery.task(base=Task)
+@celery.task(base=Task, name='pulp.server.tasks.consumer.update_content')
 def update_content(consumer_id, units, options):
     """
     Update units on a consumer.
@@ -160,7 +160,7 @@ def update_content(consumer_id, units, options):
     return agent_manager.update_content(consumer_id, units, options)
 
 
-@celery.task(base=Task)
+@celery.task(base=Task, name='pulp.server.tasks.consumer.uninstall_content')
 def uninstall_content(consumer_id, units, options):
     """
     Uninstall content from a consumer.

@@ -1,8 +1,9 @@
 import mock
 
 from .... import base
+from pulp.server.db.connection import get_collection
 from pulp.server.db.migrate.models import MigrationModule
-from pulp.server.db.model.repository import Repo, RepoContentUnit
+from pulp.server.db.model.repository import RepoContentUnit
 
 
 class TestMigrationContentUnitCount(base.PulpServerTests):
@@ -10,12 +11,12 @@ class TestMigrationContentUnitCount(base.PulpServerTests):
         super(TestMigrationContentUnitCount, self).setUp()
         self.module = MigrationModule('pulp.server.db.migrations.0004_content_unit_counts')._module
 
-    @mock.patch('pulp.server.db.model.repository.Repo.get_collection')
-    @mock.patch('pulp.server.managers.repo.cud.RepoManager.rebuild_content_unit_counts')
-    def test_calls(self, mock_rebuild, mock_get_collection):
+    @mock.patch('pulp.server.db.migrations.0004_content_unit_counts.connection.get_collection')
+    @mock.patch('pulp.server.db.migrations.0004_content_unit_counts.managers')
+    def test_calls(self, mock_managers, mock_get_collection):
         self.module.migrate()
 
-        mock_rebuild.assert_called_once_with()
+        mock_managers.RepoManager().rebuild_content_unit_counts.assert_called_once_with()
         mock_update = mock_get_collection.return_value.update
         self.assertEqual(mock_update.call_count, 1)
 
@@ -25,7 +26,7 @@ class TestMigrationContentUnitCount(base.PulpServerTests):
 
     def test_with_db(self):
         REPO_ID = 'repo123'
-        repo_collection = Repo.get_collection()
+        repo_collection = get_collection('repos')
         repo_collection.save({'id': REPO_ID, 'content_unit_count': 0})
 
         assoc_collection = RepoContentUnit.get_collection()

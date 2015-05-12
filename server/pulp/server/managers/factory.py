@@ -38,7 +38,6 @@ TYPE_PERMISSION = 'permission-manager'
 TYPE_PERMISSION_QUERY = 'permission-query-manager'
 TYPE_PLUGIN_MANAGER = 'plugin-manager'
 TYPE_PRINCIPAL = 'principal'
-TYPE_REPO = 'repo-manager'
 TYPE_REPO_ASSOCIATION = 'repo-association-manager'
 TYPE_REPO_ASSOCIATION_QUERY = 'repo-association-query-manager'
 TYPE_REPO_GROUP = 'repo-group-manager'
@@ -47,10 +46,7 @@ TYPE_REPO_GROUP_PUBLISH = 'repo-group-publish'
 TYPE_REPO_GROUP_QUERY = 'repo-group-query-manager'
 TYPE_REPO_IMPORTER = 'repo-importer-manager'
 TYPE_REPO_DISTRIBUTOR = 'repo-distributor-manager'
-TYPE_REPO_PUBLISH = 'repo-publish-manager'
 TYPE_REPO_PUBLISH_SCHEDULE = 'repo-publish-schedule-manager'
-TYPE_REPO_QUERY = 'repo-query-manager'
-TYPE_REPO_SYNC = 'repo-sync-manager'
 TYPE_REPO_SYNC_SCHEDULE = 'repo-sync-schedule-manager'
 TYPE_ROLE = 'role-manager'
 TYPE_ROLE_QUERY = 'role-query-manager'
@@ -298,13 +294,6 @@ def repo_group_query_manager():
     return get_manager(TYPE_REPO_GROUP_QUERY)
 
 
-def repo_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.cud.RepoManager}
-    """
-    return get_manager(TYPE_REPO)
-
-
 def repo_importer_manager():
     """
     @rtype: L{pulp.server.managers.repo.importer.RepoImporterManager}
@@ -333,32 +322,11 @@ def repo_unit_association_query_manager():
     return get_manager(TYPE_REPO_ASSOCIATION_QUERY)
 
 
-def repo_publish_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.publish.RepoPublishManager}
-    """
-    return get_manager(TYPE_REPO_PUBLISH)
-
-
 def repo_publish_schedule_manager():
     """
     @rtype: L{pulp.server.managers.schedule.repo.RepoPublishScheduleManager}
     """
     return get_manager(TYPE_REPO_PUBLISH_SCHEDULE)
-
-
-def repo_query_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.query.RepoQueryManager}
-    """
-    return get_manager(TYPE_REPO_QUERY)
-
-
-def repo_sync_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.sync.RepoSyncManager}
-    """
-    return get_manager(TYPE_REPO_SYNC)
 
 
 def repo_sync_schedule_manager():
@@ -439,16 +407,12 @@ def initialize():
     from pulp.server.managers.event.fire import EventFireManager
     from pulp.server.managers.event.remote import TopicPublishManager
     from pulp.server.managers.plugin import PluginManager
-    from pulp.server.managers.repo.cud import RepoManager
     from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.group.cud import RepoGroupManager
     from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
     from pulp.server.managers.repo.group.publish import RepoGroupPublishManager
     from pulp.server.managers.repo.group.query import RepoGroupQueryManager
     from pulp.server.managers.repo.importer import RepoImporterManager
-    from pulp.server.managers.repo.publish import RepoPublishManager
-    from pulp.server.managers.repo.query import RepoQueryManager
-    from pulp.server.managers.repo.sync import RepoSyncManager
     from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
     from pulp.server.managers.repo.unit_association_query import RepoUnitAssociationQueryManager
     from pulp.server.managers.schedule.repo import (RepoPublishScheduleManager,
@@ -484,7 +448,6 @@ def initialize():
         TYPE_PERMISSION_QUERY: PermissionQueryManager,
         TYPE_PLUGIN_MANAGER: PluginManager,
         TYPE_PRINCIPAL: PrincipalManager,
-        TYPE_REPO: RepoManager,
         TYPE_REPO_ASSOCIATION: RepoUnitAssociationManager,
         TYPE_REPO_ASSOCIATION_QUERY: RepoUnitAssociationQueryManager,
         TYPE_REPO_DISTRIBUTOR: RepoDistributorManager,
@@ -493,10 +456,7 @@ def initialize():
         TYPE_REPO_GROUP_PUBLISH: RepoGroupPublishManager,
         TYPE_REPO_GROUP_QUERY: RepoGroupQueryManager,
         TYPE_REPO_IMPORTER: RepoImporterManager,
-        TYPE_REPO_PUBLISH: RepoPublishManager,
         TYPE_REPO_PUBLISH_SCHEDULE: RepoPublishScheduleManager,
-        TYPE_REPO_QUERY: RepoQueryManager,
-        TYPE_REPO_SYNC: RepoSyncManager,
         TYPE_REPO_SYNC_SCHEDULE: RepoSyncScheduleManager,
         TYPE_ROLE: RoleManager,
         TYPE_ROLE_QUERY: RoleQueryManager,

@@ -4,6 +4,7 @@ from django.views.generic import View
 
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
+from pulp.server.db import model
 from pulp.server.db.model.consumer import ConsumerGroup
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers import factory
@@ -382,13 +383,12 @@ def verify_group_resources(group_id, repo_id, distributor_id):
     """
     missing_resources = {}
     group_manager = factory.consumer_group_query_manager()
-    repo_manager = factory.repo_query_manager()
     distributor_manager = factory.repo_distributor_manager()
     try:
         group_manager.get_group(group_id)
     except pulp_exceptions.MissingResource:
         missing_resources['group_id'] = group_id
-    repo = repo_manager.find_by_id(repo_id)
+    repo = model.Repository.objects(repo_id).first()
     if repo is None:
         missing_resources['repo_id'] = repo_id
     try:

@@ -2,6 +2,8 @@ import copy
 
 from django.core.urlresolvers import reverse
 
+from pulp.server.db.model import criteria
+
 
 class BaseSerializer(object):
     """
@@ -24,12 +26,15 @@ class BaseSerializer(object):
         self._exclude_fields = []
         self._mask_fields = []
         self._multiple = multiple
+        self._remapped_fields = {}
         if hasattr(self, 'Meta'):
             meta = self.Meta
             if hasattr(meta, 'exclude_fields'):
                 self._exclude_fields = meta.exclude_fields
             if hasattr(meta, 'mask_fields'):
                 self._mask_fields = meta.mask_fields
+            if hasattr(meta, 'remapped_fields'):
+                self._remapped_fields = meta.remapped_fields
 
     def to_representation(self, instance):
         """
@@ -147,6 +152,121 @@ class DictSerializer(BaseSerializer):
         """
         representation = copy.deepcopy(instance)
         return representation
+
+
+class ModelSerializer(BaseSerializer):
+    """
+    Base serializer for Mongoengine Documents.
+    """
+
+    def to_representation(self, instance):
+        """
+        Transforms a Mongoengine Document into a serialized dictionary.
+
+        :param instance: document to serialize
+        :type  instance: mongoengine.Document
+
+        :return: external dictionary representation of the document
+        """
+        document_dict = {}
+        for field in instance._fields:
+            if field in self._remapped_fields:
+                document_dict[self._remapped_fields[field]] = getattr(instance, field)
+            else:
+                document_dict[field] = getattr(instance, field)
+
+        return document_dict
+
+    def _translate_filters(self, model, filters):
+        """
+        Iterate through the filters and translate them to use our internal db representation.
+
+        :param model: the class that defines this document's fields
+        :type  model: sublcass of mongoengine.Document
+        :param filters: dict used to filter results
+        :type  filters: dict, following mongo syntax
+
+        :return: the same filters dictionary, with fields translated to the new db representation
+        :rtype:  dict, following mongo syntax
+        """
+        translated_dict = {}
+        for field in filters.iterkeys():
+            if field in self._remapped_fields.itervalues():
+                translated_dict[self._translate(model, field)] = filters[field]
+            else:
+                translated_dict[field] = filters[field]
+        return translated_dict
+
+    def _translate(self, model, field):
+        """
+        Converts an external representation of a field to the Mongoengine db_field.
+
+        :param model: the class that defines this document's fields
+        :type  model: sublcass of mongoengine.Document
+        :param field: field name (external representation)
+        :type  field: basestring
+
+        :return: the key that mongoengine uses to store this field in the database
+        :rtype:  basestring
+        """
+        for internal, external in self._remapped_fields.iteritems():
+            if external == field:
+                return getattr(model, internal).db_field
+        else:
+            return getattr(model, field).db_field
+
+    def translate_criteria(self, model, crit):
+        """
+        To preserve backwards compatability of our search API, we must translate the fields from
+        the external representation to the internal representation. This is done most often with
+        'id' since this is not an allowable key in the database in Mongoengine.
+
+        This method relies on a map defined in the subclass's Meta: `remapped_fields` which should
+        be a dictionary containing the fields that have been renamed in the format:
+
+        {'internal repr': 'external repr'}
+
+        :param model: the class that defines this document's fields
+        :type  model: sublcass of mongoengine.Document
+        :param crit: criteria object to be translated from external to internal representation
+        :type  crit: pulp.server.db.model.criteria.Criteria
+
+        :return: translated Criteria object
+        :rtype:  pulp.server.db.model.criteria.Criteria
+        """
+        crit_dict = crit.as_dict()
+        crit_dict['filters'] = self._translate_filters(model, crit.filters)
+        if crit.sort:
+            sort = [(self._translate(model, field), direc) for field, direc in crit.sort]
+            crit_dict['sort'] = sort
+        if crit.fields:
+            crit_dict['fields'] = [self._translate(model, field) for field in crit.fields]
+        return criteria.Criteria.from_dict(crit_dict)
+
+
+class Repository(ModelSerializer):
+    """
+    Serializer for Repositories.
+    """
+
+    class Meta:
+        """
+        Contains information that the base serializer needs to properly handle a Repository object.
+        """
+        exclude_fields = ['scratchpad']
+        remapped_fields = {'repo_id': 'id', 'id': '_id'}
+
+    def get_href(self, instance):
+        """
+        Build the href for a repository.
+
+        :param instance: repository being serialized
+        :type  instance: pulp.server.db.model.Repository
+
+        :return: REST href for the given repository instance
+        :rtype:  str
+        """
+        return reverse('repo_resource', kwargs={'repo_id': instance.repo_id})
 
 
 class ImporterSerializer(DictSerializer):

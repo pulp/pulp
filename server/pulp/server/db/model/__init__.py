@@ -11,12 +11,13 @@ from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntFi
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
-
+from pulp.plugins.model import Repository as plugin_repo
 from pulp.server import config, exceptions
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
-from pulp.server.db.querysets import CriteriaQuerySet
+from pulp.server.db.querysets import CriteriaQuerySet, RepoQuerySet
+from pulp.server.webservices.views.serializers import Repository as RepoSerializer
 
 
 _logger = logging.getLogger(__name__)
@@ -52,12 +53,11 @@ class Repository(Document):
     :type _is: mongoengine.StringField
     """
 
-    # This field is named `repo_id` because `id`  cannot be accessed using the normal mongoengine
-    # idiom of `obj.id` because `obj.id` has been aliased (internally in mongoengine) to reference
-    # obj._id. So we name this field `repo_id`, and temporarily continue to store it in the db as
-    # `id` for backwards compatibility. This should be migrated to `repo_id` in a future X release.
-    repo_id = StringField(db_field='id', required=True)
-    display_name = StringField(required=True)
+    # Previously, this field was 'id'. This field is required to be unique, but the previous index
+    # was '-id'. Setting unique=True here would generate a new 'repo_id' index. Instead, we set the
+    # index in meta and enforce uniqueness there.
+    repo_id = StringField(required=True, regex=r'^[.\-_A-Za-z0-9]+$')
+    display_name = StringField()
     description = StringField()
     notes = DictField()
     scratchpad = DictField(default={})
@@ -70,7 +70,46 @@ class Repository(Document):
 
     meta = {'collection': 'repos',
             'allow_inheritance': False,
-            'indexes': [{'fields': ['-repo_id'], 'unique': True}]}
+            'indexes': [{'fields': ['-repo_id'], 'unique': True}],
+            'queryset_class': RepoQuerySet}
+    serializer = RepoSerializer
+
+    def to_transfer_repo(self):
+        """
+        Converts the given database representation of a repository into a plugin repository transfer
+        object, including any other fields that need to be included.
+
+        Note: In the transfer unit, the repo_id is accessed with obj.id for backwards compatability.
+
+        :return: transfer object used in many plugin API calls
+        :rtype:  pulp.plugins.model.Repository}
+        """
+        r = plugin_repo(self.repo_id, self.display_name, self.description, self.notes,
+                        content_unit_counts=self.content_unit_counts,
+                        last_unit_added=self.last_unit_added,
+                        last_unit_removed=self.last_unit_removed)
+        return r
+
+    def update_from_delta(self, repo_delta):
+        """
+        Update the repository's fields from a delta. Keys that are not fields will be ignored.
+
+        :param delta: key value pairs that represent the new values
+        :type  delta: dict
+        """
+
+        # Notes is done seperately to only change notes fields that are specified. If a notes
+        # field is set to None, remove it.
+        if 'notes' in repo_delta:
+            for key, value in repo_delta.pop('notes').items():
+                if value is None:
+                    self.notes.pop(key)
+                else:
+                    self.notes[key] = value
+
+        # These keys may not be changed.
+        prohibited = ['content_unit_counts', 'repo_id', 'last_unit_added', 'last_unit_removed']
+        [setattr(self, key, value) for key, value in repo_delta.items() if key not in prohibited]
 
 
 class RepositoryContentUnit(Document):

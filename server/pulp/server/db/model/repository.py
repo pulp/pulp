@@ -5,61 +5,6 @@ from pulp.server.db.model.reaper_base import ReaperMixin
 import pulp.common.dateutils as dateutils
 
 
-class Repo(Model):
-    """
-    Represents a Pulp repository. Instances of this class will have references
-    into the repo importer and repo distributor collections that will describe
-    the actual functionality provided by the repository.
-
-    @ivar id: unique across all repos
-    @type id: str
-
-    @ivar display_name: user-readable name of the repository
-    @type display_name: str
-
-    @ivar description: free form text provided by the user to describe the repo
-    @type description: str
-
-    @ivar notes: arbitrary key-value pairs programmatically describing the repo;
-                 these are intended as a way to describe the repo usage or
-                 organizational purposes and should not vary depending on the
-                 actual content of the repo
-    @type notes: dict
-
-    @ivar content_unit_counts: number of units associated with this repo. This is
-                              different than the number of associations, since a
-                              unit may be associated multiple times.
-    @type content_unit_counts: int
-
-    @ivar metadata: arbitrary data that describes the contents of the repo;
-                    the values may change as the contents of the repo change,
-                    either set by the user or by an importer or distributor
-    @type metadata: dict
-    """
-
-    collection_name = 'repos'
-    unique_indices = ('id',)
-
-    def __init__(self, id, display_name, description=None, notes=None, content_unit_counts=None):
-        super(Repo, self).__init__()
-
-        self.id = id
-        self.display_name = display_name
-        self.description = description
-        self.notes = notes or {}
-        self.scratchpad = {}  # default to dict in hopes the plugins will just add/remove from it
-        self.content_unit_counts = content_unit_counts or {}
-        self.last_unit_added = None
-        self.last_unit_removed = None
-
-        # Timeline
-        # TODO: figure out how to track repo modified states
-
-        # Importers, Distributors, and Content Units are not referenced from
-        # repo instances. They are retrieved separately through their respective
-        # collections.
-
-
 class RepoImporter(Model):
     """
     Definition of an importer assigned to a repository. This couples the type of

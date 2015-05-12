@@ -273,12 +273,13 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_verify_group_resources_repo(self, mock_factory):
+    @mock.patch('pulp.server.webservices.views.consumer_groups.model.Repository.objects')
+    def test_verify_group_resources_repo(self, mock_repo_qs, mock_factory):
         """
         Test verify group resources with repo missing.
         """
         mock_factory.consumer_group_query_manager.return_value.get_group.return_value = 'test-group'
-        mock_factory.repo_query_manager.return_value.find_by_id.return_value = None
+        mock_repo_qs().first.return_value = None
         mock_factory.repo_distributor_manager.return_value.get_distributor.return_value = 'yyy'
         request = mock.MagicMock()
         request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
@@ -295,12 +296,13 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_verify_group_resources_distributor(self, mock_f):
+    @mock.patch('pulp.server.webservices.views.consumer_groups.model.Repository.objects')
+    def test_verify_group_resources_distributor(self, mock_repo_qs, mock_f):
         """
         Test verify group resources with distributor missing.
         """
         mock_f.consumer_group_query_manager.return_value.get_group.return_value = 'test'
-        mock_f.repo_query_manager.return_value.find_by_id.return_value = 'xxx'
+        mock_repo_qs.first.return_value = 'xxx'
         mock_f.repo_distributor_manager.return_value.get_distributor.side_effect = MissingResource
         request = mock.MagicMock()
         request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})
@@ -316,13 +318,14 @@ class TestConsumerGroupBindingsView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
+    @mock.patch('pulp.server.webservices.views.consumer_groups.model.Repository.objects')
     @mock.patch('pulp.server.webservices.views.consumer_groups.factory')
-    def test_verify_group_resources_group(self, mock_f):
+    def test_verify_group_resources_group(self, mock_f, mock_repo_qs):
         """
         Test verify group resources with group id missing.
         """
         mock_f.consumer_group_query_manager.return_value.get_group.side_effect = MissingResource
-        mock_f.repo_query_manager.return_value.find_by_id.return_value = 'xxx'
+        mock_repo_qs.first.return_value = 'xxx'
         mock_f.repo_distributor_manager.return_value.get_distributor.return_value = 'yyy'
         request = mock.MagicMock()
         request.body = json.dumps({'repo_id': 'xxx', 'distributor_id': 'yyy'})

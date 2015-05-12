@@ -7,8 +7,9 @@ from pymongo.errors import DuplicateKeyError
 from pulp.plugins.model import Unit, PublishReport
 from pulp.plugins.types import database as types_db
 from pulp.server.async.tasks import get_current_task_id
+from pulp.server.db import model
 from pulp.server.db.model import TaskStatus
-from pulp.server.exceptions import MissingResource
+from pulp.server import exceptions as pulp_exceptions
 import pulp.plugins.conduits._common as common_utils
 import pulp.server.managers.factory as manager_factory
 
@@ -52,36 +53,42 @@ class RepoScratchPadMixin(object):
 
     def get_repo_scratchpad(self):
         """
-        Returns the repository-level scratchpad for this repository. The
-        repository-level scratchpad can be seen and edited by all importers
-        and distributors on the repository. Care should be taken to not destroy
-        any data set by another plugin. This may be used to communicate between
-        importers, distributors and profilers relevant data for the repository.
+        Returns the repository-level scratchpad for this repository. The repository-level scratchpad
+        can be seen and edited by all importers and distributors on the repository. Care should be
+        taken to not destroy any data set by another plugin. This may be used to communicate
+        between importers, distributors and profilers relevant data for the repository.
+
+        :return: scratchpad dictionary
+        :rtype:  dict
+
+        :raises self.exception_class: if anything goes wrong, log and reraise as the
+                                      exception_class defined at class initialization
+
         """
         try:
-            repo_manager = manager_factory.repo_manager()
-            value = repo_manager.get_repo_scratchpad(self.repo_id)
-            return value
-        except Exception, e:
+            return model.Repository.objects.get_repo_or_missing_resource(self.repo_id).scratchpad
+        except pulp_exceptions.MissingResource, e:
             _logger.exception(
                 _('Error getting repository scratchpad for repo [%(r)s]') % {'r': self.repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
 
     def set_repo_scratchpad(self, value):
         """
-        Saves the given value to the repository-level scratchpad for this
-        repository. It can be retrieved in subsequent importer, distributor
-        and profiler operations through get_repo_scratchpad.
+        Saves the given value to the repository-level scratchpad for this repository. It can be
+        retrieved in subsequent importer, distributor and profiler operations through
+        get_repo_scratchpad. There is no attempt to merge in the provided with the current
+        scratchpad, it is simply overridden.
 
-        @param value: will overwrite the existing scratchpad
-        @type  value: dict
+        :param value: will overwrite the existing scratchpad
+        :type  value: dict
 
-        @raise ImporterConduitException: wraps any exception that may occur
-               in the Pulp server
+        :raises self.exception_class: if anything goes wrong, log and reraise as the
+                                      exception_class defined at class initialization
         """
         try:
-            repo_manager = manager_factory.repo_manager()
-            repo_manager.set_repo_scratchpad(self.repo_id, value)
+            repo_obj = model.Repository.objects.get_repo_or_missing_resource(self.repo_id)
+            repo_obj.scratchpad = value
+            repo_obj.save()
         except Exception, e:
             _logger.exception(
                 _('Error setting repository scratchpad for repo [%(r)s]') % {'r': self.repo_id})
@@ -89,13 +96,22 @@ class RepoScratchPadMixin(object):
 
     def update_repo_scratchpad(self, scratchpad):
         """
-        Update the repository scratchpad with the specified key-value pairs.
-        New keys are added; existing keys are updated.
+        Update the repository scratchpad with the specified key-value pairs. New keys are added,
+        existing keys are overwritten.  If the scratchpad dictionary is empty then do nothing.
+
         :param scratchpad: a dict used to update the scratchpad.
+        :type  scratchpad: dict
+
+        :raises self.exception_class: if anything goes wrong, log and reraise as the
+                                      exception_class defined at class initialization
         """
+        if not scratchpad:
+            return
         try:
-            manager = manager_factory.repo_manager()
-            manager.update_repo_scratchpad(self.repo_id, scratchpad)
+            repo_obj = model.Repository.objects.get_repo_or_missing_resource(self.repo_id)
+            for key, value in scratchpad.items():
+                repo_obj.scratchpad[key] = value
+            repo_obj.save()
         except Exception, e:
             msg = _('Error updating repository scratchpad for repo [%(r)s]') % {'r': self.repo_id}
             _logger.exception(msg)
@@ -116,14 +132,18 @@ class RepoScratchpadReadMixin(object):
         """
         Returns the repository-level scratchpad for the indicated repository.
 
-        @raise ImporterConduitException: wraps any exception that may occur
-               in the Pulp server
+        :param repo_id: identifies the repository containing the desired scratchpad
+        :type  repo_id: str
+
+        :return: scratchpad dictionary
+        :rtype:  dict
+
+        :raises self.exception_class: if anything goes wrong, log and reraise as the
+                                      exception_class defined at class initialization
         """
         try:
-            repo_manager = manager_factory.repo_manager()
-            value = repo_manager.get_repo_scratchpad(repo_id)
-            return value
-        except Exception, e:
+            return model.Repository.objects.get_repo_or_missing_resource(repo_id).scratchpad
+        except pulp_exceptions.MissingResource, e:
             _logger.exception(
                 _('Error getting repository scratchpad for repo [%(r)s]') % {'r': repo_id})
             raise self.exception_class(e), None, sys.exc_info()[2]
@@ -231,7 +251,7 @@ class SearchUnitsMixin(object):
             type_def = types_db.type_definition(type_id)
             plugin_unit = common_utils.to_plugin_unit(existing_unit, type_def)
             return plugin_unit
-        except MissingResource:
+        except pulp_exceptions.MissingResource:
             return None
 
 
@@ -516,7 +536,7 @@ class AddUnitMixin(object):
             content_manager.update_content_unit(unit.type_id, unit_id, pulp_unit)
             self._updated_count += 1
             return unit_id
-        except MissingResource:
+        except pulp_exceptions.MissingResource:
             _logger.debug(_('cannot update unit; does not exist. adding instead.'))
             return self._add_unit(unit, pulp_unit)
 

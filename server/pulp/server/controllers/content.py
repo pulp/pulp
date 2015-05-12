@@ -78,7 +78,7 @@ class ContentSourcesRefreshStep(Step):
         return len(self.sources)
 
 
-@celery.task(base=Task)
+@celery.task(base=Task, name='pulp.server.tasks.content.refresh_content_sources')
 def refresh_content_sources():
     """
     Refresh the content catalog using available content sources.
@@ -88,7 +88,7 @@ def refresh_content_sources():
     step.process_lifecycle()
 
 
-@celery.task(base=Task)
+@celery.task(base=Task, name='pulp.server.tasks.content.refresh_content_source')
 def refresh_content_source(content_source_id=None):
     """
     Refresh the content catalog from a specific content source.

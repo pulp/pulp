@@ -12,12 +12,11 @@
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 from pulp.server import exceptions
+from pulp.server.controllers import repository as repo_controller
 from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.db.model.repository import RepoImporter, RepoDistributor
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
-from pulp.server.tasks.repository import sync_with_auto_publish, publish
-
 
 _PUBLISH_OPTION_KEYS = ('override_config',)
 _SYNC_OPTION_KEYS = ('override_config',)
@@ -72,7 +71,7 @@ class RepoSyncScheduleManager(object):
         utils.validate_keys(sync_options, _SYNC_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
-        task = sync_with_auto_publish.name
+        task = repo_controller.sync.name
         args = [repo_id]
         kwargs = {'overrides': sync_options['override_config']}
         resource = RepoImporter.build_resource_tag(repo_id, importer_id)
@@ -212,7 +211,7 @@ class RepoPublishScheduleManager(object):
         utils.validate_keys(publish_options, _PUBLISH_OPTION_KEYS)
         utils.validate_initial_schedule_options(schedule, failure_threshold, enabled)
 
-        task = publish.name
+        task = repo_controller.publish.name
         args = [repo_id, distributor_id]
         kwargs = {'overrides': publish_options['override_config']}
         resource = RepoDistributor.build_resource_tag(repo_id, distributor_id)

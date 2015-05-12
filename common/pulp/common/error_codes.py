@@ -111,3 +111,5 @@ PLP1007 = Error("PLP1007", _("The relative path specified must not point outside
 PLP1008 = Error("PLP1008", _("The importer type %(importer_type_id)s does not exist"),
                 ['importer_type_id'])
 PLP1009 = Error("PLP1009", _("The request body does not contain valid JSON"), [])
+PLP1010 = Error("PLP1010", _("Provided value %(value)s for field %(field)s must be of type "
+                             "%(field_type)s."), ["value", "field", "field_type"])
