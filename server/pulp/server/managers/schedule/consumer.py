@@ -19,7 +19,7 @@ from pulp.server.db.model.dispatch import ScheduledCall
 from pulp.server.exceptions import MissingValue
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.schedule import utils
-from pulp.server.tasks import consumer
+from pulp.server.controllers import consumer
 
 
 UNIT_INSTALL_ACTION = 'scheduled_unit_install'

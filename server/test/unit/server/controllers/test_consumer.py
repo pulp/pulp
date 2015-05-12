@@ -3,12 +3,12 @@ import unittest
 from mock import patch
 
 from pulp.server.async.tasks import TaskResult
-from pulp.server.tasks import consumer
+from pulp.server.controllers import consumer
 
 
+@patch('pulp.server.controllers.consumer.managers')
 class TestBind(unittest.TestCase):
 
-    @patch('pulp.server.tasks.consumer.managers')
     def test_bind_no_agent_notification(self, mock_bind_manager):
         binding_config = {'binding': 'foo'}
         agent_options = {'bar': 'baz'}
@@ -27,7 +27,6 @@ class TestBind(unittest.TestCase):
         self.assertEquals(result.spawned_tasks, [])
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
 
-    @patch('pulp.server.tasks.consumer.managers')
     def test_bind_with_agent_notification(self, mock_bind_manager):
         binding_config = {'binding': 'foo'}
         agent_options = {'bar': 'baz'}
@@ -45,9 +44,9 @@ class TestBind(unittest.TestCase):
         self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
 
 
+@patch('pulp.server.controllers.consumer.managers')
 class TestUnbind(unittest.TestCase):
 
-    @patch('pulp.server.tasks.consumer.managers')
     def test_unbind_no_agent_notification(self, mock_bind_manager):
         binding_config = {'notify_agent': False}
         agent_options = {'bar': 'baz'}
@@ -65,7 +64,6 @@ class TestUnbind(unittest.TestCase):
         # Make sure we didn't process the agent
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
 
-    @patch('pulp.server.tasks.consumer.managers')
     def test_unbind_with_agent_notification(self, mock_bind_manager):
         binding_config = {'notify_agent': True}
         agent_options = {'bar': 'baz'}
@@ -82,8 +80,9 @@ class TestUnbind(unittest.TestCase):
         self.assertEquals(result.spawned_tasks, [{'task_id': 'foo-request-id'}])
 
 
+@patch('pulp.server.controllers.consumer.managers')
 class TestForceUnbind(unittest.TestCase):
-    @patch('pulp.server.tasks.consumer.managers')
+
     def test_unbind_no_agent_notification(self, mock_bind_manager):
         binding_config = {'notify_agent': False}
         agent_options = {'bar': 'baz'}
@@ -101,7 +100,6 @@ class TestForceUnbind(unittest.TestCase):
         # Make sure we didn't process the agent
         self.assertFalse(mock_bind_manager.consumer_agent_manager.called)
 
-    @patch('pulp.server.tasks.consumer.managers')
     def test_unbind_with_agent_notification(self, mock_bind_manager):
         binding_config = {'notify_agent': True}
         agent_options = {'bar': 'baz'}
@@ -118,7 +116,7 @@ class TestForceUnbind(unittest.TestCase):
 
 class TestInstallContent(unittest.TestCase):
 
-    @patch('pulp.server.tasks.consumer.managers')
+    @patch('pulp.server.controllers.consumer.managers')
     def test_install_content(self, mock_factory):
         # Setup
         mock_task = mock_factory.consumer_agent_manager.return_value.install_content
@@ -130,7 +128,7 @@ class TestInstallContent(unittest.TestCase):
 
 class TestUpdateContent(unittest.TestCase):
 
-    @patch('pulp.server.tasks.consumer.managers')
+    @patch('pulp.server.controllers.consumer.managers')
     def test_install_content(self, mock_factory):
         # Setup
         mock_task = mock_factory.consumer_agent_manager.return_value.update_content
@@ -142,7 +140,7 @@ class TestUpdateContent(unittest.TestCase):
 
 class TestUninstallContent(unittest.TestCase):
 
-    @patch('pulp.server.tasks.consumer.managers')
+    @patch('pulp.server.controllers.consumer.managers')
     def test_install_content(self, mock_factory):
         # Setup
         mock_task = mock_factory.consumer_agent_manager.return_value.uninstall_content

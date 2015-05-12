@@ -9,6 +9,7 @@ from celery import task
 from pymongo.errors import DuplicateKeyError
 
 from pulp.server.async.tasks import Task
+from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
@@ -431,7 +432,7 @@ class BindManager(object):
         except MissingResource:
             missing_values['consumer_id'] = consumer_id
         try:
-            factory.repo_query_manager().get_repository(repo_id)
+            model.Repository.objects.get_repo_or_missing_resource(repo_id)
         except MissingResource:
             missing_values['repo_id'] = repo_id
         try:

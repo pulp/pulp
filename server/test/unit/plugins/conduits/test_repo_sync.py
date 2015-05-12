@@ -5,14 +5,13 @@ from pulp.devel import mock_plugins
 from pulp.plugins.conduits.mixins import ImporterConduitException
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.model import SyncReport
-from pulp.server.db.model.repository import Repo, RepoContentUnit
+from pulp.server.db import model
+from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.types.database as types_database
 import pulp.plugins.types.model as types_model
 import pulp.server.managers.content.cud as content_manager
 import pulp.server.managers.content.query as query_manager
-import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
-import pulp.server.managers.repo.sync as sync_manager
 import pulp.server.managers.repo.unit_association as association_manager
 import pulp.server.managers.repo.unit_association_query as association_query_manager
 
@@ -26,24 +25,21 @@ class RepoSyncConduitTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoSyncConduitTests, self).clean()
-
+        model.Repository.drop_collection()
         RepoContentUnit.get_collection().remove()
-        Repo.get_collection().remove()
 
-    def setUp(self):
+    @mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
+    def setUp(self, mock_repo_qs):
         super(RepoSyncConduitTests, self).setUp()
         mock_plugins.install()
         types_database.update_database([TYPE_1_DEF, TYPE_2_DEF])
 
-        self.repo_manager = repo_manager.RepoManager()
         self.importer_manager = importer_manager.RepoImporterManager()
-        self.sync_manager = sync_manager.RepoSyncManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
         self.association_query_manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.content_manager = content_manager.ContentManager()
         self.query_manager = query_manager.ContentQueryManager()
 
-        self.repo_manager.create_repo('repo-1')
         self.importer_manager.set_importer('repo-1', 'mock-importer', {})
         self.conduit = RepoSyncConduit('repo-1', 'test-importer')
 
@@ -59,7 +55,8 @@ class RepoSyncConduitTests(base.PulpServerTests):
         """
         str(self.conduit)
 
-    def test_get_remove_unit(self):
+    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository.objects')
+    def test_get_remove_unit(self, mock_repo_qs):
         """
         Tests retrieving units through the conduit and removing them.
         """
@@ -89,7 +86,8 @@ class RepoSyncConduitTests(base.PulpServerTests):
         db_unit = self.query_manager.get_content_unit_by_id(TYPE_1_DEF.id, unit_1.id)
         self.assertTrue(db_unit is not None)
 
-    def test_build_reports(self):
+    @mock.patch('pulp.server.managers.repo.unit_association.model.Repository')
+    def test_build_reports(self, mock_repo_qs):
         """
         Tests that the conduit correctly inserts the count values into the report.
         """

@@ -3,10 +3,11 @@ import mock
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugins
+from pulp.server.db import model
 from pulp.server.db.model.consumer import (Bind, Consumer, RepoProfileApplicability,
                                            UnitProfile)
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.managers import factory as factory
 from pulp.server.managers.consumer.applicability import (
     _add_consumers_to_applicability_map, _add_profiles_to_consumer_map_and_get_hashes,
@@ -16,7 +17,6 @@ from pulp.server.managers.consumer.applicability import (
 from pulp.server.managers.consumer.bind import BindManager
 from pulp.server.managers.consumer.cud import ConsumerManager
 from pulp.server.managers.consumer.profile import ProfileManager
-from pulp.server.managers.repo.cud import RepoManager
 
 
 class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
@@ -33,7 +33,6 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
     def setUp(self):
         base.PulpServerTests.setUp(self)
-        Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         Consumer.get_collection().remove()
@@ -50,18 +49,21 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
 
         yum_profiler.metadata = mock.Mock(return_value={'types': ['rpm', 'erratum']})
 
+        self.old_get_existing = ApplicabilityRegenerationManager._get_existing_repo_content_types
         ApplicabilityRegenerationManager._get_existing_repo_content_types = mock.Mock(
             return_value=['rpm', 'erratum'])
 
     def tearDown(self):
         base.PulpServerTests.tearDown(self)
-        Repo.get_collection().remove()
+        model.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         Consumer.get_collection().remove()
         UnitProfile.get_collection().remove()
         RepoProfileApplicability.get_collection().remove()
         mock_plugins.reset()
+        ApplicabilityRegenerationManager._get_existing_repo_content_types = staticmethod(
+            self.old_get_existing)
 
     def populate_consumers(self):
         # Register consumers with rpm profiles
@@ -82,11 +84,9 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         manager.create(self.CONSUMER_IDS[1], 'rpm', self.PROFILE2)
 
     def populate_repos(self):
-        repo_manager = factory.repo_manager()
         distributor_manager = factory.repo_distributor_manager()
         # Create repos and add distributor
         for repo_id in self.REPO_IDS:
-            repo_manager.create_repo(repo_id)
             distributor_manager.add_distributor(repo_id, 'mock-distributor', {}, True,
                                                 self.YUM_DISTRIBUTOR_ID)
 
@@ -99,7 +99,8 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
                 bind_manager.bind(consumer_id, repo_id, self.YUM_DISTRIBUTOR_ID, False, {})
 
     # Applicability regeneration for consumers with no unit profiles associated with them
-    def test_regenerate_applicability_for_consumers_with_no_profiles(self):
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_consumers_with_no_profiles(self, mock_repo_qs):
         # Setup
         manager = factory.consumer_manager()
         for consumer_id in self.CONSUMER_IDS:
@@ -116,11 +117,10 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(len(applicability_list), 0)
 
     # Applicability regeneration with consumer criteria
-    def test_regenerate_applicability_for_consumers_with_different_profiles(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_consumers_with_different_profiles(self, mock_repo_qs):
         self.populate_consumers_different_profiles()
         self.populate_bindings()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         # Verify
@@ -131,11 +131,10 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             self.assertEqual(applicability['applicability'], expected_applicability)
             self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
 
-    def test_regenerate_applicability_for_consumers_with_same_profiles(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_consumers_with_same_profiles(self, mock_repo_qs):
         self.populate_consumers()
         self.populate_bindings()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         # Verify
@@ -146,11 +145,10 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
-    def test_regenerate_applicability_for_empty_consumer_criteria(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_empty_consumer_criteria(self, mock_repo_qs):
         self.populate_consumers()
         self.populate_bindings()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(Criteria())
         # Verify
@@ -171,13 +169,12 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(applicability_list, [])
 
-    def test_regenerate_applicability_for_consumers_profiler_notfound(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_consumers_profiler_notfound(self, mock_repo_qs):
         self.populate_consumers()
         self.populate_bindings()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
         profiler.calculate_applicable_units = mock.Mock(side_effect=NotImplementedError())
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         # Verify
@@ -185,12 +182,11 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(len(applicability_list), 0)
 
     # Applicability regeneration with repo criteria
-
-    def test_regenerate_applicability_for_repos_with_different_consumer_profiles(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_repos_with_different_consumer_profiles(
+            self, mock_repo_qs):
         self.populate_consumers_different_profiles()
         self.populate_bindings()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
@@ -202,11 +198,10 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             self.assertEqual(applicability['applicability'], expected_applicability)
             self.assertTrue(applicability['profile'] in [self.PROFILE1, self.PROFILE2])
 
-    def test_regenerate_applicability_for_repos_with_same_consumer_profiles(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_repos_with_same_consumer_profiles(self, mock_repo_qs):
         self.populate_consumers()
         self.populate_bindings()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
@@ -218,11 +213,10 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
-    def test_regenerate_applicability_for_empty_repo_criteria(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_empty_repo_criteria(self, mock_repo_qs):
         self.populate_consumers()
         self.populate_bindings()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_consumers(self.CONSUMER_CRITERIA)
         manager.regenerate_applicability_for_repos(Criteria())
@@ -234,18 +228,17 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
             self.assertEqual(applicability['profile'], self.PROFILE1)
             self.assertEqual(applicability['applicability'], expected_applicability)
 
-    def test_regenerate_applicability_for_repo_criteria_no_bindings(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_repo_criteria_no_bindings(self, mock_repo_qs):
         self.populate_repos()
-        # Test
         manager = factory.applicability_regeneration_manager()
         manager.regenerate_applicability_for_repos(self.REPO_CRITERIA)
         # Verify
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(applicability_list, [])
 
-    def test_regenerate_applicability_for_repos_profiler_notfound(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_repos_profiler_notfound(self, mock_repo_qs):
         self.populate_consumers()
         self.populate_bindings()
         profiler, cfg = plugins.get_profiler_by_type('rpm')
@@ -257,11 +250,10 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         applicability_list = list(RepoProfileApplicability.get_collection().find())
         self.assertEqual(len(applicability_list), 0)
 
-    def test_regenerate_applicability_for_repos_consumer_profile_updated(self):
-        # Setup
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
+    def test_regenerate_applicability_for_repos_consumer_profile_updated(self, mock_repo_qs):
         factory.consumer_manager().register(self.CONSUMER_IDS[0])
         factory.consumer_profile_manager().create(self.CONSUMER_IDS[0], 'rpm', self.PROFILE1)
-        factory.repo_manager().create_repo(self.REPO_IDS[0])
         factory.repo_distributor_manager().add_distributor(self.REPO_IDS[0],
                                                            'mock-distributor',
                                                            {},
@@ -288,22 +280,54 @@ class ApplicabilityRegenerationManagerTests(base.PulpServerTests):
         self.assertEqual(applicability_list[0]['profile'], self.PROFILE1)
         self.assertEqual(applicability_list[0]['applicability'], expected_applicability)
 
-    @mock.patch('pulp.server.managers.repo.query.RepoQueryManager.find_by_criteria')
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
     @mock.patch('pulp.server.db.model.consumer.RepoProfileApplicability.get_collection')
-    def test_regenerate_applicability_for_repos_batch_size(self, mock_get_collection,
-                                                           mock_find_by_criteria):
+    def test_regenerate_applicability_for_repos_batch_size(self, mock_get_collection, mock_repo_qs):
 
         factory.initialize()
         applicability_manager = ApplicabilityRegenerationManager()
         repo_criteria = {'filters': None, 'sort': None, 'limit': None,
                          'skip': None, 'fields': None}
-        mock_find_by_criteria.return_value = [{'id': 'fake-repo'}]
+        mock_repo = mock.MagicMock()
+        mock_repo.repo_id = 'fake-repo'
+        mock_repo_qs.find_by_criteria.return_value = [mock_repo]
 
         applicability_manager.regenerate_applicability_for_repos(repo_criteria)
 
         # validate that batch size of 5 is used
 
         mock_get_collection.return_value.find.return_value.batch_size.assert_called_with(5)
+
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_get_existing_repo_content_types_no_repo(self, mock_repo_qs):
+        """
+        Test that if a repository does not exist, return an empty list.
+
+        This set up isn't ideal, but the class setUp mocks this function.
+        """
+        mock_repo_qs.first.return_value = None
+        content_types = self.old_get_existing('repo')
+        self.assertEqual(content_types, [])
+
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_get_existing_repo_content_types_repo_no_units(self, mock_repo_qs):
+        """
+        Test that if a repository exists but has no units, return an empty list.
+        """
+        mock_repo = mock_repo_qs.first.return_value
+        mock_repo.content_unit_counts = {'mock_type': 0}
+        content_types = self.old_get_existing('repo')
+        self.assertEqual(content_types, [])
+
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_get_existing_repo_content_types_repo_units(self, mock_repo_qs):
+        """
+        Test that if a repository exists but has no units, return an empty list.
+        """
+        mock_repo = mock_repo_qs.first.return_value
+        mock_repo.content_unit_counts = {'mock_type_1': 4, 'mock_type_2': 8}
+        content_types = self.old_get_existing('repo')
+        self.assertListEqual(content_types, ['mock_type_2', 'mock_type_1'])
 
 
 class TestRepoProfileApplicabilityManager(base.PulpServerTests):
@@ -324,7 +348,7 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         """
         super(TestRepoProfileApplicabilityManager, self).tearDown()
         self.collection.drop()
-        Repo.get_collection().drop()
+        model.Repository.drop_collection()
         Consumer.get_collection().drop()
         UnitProfile.get_collection().drop()
         mock_plugins.reset()
@@ -445,26 +469,28 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         self.assertRaises(DoesNotExist,
                           RepoProfileApplicability.objects.get, {})
 
-    def test_remove_orphans(self):
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_remove_orphans(self, mock_repo_qs):
         """
         Test the remove_orphans() method with various cases
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
-        repo = RepoManager().create_repo('a_repo_id')
+        repo = {'id': 'a_repo_id'}
+        mock_repo_qs.distinct.return_value = [repo['id']]
         consumer, certificate = ConsumerManager().register('consumer_id')
         profile_1 = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         profile_2 = ProfileManager().create(consumer.id, 'other_content_type', 'more_profile_data')
         # This one should remain
-        rpa_1 = RepoProfileApplicability.objects.create(profile_1.profile_hash, repo['id'],
+        rpa_1 = RepoProfileApplicability.objects.create(profile_1.profile_hash, 'a_repo_id',
                                                         profile_1.profile, 'applicability_data')
         # This one should be removed, because it references a profile_hash that doesn't exist
-        RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
+        RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', 'a_repo_id',
                                                 profile_1.profile, 'applicability_data')
         # This one should be removed, because it references a repo_id that doesn't exist
         RepoProfileApplicability.objects.create(
             profile_1.profile_hash, 'repo_doesnt_exist', profile_1.profile, 'applicability_data_2')
         # This one should also remain
-        rpa_4 = RepoProfileApplicability.objects.create(profile_2.profile_hash, repo['id'],
+        rpa_4 = RepoProfileApplicability.objects.create(profile_2.profile_hash, 'a_repo_id',
                                                         profile_2.profile, 'applicability_data')
         # There should be four rpas
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 4)
@@ -478,18 +504,20 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         existing_rpa_ids = [rpa._id for rpa in existing_rpas]
         self.assertEqual(set(existing_rpa_ids), set([rpa_1._id, rpa_4._id]))
 
-    def test_remove_orphans_missing_profile_hash(self):
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_remove_orphans_missing_profile_hash(self, mock_repo_qs):
         """
         Test the remove_orphans() method with a non-existing profile_hash
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
-        repo = RepoManager().create_repo('a_repo_id')
+        repo = {'id': 'a_repo_id'}
+        mock_repo_qs.distinct.return_value = [repo['id']]
         consumer, certificate = ConsumerManager().register('consumer_id')
         profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
-        rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
+        rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, 'a_repo_id',
                                                         profile.profile, 'applicability_data')
         # This one should be removed, because it references a profile_hash that doesn't exist
-        RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', repo['id'],
+        RepoProfileApplicability.objects.create('profile_hash_doesnt_exist', 'a_repo_id',
                                                 profile.profile, 'applicability_data')
         # There should be two rpas
         self.assertEqual(len(RepoProfileApplicability.objects.filter({})), 2)
@@ -502,12 +530,14 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         existing_rpa = RepoProfileApplicability.objects.get({})
         self.assertEqual(rpa_1._id, existing_rpa._id)
 
-    def test_remove_orphans_missing_repo(self):
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_remove_orphans_missing_repo(self, mock_repo_qs):
         """
         Test the remove_orphans() method with a non-existing repo_id
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
-        repo = RepoManager().create_repo('a_repo_id')
+        repo = {'id': 'a_repo_id'}
+        mock_repo_qs.distinct.return_value = [repo['id']]
         consumer, certificate = ConsumerManager().register('consumer_id')
         profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         rpa_1 = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
@@ -526,12 +556,14 @@ class TestRepoProfileApplicabilityManager(base.PulpServerTests):
         existing_rpa = RepoProfileApplicability.objects.get({})
         self.assertEqual(rpa_1._id, existing_rpa._id)
 
-    def test_remove_orphans_nothing_to_remove(self):
+    @mock.patch('pulp.server.managers.consumer.applicability.model.Repository.objects')
+    def test_remove_orphans_nothing_to_remove(self, mock_repo_qs):
         """
         Test the remove_orphans() method, when there is nothing to remove.
         """
         # Create a RepoProfileApplicability object that references an existing repo and profile.
-        repo = RepoManager().create_repo('a_repo_id')
+        repo = {'id': 'a_repo_id'}
+        mock_repo_qs.distinct.return_value = [repo['id']]
         consumer, certificate = ConsumerManager().register('consumer_id')
         profile = ProfileManager().create(consumer.id, 'content_type', 'profile_data')
         rpa = RepoProfileApplicability.objects.create(profile.profile_hash, repo['id'],
@@ -563,13 +595,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         RepoProfileApplicability.get_collection().drop()
         Bind.get_collection().drop()
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_consumers_with_same_applicability(self, *unused_mocks):
         """
         Test that we can handle consumers that share applicability correctly.
@@ -603,13 +631,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
              'applicability': {'content_type': ['unit_1-0.9.2', 'unit_3-13.0.1']}}]
         self.assert_equal_ignoring_list_order(applicability, expected_applicability)
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_disparate_consumers(self, *unused_mocks):
         """
         Test that the function handles two consumers with different
@@ -666,13 +690,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
              'applicability': {'content_type_1': ['unit_3-13.1.0']}}]
         self.assert_equal_ignoring_list_order(applicability, expected_applicability)
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_empty_type_limiting(self, *unused_mocks):
         """
         Test with an empty list as the type limiting criteria.
@@ -734,13 +754,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         # We told it not to give us any content types, so it should be empty
         self.assertEqual(applicability, [])
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_limit_by_type(self, *unused_mocks):
         """
         Test that we allow the caller to limit applicability data by unit type.
@@ -812,13 +828,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
                  'content_type_2': ['unit_3-13.1.0']}}]
         self.assert_equal_ignoring_list_order(applicability, expected_applicability)
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_mixed_case(self, *unused_mocks):
         """
         Make sure the function can handle a mixed case of consumers.
@@ -889,13 +901,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
              'applicability': {'content_type_1': ['unit_2-3.1.1']}}]
         self.assert_equal_ignoring_list_order(applicability, expected_applicability)
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_multiple_applicability_data_matches(self, *unused_mocks):
         """
         Test that the function properly handles the case when multiple
@@ -951,13 +959,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
                  'content_type_1': ['unit_1-0.9.2', 'unit_3-13.0.1', 'unit_3-13.1.0']}}]
         self.assert_equal_ignoring_list_order(applicability, expected_applicability)
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_non_matching_consumer_ids(self, *unused_mocks):
         """
         Test the function when the given consumer_ids do not match any
@@ -1008,13 +1012,9 @@ class TestRetrieveConsumerApplicability(base.PulpServerTests,
         # We should get no applicability back
         self.assert_equal_ignoring_list_order(applicability, [])
 
-    # We mock this because we don't care about consumer history in this test suite, and it
-    # saves some DB access time and cleanup
     @mock.patch('pulp.server.managers.consumer.bind.factory.consumer_history_manager')
-    # By mocking these, we can avoid having to create repos and distributors for this test
-    # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test_single_consumer(self, *unused_mocks):
         """
         Test that the function handles matching a single consumer correctly.
@@ -1216,7 +1216,7 @@ class TestAddRepoIDsToConsumerMap(base.PulpServerTests,
     # By mocking these, we can avoid having to create repos and distributors for this test
     # suite
     @mock.patch('pulp.server.managers.consumer.bind.factory.repo_distributor_manager')
-    @mock.patch('pulp.server.managers.consumer.bind.factory.repo_query_manager')
+    @mock.patch('pulp.server.managers.consumer.bind.model.Repository.objects')
     def test__add_repo_ids_to_consumer_map(self, *unused_mocks):
         """
         Test the _add_repo_ids_to_consumer_map() function.

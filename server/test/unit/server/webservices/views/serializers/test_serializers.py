@@ -197,3 +197,44 @@ class TestImporterSerializer(unittest.TestCase):
         m_reverse.assert_called_once_with('repo_importer_resource',
                                           kwargs={'repo_id': 'apple',
                                                   'importer_id': 'pear'})
+
+
+class TestRepository(unittest.TestCase):
+    """
+    Tests for the repository serializer.
+    """
+
+    def test_meta(self):
+        """
+        Make sure that scratchpad is excluded.
+        """
+        self.assertEquals(serializers.Repository.Meta.exclude_fields, ['scratchpad'])
+
+    @mock.patch('pulp.server.webservices.views.serializers.reverse')
+    def test_get_href(self, mock_rev):
+        """
+        Test the generation of a href for a repository.
+        """
+        repo = mock.MagicMock()
+        test_serializer = serializers.Repository()
+        result = test_serializer.get_href(repo)
+        self.assertEquals(result, mock_rev.return_value)
+        mock_rev.assert_called_once_with('repo_resource', kwargs={'repo_id': repo.repo_id})
+
+    def test_to_representation(self):
+        """
+        Test custom serialization.
+
+        Specifically, make sure that repo_id in the database is converted to id for backwards
+        compatability and _id refers to what used to be stored in id.
+        """
+        repo = mock.MagicMock()
+        repo._fields = ['best', 'still_good', 'id', 'repo_id']
+        repo.best = 'joule'
+        repo.id = 'test_id'
+        repo.repo_id = 'test_repo_id'
+        repo.still_good = 'morning_times'
+        test_serializer = serializers.Repository()
+        result = test_serializer.to_representation(repo)
+        self.assertDictEqual(result, {'best': 'joule', 'still_good': 'morning_times',
+                                      '_id': 'test_id', 'id': 'test_repo_id'})

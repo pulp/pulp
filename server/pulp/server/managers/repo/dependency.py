@@ -6,11 +6,11 @@ from pulp.plugins.conduits.dependency import DependencyResolutionConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.server.async.tasks import Task
+from pulp.server.db import model
 from pulp.server.exceptions import MissingResource, PulpExecutionException
 import pulp.plugins.conduits._common as conduit_common_utils
 import pulp.plugins.types.database as types_db
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._common as common_utils
 
 
 class DependencyManager(object):
@@ -55,11 +55,8 @@ class DependencyManager(object):
         :raise MissingResource: if the repo does not exist or does not have an importer
         """
         # Validation
-        repo_query_manager = manager_factory.repo_query_manager()
         importer_manager = manager_factory.repo_importer_manager()
-
-        # The following will raise MissingResource as appropriate
-        repo = repo_query_manager.get_repository(repo_id)
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
         repo_importer = importer_manager.get_importer(repo_id)
 
         try:
@@ -70,7 +67,7 @@ class DependencyManager(object):
 
         # Package for the importer call
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'], options)
-        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo = repo_obj.to_transfer_repo()
 
         conduit = DependencyResolutionConduit(repo_id, repo_importer['id'])
 

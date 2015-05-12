@@ -3,8 +3,10 @@ from pulp.devel import mock_plugins
 from pulp.plugins.conduits.dependency import DependencyResolutionConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.types import database, model
+from pulp.server.controllers import repository as repo_controller
+from pulp.server.db import model as db_model
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp.server.db.model.repository import Repo, RepoImporter, RepoContentUnit
+from pulp.server.db.model.repository import RepoImporter, RepoContentUnit
 from pulp.server.exceptions import MissingResource
 from pulp.server.managers import factory as manager_factory
 
@@ -25,7 +27,7 @@ class DependencyManagerTests(base.PulpServerTests):
         self.repo_id = 'dep-repo'
         self.manager = manager_factory.dependency_manager()
 
-        manager_factory.repo_manager().create_repo(self.repo_id)
+        repo_controller.create_repo(self.repo_id)
         manager_factory.repo_importer_manager().set_importer(self.repo_id, 'mock-importer', {})
 
     def tearDown(self):
@@ -38,7 +40,7 @@ class DependencyManagerTests(base.PulpServerTests):
 
         database.clean()
 
-        Repo.get_collection().remove()
+        db_model.Repository.drop_collection()
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
 
@@ -73,15 +75,11 @@ class DependencyManagerTests(base.PulpServerTests):
         self.assertTrue(isinstance(args[3], PluginCallConfiguration))
 
     def test_resolve_dependencies_by_unit_no_repo(self):
-        # Test
         self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'foo', [],
                           {})
 
     def test_resolve_dependencies_by_unit_no_importer(self):
-        # Setup
-        manager_factory.repo_manager().create_repo('empty')
-
-        # Test
+        repo_controller.create_repo('empty')
         self.assertRaises(MissingResource, self.manager.resolve_dependencies_by_units, 'empty', [],
                           {})
 

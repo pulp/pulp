@@ -2,12 +2,12 @@ from mock import patch, Mock, call
 from unittest import TestCase
 
 from pulp.server.exceptions import PulpCodedTaskFailedException
-from pulp.server.tasks.content import ContentSourcesRefreshStep, ContentSourcesConduit
+from pulp.server.controllers.content import ContentSourcesRefreshStep, ContentSourcesConduit
 
 
 class TestContentSourcesRefreshStep(TestCase):
 
-    @patch('pulp.server.tasks.content.ContentSourcesRefreshStep.process_main')
+    @patch('pulp.server.controllers.content.ContentSourcesRefreshStep.process_main')
     @patch('pulp.server.content.sources.model.ContentSource.load_all')
     def test_process_main_one(self, mock_load, mock_process_main):
         sources = {
@@ -23,7 +23,7 @@ class TestContentSourcesRefreshStep(TestCase):
         step.process_main.assert_called_with(item=sources['C'])
         self.assertEquals(step.progress_successes, 1)
 
-    @patch('pulp.server.tasks.content.ContentSourcesRefreshStep.process_main')
+    @patch('pulp.server.controllers.content.ContentSourcesRefreshStep.process_main')
     @patch('pulp.server.content.sources.model.ContentSource.load_all')
     def test_process_main_all(self, mock_load, mock_process_main):
         sources = {
@@ -68,7 +68,7 @@ class TestContentSourcesRefreshStep(TestCase):
         self.assertEquals(step.progress_successes, 2)
         self.assertEqual(step.progress_failures, 1)
 
-    @patch('pulp.server.tasks.content.ContentSourcesRefreshStep.process_main',
+    @patch('pulp.server.controllers.content.ContentSourcesRefreshStep.process_main',
            side_effect=Exception('boom'))
     @patch('pulp.server.content.sources.model.ContentSource.load_all')
     def test_process_with_unexpected_exception(self, mock_load, mock_process_main):

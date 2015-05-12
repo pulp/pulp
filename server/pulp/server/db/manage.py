@@ -19,6 +19,9 @@ from pulp.server.managers.auth.role.cud import RoleManager, SUPER_USER_ROLE
 from pulp.server.managers.auth.user.cud import UserManager
 
 
+os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
+
+
 _logger = None
 
 

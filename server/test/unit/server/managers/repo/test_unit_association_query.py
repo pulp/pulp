@@ -87,15 +87,14 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         self.manager = association_query_manager.RepoUnitAssociationQueryManager()
         self.association_manager = association_manager.RepoUnitAssociationManager()
         self.content_manager = content_cud_manager.ContentManager()
-        # so we don't try to refresh the unit count on non-existing repos
-        manager_factory._CLASSES[manager_factory.TYPE_REPO] = mock.MagicMock()
         self._populate()
 
     def tearDown(self):
         super(UnitAssociationQueryTests, self).tearDown()
         manager_factory.reset()
 
-    def _populate(self):
+    @mock.patch('pulp.server.controllers.repository.model.Repository.objects')
+    def _populate(self, _):
         """
         Populates the database with units and associations with the
         following properties:
@@ -190,7 +189,8 @@ class UnitAssociationQueryTests(base.PulpServerTests):
         for i, unit_id in enumerate(self.units['delta']):
             make_association('repo-2', 'delta', unit_id, i)
 
-    def test_get_unit_ids(self):
+    @mock.patch('pulp.server.managers.repo.unit_association.repo_controller.update_last_unit_added')
+    def test_get_unit_ids(self, mock_update_last):
 
         # Setup
         repo_id = 'repo-1'

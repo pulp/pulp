@@ -16,6 +16,7 @@ from logging import getLogger
 import os
 
 from pulp.plugins.distributor import Distributor
+from pulp.server.db import model
 from pulp.server.managers import factory
 from pulp.server.config import config as pulp_conf
 from pulp.server.compat import json
@@ -214,8 +215,8 @@ class NodesHttpDistributor(Distributor):
         :param payload: The repository payload
         :type payload: dict
         """
-        manager = factory.repo_query_manager()
-        payload['repository'] = manager.get_repository(repo_id)
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        payload['repository'] = repo_obj.to_transfer_repo()
 
     def _add_importers(self, repo, config, binding_config, payload):
         """

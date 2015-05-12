@@ -5,6 +5,8 @@ from django.views.generic import View
 from pulp.common import tags
 from pulp.server.async.tasks import TaskResult
 from pulp.server.auth import authorization
+from pulp.server.controllers import consumer as consumer_controller
+from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import (InvalidValue, MissingResource, MissingValue,
                                     OperationPostponed, UnsupportedValue)
@@ -16,7 +18,6 @@ from pulp.server.managers.consumer.applicability import (regenerate_applicabilit
                                                          retrieve_consumer_applicability)
 from pulp.server.managers.schedule.consumer import (UNIT_INSTALL_ACTION, UNIT_UNINSTALL_ACTION,
                                                     UNIT_UPDATE_ACTION)
-from pulp.server.tasks import consumer as consumer_task
 from pulp.server.webservices.views import search
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.serializers import binding as serial_binding
@@ -361,9 +362,8 @@ class ConsumerBindingsView(View):
         # Check to make sure the resources exist
         missing_resources = {}
         if repo_id is not None:
-            repo = factory.repo_query_manager().find_by_id(repo_id)
-            if repo is None:
-                missing_resources['repo_id'] = repo_id
+            model.Repository.objects.get_repo_or_missing_resource(repo_id)
+
         # If get_consumer raises MissingResource we might miss reporting a bad repo_id
         try:
             factory.consumer_manager().get_consumer(consumer_id)
@@ -411,7 +411,7 @@ class ConsumerBindingsView(View):
         if not isinstance(binding_config, dict):
             raise InvalidValue(['binding_config'])
 
-        call_report = consumer_task.bind(
+        call_report = consumer_controller.bind(
             consumer_id, repo_id, distributor_id, notify_agent, binding_config, options)
 
         if call_report.spawned_tasks:
@@ -480,9 +480,10 @@ class ConsumerBindingResourceView(View):
         if not isinstance(options, dict):
             raise InvalidValue(['options'])
         if forced:
-            call_report = consumer_task.force_unbind(consumer_id, repo_id, distributor_id, options)
+            call_report = consumer_controller.force_unbind(consumer_id, repo_id, distributor_id,
+                                                           options)
         else:
-            call_report = consumer_task.unbind(consumer_id, repo_id, distributor_id, options)
+            call_report = consumer_controller.unbind(consumer_id, repo_id, distributor_id, options)
 
         if call_report.spawned_tasks:
             raise OperationPostponed(call_report)
