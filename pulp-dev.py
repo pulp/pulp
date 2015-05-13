@@ -354,6 +354,9 @@ def install(opts):
         os.system('chmod 3775 /var/www/pub')
         os.system('chown -R apache:apache /var/lib/pulp/published')
 
+        # Reload systemctl daemon
+        os.system('/sbin/systemctl daemon-reload')
+
     if warnings:
         print "\n***\nPossible problems:  Please read below\n***"
         for w in warnings:
