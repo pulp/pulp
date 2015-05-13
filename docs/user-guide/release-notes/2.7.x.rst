@@ -43,6 +43,9 @@ New Features
 
 * Added ``/v2/distributors/search/`` REST API endpoint to support distributor searches.
 
+* The ``$date`` operator added to support queries on fields stored in the database
+  as *ISODate*. See :ref:`search_criteria` for details.
+
 
 Deprecation
 -----------
