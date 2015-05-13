@@ -436,6 +436,13 @@ then
   pulp-gen-ca-certificate
 fi
 
+%if %{pulp_systemd} == 1
+  if [ $1 -eq 2 ]; # an upgrade
+  then
+    /sbin/systemctl daemon-reload > /dev/null 2>&1
+  fi
+%endif
+
 %preun server
 # If we are uninstalling
 if [ $1 -eq 0 ] ; then
