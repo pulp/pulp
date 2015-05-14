@@ -5,6 +5,7 @@ import sys
 
 import pymongo
 
+from pulp.common.dateutils import parse_iso8601_datetime
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.db.model.base import Model
 
@@ -65,6 +66,7 @@ class Criteria(Model):
         fields = _validate_fields(doc.pop('fields', None))
         if doc:
             raise pulp_exceptions.InvalidValue(doc.keys())
+        DateOperator.apply(filters)
         return cls(filters, sort, limit, skip, fields)
 
     @classmethod
@@ -394,3 +396,53 @@ def _compile_regexs_for_not(spec):
         if key == '$not' and isinstance(value, basestring):
             spec[key] = re.compile(value)
         _compile_regexs_for_not(value)
+
+
+class DateOperator(object):
+    """
+    The ``$date`` operator.
+    This operator is used to convert a ISO-8601 date string into a
+    python datetime object.
+    For example, this query:
+        {"created": {"$date": "2015-01-01T00:00:00Z"}}
+    is translated to:
+        {"created": <datetime>}
+    """
+
+    KEY = '$date'
+
+    @staticmethod
+    def apply(query):
+        """
+        Apply the operator translation to the query.
+        :param query: A database query.
+        :type query: dict
+        """
+        if not query:
+            return
+        for key, value in query.items():
+            matched, translated = DateOperator.translate(value)
+            if matched:
+                query[key] = translated
+                continue
+            if not isinstance(value, dict):
+                continue
+            DateOperator.apply(value)
+
+    @staticmethod
+    def translate(value):
+        """
+        Translate the operator *dict* into a datetime object.
+        An example of matched values: {"$date": "2015-01-01T00:00:00Z"}
+        :param value: The value to be translated.
+        :type value: dict
+        :return: A tuple of: (matched, translated)
+        :rtype: tuple
+        """
+        matched = False
+        translated = value
+        operator = DateOperator.KEY
+        if isinstance(value, dict) and value.keys() == [operator]:
+            translated = parse_iso8601_datetime(value[operator])
+            matched = True
+        return matched, translated

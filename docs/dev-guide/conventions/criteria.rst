@@ -24,6 +24,15 @@ find specification syntax, the resource fields and values to match. For more
 information on the syntax, see:
 http://www.mongodb.org/display/DOCS/Querying
 
+Pulp supports an operator extension for matching date fields. The ``$date``
+operator may be used to specify ISO-8601 date strings for fields that are
+stored as a *Date* or *ISODate* (instead of string) in the database.
+
+For example::
+
+ {"created": {"$gt": {"$date": "2015-01-01T00:00:00Z"}}}
+
+
 The **sort** field is an array of arrays. Each specifying a field and a
 direction.
 

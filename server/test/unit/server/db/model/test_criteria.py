@@ -4,11 +4,29 @@ Test the pulp.server.db.model.criteria module.
 
 import unittest
 
+from datetime import datetime
+
+from mock import patch
+
 from pulp.server import exceptions
 from pulp.server.db.model import criteria
 
 
 FIELDS = set(('sort', 'skip', 'limit', 'filters', 'fields'))
+
+
+class TestCriteria(unittest.TestCase):
+
+    @patch.object(criteria.DateOperator, 'apply')
+    def test_from_client_input_applies_date_operator(self, _apply):
+        filters = {
+            'created': {
+                '$gt': {'$date': '2013-12-01T14:35:00Z'}
+            }
+        }
+        query = {'filters': filters}
+        criteria.Criteria.from_client_input(query)
+        _apply.assert_called_once_with(filters)
 
 
 class TestAsDict(unittest.TestCase):
@@ -272,3 +290,33 @@ class TestValidateFields(unittest.TestCase):
     def test_items_as_bool(self):
         input = ['id', True]
         self.assertRaises(exceptions.InvalidValue, criteria._validate_fields, input)
+
+
+class TestDateOperator(unittest.TestCase):
+
+    def test_apply(self):
+        query = {
+            'created': {
+                '$gt': {'$date': '2013-12-01T14:35:00Z'}
+            }
+        }
+        criteria.DateOperator.apply(query)
+        self.assertTrue(isinstance(query['created']['$gt'], datetime))
+
+    def test_translate(self):
+        value = {'$date': '2013-12-01T14:35:00Z'}
+        matched, translated = criteria.DateOperator.translate(value)
+        self.assertTrue(matched)
+        self.assertTrue(isinstance(translated, datetime))
+
+    def test_translate_key_not_matched(self):
+        value = {'$dated': '2013-12-01T14:35:00Z'}
+        matched, translated = criteria.DateOperator.translate(value)
+        self.assertFalse(matched)
+        self.assertEqual(translated, value)
+
+    def test_translate_dict_not_matched(self):
+        value = {'$dated': '2013-12-01T14:35:00Z', 'unexpected': 1}
+        matched, translated = criteria.DateOperator.translate(value)
+        self.assertFalse(matched)
+        self.assertEqual(translated, value)
