@@ -880,8 +880,13 @@ exit 0
 %package -n python-pulp-repoauth
 Summary: Cert-based repo authentication for Pulp
 Group: Development/Languages
+Requires: httpd
+Requires: mod_ssl
+Requires: mod_wsgi >= 3.4-1.pulp
+Requires: openssl
 Requires: python-%{name}-common = %{pulp_version}
-Requires: %{name}-server = %{pulp_version}
+Requires: python-rhsm
+Requires: python-setuptools
 
 %description -n python-pulp-repoauth
 Cert-based repo authentication for Pulp

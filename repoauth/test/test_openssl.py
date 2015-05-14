@@ -1,12 +1,12 @@
 """
-This module contains tests for the pulp.server.common.openssl module.
+This module contains tests for the pulp.repoauth.openssl module.
 """
 import subprocess
 import unittest
 
 import mock
 
-from pulp.server.common import openssl
+from pulp.repoauth import openssl
 
 
 class TestCertificate(unittest.TestCase):
@@ -26,9 +26,9 @@ class TestCertificate(unittest.TestCase):
         self.assertEqual(cert._tempdir, None)
 
     @mock.patch('shutil.rmtree')
-    @mock.patch('pulp.server.common.openssl.subprocess.check_call')
-    @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
-    @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
+    @mock.patch('pulp.repoauth.openssl.subprocess.check_call')
+    @mock.patch('pulp.repoauth.openssl.tempfile.mkdtemp')
+    @mock.patch('pulp.repoauth.openssl.tempfile.NamedTemporaryFile')
     def test_verify_cert_expired(self, NamedTemporaryFile, mkdtemp, check_call, mock_rmtree):
         """
         Ensure that verify() returns False when the certificate is expired.
@@ -68,9 +68,9 @@ class TestCertificate(unittest.TestCase):
         mock_rmtree.assert_called_once_with(a_tempdir)
 
     @mock.patch('shutil.rmtree')
-    @mock.patch('pulp.server.common.openssl.subprocess.check_call')
-    @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
-    @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
+    @mock.patch('pulp.repoauth.openssl.subprocess.check_call')
+    @mock.patch('pulp.repoauth.openssl.tempfile.mkdtemp')
+    @mock.patch('pulp.repoauth.openssl.tempfile.NamedTemporaryFile')
     def test_verify_signature_invalid(self, NamedTemporaryFile, mkdtemp, check_call, mock_rmtree):
         """
         Ensure that verify() returns False when the signature is invalid.
@@ -152,9 +152,9 @@ class TestCertificate(unittest.TestCase):
         mock_rmtree.assert_called_once_with(a_tempdir)
 
     @mock.patch('shutil.rmtree')
-    @mock.patch('pulp.server.common.openssl.subprocess.check_call')
-    @mock.patch('pulp.server.common.openssl.tempfile.mkdtemp')
-    @mock.patch('pulp.server.common.openssl.tempfile.NamedTemporaryFile')
+    @mock.patch('pulp.repoauth.openssl.subprocess.check_call')
+    @mock.patch('pulp.repoauth.openssl.tempfile.mkdtemp')
+    @mock.patch('pulp.repoauth.openssl.tempfile.NamedTemporaryFile')
     def test_verify_valid(self, NamedTemporaryFile, mkdtemp, check_call, mock_rmtree):
         """
         Ensure that verify() returns True when the client certificate is legitimate.

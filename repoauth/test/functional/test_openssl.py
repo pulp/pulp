@@ -1,9 +1,9 @@
 """
-This module contains tests for the pulp.server.common.openssl module.
+This module contains tests for the pulp.repoauth.openssl module.
 """
 from unittest import TestCase
 
-from pulp.server.common.openssl import Certificate
+from pulp.repoauth.openssl import Certificate
 
 
 CA = """
