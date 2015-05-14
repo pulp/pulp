@@ -5,14 +5,26 @@ import unittest
 
 from django.http import HttpResponseBadRequest, HttpResponseNotFound
 
-from .base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
+from base import assert_auth_CREATE, assert_auth_DELETE, assert_auth_READ, assert_auth_UPDATE
 from pulp.server import constants
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.webservices.views.content import (
-    CatalogResourceView, ContentSourceView, ContentSourceResourceView, ContentUnitSearch,
-    ContentUnitResourceView, ContentUnitsCollectionView, ContentUnitUserMetadataResourceView,
-    DeleteOrphansActionView, OrphanCollectionView, OrphanTypeSubCollectionView, OrphanResourceView,
-    UploadResourceView, UploadsCollectionView, UploadSegmentResourceView
+    CatalogResourceView,
+    ContentSourceCollectionActionView,
+    ContentSourceCollectionView,
+    ContentSourceResourceActionView,
+    ContentSourceResourceView,
+    ContentUnitResourceView,
+    ContentUnitsCollectionView,
+    ContentUnitSearch,
+    ContentUnitUserMetadataResourceView,
+    DeleteOrphansActionView,
+    OrphanCollectionView,
+    OrphanResourceView,
+    OrphanTypeSubCollectionView,
+    UploadResourceView,
+    UploadsCollectionView,
+    UploadSegmentResourceView
 )
 
 
@@ -626,7 +638,7 @@ class TestUploadResourceView(unittest.TestCase):
         mock_upload_manager.delete_upload.assert_called_once_with('mock_unit')
 
 
-class TestContentSourceView(unittest.TestCase):
+class TestContentSourceCollectionView(unittest.TestCase):
     """
     Tests for content sources
     """
@@ -644,12 +656,18 @@ class TestContentSourceView(unittest.TestCase):
         mock_sources.return_value = {'mock': source}
 
         request = mock.MagicMock()
-        content_source_view = ContentSourceView()
+        content_source_view = ContentSourceCollectionView()
         response = content_source_view.get(request)
 
         mock_resp.assert_called_once_with([{'source_id': 'my-id',
                                             '_href': '/v2/content/sources/my-id/'}])
         self.assertTrue(response is mock_resp.return_value)
+
+
+class TestContentSourceCollectionActionView(unittest.TestCase):
+    """
+    Tests for content sources
+    """
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
@@ -659,7 +677,7 @@ class TestContentSourceView(unittest.TestCase):
         """
         request = mock.MagicMock()
         request.body = None
-        content_source_view = ContentSourceView()
+        content_source_view = ContentSourceCollectionActionView()
         response = content_source_view.post(request, 'no-such-action')
 
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
@@ -683,7 +701,7 @@ class TestContentSourceView(unittest.TestCase):
 
         request = mock.MagicMock()
         request.body = None
-        content_source_view = ContentSourceView()
+        content_source_view = ContentSourceCollectionActionView()
         try:
             content_source_view.post(request, 'refresh')
         except OperationPostponed, response:
@@ -741,10 +759,16 @@ class TestContentSourceResourceView(unittest.TestCase):
         self.assertEqual(response.http_status_code, 404)
         self.assertEqual(response.error_data['resources'], {'source_id': 'some-source'})
 
+
+class TestContentSourceResourceActionView(unittest.TestCase):
+    """
+    Tests for content sources resource
+    """
+
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
-    def test_post_bad_request_specific_content_source(self, mock_sources):
+    def test_post_invalid_action(self, mock_sources):
         """
         Test specific content source invalid action
         """
@@ -755,7 +779,7 @@ class TestContentSourceResourceView(unittest.TestCase):
 
         request = mock.MagicMock()
         request.body = None
-        content_source_view = ContentSourceResourceView()
+        content_source_view = ContentSourceResourceActionView()
         response = content_source_view.post(request, 'some-source', 'no-such-action')
 
         self.assertTrue(isinstance(response, HttpResponseBadRequest))
@@ -772,7 +796,7 @@ class TestContentSourceResourceView(unittest.TestCase):
 
         request = mock.MagicMock()
         request.body = None
-        content_source_view = ContentSourceResourceView()
+        content_source_view = ContentSourceResourceActionView()
         try:
             content_source_view.post(request, 'some-source', 'refresh')
         except MissingResource, response:
@@ -787,7 +811,7 @@ class TestContentSourceResourceView(unittest.TestCase):
     @mock.patch('pulp.server.webservices.views.content.tags')
     @mock.patch('pulp.server.content.sources.container.ContentSource.load_all')
     @mock.patch('pulp.server.webservices.views.content.content.refresh_content_source')
-    def test_refresh_specific_content_source(self, mock_refresh, mock_sources, mock_tags):
+    def test_refresh_specific_action(self, mock_refresh, mock_sources, mock_tags):
         """
         Test refresh specific content source
         """
@@ -800,7 +824,7 @@ class TestContentSourceResourceView(unittest.TestCase):
 
         request = mock.MagicMock()
         request.body = None
-        content_source_view = ContentSourceResourceView()
+        content_source_view = ContentSourceResourceActionView()
         try:
             content_source_view.post(request, 'some-source', 'refresh')
         except OperationPostponed, response:

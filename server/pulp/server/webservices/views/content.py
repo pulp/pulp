@@ -492,7 +492,7 @@ class UploadResourceView(View):
         return generate_json_response(None)
 
 
-class ContentSourceView(View):
+class ContentSourceCollectionView(View):
     """
     View for content sources.
     """
@@ -518,29 +518,19 @@ class ContentSourceView(View):
             sources.append(d)
         return generate_json_response_with_pulp_encoder(sources)
 
-    @auth_required(authorization.UPDATE)
-    @json_body_allow_empty
-    def post(self, request, action):
-        """
-        Content source actions.
 
-        :param request:   WSGI request object, body contains bits to upload
-        :type  request:   django.core.handlers.wsgi.WSGIRequest
-        :param action: Name of action to perform
-        :type action: str
-        """
-        method = getattr(self, action, None)
-        if method:
-            return method(request)
-        else:
-            return HttpResponseBadRequest('bad request')
+class ContentSourceCollectionActionView(View):
+    """
+    View for actions on all sources.
+    """
 
-    def refresh(self, request):
+    @staticmethod
+    def refresh(request):
         """
         Refresh all content sources
 
-        :param request:   WSGI request object, body contains bits to upload
-        :type  request:   django.core.handlers.wsgi.WSGIRequest
+        :param request: WSGI request object, body contains bits to upload
+        :type request: django.core.handlers.wsgi.WSGIRequest
         :raises: OperationPostponed when an async operation is performed
         """
         container = ContentContainer()
@@ -549,6 +539,23 @@ class ContentSourceView(View):
         task_tags = [tags.action_tag(ACTION_REFRESH_ALL_CONTENT_SOURCES)] + content_sources
         task_result = content.refresh_content_sources.apply_async(tags=task_tags)
         raise OperationPostponed(task_result)
+
+    @auth_required(authorization.UPDATE)
+    @json_body_allow_empty
+    def post(self, request, action):
+        """
+        Content source actions.
+
+        :param request: WSGI request object, body contains bits to upload
+        :type request: django.core.handlers.wsgi.WSGIRequest
+        :param action: Name of action to perform
+        :type action: str
+        """
+        method = getattr(self, action, None)
+        if method:
+            return method(request)
+        else:
+            return HttpResponseBadRequest('bad request')
 
 
 class ContentSourceResourceView(View):
@@ -580,6 +587,12 @@ class ContentSourceResourceView(View):
             return generate_json_response_with_pulp_encoder(d)
         else:
             raise MissingResource(source_id=source_id)
+
+
+class ContentSourceResourceActionView(View):
+    """
+    View for single content source actions.
+    """
 
     @auth_required(authorization.UPDATE)
     @json_body_allow_empty
