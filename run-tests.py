@@ -15,6 +15,7 @@ subprocess.call(['find', PROJECT_DIR, '-name', '*.pyc', '-delete'])
 paths_to_check = [
     'agent',
     'bindings',
+    'client_consumer/pulp/client/consumer/cli.py',
     'client_lib/pulp/',
     'client_lib/test/data/extensions_loader_tests/individual_fail_extensions/init_error/'
     'pulp_cli.py',
