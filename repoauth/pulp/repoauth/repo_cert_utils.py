@@ -38,7 +38,7 @@ import os
 
 from M2Crypto import X509, BIO
 from pulp.common.util import encode_unicode
-from pulp.server.common.openssl import Certificate
+from pulp.repoauth.openssl import Certificate
 
 
 LOG = logging.getLogger(__name__)

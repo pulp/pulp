@@ -85,11 +85,14 @@ class TestWsgi(unittest.TestCase):
         total_calls = self.auth_one.call_count + self.auth_two.call_count
         self.assertEquals(total_calls, 1)
 
+    @mock.patch('pulp.repoauth.auth_enabled_validation.authenticate')
     @mock.patch('pulp.repoauth.wsgi.iter_entry_points')
-    def test_successful_auth(self, iter_ep):
+    def test_successful_auth(self, iter_ep, auth_enabled):
         """
         Test for when all auth methods succeed
         """
+        # NB: 'False' means that auth is enabled
+        auth_enabled.return_value = False
         environ = mock.Mock()
 
         self.auth_one.return_value = True
