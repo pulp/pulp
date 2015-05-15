@@ -19,9 +19,9 @@ import mock
 import pulp.repoauth.oid_validation as oid_validation
 from pulp.repoauth.repo_cert_utils import RepoCertUtils
 
-
+DATA_DIR = os.path.abspath(os.path.dirname(__file__)) + '/data'
 CERT_TEST_DIR = '/tmp/test_oid_validation/'
-CONFIG_FILENAME = '/etc/pulp/repo_auth.conf'
+CONFIG_FILENAME = os.path.join(DATA_DIR, 'test-override-repoauth.conf')
 
 
 def mock_environ(client_cert_pem, uri):
