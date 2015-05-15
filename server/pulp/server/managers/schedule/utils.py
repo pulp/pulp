@@ -144,6 +144,11 @@ def update(schedule_id, delta):
         interval, start_time, occurrences = dateutils.parse_iso8601_interval(delta['iso_schedule'])
         delta['schedule'] = pickle.dumps(CelerySchedule(interval))
 
+        # set first_run and next_run so that the schedule update will take effect
+        new_schedule_call = ScheduledCall(delta['iso_schedule'], 'dummytaskname')
+        delta['first_run'] = new_schedule_call.first_run
+        delta['next_run'] = new_schedule_call.next_run
+
     try:
         spec = {'_id': ObjectId(schedule_id)}
     except InvalidId:
