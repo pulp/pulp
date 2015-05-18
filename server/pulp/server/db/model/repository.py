@@ -427,8 +427,9 @@ class RepoPublishResult(Model, ReaperMixin):
         return r
 
     @classmethod
-    def expected_result(cls, repo_id, distributor_id, distributor_type_id, started,
-                        completed, summary, details, result_code):
+    def expected_result(cls, repo_id, distributor_id, distributor_type_id,
+                        distributor_config, started, completed, summary,
+                        details, result_code):
         """
         Creates a new history entry for a successful publish.
 
@@ -457,7 +458,8 @@ class RepoPublishResult(Model, ReaperMixin):
         @type  result_code: str
         """
 
-        r = cls(repo_id, distributor_id, distributor_type_id, started, completed, result_code)
+        r = cls(repo_id, distributor_id, distributor_type_id,
+                distributor_config, started, completed, result_code)
         r.summary = summary
         r.details = details
 
@@ -497,7 +499,8 @@ class RepoPublishResult(Model, ReaperMixin):
 
         return r
 
-    def __init__(self, repo_id, distributor_id, distributor_type_id, started, completed, result):
+    def __init__(self, repo_id, distributor_id, distributor_type_id,
+                 distributor_config, started, completed, result):
         """
         Describes the results of a single completed (potentially errored) publish.
         Rather than directory instantiating instances, use one of the above
@@ -508,6 +511,7 @@ class RepoPublishResult(Model, ReaperMixin):
         self.repo_id = repo_id
         self.distributor_id = distributor_id
         self.distributor_type_id = distributor_type_id
+        self.distributor_config = distributor_config
         self.started = started
         self.completed = completed
         self.result = result
