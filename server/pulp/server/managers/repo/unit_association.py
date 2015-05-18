@@ -102,6 +102,10 @@ class RepoUnitAssociationManager(object):
             # update the record for the last added field
             manager.update_last_unit_added(repo_id)
 
+        metadata = {'_last_associated': dateutils.now_utc_timestamp()}
+        content_manager = manager_factory.content_manager()
+        content_manager.update_content_unit(unit_type_id, unit_id, metadata)
+
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list):
         """
         Creates multiple associations between the given repo and content units.
