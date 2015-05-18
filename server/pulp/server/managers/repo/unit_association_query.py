@@ -411,13 +411,11 @@ class RepoUnitAssociationQueryManager(object):
         sort = criteria.unit_sort
 
         if sort is None:
-            unit_key = types_db.type_units_unit_key(unit_type_id)
+            # sort by _id by default (better performance)
+            sort = [('_id', SORT_ASCENDING)]
 
-            if unit_key is not None:
-                sort = [(u, SORT_ASCENDING) for u in unit_key]
 
-        if sort is not None:
-            cursor.sort(sort)
+        cursor.sort(sort)
 
         return cursor
 
