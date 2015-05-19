@@ -1,20 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
+import errno
 import os
 import urllib2
-import errno
-
 from gettext import gettext as _
 
 from M2Crypto import RSA
@@ -22,25 +8,24 @@ from M2Crypto.util import no_passphrase_callback
 from M2Crypto.X509 import X509Error
 
 from pulp.bindings.exceptions import NotFoundException
+from pulp.client import validators
 from pulp.client.arg_utils import args_to_notes_dict
 from pulp.client.consumer_utils import load_consumer_id
+from pulp.client.extensions import exceptions
 from pulp.client.extensions.decorator import priority
 from pulp.client.extensions.extensions import PulpCliCommand, PulpCliOption, PulpCliFlag
-from pulp.client.extensions import exceptions
-from pulp.client import validators
 
 
 OPTION_EXCHANGE_KEYS = PulpCliFlag('--keys', _('exchange public keys with the server'))
 
-
-# -- framework hook -----------------------------------------------------------
 
 @priority()
 def initialize(context):
 
     # Common Options
     d = 'uniquely identifies the consumer; only alphanumeric, ., -, and _ allowed'
-    id_option = PulpCliOption('--consumer-id', _(d), required=True, validate_func=validators.id_validator_allow_dots)
+    id_option = PulpCliOption('--consumer-id', _(d), required=True,
+                              validate_func=validators.id_validator_allow_dots)
 
     d = 'user-readable display name for the consumer'
     name_option = PulpCliOption('--display-name', _(d), required=False)
@@ -54,8 +39,8 @@ def initialize(context):
     d += 'specifying "" as the value'
     d = _(d)
 
-    update_note_d = d % {'i' : _('changed')}
-    add_note_d =  d % {'i' : _('added')}
+    update_note_d = d % {'i': _('changed')}
+    add_note_d = d % {'i': _('added')}
 
     update_note_option = PulpCliOption('--note', update_note_d, required=False, allow_multiple=True)
     add_note_option = PulpCliOption('--note', add_note_d, required=False, allow_multiple=True)
@@ -222,7 +207,8 @@ class UpdateCommand(PulpCliCommand):
     def update(self, **kwargs):
         consumer_id = load_consumer_id(self.context)
         if not consumer_id:
-            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp "
+                                               "server.")
             return
 
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
@@ -256,7 +242,8 @@ class UpdateCommand(PulpCliCommand):
                 msg = _('Download server RSA key failed [%(e)s]' % {'e': e})
                 self.prompt.render_failure_message(msg)
         except NotFoundException:
-            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id, tag='not-found')
+            self.prompt.write('Consumer [%s] does not exist on the server' % consumer_id,
+                              tag='not-found')
 
 
 class UnregisterCommand(PulpCliCommand):
@@ -308,19 +295,22 @@ class UnregisterCommand(PulpCliCommand):
             forced = False
         except NotFoundException:
             if not force:
-                msg = _('This consumer does not exist on the server. Please retry using the --force option.')
+                msg = _('This consumer does not exist on the server. Please retry using the '
+                        '--force option.')
                 self.prompt.render_failure_message(msg)
                 return exceptions.CODE_NOT_FOUND
         except X509Error:
             self.context.logger.exception('SSL connection failed.')
             if not force:
-                msg = _('SSL connection failed. This error may be ignored by using the --force option.')
+                msg = _('SSL connection failed. This error may be ignored by using the --force '
+                        'option.')
                 self.prompt.render_failure_message(msg)
                 return os.EX_OSERR
         except Exception:
             self.context.logger.exception('Unregistration failed')
             if not force:
-                msg = _('Unregistration failed on the server. This error may be ignored by using the --force option.')
+                msg = _('Unregistration failed on the server. This error may be ignored by using '
+                        'the --force option.')
                 self.prompt.render_failure_message(msg)
                 return exceptions.CODE_UNEXPECTED
 
@@ -350,25 +340,42 @@ class HistoryCommand(PulpCliCommand):
         self.context = context
         self.prompt = context.prompt
 
-        d = 'limits displayed history entries to the given type;'
-        d += 'supported types: ("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
-        d += '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", "added_to_group",'
-        d += '"removed_from_group")'
+        d = ('limits displayed history entries to the given type; supported types: '
+             '("consumer_registered", "consumer_unregistered", "repo_bound", "repo_unbound",'
+             '"content_unit_installed", "content_unit_uninstalled", "unit_profile_changed", '
+             '"added_to_group", "removed_from_group")')
         self.add_option(PulpCliOption('--event-type', _(d), required=False))
-        self.add_option(PulpCliOption('--limit', 'limits displayed history entries to the given amount (must be greater than zero)', required=False))
-        self.add_option(PulpCliOption('--sort', 'indicates the sort direction ("ascending" or "descending") based on the entry\'s timestamp', required=False))
-        self.add_option(PulpCliOption('--start-date', 'only return entries that occur on or after the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)', required=False))
-        self.add_option(PulpCliOption('--end-date', 'only return entries that occur on or before the given date in iso8601 format (yyyy-mm-ddThh:mm:ssZ)', required=False))
+        self.add_option(PulpCliOption(
+            '--limit',
+            'limits displayed history entries to the given amount (must be greater than zero)',
+            required=False))
+        self.add_option(PulpCliOption(
+            '--sort',
+            'indicates the sort direction ("ascending" or "descending") based on the entry\'s '
+            'timestamp',
+            required=False))
+        self.add_option(PulpCliOption(
+            '--start-date',
+            'only return entries that occur on or after the given date in iso8601 format '
+            '(yyyy-mm-ddThh:mm:ssZ)',
+            required=False))
+        self.add_option(PulpCliOption(
+            '--end-date',
+            'only return entries that occur on or before the given date in iso8601 format '
+            '(yyyy-mm-ddThh:mm:ssZ)',
+            required=False))
 
     def history(self, **kwargs):
         consumer_id = load_consumer_id(self.context)
         if not consumer_id:
-            self.prompt.render_failure_message("This consumer is not registered to the Pulp server.")
+            self.prompt.render_failure_message("This consumer is not registered to the Pulp "
+                                               "server.")
             return
-        self.prompt.render_title(_('Consumer History [%(i)s]') % {'i' : consumer_id})
+        self.prompt.render_title(_('Consumer History [%(i)s]') % {'i': consumer_id})
 
-        history_list = self.context.server.consumer_history.history(consumer_id, kwargs['event-type'], kwargs['limit'], kwargs['sort'],
-                                                            kwargs['start-date'], kwargs['end-date']).response_body
+        history_list = self.context.server.consumer_history.history(
+            consumer_id, kwargs['event-type'], kwargs['limit'], kwargs['sort'],
+            kwargs['start-date'], kwargs['end-date']).response_body
         filters = ['consumer_id', 'type', 'details', 'originator', 'timestamp']
         order = filters
         for history in history_list:
@@ -388,7 +395,7 @@ class StatusCommand(PulpCliCommand):
         if consumer_id:
             server = self.context.config['server']['host']
             m = 'This consumer is registered to the server [%(s)s] with the ID [%(i)s].'
-            self.prompt.render_success_message(_(m) % {'s': server, 'i' : consumer_id})
+            self.prompt.render_success_message(_(m) % {'s': server, 'i': consumer_id})
         else:
             m = 'This consumer is not currently registered.'
             self.prompt.render_paragraph(_(m))
