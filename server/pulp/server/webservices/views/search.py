@@ -35,7 +35,7 @@ class SearchView(generic.View):
     :cvar    model:            Define this class attribute if you are making a SearchView for
                                a MongoEngine Document. The model must have a meta class
                                attribute defined with the 'queryset_class' key indexing
-                               pulp.server.db.model.base.CriteriaQuerySet, so that the
+                               pulp.server.db.querysets.CriteriaQuerySet, so that the
                                Document's QuerySet will have a find_by_criteria() method.
     :vartype model:            mongoengine.Document
     :cvar    serializer:       If your view needs to modify the QuerySet results before they

@@ -1147,7 +1147,7 @@ class TaskStatusTests(base.PulpServerTests):
         self.assertRaises(NotImplementedError, TaskStatus.objects(task_id=task_id).update_one,
                           multi=True)
 
-    @mock.patch('pulp.server.db.model.base.CriteriaQuerySet.find_by_criteria')
+    @mock.patch('pulp.server.db.querysets.CriteriaQuerySet.find_by_criteria')
     def test_find_by_criteria(self, mock_find_by_criteria):
         criteria = Criteria()
         TaskStatus.objects.find_by_criteria(criteria)

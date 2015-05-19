@@ -4,7 +4,7 @@ from datetime import datetime
 from mongoengine import ValidationError
 
 from pulp.common import dateutils
-from pulp.server.db.model import fields
+from pulp.server.db import fields
 
 
 class TestCustomFields(unittest.TestCase):
