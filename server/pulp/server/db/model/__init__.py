@@ -12,9 +12,9 @@ from mongoengine import signals
 from pulp.common import constants, dateutils, error_codes
 from pulp.server import config, exceptions
 from pulp.server.async.emit import send as send_taskstatus_message
-from pulp.server.db.model.base import CriteriaQuerySet
-from pulp.server.db.model.fields import ISO8601StringField
+from pulp.server.db.fields import ISO8601StringField
 from pulp.server.db.model.reaper_base import ReaperMixin
+from pulp.server.db.querysets import CriteriaQuerySet
 
 
 _logger = logging.getLogger(__name__)
@@ -86,10 +86,10 @@ class RepositoryContentUnit(Document):
     :ivar unit_type_id: string representation of content unit type
     :type unit_type_id: mongoengine.StringField
     :ivar created: ISO8601 representation of the time the association was created
-    :type created: pulp.server.db.model.fields.ISO8601StringField
+    :type created: pulp.server.db.fields.ISO8601StringField
     :ivar updated: ISO8601 representation of last time a copy, sync, or upload ensured that
                    the association existed
-    :type updated: pulp.server.db.model.fields.ISO8601StringField
+    :type updated: pulp.server.db.fields.ISO8601StringField
     :ivar _ns: The namespace field (Deprecated), reading
     :type _ns: mongoengine.StringField
     """

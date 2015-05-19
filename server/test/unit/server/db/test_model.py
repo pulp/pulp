@@ -18,8 +18,8 @@ from pulp.common import error_codes
 from pulp.devel.unit.util import touch
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
-from pulp.server.db.model.base import CriteriaQuerySet
-from pulp.server.db.model.fields import ISO8601StringField
+from pulp.server.db.fields import ISO8601StringField
+from pulp.server.db.querysets import CriteriaQuerySet
 
 
 class TestContentUnit(unittest.TestCase):
