@@ -4,7 +4,7 @@
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
- config.vm.box = "humaton/fedora-21-cloud"
+ config.vm.box = "https://download.gluster.org/pub/gluster/purpleidea/vagrant/fedora-21/fedora-21.box"
  config.vm.host_name = "pulp-devel"
  config.vm.synced_folder "..", "/home/vagrant/devel", type: "nfs", nfs_version: 4, nfs_udp: false
  # By default, Vagrant wants to mount the code in /vagrant with NFSv3, which will fail. Let's

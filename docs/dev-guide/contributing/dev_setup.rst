@@ -73,19 +73,14 @@ prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
       If you followed the instructions above, you have checked out master on all repositories which
       should be compatible.
 
-#. Next, cd into the pulp directory, and begin provisioning your Vagrant environment. Due to what
-   seems to be a `Vagrant bug <https://github.com/mitchellh/vagrant/issues/5321>`_, the first run
-   will fail due to Vagrant attempting to control NFS through init scripts rather than through
-   systemd. There is an easy workaround, as you can tell Vagrant to reload the box after it
-   configures your NFS exports, and everything should work. Another possible failure point is during
-   provisioning when mongod is building its initial files. This sometimes takes longer than systemd
-   allows and can fail. If that happens, simply run ``vagrant provision``. We will run two vagrant
-   reloads in a row. The first is a workaround for the mentioned bug, and the second allows the
-   machine to reboot after provisioning.::
+#. Next, cd into the pulp directory and begin provisioning your Vagrant environment. A possible
+   failure point is during provisioning when mongod is building its initial files. This sometimes
+   takes longer than systemd allows and can fail. If that happens, simply run ``vagrant provision``.
+   We will finish by running ``vagrant reload``. This allows the machine to reboot after
+   provisioning.::
 
       $ cd pulp
-      $ vagrant up  # You will experience an error starting nfs and rpcbind here
-      $ vagrant reload  # mongod may fail when this runs. vagrant provision will fix it.
+      $ vagrant up  # mongod may fail when this runs. vagrant provision will fix it.
       $ vagrant reload  # Reboot the machine at the end to apply kernel updates, etc.
 
 Once you have followed the steps above, you should have a running deployed Pulp development machine.
