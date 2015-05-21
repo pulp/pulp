@@ -17,6 +17,7 @@ paths_to_check = [
     'bindings',
     'client_consumer/pulp/client/consumer/cli.py',
     'client_lib',
+    'oid_validation/',
     'repoauth/',
     'server/pulp/plugins',
     'server/pulp/server/agent/',
@@ -55,6 +56,7 @@ TESTS_NON_RHEL5 = [
     'nodes/test/nodes_tests',
     'server/test/unit',
     'repoauth/test',
+    'oid_validation/test',
     'devel/test/unit'
 ]
 
