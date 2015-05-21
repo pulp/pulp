@@ -33,6 +33,7 @@ paths_to_check = [
     'bindings/test/unit/test_tasks.py',
     'bindings/test/unit/test_upload.py',
     'client_lib/pulp/',
+    'oid_validation/',
     'repoauth/',
     'server/pulp/plugins',
     'server/pulp/server/agent/',
@@ -71,6 +72,7 @@ TESTS_NON_RHEL5 = [
     'nodes/test/unit',
     'server/test/unit',
     'repoauth/test',
+    'oid_validation/test',
     'devel/test/unit'
 ]
 
