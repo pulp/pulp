@@ -19,7 +19,7 @@ fi
 
 
 echo "Install some prereqs"
-sudo yum install -y wget yum-utils redhat-lsb-core
+sudo dnf install -y wget yum-utils redhat-lsb-core
 
 echo "setting up repos"
 # repo setup
@@ -34,7 +34,7 @@ else
     fi
     if ! rpm -q epel-release; then
         if [ "$(lsb_release -si)" = "CentOS" ]; then
-            sudo yum install -y epel-release
+            sudo dnf install -y epel-release
         else
             sudo rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
         fi
@@ -45,7 +45,7 @@ sudo yum-config-manager --enable pulp-2.6-testing > /dev/null
 popd
 
 echo "installing some dev tools"
-sudo yum install -y vim-enhanced python-virtualenvwrapper bash-completion \
+sudo dnf install -y vim-enhanced python-virtualenvwrapper bash-completion \
                     python-django-bash-completion
 
 if ! grep WORKON_HOME ~/.bashrc; then
@@ -58,17 +58,20 @@ fi
 
 # install rpms, then remove pulp*
 echo "installing RPMs"
-sudo yum install -y @pulp-server-qpid @pulp-admin @pulp-consumer
-sudo yum remove -y pulp-\* python-pulp\*
-sudo yum install -y git mongodb mongodb-server python-debian python-django python-glanceclient \
+sudo dnf install -y @pulp-server-qpid @pulp-admin @pulp-consumer
+sudo dnf remove --setopt=clean_requirements_on_remove=false -y pulp-\* python-pulp\*
+sudo dnf install -y git mongodb mongodb-server python-debian python-django python-glanceclient \
                     python-keystoneclient python-mongoengine python-paste python-qpid-qmf \
                     python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
 
-echo "Starting services, this may take a few minutes due to mongodb journal allocation"
+# disable mongo journaling since this is a dev setup
+echo "Disabling MongoDB journal and starting services"
+sudo sed -i 's/journal = true/nojournal = true/' /etc/mongodb.conf
 for s in qpidd mongod; do
   sudo systemctl enable $s
   sudo systemctl start $s
 done
+
 
 pushd devel
 for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_python,pulp_rpm}; do
