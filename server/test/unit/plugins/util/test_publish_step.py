@@ -20,7 +20,7 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, SyncReport, Unit
 from pulp.plugins.util.publish_step import Step, PublishStep, UnitPublishStep, PluginStep, \
     AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep, \
-    PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep
+    PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep, CreatePulpManifestStep
 from pulp.server.managers import factory
 
 
@@ -1224,3 +1224,19 @@ class TestGetLocalUnitsStep(unittest.TestCase):
         step = GetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
                                  ['foo'], '/a/b/c')
         self.assertRaises(NotImplementedError, step._dict_to_unit, {'image_id': 'abc123'})
+
+
+class TestCreateManifestStep(unittest.TestCase):
+    def test_init(self):
+        step = CreatePulpManifestStep('/foo')
+
+        # make sure the description has some value
+        self.assertTrue(step.description)
+
+    @patch('pulp.plugins.util.manifest_writer.make_manifest_for_dir', spec_set=True)
+    def test_process_main(self, mock_make_manifest):
+        step = CreatePulpManifestStep('/foo/')
+
+        step.process_main()
+
+        mock_make_manifest.assert_called_once_with('/foo/')

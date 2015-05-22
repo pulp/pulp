@@ -14,7 +14,7 @@ from pulp.common import error_codes
 from pulp.common.plugins import reporting_constants, importer_constants
 from pulp.common.util import encode_unicode
 from pulp.plugins.model import Unit
-from pulp.plugins.util import misc
+from pulp.plugins.util import manifest_writer, misc
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.exceptions import PulpCodedTaskFailedException
@@ -822,6 +822,34 @@ class SaveTarFilePublishStep(PublishStep):
         if not os.path.exists(publish_dir_parent):
             os.makedirs(publish_dir_parent, 0750)
         shutil.move(os.path.join(self.source_dir, tar_file_name), self.publish_file)
+
+
+class CreatePulpManifestStep(Step):
+    """
+    This will create a PULP_MANIFEST file in the specified directory. This step should be used when
+    the checksums of the files are not already known, because it will read and calculate new
+    checksums for each one.
+
+    If you already know the SHA256 checksums of the files going in the manifest, see an example
+    in the FileDistributor that creates this file in a different way.
+    """
+    def __init__(self, target_dir):
+        """
+        :param target_dir:  full path to the directory where the PULP_MANIFEST file should
+                            be created
+        :type  target_dir:  basestring
+        """
+        super(CreatePulpManifestStep, self).__init__(reporting_constants.STEP_CREATE_PULP_MANIFEST)
+        self.target_dir = target_dir
+        self.description = _('Creating PULP_MANIFEST')
+
+    def process_main(self, item=None):
+        """
+        creates the manifest file
+
+        :param item:    not used
+        """
+        manifest_writer.make_manifest_for_dir(self.target_dir)
 
 
 class CopyDirectoryStep(PublishStep):
