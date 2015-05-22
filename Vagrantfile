@@ -14,11 +14,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
  config.vm.provider :libvirt do |domain|
    domain.memory = 2048
-   domain.cpus   = 2
+   domain.cpus   = 4
  end
 
  config.vm.provision "shell", inline: "yum install -y deltarpm"
  config.vm.provision "shell", inline: "yum update -y"
- config.vm.provision "shell", inline: "yum install -y vagrant vagrant-libvirt vagrant-lxc"
  config.vm.provision "shell", inline: "sudo -u vagrant bash -e /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"
 end
