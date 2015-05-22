@@ -17,6 +17,7 @@ paths_to_check = [
     'bindings',
     'client_consumer',
     'client_lib',
+    'devel/test/unit/test_task_simulator.py',
     'oid_validation/',
     'repoauth/',
     'server/pulp/plugins',
