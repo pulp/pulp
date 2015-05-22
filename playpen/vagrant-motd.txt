@@ -1,0 +1,23 @@
+
+Welcome to the Pulp dev environment!
+
+Here are some tips:
+* Your code is all checked out inside of ~/devel/.
+* The default username:password is admin:admin. When your session expires, you
+  can log in again with pulp-admin login -u admin
+* You can type workon <project> to quickly cd to a project dir and activate its
+  virtualenv. For example:
+
+    $ workon pulp_python
+
+  Similarly, run "workon pulp" to jump into the pulp platform virtualenv.
+* Each project has a "run-tests.py" to run the unit tests.
+* You can ssh into your vagrant environment with vagrant ssh, but presumably
+  you already know this since you are reading this message :)
+
+More information can be found at
+https://pulp.readthedocs.org/en/latest/dev-guide/ and you can ask questions in
+#pulp on Freenode IRC.
+
+Happy hacking, and thanks for your contribution!
+
