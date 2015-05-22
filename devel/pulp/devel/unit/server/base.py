@@ -103,7 +103,8 @@ class PulpWebservicesTests(unittest.TestCase):
         validate that a validation check was performed for a given operation
         :param operation: the operation to validate
         """
-        self.mock_user_query_manager.return_value.is_authorized.assert_called_once_with(mock.ANY, mock.ANY, operation)
+        self.mock_user_query_manager.return_value.is_authorized.assert_called_once_with(
+            mock.ANY, mock.ANY, operation)
 
     def get_mock_uri_path(self, *args):
         """
