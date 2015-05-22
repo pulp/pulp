@@ -1,4 +1,3 @@
-
 from unittest import TestCase
 
 from mock import patch, Mock
@@ -37,7 +36,6 @@ class TestConfig(TestCase):
             for key in DEFAULT[section]:
                 msg = '[%s].%s has default but not found in the schema' % (section, key)
                 self.assertTrue(self.schema_has_property(section, key), msg=msg)
-
 
     @patch('os.listdir')
     @patch('os.path.expanduser')
