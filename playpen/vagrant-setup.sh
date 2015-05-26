@@ -52,8 +52,17 @@ if ! grep WORKON_HOME ~/.bashrc; then
     echo "Setting up virtualenv"
     echo -e "# Set up virtualenvwrapper\nexport WORKON_HOME=$HOME/.virtualenvs\nexport PIP_VIRTUALENV_BASE=$WORKON_HOME\nexport VIRTUALENV_USE_DISTRIBUTE=true\nexport PIP_RESPECT_VIRTUALENV=true\nsource /usr/bin/virtualenvwrapper.sh" >> ~/.bashrc
 fi
-# We always need to source those variables from the bashrc, in case the user is running this for the
-# first time, or invoking the script directly with bash.
+# Let's add p{start,stop,restart,status} to the .bashrc
+if ! grep pstart ~/.bashrc; then
+    echo -e "\n\npstart() {\n    _paction start\n}\n" >> ~/.bashrc
+    echo -e "pstop() {\n    _paction stop\n}\n" >> ~/.bashrc
+    echo -e "prestart() {\n    _paction restart\n}\n" >> ~/.bashrc
+    echo -e "pstatus() {\n    _paction status\n}\n" >> ~/.bashrc
+    echo -e "_paction() {\n" >> ~/.bashrc
+    echo -e "    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do" >> ~/.bashrc
+    echo -e "        sudo systemctl \$1 \$s;\n    done;\n}" >> ~/.bashrc
+fi
+# We need to source those variables from the bashrc so that we can use the above in this script
 . ~/.bashrc
 
 # install rpms, then remove pulp*
@@ -102,11 +111,12 @@ setfacl -m user:apache:rwx /home/vagrant
 echo "populating mongodb"
 sudo -u apache pulp-manage-db
 
+# Enable and start the Pulp services
 echo "Starting more services"
 for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do
   sudo systemctl enable $s
-  sudo systemctl start $s
 done
+pstart
 
 echo "Disabling SSL verification on dev setup"
 sudo sed -i 's/# verify_ssl: True/verify_ssl: False/' /etc/pulp/admin/admin.conf
