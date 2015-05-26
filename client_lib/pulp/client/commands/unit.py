@@ -15,7 +15,7 @@ from pulp.common.constants import DISPLAY_UNITS_DEFAULT_MAXIMUM
 
 
 DESC_COPY = _('copies modules from one repository into another')
-DESC_REMOVE = _('remove copied or uploaded units from a repository')
+DESC_REMOVE = _('remove units from a repository')
 
 DESC_FROM_REPO = _('source repository from which units will be copied')
 OPTION_FROM_REPO = PulpCliOption('--from-repo-id', DESC_FROM_REPO, aliases=['-f'], required=True)
@@ -54,7 +54,7 @@ class UnitRemoveCommand(UnitAssociationCriteriaCommand, PollingCommand):
         :type  context: pulp.client.extensions.core.ClientContext
         :param name: The name of the command
         :type name: str
-        :param description: the textual discription that will be displayed in the shell
+        :param description: the textual description that will be displayed in the shell
         :type description: str
         :param method: method that will be fun when the command is invoked
         :type  method: function

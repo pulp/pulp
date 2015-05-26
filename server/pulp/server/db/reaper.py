@@ -15,7 +15,6 @@ from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, 
 # section that corresponds to the collection. The config is consulted by the reap_expired_documents
 # Task to determine how old documents should be (in days) before they are removed.
 _COLLECTION_TIMEDELTAS = {
-    dispatch.ArchivedCall: 'archived_calls',
     model.TaskStatus: 'task_status_history',
     consumer.ConsumerHistoryEvent: 'consumer_history',
     repository.RepoSyncResult: 'repo_sync_history',
