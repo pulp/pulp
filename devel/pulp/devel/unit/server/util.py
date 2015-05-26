@@ -41,7 +41,7 @@ def assert_validation_exception(method, error_codes, *args, **kwargs):
 
         expected_errors_missing = errors_expected.difference(errors_raised)
         if expected_errors_missing:
-            raise AssertionError("The following errors were specified but not raised: %s"  %
+            raise AssertionError("The following errors were specified but not raised: %s" %
                                  str(expected_errors_missing))
         errors_raised_unexpectedly = errors_raised.difference(errors_expected)
         if errors_raised_unexpectedly:
@@ -70,7 +70,7 @@ def compare_element(source, target):
         raise AssertionError("elements do not match.  Tags are different %s != %s" %
                              (source.tag, target.tag))
 
-    #test keys
+    # test keys
     source_keys = set(source.keys())
     target_keys = set(target.keys())
 
@@ -86,7 +86,7 @@ def compare_element(source, target):
         raise AssertionError("elements do not match.  Text is different\n%s\n%s" % (source.text,
                                                                                     target.text))
 
-    #Use the deprecated getchildren method for python 2.6 support
+    # Use the deprecated getchildren method for python 2.6 support
     source_children = list(source.getchildren())
     target_children = list(target.getchildren())
     if len(source_children) != len(target_children):
