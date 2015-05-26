@@ -123,12 +123,6 @@ if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
     pulp-admin rpm repo sync run --repo-id zoo
 fi
 
-echo -e '\n\nDone. Your development environment was provisioned successfully! Here are some tips:\n'
-echo -e "\t* You can ssh into your vagrant environment like this:\n"
-echo -e "\t\t$ vagrant ssh"
-echo -e "\n\t* Your code is all checked out inside of ~/devel/."
-echo -e "\n\t* The default username:password is admin:admin. When your session expires, you can log"
-echo -e "\t  in again with pulp-admin login -u admin"
-echo -e "\n\t* You can type workon <project> to quickly cd to a project dir and activate its "
-echo -e "\t  virtualenv. For example:\n"
-echo -e "\t\t$ workon pulp_python\n"
+# Give the user some use instructions
+sudo cp /home/vagrant/devel/pulp/playpen/vagrant-motd.txt /etc/motd
+echo -e '\n\nDone. You can ssh into your development environment with vagrant ssh.\n'
