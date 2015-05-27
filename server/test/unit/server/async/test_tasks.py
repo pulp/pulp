@@ -792,18 +792,6 @@ class TestGetCurrentTaskId(unittest.TestCase):
         self.assertEquals(None, tasks.get_current_task_id())
 
 
-class TestCleanupOldWorker(unittest.TestCase):
-
-    @mock.patch('pulp.server.managers.repo._common.create_worker_working_directory')
-    @mock.patch('pulp.server.async.tasks._delete_worker')
-    def test_assert_calls__delete_worker_synchronously(self, mock__delete_worker,
-                                                       mock__create_worker_working_directory):
-        sender = mock.Mock()
-        tasks.cleanup_old_worker(sender=sender)
-        mock__delete_worker.assert_called_once_with(sender.hostname, normal_shutdown=True)
-        mock__create_worker_working_directory.assert_called_once_with(sender.hostname)
-
-
 class TestScheduledTasks(unittest.TestCase):
 
     @mock.patch('pulp.server.db.reaper.reap_expired_documents.apply_async')

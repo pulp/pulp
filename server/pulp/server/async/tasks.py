@@ -9,7 +9,6 @@ import uuid
 from celery import task, Task as CeleryTask, current_task
 from celery.app import control, defaults
 from celery.result import AsyncResult
-from celery.signals import worker_init
 from mongoengine.queryset import DoesNotExist
 
 from pulp.common import constants, dateutils
@@ -559,28 +558,3 @@ def register_sigterm_handler(f, handler):
             signal.signal(signal.SIGTERM, old_signal)
 
     return wrap_f
-
-
-@worker_init.connect
-def cleanup_old_worker(*args, **kwargs):
-    """
-    Cleans up old state if this worker was previously running, but died unexpectedly.
-
-    In those cases, any Pulp tasks that were running or waiting on this worker will show incorrect
-    state. Any reserved_resource reservations associated with the previous worker will also be
-    removed along with the worker entry in the database itself. The working directory specified in
-    /etc/pulp/server.conf (/var/cache/pulp/<worker_name>) by default is removed and recreated. This
-    is called early in the worker start process, and later when its fully online pulp_celerybeat
-    will discover the worker as usual to allow new work to arrive at this worker.
-
-    If there is no previous work to cleanup this method still runs, but has not effect on the
-    database.
-
-    :param args: For positional arguments; and not used otherwise
-    :param kwargs: For keyword arguments, and expected to have one named 'sender'
-    :return: None
-    """
-    name = kwargs['sender'].hostname
-    _delete_worker(name, normal_shutdown=True)
-    # Recreate a new working directory for worker that is starting now
-    common_utils.create_worker_working_directory(name)
