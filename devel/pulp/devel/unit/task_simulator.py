@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) 2013 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains functionality to simulate returning tasks that change state at each invocation. This
 should be used for any command that uses asynchronous REST APIs to reduce the need for each
@@ -75,11 +63,11 @@ class TaskSimulator(object):
         the get_all_tasks call. The order in which these task IDs are created will be tracked and
         honored in get_all_tasks.
 
-        If doing some sort of polling operation, you'll likely need to add one of the completed states
-        once you've added all of the desired waiting/running states. This simulator will continue
-        to pop off the next task state for this task_id each time get_task is called, so if
-        your code is polling until completion, don't be surprised to find some form of index out of bounds
-        error crop up.
+        If doing some sort of polling operation, you'll likely need to add one of the completed
+        states once you've added all of the desired waiting/running states. This simulator will
+        continue to pop off the next task state for this task_id each time get_task is called, so if
+        your code is polling until completion, don't be surprised to find some form of index out of
+        bounds error crop up.
         """
         new_task_dict = copy.deepcopy(TASK_TEMPLATE)
         new_task_dict['task_id'] = task_id
@@ -92,7 +80,8 @@ class TaskSimulator(object):
             new_task.spawned_tasks = copy.copy(spawned_tasks)
 
         task_list_for_id = self.tasks_by_id.setdefault(task_id, [])
-        # reverse order because popping from the end is more efficient and it will make jconnor happy
+        # reverse order because popping from the end is more efficient and it will make jconnor
+        # happy
         task_list_for_id.insert(0, new_task)
 
         if task_id not in self.ordered_task_ids:
@@ -106,7 +95,8 @@ class TaskSimulator(object):
 
         :param task_id: task whose state list is being updated
         :type  task_id: str
-        :param state_list: list of state values; should be codes from the pulp.bindings.responses module
+        :param state_list: list of state values; should be codes from the pulp.bindings.responses
+                           module
         :type  state_list: list of str
 
         :return: list of created tasks corresponding to the same order of state_list
@@ -114,8 +104,6 @@ class TaskSimulator(object):
 
         tasks = [self.add_task_state(task_id, s) for s in state_list]
         return tasks
-
-    # -- task bindings api ----------------------------------------------------------------------------------
 
     def get_task(self, task_id):
         """
@@ -134,7 +122,6 @@ class TaskSimulator(object):
         response = responses.Response('200', task)
 
         return response
-
 
     def get_all_tasks(self, tags=()):
         """
