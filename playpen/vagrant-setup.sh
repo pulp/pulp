@@ -52,6 +52,9 @@ if ! grep WORKON_HOME ~/.bashrc; then
     echo "Setting up virtualenv"
     echo -e "# Set up virtualenvwrapper\nexport WORKON_HOME=$HOME/.virtualenvs\nexport PIP_VIRTUALENV_BASE=$WORKON_HOME\nexport VIRTUALENV_USE_DISTRIBUTE=true\nexport PIP_RESPECT_VIRTUALENV=true\nsource /usr/bin/virtualenvwrapper.sh" >> ~/.bashrc
 fi
+if ! grep DJANGO_SETTINGS_MODULE ~/.bashrc; then
+    echo "export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings" >> ~/.bashrc
+fi
 # We always need to source those variables from the bashrc, in case the user is running this for the
 # first time, or invoking the script directly with bash.
 . ~/.bashrc
