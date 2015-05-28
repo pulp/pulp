@@ -10,6 +10,7 @@ from mongoengine import (DateTimeField, DictField, Document, DynamicField, IntFi
 from mongoengine import signals
 
 from pulp.common import constants, dateutils, error_codes
+
 from pulp.server import config, exceptions
 from pulp.server.async.emit import send as send_taskstatus_message
 from pulp.server.db.fields import ISO8601StringField
@@ -58,8 +59,8 @@ class Repository(Document):
     display_name = StringField(required=True)
     description = StringField()
     notes = DictField()
-    scratchpad = DictField()
-    content_unit_counts = DictField()
+    scratchpad = DictField(default={})
+    content_unit_counts = DictField(default={})
     last_unit_added = DateTimeField()
     last_unit_removed = DateTimeField()
 
@@ -97,8 +98,17 @@ class RepositoryContentUnit(Document):
     repo_id = StringField(required=True)
     unit_id = StringField(required=True)
     unit_type_id = StringField(required=True)
-    created = ISO8601StringField(required=True)
-    updated = ISO8601StringField(required=True)
+
+    created = ISO8601StringField(
+        required=True,
+        default=lambda: dateutils.format_iso8601_utc_timestamp(
+            dateutils.now_utc_timestamp())
+    )
+    updated = ISO8601StringField(
+        required=True,
+        default=lambda: dateutils.format_iso8601_utc_timestamp(
+            dateutils.now_utc_timestamp())
+    )
 
     # For backward compatibility
     _ns = StringField(default='repo_content_units')
@@ -399,45 +409,44 @@ class ContentUnit(Document):
         document.last_updated = dateutils.now_utc_timestamp()
 
         # If content was set on this unit, copy the content into place
-        if document._source_location and document._relative_path:
+        if document._source_location:
             server_storage_dir = config.config.get('server', 'storage_dir')
-            platform_storage_dir = os.path.join(server_storage_dir, 'content',
-                                                document.unit_type_id)
-            target_location = os.path.join(platform_storage_dir, document._relative_path)
+            platform_storage_location = os.path.join(server_storage_dir, 'units',
+                                                     document.unit_type_id,
+                                                     str(document.id)[0],
+                                                     str(document.id)[1:3],
+                                                     str(document.id))
             # Make if source is a directory, recursively copy it, otherwise copy the file
             if os.path.isdir(document._source_location):
-                shutil.copytree(document._source_location, target_location)
+                shutil.copytree(document._source_location, platform_storage_location)
             else:
-                check_dir = os.path.dirname(target_location)
+                target_file_name = os.path.basename(document._source_location)
+                # Make sure the base directory exists
                 try:
-                    os.makedirs(check_dir)
+                    os.makedirs(platform_storage_location)
                 except OSError as e:
                     if e.errno != errno.EEXIST:
                         raise
-                shutil.copy(document._source_location, target_location)
+                # Copy the file
+                platform_storage_location = os.path.join(platform_storage_location,
+                                                         target_file_name)
+                shutil.copy(document._source_location, platform_storage_location)
+            document.storage_path = platform_storage_location
 
-    def set_content(self, source_location, relative_path):
+    def set_content(self, source_location):
         """
         Store the source of the content for the unit and the relative path
         where it should be stored within the plugin content directory.
 
         :param source_location: The absolute path to the content in the plugin working directory.
         :type source_location: str
-        :param relative_path: The relative path where the content should be stored inside the
-                              content type specific content folder
-        :type relative_path: str
 
         :raises PulpCodedException: PLP0036 if the source_location doesn't exist.
-                                    PLP0037 if the relative_path is not included
         """
         if not os.path.exists(source_location):
             raise exceptions.PulpCodedException(error_code=error_codes.PLP0036,
                                                 source_location=source_location)
-        if relative_path is None or relative_path.strip() == '':
-            raise exceptions.PulpCodedException(error_code=error_codes.PLP0037)
-
         self._source_location = source_location
-        self._relative_path = relative_path
 
     def get_repositories(self):
         """
@@ -449,3 +458,14 @@ class ContentUnit(Document):
         content_list = RepositoryContentUnit.objects(unit_id=self.id)
         id_list = [item.repo_id for item in content_list]
         return Repository.objects(repo_id__in=id_list)
+
+    def get_unit_key_dict(self):
+        return dict((key, self[key]) for key in self.unit_key_fields)
+
+    def __hash__(self):
+        """
+        This should provide a consistent and unique hash where units of the same
+        type and the same unit key will get the same hash value.
+        """
+        unit_key_str = str(sorted([self[key] for key in self.unit_key_fields]))
+        return hash(self.unit_type_id + unit_key_str)

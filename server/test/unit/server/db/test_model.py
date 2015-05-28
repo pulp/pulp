@@ -128,9 +128,8 @@ class TestContentUnit(unittest.TestCase):
         class ContentUnitHelper(model.ContentUnit):
             pass
         helper = ContentUnitHelper()
-        helper.set_content(self.working_dir, 'apples')
+        helper.set_content(self.working_dir)
         self.assertEquals(helper._source_location, self.working_dir)
-        self.assertEquals(helper._relative_path, 'apples')
 
     def test_set_content_bad_source_location(self):
         """
@@ -141,38 +140,10 @@ class TestContentUnit(unittest.TestCase):
             pass
         helper = ContentUnitHelper()
         try:
-            helper.set_content(os.path.join(self.working_dir, 'foo'), 'apples')
+            helper.set_content(os.path.join(self.working_dir, 'foo'))
             self.fail("Previous call should have raised a PulpCodedException")
         except PulpCodedException as raised_error:
             self.assertEquals(raised_error.error_code, error_codes.PLP0036)
-
-    def test_set_content_no_relative_path(self):
-        """
-        Test that the appropriate exception is raised when set_content
-        is called with None for the relative_path
-        """
-        class ContentUnitHelper(model.ContentUnit):
-            pass
-        helper = ContentUnitHelper()
-        try:
-            helper.set_content(self.working_dir, None)
-            self.fail("Previous call should have raised a PulpCodedException")
-        except PulpCodedException, raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0037)
-
-    def test_set_content_empty_relative_path(self):
-        """
-        Test that the appropriate exception is raised when set_content
-        is called with an empty relative_path
-        """
-        class ContentUnitHelper(model.ContentUnit):
-            pass
-        helper = ContentUnitHelper()
-        try:
-            helper.set_content(self.working_dir, '  ')
-            self.fail("Previous call should have raised a PulpCodedException")
-        except PulpCodedException as raised_error:
-            self.assertEquals(raised_error.error_code, error_codes.PLP0037)
 
     @patch('pulp.server.db.model.config')
     def test_pre_save_signal_directory_content(self, mock_config):
@@ -187,9 +158,11 @@ class TestContentUnit(unittest.TestCase):
         class ContentUnitHelper(model.ContentUnit):
             unit_type_id = 'foo_unit'
         foo = ContentUnitHelper()
-        foo.set_content(source_dir, 'apples')
+        foo.set_content(source_dir)
+        foo.id = 'abbcd'
+
         model.ContentUnit.pre_save_signal(object(), foo)
-        full_path = os.path.join(target_dir, 'content', 'foo_unit', 'apples', 'foo', 'bar')
+        full_path = os.path.join(target_dir, 'units', 'foo_unit', 'a', 'bb', 'abbcd', 'foo', 'bar')
         self.assertTrue(os.path.exists(full_path))
 
     @patch('pulp.server.db.model.config')
@@ -207,10 +180,12 @@ class TestContentUnit(unittest.TestCase):
             unit_type_id = 'foo_unit'
             pass
         foo = ContentUnitHelper()
-        foo.set_content(source_file, 'foo/bar')
+        foo.set_content(source_file)
+        foo.id = 'abbcd'
         model.ContentUnit.pre_save_signal(object(), foo)
-        full_path = os.path.join(target_dir, 'content', 'foo_unit', 'foo', 'bar')
+        full_path = os.path.join(target_dir, 'units', 'foo_unit', 'a', 'bb', 'abbcd', 'bar')
         self.assertTrue(os.path.exists(full_path))
+        self.assertTrue(os.path.isfile(full_path))
 
     @patch('pulp.server.db.model.Repository.objects')
     @patch('pulp.server.db.model.RepositoryContentUnit.objects')

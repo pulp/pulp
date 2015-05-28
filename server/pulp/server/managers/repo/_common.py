@@ -11,8 +11,10 @@ The root of the working directories is specified with 'working_directory' settin
 /etc/pulp/server.conf.  The default value is /var/cache/pulp
 """
 
+import errno
 import os
 import shutil
+import stat
 
 from celery import task
 
@@ -153,7 +155,7 @@ def delete_worker_working_directory(worker_name):
     """
     working_dir_root = _working_dir_root(worker_name)
     if os.path.exists(working_dir_root):
-        shutil.rmtree(working_dir_root)
+        _rmtree_fix_permissions(working_dir_root)
 
 
 def _working_directory_path():
@@ -209,4 +211,26 @@ def delete_working_directory():
     working_dir_root = _working_directory_path()
 
     if working_dir_root and os.path.exists(working_dir_root):
-        shutil.rmtree(working_dir_root)
+        _rmtree_fix_permissions(working_dir_root)
+
+
+def _rmtree_fix_permissions(directory_path):
+    """
+    Recursively remove a directory. If permissions on the directory or it's contents
+    block removal, attempt to fix the permissions to allow removal and attempt the removal
+    again.
+
+    :param directory_path: The directory to remove
+    :type directory_path: str
+    """
+    try:
+        shutil.rmtree(directory_path)
+    except OSError as error:
+        # if perm denied (13) add rwx permissions to all directories and retry
+        # so that we are not blocked by users creating directories with no permissions
+        if error.errno is errno.EACCES:
+            for root, dirs, files in os.walk(directory_path):
+                for dir_path in dirs:
+                    os.chmod(os.path.join(root, dir_path),
+                             stat.S_IXUSR | stat.S_IWUSR | stat.S_IREAD)
+            shutil.rmtree(directory_path)
