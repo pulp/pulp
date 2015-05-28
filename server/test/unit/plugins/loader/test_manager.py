@@ -5,6 +5,7 @@ except ImportError:
     import unittest
 
 import mock
+import mongoengine
 
 from pulp.common import error_codes
 from pulp.plugins.loader import manager
@@ -13,7 +14,8 @@ from pulp.server.db.model import ContentUnit
 
 
 class ContentUnitHelper(ContentUnit):
-    pass
+    unit_type_id = mongoengine.StringField(default='foo')
+    unit_key_fields = ('apple', 'pear')
 
 
 class BadContentUnit(object):

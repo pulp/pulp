@@ -86,9 +86,8 @@ PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a fai
                 ['distributor_id', 'repository_id'])
 PLP0035 = Error("PLP0035", _("The ContentUnit model class %(class_name)s failed to define the "
                              "attribute unit_key_fields"), ['class_name'])
-PLP0036 = Error("PLP0036", _("The source_location: %(source_location) specified for the content unit is invalid."),
+PLP0036 = Error("PLP0036", _("The source_location: %(source_location)s specified for the content unit is invalid."),
                 ['source_location'])
-PLP0037 = Error("PLP0037", _("The relative_path specified for the content unit is empty."), [])
 PLP0038 = Error("PLP0038", _("The unit model with id %(model_id)s and class "
                              "%(model_class)s failed to register. Another model has already "
                              "been registered with the same id."), ['model_id', 'model_class'])

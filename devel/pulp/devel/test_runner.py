@@ -72,7 +72,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
         if flake8_paths:
             # Ignore E401: multiple imports on one line
             flake8_command = ['flake8', '--max-line-length=100', '--ignore=E401',
-                              '--exclude=.ropeproject,docs,playpen,pulp-dev.py']
+                              '--exclude=.ropeproject,docs,playpen,pulp-dev.py,*/build/*']
             flake8_command.extend(flake8_paths)
             print "Running flake8"
             flake8_exit_code = subprocess.call(flake8_command)

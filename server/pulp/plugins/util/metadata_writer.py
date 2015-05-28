@@ -297,7 +297,7 @@ class FastForwardXmlFileContext(XmlFileContext):
         :type root_tag: str
         :param search_tag: The tag that denotes the beginning of content to copy
         :param root_attributes: Any attributes to populate on the root xml tag
-        :type root_attributes: dict of str
+        :type root_attributes: dict of str, str
         :param args: any positional arguments to be passed to the superclass
         :type  args: list
         :param kwargs: any keyword arguments to be passed to the superclass

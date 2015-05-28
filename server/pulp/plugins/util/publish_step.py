@@ -13,15 +13,17 @@ import uuid
 from pulp.common import error_codes
 from pulp.common.plugins import reporting_constants, importer_constants
 from pulp.common.util import encode_unicode
-from pulp.plugins.model import Unit
 from pulp.plugins.util import manifest_writer, misc
 from pulp.plugins.util.nectar_config import importer_config_to_nectar_config
+from pulp.server.controllers import repository as repo_controller
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.exceptions import PulpCodedTaskFailedException
+from pulp.server.controllers import units as units_controller
 from nectar import listener
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.downloaders.threaded import HTTPThreadedDownloader
 import pulp.server.managers.factory as manager_factory
+from pulp.server.managers.repo import _common as common_utils
 
 
 _logger = logging.getLogger(__name__)
@@ -46,12 +48,17 @@ class Step(object):
     the use of a conduit that extends StatusMixin for reporting status along the way.
     """
 
-    def __init__(self, step_type, status_conduit=None, non_halting_exceptions=None):
+    def __init__(self, step_type, status_conduit=None, non_halting_exceptions=None,
+                 disable_reporting=False):
         """
         :param step_type: The id of the step this processes
         :type step_type: str
         :param status_conduit: The conduit used for reporting status as the step executes
         :type status_conduit: pulp.plugins.conduits.mixins.StatusMixin
+        :param non_halting_exceptions: Disable progress reporting for this step or any child steps
+        :type non_halting_exceptions: list of Exception
+        :param disable_reporting: Disable progress reporting for this step or any child steps
+        :type disable_reporting: bool
         """
         self.status_conduit = status_conduit
         self.uuid = str(uuid.uuid4())
@@ -69,8 +76,9 @@ class Step(object):
         self.last_report_time = 0
         self.last_reported_state = self.state
         self.timestamp = str(time.time())
-        self.non_halting_exceptions = non_halting_exceptions
+        self.non_halting_exceptions = non_halting_exceptions or []
         self.exceptions = []
+        self.disable_reporting = disable_reporting
 
     def add_child(self, step):
         """
@@ -157,6 +165,9 @@ class Step(object):
     def process_main(self, item=None):
         """
         Do any primary work required for this step
+
+        :param item: The item to process or none if this get_iterator is not defined
+        :param item: object or None
         """
         pass
 
@@ -195,6 +206,8 @@ class Step(object):
                                     break
                             if raise_exception:
                                 raise
+                        # Clen out the progress_details for the individual item
+                        self.progress_details = ""
                     if self.exceptions:
                         raise PulpCodedTaskFailedException(error_code=error_codes.PLP0032,
                                                            task_id=self.status_conduit.task_id)
@@ -248,7 +261,14 @@ class Step(object):
 
     def _get_total(self):
         """
+        DEPRECATED in favor of get_total()
+        """
+        return self.get_total()
+
+    def get_total(self):
+        """
         Process steps default to one action.
+
         This is used generally for progress reporting.  The value returned should not change
         during the processing of the step.
         """
@@ -261,6 +281,9 @@ class Step(object):
         :param force: Whether or not a write to the database should be forced
         :type force: bool
         """
+        if self.disable_reporting:
+            return
+
         # Force an update if the step state has changed
         if self.state != self.last_reported_state:
             force = True
@@ -364,7 +387,7 @@ class PluginStep(Step):
     """
 
     def __init__(self, step_type, repo=None, conduit=None, config=None, working_dir=None,
-                 plugin_type=None):
+                 plugin_type=None, **kwargs):
         """
         Set the default parent and step_type or the the plugin step
 
@@ -381,7 +404,7 @@ class PluginStep(Step):
         :param plugin_type: The type of the plugin
         :type  plugin_type: str
         """
-        super(PluginStep, self).__init__(step_type, conduit)
+        super(PluginStep, self).__init__(step_type, conduit, **kwargs)
         self.plugin_type = plugin_type
         self.working_dir = working_dir
         self.repo = repo
@@ -397,11 +420,13 @@ class PluginStep(Step):
         :returns: the working directory
         :rtype: str
         """
-        if not self.working_dir:
-            repo = self.get_repo()
-            self.working_dir = repo.working_dir
-
-        return self.working_dir
+        if self.working_dir:
+            return self.working_dir
+        elif self.parent:
+            return self.parent.get_working_dir()
+        else:
+            self.working_dir = common_utils.get_working_directory()
+            return self.working_dir
 
     def get_plugin_type(self):
         """
@@ -421,7 +446,7 @@ class PluginStep(Step):
         Return the repo associated with the step
 
         :returns: the repository for this action
-        :rtype: pulp.plugins.model.Repository
+        :rtype: pulp.server.db.model.Repository
         """
         if self.repo:
             return self.repo
@@ -436,7 +461,10 @@ class PluginStep(Step):
         """
         if self.conduit:
             return self.conduit
-        return self.parent.get_conduit()
+        if self.parent:
+            return self.parent.get_conduit()
+        else:
+            return None
 
     def get_config(self):
         """
@@ -468,6 +496,8 @@ class PluginStep(Step):
         :return: report describing the publish run
         :rtype:  pulp.plugins.model.PublishReport
         """
+        if self.disable_reporting:
+            return None
 
         overall_success = True
         if self.state == reporting_constants.STATE_FAILED:
@@ -701,7 +731,7 @@ class UnitPublishStep(PublishStep):
         return total
 
 
-class AtomicDirectoryPublishStep(PublishStep):
+class AtomicDirectoryPublishStep(PluginStep):
     """
     Perform a publish of a working directory to a published directory with an atomic action.
     This works by first copying the files to a master directory and creating or updating a symbolic
@@ -731,7 +761,7 @@ class AtomicDirectoryPublishStep(PublishStep):
         self.master_publish_dir = master_publish_dir
         self.only_publish_directory_contents = only_publish_directory_contents
 
-    def process_main(self):
+    def process_main(self, item=None):
         """
         Publish a directory from the repo to a target directory.
         """
@@ -785,7 +815,7 @@ class AtomicDirectoryPublishStep(PublishStep):
                     os.rename(tmp_link_name, final_name)
 
         # Clear out any previously published masters
-        self._clear_directory(self.master_publish_dir, skip_list=[self.parent.timestamp])
+        misc.clear_directory(self.master_publish_dir, skip_list=[self.parent.timestamp])
 
 
 class SaveTarFilePublishStep(PublishStep):
@@ -998,7 +1028,7 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
             self._downloads = list(self._downloads)
         return self._downloads
 
-    def _get_total(self):
+    def get_total(self):
         """
         Get total number of items to download
 
@@ -1046,77 +1076,63 @@ class DownloadStep(PluginStep, listener.DownloadEventListener):
         self.downloader.cancel()
 
 
-class GetLocalUnitsStep(PluginStep):
+class SaveUnitsStep(PluginStep):
     """
-    Given a list of unit keys, this will determine which ones are already in
-    pulp, and it will use the conduit to save each. This depends on there being
-    a parent step with attribute "available_units", which must be a list of
-    unit keys (which themselves are dictionaries).
+    Base class for steps that save/associate units with a repository
+
+    Any step that saves units to the database should use this step in order to ensure that
+    the repo unit counts are udpated properly.
     """
-    def __init__(self, importer_type, unit_type, unit_key_fields, working_dir):
+
+    def finalize(self):
+        repo_controller.rebuild_content_unit_counts(self.get_repo())
+
+
+class GetLocalUnitsStep(SaveUnitsStep):
+    """
+    Associate existing units & produce a list of unknown units
+
+    Given an iterator of units, associate the ones that are already in Pulp with the
+    repository and create a list of all the units that do not yet exist in Pulp.
+    This requires a parent step with the attribute "available_units",
+    which must be an iterable of unit model instances with the unit keys populated
+    """
+
+    def __init__(self, importer_type, unit_pagination_size=50, **kwargs):
         """
-        :param importer_type:   unique identifier for the type of importer
-        :type  importer_type:   basestring
-        :param unit_type:       unique identifier for the unit type in use
-        :type  unit_type:       basestring
-        :param unit_key_fields: a list of field names in the unit type's unit key.
-        :type  unit_key_fields: list
-        :param working_dir:     full path to a working directory
-        :type  working_dir:     basestring
+        :param importer_type: unique identifier for the type of importer
+        :type  importer_type: basestring
+        :param unit_pagination_size: How many units should be queried at one time (default 50)
+        :type  importer_type: int
         """
         super(GetLocalUnitsStep, self).__init__(step_type=reporting_constants.SYNC_STEP_GET_LOCAL,
                                                 plugin_type=importer_type,
-                                                working_dir=working_dir)
+                                                **kwargs)
         self.description = _('Copying units already in pulp')
 
-        self.unit_type = unit_type
-        self.unit_key_fields = unit_key_fields
-        self.content_query_manager = manager_factory.content_query_manager()
-        # list of unit keys
+        # list of unit model instances
         self.units_to_download = []
+        self.unit_pagination_size = unit_pagination_size
 
-    def process_main(self):
+    def process_main(self, item=None):
         """
         given the passed-in unit keys, determine which of them already exist in
         pulp, and save those with the conduit found on the parent.
+
+        :param item: The item to process or none if get_iterator is not defined
+        :param item: object or None
         """
         # any units that are already in pulp
         units_we_already_had = set()
 
-        # mongodb throws exceptions for too big queries, so we spilt it into multiple smaller ones
-        for page in misc.paginate(self.parent.available_units, 50):
-            # for any unit that is already in pulp, save it into the repo
-            for unit_dict in self.content_query_manager.get_multiple_units_by_keys_dicts(
-                    self.unit_type, page, self.unit_key_fields):
-                unit = self._dict_to_unit(unit_dict)
-                self.get_conduit().save_unit(unit)
-                units_we_already_had.add(unit)
+        for units_group in misc.paginate(self.parent.available_units, self.unit_pagination_size):
+            # Get this group of units
+            query = units_controller.find_units(units_group)
 
-        for unit_key in self.parent.available_units:
-            # build a temp Unit instance just to use its comparison feature
-            unit = Unit(self.unit_type, unit_key, {}, '')
-            if unit not in units_we_already_had:
-                self.units_to_download.append(unit_key)
+            for found_unit in query:
+                units_we_already_had.add(hash(found_unit))
+                repo_controller.associate_single_unit(self.get_repo(), found_unit)
 
-    def _dict_to_unit(self, unit_dict):
-        """
-        convert a unit dictionary (a flat dict that has all unit key, metadata,
-        etc. keys at the root level) into a Unit object. This requires knowing
-        not just what fields are part of the unit key, but also how to derive
-        the storage path.
-
-        This should be overridden in a subclass.
-
-        Any keys in the "metadata" dict on the returned unit will overwrite the
-        corresponding values that are currently saved in the unit's metadata.
-        Thus, a plugin should use an empty dict for the metadata.
-
-        :param unit_dict:   a flat dictionary that has all unit key, metadata,
-                            etc. keys at the root level, representing a unit
-                            in pulp
-        :type  unit_dict:   dict
-
-        :return:    a unit instance
-        :rtype:     pulp.plugins.model.Unit
-        """
-        raise NotImplementedError
+            for unit in units_group:
+                if hash(unit) not in units_we_already_had:
+                    self.units_to_download.append(unit)
