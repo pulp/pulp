@@ -6,7 +6,6 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo as RepoModel
-from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
@@ -1256,8 +1255,7 @@ class RepoUnassociate(View):
                      tags.action_tag('unassociate')]
         async_result = unassociate_by_criteria.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
-             manager_factory.principal_manager().get_principal()['login']], tags=task_tags)
+            [repo_id, criteria], tags=task_tags)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 

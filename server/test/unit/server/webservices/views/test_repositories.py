@@ -2019,13 +2019,12 @@ class TestRepoUnunassociate(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories.RepoContentUnit')
     @mock.patch('pulp.server.webservices.views.repositories.tags')
     @mock.patch('pulp.server.webservices.views.repositories.unassociate_by_criteria')
     @mock.patch(
         'pulp.server.webservices.views.repositories.UnitAssociationCriteria.from_client_input')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_post_minimal(self, mock_factory, mock_crit, mock_unassociate, mock_tags, mock_unit):
+    def test_post_minimal(self, mock_factory, mock_crit, mock_unassociate, mock_tags):
         """
         Test that a task is created with the minimal body params.
         """
@@ -2043,10 +2042,7 @@ class TestRepoUnunassociate(unittest.TestCase):
 
         task_tags = [mock_tags.resource_tag(), mock_tags.action_tag()]
         mock_unassociate.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', [
-                'mock_repo', None, mock_unit.OWNER_TYPE_USER,
-                mock_factory.principal_manager().get_principal()[0]
-            ],
+            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo', None],
             tags=task_tags
         )
         self.assertEqual(response.http_status_code, 202)
