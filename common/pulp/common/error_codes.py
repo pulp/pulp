@@ -47,7 +47,7 @@ PLP0008 = Error("PLP0008",
                   "The field [%(field)s] was not included in the error_data."),
                 ['code', 'field'])
 PLP0009 = Error("PLP0009", _("Missing resource(s): %(resources)s"), ['resources'])
-PLP0010 = Error("PLP0010", _("Conflicting operation reasons: %(r)s"), ['reasons'])
+PLP0010 = Error("PLP0010", _("Conflicting operation reasons: %(reasons)s"), ['reasons'])
 PLP0011 = Error("PLP0011", _("Operation timed out after: %(timeout)s"), ['timeout'])
 PLP0012 = Error("PLP0012", _("Operation postponed"), [])
 PLP0014 = Error("PLP0014", _('Operation not implemented: %(operation_name)s'), ['operation_name'])
@@ -89,12 +89,12 @@ PLP0034 = Error("PLP0034", _("The distributor %(distributor_id)s indicated a fai
 # error message nested inside of it.
 PLP1000 = Error("PLP1000", _("A validation error occurred."), [])
 PLP1001 = Error("PLP1001", _("The consumer %(consumer_id)s does not exist."), ['consumer_id'])
-PLP1002 = Error("PLP1002", _("The field %(field) must have a value specified."), ['field'])
-PLP1003 = Error("PLP1003", _("The value specified for the field %(field) must be made up of letters"
+PLP1002 = Error("PLP1002", _("The field %(field)s must have a value specified."), ['field'])
+PLP1003 = Error("PLP1003", _("The value specified for the field %(field)s must be made up of letters"
                              ", numbers, underscores, or hyphens with no spaces."), ['field'])
-PLP1004 = Error("PLP1004", _("An object of type %(type) already exists in the database with an id of %(object_id)"), ['type', 'object_id'])
+PLP1004 = Error("PLP1004", _("An object of type %(type)s already exists in the database with an id of %(object_id)s"), ['type', 'object_id'])
 PLP1005 = Error("PLP1005", _("The checksum type %(checksum_type)s is unknown."), ['checksum_type'])
-PLP1006 = Error("PLP1006", _("The value specified for the field %(field) may not start with %(value)s."), ['field', 'value'])
+PLP1006 = Error("PLP1006", _("The value specified for the field %(field)s may not start with %(value)s."), ['field', 'value'])
 PLP1007 = Error("PLP1007", _("The relative path specified must not point outside of the parent"
                              " directory:  %(path)s"), ['path'])
 PLP1008 = Error("PLP1008", _("The importer type %(importer_type_id)s does not exist"),
