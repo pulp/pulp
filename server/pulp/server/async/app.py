@@ -3,7 +3,7 @@ This module is the Pulp Celery App. It is passed to the workers from the command
 will see the "celery" module attribute and use it. This module also initializes the Pulp app after
 Celery setup finishes.
 """
-from celery.signals import worker_init
+from celery.signals import celeryd_after_setup
 
 # This import will load our configs
 from pulp.server import config  # noqa
@@ -16,7 +16,7 @@ from pulp.server.async.celery_instance import celery  # noqa
 from pulp.server.managers.repo import _common as common_utils
 
 
-@worker_init.connect
+@celeryd_after_setup.connect
 def initialize_worker(sender, instance, **kwargs):
     """
     This function performs all the necessary initialization of the Celery worker.
@@ -48,8 +48,7 @@ def initialize_worker(sender, instance, **kwargs):
     """
     initialization.initialize()
 
-    name = sender
-    tasks._delete_worker(name, normal_shutdown=True)
+    tasks._delete_worker(sender, normal_shutdown=True)
 
     # Create a new working directory for worker that is starting now
-    common_utils.create_worker_working_directory(name)
+    common_utils.create_worker_working_directory(sender)
