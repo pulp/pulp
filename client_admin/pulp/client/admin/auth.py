@@ -160,7 +160,7 @@ class UserSection(PulpCliSection):
                                                            _(unmatch_msg))
             if password is self.context.prompt.ABORT:
                 self.context.prompt.render_spacer()
-                self.context.prompt.write(_('Create user cancelled'))
+                self.context.prompt.write(_('Create user canceled'))
                 return os.EX_NOUSER
             if not password:
                 self.context.prompt.render_spacer()

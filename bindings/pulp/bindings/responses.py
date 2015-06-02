@@ -128,7 +128,7 @@ class Task(object):
     def is_completed(self):
         """
         Indicates if the task has finished running and will not begin again,
-        regardless of the result (error, success, or cancelled).
+        regardless of the result (error, success, or canceled).
 
         :rtype: bool
         """

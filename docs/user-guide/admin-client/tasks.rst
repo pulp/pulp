@@ -101,7 +101,7 @@ The **pulp-admin** command line client provides the ``tasks`` section and the
 
  Operations:   sync
  Resources:    ff7-e6 (repository)
- State:        Cancelled
+ State:        Canceled
  Start Time:   2012-12-09T04:28:10Z
  Finish Time:  2012-12-09T04:29:09Z
  Result:       N/A
