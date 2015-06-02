@@ -40,7 +40,7 @@ named for a content type. For example, the RPM repo section looks like this:
     copy    - copies one or more content units between repositories
     export  - run or view the status of ISO export of a repository
     publish - run, schedule, or view the status of publish tasks
-    remove  - remove copied or uploaded modules from a repository
+    remove  - remove modules from a repository
     sync    - run, schedule, or view the status of sync tasks
     uploads - upload modules into a repository
 
