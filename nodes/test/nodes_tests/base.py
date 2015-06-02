@@ -17,7 +17,6 @@ from pulp.common.config import Config
 from pulp.server.async import celery_instance
 from pulp.server.config import config as pulp_conf
 from pulp.server.db import connection
-from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as managers
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
@@ -48,9 +47,6 @@ class ServerTests(unittest.TestCase):
             os.makedirs(storage_dir)
         shutil.rmtree(storage_dir+'/*', ignore_errors=True)
         managers.initialize()
-
-    def setUp(self):
-        QueuedCall.get_collection().remove()
 
 
 class ClientTests(TestCase):
