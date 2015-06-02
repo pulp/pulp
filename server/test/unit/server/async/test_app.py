@@ -8,16 +8,22 @@ import mock
 from pulp.server.async import app
 
 
-class InitializePulpTestCase(unittest.TestCase):
+class InitializeWorkerTestCase(unittest.TestCase):
     """
-    This class contains tests for the initialize_pulp() function.
+    This class contains tests for the initialize_worker() function.
     """
+    @mock.patch('pulp.server.async.app.common_utils.create_worker_working_directory')
     @mock.patch('pulp.server.async.app.initialization.initialize')
-    def test_initialize_pulp(self, initialize):
+    @mock.patch('pulp.server.async.app.tasks._delete_worker')
+    def test_initialize_worker(self, _delete_worker, initialize, create_worker_working_directory):
         """
-        Assert that initialize_pulp() calls Pulp's initialization code.
+        Assert that initialize_worker() calls Pulp's initialization code and the appropriate worker
+        monitoring code.
         """
+        sender = mock.MagicMock()
         # The args aren't used and don't matter, so we'll just pass some mocks
-        app.initialize_pulp(mock.MagicMock(), mock.MagicMock())
+        app.initialize_worker(sender, mock.MagicMock())
 
         initialize.assert_called_once_with()
+        _delete_worker.assert_called_once_with(sender, normal_shutdown=True)
+        create_worker_working_directory.assert_called_once_with(sender)
