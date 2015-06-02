@@ -61,7 +61,8 @@ class PulpClientTests(unittest.TestCase):
         self.logger = logging.getLogger('pulp')
         self.exception_handler = ExceptionHandler(self.prompt, self.config)
 
-        self.context = ClientContext(self.bindings, self.config, self.logger, self.prompt, self.exception_handler)
+        self.context = ClientContext(self.bindings, self.config, self.logger, self.prompt,
+                                     self.exception_handler)
 
         self.cli = PulpCli(self.context)
         self.context.cli = self.cli
