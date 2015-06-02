@@ -15,7 +15,7 @@ from pulp.common.constants import DISPLAY_UNITS_DEFAULT_MAXIMUM
 
 
 DESC_COPY = _('copies modules from one repository into another')
-DESC_REMOVE = _('remove copied or uploaded units from a repository')
+DESC_REMOVE = _('remove units from a repository')
 
 DESC_FROM_REPO = _('source repository from which units will be copied')
 OPTION_FROM_REPO = PulpCliOption('--from-repo-id', DESC_FROM_REPO, aliases=['-f'], required=True)
