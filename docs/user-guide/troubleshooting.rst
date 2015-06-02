@@ -219,8 +219,10 @@ On Red Hat operating systems, this is provided by the ``python-qpid`` package.
 qpidtoollibs is not installed
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are using Qpid as your message broker, you will also need the Python package
-``qpidtoollibs``. On Red Hat operating systems, this is provided by the python-qpid-qmf package.
+If you are using Qpid as your message broker, you will also need the Python
+package ``qpidtoollibs``. On Red Hat operating systems this is provided by
+either the qpid-tools package or the python-qpid-qmf package, depending on the
+versions of qpid you are using (newer qpid versions provide it with qpid-tools.)
 
 pulp-manage-db gives an error "Cannot delete queue"
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
