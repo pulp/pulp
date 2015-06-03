@@ -1,8 +1,8 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from %distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           python-nectar
-Version:        1.3.1
-Release:        2%{?dist}
+Version:        1.3.2
+Release:        1%{?dist}
 Summary:        A download library that separates workflow from implementation details
 
 Group:          Development/Tools
@@ -45,8 +45,14 @@ rm -rf $RPM_BUILD_ROOT
 %doc COPYRIGHT LICENSE.txt README.rst
 
 %changelog
-* Mon Jan 19 2015 Chris Duryee <cduryee@redhat.com> 1.3.1-2
-- 1174283 - bump python-requests to 2.4.3 (austin@dhcp129-50.rdu.redhat.com)
+* Tue Jun 02 2015 Ina Panova <ipanova@redhat.com> 1.3.2-1
+- 1174283 - bump python-requests requirement to match included dep
+  (asmacdo@gmail.com)
+- 1124625 - fail quickly if there is a connection error (asmacdo@gmail.com)
+- Log OSErrors at debug level when attempting to link files that do not exist
+  (asmacdo@gmail.com)
+- Handle local IOErrors in debug level logs rather than error level.
+  (asmacdo@gmail.com)
 
 * Thu Aug 21 2014 Barnaby Court <bcourt@redhat.com> 1.3.1-1
 - 1127298 - Canceling a download causes hang in ThreadedDownloader (bcourt@redhat.com)
