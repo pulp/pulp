@@ -1,13 +1,5 @@
 #!/bin/bash -e
 
-if [ $(getenforce) = "Enforcing" ]; then
-    echo "Disabling selinux for dev install"
-    # dev setup does not work with selinux at this time
-    sudo setenforce 0
-    sudo sed -i 's/enforcing/permissive/' /etc/sysconfig/selinux
-fi
-
-
 if ! sudo grep -q "StrictModes no" /etc/ssh/sshd_config; then
     echo -e "\nIn some setups (eg. Vagrant), it is necessary to disable"
     echo "ssh strict modes to access the machine with key based authentication."
@@ -16,7 +8,6 @@ if ! sudo grep -q "StrictModes no" /etc/ssh/sshd_config; then
     sudo sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config
     sudo systemctl restart sshd
 fi
-
 
 echo "Install some prereqs"
 sudo dnf install -y wget yum-utils redhat-lsb-core
@@ -45,8 +36,7 @@ sudo yum-config-manager --enable pulp-2.6-testing > /dev/null
 popd
 
 echo "installing some dev tools"
-sudo dnf install -y vim-enhanced python-virtualenvwrapper bash-completion \
-                    python-django-bash-completion
+sudo dnf install -y python-virtualenvwrapper python-django-bash-completion
 
 if ! grep WORKON_HOME ~/.bashrc; then
     echo "Setting up virtualenv"

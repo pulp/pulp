@@ -1,0 +1,12 @@
+---
+- hosts: all
+  sudo: true
+  vars:
+  roles:
+    - common
+
+- hosts: dev
+  sudo: true
+  vars:
+  roles:
+    - pulp_server

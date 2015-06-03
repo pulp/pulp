@@ -20,9 +20,9 @@ development environments. Pulp has provided a ``Vagrantfile`` in the platform gi
 is the easiest way to get started on developing with Pulp if you aren't sure which method you
 prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
 
-#. Install vagrant::
+#. Install vagrant and ansible::
    
-      $ sudo yum install vagrant-libvirt
+      $ sudo yum install ansible vagrant-libvirt
 
 #. Install NFS. NFS will be used to share your code directory with the deployed virtual machine::
    

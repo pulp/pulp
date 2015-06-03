@@ -1,0 +1,12 @@
+---
+- name: Install dnf
+  yum: name=dnf state=latest
+
+- name: System update
+  dnf: name=* state=latest
+
+- name: Install common packages
+  dnf: name={{ item }} state=latest
+  with_items:
+      - bash-completion
+      - vim-enhanced
