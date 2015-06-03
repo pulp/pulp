@@ -9,6 +9,7 @@ Contents:
    introduction
    authentication
    consumer
+   consumer-group
    events
    nodes
    repositories
