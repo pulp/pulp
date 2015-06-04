@@ -7,7 +7,7 @@ from pulp.common.tags import action_tag
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import Task
 from pulp.server.db import model
-from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, repository
+from pulp.server.db.model import celery_result, consumer, repo_group, repository
 
 
 # Add collections to reap here. The keys in this datastructure are the Model classes that represent
@@ -15,7 +15,6 @@ from pulp.server.db.model import celery_result, consumer, dispatch, repo_group, 
 # section that corresponds to the collection. The config is consulted by the reap_expired_documents
 # Task to determine how old documents should be (in days) before they are removed.
 _COLLECTION_TIMEDELTAS = {
-    dispatch.ArchivedCall: 'archived_calls',
     model.TaskStatus: 'task_status_history',
     consumer.ConsumerHistoryEvent: 'consumer_history',
     repository.RepoSyncResult: 'repo_sync_history',
