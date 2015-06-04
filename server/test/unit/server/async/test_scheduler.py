@@ -112,6 +112,7 @@ class TestEventMonitorEvents(unittest.TestCase):
         self.assertTrue('task-succeeded' in handlers)
         self.assertTrue('worker-heartbeat' in handlers)
         self.assertTrue('worker-offline' in handlers)
+        self.assertTrue('worker-online' in handlers)
 
     @mock.patch('pulp.server.async.scheduler.app.connection')
     @mock.patch('pulp.server.async.scheduler.app.events.Receiver')
