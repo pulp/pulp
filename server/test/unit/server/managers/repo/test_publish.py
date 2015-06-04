@@ -482,7 +482,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 10, 2):
             r = RepoPublishResult.expected_result(
-                'test_sort', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test_sort', 'test_dist', 'bar', {}, date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
@@ -508,7 +508,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 10, 2):
             r = RepoPublishResult.expected_result(
-                'test_sort', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test_sort', 'test_dist', 'bar', {}, date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
@@ -543,7 +543,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 6, 2):
             r = RepoPublishResult.expected_result(
-                'test_date', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test_date', 'test_dist', 'bar', {}, date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
@@ -569,7 +569,7 @@ class RepoSyncManagerTests(base.PulpServerTests):
         date_string = '2013-06-01T12:00:0%sZ'
         for i in range(0, 6, 2):
             r = RepoPublishResult.expected_result(
-                'test_date', 'test_dist', 'bar', date_string % str(i), date_string % str(i + 1),
+                'test_date', 'test_dist', 'bar', {}, date_string % str(i), date_string % str(i + 1),
                 'test-summary', 'test-details', RepoPublishResult.RESULT_SUCCESS)
             RepoPublishResult.get_collection().insert(r, safe=True)
 
@@ -617,6 +617,18 @@ class RepoSyncManagerTests(base.PulpServerTests):
         add_result('test_date', 'test_dist', 1)
         entry = self.publish_manager.publish_history('test_date', 'test_dist')[0]
         self.assertTrue(hasattr(entry, "distributor_config"))
+
+    def test_publish_history_distributor_config(self):
+        """
+        Test there's distributor config included in publish history
+        """
+        # Setup
+        self.repo_manager.create_repo('test_date')
+        self.distributor_manager.add_distributor('test_date', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        add_result('test_date', 'test_dist', 1)
+        entry = self.publish_manager.publish_history('test_date', 'test_dist')[0]
+        self.assertTrue("distributor_config" in entry, entry)
 
     def _test_auto_distributors(self):
         """
@@ -728,7 +740,7 @@ def add_result(repo_id, dist_id, offset):
     started = dateutils.now_utc_datetime_with_tzinfo()
     completed = started + datetime.timedelta(days=offset)
     r = RepoPublishResult.expected_result(
-        repo_id, dist_id, 'bar', dateutils.format_iso8601_datetime(started),
+        repo_id, dist_id, 'bar', {}, dateutils.format_iso8601_datetime(started),
         dateutils.format_iso8601_datetime(completed), 'test-summary', 'test-details',
         RepoPublishResult.RESULT_SUCCESS)
     RepoPublishResult.get_collection().insert(r, safe=True)
