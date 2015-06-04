@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 Contains dummy importer and distributor implementations.
 
@@ -99,36 +86,34 @@ _ORIG_GET_IMPORTER_BY_ID = None
 _ORIG_GET_DISTRIBUTOR_BY_ID = None
 _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID = None
 
+
 def install():
     """
     Install the plugin loader monkey patch dummy plugins for testing.
     """
     global IMPORTER_MAPPINGS, DISTRIBUTOR_MAPPINGS, GROUP_DISTRIBUTOR_MAPPINGS, \
-           _ORIG_GET_IMPORTER_BY_ID, _ORIG_GET_DISTRIBUTOR_BY_ID, _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID
+        _ORIG_GET_IMPORTER_BY_ID, _ORIG_GET_DISTRIBUTOR_BY_ID, _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID
 
     # update plugin loader inventory
-
     plugin_api._create_manager()
     plugin_api._MANAGER.importers.add_plugin('dummy-importer', DummyImporter, {})
     plugin_api._MANAGER.distributors.add_plugin('dummy-distributor', DummyDistributor, {})
     plugin_api._MANAGER.distributors.add_plugin('dummy-distributor-2', DummyDistributor, {})
-    plugin_api._MANAGER.group_distributors.add_plugin('dummy-group-distributor', DummyGroupDistributor, {})
+    plugin_api._MANAGER.group_distributors.add_plugin('dummy-group-distributor',
+                                                      DummyGroupDistributor, {})
 
     # setup the importer/distributor mappings that return the dummy instances
-
     IMPORTER_MAPPINGS = {'dummy-importer': DUMMY_IMPORTER}
     DISTRIBUTOR_MAPPINGS = {'dummy-distributor': DUMMY_DISTRIBUTOR,
                             'dummy-distributor-2': DUMMY_DISTRIBUTOR_2}
-    GROUP_DISTRIBUTOR_MAPPINGS = {'dummy-group-distributor' : DUMMY_GROUP_DISTRIBUTOR}
+    GROUP_DISTRIBUTOR_MAPPINGS = {'dummy-group-distributor': DUMMY_GROUP_DISTRIBUTOR}
 
     # save state of original plugin so it can be reverted
-
     _ORIG_GET_IMPORTER_BY_ID = plugin_api.get_importer_by_id
     _ORIG_GET_DISTRIBUTOR_BY_ID = plugin_api.get_distributor_by_id
     _ORIG_GET_GROUP_DISTRIBUTOR_BY_ID = plugin_api.get_group_distributor_by_id
 
     # monkey-patch methods to return the dummy instances
-
     def dummy_get_importer_by_id(id):
         if id not in IMPORTER_MAPPINGS:
             raise plugin_exceptions.PluginNotFound()
@@ -145,10 +130,10 @@ def install():
         return GROUP_DISTRIBUTOR_MAPPINGS[id], {}
 
     # monkey-patch in the dummy methods
-
     plugin_api.get_importer_by_id = dummy_get_importer_by_id
     plugin_api.get_distributor_by_id = dummy_get_distributor_by_id
     plugin_api.get_group_distributor_by_id = dummy_get_group_distributor_by_id
+
 
 def reset():
     """
