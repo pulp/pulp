@@ -51,7 +51,7 @@ class PublishStepStatusRenderer(StatusRenderer):
                 for report_details in reports:
                     self.render_step(report_details)
         except CancelException:
-            self.prompt.render_failure_message(_('Operation cancelled.'))
+            self.prompt.render_failure_message(_('Operation canceled.'))
 
     def render_step(self, step_details):
         """
