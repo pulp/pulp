@@ -606,6 +606,18 @@ class RepoSyncManagerTests(base.PulpServerTests):
         self.assertRaises(publish_manager.MissingResource, self.publish_manager.publish_history,
                           'missing', 'irrelevant')
 
+    def test_publish_history_distributor_config(self):
+        """
+        Test there's distributor config included in publish history
+        """
+        # Setup
+        self.repo_manager.create_repo('test_date')
+        self.distributor_manager.add_distributor('test_date', 'mock-distributor', {}, True,
+                                                 distributor_id='test_dist')
+        add_result('test_date', 'test_dist', 1)
+        entry = self.publish_manager.publish_history('test_date', 'test_dist')[0]
+        self.assertTrue(hasattr(entry, "distributor_config"))
+
     def _test_auto_distributors(self):
         """
         Tests that the query for distributors on a repo that are configured for automatic
