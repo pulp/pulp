@@ -291,7 +291,8 @@ class RepoManagerTests(base.PulpServerTests):
         except exceptions.MissingResource:
             pass
 
-    def test_update_importer_config(self):
+    @mock.patch('pulp.server.managers.repo.importer.serializers.ImporterSerializer')
+    def test_update_importer_config(self, m_serializer):
         """
         Tests the successful case of updating an importer's configuration.
         """
@@ -304,18 +305,17 @@ class RepoManagerTests(base.PulpServerTests):
 
         # Test
         config_delta = {'key1': 'updated1', 'key2': None}
-        updated = self.importer_manager.update_importer_config('winterhold', config_delta)
+        self.importer_manager.update_importer_config('winterhold', config_delta)
 
         # Verify
         expected_config = {'key1': 'updated1', 'key3': 'initial3'}
+        set_config = m_serializer.mock_calls[0][1][0]['config']
+        self.assertDictEqual(set_config, expected_config)
 
         # Database
         importer = RepoImporter.get_collection().find_one(
             {'repo_id': 'winterhold', 'id': 'mock-importer'})
         self.assertEqual(importer['config'], expected_config)
-
-        # Return Value
-        self.assertEqual(updated['config'], expected_config)
 
         # Plugin
         # initial and update
@@ -434,8 +434,8 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertEqual(importer['id'], 'mock-importer')
         self.assertEqual(importer['repo_id'], 'trance')
         self.assertEqual(importer['config']['volume'], 'two')
-        self.assertEqual(importer['config']['proxy_password'], '*****')
-        self.assertEqual(importer['config']['basic_auth_password'], '*****')
+        self.assertEqual(importer['config']['proxy_password'], 'secret')
+        self.assertEqual(importer['config']['basic_auth_password'], 'secret')
 
     def test_get_importer_missing_repo(self):
         """
@@ -552,39 +552,3 @@ class RepoManagerTests(base.PulpServerTests):
     def test_find_by_repo_list_no_scheduled_sync(self, mock_get_collection):
         self.importer_manager.find_by_repo_list(['repo-1'])
         self.assertFalse(mock_get_collection.return_value.find.called)
-
-    def test_sanitize_passwords_none(self):
-        """
-        Ensure we don't break when sanitizing None.
-        """
-        result = self.importer_manager._sanitize_passwords(None)
-        self.assertEquals(result, None)
-
-    def test_sanitize_passwords_no_passwords(self):
-        """
-        Pass non-password fields through
-        """
-        importer = {'some_key': 'some_value', 'config': {'conf1': 'value1'}}
-        result = self.importer_manager._sanitize_passwords(importer)
-        self.assertEquals(result, importer)
-
-    def test_sanitize_passwords(self):
-        """
-        reset passwords to '*****'
-        """
-        importer = {'some_key': 'some_value', 'config': {'proxy_password': 'secret!',
-                                                         'basic_auth_password': 'secret!',
-                                                         'not_a_password': 'hello'}}
-        result = self.importer_manager._sanitize_passwords(importer)
-        self.assertEquals(result['some_key'], 'some_value')
-        self.assertEquals(result['config']['proxy_password'], '*****')
-        self.assertEquals(result['config']['basic_auth_password'], '*****')
-        self.assertEquals(result['config']['not_a_password'], 'hello')
-
-    def test_sanitize_passwords_empty_pw(self):
-        """
-        Do not change the empty string to '*****'
-        """
-        importer = {'some_key': 'some_value', 'config': {'proxy_password': None}}
-        result = self.importer_manager._sanitize_passwords(importer)
-        self.assertEquals(result['config']['proxy_password'], None)
