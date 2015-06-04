@@ -332,8 +332,8 @@ class PollingCommand(PulpCliCommand):
         :param task: full task report for the task being displayed
         :type  task: pulp.bindings.responses.Task
         """
-        msg = _('Task Cancelled')
-        self.prompt.render_paragraph(msg, tag='cancelled')
+        msg = _('Task Canceled')
+        self.prompt.render_paragraph(msg, tag='canceled')
 
     def rejected(self, task):
         """

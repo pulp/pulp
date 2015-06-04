@@ -81,7 +81,7 @@ class PerformUploadCommand(polling.PollingCommand):
 
         d = _('Starting upload of selected units. If this process is stopped through '
               'ctrl+c, the uploads will be paused and may be resumed later using the '
-              'resume command or cancelled entirely using the cancel command.')
+              'resume command or canceled entirely using the cancel command.')
         context.prompt.render_paragraph(d)
 
         # Upload and import each upload. The try block is inside of the loop to
@@ -631,7 +631,7 @@ class CancelCommand(PulpCliCommand):
         non_running_uploads = [u for u in uploads if not u.is_running]
         if len(non_running_uploads) == 0:
             d = _('All requests are currently in the process of being uploaded. '
-                  'Only paused uploads may be cancelled.')
+                  'Only paused uploads may be canceled.')
             self.context.prompt.render_paragraph(d)
             return
 

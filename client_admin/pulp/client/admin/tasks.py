@@ -202,7 +202,7 @@ class BaseTasksSection(PulpCliSection):
                 finish_time = _('N/A')
                 result = _('N/A')
             elif task.was_cancelled():
-                state = _('Cancelled')
+                state = _('Canceled')
                 result = _('N/A')
 
         return state, start_time, finish_time, result

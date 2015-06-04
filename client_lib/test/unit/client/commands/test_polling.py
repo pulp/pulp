@@ -352,7 +352,7 @@ class PollingCommandTests(base.PulpClientTests):
         self.assertEqual(1, len(completed_tasks))
 
         expected_tags = ['abort', 'delayed-spinner', 'running-spinner', 'running-spinner',
-                         'running-spinner', 'cancelled']
+                         'running-spinner', 'canceled']
         self.assertEqual(expected_tags, self.prompt.get_write_tags())
 
     def test_keyboard_interrupt(self):
