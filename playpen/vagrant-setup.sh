@@ -18,6 +18,10 @@ if ! sudo grep -q "StrictModes no" /etc/ssh/sshd_config; then
 fi
 
 
+# Allow admins to passwordless sudo for all commands as any user
+sudo sed -i 's/%admin ALL=NOPASSWD: ALL/%admin ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
+
+
 echo "Install some prereqs"
 sudo dnf install -y wget yum-utils redhat-lsb-core
 
