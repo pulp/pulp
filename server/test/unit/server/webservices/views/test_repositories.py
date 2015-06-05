@@ -43,13 +43,41 @@ class TestMergeRelatedObjects(unittest.TestCase):
 
         self.assertTrue(len(ret) == 2)
         self.assertEqual(map(itemgetter('id'), ret), ['mock1', 'mock2'])
-        mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1'},
-                                    {'repo_id': 'mock1', 'id': 'mock_importer2'}]
-        mock2_expected_importers = [{'repo_id': 'mock2', 'id': 'mock_importer2'}]
+        mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1',
+                                     '_href': '/v2/repositories/mock1/importers/mock_importer1/'},
+                                    {'repo_id': 'mock1', 'id': 'mock_importer2',
+                                     '_href': '/v2/repositories/mock1/importers/mock_importer2/'}]
+        mock2_expected_importers = [{'repo_id': 'mock2', 'id': 'mock_importer2',
+                                     '_href': '/v2/repositories/mock2/importers/mock_importer2/'}]
         mock1_importers = ret[map(itemgetter('id'), ret).index('mock1')]['importers']
         mock2_importers = ret[map(itemgetter('id'), ret).index('mock2')]['importers']
         self.assertEqual(mock1_importers, mock1_expected_importers)
         self.assertEqual(mock2_importers, mock2_expected_importers)
+
+    def test__merge_related_objects_distributors(self):
+        """
+        Test that objects are included in the appropriate for distributors
+        """
+
+        mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
+        mock_distributors = [{'repo_id': 'mock1', 'id': 'mock_distributor1'},
+                             {'repo_id': 'mock1', 'id': 'mock_distributor2'},
+                             {'repo_id': 'mock2', 'id': 'mock_distributor2'}]
+
+        mock_distributor_manager = mock.MagicMock()
+        mock_distributor_manager.find_by_repo_list.return_value = mock_distributors
+        ret = repositories._merge_related_objects('distributors', mock_distributor_manager,
+                                                  mock_repos)
+
+        self.assertTrue(len(ret) == 2)
+        self.assertEqual(map(itemgetter('id'), ret), ['mock1', 'mock2'])
+        mock1_expected_distributors = [{'repo_id': 'mock1', 'id': 'mock_distributor1'},
+                                       {'repo_id': 'mock1', 'id': 'mock_distributor2'}]
+        mock2_expected_distributors = [{'repo_id': 'mock2', 'id': 'mock_distributor2'}]
+        mock1_distributors = ret[map(itemgetter('id'), ret).index('mock1')]['distributors']
+        mock2_distributors = ret[map(itemgetter('id'), ret).index('mock2')]['distributors']
+        self.assertEqual(mock1_distributors, mock1_expected_distributors)
+        self.assertEqual(mock2_distributors, mock2_expected_distributors)
 
     def test__merge_related_objects_no_objects(self):
         """
@@ -772,11 +800,13 @@ class TestRepoImportersView(unittest.TestCase):
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = [{"mock": "importer"}]
+        mock_importer = [{"id": "importer", 'repo_id': 'mock_repo'}]
         mock_factory.repo_importer_manager.return_value.get_importers.return_value = mock_importer
         repo_importers = RepoImportersView()
         response = repo_importers.get(mock_request, 'mock_repo')
-        mock_resp.assert_called_once_with(mock_importer)
+        expected_response = [{'repo_id': 'mock_repo', 'id': 'importer',
+                              '_href': '/v2/repositories/mock_repo/importers/importer/'}]
+        mock_resp.assert_called_once_with(expected_response)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
@@ -824,13 +854,15 @@ class TestRepoImporterResourceView(unittest.TestCase):
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = {"id": "mock_importer"}
+        mock_importer = {"id": "mock_importer", 'repo_id': 'mock-repo'}
         mock_factory.repo_importer_manager.return_value.get_importer.return_value = mock_importer
 
         repo_importer = RepoImporterResourceView()
         response = repo_importer.get(mock_request, 'mock_repo', 'mock_importer')
 
-        mock_resp.assert_called_once_with(mock_importer)
+        expected_response = {'repo_id': 'mock-repo', 'id': 'mock_importer',
+                             '_href': '/v2/repositories/mock-repo/importers/mock_importer/'}
+        mock_resp.assert_called_once_with(expected_response)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
