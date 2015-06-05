@@ -17,7 +17,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
    domain.cpus   = 4
  end
 
- config.vm.provision "shell", inline: "yum install -y dnf"
+ config.vm.provision "shell", inline: "yum install -y dnf deltarpm"
  config.vm.provision "shell", inline: "dnf upgrade -y"
  config.vm.provision "shell", inline: "sudo -u vagrant bash -e /home/vagrant/devel/pulp/playpen/vagrant-setup.sh"
 end
