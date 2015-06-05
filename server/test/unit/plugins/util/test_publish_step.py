@@ -8,6 +8,7 @@ import time
 import traceback
 import unittest
 
+import mongoengine
 from mock import Mock, patch, MagicMock
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.request import DownloadRequest
@@ -20,7 +21,9 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, SyncReport, Unit
 from pulp.plugins.util.publish_step import Step, PublishStep, UnitPublishStep, PluginStep, \
     AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep, \
-    PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep, CreatePulpManifestStep
+    PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep, SaveUnitsStep, \
+    CreatePulpManifestStep
+from pulp.server.db import model
 from pulp.server.managers import factory
 
 
@@ -116,6 +119,24 @@ class StepTests(PublisherBase):
         step.parent.get_status_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_status_conduit())
 
+    def test_get_total(self):
+        step = Step('foo_step')
+        self.assertEquals(1, step.get_total())
+
+    def test__get_total(self):
+        step = Step('foo_step')
+        step.get_total = Mock(return_value=3)
+        self.assertEquals(3, step._get_total())
+
+    def test_report_progress_disable_reporting(self):
+        """
+        Test that we can disable reporting when calling report_progress()
+        """
+        step = Step('foo_step', disable_reporting=True)
+        step.status_conduit = Mock()
+        step.report_progress()
+        self.assertFalse(step.status_conduit.report_progress.called)
+
 
 class PluginStepTests(PluginBase):
     """
@@ -125,14 +146,29 @@ class PluginStepTests(PluginBase):
     can be removed.
     """
 
-    def test_get_working_dir_already_calculated(self):
+    def test_get_working_dir_from_step(self):
+        """
+        Test getting the working dir if it has already been calculated or set on this step
+        """
         step = PluginStep('foo_step')
         step.working_dir = 'foo'
         self.assertEquals('foo', step.get_working_dir())
 
-    def test_get_working_dir_from_repo(self):
+    @patch('pulp.plugins.util.publish_step.common_utils.get_working_directory')
+    def test_get_working_dir_from_util(self, mock_get_working_dir):
+        """
+        Test getting the working dir from the utilities
+        """
         step = PluginStep('foo_step')
-        step.get_repo = Mock(return_value=Mock(working_dir='foo'))
+        mock_get_working_dir.return_value = 'foo'
+        self.assertEquals('foo', step.get_working_dir())
+
+    def test_get_working_dir_from_parent(self):
+        """
+        Test getting the working dir from a parent step
+        """
+        step = PluginStep('foo_step')
+        step.parent = Mock(get_working_dir=Mock(return_value='foo'))
         self.assertEquals('foo', step.get_working_dir())
 
     def test_get_repo(self):
@@ -174,6 +210,14 @@ class PluginStepTests(PluginBase):
         step.parent = Mock()
         step.parent.get_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_conduit())
+
+    def test_get_conduit_not_set(self):
+        """
+        Test that if the conduit has not been set in this step or it's parent, that we
+        return None
+        """
+        step = PluginStep('foo_step')
+        self.assertEquals(None, step.get_conduit())
 
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
     def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
@@ -307,6 +351,14 @@ class PluginStepTests(PluginBase):
 
         self.assertFalse(report.success_flag)
 
+    def test_build_final_report_reporting_disable(self):
+        """
+        Test that _build_final_report returnes None if reporting has been disabled
+        """
+        step = PluginStep('step_one', disable_reporting=True)
+        report = step._build_final_report()
+        self.assertEquals(report, None)
+
     def test_process_child_on_error_notifies_parent(self):
         # set working_dir and conduit. This is required by process_lifecycle
         step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
@@ -381,30 +433,14 @@ class PluginStepTests(PluginBase):
         self.assertTrue(os.path.exists(new_dir))
         mock_rmtree.assert_called_once_with(new_dir, ignore_errors=True)
 
+    def test_clear_children(self):
+        step = PublishStep("foo")
+        step.children = ['bar']
+        step.clear_children()
+        self.assertEquals(0, len(step.children))
+
 
 class PublishStepTests(PublisherBase):
-
-    def test_get_working_dir_already_calculated(self):
-        step = PublishStep('foo_step')
-        step.working_dir = 'foo'
-        self.assertEquals('foo', step.get_working_dir())
-
-    def test_get_working_dir_from_repo(self):
-        step = PublishStep('foo_step')
-        step.get_repo = Mock(return_value=Mock(working_dir='foo'))
-        self.assertEquals('foo', step.get_working_dir())
-
-    def test_get_repo(self):
-        step = PublishStep('foo_step')
-        step.repo = 'foo'
-        self.assertEquals('foo', step.get_repo())
-
-    def test_get_repo_from_parent(self):
-        step = PublishStep('foo_step')
-        step.conduit = 'foo'
-        step.parent = Mock()
-        step.parent.get_repo.return_value = 'foo'
-        self.assertEquals('foo', step.get_repo())
 
     def test_get_distributor_type(self):
         step = PublishStep('foo_step')
@@ -422,124 +458,6 @@ class PublishStepTests(PublisherBase):
         step.parent.get_plugin_type.return_value = 'foo'
         self.assertEquals('foo', step.get_distributor_type())
 
-    def test_get_conduit(self):
-        step = PublishStep('foo_step')
-        step.conduit = 'foo'
-        self.assertEquals('foo', step.get_conduit())
-
-    def test_get_conduit_from_parent(self):
-        step = PublishStep('foo_step')
-        step.conduit = 'foo'
-        step.parent = Mock()
-        step.parent.get_conduit.return_value = 'foo'
-        self.assertEquals('foo', step.get_conduit())
-
-    @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
-        mock_get_units.return_value = ['mock_unit']
-        step = PublishStep('foo_step')
-        step.parent = self.publisher
-        step.finalize = Mock(side_effect=Exception())
-        self.assertRaises(Exception, step.process)
-        self.assertEquals(step.state, reporting_constants.STATE_FAILED)
-        self.assertEquals(step.progress_successes, 1)
-        self.assertEquals(step.progress_failures, 1)
-        self.assertEquals(step.total_units, 1)
-
-    def test_cancel_before_processing(self):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
-        step = PublishStep('foo_step')
-        step.is_skipped = Mock()
-        step.cancel()
-        step.process()
-        self.assertEquals(0, step.is_skipped.call_count)
-
-    def test_report_progress(self):
-        publish_step = PublishStep('foo_step')
-        publish_step.parent = Mock()
-        publish_step.report_progress()
-        publish_step.parent.report_progress.assert_called_once_with(False)
-
-    def test_record_failure(self):
-        publish_step = PublishStep('foo_step')
-        publish_step.parent = self.publisher
-
-        error_msg = 'Too bad, so sad'
-
-        try:
-            raise Exception(error_msg)
-
-        except Exception, e:
-            tb = sys.exc_info()[2]
-            publish_step._record_failure(e, tb)
-
-        self.assertEquals(publish_step.progress_failures, 1)
-        details = {'error': str(e),
-                   'traceback': '\n'.join(traceback.format_tb(tb))}
-        self.assertEqual(publish_step.error_details[0], details)
-
-    def test_get_progress_report(self):
-        step = PublishStep('foo_step')
-        step.error_details = "foo"
-        step.state = reporting_constants.STATE_COMPLETE
-        step.total_units = 2
-        step.progress_successes = 1
-        step.progress_failures = 1
-        report = step.get_progress_report()
-
-        target_report = {
-            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'foo_step',
-            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
-            reporting_constants.PROGRESS_STATE_KEY: step.state,
-            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
-            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
-            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
-            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
-            reporting_constants.PROGRESS_DESCRIPTION_KEY: '',
-            reporting_constants.PROGRESS_DETAILS_KEY: '',
-            reporting_constants.PROGRESS_STEP_UUID: step.uuid
-        }
-
-        compare_dict(report[0], target_report)
-
-    def test_get_progress_report_description(self):
-        step = PublishStep('bar_step')
-        step.description = 'bar'
-        step.progress_details = 'baz'
-        step.error_details = "foo"
-        step.state = reporting_constants.STATE_COMPLETE
-        step.total_units = 2
-        step.progress_successes = 1
-        step.progress_failures = 1
-        report = step.get_progress_report()
-
-        target_report = {
-            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'bar_step',
-            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
-            reporting_constants.PROGRESS_STATE_KEY: step.state,
-            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
-            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
-            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
-            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
-            reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar',
-            reporting_constants.PROGRESS_DETAILS_KEY: 'baz',
-            reporting_constants.PROGRESS_STEP_UUID: step.uuid
-        }
-
-        compare_dict(report[0], target_report)
-
-    def test_get_progress_report_summary(self):
-        parent_step = PublishStep('parent_step')
-        step = PublishStep('foo_step')
-        parent_step.add_child(step)
-        step.state = reporting_constants.STATE_COMPLETE
-        report = parent_step.get_progress_report_summary()
-        target_report = {
-            'foo_step': reporting_constants.STATE_COMPLETE
-        }
-        compare_dict(report, target_report)
-
     @patch('pulp.plugins.util.misc.create_symlink')
     def test_create_symlink(self, mock_symlink):
         step = PublishStep("foo")
@@ -553,49 +471,12 @@ class PublishStepTests(PublisherBase):
         step._clear_directory(self.working_dir, ['two'])
         mock_clear.assert_called_once_with(self.working_dir, ['two'])
 
-    def test_get_total(self):
-        step = PublishStep("foo")
-        self.assertEquals(1, step._get_total())
-
-    def test_clear_children(self):
-        step = PublishStep("foo")
-        step.children = ['bar']
-        step.clear_children()
-        self.assertEquals(0, len(step.children))
-
     def test_publish(self):
         # just test that process_lifecycle got called, that is where the functionality lives now
         step = PublishStep("foo")
         step.process_lifecycle = Mock()
         step.publish()
         self.assertTrue(step.process_lifecycle.called)
-
-    def test_build_final_report_success(self):
-
-        step_one = PublishStep('step_one')
-        step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PublishStep('step_two')
-        step_two.state = reporting_constants.STATE_COMPLETE
-        self.publisher.add_child(step_one)
-        self.publisher.add_child(step_two)
-
-        report = self.publisher._build_final_report()
-
-        self.assertTrue(report.success_flag)
-
-    def test_build_final_report_failure(self):
-
-        self.publisher.state = reporting_constants.STATE_FAILED
-        step_one = PublishStep('step_one')
-        step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PublishStep('step_two')
-        step_two.state = reporting_constants.STATE_FAILED
-        self.publisher.add_child(step_one)
-        self.publisher.add_child(step_two)
-
-        report = self.publisher._build_final_report()
-
-        self.assertFalse(report.success_flag)
 
 
 class UnitPublishStepTests(PublisherBase):
@@ -1156,32 +1037,35 @@ class DownloadStepTests(unittest.TestCase):
         self.assertTrue(dlstep.downloader.is_canceled)
 
 
-@patch('pulp.server.managers.content.query.ContentQueryManager.get_multiple_units_by_keys_dicts',
-       spec_set=True)
+@patch('pulp.plugins.util.publish_step.repo_controller.associate_single_unit')
+@patch('pulp.plugins.util.publish_step.units_controller.find_units')
 class TestGetLocalUnitsStep(unittest.TestCase):
-    class DemoGetLocalUnitsStep(GetLocalUnitsStep):
-        def _dict_to_unit(self, unit_dict):
-            return Unit('fake_unit_type', unit_dict, {}, '')
+
+    class DemoModel(model.ContentUnit):
+        key_field = mongoengine.StringField()
+        unit_key_fields = ['key_field']
+
+        unit_type_id = 'demo_model'
+
+        objects = MagicMock()
+        save = MagicMock()
 
     def setUp(self):
         super(TestGetLocalUnitsStep, self).setUp()
         self.parent = MagicMock()
-        self.step = self.DemoGetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
-                                               ['foo'], '/a/b/c')
+        self.step = GetLocalUnitsStep('fake_importer_type', repo='fake_repo')
         self.step.parent = self.parent
         self.step.conduit = MagicMock()
         self.parent.available_units = []
 
-    def test_no_available_units(self, mock_get_multiple):
-        mock_get_multiple.return_value = []
-
+    def test_no_available_units(self, mock_find_units, mock_associate):
         self.step.process_main()
 
         self.assertEqual(self.step.conduit.save_unit.call_count, 0)
         self.assertEqual(self.step.units_to_download, [])
 
     @patch('pulp.plugins.util.publish_step.misc.paginate')
-    def test_calls_get_multiple(self, mock_paginate, mock_get_multiple):
+    def test_calls_get_multiple(self, mock_paginate, mock_find_units, mock_associate):
         """
         ensure that paginate is used
         """
@@ -1191,39 +1075,51 @@ class TestGetLocalUnitsStep(unittest.TestCase):
 
         mock_paginate.assert_called_once_with(self.step.parent.available_units, 50)
 
-    def test_saves_unit(self, mock_get_multiple):
-        mock_get_multiple.return_value = [{'foo': 'a'}]
-        self.parent.available_units = [{'foo': 'a'}]
+    def test_saves_unit(self, mock_find_units, mock_associate):
+        """
+        Test that units which already exist in the database are associated properly
+        """
+        # mock_get_multiple.return_value = [self.DemoModel(key_field='a')]
+
+        demo = self.DemoModel(key_field='a')
+        self.parent.available_units = [demo]
+        existing_demo = self.DemoModel(key_field='a', id='foo')
+        mock_find_units.return_value = [existing_demo]
 
         self.step.process_main()
+        mock_associate.assert_called_once_with('fake_repo', existing_demo)
+        mock_find_units.assert_called_once_with((demo, ))
 
-        self.step.conduit.save_unit.assert_called_once_with(Unit('fake_unit_type',
-                                                            {'foo': 'a'}, {}, ''))
-
-    def test_populates_units_to_download(self, mock_get_multiple):
-        mock_get_multiple.return_value = [{'foo': 'a'}]
-        # this unit should be identified as one that should get downloaded, since
-        # it wasn't returned by the get_multiple query.
-        self.parent.available_units = [{'foo': 'b'}]
-
-        self.step.process_main()
-
-        self.assertEqual(self.step.units_to_download, [{'foo': 'b'}])
-
-    def test_empty_units_to_download(self, mock_get_multiple):
-        mock_get_multiple.return_value = [{'foo': 'a'}]
-        # this unit should not be identified as one that should get downloaded, since
-        # it was returned by the get_multiple query.
-        self.parent.available_units = [{'foo': 'a'}]
-
-        self.step.process_main()
-
+        # Ensure that the unit was not marked for download
         self.assertEqual(self.step.units_to_download, [])
 
-    def test_dict_to_unit_not_implemented(self, mock_get_multiple):
-        step = GetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
-                                 ['foo'], '/a/b/c')
-        self.assertRaises(NotImplementedError, step._dict_to_unit, {'image_id': 'abc123'})
+    def test_populates_units_to_download(self, mock_find_units, mock_associate):
+        """
+        Test that if a unit does not exist in the database it is added to the
+        units_to_download list
+        """
+        demo_1 = self.DemoModel(key_field='a')
+        demo_2 = self.DemoModel(key_field='b')
+        self.parent.available_units = [demo_1, demo_2]
+        existing_demo = self.DemoModel(key_field='b', id='foo')
+        mock_find_units.return_value = [existing_demo]
+
+        self.step.process_main()
+        mock_find_units.assert_called_once_with((demo_1, demo_2))
+
+        # The one that exists is associated
+        mock_associate.assert_called_once_with('fake_repo', existing_demo)
+        # The one that does not exist yet is added to the download list
+        self.assertEqual(self.step.units_to_download, [demo_1])
+
+
+class TestSaveUnitsStep(unittest.TestCase):
+
+    @patch('pulp.plugins.util.publish_step.repo_controller')
+    def test_finalize(self, mock_repo_controller):
+        step = SaveUnitsStep('foo_type', repo='bar')
+        step.finalize()
+        mock_repo_controller.rebuild_content_unit_counts.assert_called_once_with('bar')
 
 
 class TestCreateManifestStep(unittest.TestCase):
