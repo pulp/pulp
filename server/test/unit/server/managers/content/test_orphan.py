@@ -161,6 +161,15 @@ class OrphanManagerGeneratorTests(OrphanManagerTests):
             pulp_exceptions.MissingResource,
             OrphanManager.generate_orphans_by_type_with_unit_keys('Not a type').next)
 
+    def test_validate_type_valid_type(self):
+        unit_1 = gen_content_unit(PHONY_TYPE_1.id, self.content_root)
+        content_type_definition = self.orphan_manager.validate_type(PHONY_TYPE_1.id)
+        self.assertEqual(content_type_definition['id'], unit_1['_content_type_id'])
+
+    def test_validate_type_wrong_type(self):
+        self.assertRaises(
+            pulp_exceptions.MissingResource, OrphanManager.validate_type, 'foo')
+
     def test_generate_orphans_by_type_with_unit_keys(self):
         """
         Assert that orphans are retrieved by type with unit keys correctly
