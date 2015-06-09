@@ -120,11 +120,11 @@ class ApplicabilityRegenerationManager(object):
         repo_ids = [r['id'] for r in repo_query_manager.find_by_criteria(repo_criteria)]
 
         for repo_id in repo_ids:
-            # Find all existing applicabilities for given repo_id. Setting batch size of 25 ensures
+            # Find all existing applicabilities for given repo_id. Setting batch size of 5 ensures
             # the MongoDB cursor does not time out. See https://pulp.plan.io/issues/998#note-6 for
             # more details.
             existing_applicabilities = RepoProfileApplicability.get_collection().find(
-                {'repo_id': repo_id}).batch_size(25)
+                {'repo_id': repo_id}).batch_size(5)
             for existing_applicability in existing_applicabilities:
                 # Convert cursor to RepoProfileApplicability object
                 existing_applicability = RepoProfileApplicability(**dict(existing_applicability))
