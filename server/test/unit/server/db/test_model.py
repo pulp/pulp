@@ -507,3 +507,32 @@ class TestRepository(unittest.TestCase):
         self.assertEqual(repo_obj.notes['leave'], 2)
         self.assertEqual(repo_obj.notes['modify'], 4)
         self.assertEqual(repo_obj.notes['add'], 5)
+
+
+class TestCeleryBeatLock(unittest.TestCase):
+    """
+    Test the CeleryBeatLock class.
+    """
+    def test_model_superclass(self):
+        sample_model = model.CeleryBeatLock()
+        self.assertTrue(isinstance(sample_model, Document))
+
+    def test_attributes(self):
+        self.assertTrue(isinstance(model.CeleryBeatLock.celerybeat_name, StringField))
+        self.assertTrue(model.CeleryBeatLock.celerybeat_name.required)
+
+        self.assertTrue(model.CeleryBeatLock.timestamp, DateTimeField)
+        self.assertTrue(model.CeleryBeatLock.timestamp.required)
+
+        self.assertTrue(model.CeleryBeatLock.lock, StringField)
+        self.assertTrue(model.CeleryBeatLock.lock.required)
+        self.assertTrue(model.CeleryBeatLock.lock.default, 'locked')
+        self.assertTrue(model.CeleryBeatLock.lock.unique)
+
+        self.assertTrue('_ns' in model.CeleryBeatLock._fields)
+
+    def test_meta_collection(self):
+        """
+        Assert that the collection name is correct.
+        """
+        self.assertEquals(model.CeleryBeatLock._meta['collection'], 'celery_beat_lock')

@@ -534,3 +534,24 @@ class ContentUnit(Document):
         type and the same unit key will get the same hash value.
         """
         return hash(self.unit_type_id + self.unit_key_str)
+
+
+class CeleryBeatLock(Document):
+    """
+    Single document collection which gives information about the current celerybeat lock.
+
+    :ivar celerybeat_name: string representing the celerybeat instance name
+    :type celerybeat_name: basestring
+    :ivar timestamp: The timestamp(UTC) at which lock is acquired
+    :type timestamp: datetime.datetime
+    :ivar lock: A unique key set to "locked" when lock is acquired.
+    :type lock: basestring
+    :ivar _ns: (Deprecated), Contains the name of the collection this model represents
+    :type _ns: mongoengine.StringField
+    """
+    celerybeat_name = StringField(required=True)
+    timestamp = DateTimeField(required=True)
+    lock = StringField(required=True, default="locked", unique=True)
+
+    # For backward compatibility
+    _ns = StringField(default='celery_beat_lock')

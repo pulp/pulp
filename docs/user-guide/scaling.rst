@@ -31,8 +31,9 @@ Pulp consists of several components:
   Additionally, it performs task cancellations in the event of a worker
   shutdown or failure. The celerybeat process also initiates scheduled tasks,
   and automatically cancels tasks that have failed more than *X* times. This
-  process also initiates periodic jobs that Pulp runs internally. In a Pulp
-  cluster, exactly one of these should be running!
+  process also initiates periodic jobs that Pulp runs internally. Multiple
+  instances of the ``pulp_celerybeat`` process can run at the same time to
+  ensure high availability of the Pulp.
 
 * ``pulp_resource_manager`` - The resource manager assigns tasks to workers,
   and ensures multiple conflicting tasks on a repo are not executed at the same
@@ -45,9 +46,8 @@ Additionally, Pulp relies on other components:
 * `Apache Qpid`_ or `RabbitMQ`_ - the queuing system that Pulp uses to assign
   work to workers. Pulp can operate equally well with either Qpid or RabbitMQ.
 
-.. warning:: It is critical to note that ``pulp_celerybeat`` and
-    ``pulp_resource_manager`` should *never* have more than a single instance
-    running under any circumstance!
+.. warning:: It is critical to note that ``pulp_resource_manager`` should
+   *never* have more than a single instance running under any circumstance!
 
 The diagram below shows an example default deployment.
 
@@ -132,8 +132,7 @@ httpd workers are.
 
 To add additional httpd server capacity, configure the desired number of
 `Pulp clustered servers` and start ``httpd`` on them. Remember only one
-instance of ``pulp_celerybeat`` and ``pulp_resource_manager`` should be
-running across all `Pulp clustered servers`.
+instance of ``pulp_resource_manager`` should be running across all `Pulp clustered servers`.
 
 
 Scaling workers
@@ -144,9 +143,8 @@ and redundancy.
 
 To add additional Pulp worker capacity, configure the desired number of `Pulp
 clustered servers` according to the the `clustering`_ docs and start
-``pulp_workers`` on each of them. Remember only one instance of
-``pulp_celerybeat`` and ``pulp_resource_manager`` should be running across
-all `Pulp clustered servers`.
+``pulp_workers`` on each of them. Remember only one instance of ``pulp_resource_manager``
+should be running across all `Pulp clustered servers`.
 
 
 .. _clustering:

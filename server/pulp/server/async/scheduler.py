@@ -9,15 +9,16 @@ import time
 
 from celery import beat
 from celery.result import AsyncResult
+import mongoengine
 
-from pulp.common.constants import SCHEDULER_WORKER_NAME
+from pulp.common.constants import SCHEDULER_WORKER_NAME, CELERYBEAT_WAIT_SECONDS, TICK_SECONDS
 from pulp.server.async import worker_watcher
 from pulp.server.async.celery_instance import celery as app
 from pulp.server.async.tasks import _delete_worker
 from pulp.server.db import connection as db_connection
 from pulp.server.db.connection import retry_decorator
 from pulp.server.db.model.dispatch import ScheduledCall, ScheduleEntry
-from pulp.server.db.model import Worker
+from pulp.server.db.model import Worker, CeleryBeatLock
 from pulp.server.managers.schedule import utils
 
 # The import below is not used in this module, but it needs to be kept here. This module is the
@@ -305,6 +306,13 @@ class Scheduler(beat.Scheduler):
         worker_timeout_monitor.daemon = True
         worker_timeout_monitor.start()
 
+    @staticmethod
+    def call_tick(self, celerybeat_name):
+        ret = super(Scheduler, self).tick()
+        _logger.debug(_("%(celerybeat_name)s will tick again in %(ret)s secs")
+                      % {'ret': ret, 'celerybeat_name': celerybeat_name})
+        return ret
+
     def tick(self):
         """
         Superclass runs a tick, that is one iteration of the scheduler. Executes
@@ -317,15 +325,50 @@ class Scheduler(beat.Scheduler):
         :return:    number of seconds before the next tick should run
         :rtype:     float
         """
-        ret = super(Scheduler, self).tick()
         self._failure_watcher.trim()
+
+        # Setting the celerybeat name
+        celerybeat_name = SCHEDULER_WORKER_NAME + "@" + platform.node()
 
         # this is not an event that gets sent anywhere. We process it
         # immediately.
         scheduler_event = {'timestamp': time.time(),
                            'type': 'scheduler-event',
-                           'hostname': ("%s@%s" % (SCHEDULER_WORKER_NAME, platform.node()))}
+                           'hostname': celerybeat_name}
         worker_watcher.handle_worker_heartbeat(scheduler_event)
+
+        old_timestamp = datetime.utcnow() - timedelta(seconds=CELERYBEAT_WAIT_SECONDS)
+
+        # Updating the current lock if lock is on this instance of celerybeat
+        result = CeleryBeatLock.objects(celerybeat_name=celerybeat_name).\
+            update(set__timestamp=datetime.utcnow())
+
+        # If current instance has lock and updated lock_timestamp, call super
+        if result == 1:
+            _logger.debug(_('Lock updated by %(celerybeat_name)s')
+                          % {'celerybeat_name': celerybeat_name})
+            ret = self.call_tick(self, celerybeat_name)
+        else:
+            # check for old enough time_stamp and remove if such lock is present
+            CeleryBeatLock.objects(timestamp__lte=old_timestamp).delete()
+            try:
+                lock_timestamp = datetime.utcnow()
+
+                # Insert new lock entry
+                new_lock = CeleryBeatLock(celerybeat_name=celerybeat_name,
+                                          timestamp=lock_timestamp)
+                new_lock.save()
+                _logger.info(_("New lock acquired by %(celerybeat_name)s") %
+                             {'celerybeat_name': celerybeat_name})
+                # After acquiring new lock call super to dispatch tasks
+                ret = self.call_tick(self, celerybeat_name)
+
+            except mongoengine.NotUniqueError:
+                # Setting a default wait time for celerybeat instances with no lock
+                ret = TICK_SECONDS
+                _logger.info(_("Duplicate or new celerybeat Instance, "
+                               "ticking again in %(ret)s seconds.")
+                             % {'ret': ret})
         return ret
 
     def setup_schedule(self):
