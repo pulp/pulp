@@ -73,6 +73,17 @@ prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
       If you followed the instructions above, you have checked out master on all repositories which
       should be compatible.
 
+#. Optionally, configure your system policy to allow your user to manage libvirt without needing
+   root privileges. Create ``/etc/polkit-1/localauthority/50-local.d/libvirt.pkla`` with the
+   following contents, substituting with your user id::
+
+    [Allow your_user_id_here libvirt management permissions]
+    Identity=unix-user:your_user_id_here
+    Action=org.libvirt.unix.manage
+    ResultAny=yes
+    ResultInactive=yes
+    ResultActive=yes
+
 #. Next, cd into the pulp directory and begin provisioning your Vagrant environment. A possible
    failure point is during provisioning when mongod is building its initial files. This sometimes
    takes longer than systemd allows and can fail. If that happens, simply run ``vagrant provision``.
