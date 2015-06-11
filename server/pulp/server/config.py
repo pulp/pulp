@@ -16,7 +16,6 @@ _default_values = {
     },
     'data_reaping': {
         'reaper_interval': '0.25',
-        'archived_calls': '0.5',
         'consumer_history': '60',
         'repo_sync_history': '60',
         'repo_publish_history': '60',
