@@ -334,7 +334,7 @@ class TestContentUnitSearch(unittest.TestCase):
         mock_query = mock.MagicMock()
         mock_search = mock.MagicMock(return_value=['result_1', 'result_2'])
         serialized_results = content_search.get_results(
-            mock_query, mock_search, {'include_repos': 'true'}, type_id='mock_type'
+            mock_query, mock_search, {'include_repos': True}, type_id='mock_type'
         )
         mock_process.assert_has_calls([mock.call('result_1', 'mock_type'),
                                        mock.call('result_2', 'mock_type')])
@@ -344,7 +344,7 @@ class TestContentUnitSearch(unittest.TestCase):
 
 class TestContentUnitResourceView(unittest.TestCase):
     """
-    Tests for views of a single conttent unit.
+    Tests for views of a single content unit.
     """
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
