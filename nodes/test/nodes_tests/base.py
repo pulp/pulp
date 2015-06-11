@@ -17,7 +17,6 @@ from pulp.common.config import Config
 from pulp.server.async import celery_instance
 from pulp.server.config import config as pulp_conf
 from pulp.server.db import connection
-from pulp.server.db.model.dispatch import QueuedCall
 from pulp.server.logs import start_logging, stop_logging
 from pulp.server.managers import factory as managers
 from pulp.server.managers.auth.cert.cert_generator import SerialNumber
@@ -49,8 +48,14 @@ class ServerTests(unittest.TestCase):
         shutil.rmtree(storage_dir+'/*', ignore_errors=True)
         managers.initialize()
 
-    def setUp(self):
-        QueuedCall.get_collection().remove()
+    @classmethod
+    def tearDownClass(cls):
+        name = pulp_conf.get('database', 'name')
+        db = pymongo.database.Database(connection._CONNECTION, name)
+        for name in db.collection_names():
+            if name[:7] == 'system.':
+                continue
+            db.drop_collection(name)
 
 
 class ClientTests(TestCase):

@@ -52,6 +52,11 @@ Deprecation
 
 .. _2.6.x_upgrade_to_2.7.0:
 
+* The ``archived_calls`` setting in ``server.conf`` is removed. It has not been used in several releases.
+
+* The ``archived_calls`` collection is dropped from the database with a migration.
+
+
 Upgrade Instructions for 2.6.x --> 2.7.0
 -----------------------------------------
 
