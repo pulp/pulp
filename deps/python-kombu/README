@@ -17,11 +17,11 @@ Permanent Patches:
 
 Temporary Patches:
 
-This are contributed to upstream Kombu and will be included in a future release
-of Kombu, but until it is we include it in downstream.
+This are contributed to upstream Kombu and will be included in a future
+release of Kombu, but until it is we include it in downstream.
 
-1195361.patch - Fixes close bug where the connection was not being closed. This
-                fixes https://github.com/celery/kombu/issues/455
+1195361.patch - Fixes close bug where the connection was not being closed.
+                This fixes https://github.com/celery/kombu/issues/455
 
 476.patch - Fixes file descriptor leak issue:
             https://github.com/celery/kombu/issues/476
