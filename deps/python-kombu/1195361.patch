@@ -1,7 +1,7 @@
-From f032b227747bc6ac3df27bc1866cf8e65a24f759 Mon Sep 17 00:00:00 2001
+From 7832d5ca39d132e09e5044350d83b4da315e3bb1 Mon Sep 17 00:00:00 2001
 From: Brian Bouterse <bmbouter@gmail.com>
 Date: Fri, 20 Feb 2015 11:59:54 -0500
-Subject: [PATCH] Fixes close bug where the connection was not being closed
+Subject: [PATCH 1/3] Fixes close bug where the connection was not being closed
 
 ---
  kombu/tests/transport/test_qpid.py | 19 ++++++++++++-------
@@ -9,10 +9,10 @@ Subject: [PATCH] Fixes close bug where the connection was not being closed
  2 files changed, 26 insertions(+), 18 deletions(-)
 
 diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
-index 5f53c2f..222f9b3 100644
+index eb7d8f5..4e654c0 100644
 --- a/kombu/tests/transport/test_qpid.py
 +++ b/kombu/tests/transport/test_qpid.py
-@@ -441,6 +441,16 @@ class TestConnectionGetQpidConnection(ConnectionTestBase):
+@@ -449,6 +449,16 @@ class TestConnectionGetQpidConnection(ConnectionTestBase):
  
  @case_no_python3
  @case_no_pypy
@@ -29,7 +29,7 @@ index 5f53c2f..222f9b3 100644
  class TestConnectionCloseChannel(ConnectionTestBase):
  
      def setUp(self):
-@@ -1993,16 +2003,11 @@ class TestTransport(ExtraAssertionsMixin, Case):
+@@ -1987,16 +1997,11 @@ class TestTransport(ExtraAssertionsMixin, Case):
          self.mock_client = Mock()
  
      def test_close_connection(self):
@@ -49,10 +49,10 @@ index 5f53c2f..222f9b3 100644
      def test_default_connection_params(self):
          """Test that the default_connection_params are correct"""
 diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
-index a3b0a4c..fb240ad 100644
+index ef88bc5..b8cab9d 100644
 --- a/kombu/transport/qpid.py
 +++ b/kombu/transport/qpid.py
-@@ -928,7 +928,7 @@ class Channel(base.StdChannel):
+@@ -963,7 +963,7 @@ class Channel(base.StdChannel):
              self.connection._callbacks.pop(queue, None)
  
      def close(self):
@@ -61,7 +61,7 @@ index a3b0a4c..fb240ad 100644
  
          This cancels all consumers by calling :meth:`basic_cancel` for each
          known consumer_tag. It also closes the self._broker sessions. Closing
-@@ -1272,6 +1272,14 @@ class Connection(object):
+@@ -1301,6 +1301,14 @@ class Connection(object):
          """
          return self._qpid_conn
  
@@ -76,7 +76,7 @@ index a3b0a4c..fb240ad 100644
      def close_channel(self, channel):
          """Close a Channel.
  
-@@ -1620,18 +1628,13 @@ class Transport(base.Transport):
+@@ -1639,18 +1647,13 @@ class Transport(base.Transport):
          return conn
  
      def close_connection(self, connection):
@@ -100,6 +100,119 @@ index a3b0a4c..fb240ad 100644
  
      def drain_events(self, connection, timeout=0, **kwargs):
          """Handle and call callbacks for all ready Transport messages.
+-- 
+1.9.3
+
+
+From ff67d37c97966799be6d69dbe9c98c1a0a0745a0 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Wed, 10 Jun 2015 17:06:35 -0400
+Subject: [PATCH 2/3] Causes the monitoring thread to exit if SessionClosed is
+ raised.
+
+Conflicts:
+	kombu/transport/qpid.py
+---
+ kombu/tests/transport/test_qpid.py | 13 +++++++++++++
+ kombu/transport/qpid.py            |  8 ++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index 4e654c0..db7a8f6 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -1447,6 +1447,19 @@ class TestReceiversMonitorRun(ReceiversMonitorTestBase):
+             self.monitor.run()
+         mock_monitor_receivers.assert_called_once_with()
+ 
++    @patch(QPID_MODULE + '.SessionClosed', new=QpidException)
++    @patch.object(ReceiversMonitor, 'monitor_receivers')
++    @patch(QPID_MODULE + '.time.sleep')
++    def test_receivers_monitor_run_exits_on_session_closed(
++            self, mock_sleep, mock_monitor_receivers):
++        mock_monitor_receivers.side_effect = QpidException()
++        try:
++            self.monitor.run()
++        except Exception:
++            self.fail('No exception should be raised here')
++        mock_monitor_receivers.assert_called_once_with()
++        mock_sleep.has_calls([])
++
+     @patch.object(Transport, 'connection_errors', new=(BreakOutException, ))
+     @patch.object(ReceiversMonitor, 'monitor_receivers')
+     @patch(QPID_MODULE + '.time.sleep')
+diff --git a/kombu/transport/qpid.py b/kombu/transport/qpid.py
+index b8cab9d..eaa74fb 100644
+--- a/kombu/transport/qpid.py
++++ b/kombu/transport/qpid.py
+@@ -53,9 +53,11 @@ except ImportError:  # pragma: no cover
+ try:
+     from qpid.messaging.exceptions import ConnectionError
+     from qpid.messaging.exceptions import Empty as QpidEmpty
++    from qpid.messaging.exceptions import SessionClosed
+ except ImportError:  # pragma: no cover
+     ConnectionError = None
+     QpidEmpty = None
++    SessionClosed = None
+ 
+ try:
+     import qpid
+@@ -1369,6 +1371,10 @@ class ReceiversMonitor(threading.Thread):
+         guards against unexpected exceptions which could cause this thread to
+         exit unexpectedly.
+ 
++        A :class:`qpid.messaging.exceptions.SessionClosed` exception should
++        cause this thread to exit. This is a normal exit condition and the
++        thread is no longer needed.
++
+         If a recoverable error occurs, then the exception needs to be
+         propagated to the Main Thread where an exception handler can properly
+         handle it. An Exception is checked if it is recoverable, and if so,
+@@ -1389,6 +1395,8 @@ class ReceiversMonitor(threading.Thread):
+                 self._session.saved_exception = exc
+                 os.write(self._w_fd, 'e')
+                 break
++            except SessionClosed:
++                break
+             except Exception as exc:
+                 logger.error(exc, exc_info=1)
+             time.sleep(10)
+-- 
+1.9.3
+
+
+From f6e239767e41dd78892424436ce02df7ee895342 Mon Sep 17 00:00:00 2001
+From: Brian Bouterse <bmbouter@gmail.com>
+Date: Thu, 11 Jun 2015 11:26:04 -0400
+Subject: [PATCH 3/3] Adds in QpidException which is also needed from upstream
+ Kombu
+
+---
+ kombu/tests/transport/test_qpid.py | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/kombu/tests/transport/test_qpid.py b/kombu/tests/transport/test_qpid.py
+index db7a8f6..cad8b74 100644
+--- a/kombu/tests/transport/test_qpid.py
++++ b/kombu/tests/transport/test_qpid.py
+@@ -73,6 +73,17 @@ class ExtraAssertionsMixin(object):
+             self.assertEqual(a[key], b[key])
+ 
+ 
++class QpidException(Exception):
++    """
++    An object used to mock Exceptions provided by qpid.messaging.exceptions
++    """
++
++    def __init__(self, code=None, text=None):
++        super(Exception, self).__init__(self)
++        self.code = code
++        self.text = text
++
++
+ class MockException(Exception):
+     pass
+ 
 -- 
 1.9.3
 
