@@ -1,6 +1,9 @@
 ---
-- name: Install dnf
-  yum: name=dnf state=latest
+- name: Install dnf and deltarpm
+  yum: name={{ item }} state=latest
+  with_items:
+      - dnf
+      - deltarpm
 
 - name: System update
   dnf: name=* state=latest
