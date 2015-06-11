@@ -167,6 +167,7 @@ Remove all the orphaned content of a particular content type.
 | :response_list:`_`
 
 * :response_code:`202,even if no content is to be deleted`
+* :response_code:`404,if content type does not exist`
 
 | :return:`a` :ref:`call_report`
 
@@ -183,7 +184,7 @@ Remove and individual orphaned content unit by content type and content id.
 | :response_list:`_`
 
 * :response_code:`202,if the content unit is to be deleted`
-* :response_code:`404,if the content does not exist`
+* :response_code:`404,if the content unit or content type does not exist`
 
 | :return:`a` :ref:`call_report`
 

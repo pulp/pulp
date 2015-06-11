@@ -17,6 +17,23 @@ _logger = logging.getLogger(__name__)
 
 class OrphanManager(object):
 
+    @staticmethod
+    def validate_type(content_type_id):
+        """
+        Validate the provided content type id.
+
+        :param content_type_id: unique id of the content type
+        :type content_type_id: str
+        :raises MissingResource: if there is no such content type id
+
+        :return: content type definition
+        :rtype: dict
+        """
+        content_type_definition = content_types_db.type_definition(content_type_id)
+        if content_type_definition is None:
+            raise pulp_exceptions.MissingResource(content_type_id=content_type_id)
+        return content_type_definition
+
     def orphans_summary(self):
         """
         Return a summary of the orphaned units as a dictionary of
@@ -118,10 +135,7 @@ class OrphanManager(object):
         :return: generator of orphaned content units for the given content type
         :rtype: generator
         """
-        content_type_definition = content_types_db.type_definition(content_type_id)
-        if content_type_definition is None:
-            raise pulp_exceptions.MissingResource(content_type_id=content_type_id)
-
+        content_type_definition = OrphanManager.validate_type(content_type_id)
         fields = ['_id', '_content_type_id']
         fields.extend(content_type_definition['unit_key'])
 
