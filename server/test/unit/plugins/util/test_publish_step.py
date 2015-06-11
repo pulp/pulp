@@ -8,6 +8,7 @@ import time
 import traceback
 import unittest
 
+import mongoengine
 from mock import Mock, patch, MagicMock
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.request import DownloadRequest
@@ -18,9 +19,8 @@ from pulp.plugins.conduits.repo_publish import RepoPublishConduit
 from pulp.plugins.conduits.repo_sync import RepoSyncConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.model import Repository, SyncReport, Unit
-from pulp.plugins.util.publish_step import Step, PublishStep, UnitPublishStep, PluginStep, \
-    AtomicDirectoryPublishStep, SaveTarFilePublishStep, _post_order, CopyDirectoryStep, \
-    PluginStepIterativeProcessingMixin, DownloadStep, GetLocalUnitsStep, CreatePulpManifestStep
+from pulp.plugins.util import publish_step
+from pulp.server.db import model
 from pulp.server.managers import factory
 
 
@@ -41,8 +41,9 @@ class PublisherBase(unittest.TestCase):
         self.conduit.get_repo_scratchpad = Mock(return_value={})
 
         self.config = PluginCallConfiguration(None, None)
-        self.publisher = PublishStep("base-step", repo=self.repo, publish_conduit=self.conduit,
-                                     config=self.config, distributor_type='test_distributor_type')
+        self.publisher = publish_step.PublishStep(
+            "base-step", repo=self.repo, publish_conduit=self.conduit,
+            config=self.config, distributor_type='test_distributor_type')
 
     def tearDown(self):
         shutil.rmtree(self.working_dir)
@@ -60,8 +61,9 @@ class PluginBase(unittest.TestCase):
         self.conduit.get_repo_scratchpad = Mock(return_value={})
 
         self.config = PluginCallConfiguration(None, None)
-        self.pluginstep = PluginStep("base-step", repo=self.repo, conduit=self.conduit,
-                                     config=self.config, plugin_type='test_plugin_type')
+        self.pluginstep = publish_step.PluginStep(
+            "base-step", repo=self.repo, conduit=self.conduit,
+            config=self.config, plugin_type='test_plugin_type')
 
 
 class PostOrderTests(unittest.TestCase):
@@ -81,40 +83,58 @@ class PostOrderTests(unittest.TestCase):
         n5.children = [n1, n4]
         n4.children = [n2, n3]
 
-        value_list = [n.value for n in _post_order(n5)]
+        value_list = [n.value for n in publish_step._post_order(n5)]
         self.assertEquals(value_list, [1, 2, 3, 4, 5])
 
 
 class StepTests(PublisherBase):
 
     def test_add_child(self):
-        step = Step('foo')
-        step2 = Step('step2')
-        step3 = Step('step3')
+        step = publish_step.Step('foo')
+        step2 = publish_step.Step('step2')
+        step3 = publish_step.Step('step3')
         step.add_child(step2)
         step.add_child(step3)
         self.assertEquals(step.children, [step2, step3])
 
     def test_insert_child(self):
-        step = Step('foo')
-        step2 = Step('step2')
-        step3 = Step('step3')
-        step4 = Step('step4')
+        step = publish_step.Step('foo')
+        step2 = publish_step.Step('step2')
+        step3 = publish_step.Step('step3')
+        step4 = publish_step.Step('step4')
         step.add_child(step2)
         step.add_child(step3)
         step.insert_child(0, step4)
         self.assertEquals(step.children, [step4, step2, step3])
 
     def test_get_status_conduit(self):
-        step = Step('foo_step')
+        step = publish_step.Step('foo_step')
         step.status_conduit = 'foo'
         self.assertEquals('foo', step.get_status_conduit())
 
     def test_get_status_conduit_from_parent(self):
-        step = Step('foo_step')
+        step = publish_step.Step('foo_step')
         step.parent = Mock()
         step.parent.get_status_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_status_conduit())
+
+    def test_get_total(self):
+        step = publish_step.Step('foo_step')
+        self.assertEquals(1, step.get_total())
+
+    def test__get_total(self):
+        step = publish_step.Step('foo_step')
+        step.get_total = Mock(return_value=3)
+        self.assertEquals(3, step._get_total())
+
+    def test_report_progress_disable_reporting(self):
+        """
+        Test that we can disable reporting when calling report_progress()
+        """
+        step = publish_step.Step('foo_step', disable_reporting=True)
+        step.status_conduit = Mock()
+        step.report_progress()
+        self.assertFalse(step.status_conduit.report_progress.called)
 
 
 class PluginStepTests(PluginBase):
@@ -125,61 +145,84 @@ class PluginStepTests(PluginBase):
     can be removed.
     """
 
-    def test_get_working_dir_already_calculated(self):
-        step = PluginStep('foo_step')
+    def test_get_working_dir_from_step(self):
+        """
+        Test getting the working dir if it has already been calculated or set on this step
+        """
+        step = publish_step.PluginStep('foo_step')
         step.working_dir = 'foo'
         self.assertEquals('foo', step.get_working_dir())
 
-    def test_get_working_dir_from_repo(self):
-        step = PluginStep('foo_step')
-        step.get_repo = Mock(return_value=Mock(working_dir='foo'))
+    @patch('pulp.plugins.util.publish_step.common_utils.get_working_directory')
+    def test_get_working_dir_from_util(self, mock_get_working_dir):
+        """
+        Test getting the working dir from the utilities
+        """
+        step = publish_step.PluginStep('foo_step')
+        mock_get_working_dir.return_value = 'foo'
+        self.assertEquals('foo', step.get_working_dir())
+
+    def test_get_working_dir_from_parent(self):
+        """
+        Test getting the working dir from a parent step
+        """
+        step = publish_step.PluginStep('foo_step')
+        step.parent = Mock(get_working_dir=Mock(return_value='foo'))
         self.assertEquals('foo', step.get_working_dir())
 
     def test_get_repo(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.repo = 'foo'
         self.assertEquals('foo', step.get_repo())
 
     def test_get_repo_from_parent(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.conduit = 'foo'
         step.parent = Mock()
         step.parent.get_repo.return_value = 'foo'
         self.assertEquals('foo', step.get_repo())
 
     def test_get_plugin_type(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.plugin_type = 'foo'
         self.assertEquals('foo', step.get_plugin_type())
 
     def test_get_plugin_type_none(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         self.assertEquals(None, step.get_plugin_type())
 
     def test_get_plugin_type_from_parent(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.conduit = 'foo'
         step.parent = Mock()
         step.parent.get_plugin_type.return_value = 'foo'
         self.assertEquals('foo', step.get_plugin_type())
 
     def test_get_conduit(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.conduit = 'foo'
         self.assertEquals('foo', step.get_conduit())
 
     def test_get_conduit_from_parent(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.conduit = 'foo'
         step.parent = Mock()
         step.parent.get_conduit.return_value = 'foo'
         self.assertEquals('foo', step.get_conduit())
 
+    def test_get_conduit_not_set(self):
+        """
+        Test that if the conduit has not been set in this step or it's parent, that we
+        return None
+        """
+        step = publish_step.PluginStep('foo_step')
+        self.assertEquals(None, step.get_conduit())
+
     @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
     def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
         self.pluginstep.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_get_units.return_value = ['mock_unit']
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.parent = self.pluginstep
         step.finalize = Mock(side_effect=Exception())
         self.assertRaises(Exception, step.process)
@@ -190,20 +233,20 @@ class PluginStepTests(PluginBase):
 
     def test_cancel_before_processing(self):
         self.pluginstep.repo.content_unit_counts = {'FOO_TYPE': 2}
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.is_skipped = Mock()
         step.cancel()
         step.process()
         self.assertEquals(0, step.is_skipped.call_count)
 
     def test_report_progress(self):
-        plugin_step = PluginStep('foo_step')
+        plugin_step = publish_step.PluginStep('foo_step')
         plugin_step.parent = Mock()
         plugin_step.report_progress()
         plugin_step.parent.report_progress.assert_called_once_with(False)
 
     def test_record_failure(self):
-        plugin_step = PluginStep('foo_step')
+        plugin_step = publish_step.PluginStep('foo_step')
         plugin_step.parent = self.pluginstep
 
         error_msg = 'Too bad, so sad'
@@ -221,7 +264,7 @@ class PluginStepTests(PluginBase):
         self.assertEqual(plugin_step.error_details[0], details)
 
     def test_get_progress_report(self):
-        step = PluginStep('foo_step')
+        step = publish_step.PluginStep('foo_step')
         step.error_details = "foo"
         step.state = reporting_constants.STATE_COMPLETE
         step.total_units = 2
@@ -245,7 +288,7 @@ class PluginStepTests(PluginBase):
         compare_dict(report[0], target_report)
 
     def test_get_progress_report_description(self):
-        step = PluginStep('bar_step')
+        step = publish_step.PluginStep('bar_step')
         step.description = 'bar'
         step.error_details = "foo"
         step.state = reporting_constants.STATE_COMPLETE
@@ -270,8 +313,8 @@ class PluginStepTests(PluginBase):
         compare_dict(report[0], target_report)
 
     def test_get_progress_report_summary(self):
-        parent_step = PluginStep('parent_step')
-        step = PluginStep('foo_step')
+        parent_step = publish_step.PluginStep('parent_step')
+        step = publish_step.PluginStep('foo_step')
         parent_step.add_child(step)
         step.state = reporting_constants.STATE_COMPLETE
         report = parent_step.get_progress_report_summary()
@@ -282,9 +325,9 @@ class PluginStepTests(PluginBase):
 
     def test_build_final_report_success(self):
 
-        step_one = PluginStep('step_one')
+        step_one = publish_step.PluginStep('step_one')
         step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PluginStep('step_two')
+        step_two = publish_step.PluginStep('step_two')
         step_two.state = reporting_constants.STATE_COMPLETE
         self.pluginstep.add_child(step_one)
         self.pluginstep.add_child(step_two)
@@ -296,9 +339,9 @@ class PluginStepTests(PluginBase):
     def test_build_final_report_failure(self):
 
         self.pluginstep.state = reporting_constants.STATE_FAILED
-        step_one = PluginStep('step_one')
+        step_one = publish_step.PluginStep('step_one')
         step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PluginStep('step_two')
+        step_two = publish_step.PluginStep('step_two')
         step_two.state = reporting_constants.STATE_FAILED
         self.pluginstep.add_child(step_one)
         self.pluginstep.add_child(step_two)
@@ -307,10 +350,19 @@ class PluginStepTests(PluginBase):
 
         self.assertFalse(report.success_flag)
 
+    def test_build_final_report_reporting_disable(self):
+        """
+        Test that _build_final_report returnes None if reporting has been disabled
+        """
+        step = publish_step.PluginStep('step_one', disable_reporting=True)
+        report = step._build_final_report()
+        self.assertEquals(report, None)
+
     def test_process_child_on_error_notifies_parent(self):
         # set working_dir and conduit. This is required by process_lifecycle
-        step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
-        child_step = PluginStep('child', working_dir=self.working_dir, conduit=self.conduit)
+        step = publish_step.PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
+        child_step = publish_step.PluginStep(
+            'child', working_dir=self.working_dir, conduit=self.conduit)
         child_step.initialize = Mock(side_effect=Exception('boo'))
         child_step.on_error = Mock(side_effect=Exception('flux'))
         step.on_error = Mock()
@@ -326,9 +378,11 @@ class PluginStepTests(PluginBase):
 
     def test_process_lifecycle(self):
         # set working_dir and conduit. This is required by process_lifecycle
-        step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
+        step = publish_step.PluginStep(
+            'parent', working_dir=self.working_dir, conduit=self.conduit)
         step.process = Mock()
-        child_step = PluginStep('child', working_dir=self.working_dir, conduit=self.conduit)
+        child_step = publish_step.PluginStep(
+            'child', working_dir=self.working_dir, conduit=self.conduit)
         child_step.process = Mock()
         step.add_child(child_step)
         step.report_progress = Mock()
@@ -341,7 +395,7 @@ class PluginStepTests(PluginBase):
 
     def test_process_lifecycle_reports_on_error(self):
         # set working_dir and conduit. This is required by process_lifecycle
-        step = PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
+        step = publish_step.PluginStep('parent', working_dir=self.working_dir, conduit=self.conduit)
         step.process = Mock(side_effect=Exception('Foo'))
         step.report_progress = Mock()
 
@@ -352,7 +406,7 @@ class PluginStepTests(PluginBase):
     @patch('pulp.plugins.util.publish_step.shutil.rmtree')
     @patch('pulp.plugins.util.publish_step.Step.process_lifecycle', side_effect=Exception('foo'))
     def test_process_lifecycle_exception_still_removes_working_dir(self, super_pl, mock_rmtree):
-        step = PluginStep("foo", working_dir=self.working_dir, conduit=self.conduit)
+        step = publish_step.PluginStep("foo", working_dir=self.working_dir, conduit=self.conduit)
         step._build_final_report = Mock()
         self.assertRaises(Exception, step.process_lifecycle)
         super_pl.assert_called_once_with()
@@ -365,7 +419,7 @@ class PluginStepTests(PluginBase):
         # self.working_directory to None so that we don't go up the step repo
         # chain looking for working_dirs
         mock_wd.return_value = None
-        step = PluginStep("foo")
+        step = publish_step.PluginStep("foo")
         self.assertRaises(RuntimeError, step.process_lifecycle)
 
     @patch('pulp.plugins.util.publish_step.PluginStep._build_final_report')
@@ -376,226 +430,55 @@ class PluginStepTests(PluginBase):
                                                         mock_build_report):
         new_dir = os.path.join(self.working_dir, 'test', 'bar')
         mock_wd.return_value = new_dir
-        step = PluginStep("foo")
+        step = publish_step.PluginStep("foo")
         step.process_lifecycle()
         self.assertTrue(os.path.exists(new_dir))
         mock_rmtree.assert_called_once_with(new_dir, ignore_errors=True)
 
+    def test_clear_children(self):
+        step = publish_step.PublishStep("foo")
+        step.children = ['bar']
+        step.clear_children()
+        self.assertEquals(0, len(step.children))
+
 
 class PublishStepTests(PublisherBase):
 
-    def test_get_working_dir_already_calculated(self):
-        step = PublishStep('foo_step')
-        step.working_dir = 'foo'
-        self.assertEquals('foo', step.get_working_dir())
-
-    def test_get_working_dir_from_repo(self):
-        step = PublishStep('foo_step')
-        step.get_repo = Mock(return_value=Mock(working_dir='foo'))
-        self.assertEquals('foo', step.get_working_dir())
-
-    def test_get_repo(self):
-        step = PublishStep('foo_step')
-        step.repo = 'foo'
-        self.assertEquals('foo', step.get_repo())
-
-    def test_get_repo_from_parent(self):
-        step = PublishStep('foo_step')
-        step.conduit = 'foo'
-        step.parent = Mock()
-        step.parent.get_repo.return_value = 'foo'
-        self.assertEquals('foo', step.get_repo())
-
     def test_get_distributor_type(self):
-        step = PublishStep('foo_step')
+        step = publish_step.PublishStep('foo_step')
         step.plugin_type = 'foo'
         self.assertEquals('foo', step.get_distributor_type())
 
     def test_get_distributor_type_none(self):
-        step = PublishStep('foo_step')
+        step = publish_step.PublishStep('foo_step')
         self.assertEquals(None, step.get_distributor_type())
 
     def test_get_distributor_type_from_parent(self):
-        step = PublishStep('foo_step')
+        step = publish_step.PublishStep('foo_step')
         step.conduit = 'foo'
         step.parent = Mock()
         step.parent.get_plugin_type.return_value = 'foo'
         self.assertEquals('foo', step.get_distributor_type())
 
-    def test_get_conduit(self):
-        step = PublishStep('foo_step')
-        step.conduit = 'foo'
-        self.assertEquals('foo', step.get_conduit())
-
-    def test_get_conduit_from_parent(self):
-        step = PublishStep('foo_step')
-        step.conduit = 'foo'
-        step.parent = Mock()
-        step.parent.get_conduit.return_value = 'foo'
-        self.assertEquals('foo', step.get_conduit())
-
-    @patch('pulp.plugins.conduits.repo_publish.RepoPublishConduit.get_units')
-    def test_process_step_failure_reported_on_metadata_finalized(self, mock_get_units):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
-        mock_get_units.return_value = ['mock_unit']
-        step = PublishStep('foo_step')
-        step.parent = self.publisher
-        step.finalize = Mock(side_effect=Exception())
-        self.assertRaises(Exception, step.process)
-        self.assertEquals(step.state, reporting_constants.STATE_FAILED)
-        self.assertEquals(step.progress_successes, 1)
-        self.assertEquals(step.progress_failures, 1)
-        self.assertEquals(step.total_units, 1)
-
-    def test_cancel_before_processing(self):
-        self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
-        step = PublishStep('foo_step')
-        step.is_skipped = Mock()
-        step.cancel()
-        step.process()
-        self.assertEquals(0, step.is_skipped.call_count)
-
-    def test_report_progress(self):
-        publish_step = PublishStep('foo_step')
-        publish_step.parent = Mock()
-        publish_step.report_progress()
-        publish_step.parent.report_progress.assert_called_once_with(False)
-
-    def test_record_failure(self):
-        publish_step = PublishStep('foo_step')
-        publish_step.parent = self.publisher
-
-        error_msg = 'Too bad, so sad'
-
-        try:
-            raise Exception(error_msg)
-
-        except Exception, e:
-            tb = sys.exc_info()[2]
-            publish_step._record_failure(e, tb)
-
-        self.assertEquals(publish_step.progress_failures, 1)
-        details = {'error': str(e),
-                   'traceback': '\n'.join(traceback.format_tb(tb))}
-        self.assertEqual(publish_step.error_details[0], details)
-
-    def test_get_progress_report(self):
-        step = PublishStep('foo_step')
-        step.error_details = "foo"
-        step.state = reporting_constants.STATE_COMPLETE
-        step.total_units = 2
-        step.progress_successes = 1
-        step.progress_failures = 1
-        report = step.get_progress_report()
-
-        target_report = {
-            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'foo_step',
-            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
-            reporting_constants.PROGRESS_STATE_KEY: step.state,
-            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
-            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
-            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
-            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
-            reporting_constants.PROGRESS_DESCRIPTION_KEY: '',
-            reporting_constants.PROGRESS_DETAILS_KEY: '',
-            reporting_constants.PROGRESS_STEP_UUID: step.uuid
-        }
-
-        compare_dict(report[0], target_report)
-
-    def test_get_progress_report_description(self):
-        step = PublishStep('bar_step')
-        step.description = 'bar'
-        step.progress_details = 'baz'
-        step.error_details = "foo"
-        step.state = reporting_constants.STATE_COMPLETE
-        step.total_units = 2
-        step.progress_successes = 1
-        step.progress_failures = 1
-        report = step.get_progress_report()
-
-        target_report = {
-            reporting_constants.PROGRESS_STEP_TYPE_KEY: 'bar_step',
-            reporting_constants.PROGRESS_NUM_SUCCESSES_KEY: 1,
-            reporting_constants.PROGRESS_STATE_KEY: step.state,
-            reporting_constants.PROGRESS_ERROR_DETAILS_KEY: step.error_details,
-            reporting_constants.PROGRESS_NUM_PROCESSED_KEY: 2,
-            reporting_constants.PROGRESS_NUM_FAILURES_KEY: 1,
-            reporting_constants.PROGRESS_ITEMS_TOTAL_KEY: 2,
-            reporting_constants.PROGRESS_DESCRIPTION_KEY: 'bar',
-            reporting_constants.PROGRESS_DETAILS_KEY: 'baz',
-            reporting_constants.PROGRESS_STEP_UUID: step.uuid
-        }
-
-        compare_dict(report[0], target_report)
-
-    def test_get_progress_report_summary(self):
-        parent_step = PublishStep('parent_step')
-        step = PublishStep('foo_step')
-        parent_step.add_child(step)
-        step.state = reporting_constants.STATE_COMPLETE
-        report = parent_step.get_progress_report_summary()
-        target_report = {
-            'foo_step': reporting_constants.STATE_COMPLETE
-        }
-        compare_dict(report, target_report)
-
     @patch('pulp.plugins.util.misc.create_symlink')
     def test_create_symlink(self, mock_symlink):
-        step = PublishStep("foo")
+        step = publish_step.PublishStep("foo")
         step._create_symlink('foo', 'bar')
         mock_symlink.assert_called_once_with('foo', 'bar')
 
     @patch('pulp.plugins.util.misc.clear_directory')
     def test_clear_directory(self, mock_clear):
-        step = PublishStep("foo")
+        step = publish_step.PublishStep("foo")
 
         step._clear_directory(self.working_dir, ['two'])
         mock_clear.assert_called_once_with(self.working_dir, ['two'])
 
-    def test_get_total(self):
-        step = PublishStep("foo")
-        self.assertEquals(1, step._get_total())
-
-    def test_clear_children(self):
-        step = PublishStep("foo")
-        step.children = ['bar']
-        step.clear_children()
-        self.assertEquals(0, len(step.children))
-
     def test_publish(self):
         # just test that process_lifecycle got called, that is where the functionality lives now
-        step = PublishStep("foo")
+        step = publish_step.PublishStep("foo")
         step.process_lifecycle = Mock()
         step.publish()
         self.assertTrue(step.process_lifecycle.called)
-
-    def test_build_final_report_success(self):
-
-        step_one = PublishStep('step_one')
-        step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PublishStep('step_two')
-        step_two.state = reporting_constants.STATE_COMPLETE
-        self.publisher.add_child(step_one)
-        self.publisher.add_child(step_two)
-
-        report = self.publisher._build_final_report()
-
-        self.assertTrue(report.success_flag)
-
-    def test_build_final_report_failure(self):
-
-        self.publisher.state = reporting_constants.STATE_FAILED
-        step_one = PublishStep('step_one')
-        step_one.state = reporting_constants.STATE_COMPLETE
-        step_two = PublishStep('step_two')
-        step_two.state = reporting_constants.STATE_FAILED
-        self.publisher.add_child(step_one)
-        self.publisher.add_child(step_two)
-
-        report = self.publisher._build_final_report()
-
-        self.assertFalse(report.success_flag)
 
 
 class UnitPublishStepTests(PublisherBase):
@@ -606,7 +489,7 @@ class UnitPublishStepTests(PublisherBase):
 
     def test_process_step_skip_units(self):
         self.publisher.config = PluginCallConfiguration(None, {'skip': ['FOO']})
-        step = UnitPublishStep('foo_step', 'FOO')
+        step = publish_step.UnitPublishStep('foo_step', 'FOO')
         step.parent = self.publisher
         step.process()
         self.assertEquals(step.state, reporting_constants.STATE_SKIPPED)
@@ -616,7 +499,7 @@ class UnitPublishStepTests(PublisherBase):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 0}
         mock_method = Mock()
         mock_get_units.return_value = []
-        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step = publish_step.UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
         step.process_unit = mock_method
         step.process()
@@ -628,7 +511,7 @@ class UnitPublishStepTests(PublisherBase):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_method = Mock()
         mock_get_units.return_value = ['mock_unit']
-        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step = publish_step.UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
         step.process_unit = mock_method
         step.process()
@@ -644,7 +527,7 @@ class UnitPublishStepTests(PublisherBase):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 1}
         mock_method = Mock(side_effect=Exception())
         mock_get_units.return_value = ['mock_unit']
-        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step = publish_step.UnitPublishStep('foo_step', 'FOO_TYPE')
         step.parent = self.publisher
         step.process_unit = mock_method
 
@@ -659,7 +542,7 @@ class UnitPublishStepTests(PublisherBase):
     def test_process_step_cancelled_mid_unit_processing(self, mock_get_units):
         self.publisher.repo.content_unit_counts = {'FOO_TYPE': 2}
         mock_get_units.return_value = ['cancel', 'bar_unit']
-        step = UnitPublishStep('foo_step', 'FOO_TYPE')
+        step = publish_step.UnitPublishStep('foo_step', 'FOO_TYPE')
         self.publisher.add_child(step)
 
         step.process_unit = self._step_canceler
@@ -671,34 +554,34 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(step.total_units, 2)
 
     def test_is_skipped_list(self):
-        step = UnitPublishStep("foo", 'bar')
+        step = publish_step.UnitPublishStep("foo", 'bar')
         step.config = PluginCallConfiguration(None, {'skip': ['bar', 'baz']})
         self.assertTrue(step.is_skipped())
 
     def test_is_skipped_dict(self):
-        step = UnitPublishStep("foo", 'bar')
+        step = publish_step.UnitPublishStep("foo", 'bar')
         step.config = PluginCallConfiguration(None, {'skip': {'bar': True, 'baz': True}})
         self.assertTrue(step.is_skipped())
 
     def test_is_skipped_list_not_skipped(self):
-        step = UnitPublishStep("foo", 'bar')
+        step = publish_step.UnitPublishStep("foo", 'bar')
         step.config = PluginCallConfiguration(None, None)
         self.assertFalse(step.is_skipped())
 
     def test_is_skipped_dict_not_skipped(self):
-        step = UnitPublishStep("foo", 'bar')
+        step = publish_step.UnitPublishStep("foo", 'bar')
         step.config = PluginCallConfiguration(None, None)
         self.assertFalse(step.is_skipped())
 
     def test_get_total(self):
-        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
         step.parent = Mock()
         step.parent.repo.content_unit_counts.get.return_value = 1
         total = step._get_total()
         self.assertEquals(2, total)
 
     def test_get_total_for_list(self):
-        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
         step.parent = Mock()
         step.parent.repo.content_unit_counts.get.return_value = 1
         total = step._get_total()
@@ -706,7 +589,7 @@ class UnitPublishStepTests(PublisherBase):
 
     @patch('pulp.plugins.util.publish_step.manager_factory')
     def test_get_with_association_filter(self, mock_manager_factory):
-        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
         step.association_filters = {'foo': 'bar'}
 
         find_by_criteria = mock_manager_factory.repo_unit_association_query_manager.return_value.\
@@ -719,7 +602,7 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(5, total)
 
     def test_get_total_ignore_filter(self):
-        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
         step.association_filters = {'foo': 'bar'}
         step.parent = Mock()
         step.parent.repo.content_unit_counts.get.return_value = 1
@@ -727,7 +610,7 @@ class UnitPublishStepTests(PublisherBase):
         self.assertEquals(2, total)
 
     def test_get_total_for_none(self):
-        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
         step.parent = Mock()
         step.parent.repo.content_unit_counts.get.return_value = 0
         total = step._get_total()
@@ -735,7 +618,7 @@ class UnitPublishStepTests(PublisherBase):
 
     def test_process_unit_with_no_work(self):
         # Run the blank process unit to ensure no exceptions are raised
-        step = UnitPublishStep("foo", ['bar', 'baz'])
+        step = publish_step.UnitPublishStep("foo", ['bar', 'baz'])
         step.process_unit('foo')
 
 
@@ -749,11 +632,11 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         shutil.rmtree(self.working_directory)
 
     def test_process_main_alternate_id(self):
-        step = AtomicDirectoryPublishStep('foo', 'bar', 'baz', step_type='alternate')
+        step = publish_step.AtomicDirectoryPublishStep('foo', 'bar', 'baz', step_type='alternate')
         self.assertEquals(step.step_id, 'alternate')
 
     def test_process_main_default_id(self):
-        step = AtomicDirectoryPublishStep('foo', 'bar', 'baz')
+        step = publish_step.AtomicDirectoryPublishStep('foo', 'bar', 'baz')
         self.assertEquals(step.step_id, reporting_constants.PUBLISH_STEP_DIRECTORY)
 
     def test_process_main(self):
@@ -761,7 +644,7 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         master_dir = os.path.join(self.working_directory, 'master')
         publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
         publish_dir += '/'
-        step = AtomicDirectoryPublishStep(source_dir, [('/', publish_dir)], master_dir)
+        step = publish_step.AtomicDirectoryPublishStep(source_dir, [('/', publish_dir)], master_dir)
         step.parent = Mock(timestamp=str(time.time()))
 
         # create some files to test
@@ -790,7 +673,7 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
 
         target_qux = os.path.join(self.working_directory, 'publish', 'qux.html')
 
-        step = AtomicDirectoryPublishStep(
+        step = publish_step.AtomicDirectoryPublishStep(
             source_dir, [('/', publish_dir), ('qux/quux.html', target_qux)], master_dir)
         step.parent = Mock(timestamp=str(time.time()))
 
@@ -805,8 +688,8 @@ class TestAtomicDirectoryPublishStep(unittest.TestCase):
         master_dir = os.path.join(self.working_directory, 'master')
         publish_dir = os.path.join(self.working_directory, 'publish', 'bar')
         publish_dir += '/'
-        step = AtomicDirectoryPublishStep(source_dir, [('/', publish_dir)], master_dir,
-                                          only_publish_directory_contents=True)
+        step = publish_step.AtomicDirectoryPublishStep(
+            source_dir, [('/', publish_dir)], master_dir, only_publish_directory_contents=True)
         step.parent = Mock(timestamp=str(time.time()))
 
         # create some files to test
@@ -840,7 +723,7 @@ class TestSaveTarFilePublishStep(unittest.TestCase):
         source_dir = os.path.join(self.working_directory, 'source')
         os.makedirs(source_dir)
         target_file = os.path.join(self.working_directory, 'target', 'target.tar')
-        step = SaveTarFilePublishStep(source_dir, target_file)
+        step = publish_step.SaveTarFilePublishStep(source_dir, target_file)
 
         touch(os.path.join(source_dir, 'foo.txt'))
         step.process_main()
@@ -867,7 +750,7 @@ class TestCopyDirectoryStep(unittest.TestCase):
 
         target_file = os.path.join(target_dir, 'foo.txt')
 
-        step = CopyDirectoryStep(source_dir, target_dir)
+        step = publish_step.CopyDirectoryStep(source_dir, target_dir)
 
         touch(os.path.join(source_dir, 'foo.txt'))
         step.process_main()
@@ -877,7 +760,7 @@ class TestCopyDirectoryStep(unittest.TestCase):
 
 class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
 
-    class DummyStep(PluginStepIterativeProcessingMixin):
+    class DummyStep(publish_step.PluginStepIterativeProcessingMixin):
         """
         A dummy class that provides some stuff that the mixin uses
         """
@@ -890,7 +773,7 @@ class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
         def get_generator(self):
             return (n for n in [1, 2])
 
-    class DummyCanceledStep(PluginStepIterativeProcessingMixin):
+    class DummyCanceledStep(publish_step.PluginStepIterativeProcessingMixin):
         """
         A dummy class that provides some stuff that the mixin uses
         """
@@ -904,7 +787,7 @@ class TestPluginStepIterativeProcessingMixin(unittest.TestCase):
             return (n for n in [1, 2])
 
     def test_get_generator(self):
-        mixin = PluginStepIterativeProcessingMixin()
+        mixin = publish_step.PluginStepIterativeProcessingMixin()
         try:
             mixin.get_generator()
             self.assertTrue(False, "no exception thrown")
@@ -1014,9 +897,10 @@ class DownloadStepTests(unittest.TestCase):
         self.mock_conduit = Mock()
         self.mock_config = Mock()
         self.mock_working_dir = Mock()
-        self.dlstep = DownloadStep("fake_download", repo=self.mock_repo, conduit=self.mock_conduit,
-                                   config=self.mock_config, working_dir=self.mock_working_dir,
-                                   plugin_type="fake plugin", description='foo')
+        self.dlstep = publish_step.DownloadStep(
+            "fake_download", repo=self.mock_repo, conduit=self.mock_conduit,
+            config=self.mock_config, working_dir=self.mock_working_dir,
+            plugin_type="fake plugin", description='foo')
 
     def test_init(self):
         self.assertEquals(self.dlstep.get_repo(), self.mock_repo)
@@ -1103,21 +987,21 @@ class DownloadStepTests(unittest.TestCase):
         self.dlstep.initialize()
         self.assertEqual(self.dlstep.downloader.config.ssl_validation, True)
 
-    def test__get_total(self):
+    def test_get_total(self):
         mock_downloads = ['fake', 'downloads']
-        dlstep = DownloadStep('fake-step', downloads=mock_downloads)
-        self.assertEquals(dlstep._get_total(), 2)
+        dlstep = publish_step.DownloadStep('fake-step', downloads=mock_downloads)
+        self.assertEquals(dlstep.get_total(), 2)
 
     def test__process_block(self):
         mock_downloader = Mock()
         mock_downloads = ['fake', 'downloads']
-        dlstep = DownloadStep('fake-step', downloads=mock_downloads)
+        dlstep = publish_step.DownloadStep('fake-step', downloads=mock_downloads)
         dlstep.downloader = mock_downloader
         dlstep._process_block()
         mock_downloader.download.assert_called_once_with(['fake', 'downloads'])
 
     def test_download_succeeded(self):
-        dlstep = DownloadStep('fake-step')
+        dlstep = publish_step.DownloadStep('fake-step')
         mock_report = Mock()
         mock_report_progress = Mock()
         dlstep.report_progress = mock_report_progress
@@ -1127,7 +1011,7 @@ class DownloadStepTests(unittest.TestCase):
         mock_report_progress.assert_called_once_with()
 
     def test_download_failed(self):
-        dlstep = DownloadStep('fake-step')
+        dlstep = publish_step.DownloadStep('fake-step')
         mock_report = Mock()
         mock_report_progress = Mock()
         dlstep.report_progress = mock_report_progress
@@ -1138,7 +1022,7 @@ class DownloadStepTests(unittest.TestCase):
 
     def test_downloads_property(self):
         generator = (DownloadRequest(url, '/a/b/c') for url in ['http://pulpproject.org'])
-        dlstep = DownloadStep('fake-step', downloads=generator)
+        dlstep = publish_step.DownloadStep('fake-step', downloads=generator)
 
         downloads = dlstep.downloads
 
@@ -1147,7 +1031,7 @@ class DownloadStepTests(unittest.TestCase):
         self.assertTrue(isinstance(downloads[0], DownloadRequest))
 
     def test_cancel(self):
-        dlstep = DownloadStep('fake-step')
+        dlstep = publish_step.DownloadStep('fake-step')
         dlstep.parent = MagicMock()
         dlstep.initialize()
 
@@ -1156,32 +1040,35 @@ class DownloadStepTests(unittest.TestCase):
         self.assertTrue(dlstep.downloader.is_canceled)
 
 
-@patch('pulp.server.managers.content.query.ContentQueryManager.get_multiple_units_by_keys_dicts',
-       spec_set=True)
+@patch('pulp.plugins.util.publish_step.repo_controller.associate_single_unit')
+@patch('pulp.plugins.util.publish_step.units_controller.find_units')
 class TestGetLocalUnitsStep(unittest.TestCase):
-    class DemoGetLocalUnitsStep(GetLocalUnitsStep):
-        def _dict_to_unit(self, unit_dict):
-            return Unit('fake_unit_type', unit_dict, {}, '')
+
+    class DemoModel(model.ContentUnit):
+        key_field = mongoengine.StringField()
+        unit_key_fields = ['key_field']
+
+        unit_type_id = 'demo_model'
+
+        objects = MagicMock()
+        save = MagicMock()
 
     def setUp(self):
         super(TestGetLocalUnitsStep, self).setUp()
         self.parent = MagicMock()
-        self.step = self.DemoGetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
-                                               ['foo'], '/a/b/c')
+        self.step = publish_step.GetLocalUnitsStep('fake_importer_type', repo='fake_repo')
         self.step.parent = self.parent
         self.step.conduit = MagicMock()
         self.parent.available_units = []
 
-    def test_no_available_units(self, mock_get_multiple):
-        mock_get_multiple.return_value = []
-
+    def test_no_available_units(self, mock_find_units, mock_associate):
         self.step.process_main()
 
         self.assertEqual(self.step.conduit.save_unit.call_count, 0)
         self.assertEqual(self.step.units_to_download, [])
 
     @patch('pulp.plugins.util.publish_step.misc.paginate')
-    def test_calls_get_multiple(self, mock_paginate, mock_get_multiple):
+    def test_calls_get_multiple(self, mock_paginate, mock_find_units, mock_associate):
         """
         ensure that paginate is used
         """
@@ -1191,51 +1078,63 @@ class TestGetLocalUnitsStep(unittest.TestCase):
 
         mock_paginate.assert_called_once_with(self.step.parent.available_units, 50)
 
-    def test_saves_unit(self, mock_get_multiple):
-        mock_get_multiple.return_value = [{'foo': 'a'}]
-        self.parent.available_units = [{'foo': 'a'}]
+    def test_saves_unit(self, mock_find_units, mock_associate):
+        """
+        Test that units which already exist in the database are associated properly
+        """
+        # mock_get_multiple.return_value = [self.DemoModel(key_field='a')]
+
+        demo = self.DemoModel(key_field='a')
+        self.parent.available_units = [demo]
+        existing_demo = self.DemoModel(key_field='a', id='foo')
+        mock_find_units.return_value = [existing_demo]
 
         self.step.process_main()
+        mock_associate.assert_called_once_with('fake_repo', existing_demo)
+        mock_find_units.assert_called_once_with((demo, ))
 
-        self.step.conduit.save_unit.assert_called_once_with(Unit('fake_unit_type',
-                                                            {'foo': 'a'}, {}, ''))
-
-    def test_populates_units_to_download(self, mock_get_multiple):
-        mock_get_multiple.return_value = [{'foo': 'a'}]
-        # this unit should be identified as one that should get downloaded, since
-        # it wasn't returned by the get_multiple query.
-        self.parent.available_units = [{'foo': 'b'}]
-
-        self.step.process_main()
-
-        self.assertEqual(self.step.units_to_download, [{'foo': 'b'}])
-
-    def test_empty_units_to_download(self, mock_get_multiple):
-        mock_get_multiple.return_value = [{'foo': 'a'}]
-        # this unit should not be identified as one that should get downloaded, since
-        # it was returned by the get_multiple query.
-        self.parent.available_units = [{'foo': 'a'}]
-
-        self.step.process_main()
-
+        # Ensure that the unit was not marked for download
         self.assertEqual(self.step.units_to_download, [])
 
-    def test_dict_to_unit_not_implemented(self, mock_get_multiple):
-        step = GetLocalUnitsStep('fake_importer_type', 'fake_unit_type',
-                                 ['foo'], '/a/b/c')
-        self.assertRaises(NotImplementedError, step._dict_to_unit, {'image_id': 'abc123'})
+    def test_populates_units_to_download(self, mock_find_units, mock_associate):
+        """
+        Test that if a unit does not exist in the database it is added to the
+        units_to_download list
+        """
+        demo_1 = self.DemoModel(key_field='a')
+        demo_2 = self.DemoModel(key_field='b')
+        self.parent.available_units = [demo_1, demo_2]
+        existing_demo = self.DemoModel(key_field='b', id='foo')
+        mock_find_units.return_value = [existing_demo]
+
+        self.step.process_main()
+        mock_find_units.assert_called_once_with((demo_1, demo_2))
+
+        # The one that exists is associated
+        mock_associate.assert_called_once_with('fake_repo', existing_demo)
+        # The one that does not exist yet is added to the download list
+        self.assertEqual(self.step.units_to_download, [demo_1])
+
+
+class TestSaveUnitsStep(unittest.TestCase):
+
+    @patch('pulp.plugins.util.publish_step.repo_controller')
+    def test_finalize(self, mock_repo_controller):
+        step = publish_step.SaveUnitsStep('foo_type', repo='bar')
+        step.finalize()
+        mock_repo_controller.rebuild_content_unit_counts.assert_called_once_with('bar')
 
 
 class TestCreateManifestStep(unittest.TestCase):
     def test_init(self):
-        step = CreatePulpManifestStep('/foo')
+        step = publish_step.CreatePulpManifestStep('/foo')
 
         # make sure the description has some value
         self.assertTrue(step.description)
 
     @patch('pulp.plugins.util.manifest_writer.make_manifest_for_dir', spec_set=True)
     def test_process_main(self, mock_make_manifest):
-        step = CreatePulpManifestStep('/foo/')
+        step = publish_step.CreatePulpManifestStep('/foo/')
 
         step.process_main()
 
