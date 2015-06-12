@@ -78,6 +78,19 @@ class TestSearchView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
+    @mock.patch('pulp.server.webservices.views.search.SearchView._parse_args')
+    def test_get_with_invalid_filters(self, mock_parse):
+        """
+        InvalidValue should be raised if param 'filters' is not json.
+        """
+        mock_parse.return_value = ({'mock': 'query'}, 'tuple')
+        search_view = search.SearchView()
+        mock_request = mock.MagicMock()
+        mock_request.GET = http.QueryDict('filters=invalid json')
+        self.assertRaises(exceptions.InvalidValue, search_view.get, mock_request)
+
+    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
+                new=assert_auth_READ())
     def test_post(self):
         """
         Test the POST search under normal conditions.
