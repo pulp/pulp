@@ -1,1 +1,1 @@
-el6 el7 fc20 fc21
+el6 el7 fc21 fc22
