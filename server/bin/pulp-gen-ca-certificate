@@ -26,7 +26,7 @@ PULP_CONF=(`python -c "$READ_PULP_CONF"`)
 TMP=/tmp/$RANDOM
 CA_KEY=${PULP_CONF[0]}
 CA_CRT=${PULP_CONF[1]}
-CN=`hostname`
+CN=`hostname --fqdn`
 ORG="PULP"
 
 mkdir -p $TMP
