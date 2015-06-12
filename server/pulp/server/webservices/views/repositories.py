@@ -92,21 +92,24 @@ def _process_repos(repos, details, importers, distributors):
 
     :param repos: collection of repositories
     :type  repos: list, tuple
-    :param importers: if `true`, adds related importers under the attribute "importers".
-    :type  importers: str
-    :param distributors: if `true`, adds related distributors under the attribute "distributors"
-    :type  distributors: str
+    :param details: if True, sets both "importers" and "distributors" to True regardless of any
+                    value that may have been passed in.
+    :type  details: bool
+    :param importers: if True, adds related importers under the attribute "importers".
+    :type  importers: bool
+    :param distributors: if True, adds related distributors under the attribute "distributors"
+    :type  distributors: bool
 
     :return: the same list that was passed in, just for convenience. The list itself is not
              modified- only its members are modified in-place.
     :rtype:  list of Repo instances
     """
-    if details.lower() == 'true':
-        importers = distributors = 'true'
-    if importers.lower() == 'true':
+    if details:
+        importers = distributors = True
+    if importers:
         _merge_related_objects(
             'importers', manager_factory.repo_importer_manager(), repos)
-    if distributors.lower() == 'true':
+    if distributors:
         _merge_related_objects(
             'distributors', manager_factory.repo_distributor_manager(), repos)
     for repo in repos:
@@ -137,9 +140,9 @@ class ReposView(View):
 
         all_repos = list(RepoModel.get_collection().find(projection={'scratchpad': 0}))
 
-        details = request.GET.get('details', 'false')
-        include_importers = request.GET.get('importers', 'false')
-        include_distributors = request.GET.get('distributors', 'false')
+        details = request.GET.get('details', 'false').lower() == 'true'
+        include_importers = request.GET.get('importers', 'false').lower() == 'true'
+        include_distributors = request.GET.get('distributors', 'false').lower() == 'true'
 
         _process_repos(
             all_repos,
@@ -294,7 +297,7 @@ class RepoSearch(search.SearchView):
     Adds GET and POST searching for repositories.
     """
     manager = repo_query.RepoQueryManager()
-    optional_fields = ['details', 'importers', 'distributors']
+    optional_bool_fields = ('details', 'importers', 'distributors')
     response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
     @classmethod
@@ -314,10 +317,9 @@ class RepoSearch(search.SearchView):
         :rtype:  list
         """
         results = list(search_method(query))
-        details = options.get('details', 'false')
-        importers = options.get('importers', 'false')
-        distributors = options.get('distributors', 'false')
-        return _process_repos(results, details, importers, distributors)
+        return _process_repos(results, options.get('details', False),
+                              options.get('importers', False),
+                              options.get('distributors', False))
 
 
 class RepoUnitSearch(search.SearchView):

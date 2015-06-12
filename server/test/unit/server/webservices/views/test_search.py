@@ -117,31 +117,6 @@ class TestSearchView(unittest.TestCase):
         except exceptions.MissingValue, e:
             self.assertEqual(e.property_names, ['criteria'])
 
-    def test__parse_args_no_optional_fields(self):
-        """
-        Test that options are an empty dict and args are full when optional fields are not set.
-        """
-        class FakeSearchView(search.SearchView):
-            pass
-
-        fake_search = FakeSearchView()
-        search_params, options = fake_search._parse_args({'non-optional': 'field'})
-        self.assertEqual(search_params, {'non-optional': 'field'})
-        self.assertEqual(options, {})
-
-    def test__parse_args_with_optional_fields(self):
-        """
-        Test that options are populated and optional fields are removed from args.
-        """
-        class FakeSearchView(search.SearchView):
-            optional_fields = ['optional']
-
-        fake_search = FakeSearchView()
-        search_params, options = fake_search._parse_args({'optional': 'field',
-                                                          'non-optional': 'field'})
-        self.assertEqual(search_params, {'non-optional': 'field'})
-        self.assertEqual(options, {'optional': 'field'})
-
     def test__generate_response_no_fields(self):
         """
         Test that _generate_response() works correctly when the query does not contain fields.
@@ -277,3 +252,77 @@ class TestSearchView(unittest.TestCase):
             {'money': {'$gt': 1000000}})
         self.assertEqual([c[1][0] for c in FakeSearchView.serializer.mock_calls],
                          ['big money', 'bigger money'])
+
+
+class TestParseArgs(unittest.TestCase):
+    class FakeSearchView(search.SearchView):
+        optional_bool_fields = ('opt_bool',)
+        optional_string_fields = ('opt_str',)
+
+    def setUp(self):
+        self.fake_search = self.FakeSearchView()
+
+    def test_no_optional_fields(self):
+        """
+        Test that options are an empty dict and args are full when optional fields are not set.
+        """
+        fake_search = search.SearchView()
+        search_params, options = fake_search._parse_args({'non-optional': 'field'})
+        self.assertEqual(search_params, {'non-optional': 'field'})
+        self.assertEqual(options, {})
+
+    def test_with_optional_fields(self):
+        """
+        Test that options are populated and optional fields are removed from args.
+        """
+        args = http.QueryDict('opt_bool=true&opt_str=hi&non-optional=field')
+
+        search_params, options = self.fake_search._parse_args(args)
+
+        self.assertEqual(search_params, {'non-optional': 'field'})
+        self.assertTrue(options['opt_bool'] is True)
+        self.assertEqual(options['opt_str'], 'hi')
+
+    def test_parse_args_converts_true(self):
+        args = http.QueryDict('opt_bool=true')
+
+        params, options = self.fake_search._parse_args(args)
+
+        self.assertTrue(options['opt_bool'] is True)
+
+    def test_parse_args_converts_TRUE(self):
+        args = http.QueryDict('opt_bool=TRUE')
+
+        params, options = self.fake_search._parse_args(args)
+
+        self.assertTrue(options['opt_bool'] is True)
+
+    def test_parse_args_converts_false(self):
+        args = http.QueryDict('opt_bool=false')
+
+        params, options = self.fake_search._parse_args(args)
+
+        self.assertTrue(options['opt_bool'] is False)
+
+    def test_parse_args_converts_FALSE(self):
+        args = http.QueryDict('opt_bool=FALSE')
+
+        params, options = self.fake_search._parse_args(args)
+
+        self.assertTrue(options['opt_bool'] is False)
+
+    def test_parse_args_preserves_true(self):
+        args = http.QueryDict('', mutable=True)
+        args['opt_bool'] = True
+
+        params, options = self.fake_search._parse_args(args)
+
+        self.assertTrue(options['opt_bool'] is True)
+
+    def test_parse_args_preserves_false(self):
+        args = http.QueryDict('', mutable=True)
+        args['opt_bool'] = False
+
+        params, options = self.fake_search._parse_args(args)
+
+        self.assertTrue(options['opt_bool'] is False)
