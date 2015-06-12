@@ -70,7 +70,7 @@ _default_values = {
         'serial_number_path': '/var/lib/pulp/sn.dat',
     },
     'server': {
-        'server_name': socket.gethostname(),
+        'server_name': socket.getfqdn(),
         'default_login': 'admin',
         'default_password': 'admin',
         'debugging_mode': 'false',
