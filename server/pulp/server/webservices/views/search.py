@@ -77,9 +77,16 @@ class SearchView(generic.View):
         :type  request: django.core.handlers.wsgi.WSGIRequest
         :return:        HttpReponse containing a list of objects that were matched by the request
         :rtype:         django.http.HttpResponse
+
+        :raises InvalidValue: if filters is passed but is not valid JSON
         """
         query, options = self._parse_args(request.GET)
-        query['filters'] = json.loads(request.GET.get('filters'))
+        filters = request.GET.get('filters')
+        if filters:
+            try:
+                query['filters'] = json.loads(filters)
+            except ValueError:
+                raise exceptions.InvalidValue('filters')
 
         fields = query.pop('field', '')
         if fields:
