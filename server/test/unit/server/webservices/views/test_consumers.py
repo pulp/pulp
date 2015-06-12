@@ -38,7 +38,6 @@ class Test_expand_consumers(unittest.TestCase):
         """
         Test for consumer info expansion with details/bindings
         """
-        options = {'details': 'true'}
         consumers_list = [{'id': 'c1'}]
         bindings = [{'consumer_id': 'c1', 'repo_id': 'repo1', 'distributor_id': 'dist1'}]
         mock_factory.return_value.find_by_criteria.return_value = bindings
@@ -46,7 +45,7 @@ class Test_expand_consumers(unittest.TestCase):
                                               'distributor_id': 'dist1',
                                               '_href': '/some/c1/some_bind/'}
 
-        cons = consumers.expand_consumers(options, consumers_list)
+        cons = consumers.expand_consumers(True, False, consumers_list)
         expected_cons = [{'id': 'c1', 'bindings': [{'consumer_id': 'c1', 'repo_id': 'repo1',
                          'distributor_id': 'dist1', '_href': '/some/c1/some_bind/'}]}]
         self.assertEqual(cons, expected_cons)
@@ -418,7 +417,7 @@ class TestConsumerSearchView(unittest.TestCase):
         """
         self.assertEqual(ConsumerSearchView.response_builder,
                          util.generate_json_response_with_pulp_encoder)
-        self.assertEqual(ConsumerSearchView.optional_fields, ['details', 'bindings'])
+        self.assertEqual(ConsumerSearchView.optional_bool_fields, ('details', 'bindings'))
         self.assertTrue(isinstance(ConsumerSearchView.manager, query.ConsumerQueryManager))
 
     @mock.patch('pulp.server.webservices.views.consumers.add_link')
@@ -434,7 +433,7 @@ class TestConsumerSearchView(unittest.TestCase):
 
         consumer_search = ConsumerSearchView()
         serialized_results = consumer_search.get_results(query, search_method, options)
-        mock_expand.assert_called_once_with({'mock': 'options'}, list(search_method.return_value))
+        mock_expand.assert_called_once_with(False, False, list(search_method.return_value))
         mock_add_link.assert_has_calls([mock.call('result_1'), mock.call('result_2')])
         self.assertEqual(serialized_results, mock_expand.return_value)
 

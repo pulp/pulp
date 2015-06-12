@@ -46,7 +46,8 @@ class SearchView(generic.View):
     """
 
     response_builder = staticmethod(util.generate_json_response)
-    optional_fields = []
+    optional_string_fields = tuple()
+    optional_bool_fields = tuple()
 
     @classmethod
     def _parse_args(cls, args):
@@ -54,17 +55,28 @@ class SearchView(generic.View):
         Some search views are required to be able to include extra information. This function
         separates those flags from the search arguments.
         :param args: Search parameters mixed with extra options. Any extra options should be
-                     removed and returned seperately.
+                     removed and returned separately.
         :type  args: django.http.QueryDict
 
         :return: filtered search parameters and options
         :rtype:  tuple containing a 2 dicts
         """
-        search_params = dict(args)
+        search_params = {}
         options = {}
-        for field in cls.optional_fields:
-            if search_params.get(field):
-                options[field] = search_params.pop(field)
+
+        for field in filter(args.__contains__, cls.optional_bool_fields):
+            value = args.get(field)
+            if isinstance(value, basestring):
+                options[field] = value.lower() == 'true'
+            else:
+                options[field] = value
+
+        for field in filter(args.__contains__, cls.optional_string_fields):
+            options[field] = args.get(field)
+
+        for field in args.iterkeys():
+            if field not in options:
+                search_params[field] = args.get(field)
 
         return search_params, options
 

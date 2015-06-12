@@ -148,7 +148,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        repositories._process_repos(mock_repos, 'false', 'false', 'false')
+        repositories._process_repos(mock_repos, False, False, False)
         mock_rev.assert_has_calls(
             [mock.call('repo_resource', kwargs={'repo_id': 'mock1'}),
              mock.call('repo_resource', kwargs={'repo_id': 'mock2'})]
@@ -169,7 +169,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        repositories._process_repos(mock_repos, 'true', 'false', 'false')
+        repositories._process_repos(mock_repos, True, False, False)
         mock_merge.assert_has_calls(
             [mock.call('importers', mock_factory.repo_importer_manager(), mock_repos),
              mock.call('distributors', mock_factory.repo_distributor_manager(), mock_repos)]
@@ -191,7 +191,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1', 'scratchpad': 'should be removed'}, {'id': 'mock2'}]
-        repositories._process_repos(mock_repos, 'false', 'false', 'false')
+        repositories._process_repos(mock_repos, False, False, False)
         mock_rev.assert_has_calls(
             [mock.call('repo_resource', kwargs={'repo_id': 'mock1'}),
              mock.call('repo_resource', kwargs={'repo_id': 'mock2'})]
@@ -219,7 +219,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         response = repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, False, False)
         mock_resp.assert_called_once_with(mock_collection().find.return_value)
         self.assertTrue(response is mock_resp.return_value)
 
@@ -239,7 +239,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'true', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, True, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -260,7 +260,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -278,7 +278,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'True', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, True, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -296,7 +296,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'yes', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -314,7 +314,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'true', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, True, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -332,7 +332,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'true')
+        mock_process.assert_called_once_with(mock_repos, False, False, True)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -711,7 +711,7 @@ class TestRepoSearch(unittest.TestCase):
         """
         repo_search = RepoSearch()
         self.assertTrue(isinstance(repo_search.manager, repo_query.RepoQueryManager))
-        self.assertEqual(repo_search.optional_fields, ['details', 'importers', 'distributors'])
+        self.assertEqual(repo_search.optional_bool_fields, ('details', 'importers', 'distributors'))
         self.assertEqual(repo_search.response_builder,
                          util.generate_json_response_with_pulp_encoder)
 

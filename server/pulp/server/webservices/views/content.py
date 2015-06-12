@@ -238,7 +238,7 @@ class ContentUnitSearch(search.SearchView):
     """
     Adds GET and POST searching for content units.
     """
-    optional_fields = ['include_repos']
+    optional_bool_fields = ('include_repos',)
     manager = content_query.ContentQueryManager()
 
     @staticmethod
@@ -283,7 +283,7 @@ class ContentUnitSearch(search.SearchView):
         type_id = kwargs['type_id']
         units = list(search_method(type_id, query))
         units = [_process_content_unit(unit, type_id) for unit in units]
-        if options.get('include_repos', 'false').lower() == "true":
+        if options.get('include_repos') is True:
             cls._add_repo_memberships(units, type_id)
         return units
 
