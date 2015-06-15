@@ -247,12 +247,14 @@ class PluginTestBase(ServerTests):
                 self.UNIT_TYPE_ID,
                 unit_id,
                 unit)
+            content_manager = managers.content_query_manager()
             manager = managers.repo_unit_association_manager()
             # associate unit
             manager.associate_unit_by_id(
                 self.REPO_ID,
                 self.UNIT_TYPE_ID,
                 unit_id)
+            unit = content_manager.get_content_unit_by_id(self.UNIT_TYPE_ID, unit_id)
             units.append(unit)
         return units
 
