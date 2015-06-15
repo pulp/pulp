@@ -16,7 +16,7 @@ import urlparse
 from M2Crypto import X509
 import mock
 
-import pulp.repoauth.oid_validation as oid_validation
+import pulp.oid_validation.oid_validation as oid_validation
 from pulp.repoauth.repo_cert_utils import RepoCertUtils
 
 DATA_DIR = os.path.abspath(os.path.dirname(__file__)) + '/data'
@@ -65,9 +65,9 @@ class TestOidValidation(unittest.TestCase):
         ca_cert = X509.load_cert_string(ca_pem)
         return cert.verify(ca_cert.get_pubkey())
 
-    @mock.patch('pulp.repoauth.oid_validation.OidValidator._check_extensions',
+    @mock.patch('pulp.oid_validation.oid_validation.OidValidator._check_extensions',
                 return_value=True)
-    @mock.patch('pulp.repoauth.oid_validation.RepoCertUtils.validate_certificate_pem')
+    @mock.patch('pulp.oid_validation.oid_validation.RepoCertUtils.validate_certificate_pem')
     @mock.patch(
         'pulp.repoauth.protected_repo_utils.ProtectedRepoUtils.read_protected_repo_listings')
     @mock.patch('pulp.repoauth.repo_cert_utils.RepoCertUtils.read_consumer_cert_bundle')
@@ -90,8 +90,8 @@ class TestOidValidation(unittest.TestCase):
         # It should be valid because we mocked _check_extensions to return True
         self.assertEqual(valid, True)
 
-    @mock.patch('pulp.repoauth.oid_validation.OidValidator._check_extensions')
-    @mock.patch('pulp.repoauth.oid_validation.RepoCertUtils.validate_certificate_pem',
+    @mock.patch('pulp.oid_validation.oid_validation.OidValidator._check_extensions')
+    @mock.patch('pulp.oid_validation.oid_validation.RepoCertUtils.validate_certificate_pem',
                 return_value=False)
     @mock.patch(
         'pulp.repoauth.protected_repo_utils.ProtectedRepoUtils.read_protected_repo_listings')
@@ -117,8 +117,8 @@ class TestOidValidation(unittest.TestCase):
         # _check_extensions shouldn't have been called
         self.assertEqual(_check_extensions.call_count, 0)
 
-    @mock.patch('pulp.repoauth.oid_validation.OidValidator._check_extensions')
-    @mock.patch('pulp.repoauth.oid_validation.RepoCertUtils.validate_certificate_pem',
+    @mock.patch('pulp.oid_validation.oid_validation.OidValidator._check_extensions')
+    @mock.patch('pulp.oid_validation.oid_validation.RepoCertUtils.validate_certificate_pem',
                 return_value=False)
     @mock.patch(
         'pulp.repoauth.protected_repo_utils.ProtectedRepoUtils.read_protected_repo_listings')
@@ -655,8 +655,8 @@ class TestOidValidation(unittest.TestCase):
         self.assertTrue(response_y)
         self.assertTrue(response_xx)
 
-    @mock.patch("pulp.repoauth.oid_validation._config")
-    @mock.patch("pulp.repoauth.oid_validation.OidValidator")
+    @mock.patch("pulp.oid_validation.oid_validation._config")
+    @mock.patch("pulp.oid_validation.oid_validation.OidValidator")
     def test_authenticate_loads_config(self, mock_validator, mock_config):
         mock_environ = mock.MagicMock()
 
@@ -664,7 +664,7 @@ class TestOidValidation(unittest.TestCase):
 
         mock_config.assert_called_once_with()
 
-    @mock.patch("pulp.repoauth.oid_validation.SafeConfigParser")
+    @mock.patch("pulp.oid_validation.oid_validation.SafeConfigParser")
     def test_config(self, mock_config_parser):
         mock_config_parser_instance = mock.Mock()
         mock_config_parser.return_value = mock_config_parser_instance

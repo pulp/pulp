@@ -43,13 +43,41 @@ class TestMergeRelatedObjects(unittest.TestCase):
 
         self.assertTrue(len(ret) == 2)
         self.assertEqual(map(itemgetter('id'), ret), ['mock1', 'mock2'])
-        mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1'},
-                                    {'repo_id': 'mock1', 'id': 'mock_importer2'}]
-        mock2_expected_importers = [{'repo_id': 'mock2', 'id': 'mock_importer2'}]
+        mock1_expected_importers = [{'repo_id': 'mock1', 'id': 'mock_importer1',
+                                     '_href': '/v2/repositories/mock1/importers/mock_importer1/'},
+                                    {'repo_id': 'mock1', 'id': 'mock_importer2',
+                                     '_href': '/v2/repositories/mock1/importers/mock_importer2/'}]
+        mock2_expected_importers = [{'repo_id': 'mock2', 'id': 'mock_importer2',
+                                     '_href': '/v2/repositories/mock2/importers/mock_importer2/'}]
         mock1_importers = ret[map(itemgetter('id'), ret).index('mock1')]['importers']
         mock2_importers = ret[map(itemgetter('id'), ret).index('mock2')]['importers']
         self.assertEqual(mock1_importers, mock1_expected_importers)
         self.assertEqual(mock2_importers, mock2_expected_importers)
+
+    def test__merge_related_objects_distributors(self):
+        """
+        Test that objects are included in the appropriate for distributors
+        """
+
+        mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
+        mock_distributors = [{'repo_id': 'mock1', 'id': 'mock_distributor1'},
+                             {'repo_id': 'mock1', 'id': 'mock_distributor2'},
+                             {'repo_id': 'mock2', 'id': 'mock_distributor2'}]
+
+        mock_distributor_manager = mock.MagicMock()
+        mock_distributor_manager.find_by_repo_list.return_value = mock_distributors
+        ret = repositories._merge_related_objects('distributors', mock_distributor_manager,
+                                                  mock_repos)
+
+        self.assertTrue(len(ret) == 2)
+        self.assertEqual(map(itemgetter('id'), ret), ['mock1', 'mock2'])
+        mock1_expected_distributors = [{'repo_id': 'mock1', 'id': 'mock_distributor1'},
+                                       {'repo_id': 'mock1', 'id': 'mock_distributor2'}]
+        mock2_expected_distributors = [{'repo_id': 'mock2', 'id': 'mock_distributor2'}]
+        mock1_distributors = ret[map(itemgetter('id'), ret).index('mock1')]['distributors']
+        mock2_distributors = ret[map(itemgetter('id'), ret).index('mock2')]['distributors']
+        self.assertEqual(mock1_distributors, mock1_expected_distributors)
+        self.assertEqual(mock2_distributors, mock2_expected_distributors)
 
     def test__merge_related_objects_no_objects(self):
         """
@@ -120,7 +148,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        repositories._process_repos(mock_repos, 'false', 'false', 'false')
+        repositories._process_repos(mock_repos, False, False, False)
         mock_rev.assert_has_calls(
             [mock.call('repo_resource', kwargs={'repo_id': 'mock1'}),
              mock.call('repo_resource', kwargs={'repo_id': 'mock2'})]
@@ -141,7 +169,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1'}, {'id': 'mock2'}]
-        repositories._process_repos(mock_repos, 'true', 'false', 'false')
+        repositories._process_repos(mock_repos, True, False, False)
         mock_merge.assert_has_calls(
             [mock.call('importers', mock_factory.repo_importer_manager(), mock_repos),
              mock.call('distributors', mock_factory.repo_distributor_manager(), mock_repos)]
@@ -163,7 +191,7 @@ class TestReposView(unittest.TestCase):
         """
 
         mock_repos = [{'id': 'mock1', 'scratchpad': 'should be removed'}, {'id': 'mock2'}]
-        repositories._process_repos(mock_repos, 'false', 'false', 'false')
+        repositories._process_repos(mock_repos, False, False, False)
         mock_rev.assert_has_calls(
             [mock.call('repo_resource', kwargs={'repo_id': 'mock1'}),
              mock.call('repo_resource', kwargs={'repo_id': 'mock2'})]
@@ -191,7 +219,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         response = repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, False, False)
         mock_resp.assert_called_once_with(mock_collection().find.return_value)
         self.assertTrue(response is mock_resp.return_value)
 
@@ -211,7 +239,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'true', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, True, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -232,7 +260,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -250,7 +278,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'True', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, True, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -268,7 +296,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'yes', 'false', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, False, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -286,7 +314,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'true', 'false')
+        mock_process.assert_called_once_with(mock_repos, False, True, False)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_READ())
@@ -304,7 +332,7 @@ class TestReposView(unittest.TestCase):
         repos_view = ReposView()
 
         repos_view.get(mock_request)
-        mock_process.assert_called_once_with(mock_repos, 'false', 'false', 'true')
+        mock_process.assert_called_once_with(mock_repos, False, False, True)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
@@ -683,7 +711,7 @@ class TestRepoSearch(unittest.TestCase):
         """
         repo_search = RepoSearch()
         self.assertTrue(isinstance(repo_search.manager, repo_query.RepoQueryManager))
-        self.assertEqual(repo_search.optional_fields, ['details', 'importers', 'distributors'])
+        self.assertEqual(repo_search.optional_bool_fields, ('details', 'importers', 'distributors'))
         self.assertEqual(repo_search.response_builder,
                          util.generate_json_response_with_pulp_encoder)
 
@@ -772,11 +800,13 @@ class TestRepoImportersView(unittest.TestCase):
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = [{"mock": "importer"}]
+        mock_importer = [{"id": "importer", 'repo_id': 'mock_repo'}]
         mock_factory.repo_importer_manager.return_value.get_importers.return_value = mock_importer
         repo_importers = RepoImportersView()
         response = repo_importers.get(mock_request, 'mock_repo')
-        mock_resp.assert_called_once_with(mock_importer)
+        expected_response = [{'repo_id': 'mock_repo', 'id': 'importer',
+                              '_href': '/v2/repositories/mock_repo/importers/importer/'}]
+        mock_resp.assert_called_once_with(expected_response)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
@@ -824,13 +854,15 @@ class TestRepoImporterResourceView(unittest.TestCase):
         """
 
         mock_request = mock.MagicMock()
-        mock_importer = {"id": "mock_importer"}
+        mock_importer = {"id": "mock_importer", 'repo_id': 'mock-repo'}
         mock_factory.repo_importer_manager.return_value.get_importer.return_value = mock_importer
 
         repo_importer = RepoImporterResourceView()
         response = repo_importer.get(mock_request, 'mock_repo', 'mock_importer')
 
-        mock_resp.assert_called_once_with(mock_importer)
+        expected_response = {'repo_id': 'mock-repo', 'id': 'mock_importer',
+                             '_href': '/v2/repositories/mock-repo/importers/mock_importer/'}
+        mock_resp.assert_called_once_with(expected_response)
         self.assertTrue(response is mock_resp.return_value)
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
@@ -2019,13 +2051,12 @@ class TestRepoUnunassociate(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_UPDATE())
-    @mock.patch('pulp.server.webservices.views.repositories.RepoContentUnit')
     @mock.patch('pulp.server.webservices.views.repositories.tags')
     @mock.patch('pulp.server.webservices.views.repositories.unassociate_by_criteria')
     @mock.patch(
         'pulp.server.webservices.views.repositories.UnitAssociationCriteria.from_client_input')
     @mock.patch('pulp.server.webservices.views.repositories.manager_factory')
-    def test_post_minimal(self, mock_factory, mock_crit, mock_unassociate, mock_tags, mock_unit):
+    def test_post_minimal(self, mock_factory, mock_crit, mock_unassociate, mock_tags):
         """
         Test that a task is created with the minimal body params.
         """
@@ -2043,10 +2074,7 @@ class TestRepoUnunassociate(unittest.TestCase):
 
         task_tags = [mock_tags.resource_tag(), mock_tags.action_tag()]
         mock_unassociate.apply_async_with_reservation.assert_called_once_with(
-            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', [
-                'mock_repo', None, mock_unit.OWNER_TYPE_USER,
-                mock_factory.principal_manager().get_principal()[0]
-            ],
+            mock_tags.RESOURCE_REPOSITORY_TYPE, 'mock_repo', ['mock_repo', None],
             tags=task_tags
         )
         self.assertEqual(response.http_status_code, 202)

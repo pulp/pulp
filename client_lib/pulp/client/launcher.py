@@ -83,7 +83,7 @@ def main(config, exception_handler_class=ExceptionHandler):
 
         if password is prompt.ABORT:
             prompt.render_spacer()
-            prompt.write(_('Login cancelled'))
+            prompt.write(_('Login canceled'))
             sys.exit(os.EX_NOUSER)
 
     server = _create_bindings(config, logger, username, password, verbose=options.verbose)

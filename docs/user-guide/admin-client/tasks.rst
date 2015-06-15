@@ -71,7 +71,7 @@ in the list.
 The ``reaper`` task is responsible for cleaning up the database on a regularly scheduled interval.
 The interval is configured with ``reaper_interval`` in ``[data_reaping]`` section of
 ``/etc/pulp/server.conf``. The value can be whole or fraction of days. The length of time to keep
-documents for each collection is also configured in the same section. ``archived_calls``,
+documents for each collection is also configured in the same section.
 ``task_status_history``, ``consumer_history``, ``repo_sync_history``, ``repo_publish_history``,
 ``repo_group_publish_history``, and ``task_result_history`` take values of whole or fraction of
 days to keep that type of history. This database cleanup is needed because these transactions can
@@ -101,7 +101,7 @@ The **pulp-admin** command line client provides the ``tasks`` section and the
 
  Operations:   sync
  Resources:    ff7-e6 (repository)
- State:        Cancelled
+ State:        Canceled
  Start Time:   2012-12-09T04:28:10Z
  Finish Time:  2012-12-09T04:29:09Z
  Result:       N/A

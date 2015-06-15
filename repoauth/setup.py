@@ -8,9 +8,4 @@ setup(
     packages=find_packages(exclude=['test']),
     author='Pulp Team',
     author_email='pulp-list@redhat.com',
-    entry_points={
-        'pulp_content_authenticators': [
-            'oid_validation=pulp.repoauth.oid_validation:authenticate'
-        ]
-    },
 )

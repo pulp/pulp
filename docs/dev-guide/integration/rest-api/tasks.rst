@@ -79,8 +79,8 @@ executing. Polling returns a :ref:`task_report`
 Cancelling a Task
 -----------------
 
-Some asynchronous tasks may be cancelled by the user before they complete. A
-task must be in the *waiting* or *running* states in order to be cancelled.
+Some asynchronous tasks may be canceled by the user before they complete. A
+task must be in the *waiting* or *running* states in order to be canceled.
 
 .. Note::
 

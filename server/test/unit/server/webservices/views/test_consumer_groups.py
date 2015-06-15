@@ -208,7 +208,6 @@ class TestConsumerGroupSearchView(unittest.TestCase):
         """
         consumer_group_search = ConsumerGroupSearchView()
         self.assertTrue(isinstance(consumer_group_search.manager, query.ConsumerGroupQueryManager))
-        self.assertEqual(consumer_group_search.optional_fields, [])
         self.assertEqual(consumer_group_search.response_builder,
                          util.generate_json_response_with_pulp_encoder)
         self.assertEqual(consumer_group_search.serializer, serialize)

@@ -178,6 +178,7 @@ class EventMonitor(threading.Thread):
                 'task-succeeded': self._failure_watcher.handle_succeeded_task,
                 'worker-heartbeat': worker_watcher.handle_worker_heartbeat,
                 'worker-offline': worker_watcher.handle_worker_offline,
+                'worker-online': worker_watcher.handle_worker_heartbeat,
             })
             _logger.info(_('Event Monitor Starting'))
             recv.capture(limit=None, timeout=None, wakeup=True)

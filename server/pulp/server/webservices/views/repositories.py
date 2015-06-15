@@ -6,7 +6,6 @@ from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
 from pulp.server.db.model.repository import Repo as RepoModel
-from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
@@ -15,7 +14,7 @@ from pulp.server.managers.repo import importer as repo_importer_manager
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
 from pulp.server.tasks import repository as repo_tasks
-from pulp.server.webservices.views import search
+from pulp.server.webservices.views import search, serializers
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.schedule import ScheduleResource
 from pulp.server.webservices.views.util import (generate_json_response,
@@ -55,7 +54,11 @@ def _merge_related_objects(name, manager, repos):
         repo[name] = []
 
     for item in manager.find_by_repo_list(repo_ids):
-        repo_dict[item['repo_id']][name].append(item)
+        if name == 'importers':
+            serializer = serializers.ImporterSerializer(item)
+            repo_dict[item['repo_id']][name].append(serializer.data)
+        else:
+            repo_dict[item['repo_id']][name].append(item)
 
     return repos
 
@@ -89,21 +92,24 @@ def _process_repos(repos, details, importers, distributors):
 
     :param repos: collection of repositories
     :type  repos: list, tuple
-    :param importers: if `true`, adds related importers under the attribute "importers".
-    :type  importers: str
-    :param distributors: if `true`, adds related distributors under the attribute "distributors"
-    :type  distributors: str
+    :param details: if True, sets both "importers" and "distributors" to True regardless of any
+                    value that may have been passed in.
+    :type  details: bool
+    :param importers: if True, adds related importers under the attribute "importers".
+    :type  importers: bool
+    :param distributors: if True, adds related distributors under the attribute "distributors"
+    :type  distributors: bool
 
     :return: the same list that was passed in, just for convenience. The list itself is not
              modified- only its members are modified in-place.
     :rtype:  list of Repo instances
     """
-    if details.lower() == 'true':
-        importers = distributors = 'true'
-    if importers.lower() == 'true':
+    if details:
+        importers = distributors = True
+    if importers:
         _merge_related_objects(
             'importers', manager_factory.repo_importer_manager(), repos)
-    if distributors.lower() == 'true':
+    if distributors:
         _merge_related_objects(
             'distributors', manager_factory.repo_distributor_manager(), repos)
     for repo in repos:
@@ -134,9 +140,9 @@ class ReposView(View):
 
         all_repos = list(RepoModel.get_collection().find(projection={'scratchpad': 0}))
 
-        details = request.GET.get('details', 'false')
-        include_importers = request.GET.get('importers', 'false')
-        include_distributors = request.GET.get('distributors', 'false')
+        details = request.GET.get('details', 'false').lower() == 'true'
+        include_importers = request.GET.get('importers', 'false').lower() == 'true'
+        include_distributors = request.GET.get('distributors', 'false').lower() == 'true'
 
         _process_repos(
             all_repos,
@@ -291,7 +297,7 @@ class RepoSearch(search.SearchView):
     Adds GET and POST searching for repositories.
     """
     manager = repo_query.RepoQueryManager()
-    optional_fields = ['details', 'importers', 'distributors']
+    optional_bool_fields = ('details', 'importers', 'distributors')
     response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
     @classmethod
@@ -311,10 +317,9 @@ class RepoSearch(search.SearchView):
         :rtype:  list
         """
         results = list(search_method(query))
-        details = options.get('details', 'false')
-        importers = options.get('importers', 'false')
-        distributors = options.get('distributors', 'false')
-        return _process_repos(results, details, importers, distributors)
+        return _process_repos(results, options.get('details', False),
+                              options.get('importers', False),
+                              options.get('distributors', False))
 
 
 class RepoUnitSearch(search.SearchView):
@@ -376,7 +381,9 @@ class RepoImportersView(View):
 
         importer_manager = manager_factory.repo_importer_manager()
         importers = importer_manager.get_importers(repo_id)
-        return generate_json_response_with_pulp_encoder(importers)
+        serializer = serializers.ImporterSerializer(importers, multiple=True)
+
+        return generate_json_response_with_pulp_encoder(serializer.data)
 
     @auth_required(authorization.CREATE)
     @json_body_required
@@ -439,7 +446,9 @@ class RepoImporterResourceView(View):
         importer = importer_manager.get_importer(repo_id)
         if importer['id'] != importer_id:
             raise pulp_exceptions.MissingResource(importer_id=importer_id)
-        return generate_json_response_with_pulp_encoder(importer)
+
+        serializer = serializers.ImporterSerializer(importer)
+        return generate_json_response_with_pulp_encoder(serializer.data)
 
     @auth_required(authorization.DELETE)
     def delete(self, request, repo_id, importer_id):
@@ -1256,8 +1265,7 @@ class RepoUnassociate(View):
                      tags.action_tag('unassociate')]
         async_result = unassociate_by_criteria.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id, criteria, RepoContentUnit.OWNER_TYPE_USER,
-             manager_factory.principal_manager().get_principal()['login']], tags=task_tags)
+            [repo_id, criteria], tags=task_tags)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 

@@ -2,6 +2,27 @@
 Pulp 2.6 Release Notes
 =========================
 
+Pulp 2.6.3
+==========
+
+Pulp 2.6.3 is released with packages for Fedora 22 and Fedora 21. Support for
+Fedora 20 has been dropped. Please see the `Fedora lifecycle
+<https://fedoraproject.org/wiki/Fedora_Release_Life_Cycle#Maintenance_Schedule>`_
+for more detail.
+
+Bug Fixes
+---------
+
+This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.3>`.
+
+Pulp 2.6.2
+==========
+
+Bug Fixes
+---------
+
+This is a minor release which contains bug fixes for :fixedbugs:`these issues <2.6.2>`.
+
 Pulp 2.6.1
 ==========
 

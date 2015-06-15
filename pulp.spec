@@ -74,7 +74,7 @@ popd
 %endif # End pulp-admin build block
 
 %if %{pulp_server}
-for directory in server repoauth nodes/common nodes/parent nodes/child nodes/extensions/admin nodes/extensions/consumer
+for directory in server repoauth oid_validation nodes/common nodes/parent nodes/child nodes/extensions/admin nodes/extensions/consumer
 do
     pushd $directory
     %{__python} setup.py build
@@ -157,7 +157,7 @@ cp docs/_build/man/pulp-admin.1 %{buildroot}/%{_mandir}/man1/
 
 # Server installation
 %if %{pulp_server}
-for directory in server repoauth nodes/common nodes/parent nodes/child nodes/extensions/admin nodes/extensions/consumer
+for directory in server repoauth oid_validation nodes/common nodes/parent nodes/child nodes/extensions/admin nodes/extensions/consumer
 do
     pushd $directory
     %{__python} setup.py install -O1 --skip-build --root %{buildroot}
@@ -436,12 +436,6 @@ then
   pulp-gen-ca-certificate
 fi
 
-%if %{pulp_systemd} == 1
-  if [ $1 -eq 2 ]; # an upgrade
-  then
-    /sbin/systemctl daemon-reload > /dev/null 2>&1
-  fi
-%endif
 
 %preun server
 # If we are uninstalling
@@ -878,7 +872,7 @@ exit 0
 
 %if %{pulp_server}
 %package -n python-pulp-repoauth
-Summary: Cert-based repo authentication for Pulp
+Summary: Framework for cert-based repo authentication
 Group: Development/Languages
 Requires: httpd
 Requires: mod_ssl
@@ -897,6 +891,21 @@ Cert-based repo authentication for Pulp
 /srv/%{name}/repo_auth.wsgi
 %{python_sitelib}/%{name}/repoauth/
 %{python_sitelib}/pulp_repoauth*.egg-info
+
+%package -n python-pulp-oid_validation
+Summary: Cert-based repo authentication for Pulp
+Group: Development/Languages
+Requires: python-rhsm
+Requires: python-pulp-repoauth = %{pulp_version}
+
+%description -n python-pulp-oid_validation
+Cert-based repo authentication for Pulp
+
+%files -n python-pulp-oid_validation
+%defattr(-,root,root,-)
+%{python_sitelib}/%{name}/oid_validation/
+%{python_sitelib}/pulp_oid_validation*.egg-info
+
 %endif # End pulp_server if block for repoauth
 
 %changelog

@@ -130,6 +130,8 @@ class OrphanTypeSubCollectionView(View):
 
         :raises: OperationPostponed when an async operation is performed
         """
+        orphan_manager = factory.content_orphan_manager()
+        orphan_manager.validate_type(content_type)
         task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = content_orphan.delete_orphans_by_type.apply_async(
             (content_type,), tags=task_tags
@@ -175,6 +177,8 @@ class OrphanResourceView(View):
 
         :raises: OperationPostponed when an async operation is performed
         """
+        orphan_manager = factory.content_orphan_manager()
+        orphan_manager.get_orphan(content_type, unit_id)
         unit_info = [{'content_type_id': content_type, 'unit_id': unit_id}]
         task_tags = [tags.resource_tag(tags.RESOURCE_CONTENT_UNIT_TYPE, 'orphans')]
         async_task = content_orphan.delete_orphans_by_id.apply_async((unit_info,), tags=task_tags)
@@ -234,7 +238,7 @@ class ContentUnitSearch(search.SearchView):
     """
     Adds GET and POST searching for content units.
     """
-    optional_fields = ['include_repos']
+    optional_bool_fields = ('include_repos',)
     manager = content_query.ContentQueryManager()
 
     @staticmethod
@@ -279,7 +283,7 @@ class ContentUnitSearch(search.SearchView):
         type_id = kwargs['type_id']
         units = list(search_method(type_id, query))
         units = [_process_content_unit(unit, type_id) for unit in units]
-        if options.get('include_repos', 'false').lower() == "true":
+        if options.get('include_repos') is True:
             cls._add_repo_memberships(units, type_id)
         return units
 

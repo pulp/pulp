@@ -102,7 +102,7 @@ def scheduled_unit_management_obj(scheduled_call):
     return scheduled_call
 
 
-def expand_consumers(options, consumers):
+def expand_consumers(details, bindings, consumers):
     """
     Expand a list of users based on the flag specified in the query parameters.
     The _href is always added by the serialization function used.
@@ -110,8 +110,10 @@ def expand_consumers(options, consumers):
       details - include details
       bindings - include bindings
 
-    :param options: The (expanding) options.
-    :type options: dict
+    :param details: if True, details will be included in the response
+    :type  details: bool
+    :param bindings:    if True, bindings will be included with each returned consumer
+    :type  bindings:    bool
     :param consumers: A list of consumers
     :type consumers: list
 
@@ -119,8 +121,6 @@ def expand_consumers(options, consumers):
     :rtype: list
     """
 
-    details = options.get('details', 'false').lower() == 'true'
-    bindings = options.get('bindings', 'false').lower() == 'true'
     if details:
         bindings = True
     # add bindings
@@ -158,9 +158,11 @@ class ConsumersView(View):
         """
 
         query_params = request.GET
+        details = query_params.get('details', 'false').lower() == 'true'
+        bindings = query_params.get('bindings', 'false').lower() == 'true'
 
         manager = factory.consumer_query_manager()
-        consumers = expand_consumers(query_params, manager.find_all())
+        consumers = expand_consumers(details, bindings, manager.find_all())
         for consumer in consumers:
             add_link(consumer)
         return generate_json_response_with_pulp_encoder(consumers)
@@ -229,9 +231,12 @@ class ConsumerResourceView(View):
         """
 
         query_params = request.GET
+        details = query_params.get('details', 'false').lower() == 'true'
+        bindings = query_params.get('bindings', 'false').lower() == 'true'
+
         manager = factory.consumer_manager()
         consumer = manager.get_consumer(consumer_id)
-        consumer = expand_consumers(query_params, [consumer])[0]
+        consumer = expand_consumers(details, bindings, [consumer])[0]
         add_link(consumer)
         return generate_json_response_with_pulp_encoder(consumer)
 
@@ -280,7 +285,7 @@ class ConsumerSearchView(search.SearchView):
     """
     This view provides GET and POST searching for Consumers.
     """
-    optional_fields = ['details', 'bindings']
+    optional_bool_fields = ('details', 'bindings')
     response_builder = staticmethod(generate_json_response_with_pulp_encoder)
     manager = query_manager.ConsumerQueryManager()
 
@@ -301,7 +306,9 @@ class ConsumerSearchView(search.SearchView):
         :rtype:  list
         """
         results = list(search_method(query))
-        results = expand_consumers(options, results)
+        results = expand_consumers(options.get('details', False),
+                                   options.get('bindings', False),
+                                   results)
         for consumer in results:
             add_link(consumer)
         return results

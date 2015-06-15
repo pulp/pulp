@@ -29,3 +29,5 @@ PUBLISH_STEP_COPY_DIRECTORY = u'copy_directory'
 
 SYNC_STEP_GET_LOCAL = u'get_local'
 REFRESH_STEP_CONTENT_SOURCE = u'refresh_content_source'
+
+STEP_CREATE_PULP_MANIFEST = u'create_pulp_manifest'

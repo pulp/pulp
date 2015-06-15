@@ -137,8 +137,9 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.content.factory.content_orphan_manager')
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
-    def test_delete_orphan_type_subcollection(self, mock_orphan_manager):
+    def test_delete_orphan_type_subcollection(self, mock_orphan_manager, mock_type):
         """
         Delete orphans should be called with the correct arguments and OperationPostponed is raised.
         """
@@ -151,6 +152,7 @@ class TestOrphanTypeSubCollectionView(unittest.TestCase):
         mock_orphan_manager.delete_orphans_by_type.apply_async.assert_called_once_with(
             ('mock_type',), tags=['pulp:content_unit:orphans']
         )
+        mock_type.return_value.validate_type.assert_called_once_with('mock_type')
 
 
 class TestOrphanResourceView(unittest.TestCase):
@@ -182,8 +184,9 @@ class TestOrphanResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
+    @mock.patch('pulp.server.webservices.views.content.factory.content_orphan_manager')
     @mock.patch('pulp.server.webservices.views.content.content_orphan')
-    def test_delete_orphan_resource(self, mock_orphan_manager):
+    def test_delete_orphan_resource(self, mock_orphan_manager, mock_orphan):
         """
         OrphanResourceView should call delete orphans by id and raise OperationPostponed.
         """
@@ -197,6 +200,7 @@ class TestOrphanResourceView(unittest.TestCase):
             ([{'content_type_id': 'mock_type', 'unit_id': 'mock_id'}],),
             tags=['pulp:content_unit:orphans']
         )
+        mock_orphan.return_value.get_orphan.assert_called_once_with('mock_type', 'mock_id')
 
 
 class TestDeleteOrphansActionView(unittest.TestCase):
@@ -330,7 +334,7 @@ class TestContentUnitSearch(unittest.TestCase):
         mock_query = mock.MagicMock()
         mock_search = mock.MagicMock(return_value=['result_1', 'result_2'])
         serialized_results = content_search.get_results(
-            mock_query, mock_search, {'include_repos': 'true'}, type_id='mock_type'
+            mock_query, mock_search, {'include_repos': True}, type_id='mock_type'
         )
         mock_process.assert_has_calls([mock.call('result_1', 'mock_type'),
                                        mock.call('result_2', 'mock_type')])
@@ -340,7 +344,7 @@ class TestContentUnitSearch(unittest.TestCase):
 
 class TestContentUnitResourceView(unittest.TestCase):
     """
-    Tests for views of a single conttent unit.
+    Tests for views of a single content unit.
     """
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',

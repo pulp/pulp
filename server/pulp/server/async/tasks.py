@@ -232,6 +232,8 @@ class TaskResult(object):
                     self.spawned_tasks.append({'task_id': spawned_task.get('task_id')})
                 elif isinstance(spawned_task, AsyncResult):
                     self.spawned_tasks.append({'task_id': spawned_task.id})
+                elif isinstance(spawned_task, TaskStatus):
+                    self.spawned_tasks.append({'task_id': spawned_task.task_id})
                 else:  # This should be a string
                     self.spawned_tasks.append({'task_id': spawned_task})
 

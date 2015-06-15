@@ -277,13 +277,16 @@ class TestTaskResult(unittest.TestCase):
 
         async_result = AsyncResult('foo')
         test_exception = PulpException('foo')
-        result = tasks.TaskResult('foo', test_exception, [{'task_id': 'baz'}, async_result, "qux"])
+        task_status = TaskStatus(task_id='quux')
+        result = tasks.TaskResult('foo', test_exception, [{'task_id': 'baz'},
+                                                          async_result, "qux", task_status])
         serialized = result.serialize()
         self.assertEquals(serialized.get('result'), 'foo')
         compare_dict(test_exception.to_dict(), serialized.get('error'))
         self.assertEquals(serialized.get('spawned_tasks'), [{'task_id': 'baz'},
                                                             {'task_id': 'foo'},
-                                                            {'task_id': 'qux'}])
+                                                            {'task_id': 'qux'},
+                                                            {'task_id': 'quux'}])
 
 
 class TestReservedTaskMixinApplyAsyncWithReservation(ResourceReservationTests):
