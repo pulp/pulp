@@ -1,7 +1,7 @@
 import unittest
 import mock
 
-from pulp.repoauth.wsgi import allow_access
+from pulp.repoauth.wsgi import allow_access, _get_disabled_authenticators
 
 
 class TestWsgi(unittest.TestCase):
@@ -100,3 +100,36 @@ class TestWsgi(unittest.TestCase):
         iter_ep.return_value = self.entrypoint_list
 
         self.assertTrue(allow_access(environ, 'fake.host.name'))
+
+    @mock.patch('pulp.repoauth.auth_enabled_validation.authenticate')
+    @mock.patch('pulp.repoauth.wsgi.iter_entry_points')
+    @mock.patch('pulp.repoauth.wsgi._get_disabled_authenticators')
+    def test_disabled_authenticators(self, disabled_authenticators, iter_ep, auth_enabled):
+        """
+        Test for when authenticators are individually disabled
+        """
+        # NB: 'False' means that auth is enabled
+        auth_enabled.return_value = False
+        environ = mock.Mock()
+
+        disabled_authenticators.return_value = ['auth_one', 'auth_two']
+
+        self.auth_one.return_value = False
+        self.auth_two.return_value = False
+        iter_ep.return_value = self.entrypoint_list
+
+        self.assertTrue(allow_access(environ, 'fake.host.name'))
+
+    @mock.patch("pulp.repoauth.wsgi.SafeConfigParser")
+    def test_config_read(self, mock_parser):
+        """
+        Test that we are reading the file we think we are reading
+        """
+        mock_parser_instance = mock.Mock()
+        mock_parser_instance.get.return_value = "foo,bar,baz"
+        mock_parser.return_value = mock_parser_instance
+
+        self.assertEquals(_get_disabled_authenticators(), ['foo', 'bar', 'baz'])
+
+        mock_parser_instance.read.assert_called_once_with('/etc/pulp/repo_auth.conf')
+        mock_parser_instance.has_option.assert_called_once_with('main', 'disabled_authenticators')

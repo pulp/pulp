@@ -43,3 +43,8 @@ need to pass all auth checks to see the log message; once one check fails then
 the rest are not executed. If the ``authenticate`` method raises an exception
 for any reason then mod_wsgi will write a message to ``ssl_error_log`` and deny
 the request.
+
+If you would like to disable a specific plugin, simply set
+``disabled_authenticators`` in ``/etc/pulp/repo_auth.conf`` to the name of the
+authenticator in the entry point. In the example above, we would set it to
+``example_auth``. Multiple entries can be given via comma-seperated values.
