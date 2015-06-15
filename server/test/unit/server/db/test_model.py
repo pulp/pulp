@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Tests for the pulp.server.db.model module.
 """
@@ -12,9 +14,10 @@ try:
 except ImportError:
     import unittest
 
+import mongoengine
 from mongoengine import DateTimeField, DictField, Document, IntField, StringField
 
-from pulp.common import error_codes
+from pulp.common import error_codes, dateutils
 from pulp.devel.unit.util import touch
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model
@@ -387,11 +390,10 @@ class TestRepository(unittest.TestCase):
         """
         self.assertTrue(isinstance(model.Repository.repo_id, StringField))
         self.assertTrue(model.Repository.repo_id.required)
-
-        self.assertEqual(model.Repository.repo_id.db_field, 'id')
+        self.assertEqual(model.Repository.repo_id.db_field, 'repo_id')
 
         self.assertTrue(isinstance(model.Repository.display_name, StringField))
-        self.assertTrue(model.Repository.display_name.required)
+        self.assertFalse(model.Repository.display_name.required)
 
         self.assertTrue(isinstance(model.Repository.description, StringField))
         self.assertFalse(model.Repository.description.required)
@@ -432,3 +434,76 @@ class TestRepository(unittest.TestCase):
         """
         indexes = model.Repository._meta['indexes']
         self.assertDictEqual(indexes[0], {'fields': ['-repo_id'], 'unique': True})
+
+    def test_invalid_repo_id(self):
+        """
+        Ensure that validation raises as expected when invalid characters are present.
+        """
+        repo_obj = model.Repository('invalid_char%')
+        self.assertRaises(mongoengine.ValidationError, repo_obj.validate)
+
+    def test_create_i18n(self):
+        """
+        Test use of international text for fields that are not repo_id.
+        """
+        i18n_text = 'Brasília'
+        repo_obj = model.Repository('limited_characters', i18n_text, i18n_text)
+        repo_obj.validate()
+
+    def test_to_transfer_repo(self):
+        """
+        Test changing a repository object into a transfer unit for plugins.
+        """
+        dt = dateutils.now_utc_datetime_with_tzinfo()
+        data = {
+            'repo_id': 'foo',
+            'display_name': 'bar',
+            'description': 'baz',
+            'notes': 'qux',
+            'content_unit_counts': {'units': 1},
+            'last_unit_added': dt,
+            'last_unit_removed': dt
+        }
+        repo_obj = model.Repository(**data)
+        repo = repo_obj.to_transfer_repo()
+
+        self.assertEquals('foo', repo.id)
+        self.assertFalse(hasattr(repo, 'repo_id'))
+        self.assertEquals('bar', repo.display_name)
+        self.assertEquals('baz', repo.description)
+        self.assertEquals('qux', repo.notes)
+        self.assertEquals({'units': 1}, repo.content_unit_counts)
+        self.assertEquals(dt, repo.last_unit_added)
+        self.assertEquals(dt, repo.last_unit_removed)
+
+    def test_update_from_delta(self):
+        """
+        Update repository information from a delta dictionary.
+        """
+        repo_obj = model.Repository('mock_repo')
+        repo_obj.update_from_delta({'display_name': 'dn_updated', 'description': 'd_update'})
+        self.assertEqual(repo_obj.display_name, 'dn_updated')
+        self.assertEqual(repo_obj.description, 'd_update')
+
+    def test_update_from_delta_skips_prohibited_fields(self):
+        """
+        Attempt to update a prohibited field. Make sure it is ignored.
+        """
+        repo_obj = model.Repository('mock_repo')
+        repo_obj.update_from_delta({'repo_id': 'id_updated'})
+        self.assertEqual(repo_obj.repo_id, 'mock_repo')
+
+    def test_update_from_delta_notes(self):
+        """
+        Test the update of notes.
+
+        Make sure new fields are added, fields changed to `None` are removed, and existing fields
+        are modified.
+        """
+        repo_obj = model.Repository('mock_repo', notes={'remove': 1, 'leave': 2, 'modify': 3})
+        repo_obj.update_from_delta({'notes': {'remove': None, 'modify': 4, 'add': 5}})
+        self.assertEqual(repo_obj.repo_id, 'mock_repo')
+        self.assertFalse('remove' in repo_obj.notes)
+        self.assertEqual(repo_obj.notes['leave'], 2)
+        self.assertEqual(repo_obj.notes['modify'], 4)
+        self.assertEqual(repo_obj.notes['add'], 5)

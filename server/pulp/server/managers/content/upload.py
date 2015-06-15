@@ -12,10 +12,10 @@ from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api, exceptions as plugin_exceptions
 from pulp.server import config as pulp_config
 from pulp.server.async.tasks import Task
+from pulp.server.db import model
 from pulp.server.exceptions import (PulpDataException, MissingResource, PulpExecutionException,
                                     PulpException)
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._common as repo_common_utils
 
 
 logger = logging.getLogger(__name__)
@@ -188,11 +188,8 @@ class ContentUploadManager(object):
         """
         # If it doesn't raise an exception, it's good to go
         ContentUploadManager.is_valid_upload(repo_id, unit_type_id)
-
-        repo_query_manager = manager_factory.repo_query_manager()
         importer_manager = manager_factory.repo_importer_manager()
-
-        repo = repo_query_manager.find_by_id(repo_id)
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
         repo_importer = importer_manager.get_importer(repo_id)
 
         try:
@@ -206,7 +203,7 @@ class ContentUploadManager(object):
 
         call_config = PluginCallConfiguration(plugin_config, repo_importer['config'],
                                               override_config)
-        transfer_repo = repo_common_utils.to_transfer_repo(repo)
+        transfer_repo = repo_obj.to_transfer_repo()
 
         file_path = ContentUploadManager._upload_file_path(upload_id)
 

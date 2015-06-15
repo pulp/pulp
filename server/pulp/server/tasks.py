@@ -5,4 +5,4 @@ of this Python package.
 """
 import pulp.server.db.reaper  # noqa
 import pulp.server.maintenance.monthly  # noqa
-import pulp.server.controllers.content  # noqa
+import pulp.server.repository.content  # noqa

@@ -1,12 +1,15 @@
+import mock
+
 from ... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.conduits.profiler import ProfilerConduit
 from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as typedb
 from pulp.plugins.types.model import TypeDefinition
+from pulp.server.db import model
 from pulp.server.db.model.consumer import Consumer, Bind, UnitProfile
 from pulp.server.db.model.criteria import UnitAssociationCriteria
-from pulp.server.db.model.repository import Repo, RepoDistributor, RepoContentUnit
+from pulp.server.db.model.repository import RepoDistributor, RepoContentUnit
 from pulp.server.managers import factory
 
 
@@ -25,7 +28,6 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     def setUp(self):
         super(BaseProfilerConduitTests, self).setUp()
         Consumer.get_collection().remove()
-        Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
@@ -37,7 +39,7 @@ class BaseProfilerConduitTests(base.PulpServerTests):
     def tearDown(self):
         super(BaseProfilerConduitTests, self).tearDown()
         Consumer.get_collection().remove()
-        Repo.get_collection().remove()
+        model.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         RepoContentUnit.get_collection().remove()
@@ -47,12 +49,13 @@ class BaseProfilerConduitTests(base.PulpServerTests):
         mock_plugins.reset()
 
     def populate(self, additional_key=None):
-        self.populate_consumer()
-        self.populate_repository()
-        self.populate_bindings()
-        self.populate_units('key-1', self.TYPE_1_DEF, additional_key)
-        self.populate_units('key-2', self.TYPE_2_DEF, additional_key)
-        self.populate_profile()
+        with mock.patch('pulp.server.db.model.Repository.objects'):
+            self.populate_consumer()
+            self.populate_repository()
+            self.populate_bindings()
+            self.populate_units('key-1', self.TYPE_1_DEF, additional_key)
+            self.populate_units('key-2', self.TYPE_2_DEF, additional_key)
+            self.populate_profile()
 
     def populate_consumer(self):
         manager = factory.consumer_manager()
@@ -60,8 +63,6 @@ class BaseProfilerConduitTests(base.PulpServerTests):
 
     def populate_repository(self):
         config = {'key1': 'value1', 'key2': None}
-        manager = factory.repo_manager()
-        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,

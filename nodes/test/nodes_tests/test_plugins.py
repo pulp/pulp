@@ -10,6 +10,7 @@ from unittest import TestCase
 
 from mock import Mock, patch
 from base import ServerTests
+import mock
 
 from nectar.downloaders.local import LocalFileDownloader
 from nectar.config import DownloaderConfig
@@ -27,7 +28,8 @@ from pulp.plugins.loader import api as plugin_api
 from pulp.plugins.types import database as unit_db
 from pulp.server import config as pulp_conf
 from pulp.server.db import connection
-from pulp.server.db.model.repository import Repo, RepoDistributor, RepoImporter
+from pulp.server.db import model
+from pulp.server.db.model.repository import RepoDistributor, RepoImporter
 from pulp.server.db.model.repository import RepoContentUnit
 from pulp.server.db.model.consumer import Consumer, Bind
 from pulp.server.db.model.content import ContentType
@@ -167,7 +169,6 @@ class PluginTestBase(ServerTests):
         self.alias = (self.parentfs, self.parentfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
-        Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
@@ -175,9 +176,12 @@ class PluginTestBase(ServerTests):
         self.define_plugins()
         plugin_api._create_manager()
         imp_conf = dict(strategy=constants.MIRROR_STRATEGY)
-        plugin_api._MANAGER.importers.add_plugin(constants.HTTP_IMPORTER, NodesHttpImporter, imp_conf)
-        plugin_api._MANAGER.distributors.add_plugin(constants.HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
-        plugin_api._MANAGER.distributors.add_plugin(FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
+        plugin_api._MANAGER.importers.add_plugin(
+            constants.HTTP_IMPORTER, NodesHttpImporter, imp_conf)
+        plugin_api._MANAGER.distributors.add_plugin(
+            constants.HTTP_DISTRIBUTOR, NodesHttpDistributor, {})
+        plugin_api._MANAGER.distributors.add_plugin(
+            FAKE_DISTRIBUTOR, FakeDistributor, FAKE_DISTRIBUTOR_CONFIG)
         plugin_api._MANAGER.profilers.add_plugin(constants.PROFILER_ID, NodeProfiler, {})
 
     def tearDown(self):
@@ -186,7 +190,7 @@ class PluginTestBase(ServerTests):
         shutil.rmtree(self.childfs)
         Consumer.get_collection().remove()
         Bind.get_collection().remove()
-        Repo.get_collection().remove()
+        model.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         RepoImporter.get_collection().remove()
         RepoContentUnit.get_collection().remove()
@@ -196,17 +200,12 @@ class PluginTestBase(ServerTests):
         collection = ContentType.get_collection()
         collection.save(dict(id=self.TYPEDEF_ID, unit_key=self.UNIT_KEY.keys()), safe=True)
 
-    def populate(self):
+    @mock.patch('pulp.server.managers.repo.unit_association.repo_controller')
+    def populate(self, mock_repo_ctrl):
         # make content/ dir.
         os.makedirs(os.path.join(self.parentfs, 'content'))
 
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
-            # create repo
-            manager = managers.repo_manager()
-            manager.create_repo(
-                self.REPO_ID, display_name=REPO_NAME, description=REPO_DESCRIPTION, notes=REPO_NOTES)
-            manager.set_repo_scratchpad(self.REPO_ID, REPO_SCRATCHPAD)
-            # add units
             units = self.add_units(0, self.NUM_UNITS)
             self.units = units
 
@@ -499,11 +498,11 @@ class TestDistributor(PluginTestBase):
         self.assertFalse(report[0])
         self.assertFalse(report[1] is None)
 
-    def test_payload(self):
-        # Setup
+    @patch('pulp_node.distributors.http.distributor.model.Repository')
+    def test_payload(self, mock_repo_model):
+        mock_repo = mock_repo_model.objects.get_repo_or_missing_resource.return_value
         self.populate()
 
-        # Test
         with mock_config.patch({'server': {'storage_dir': self.parentfs}}):
             dist = NodesHttpDistributor()
             repo = Repository(self.REPO_ID)
@@ -518,14 +517,15 @@ class TestDistributor(PluginTestBase):
         repository = payload['repository']
         self.assertTrue(isinstance(distributors, list))
         self.assertTrue(isinstance(importers, list))
-        self.assertTrue(isinstance(repository, dict))
+        self.assertTrue(repository is mock_repo.to_transfer_repo())
         self.assertTrue(len(importers), 1)
         for key in ('id', 'importer_type_id', 'config'):
             self.assertTrue(key in importers[0])
         for key in (constants.MANIFEST_URL_KEYWORD, constants.STRATEGY_KEYWORD):
             self.assertTrue(key in importers[0]['config'])
 
-    def test_publish(self):
+    @patch('pulp.server.managers.repo.unit_association.repo_controller')
+    def test_publish(self, mock_repo_ctrl):
         # Setup
         self.populate()
 
@@ -654,7 +654,7 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            Repo.get_collection().remove()
+            model.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -696,7 +696,7 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            Repo.get_collection().remove()
+            model.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -739,7 +739,7 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            Repo.get_collection().remove()
+            model.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -780,7 +780,7 @@ class ImporterTest(PluginTestBase):
             configuration = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, configuration)
-            Repo.get_collection().remove()
+            model.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -825,7 +825,7 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            Repo.get_collection().remove()
+            model.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()
@@ -869,7 +869,7 @@ class ImporterTest(PluginTestBase):
             cfg = self.dist_conf()
             conduit = RepoPublishConduit(self.REPO_ID, constants.HTTP_DISTRIBUTOR)
             dist.publish_repo(repo, conduit, cfg)
-            Repo.get_collection().remove()
+            model.Repository.drop_collection()
             RepoDistributor.get_collection().remove()
             RepoContentUnit.get_collection().remove()
             unit_db.clean()

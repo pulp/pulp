@@ -11,12 +11,12 @@ from pulp.common.tags import (ACTION_REFRESH_ALL_CONTENT_SOURCES,
 from pulp.server import constants
 from pulp.server.auth import authorization
 from pulp.server.content.sources.container import ContentContainer
+from pulp.server.controllers import content
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.exceptions import InvalidValue, MissingResource, OperationPostponed
 from pulp.server.managers import factory
 from pulp.server.managers.content import query as content_query
 from pulp.server.managers.content import orphan as content_orphan
-from pulp.server.tasks import content
 from pulp.server.webservices.views import search
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.serializers import content as serial_content

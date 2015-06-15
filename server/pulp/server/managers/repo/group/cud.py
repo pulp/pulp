@@ -7,9 +7,8 @@ from pymongo.errors import DuplicateKeyError
 from pulp.common.plugins import distributor_constants
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.async.tasks import Task
+from pulp.server.db import model
 from pulp.server.db.model.repo_group import RepoGroup
-from pulp.server.db.model.repository import Repo
-from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
 
 
@@ -35,9 +34,8 @@ class RepoGroupManager(object):
         """
         if repo_ids:
             # Check if ids in repo_ids belong to existing repositories
-            repo_query_manager = manager_factory.repo_query_manager()
             for repo_id in repo_ids:
-                repo_query_manager.get_repository(repo_id)
+                model.Repository.objects.get_repo_or_missing_resource(repo_id)
         # Create repo group
         collection = RepoGroup.get_collection()
         repo_group = RepoGroup(group_id, display_name, description, repo_ids, notes)
@@ -193,9 +191,8 @@ class RepoGroupManager(object):
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
         """
         group_collection = validate_existing_repo_group(group_id)
-        repo_collection = Repo.get_collection()
-        cursor = repo_collection.query(criteria)
-        repo_ids = [r['id'] for r in cursor]
+        cursor = model.Repository.objects.find_by_criteria(criteria)
+        repo_ids = [r.repo_id for r in cursor]
         if not repo_ids:
             return
         group_collection.update({'id': group_id},
@@ -212,9 +209,8 @@ class RepoGroupManager(object):
         @type  criteria: L{pulp.server.db.model.criteria.Criteria}
         """
         group_collection = validate_existing_repo_group(group_id)
-        repo_collection = Repo.get_collection()
-        cursor = repo_collection.query(criteria)
-        repo_ids = [r['id'] for r in cursor]
+        cursor = model.Repository.objects.find_by_criteria(criteria)
+        repo_ids = [r.repo_id for r in cursor]
         if not repo_ids:
             return
         group_collection.update({'id': group_id},

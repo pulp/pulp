@@ -13,13 +13,14 @@ from pulp.plugins.conduits.unit_import import ImportUnitConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
+from pulp.server.controllers import repository as repo_controller
+from pulp.server.db import model
 from pulp.server.db.model.criteria import UnitAssociationCriteria
 from pulp.server.db.model.repository import RepoContentUnit
 import pulp.plugins.conduits._common as conduit_common_utils
 import pulp.plugins.types.database as types_db
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
-import pulp.server.managers.repo._common as common_utils
 
 
 # Valid sort strings
@@ -93,14 +94,10 @@ class RepoUnitAssociationManager(object):
         association = RepoContentUnit(repo_id, unit_id, unit_type_id)
         RepoContentUnit.get_collection().save(association, safe=True)
 
-        manager = manager_factory.repo_manager()
-
-        # update the count of associated units on the repo object
+        # update the count and times of associated units on the repo object
         if update_repo_metadata and not similar_exists:
-            manager.update_unit_count(repo_id, unit_type_id, 1)
-
-            # update the record for the last added field
-            manager.update_last_unit_added(repo_id)
+            repo_controller.update_unit_count(repo_id, unit_type_id, 1)
+            repo_controller.update_last_unit_added(repo_id)
 
     def associate_all_by_ids(self, repo_id, unit_type_id, unit_id_list):
         """
@@ -135,10 +132,8 @@ class RepoUnitAssociationManager(object):
 
         # update the count of associated units on the repo object
         if unique_count:
-            manager_factory.repo_manager().update_unit_count(
-                repo_id, unit_type_id, unique_count)
-            # update the timestamp for when the units were added to the repo
-            manager_factory.repo_manager().update_last_unit_added(repo_id)
+            repo_controller.update_unit_count(repo_id, unit_type_id, unique_count)
+            repo_controller.update_last_unit_added(repo_id)
         return unique_count
 
     @staticmethod
@@ -177,12 +172,9 @@ class RepoUnitAssociationManager(object):
         :rtype:                        dict
         :raise MissingResource:        if either of the specified repositories don't exist
         """
-        # Validation
-        repo_query_manager = manager_factory.repo_query_manager()
         importer_manager = manager_factory.repo_importer_manager()
-
-        source_repo = repo_query_manager.get_repository(source_repo_id)
-        dest_repo = repo_query_manager.get_repository(dest_repo_id)
+        source_repo = model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
+        dest_repo = model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
 
         # This will raise MissingResource if there isn't one, which is the
         # behavior we want this method to exhibit, so just let it bubble up.
@@ -219,9 +211,8 @@ class RepoUnitAssociationManager(object):
             transfer_units = create_transfer_units(associate_us, associated_unit_type_ids)
 
         # Convert the two repos into the plugin API model
-        transfer_dest_repo = common_utils.to_transfer_repo(dest_repo)
-
-        transfer_source_repo = common_utils.to_transfer_repo(source_repo)
+        transfer_dest_repo = dest_repo.to_transfer_repo()
+        transfer_source_repo = source_repo.to_transfer_repo()
 
         # Invoke the importer
         importer_instance, plugin_config = plugin_api.get_importer_by_id(
@@ -321,7 +312,6 @@ class RepoUnitAssociationManager(object):
             id_list.append(unit['unit_id'])
 
         collection = RepoContentUnit.get_collection()
-        repo_manager = manager_factory.repo_manager()
 
         for unit_type_id, unit_ids in unit_map.items():
             spec = {'repo_id': repo_id,
@@ -336,9 +326,9 @@ class RepoUnitAssociationManager(object):
             if not unique_count:
                 continue
 
-            repo_manager.update_unit_count(repo_id, unit_type_id, -unique_count)
+            repo_controller.update_unit_count(repo_id, unit_type_id, -unique_count)
 
-        repo_manager.update_last_unit_removed(repo_id)
+        repo_controller.update_last_unit_removed(repo_id)
 
         # Convert the units into transfer units. This happens regardless of whether or not
         # the plugin will be notified as it's used to generate the return result,
@@ -424,14 +414,11 @@ def create_transfer_units(associate_units, associated_unit_type_ids):
 
 
 def remove_from_importer(repo_id, transfer_units):
-    # Retrieve the repo from the database and convert to the transfer repo
-    repo_query_manager = manager_factory.repo_query_manager()
-    repo = repo_query_manager.get_repository(repo_id)
+    repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+    transfer_repo = repo_obj.to_transfer_repo()
 
     importer_manager = manager_factory.repo_importer_manager()
     repo_importer = importer_manager.get_importer(repo_id)
-
-    transfer_repo = common_utils.to_transfer_repo(repo)
 
     # Retrieve the plugin instance to invoke
     importer_instance, plugin_config = plugin_api.get_importer_by_id(

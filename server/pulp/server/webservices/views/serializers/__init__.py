@@ -149,6 +149,50 @@ class DictSerializer(BaseSerializer):
         return representation
 
 
+class ModelSerializer(BaseSerializer):
+    pass
+
+
+class Repository(ModelSerializer):
+    """
+    Convert a Mongoengine document into a dictionary.
+    """
+
+    class Meta:
+        """
+        Exclude scratchpad from serialized repositories.
+        """
+        exclude_fields = ['scratchpad']
+
+    def to_representation(self, instance):
+        """
+        :param document: Object to serialize
+        :type  document: mongoengine.Document
+        :param blacklist: fields that should not be included in the dict
+        :type  blacklist: list of strings
+
+        :return: dictionary representation of document
+        :rtype:  dict
+        """
+
+        document_dict = {}
+        for field in instance._fields:
+            # Mongoengine stores the pk in _id but accesses it via id.
+            if field == "id":
+                document_dict['_id'] = instance.id
+            elif field == "repo_id":
+                document_dict['id'] = instance.repo_id
+            else:
+                document_dict[field] = getattr(instance, field)
+        return document_dict
+
+    def get_href(self, instance):
+        """
+        Build the href for a repository.
+        """
+        return reverse('repo_resource', kwargs={'repo_id': instance.repo_id})
+
+
 class ImporterSerializer(DictSerializer):
     """
     Serializer for the pulp Repository Importer objects

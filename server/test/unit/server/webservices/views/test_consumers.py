@@ -488,14 +488,16 @@ class TestConsumerBindingSearchView(unittest.TestCase):
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
     @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_get_consumer_bindings_by_repoid(self, mock_factory, mock_resp, mock_serial):
+    @mock.patch('pulp.server.webservices.views.consumers.model.Repository.objects')
+    def test_get_consumer_bindings_by_repoid(self, mock_repo_qs, mock_factory, mock_resp,
+                                             mock_serial):
         """
         Test all bindings retrieval by repo-id
         """
         mock_factory.consumer_manager.return_value.get_consumer.return_value = {'id': 'foo'}
         bindings = [{'repo_id': 'some-repo', 'consumer_id': 'foo'}]
         mock_factory.consumer_bind_manager.return_value.find_by_consumer.return_value = bindings
-        mock_factory.repo_query_manager.return_value.find_by_id.return_value = 'some-repo'
+        mock_repo_qs.get_repo_or_missing_resource.return_value = 'some-repo'
         serial_resp = {'consumer_id': 'foo', 'repo_id': 'some-repo',
                        '_href': '/v2/consumers/foo/bindings/some-repo/'}
         mock_serial.serialize.return_value = serial_resp
@@ -532,29 +534,8 @@ class TestConsumerBindingSearchView(unittest.TestCase):
         self.assertEqual(response.error_data['resources'], {'consumer_id': 'nonexistent_id'})
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
-                new=assert_auth_READ())
-    @mock.patch('pulp.server.webservices.views.consumers.factory')
-    def test_get_consumer_bindings_invalid_repo(self, mock_factory):
-        """
-        Test all bindings retrieval invalid repo
-        """
-        mock_factory.repo_query_manager.return_value.find_by_id.return_value = None
-
-        request = mock.MagicMock()
-        consumer_bindings = ConsumerBindingsView()
-
-        try:
-            response = consumer_bindings.get(request, 'foo', 'some-repo')
-        except MissingResource, response:
-            pass
-        else:
-            raise AssertionError("MissingResource should be raised with nonexistent repo_id")
-        self.assertEqual(response.http_status_code, 404)
-        self.assertEqual(response.error_data['resources'], {'repo_id': 'some-repo'})
-
-    @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_CREATE())
-    @mock.patch('pulp.server.webservices.views.consumers.consumer_task.bind')
+    @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.bind')
     def test_create_binding_async(self, mock_bind):
         """
         Test bind consumer to a repo async task.
@@ -569,7 +550,7 @@ class TestConsumerBindingSearchView(unittest.TestCase):
                 new=assert_auth_CREATE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.consumer_task.bind')
+    @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.bind')
     def test_create_binding_sync(self, mock_bind, mock_resp):
         """
         Test bind consumer to a repo sync task(notify_agent is false)
@@ -641,7 +622,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.consumers.consumer_task.unbind')
+    @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.unbind')
     def test_delete_binding_async_no_force(self, mock_unbind):
         """
         Test consumer binding removal async no force
@@ -656,7 +637,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
 
     @mock.patch('pulp.server.webservices.views.decorators._verify_auth',
                 new=assert_auth_DELETE())
-    @mock.patch('pulp.server.webservices.views.consumers.consumer_task.force_unbind')
+    @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.force_unbind')
     def test_delete_binding_async_yes_force(self, mock_unbind):
         """
         Test consumer binding removal async with force.
@@ -672,7 +653,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
                 new=assert_auth_DELETE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.consumer_task.unbind')
+    @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.unbind')
     def test_delete_binding_sync_no_force(self, mock_unbind, mock_resp):
         """
         Test consumer binding removal sync no force
@@ -696,7 +677,7 @@ class TestConsumerBindingResourceView(unittest.TestCase):
                 new=assert_auth_DELETE())
     @mock.patch(
         'pulp.server.webservices.views.consumers.generate_json_response_with_pulp_encoder')
-    @mock.patch('pulp.server.webservices.views.consumers.consumer_task.force_unbind')
+    @mock.patch('pulp.server.webservices.views.consumers.consumer_controller.force_unbind')
     def test_delete_binding_sync_yes_force(self, mock_unbind, mock_resp):
         """
         Test consumer binding removal sync with force

@@ -1,5 +1,8 @@
+from mongoengine import DoesNotExist
 from mongoengine.queryset import QuerySet
 from pymongo import ASCENDING
+
+from pulp.server import exceptions as pulp_exceptions
 
 
 class CriteriaQuerySet(QuerySet):
@@ -84,3 +87,26 @@ class CriteriaQuerySet(QuerySet):
             raise NotImplementedError("The 'multi' parameter cannot be set on this method.")
         kwargs['multi'] = False
         self.update(*args, **kwargs)
+
+
+class RepoQuerySet(CriteriaQuerySet):
+    """
+    Custom queryset for repositories.
+    """
+
+    def get_repo_or_missing_resource(self, repo_id):
+        """
+        Allows a django-like get or 404.
+
+        :param repo_id: identifies the repository to be returned
+        :type  repo_id: str
+
+        :return: repository object
+        :rtype:  pulp.server.db.model.Repository
+
+        :raises pulp_exceptions.MissingResource if repository is not found
+        """
+        try:
+            return self.get(repo_id=repo_id)
+        except DoesNotExist:
+            raise pulp_exceptions.MissingResource(repository=repo_id)

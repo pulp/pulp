@@ -5,22 +5,19 @@ from pulp.devel import mock_plugins
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.importer import Importer
 from pulp.plugins.loader import api as plugin_api
-from pulp.plugins.model import Repository
+from pulp.server.db import model
 from pulp.server.db.model.dispatch import ScheduledCall
-from pulp.server.db.model.repository import Repo, RepoImporter
+from pulp.server.db.model.repository import RepoImporter
 import pulp.server.exceptions as exceptions
-import pulp.server.managers.repo.cud as repo_manager
 import pulp.server.managers.repo.importer as importer_manager
 
 
+@mock.patch('pulp.server.managers.repo.importer.model.Repository.objects')
 class RepoManagerTests(base.PulpServerTests):
 
     def setUp(self):
         super(RepoManagerTests, self).setUp()
         mock_plugins.install()
-
-        # Create the manager instance to test
-        self.repo_manager = repo_manager.RepoManager()
         self.importer_manager = importer_manager.RepoImporterManager()
 
     def tearDown(self):
@@ -29,17 +26,14 @@ class RepoManagerTests(base.PulpServerTests):
 
     def clean(self):
         super(RepoManagerTests, self).clean()
-
-        Repo.get_collection().remove()
+        model.Repository.drop_collection()
         RepoImporter.get_collection().remove()
 
-    def test_set_importer(self):
+    def test_set_importer(self, mock_repo_qs):
         """
         Tests setting an importer on a new repo (normal case).
         """
-
-        # Setup
-        self.repo_manager.create_repo('importer-test')
+        mock_repo = mock_repo_qs.get_repo_or_missing_resource()
         importer_config = {'key1': 'value1', 'key2': None}
 
         # Test
@@ -68,8 +62,7 @@ class RepoManagerTests(base.PulpServerTests):
         call_repo = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][0]
         call_config = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][1]
 
-        self.assertTrue(isinstance(call_repo, Repository))
-        self.assertEqual('importer-test', call_repo.id)
+        self.assertTrue(call_repo is mock_repo.to_transfer_repo())
 
         self.assertTrue(isinstance(call_config, PluginCallConfiguration))
         self.assertTrue(call_config.plugin_config is not None)
@@ -79,40 +72,21 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.validate_config.call_count)
         call_repo = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][0]
         call_config = mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][1]
-        self.assertTrue(isinstance(call_repo, Repository))
+        self.assertTrue(call_repo is mock_repo.to_transfer_repo())
         self.assertTrue(isinstance(call_config, PluginCallConfiguration))
 
-    def test_set_importer_no_repo(self):
-        """
-        Tests setting the importer on a repo that doesn't exist correctly
-        informs the user.
-        """
-
-        # Test
-        try:
-            self.importer_manager.set_importer('fake', 'mock-importer', None)
-        except exceptions.MissingResource, e:
-            self.assertTrue('fake' == e.resources['resource_id'])
-            self.assertEqual(str(e), 'Missing resource(s): resource_id=fake')
-
-    def test_set_importer_no_importer(self):
+    def test_set_importer_no_importer(self, mock_repo_qs):
         """
         Tests setting an importer that doesn't exist on a repo.
         """
-
-        # Setup
-        self.repo_manager.create_repo('real-repo')
-
-        # Test
         self.assertRaises(exceptions.PulpCodedValidationException,
                           self.importer_manager.set_importer, 'real-repo', 'fake-importer', None)
 
-    def test_set_importer_with_existing(self):
+    def test_set_importer_with_existing(self, mock_repo_qs):
         """
         Tests setting a different importer on a repo that already had one.
         """
 
-        # Setup
         class MockImporter2(Importer):
             @classmethod
             def metadata(cls):
@@ -124,7 +98,6 @@ class RepoManagerTests(base.PulpServerTests):
         mock_plugins.IMPORTER_MAPPINGS['mock-importer-2'] = MockImporter2()
         plugin_api._MANAGER.importers.add_plugin('mock-importer-2', MockImporter2, {})
 
-        self.repo_manager.create_repo('change_me')
         self.importer_manager.set_importer('change_me', 'mock-importer', {})
 
         # Test
@@ -136,89 +109,56 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertEqual(all_importers[0]['id'], 'mock-importer-2')
 
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
+        RepoImporter.get_collection().remove()
 
-    def test_set_importer_added_raises_error(self):
+    def test_set_importer_added_raises_error(self, mock_repo_qs):
         """
         Tests simulating an error coming out of the importer's validate config method.
         """
-
-        # Setup
         mock_plugins.MOCK_IMPORTER.importer_added.side_effect = Exception()
-        self.repo_manager.create_repo('repo-1')
-
-        # Test
         config = {'hobbit': 'frodo'}
+
         try:
             self.importer_manager.set_importer('repo-1', 'mock-importer', config)
             self.fail('Exception expected for importer plugin exception')
         except exceptions.PulpExecutionException:
             pass
+        finally:
+            mock_plugins.MOCK_IMPORTER.importer_added.side_effect = None
+            RepoImporter.get_collection().remove()
 
-        # Cleanup
-        mock_plugins.MOCK_IMPORTER.importer_added.side_effect = None
-
-    def test_set_importer_validate_config_error(self):
+    def test_set_importer_validate_config_error(self, mock_repo_qs):
         """
         Tests manager handling when the plugin raises an error while validating a config.
         """
-
-        # Setup
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = IOError()
-        self.repo_manager.create_repo('bad_config')
-
-        # Test
         self.assertRaises(IOError, self.importer_manager.set_importer, 'bad_config',
                           'mock-importer', {})
-
-        # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = None
 
-    def test_set_importer_invalid_config(self):
+    def test_set_importer_invalid_config(self, mock_repo_qs):
         """
         Tests the set_importer call properly errors when the config is invalid.
         """
-
-        # Setup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = (False, 'Invalid stuff')
-        self.repo_manager.create_repo('bad_config')
-
-        # Test
         config = {'elf': 'legolas'}
         self.assertRaises(exceptions.PulpCodedValidationException,
                           self.importer_manager.set_importer, 'bad_config', 'mock-importer', config)
 
-    def test_set_importer_invalid_config_backward_compatibility(self):
+    def test_set_importer_invalid_config_backward_compatibility(self, mock_repo_qs):
         """
         Tests the set_importer call properly errors when the config is invalid
         and the importer still returns a single boolean.
         """
-
-        # Setup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = False
-        self.repo_manager.create_repo('bad_config')
-
-        # Test
         config = {'elf': 'legolas'}
         self.assertRaises(exceptions.PulpCodedValidationException,
                           self.importer_manager.set_importer, 'bad_config', 'mock-importer', config)
 
-    @mock.patch('pulp.server.db.model.base.Model.get_collection')
-    def test_validate_importer_config_no_repo(self, mock_get_collection):
-        """
-        Test that the validator raises a MissingResource exception if the repository is missing
-        """
-        mock_collection = mock.Mock(return_value=None)
-        mock_collection.find_one.return_value = None
-        mock_get_collection.return_value = mock_collection
-
-        self.assertRaises(exceptions.MissingResource,
-                          self.importer_manager.validate_importer_config, 'repo', 'importer_id', {})
-        mock_collection.find_one.assert_called_once_with({'id': 'repo'})
-
     @mock.patch('pulp.plugins.loader.api.is_valid_importer', return_value=False)
     @mock.patch('pulp.server.db.model.base.Model.get_collection')
     def test_validate_importer_config_no_importer(self, mock_get_collection,
-                                                  mock_importer_validator):
+                                                  mock_importer_validator, mock_repo_model):
         """
         Test that the validator raises a PulpCodedValidationException if the importer doesn't exist
         """
@@ -227,7 +167,6 @@ class RepoManagerTests(base.PulpServerTests):
         mock_importer_validator.assert_called_once_with('importer_id')
 
     @mock.patch('pulp.plugins.loader.api.is_valid_importer', return_value=True)
-    @mock.patch('pulp.server.db.model.base.Model.get_collection')
     @mock.patch('pulp.plugins.loader.api.get_importer_by_id')
     def test_validate_importer_config_invalid_config(self, mock_get_importer, *unused_mocks):
         mock_importer = mock.Mock()
@@ -244,19 +183,15 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertEqual({}, config.repo_plugin_config)
 
     @mock.patch('pulp.server.managers.schedule.repo.RepoSyncScheduleManager.delete_by_importer_id')
-    def test_remove_importer(self, mock_delete_schedules):
+    def test_remove_importer(self, mock_delete_schedules, mock_repo_qs):
         """
         Tests the successful case of removing an importer.
         """
-
-        # Setup
-        self.repo_manager.create_repo('whiterun')
         self.importer_manager.set_importer('whiterun', 'mock-importer', {})
-
-        # Test
+        importer = RepoImporter.get_collection().find_one({'repo_id': 'whiterun',
+                                                           'id': 'mock-importer'})
+        self.assertTrue(importer is not None)
         self.importer_manager.remove_importer('whiterun')
-
-        # Verify
         importer = RepoImporter.get_collection().find_one({'repo_id': 'whiterun',
                                                            'id': 'mock-importer'})
         self.assertTrue(importer is None)
@@ -264,27 +199,10 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertEqual(1, mock_plugins.MOCK_IMPORTER.importer_removed.call_count)
         mock_delete_schedules.assert_called_once_with('whiterun', 'mock-importer')
 
-    def test_remove_importer_missing_repo(self):
-        """
-        Tests removing the importer from a repo that doesn't exist.
-        """
-
-        # Test
-        try:
-            self.importer_manager.remove_importer('not-there')
-            self.fail('Exception expected')
-        except exceptions.MissingResource, e:
-            self.assertTrue('not-there' == e.resources['resource_id'])
-
-    def test_remove_importer_missing_importer(self):
+    def test_remove_importer_missing_importer(self, mock_repo_qs):
         """
         Tests removing an importer from a repo that doesn't have one.
         """
-
-        # Setup
-        self.repo_manager.create_repo('solitude')
-
-        # Test
         try:
             self.importer_manager.remove_importer('solitude')
             self.fail('Exception expected')
@@ -292,22 +210,15 @@ class RepoManagerTests(base.PulpServerTests):
             pass
 
     @mock.patch('pulp.server.managers.repo.importer.serializers.ImporterSerializer')
-    def test_update_importer_config(self, m_serializer):
+    def test_update_importer_config(self, m_serializer, mock_repo_qs):
         """
         Tests the successful case of updating an importer's configuration.
         """
-
-        # Setup
-        self.repo_manager.create_repo('winterhold')
-
         orig_config = {'key1': 'initial1', 'key2': 'initial2', 'key3': 'initial3'}
         self.importer_manager.set_importer('winterhold', 'mock-importer', orig_config)
-
-        # Test
         config_delta = {'key1': 'updated1', 'key2': None}
-        self.importer_manager.update_importer_config('winterhold', config_delta)
 
-        # Verify
+        self.importer_manager.update_importer_config('winterhold', config_delta)
         expected_config = {'key1': 'updated1', 'key3': 'initial3'}
         set_config = m_serializer.mock_calls[0][1][0]['config']
         self.assertDictEqual(set_config, expected_config)
@@ -325,45 +236,22 @@ class RepoManagerTests(base.PulpServerTests):
             expected_config,
             mock_plugins.MOCK_IMPORTER.validate_config.call_args[0][1].repo_plugin_config)
 
-    def test_update_importer_missing_repo(self):
-        """
-        Tests the appropriate exception is raised when updating the importer on a non-existent repo.
-        """
-
-        # Test
-        try:
-            self.importer_manager.update_importer_config('not-there', {})
-            self.fail('Exception expected')
-        except exceptions.MissingResource, e:
-            self.assertTrue('not-there' == e.resources['resource_id'])
-
-    def test_update_importer_missing_importer(self):
+    def test_update_importer_missing_importer(self, mock_repo_qs):
         """
         Tests the appropriate exception is raised when updating a repo that has no importer.
         """
-
-        # Setup
-        self.repo_manager.create_repo('empty')
-
-        # Test
         try:
             self.importer_manager.update_importer_config('empty', {})
             self.fail('Exception expected')
         except exceptions.MissingResource:
             pass
 
-    def test_update_importer_plugin_exception(self):
+    def test_update_importer_plugin_exception(self, mock_repo_qs):
         """
         Tests the appropriate exception is raised when the plugin throws an error during validation.
         """
-
-        # Setup
-        self.repo_manager.create_repo('riverwood')
         self.importer_manager.set_importer('riverwood', 'mock-importer', {})
-
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = Exception()
-
-        # Test
         try:
             self.importer_manager.update_importer_config('riverwood', {})
             self.fail('Exception expected')
@@ -373,18 +261,12 @@ class RepoManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.side_effect = None
 
-    def test_update_importer_invalid_config(self):
+    def test_update_importer_invalid_config(self, mock_repo_qs):
         """
         Tests the appropriate exception is raised when the plugin indicates the config is invalid.
         """
-
-        # Setup
-        self.repo_manager.create_repo('restoration')
         self.importer_manager.set_importer('restoration', 'mock-importer', {})
-
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = (False, 'Invalid stuff')
-
-        # Test
         try:
             self.importer_manager.update_importer_config('restoration', {})
             self.fail('Exception expected')
@@ -394,18 +276,12 @@ class RepoManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = True
 
-    def test_update_importer_invalid_config_backward_compatibility(self):
+    def test_update_importer_invalid_config_backward_compatibility(self, mock_repo_qs):
         """
         Tests the appropriate exception is raised when the plugin indicates the config is invalid.
         """
-
-        # Setup
-        self.repo_manager.create_repo('restoration')
         self.importer_manager.set_importer('restoration', 'mock-importer', {})
-
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = False
-
-        # Test
         try:
             self.importer_manager.update_importer_config('restoration', {})
             self.fail('Exception expected')
@@ -415,18 +291,13 @@ class RepoManagerTests(base.PulpServerTests):
         # Cleanup
         mock_plugins.MOCK_IMPORTER.validate_config.return_value = True
 
-    def test_get_importer(self):
+    def test_get_importer(self, mock_repo_qs):
         """
         Tests retrieving a repo's importer in the successful case.
         """
-
-        # Setup
-        self.repo_manager.create_repo('trance')
         importer_config = {'volume': 'two', 'proxy_password': 'secret',
                            'basic_auth_password': 'secret'}
         self.importer_manager.set_importer('trance', 'mock-importer', importer_config)
-
-        # Test
         importer = self.importer_manager.get_importer('trance')
 
         # Verify
@@ -437,77 +308,34 @@ class RepoManagerTests(base.PulpServerTests):
         self.assertEqual(importer['config']['proxy_password'], 'secret')
         self.assertEqual(importer['config']['basic_auth_password'], 'secret')
 
-    def test_get_importer_missing_repo(self):
-        """
-        Tests getting the importer for a repo that doesn't exist.
-        """
-
-        # Test
-        self.assertRaises(exceptions.MissingResource, self.importer_manager.get_importer,
-                          'fake-repo')
-
-    def test_get_importer_missing_importer(self):
+    def test_get_importer_missing_importer(self, mock_repo_qs):
         """
         Tests getting the importer for a repo that doesn't have one associated.
         """
-
-        # Setup
-        self.repo_manager.create_repo('empty')
-
-        # Test
         self.assertRaises(exceptions.MissingResource, self.importer_manager.get_importer, 'empty')
 
-    def test_get_importers(self):
+    def test_get_importers(self, mock_repo_qs):
         """
         Tests the successful case of getting the importer list for a repo.
         """
-
-        # Setup
-        self.repo_manager.create_repo('trance')
         self.importer_manager.set_importer('trance', 'mock-importer', {})
-
-        # Test
         importers = self.importer_manager.get_importers('trance')
-
-        # Verify
         self.assertTrue(importers is not None)
         self.assertEqual(1, len(importers))
         self.assertEqual('mock-importer', importers[0]['id'])
 
-    def test_get_importers_none(self):
+    def test_get_importers_none(self, mock_repo_qs):
         """
         Tests an empty list is returned for a repo that has none.
         """
-
-        # Setup
-        self.repo_manager.create_repo('trance')
-
-        # Test
         importers = self.importer_manager.get_importers('trance')
-
-        # Verify
         self.assertTrue(importers is not None)
         self.assertEqual(0, len(importers))
 
-    def test_get_importers_missing_repo(self):
-        """
-        Tests an exception is raised when getting importers for a repo that doesn't exist.
-        """
-
-        # Test
-        try:
-            self.importer_manager.get_importers('fake')
-            self.fail('Exception expected')
-        except exceptions.MissingResource, e:
-            self.assertTrue('fake' == e.resources['resource_id'])
-
-    def test_get_set_importer_scratchpad(self):
+    def test_get_set_importer_scratchpad(self, mock_repo_qs):
         """
         Tests the retrieval and setting of a repo importer's scratchpad.
         """
-
-        # Setup
-        self.repo_manager.create_repo('repo')
         self.importer_manager.set_importer('repo', 'mock-importer', {})
 
         # Test - Unset Scratchpad
@@ -522,26 +350,17 @@ class RepoManagerTests(base.PulpServerTests):
         scratchpad = self.importer_manager.get_importer_scratchpad('repo')
         self.assertEqual(contents, scratchpad)
 
-    def test_get_set_importer_scratchpad_missing(self):
+    def test_get_set_importer_scratchpad_missing(self, mock_repo_qs):
         """
         Tests no error is raised when getting or setting the scratchpad for missing cases.
         """
-
-        # Setup
-        self.repo_manager.create_repo('empty')
-
-        # Test - Get
         scratchpad = self.importer_manager.get_importer_scratchpad('empty')
         self.assertTrue(scratchpad is None)
-
-        # Test - Set No Importer
         self.importer_manager.set_importer_scratchpad('empty', 'foo')  # should not error
-
-        # Test - Set Fake Repo
         self.importer_manager.set_importer_scratchpad('fake', 'bar')  # should not error
 
     @mock.patch.object(RepoImporter, 'get_collection')
-    def test_find_by_repo_list(self, mock_get_collection):
+    def test_find_by_repo_list(self, mock_get_collection, mock_repo_qs):
         EXPECT = {'repo_id': {'$in': ['repo-1']}}
         PROJECTION = {'scratchpad': 0}
         self.importer_manager.find_by_repo_list(['repo-1'])
@@ -549,6 +368,6 @@ class RepoManagerTests(base.PulpServerTests):
         mock_get_collection.return_value.find.assert_called_once_with(EXPECT, PROJECTION)
 
     @mock.patch.object(ScheduledCall, 'get_collection')
-    def test_find_by_repo_list_no_scheduled_sync(self, mock_get_collection):
+    def test_find_by_repo_list_no_scheduled_sync(self, mock_get_collection, mock_repo_qs):
         self.importer_manager.find_by_repo_list(['repo-1'])
         self.assertFalse(mock_get_collection.return_value.find.called)

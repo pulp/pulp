@@ -11,8 +11,8 @@
 # have received a copy of GPLv2 along with this software; if not, see
 # http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
-from pulp.server.db.model.repository import Repo
-from pulp.server.managers.repo.cud import RepoManager
+from pulp.server.db.connection import get_collection
+from pulp.server.db.migrations.lib import managers
 
 
 def migrate(*args, **kwargs):
@@ -22,6 +22,6 @@ def migrate(*args, **kwargs):
     will be that the 'content_unit_counts' attribute does not yet exist, but
     this migration is idempotent just in case.
     """
-    RepoManager().rebuild_content_unit_counts()
-    repo_collection = Repo.get_collection()
+    managers.RepoManager().rebuild_content_unit_counts()
+    repo_collection = get_collection('repos')
     repo_collection.update({}, {'$unset': {'content_unit_count': 1}}, safe=True)

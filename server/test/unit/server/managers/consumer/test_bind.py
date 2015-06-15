@@ -3,13 +3,15 @@ from mock import patch
 from .... import base
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
+from pulp.server.db import model
 from pulp.server.db.model.consumer import Bind, Consumer, ConsumerHistoryEvent
 from pulp.server.db.model.criteria import Criteria
-from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.exceptions import MissingResource, InvalidValue
 from pulp.server.managers import factory
 
 
+@patch('pulp.server.managers.consumer.bind.model.Repository.objects')
 class BindManagerTests(base.PulpServerTests):
 
     CONSUMER_ID = 'test-consumer'
@@ -34,7 +36,6 @@ class BindManagerTests(base.PulpServerTests):
     def setUp(self):
         super(BindManagerTests, self).setUp()
         Consumer.get_collection().remove()
-        Repo.get_collection().remove()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         ConsumerHistoryEvent.get_collection().remove()
@@ -44,7 +45,7 @@ class BindManagerTests(base.PulpServerTests):
     def tearDown(self):
         super(BindManagerTests, self).tearDown()
         Consumer.get_collection().remove()
-        Repo.get_collection().remove()
+        model.Repository.drop_collection()
         RepoDistributor.get_collection().remove()
         Bind.get_collection().remove()
         ConsumerHistoryEvent.get_collection().remove()
@@ -52,8 +53,6 @@ class BindManagerTests(base.PulpServerTests):
 
     def populate(self):
         config = {'key1': 'value1', 'key2': None}
-        manager = factory.repo_manager()
-        manager.create_repo(self.REPO_ID)
         manager = factory.repo_distributor_manager()
         manager.add_distributor(
             self.REPO_ID,
@@ -65,10 +64,8 @@ class BindManagerTests(base.PulpServerTests):
         for consumer_id in self.ALL_CONSUMERS:
             manager.register(consumer_id)
 
-    def test_bind(self):
-        # Setup
+    def test_bind(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -82,10 +79,8 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
-    def test_bind_consumer_history(self):
-        # Setup
+    def test_bind_consumer_history(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -98,7 +93,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(history['originator'], 'SYSTEM')
         self.assertEqual(history['details'], self.DETAILS)
 
-    def test_bind_non_bool_notify(self):
+    def test_bind_non_bool_notify(self, mock_repo_qs):
         # Setup
         self.populate()
 
@@ -111,7 +106,7 @@ class BindManagerTests(base.PulpServerTests):
         except InvalidValue, e:
             self.assertEqual(['notify_agent'], e.property_names)
 
-    def test_unbind(self):
+    def test_unbind(self, mock_repo_qs):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -131,8 +126,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertTrue(bind is not None)
         self.assertTrue(bind['deleted'])
 
-    def test_unbind_consumer_history(self):
-        # Setup
+    def test_unbind_consumer_history(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
@@ -148,7 +142,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(history['originator'], 'SYSTEM')
         self.assertEqual(history['details'], self.DETAILS)
 
-    def test_get_bind(self):
+    def test_get_bind(self, mock_repo_qs):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -162,7 +156,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['repo_id'], self.REPO_ID)
         self.assertEqual(bind['distributor_id'], self.DISTRIBUTOR_ID)
 
-    def test_get_bind_not_found(self):
+    def test_get_bind_not_found(self, mock_repo_qs):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -171,25 +165,20 @@ class BindManagerTests(base.PulpServerTests):
         # Test
         self.assertRaises(MissingResource, manager.get_bind, 'A', 'B', 'C')
 
-    def test_get_bind_repo_gone(self):
+    def test_get_bind_repo_gone(self, mock_repo_qs):
         """
         Test that retrieving a consumer binding when the repo is gone is possible
         """
-        # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
-        Repo.get_collection().remove({})
-
-        # Test
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertEquals(bind['consumer_id'], self.CONSUMER_ID)
         self.assertEquals(bind['repo_id'], self.REPO_ID)
         self.assertEquals(bind['distributor_id'], self.DISTRIBUTOR_ID)
 
-    def test_find_all(self):
-        # Setup
+    def test_find_all(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
@@ -205,8 +194,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
-    def test_find_by_consumer(self):
-        # Setup
+    def test_find_by_consumer(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
@@ -222,8 +210,7 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
-    def test_find_by_criteria(self):
-        # Setup
+    def test_find_by_criteria(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
@@ -249,10 +236,8 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
-    def test_find_by_repo(self):
-        # Setup
+    def test_find_by_repo(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -267,10 +252,8 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
-    def test_find_by_distributor(self):
-        # Setup
+    def test_find_by_distributor(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -285,10 +268,8 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(bind['notify_agent'], self.NOTIFY_AGENT)
         self.assertEqual(bind['binding_config'], self.BINDING_CONFIG)
 
-    def test_consumer_deleted(self):
-        # Setup
+    def test_consumer_deleted(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -302,9 +283,7 @@ class BindManagerTests(base.PulpServerTests):
 
     @patch('pulp.server.managers.factory.consumer_agent_manager')
     def test_consumer_unregister_cleanup(self, *unused):
-        # Setup
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -319,10 +298,8 @@ class BindManagerTests(base.PulpServerTests):
         binds = manager.find_by_consumer(self.CONSUMER_ID)
         self.assertEqual(len(binds), 0)
 
-    def test_request_pending(self):
-        # Setup
+    def test_request_pending(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -341,10 +318,8 @@ class BindManagerTests(base.PulpServerTests):
         self.assertEqual(actions[0]['action'], Bind.Action.BIND)
         self.assertEqual(actions[0]['status'], Bind.Status.PENDING)
 
-    def test_bind_request_succeeded(self):
-        # Setup
+    def test_bind_request_succeeded(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -372,10 +347,8 @@ class BindManagerTests(base.PulpServerTests):
         actions = bind['consumer_actions']
         self.assertEqual(len(actions), 4)
 
-    def test_bind_action_failed(self):
-        # Setup
+    def test_bind_action_failed(self, mock_repo_qs):
         self.populate()
-        # Test
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                      self.NOTIFY_AGENT, self.BINDING_CONFIG)
@@ -419,21 +392,19 @@ class BindManagerTests(base.PulpServerTests):
         actions = bind['consumer_actions']
         self.assertEqual(len(actions), 2)
 
-    def test_mark_deleted(self):
-        # Setup
+    def test_mark_deleted(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         bind = manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
                             self.NOTIFY_AGENT, self.BINDING_CONFIG)
         self.assertFalse(bind['deleted'])
-        # Test
+
         manager.mark_deleted(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         # Validate
         bind = manager.get_bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID)
         self.assertTrue(bind['deleted'])
 
-    def test_delete(self):
-        # Setup
+    def test_delete(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         for consumer_id in self.ALL_CONSUMERS:
@@ -452,7 +423,7 @@ class BindManagerTests(base.PulpServerTests):
         manager.get_bind(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager.get_bind(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID)
 
-    def test_delete_but_not_marked_for_delete(self):
+    def test_delete_but_not_marked_for_delete(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         for consumer_id in self.ALL_CONSUMERS:
@@ -469,7 +440,7 @@ class BindManagerTests(base.PulpServerTests):
         manager.get_bind(self.EXTRA_CONSUMER_1, self.REPO_ID, self.DISTRIBUTOR_ID)
         manager.get_bind(self.EXTRA_CONSUMER_2, self.REPO_ID, self.DISTRIBUTOR_ID)
 
-    def test_delete_with_actions(self):
+    def test_delete_with_actions(self, mock_repo_qs):
         # Setup
         self.populate()
         manager = factory.consumer_bind_manager()
@@ -490,8 +461,7 @@ class BindManagerTests(base.PulpServerTests):
             self.REPO_ID,
             self.DISTRIBUTOR_ID)
 
-    def test_hard_delete(self):
-        # Setup
+    def test_hard_delete(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
         manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
@@ -510,11 +480,9 @@ class BindManagerTests(base.PulpServerTests):
         bind = collection.find_one(bind_id)
         self.assertTrue(bind is None)
 
-    def test_get_missing_bind(self):
-        # Setup
+    def test_get_missing_bind(self, mock_repo_qs):
         self.populate()
         manager = factory.consumer_bind_manager()
-        # Test
         try:
             manager.get_bind(
                 self.CONSUMER_ID,
@@ -525,12 +493,10 @@ class BindManagerTests(base.PulpServerTests):
             # expected
             pass
 
-    def test_bind_missing_consumer(self):
-        # Setup
+    def test_bind_missing_consumer(self, mock_repo_qs):
         self.populate()
         collection = Consumer.get_collection()
         collection.remove({})
-        # Test
         manager = factory.consumer_bind_manager()
         try:
             manager.bind(self.CONSUMER_ID, self.REPO_ID, self.DISTRIBUTOR_ID,
@@ -545,12 +511,10 @@ class BindManagerTests(base.PulpServerTests):
         binds = [b for b in binds]
         self.assertEqual(len(binds), 0)
 
-    def test_bind_missing_distributor(self):
-        # Setup
+    def test_bind_missing_distributor(self, mock_repo_qs):
         self.populate()
         collection = RepoDistributor.get_collection()
         collection.remove({})
-        # Test
         manager = factory.consumer_bind_manager()
         self.assertRaises(InvalidValue, manager.bind, self.CONSUMER_ID, self.REPO_ID,
                           self.DISTRIBUTOR_ID, self.NOTIFY_AGENT, self.BINDING_CONFIG)
