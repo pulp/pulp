@@ -1,12 +1,13 @@
 from pulp.client.extensions.decorator import priority
 from pulp.client.admin import (
-    admin_auth, consumer, content, auth, binding, event, orphan, repo,
+    admin_auth, admin_status, consumer, content, auth, binding, event, orphan, repo,
     server_info, tasks)
 
 
 @priority()
 def initialize(context):
     admin_auth.initialize(context)
+    admin_status.initialize(context)
     consumer.initialize(context)
     content.initialize(context)
     auth.initialize(context)
