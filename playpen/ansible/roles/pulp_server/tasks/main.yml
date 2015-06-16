@@ -1,2 +1,8 @@
 ---
 - selinux: state=disabled
+
+- name: Install packages
+  dnf: name={{ item }} state=latest
+  with_items:
+      - koji
+      - tito
