@@ -3,13 +3,10 @@ HTTP utilities to help Pulp web services with HTTP using the django framework
 """
 
 import base64
-import httplib
 import os
 import re
 import threading
 import urllib
-
-from pulp.server.compat import http_responses
 
 
 _thread_local = threading.local()
@@ -235,5 +232,3 @@ def ensure_ending_slash(uri_or_path):
     if not uri_or_path.endswith('/'):
         uri_or_path += '/'
     return uri_or_path
-
-

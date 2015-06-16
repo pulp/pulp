@@ -1,16 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2010-2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 """
 This module provides "backward compatibility" for both python's standard library
 and third-party modules.
@@ -18,57 +6,33 @@ and third-party modules.
 
 import sys
 
-# stdlib imports ---------------------------------------------------------------
-
-try:
-    import json as _json
-except ImportError:
-    import simplejson as _json
-
-json = _json
-
-
 if sys.version_info < (2, 5):
-    import sha as _digestmod
+    import sha as digestmod
 else:
-    from hashlib import sha256 as _digestmod
-
-digestmod = _digestmod
-
-# pymongo imports --------------------------------------------------------------
-
+    from hashlib import sha256 as digestmod  # noqa
 try:
-    from bson import json_util as _json_util
+    import json
 except ImportError:
-    from pymongo import json_util as _json_util
-
-json_util = _json_util
+    import simplejson as json  # noqa
 
 
 try:
-    from bson.objectid import ObjectId as _ObjectId
+    from bson import BSON
 except ImportError:
-    from pymongo.objectid import ObjectId as _ObjectId
-
-ObjectId = _ObjectId
-
-
+    from pymongo.bson import BSON  # noqa
 try:
-    from bson import BSON as _BSON
+    from bson import json_util
 except ImportError:
-    from pymongo.bson import BSON as _BSON
-
-BSON = _BSON
-
-
+    from pymongo import json_util  # noqa
 try:
-    from bson.son import SON as _SON
+    from bson.objectid import ObjectId
 except ImportError:
-    from pymongo.son import SON as _SON
+    from pymongo.objectid import ObjectId  # noqa
+try:
+    from bson.son import SON
+except ImportError:
+    from pymongo.son import SON  # noqa
 
-SON = _SON
-
-# functools wraps decorator ----------------------------------------------------
 
 def _update_wrapper(orig, wrapper):
     # adopt the original's metadata
@@ -79,14 +43,14 @@ def _update_wrapper(orig, wrapper):
         getattr(wrapper, attr).update(getattr(orig, attr, {}))
     return wrapper
 
+
 def wraps(orig):
-    # decorator to make well-behaved decorators
-    # http://wiki.python.org/moin/PythonDecoratorLibrary#Creating_Well-Behaved_Decorators_.2BAC8_.22Decorator_decorator.22
+    # decorator to make well-behaved decorators. See "Creating Well-Behaved Decorators at
+    # http://wiki.python.org/moin/PythonDecoratorLibrary
     def _wraps(decorator):
         return _update_wrapper(orig, decorator)
     return _wraps
 
-# httplib responses dict -------------------------------------------------------
 
 http_responses = {
     200: 'OK',
@@ -130,4 +94,3 @@ http_responses = {
     503: 'Service Unavailable',
     504: 'Gateway Timeout',
     505: 'HTTP Version Not Supported'}
-

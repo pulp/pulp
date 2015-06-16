@@ -2,8 +2,8 @@ import logging
 import sys
 
 # We need to read the config prior to any other imports, since some of the imports will invoke
-# setup methods.
-from pulp.server import config  # automatically loads config
+# setup methods. Importing the config reads the config file, unfortunately.
+from pulp.server import config  # noqa
 from pulp.server import initialization, logs
 from pulp.server.agent.direct.services import Services as AgentServices
 # Even though this import does not get used anywhere, we must import it for the Celery
@@ -84,11 +84,6 @@ def _initialize_web_services():
 
     # start agent services
     AgentServices.start()
-
-    # Setup debugging, if configured
-    if config.config.getboolean('server', 'debugging_mode'):
-        STACK_TRACER = StacktraceDumper()
-        STACK_TRACER.start()
 
     # If we got this far, it was successful, so flip the flag
     _IS_INITIALIZED = True

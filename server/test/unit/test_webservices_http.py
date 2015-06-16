@@ -4,6 +4,7 @@ import mock
 
 from pulp.server.webservices import http
 
+
 class TestHTTP(unittest.TestCase):
     @mock.patch.object(http, 'uri_path', return_value='/base/uri/')
     def test_extend_uri_path(self, mock_path):
@@ -25,4 +26,3 @@ class TestHTTP(unittest.TestCase):
         # verify
         self.assertEqual(mock_path.call_count, 0)
         self.assertEqual(ret, '/base/uri/repo1/')
-
