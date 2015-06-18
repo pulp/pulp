@@ -436,6 +436,7 @@ class ContentUnit(Document):
                 document_full_storage_location = os.path.join(platform_storage_location,
                                                               target_file_name)
                 shutil.copy(document._source_location, document_full_storage_location)
+                platform_storage_location = document_full_storage_location
             document.storage_path = platform_storage_location
 
     def set_content(self, source_location):
