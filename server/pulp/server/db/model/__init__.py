@@ -158,6 +158,9 @@ class Worker(Document):
     name = StringField(primary_key=True)
     last_heartbeat = DateTimeField()
 
+    # For backward compatibility
+    _ns = StringField(default='workers')
+
     meta = {'collection': 'workers',
             'indexes': [],  # this is a small collection that does not need an index
             'allow_inheritance': False,
