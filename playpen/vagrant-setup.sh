@@ -64,10 +64,7 @@ fi
 
 # install rpms, then remove pulp*
 echo "installing RPMs"
-sudo dnf install -y @pulp-server-qpid @pulp-admin @pulp-consumer
-sudo dnf remove --setopt=clean_requirements_on_remove=false -y pulp-\* python-pulp\*
-sudo dnf install -y git mongodb mongodb-server python-debian python-django python-glanceclient \
-                    python-keystoneclient python-mongoengine python-paste python-qpid-qmf \
+sudo dnf install -y git mongodb mongodb-server python-gofer-qpid python-qpid python-qpid-qmf \
                     python-setuptools python-sphinx qpid-cpp-server qpid-cpp-server-store
 
 # disable mongo journaling since this is a dev setup
@@ -88,6 +85,7 @@ for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_
     ! mkvirtualenv --system-site-packages $r
     workon $r
     setvirtualenvproject
+    sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' *.spec | grep -v "/.*" | grep -v "python-pulp.* " | grep -v "pulp.*" | uniq)
     # Install dependencies for automated tests
     pip install -r test_requirements.txt
     sudo python ./pulp-dev.py -I
@@ -96,8 +94,38 @@ for r in {pulp,pulp_deb,pulp_docker,pulp_openstack,pulp_ostree,pulp_puppet,pulp_
     popd
   fi
 done
+# If crane is present, let's set it and its dependencies up as well
+if [ -d crane ]; then
+    echo "installing crane's environment"
+    pushd crane
+    ! mkvirtualenv --system-site-packages crane
+    workon crane
+    setvirtualenvproject
+    # Install dependencies
+    sudo dnf install -y $(rpmspec -q --queryformat '[%{REQUIRENAME}\n]' python-crane.spec | grep -v "/.*" | uniq)
+    pip install -r test-requirements.txt
+    python setup.py test
 
-# If there is no .vimrm, give them a basic one
+    cat << EOF > /home/vagrant/devel/crane/crane.conf
+[general]
+data_dir: /home/vagrant/devel/crane/metadata
+debug: true
+endpoint: pulp-devel:5001
+EOF
+
+    mkdir -p metadata
+    sudo ln -s /home/vagrant/devel/crane/metadata/ /var/lib/pulp/published/docker/app
+
+    if ! grep CRANE_CONFIG_PATH ~/.bashrc; then
+        echo "export CRANE_CONFIG_PATH=/home/vagrant/devel/crane/crane.conf" >> /home/vagrant/.bashrc
+    fi
+    deactivate
+    popd
+fi
+popd
+
+
+# If there is no .vimrc, give them a basic one
 if [ ! -f /home/vagrant/.vimrc ]; then
     echo -e "set expandtab\nset tabstop=4\nset shiftwidth=4\n" > /home/vagrant/.vimrc
 fi
@@ -124,10 +152,9 @@ if [ ! -f /home/vagrant/.pulp/user-cert.pem ]; then
 fi
 
 if [ "$(pulp-admin rpm repo list | grep zoo)" = "" ]; then
-    echo "Creating and syncing the example zoo repository"
+    echo "Creating the example zoo repository"
     pulp-admin rpm repo create --repo-id zoo --feed \
         https://repos.fedorapeople.org/repos/pulp/pulp/demo_repos/zoo/ --relative-url zoo
-    pulp-admin rpm repo sync run --repo-id zoo
 fi
 
 # Give the user some use instructions
