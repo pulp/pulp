@@ -55,7 +55,11 @@ if ! grep pstart ~/.bashrc; then
     echo -e "    for s in goferd httpd pulp_workers pulp_celerybeat pulp_resource_manager; do" >> ~/.bashrc
     echo -e "        sudo systemctl \$1 \$s;\n    done;\n}" >> ~/.bashrc
 fi
-# We need to source those variables from the bashrc so that we can use the above in this script
+if ! grep DJANGO_SETTINGS_MODULE ~/.bashrc; then
+    echo "export DJANGO_SETTINGS_MODULE=pulp.server.webservices.settings" >> ~/.bashrc
+fi
+# We always need to source those variables from the bashrc, in case the user is running this for the
+# first time, or invoking the script directly with bash.
 . ~/.bashrc
 
 # install rpms, then remove pulp*
