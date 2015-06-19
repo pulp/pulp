@@ -40,7 +40,6 @@ with an importer that supports the type of units being copied.
       }
     },
    'override_config': {
-     'resolve_dependencies: true,
      'recursive': true
     },
   }
