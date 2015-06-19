@@ -13,8 +13,8 @@ Here are some tips:
   Similarly, run "workon pulp" to jump into the pulp platform virtualenv.
 * Each project has a "run-tests.py" to run the unit tests.
 * There are a set of bash functions in your .bashrc that are useful: pstart,
-  pstop, prestart, pstatus. They will start, stop, restart, and tell you the
-  status of all of the Pulp services.
+  pstop, prestart, pstatus, and ptests. They will start, stop, restart, tell you
+  the status of all of the Pulp services, and run all unit tests.
 * You can ssh into your vagrant environment with vagrant ssh, but presumably
   you already know this since you are reading this message :)
 
