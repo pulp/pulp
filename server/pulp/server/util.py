@@ -1,19 +1,6 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public License as
-# published by the Free Software Foundation; either version 2 of the License
-# (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied, including the
-# implied warranties of MERCHANTABILITY, NON-INFRINGEMENT, or FITNESS FOR A
-# PARTICULAR PURPOSE.
-# You should have received a copy of GPLv2 along with this software; if not,
-# see http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
-
-# XXX this is not a dumping grounds for any random code. It is a place to put
-# paradigm-changing code that allows you to get unique or more efficient behaviors
-
+"""
+This module contains utility code to be used by pulp.server.
+"""
 from gettext import gettext as _
 
 from pulp.server.exceptions import PulpExecutionException
@@ -71,7 +58,6 @@ class subdict(dict):
         n = dict((k, v) for k, v in d.items() if k in keys)
         super(subdict, self).__init__(n)
 
-# topological sorting ----------------------------------------------------------
 
 class TopologicalSortError(PulpExecutionException):
 
@@ -156,7 +142,6 @@ def topological_sort(graph):
 
     return sorted_vertices
 
-# legacy delta -----------------------------------------------------------------
 
 class Delta(dict):
     """
@@ -179,6 +164,6 @@ class Delta(dict):
         dict.__init__(self)
         if isinstance(filter, basestring):
             filter = (filter,)
-        for k,v in obj.items():
+        for k, v in obj.items():
             if k in filter:
                 self[k] = v

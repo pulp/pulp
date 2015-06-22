@@ -21,19 +21,8 @@ paths_to_check = [
     'oid_validation/',
     'repoauth/',
     'server/pulp/plugins',
-    'server/pulp/server/agent/',
-    'server/pulp/server/async/',
-    'server/pulp/server/auth/',
-    'server/pulp/server/content/',
-    'server/pulp/server/db/',
-    'server/pulp/server/event/',
-    'server/pulp/server/maintenance/',
-    'server/pulp/server/managers',
-    'server/pulp/server/tasks/',
-    'server/pulp/server/webservices/middleware/',
-    'server/pulp/server/webservices/views/',
-    'server/test/unit/plugins/',
-    'server/test/unit/server/']
+    'server/pulp/server/',
+    'server/test/unit/']
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
