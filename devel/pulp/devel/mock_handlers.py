@@ -1,38 +1,19 @@
-#!/usr/bin/python
-#
-# Copyright (c) 2011 Red Hat, Inc.
-#
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
-#
-# Contains mock agent content handlers.
-#
+"""
+Contains mock agent content handlers.
+"""
 
 import os
 import shutil
-
-from pulp.agent.lib.report import *
+import sys
 
 
 PACKAGE = 'test.handlers'
 
-#
+
 # Handlers to be deployed for loader testing
-#
-
-# -- Mock RPM Handler --------------------------------------------------------------------
-
 RPM = dict(
-name='rpm',
-descriptor="""
+    name='rpm',
+    descriptor="""
 [main]
 enabled=1
 
@@ -52,8 +33,7 @@ class=YumHandler
 [Linux]
 class=LinuxHandler
 """,
-handler=
-"""
+    handler="""
 from pulp.agent.lib.handler import *
 from pulp.agent.lib.report import *
 from pulp.agent.lib.conduit import *
@@ -127,12 +107,10 @@ class LinuxHandler(SystemHandler):
 """)
 
 
-# -- Mock SRPM Handler -------------------------------------------------------------------
 # note: loading into site-packages
-
 SRPM = dict(
-name='srpm',
-descriptor="""
+    name='srpm',
+    descriptor="""
 [main]
 enabled=1
 
@@ -143,8 +121,7 @@ content=srpm
 class=%s.srpm.SRpmHandler
 
 """ % PACKAGE,
-handler=
-"""
+    handler="""
 from pulp.agent.lib.handler import *
 from pulp.agent.lib.report import *
 from pulp.agent.lib.conduit import *
@@ -175,25 +152,22 @@ class SRpmHandler(ContentHandler):
     report.succeeded({}, len(units))
     return report
 """,
-site_packages=True)
+    site_packages=True)
 
-# -- Mock (section missing) Handler ------------------------------------------------------
 
 SECTION_MISSING = dict(
-name='Test-section-not-found',
-descriptor="""
+    name='Test-section-not-found',
+    descriptor="""
 [main]
 enabled=1
 
 [types]
 content=puppet
 """,
-handler="""
+    handler="""
 class A: pass
 """)
 
-
-# -- Mock (class not defined) Handler ----------------------------------------------------
 
 NO_MODULE = dict(
     name='Test-class-property-missing',
@@ -205,15 +179,14 @@ content=puppet
 [puppet]
 foo=bar
 """,
-handler="""
+    handler="""
 class A: pass
 """)
 
-# -- Mock (class not found) Handler ----------------------------------------------------
 
 CLASS_NDEF = dict(
-name='Test-class-not-found',
-descriptor="""
+    name='Test-class-not-found',
+    descriptor="""
 [main]
 enabled=1
 [types]
@@ -222,9 +195,6 @@ content=something
 class=Something
 """)
 
-#
-# Mock Deployer
-#
 
 class MockDeployer:
 

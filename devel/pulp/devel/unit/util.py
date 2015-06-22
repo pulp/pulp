@@ -1,5 +1,5 @@
-import os
 import mock
+import os
 
 
 def compare_dict(source, target):
@@ -17,7 +17,7 @@ def compare_dict(source, target):
     if not isinstance(target, dict):
         raise AssertionError("Target is not a dictionary")
 
-    #test keys
+    # test keys
     source_keys = set(source.keys())
     target_keys = set(target.keys())
 

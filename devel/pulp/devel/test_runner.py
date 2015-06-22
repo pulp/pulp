@@ -4,10 +4,9 @@ This module is to contain the helper functions used by the test runners in pulp,
 pulp_puppet
 """
 
-import copy
+import argparse
 import subprocess
 import sys
-import argparse
 
 
 def run_tests(packages, tests_all_platforms, tests_non_rhel5,
@@ -26,7 +25,7 @@ def run_tests(packages, tests_all_platforms, tests_non_rhel5,
     :type tests_non_rhel5: list of str
     :param flake8_paths: paths that should be checked with flake8
     :type flake8_paths: list of str
-    :return: the exit code from nosetests 
+    :return: the exit code from nosetests
     :rtype:  integer
     """
     parser = argparse.ArgumentParser()
