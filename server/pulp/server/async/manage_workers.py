@@ -115,7 +115,7 @@ def _stop_workers():
         sys.exit(exit_code)
 
 
-def main():
+if __name__ == "__main__":
     """
     This is the entry point method that becomes pulp-manage-workers.
     """
