@@ -199,8 +199,6 @@ cp server/etc/default/upstart_pulp_celerybeat %{buildroot}/%{_sysconfdir}/defaul
 cp server/etc/default/upstart_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
 cp server/etc/default/upstart_pulp_workers %{buildroot}/%{_sysconfdir}/default/pulp_workers
 cp -d server/etc/rc.d/init.d/* %{buildroot}/%{_initddir}/
-# We don't want to install pulp-manage-workers in upstart systems
-rm -rf %{buildroot}/%{_libexecdir}
 %else
 cp server/etc/default/systemd_pulp_celerybeat %{buildroot}/%{_sysconfdir}/default/pulp_celerybeat
 cp server/etc/default/systemd_pulp_resource_manager %{buildroot}/%{_sysconfdir}/default/pulp_resource_manager
@@ -366,8 +364,6 @@ Pulp provides replication, access, and accounting for software repositories.
 # Install the systemd unit files
 %defattr(-,root,root,-)
 %{_usr}/lib/systemd/system/*
-%defattr(755,root,root,-)
-%{_libexecdir}/pulp-manage-workers
 %endif
 # 640 root:apache
 %defattr(640,root,apache,-)
