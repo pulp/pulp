@@ -6,8 +6,8 @@ After=network.target
 Type=oneshot
 RemainAfterExit=true
 WorkingDirectory=/var/run/pulp/
-ExecStart=/usr/libexec/pulp-manage-workers start
-ExecStop=/usr/libexec/pulp-manage-workers stop
+ExecStart=/usr/bin/python -m  pulp.server.async.manage_workers start
+ExecStop=/usr/bin/python -m  pulp.server.async.manage_workers stop
 
 [Install]
 WantedBy=multi-user.target
