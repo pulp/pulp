@@ -117,7 +117,7 @@ def _stop_workers():
 
 def main():
     """
-    This is the entry point method that becomes pulp-manage-workers.
+    This function is executed by the systemd unit file to manage the worker units.
     """
     if len(sys.argv) != 2 or sys.argv[1] not in ('start', 'stop'):
         sys.stderr.write('This script may only be called with "start" or "stop" as an argument.\n')
@@ -128,3 +128,7 @@ def main():
         _start_workers()
     elif _action == 'stop':
         _stop_workers()
+
+
+if __name__ == "__main__":
+    main() #nocover
