@@ -1,5 +1,4 @@
 from gettext import gettext as _
-import sys
 
 import pulp.common.tags as tag_utils
 from pulp.bindings.exceptions import PulpServerException
@@ -32,14 +31,13 @@ class BaseTasksSection(PulpCliSection):
     to provide consistent functionality for a subset of tasks.
     """
 
-    all_flag = PulpCliFlag('--all',  _('if specified, all tasks in all states are shown'),
+    all_flag = PulpCliFlag('--all', _('if specified, all tasks in all states are shown'),
                            aliases=['-a'])
     state_option = PulpCliOption('--state',
                                  _('comma-separated list of tasks states desired to be '
                                    'shown. Example: "running,waiting,canceled,successful,failed". '
                                    'Do not include spaces'), aliases=['-s'], required=False,
                                  parse_func=parsers.csv)
-
 
     def __init__(self, context, name, description):
         PulpCliSection.__init__(self, name, description)
@@ -162,7 +160,7 @@ class BaseTasksSection(PulpCliSection):
                 self.context.prompt.render_failure_message(msg)
                 return
             else:
-                raise e, None, sys.exc_info()[2]
+                raise
 
     @staticmethod
     def parse_state(task):

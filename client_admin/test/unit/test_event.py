@@ -1,15 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
 
 import unittest
 
@@ -32,13 +21,13 @@ class TestEventSection(unittest.TestCase):
 
 class TestGenericSection(unittest.TestCase):
     CREATE_ARGS = {
-        'config' : {'a' : 'foo'},
-        'event_types' : ['repo-sync-started'],
-        'notifier_type' : 'email'
+        'config': {'a': 'foo'},
+        'event_types': ['repo-sync-started'],
+        'notifier_type': 'email'
     }
 
     def setUp(self):
-        self.section = event.GenericSection(mock.MagicMock(), 'section' ,'stuff')
+        self.section = event.GenericSection(mock.MagicMock(), 'section', 'stuff')
 
     def test_create(self):
         self.section._create(**self.CREATE_ARGS)
@@ -62,14 +51,14 @@ class TestGenericSection(unittest.TestCase):
         self.assertEqual(self.section.context.server.event_listener.update.call_count, 0)
 
     def test_update(self):
-        self.section._update('foo', {'notifier_config': {'a':'bar'}})
+        self.section._update('foo', {'notifier_config': {'a': 'bar'}})
 
         self.assertEqual(self.section.context.prompt.render_success_message.call_count, 1)
         self.section.context.server.event_listener.update.assert_called_once_with(
             'foo', notifier_config={'a': 'bar'})
 
     def test_update_event_type(self):
-        self.section._update('foo', {'event_types' : ['blah']})
+        self.section._update('foo', {'event_types': ['blah']})
 
         self.assertEqual(self.section.context.prompt.render_success_message.call_count, 1)
         self.section.context.server.event_listener.update.assert_called_once_with(
@@ -96,7 +85,7 @@ class TestListenerSection(unittest.TestCase):
         self.section.context.prompt.render_document.assert_called_once_with({})
 
     def test_delete(self):
-        args = {'listener-id' : 'foo'}
+        args = {'listener-id': 'foo'}
         self.section.delete(**args)
 
         self.assertEqual(self.section.context.prompt.render_success_message.call_count, 1)
@@ -110,8 +99,8 @@ class TestAMQPSection(unittest.TestCase):
 
     def test_create(self):
         kwargs = {
-            'event-type' : 'repo-sync-finished',
-            'exchange' : 'pulp',
+            'event-type': 'repo-sync-finished',
+            'exchange': 'pulp',
         }
         self.section.create(**kwargs)
 
@@ -125,9 +114,9 @@ class TestAMQPSection(unittest.TestCase):
 
     def test_update_exchange(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'exchange' : 'pulp',
-            'event-type' : None
+            'listener-id': 'listener1',
+            'exchange': 'pulp',
+            'event-type': None
         }
 
         self.section.update(**kwargs)
@@ -136,9 +125,9 @@ class TestAMQPSection(unittest.TestCase):
 
     def test_update_exchange_empty(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'exchange' : '',
-            'event-type' : None
+            'listener-id': 'listener1',
+            'exchange': '',
+            'event-type': None
         }
 
         self.section.update(**kwargs)
@@ -152,9 +141,9 @@ class TestEmailSection(unittest.TestCase):
 
     def test_create(self):
         kwargs = {
-            'event-type' : 'repo-sync-finished',
-            'subject' : 'hi',
-            'addresses' : ['info@some.domain', 'info@other.domain']
+            'event-type': 'repo-sync-finished',
+            'subject': 'hi',
+            'addresses': ['info@some.domain', 'info@other.domain']
         }
         self.section.create(**kwargs)
 
@@ -162,17 +151,17 @@ class TestEmailSection(unittest.TestCase):
             'email',
             {
                 'subject': 'hi',
-                'addresses' : ['info@some.domain', 'info@other.domain']
+                'addresses': ['info@some.domain', 'info@other.domain']
             },
             'repo-sync-finished'
         )
 
     def test_update_subject(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'subject' : 'hi',
-            'addresses' : None,
-            'event-type' : None
+            'listener-id': 'listener1',
+            'subject': 'hi',
+            'addresses': None,
+            'event-type': None
         }
 
         self.section.update(**kwargs)
@@ -181,10 +170,10 @@ class TestEmailSection(unittest.TestCase):
 
     def test_update_addresses(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'subject' : None,
-            'addresses' : ['info@some.domain'],
-            'event-type' : None
+            'listener-id': 'listener1',
+            'subject': None,
+            'addresses': ['info@some.domain'],
+            'event-type': None
         }
 
         self.section.update(**kwargs)
@@ -193,10 +182,10 @@ class TestEmailSection(unittest.TestCase):
 
     def test_update_event_types(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'subject' : None,
-            'addresses' : None,
-            'event-type' : ['repo-sync-finished']
+            'listener-id': 'listener1',
+            'subject': None,
+            'addresses': None,
+            'event-type': ['repo-sync-finished']
         }
 
         self.section.update(**kwargs)
@@ -210,8 +199,8 @@ class TestRESTAPISection(unittest.TestCase):
 
     def test_create_basic(self):
         kwargs = {
-            'event-type' : 'repo-sync-finished',
-            'url' : 'http://redhat.com',
+            'event-type': 'repo-sync-finished',
+            'url': 'http://redhat.com',
         }
         self.section.create(**kwargs)
 
@@ -223,30 +212,29 @@ class TestRESTAPISection(unittest.TestCase):
 
     def test_create_with_username_password(self):
         kwargs = {
-            'event-type' : 'repo-sync-finished',
-            'url' : 'http://redhat.com',
-            'username' : 'me',
-            'password' : 'letmein'
-            }
+            'event-type': 'repo-sync-finished',
+            'url': 'http://redhat.com',
+            'username': 'me',
+            'password': 'letmein'}
         self.section.create(**kwargs)
 
         self.section.context.server.event_listener.create.assert_called_once_with(
             'http',
             {
                 'url': 'http://redhat.com',
-                'username' : 'me',
-                'password' : 'letmein'
+                'username': 'me',
+                'password': 'letmein'
             },
             'repo-sync-finished'
         )
 
     def test_update_url(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'url' : 'http://redhat.com',
-            'username' : None,
-            'password' : None,
-            'event-type' : None,
+            'listener-id': 'listener1',
+            'url': 'http://redhat.com',
+            'username': None,
+            'password': None,
+            'event-type': None,
         }
 
         self.section.update(**kwargs)
@@ -255,37 +243,37 @@ class TestRESTAPISection(unittest.TestCase):
 
     def test_update_username(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'url' : None,
-            'username' : 'me',
-            'password' : None,
-            'event-type' : None,
+            'listener-id': 'listener1',
+            'url': None,
+            'username': 'me',
+            'password': None,
+            'event-type': None,
         }
 
         self.section.update(**kwargs)
         self.section.context.server.event_listener.update.assert_called_once_with(
-            'listener1', notifier_config={'username' : 'me'})
+            'listener1', notifier_config={'username': 'me'})
 
     def test_update_password(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'url' : None,
-            'username' : None,
-            'password' : 'letmein',
-            'event-type' : None,
+            'listener-id': 'listener1',
+            'url': None,
+            'username': None,
+            'password': 'letmein',
+            'event-type': None,
         }
 
         self.section.update(**kwargs)
         self.section.context.server.event_listener.update.assert_called_once_with(
-            'listener1', notifier_config={'password' : 'letmein'})
+            'listener1', notifier_config={'password': 'letmein'})
 
     def test_update_event_types(self):
         kwargs = {
-            'listener-id' : 'listener1',
-            'url' : None,
-            'username' : None,
-            'password' : None,
-            'event-type' : ['repo-sync-finished'],
+            'listener-id': 'listener1',
+            'url': None,
+            'username': None,
+            'password': None,
+            'event-type': ['repo-sync-finished'],
         }
 
         self.section.update(**kwargs)
