@@ -24,6 +24,14 @@ prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
    
       $ sudo yum install ansible vagrant-libvirt
 
+#. Optionally, install `vagrant-cachier <http://fgrehm.viewdocs.io/vagrant-cachier>`_. It will cache
+   the packages that are downloaded during provisioning on your host so that the next time you
+   provision you will save some time and bandwidth. You will need to install some development
+   libraries as well so that the ``vagrant plugin install`` command has its dependencies available::
+
+      $ sudo yum install gcc-c++ libvirt-devel ruby-devel
+      $ vagrant plugin install vagrant-cachier
+
 #. Install NFS. NFS will be used to share your code directory with the deployed virtual machine::
    
       $ sudo yum install nfs-utils

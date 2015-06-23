@@ -13,6 +13,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
      ansible.playbook = "playpen/ansible/playbook.yml"
  end
 
+ if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+    config.cache.synced_folder_opts = {
+        type: :nfs,
+        mount_options: ['rw', 'vers=4', 'tcp']
+    }
+ end
+
  # Create the "dev" box
  config.vm.define "dev" do |dev|
     dev.vm.host_name = "pulp-devel"
