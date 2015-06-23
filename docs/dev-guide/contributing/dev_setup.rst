@@ -84,6 +84,53 @@ prefer. Vagrant is available in Fedora 21 and newer. Follow these steps:
     ResultInactive=yes
     ResultActive=yes
 
+#. Optionally, configure your Vagrant environment to use
+   `kvm's unsafe cache mode <http://libvirt.org/formatdomain.html#elementsDisks>`_. If you do this,
+   you will trade data integrity on your development environment's filesystem for a noticeable speed
+   boost. You can configure Vagrant to use the unsafe cache for all Vagrant guests on your system by
+   creating ``~/.vagrant.d/Vagrantfile`` with the following contents::
+
+    # -*- mode: ruby -*-
+    # vi: set ft=ruby :
+
+
+    Vagrant.configure(2) do |config|
+        config.vm.provider :libvirt do |domain|
+            # Configure the unsafe cache mode in which the host will ignore fsync requests from the
+            # guest, speeding up disk I/O. Since our development environment is ephemeral, this is
+            # OK. You can read about libvirt's cache modes here:
+            # http://libvirt.org/formatdomain.html#elementsDisks
+            domain.volume_cache = "unsafe"
+        end
+    end
+
+   It is also possible to target a single Vagrant guest by defining a code block for it by name. For
+   example, the Pulp Vagrantfile defines the development vm as "dev". You can define "dev"'s cache
+   mode as unsafe with the following in your ``~/.vagrant.d/Vagrantfile``::
+
+    # -*- mode: ruby -*-
+    # vi: set ft=ruby :
+
+
+    Vagrant.configure(2) do |config|
+        config.vm.define "dev" do |dev|
+            dev.vm.provider :libvirt do |domain|
+                # Configure the unsafe cache mode in which the host will ignore fsync requests from
+                # the guest, speeding up disk I/O. Since our development environment is ephemeral,
+                # this is OK. You can read about libvirt's cache modes here:
+                # http://libvirt.org/formatdomain.html#elementsDisks
+                domain.volume_cache = "unsafe"
+            end
+        end
+    end
+
+   .. warning::
+
+    This is dangerous! However, the development environment is intended to be "throw away", so
+    if you end up with a corrupted environment you will need to destroy and recreate it.
+    Fortunately, the code you are working on will be shared from your host via NFS so your work
+    should have data safety.
+
 #. Next, cd into the pulp directory and begin provisioning your Vagrant environment. A possible
    failure point is during provisioning when mongod is building its initial files. This sometimes
    takes longer than systemd allows and can fail. If that happens, simply run ``vagrant provision``.
