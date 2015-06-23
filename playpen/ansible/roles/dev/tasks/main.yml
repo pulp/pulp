@@ -1,0 +1,35 @@
+---
+- name: Disable selinux
+  selinux: state=disabled
+  when: selinux_enabled == true
+
+- name: Disable sshd strict modes
+  lineinfile:
+      backrefs: yes
+      dest: /etc/ssh/sshd_config
+      regexp: "^#StrictModes yes"
+      line: "StrictModes no"
+  notify: restart sshd
+
+- name: Install Fedora packages
+  dnf: name={{ item }} state=present
+  with_items:
+      - koji
+      - python-django-bash-completion
+      - python-virtualenvwrapper
+      - redhat-lsb-core
+      - rpm-build
+      - tito
+      - yum-utils
+
+- name: Install Pulp dnf repository
+  get_url:
+      url: https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
+      dest: /etc/yum.repos.d/fedora-pulp.repo
+
+- name: Enable Pulp 2.7 beta repository
+  command: yum-config-manager --enable pulp-2.7-beta
+  when: pulp_27_beta_repo_enabled == false
+
+- name: Install custom ~/.bashrc
+  template: src=bashrc dest=/home/vagrant/.bashrc

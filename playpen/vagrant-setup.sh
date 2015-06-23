@@ -1,50 +1,5 @@
 #!/bin/bash -e
 
-if ! sudo grep -q "StrictModes no" /etc/ssh/sshd_config; then
-    echo -e "\nIn some setups (eg. Vagrant), it is necessary to disable"
-    echo "ssh strict modes to access the machine with key based authentication."
-    echo "StrictModes will be disabled now and for future restarts."
-    echo "Disabling StrictModes"
-    sudo sed -i 's/#StrictModes yes/StrictModes no/' /etc/ssh/sshd_config
-    sudo systemctl restart sshd
-fi
-
-# Allow admins to passwordless sudo for all commands as any user
-sudo sed -i 's/%admin ALL=NOPASSWD: ALL/%admin ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
-
-echo "Install some prereqs"
-sudo dnf install -y wget yum-utils redhat-lsb-core
-
-echo "setting up repos"
-# repo setup
-pushd /etc/yum.repos.d
-if [ "$(lsb_release -si)" = "Fedora" ]; then
-    if [ ! -f fedora-pulp.repo ]; then
-        sudo wget -q https://repos.fedorapeople.org/repos/pulp/pulp/fedora-pulp.repo
-    fi
-else
-    if [ ! -f rhel-pulp.repo ]; then
-        sudo wget -q https://repos.fedorapeople.org/repos/pulp/pulp/rhel-pulp.repo
-    fi
-    if ! rpm -q epel-release; then
-        if [ "$(lsb_release -si)" = "CentOS" ]; then
-            sudo dnf install -y epel-release
-        else
-            sudo rpm -Uvh http://download.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-        fi
-    fi
-fi
-sudo yum-config-manager --enable pulp-2.6-beta > /dev/null
-sudo yum-config-manager --enable pulp-2.6-testing > /dev/null
-popd
-
-echo "installing some dev tools"
-sudo dnf install -y python-virtualenvwrapper python-django-bash-completion
-
-if ! grep WORKON_HOME ~/.bashrc; then
-    echo "Setting up virtualenv"
-    echo -e "# Set up virtualenvwrapper\nexport WORKON_HOME=$HOME/.virtualenvs\nexport PIP_VIRTUALENV_BASE=$WORKON_HOME\nexport VIRTUALENV_USE_DISTRIBUTE=true\nexport PIP_RESPECT_VIRTUALENV=true\nsource /usr/bin/virtualenvwrapper.sh" >> ~/.bashrc
-fi
 # Let's add p{start,stop,restart,status} to the .bashrc
 if ! grep pstart ~/.bashrc; then
     echo -e "\n\npstart() {\n    _paction start\n}\n" >> ~/.bashrc
