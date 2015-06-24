@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2012 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import unittest
 
 import mock
@@ -37,7 +24,7 @@ class TestUserSearch(base_builtins.PulpClientTests):
         self.assertEqual(mock_search.call_count, 1)
         mock_search.assert_called_once_with(limit=20)
 
-    @mock.patch('pulp.bindings.search.SearchAPI.search', return_value=[1,2])
+    @mock.patch('pulp.bindings.search.SearchAPI.search', return_value=[1, 2])
     @mock.patch('pulp.client.extensions.core.PulpPrompt.render_document')
     def test_calls_render(self, mock_render, mock_search):
         """
@@ -125,7 +112,8 @@ class TestAuthUser(unittest.TestCase):
         mock_context = mock.MagicMock()
         self.user_section = auth.UserSection(mock_context)
 
-        self.user_section.update(login='mock_login', password='mock_password')
+        self.user_section.update(login='mock_login', password='mock_password', p=False)
+        self.assertEqual(mock_context.prompt.prompt_password.call_count, 0)
         mock_context.server.user.update.assert_called_once_with(
             'mock_login', {'password': 'mock_password'}
         )
@@ -136,8 +124,9 @@ class TestAuthUser(unittest.TestCase):
         self.user_section = auth.UserSection(mock_context)
 
         self.user_section.update(login='mock_login', p=True)
+        self.assertEqual(mock_context.prompt.prompt_password.call_count, 1)
         mock_context.server.user.update.assert_called_once_with(
-            'mock_login', {'p': True, 'password': 'user_entered_password'}
+            'mock_login', {'password': 'user_entered_password'}
         )
 
 
@@ -152,9 +141,9 @@ class TestAuthRole(base_builtins.PulpClientTests):
         # Setup
         section = auth.RoleSection(self.context)
         options = {
-            'role-id' : self.ROLE_ID,
-            'display-name' : self.DISPLAY_NAME,
-            'description' : self.DESCRIPTION,
+            'role-id': self.ROLE_ID,
+            'display-name': self.DISPLAY_NAME,
+            'description': self.DESCRIPTION,
         }
         # Test
         section.update(**options)
