@@ -9,4 +9,5 @@
   sudo: true
   vars:
   roles:
+    - db
     - dev

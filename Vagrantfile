@@ -23,7 +23,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
  # Create the "dev" box
  config.vm.define "dev" do |dev|
-    dev.vm.host_name = "pulp-devel"
+    dev.vm.host_name = "dev.example.com"
     dev.vm.synced_folder "..", "/home/vagrant/devel", type: "nfs", nfs_version: 4, nfs_udp: false
 
     dev.vm.provider :libvirt do |domain|
