@@ -126,6 +126,7 @@ class UserSection(PulpCliSection):
         # Assemble the delta for all options that were passed in
         delta = dict([(k, v) for k, v in kwargs.items() if v is not None])
         login = delta.pop('login')  # not needed in the delta
+        delta.pop('p')  # not needed in the delta
         if 'password' not in delta:
             if kwargs['p'] is True:
                 delta['password'] = self._prompt_password(login)
