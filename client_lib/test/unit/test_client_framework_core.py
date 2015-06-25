@@ -78,6 +78,38 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(len(doc), len(p.get_write_tags()))
         self.assertEqual(core.TAG_DOCUMENT, p.get_write_tags()[0])
 
+    def test_render_document_list_omit_hidden_true(self):
+        # Test
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
+        docs = [
+            {'_id': 'd1', 'name': 'document 1'}
+        ]
+        p.render_document_list(docs, omit_hidden=True)
+
+        # Verify
+        self.assertEqual(1, len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+        self.assertTrue('Name' in r.lines[1])
+        for line in r.lines:
+            self.assertTrue('_id' not in line)
+
+    def test_render_document_list_omit_hidden_false(self):
+        # Test
+        r = Recorder()
+        p = core.PulpPrompt(output=r, record_tags=True)
+        docs = [
+            {'_id': 'd1', 'name': 'document 1'}
+        ]
+        p.render_document_list(docs, omit_hidden=False)
+
+        # Verify
+        self.assertEqual(2, len(p.get_write_tags()))
+        self.assertEqual(0, len([t for t in p.get_write_tags() if t is not core.TAG_DOCUMENT]))
+
+        self.assertTrue('_id' in r.lines[1])
+
     def test_render_document_list(self):
         # Test
         p = core.PulpPrompt(record_tags=True)

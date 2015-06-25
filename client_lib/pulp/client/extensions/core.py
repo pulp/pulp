@@ -345,7 +345,7 @@ class PulpPrompt(Prompt):
 
                 if isinstance(v, dict):
                     self.write(line_template % (formatted_k + ':', ''))
-                    self.render_document_list([v], indent=indent + step)
+                    self.render_document_list([v], indent=indent + step, omit_hidden=omit_hidden)
                     continue
 
                 # If the value is a list, pretty it up
@@ -353,7 +353,7 @@ class PulpPrompt(Prompt):
 
                     if len(v) > 0 and isinstance(v[0], dict):
                         self.write(line_template % (formatted_k + ':', ''))
-                        self.render_document_list(v, indent=indent + step)
+                        self.render_document_list(v, indent=indent + step, omit_hidden=omit_hidden)
                         continue
                     else:
                         try:
