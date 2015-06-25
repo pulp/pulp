@@ -120,7 +120,7 @@ Retrieves information on a single binding between a consumer and a repository.
 :sample_response:`200` ::
 
  {
-    "_href": "/pulp/api/v2/consumers/c2/bindings/xxx/yum_distributor/",
+    "_href": "/pulp/api/v2/consumers/test-consumer/bindings/test-repo/yum_distributor/",
     "_id": {
         "$oid": "55097a6045ef4829b243f102"
     },
@@ -134,7 +134,7 @@ Retrieves information on a single binding between a consumer and a repository.
             "timestamp": 1426684512.37454
         }
     ],
-    "consumer_id": "c2",
+    "consumer_id": "test-consumer",
     "deleted": false,
     "details": {
         "ca_cert": null,
@@ -143,14 +143,14 @@ Retrieves information on a single binding between a consumer and a repository.
         "protocols": [
             "https"
         ],
-        "relative_path": "/pulp/repos/xxx",
-        "repo_name": "xxx",
+        "relative_path": "/pulp/repos/test-repo",
+        "repo_name": "test-repo",
         "server_name": "example.com"
     },
     "distributor_id": "yum_distributor",
     "id": "55097a6045ef4829b243f102",
     "notify_agent": true,
-    "repo_id": "xxx",
+    "repo_id": "test-repo",
     "type_id": "yum_distributor"
  }
 
@@ -176,7 +176,7 @@ Retrieves information on all bindings for the specified consumer.
 
  [
     {
-        "_href": "/pulp/api/v2/consumers/c2/bindings/xxx1/yum_distributor/",
+        "_href": "/pulp/api/v2/consumers/test-consumer/bindings/test-repo/yum_distributor/",
         "_id": {
             "$oid": "55097cd045ef4829b081fd28"
         },
@@ -190,7 +190,7 @@ Retrieves information on all bindings for the specified consumer.
                 "timestamp": 1426685136.733399
             }
         ],
-        "consumer_id": "c2",
+        "consumer_id": "test-consumer",
         "deleted": false,
         "details": {
             "ca_cert": null,
@@ -199,18 +199,18 @@ Retrieves information on all bindings for the specified consumer.
             "protocols": [
                 "https"
             ],
-            "relative_path": "/pulp/repos/xxx1",
-            "repo_name": "xxx1",
+            "relative_path": "/pulp/repos/test-repo",
+            "repo_name": "test-repo",
             "server_name": "example.com"
         },
         "distributor_id": "yum_distributor",
         "id": "55097cd045ef4829b081fd28",
         "notify_agent": true,
-        "repo_id": "xxx1",
+        "repo_id": "test-repo",
         "type_id": "yum_distributor"
     },
     {
-        "_href": "/pulp/api/v2/consumers/c2/bindings/xxx/yum_distributor/",
+        "_href": "/pulp/api/v2/consumers/test-consumer/bindings/repo1/yum_distributor/",
         "_id": {
             "$oid": "55097a6045ef4829b243f102"
         },
@@ -224,7 +224,7 @@ Retrieves information on all bindings for the specified consumer.
                 "timestamp": 1426684512.37454
             }
         ],
-        "consumer_id": "c2",
+        "consumer_id": "test-consumer",
         "deleted": false,
         "details": {
             "ca_cert": null,
@@ -233,14 +233,14 @@ Retrieves information on all bindings for the specified consumer.
             "protocols": [
                 "https"
             ],
-            "relative_path": "/pulp/repos/xxx",
-            "repo_name": "xxx",
+            "relative_path": "/pulp/repos/repo1",
+            "repo_name": "repo1",
             "server_name": "example.com"
         },
         "distributor_id": "yum_distributor",
         "id": "55097a6045ef4829b243f102",
         "notify_agent": true,
-        "repo_id": "xxx",
+        "repo_id": "repo1",
         "type_id": "yum_distributor"
     }
  ]
