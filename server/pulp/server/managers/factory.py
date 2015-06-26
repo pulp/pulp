@@ -31,7 +31,6 @@ TYPE_CONTENT_CATALOG = 'content-catalog-manager'
 TYPE_CONTENT_ORPHAN = 'content-orphan-manager'
 TYPE_CONTENT_QUERY = 'content-query-manager'
 TYPE_CONTENT_UPLOAD = 'content-upload-manager'
-TYPE_DEPENDENCY = 'dependencies-manager'
 TYPE_EVENT_FIRE = 'event-fire-manager'
 TYPE_EVENT_LISTENER = 'event-listener-manager'
 TYPE_PASSWORD = 'password-manager'
@@ -220,13 +219,6 @@ def content_upload_manager():
     @rtype: L{pulp.server.managers.content.upload.ContentUploadManager}
     """
     return get_manager(TYPE_CONTENT_UPLOAD)
-
-
-def dependency_manager():
-    """
-    @rtype: L{pulp.server.managers.repo.dependency.DependencyManager}
-    """
-    return get_manager(TYPE_DEPENDENCY)
 
 
 def event_fire_manager():
@@ -448,7 +440,6 @@ def initialize():
     from pulp.server.managers.event.remote import TopicPublishManager
     from pulp.server.managers.plugin import PluginManager
     from pulp.server.managers.repo.cud import RepoManager
-    from pulp.server.managers.repo.dependency import DependencyManager
     from pulp.server.managers.repo.distributor import RepoDistributorManager
     from pulp.server.managers.repo.group.cud import RepoGroupManager
     from pulp.server.managers.repo.group.distributor import RepoGroupDistributorManager
@@ -486,7 +477,6 @@ def initialize():
         TYPE_CONTENT_ORPHAN: OrphanManager,
         TYPE_CONTENT_QUERY: ContentQueryManager,
         TYPE_CONTENT_UPLOAD: ContentUploadManager,
-        TYPE_DEPENDENCY: DependencyManager,
         TYPE_EVENT_FIRE: EventFireManager,
         TYPE_EVENT_LISTENER: EventListenerManager,
         TYPE_PASSWORD: PasswordManager,

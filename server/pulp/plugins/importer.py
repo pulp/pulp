@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright © 2011 Red Hat, Inc.
-#
-# This software is licensed to you under the GNU General Public
-# License as published by the Free Software Foundation; either version
-# 2 of the License (GPLv2) or (at your option) any later version.
-# There is NO WARRANTY for this software, express or implied,
-# including the implied warranties of MERCHANTABILITY,
-# NON-INFRINGEMENT, or FITNESS FOR A PARTICULAR PURPOSE. You should
-# have received a copy of GPLv2 along with this software; if not, see
-# http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt.
-
 import sys
 
 
@@ -287,35 +274,6 @@ class Importer(object):
         :raise SystemExit: raised through a call to sys.exit()
         """
         sys.exit()
-
-    def resolve_dependencies(self, repo, units, dependency_conduit, config):
-        """
-        Given a list of units, the importer will determine what other units in
-        the repository represent their dependencies.
-
-        The actual definition of what a "dependency" is depends on the content
-        types in play. They may be dependencies for the unit to run or in the
-        case of an aggregate unit (such as a group construct), a list of the
-        units referenced by it.
-
-        :param repo: describes the repository in which to search for dependencies
-        :type  repo: pulp.plugins.model.Repository
-
-        :param units: list of units to find dependencies for; entries in the list
-               are of type
-        :type  units: list of pulp.plugins.model.Unit
-
-        :param dependency_conduit: used to query into the server
-        :type  dependency_conduit: pulp.plugins.conduits.dependency.DependencyResolutionConduit
-
-        :param config: plugin configuration
-        :type  config: pulp.plugins.config.PluginCallConfiguration
-
-        :return: list of relevant units retrieved from the conduit calls; empty
-                 list if no dependencies are found
-        :rtype:  list of pulp.plugins.model.Unit
-        """
-        raise NotImplementedError()
 
 
 class GroupImporter(object):
