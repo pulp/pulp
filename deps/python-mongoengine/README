@@ -1,3 +1,14 @@
-Team owner: cduryee
+Team owner: bmbouter
 
-This is the same as the EPEL6 srpm. It is included here for building for el7, since EPEL7 does not carry python-mongoengine.
+Pulp uses a vanilla version of mongoengine 0.9.0, except for one
+patch which removes Pillow as a setuptools dependency. Not
+having Pillow installed at runtime will disable the ImageField,
+but mongoengine will operate fully otherwise. At the time I built
+mongoengine 0.9.0, Pillow is not available on EL6.
+
+python-mongoengine requires at least pymongo 2.7.1 at runtime.
+
+The spec file was originally adapted from the spec file inside of
+python-mongoengine-0.8.4-3.el7.src.rpm [0].
+
+[0]: http://koji.fedoraproject.org/koji/buildinfo?buildID=612617

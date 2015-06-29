@@ -327,7 +327,7 @@ class TestWorkerModel(unittest.TestCase):
 
         self.assertTrue(isinstance(model.Worker.last_heartbeat, DateTimeField))
 
-        self.assertFalse('_ns' in model.Worker._fields)
+        self.assertTrue('_ns' in model.Worker._fields)
 
     def test_indexes(self):
         self.assertEqual(model.Worker._meta['indexes'], [])

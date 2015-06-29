@@ -60,27 +60,3 @@ class CriteriaQuerySet(QuerySet):
             except AttributeError:
                 # if post_save() is not defined for this particular document, that's ok
                 pass
-
-    def update_one(self, *args, **kwargs):
-        """
-        Mongoengine 0.7's QuerySet.update_one() does not call update() but
-        instead just makes a slightly different pymongo call[1]. We need to
-        subclass both methods.
-
-        Also, we cannot simply call super()'s update_one here! In Mongoengine
-        0.8, update_one() simply calls update(). This invokes *OUR* update()
-        method since 'self' is this class and not the superclass. This causes
-        the post_save hook to get fired twice. Instead, we call update() with
-        "multi=False" which mimics the behavior of update_one(). In the
-        unlikely event that someone really does want to use "multi", we raise an
-        exception.
-
-        Once we are rid of 0.7 we can get rid of this method entirely.
-
-        [1] http://tinyurl.com/nf7fafy
-
-        """
-        if 'multi' in kwargs:
-            raise NotImplementedError("The 'multi' parameter cannot be set on this method.")
-        kwargs['multi'] = False
-        self.update(*args, **kwargs)

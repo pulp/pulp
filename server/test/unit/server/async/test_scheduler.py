@@ -584,8 +584,8 @@ class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
     @mock.patch('pulp.server.async.scheduler.Worker')
     def test_deletes_workers(self, mock_worker, mock_delete_worker):
         mock_worker.objects.return_value = [
-            Worker('name1', datetime.utcnow()),
-            Worker('name2', datetime.utcnow()),
+            Worker(name='name1', last_heartbeat=datetime.utcnow()),
+            Worker(name='name2', last_heartbeat=datetime.utcnow()),
         ]
 
         scheduler.WorkerTimeoutMonitor().check_workers()
