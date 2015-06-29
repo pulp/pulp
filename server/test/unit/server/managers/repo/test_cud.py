@@ -445,58 +445,6 @@ class RepoManagerTests(base.ResourceReservationTests):
         except exceptions.MissingResource, e:
             self.assertTrue('not-there' == e.resources['resource_id'])
 
-    @mock.patch('pulp.server.async.tasks.get_worker_for_reservation')
-    @mock.patch('pulp.server.tasks.repository.distributor_update.apply_async_with_reservation',
-                side_effect=repository.distributor_update.apply_async_with_reservation)
-    def test_update_repo_and_plugins(self, distributor_update, mock_get_worker_for_reservation):
-        """
-        Tests the aggregate call to update a repo and its plugins.
-        """
-        mock_get_worker_for_reservation.return_value = Worker('some_queue', datetime.datetime.now())
-        self.manager.create_repo('repo-1', 'Original', 'Original Description')
-
-        importer_manager = manager_factory.repo_importer_manager()
-        distributor_manager = manager_factory.repo_distributor_manager()
-
-        importer_manager.set_importer('repo-1', 'mock-importer', {'key-i1': 'orig-1'})
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d1': 'orig-1'},
-                                            True, distributor_id='dist-1')
-        distributor_manager.add_distributor('repo-1', 'mock-distributor', {'key-d2': 'orig-2'},
-                                            True, distributor_id='dist-2')
-
-        # Test
-        repo_delta = {'display_name': 'Updated'}
-        new_importer_config = {'key-i1': 'updated-1', 'key-i2': 'new-1'}
-        new_distributor_configs = {
-            'dist-1': {'key-d1': 'updated-1'},
-        }  # only update one of the two distributors
-
-        result = self.manager.update_repo_and_plugins('repo-1', repo_delta, new_importer_config,
-                                                      new_distributor_configs)
-
-        self.assertTrue(isinstance(result, TaskResult))
-        self.assertEquals(None, result.error)
-        repo = result.return_value
-
-        # Verify
-        self.assertEqual(repo['id'], 'repo-1')
-        self.assertEqual(repo['display_name'], 'Updated')
-        self.assertEqual(repo['description'], 'Original Description')
-
-        importer = importer_manager.get_importer('repo-1')
-        self.assertEqual(importer['config'], new_importer_config)
-
-        dist_1 = distributor_manager.get_distributor('repo-1', 'dist-1')
-        self.assertEqual(dist_1['config'], new_distributor_configs['dist-1'])
-
-        dist_2 = distributor_manager.get_distributor('repo-1', 'dist-2')
-        self.assertEqual(dist_2['config'], {'key-d2': 'orig-2'})
-
-        # There should have been a spawned task for the new distributor config
-        expected_task_id = TaskStatus.objects.get(
-            tags='pulp:repository_distributor:dist-1')['task_id']
-        self.assertEqual(result.spawned_tasks, [{'task_id': expected_task_id}])
-
     def test_update_repo_and_plugins_partial(self):
         """
         Tests no errors are encountered when only updating some of the possible fields.
