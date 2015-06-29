@@ -304,8 +304,8 @@ Requires: python-%{name}-common = %{pulp_version}
 Requires: python-blinker
 Requires: python-celery >= 3.1.0
 Requires: python-celery < 3.2.0
-Requires: python-pymongo >= 2.5.2
-Requires: python-mongoengine >= 0.7.10
+Requires: python-pymongo >= 2.7.1
+Requires: python-mongoengine >= 0.9.0
 Requires: python-setuptools
 Requires: python-oauth2 >= 1.5.211
 Requires: python-httplib2

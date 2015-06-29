@@ -1,0 +1,12 @@
+Team owner: bmbouter
+
+Pulp currently uses a vanilla version of pymongo 2.7.2. That is
+the latest Z release for the pymongo 2.7 release stream.
+
+python-mongoengine requires at least pymongo 2.7.1 at runtime.
+
+The spec file was originally adapted from the spec file inside of
+python-pymongo-2.5.2-7.fc23.src.rpm [0]. Thanks also to dgoodwin
+and Dominic in #tito for the spec file help.
+
+[0]: http://koji.fedoraproject.org/koji/buildinfo?buildID=659860

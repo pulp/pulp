@@ -63,35 +63,40 @@ class TestQueueReservedTask(ResourceReservationTests):
         super(TestQueueReservedTask, self).tearDown()
 
     def test_creates_and_saves_reserved_resource(self):
-        self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
+        self.mock_get_worker_for_reservation.return_value = Worker(
+            name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.mock_reserved_resource.assert_called_once_with('my_task_id', 'worker1',
                                                             'my_resource_id')
         self.mock_reserved_resource.return_value.save.assert_called_once_with()
 
     def test_dispatches_inner_task(self):
-        self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
+        self.mock_get_worker_for_reservation.return_value = Worker(
+            name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         apply_async = self.mock_celery.tasks['task_name'].apply_async
         apply_async.assert_called_once_with(1, 2, a=2, routing_key='worker1', task_id='my_task_id',
                                             exchange='C.dq')
 
     def test_dispatches__release_resource(self):
-        self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
+        self.mock_get_worker_for_reservation.return_value = Worker(
+            name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.mock__release_resource.apply_async.assert_called_once_with(('my_task_id',),
                                                                         routing_key='worker1',
                                                                         exchange='C.dq')
 
     def test_get_worker_for_reservation_breaks_out_of_loop(self):
-        self.mock_get_worker_for_reservation.return_value = Worker('worker1', datetime.utcnow())
+        self.mock_get_worker_for_reservation.return_value = Worker(
+            name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.assertTrue(not self.mock_get_unreserved_worker.called)
         self.assertTrue(not self.mock_time.sleep.called)
 
     def test_get_unreserved_worker_breaks_out_of_loop(self):
         self.mock_get_worker_for_reservation.side_effect = NoWorkers()
-        self.mock_get_unreserved_worker.return_value = Worker('worker1', datetime.utcnow())
+        self.mock_get_unreserved_worker.return_value = Worker(name='worker1',
+                                                              last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
         self.assertTrue(not self.mock_time.sleep.called)
 
@@ -215,14 +220,16 @@ class TestReleaseResource(ResourceReservationTests):
         gracefully handled, and result in no changes to the database.
         """
         # Set up two workers
-        worker_1 = Worker(WORKER_1, datetime.utcnow())
+        worker_1 = Worker(name=WORKER_1, last_heartbeat=datetime.utcnow())
         worker_1.save()
-        worker_2 = Worker(WORKER_2, datetime.utcnow())
+        worker_2 = Worker(name=WORKER_2, last_heartbeat=datetime.utcnow())
         worker_2.save()
         # Set up two resource reservations, using our workers from above
-        reserved_resource_1 = ReservedResource(str(uuid.uuid4()), worker_1.name, 'resource_1')
+        reserved_resource_1 = ReservedResource(task_id=str(uuid.uuid4()),
+                                               worker_name=worker_1.name, resource_id='resource_1')
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource(str(uuid.uuid4()), worker_2.name, 'resource_2')
+        reserved_resource_2 = ReservedResource(task_id=str(uuid.uuid4()),
+                                               worker_name=worker_2.name, resource_id='resource_2')
         reserved_resource_2.save()
 
         # This should not raise any Exception, but should also not alter either the Worker
@@ -251,14 +258,16 @@ class TestReleaseResource(ResourceReservationTests):
         """
         # Set up two workers
         now = datetime.utcnow()
-        worker_1 = Worker(WORKER_1, now)
+        worker_1 = Worker(name=WORKER_1, last_heartbeat=now)
         worker_1.save()
-        worker_2 = Worker(WORKER_2, now)
+        worker_2 = Worker(name=WORKER_2, last_heartbeat=now)
         worker_2.save()
         # Set up two reserved resources
-        reserved_resource_1 = ReservedResource(str(uuid.uuid4()), worker_1.name, 'resource_1')
+        reserved_resource_1 = ReservedResource(task_id=str(uuid.uuid4()),
+                                               worker_name=worker_1.name, resource_id='resource_1')
         reserved_resource_1.save()
-        reserved_resource_2 = ReservedResource(str(uuid.uuid4()), worker_2.name, 'resource_2')
+        reserved_resource_2 = ReservedResource(task_id=str(uuid.uuid4()),
+                                               worker_name=worker_2.name, resource_id='resource_2')
         reserved_resource_2.save()
 
         # This should remove resource_2 from the _resource_map.

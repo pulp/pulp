@@ -1,110 +1,88 @@
-%global pkgname mongoengine
-Name: python-mongoengine
-Version: 0.7.10
-Release: 2%{?dist}
-Summary: A Python Document-Object Mapper for working with MongoDB
+# sitelib for noarch packages, sitearch for others (remove the unneeded one)
+%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
+%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 
-License: MIT
-URL:     http://pypi.python.org/pypi/mongoengine/
-Source0: http://pypi.python.org/packages/source/m/mongoengine/%{pkgname}-%{version}.tar.gz
+%define srcname mongoengine
 
-Patch1: fix-requirements-pillow-instead-PIL.patch
-BuildArch: noarch
-BuildRequires: python2-devel
-BuildRequires: python-setuptools
-BuildRequires: python-dateutil
+Name:           python-%{srcname}
+Version:        0.9.0
+Release:        1%{?dist}
+Summary:        A Python Document-Object Mapper for working with MongoDB
 
-# python-sphinx is really old in epel6, use the compat package instead
+Group:          Development/Libraries
+License:        MIT
+URL:            https://github.com/MongoEngine/mongoengine
+Source0:        %{srcname}-%{version}.tar.gz
+
+Patch0:         remove-Pillow-as-test-requirement.patch
+
+BuildArch:      noarch
+
+BuildRequires:  python2-devel
+BuildRequires:  python-setuptools
+BuildRequires:  python-sphinx
+BuildRequires:  python-dateutil
+BuildRequires:  python-pymongo
+BuildRequires:  python-pymongo-gridfs
+BuildRequires:  mongodb-server
+BuildRequires:  mongodb
+BuildRequires:  python-blinker
+BuildRequires:  python-coverage
+BuildRequires:  python-nose
+
 %if 0%{?rhel} == 6
-BuildRequires: python-sphinx10
+BuildRequires:  Django14
 %else
-BuildRequires: python-sphinx
+BuildRequires:  python-django
 %endif
 
-%if 0%{?fedora} >= 18
-BuildRequires: python-pymongo
-BuildRequires: python-django
-BuildRequires: python-pymongo-gridfs
-Requires: python-pymongo
-Requires: python-pymongo-gridfs
-%else
-BuildRequires: python-pymongo
-BuildRequires: Django
-BuildRequires: python-pymongo-gridfs
-Requires: python-pymongo >= 2.1.1
-Requires: python-pymongo-gridfs
-%endif
-
-BuildRequires: mongodb-server
-BuildRequires: python-blinker
-%if 0%{?fedora} >= 19
-BuildRequires: python-pillow
-Requires:      python-pillow
-%else
-Requires: python-imaging
-BuildRequires: python-imaging
-%endif
-BuildRequires: python-coverage
-BuildRequires: python-nose
-Requires: python-blinker
+Requires:       python-pymongo >= 2.7.1
+Requires:       python-pymongo-gridfs >= 2.7.1
+Requires:       python-blinker
 
 
 %description
-MongoEngine is a Document-Object Mapper (think ORM,
-but for document databases) for working with MongoDB
-from Python. It uses a simple declarative API, similar
-to the Django ORM.
-
+MongoEngine is an ORM-like layer on top of PyMongo.
 
 %prep
-%setup -q -n %{pkgname}-%{version}
-
-%if 0%{?fedora} >= 19
-%patch1 -p1
-%endif
-
-rm -rf mongoengine.egg-info
+%setup -q -n %{srcname}-%{version}
+%patch0 -p1
 
 
 %build
-python setup.py build
-
-# python-sphinx10 has a different binary name for sphinx-build
-# set the makefile's variable for the binary when needed
-%if 0%{?rhel} == 6
-PYTHONPATH=$(pwd) make -C docs html SPHINXBUILD='sphinx-1.0-build'
-%else
-PYTHONPATH=$(pwd) make -C docs html
-%endif
-
-#PYTHONPATH=$(pwd) make -C docs html
-rm -f docs/_build/html/.buildinfo
+# Remove CFLAGS=... for noarch packages (unneeded)
+CFLAGS="$RPM_OPT_FLAGS" %{__python} setup.py build
 
 
 %install
-python setup.py install --skip-build --root %{buildroot}
+rm -rf $RPM_BUILD_ROOT
+%{__python} setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
 
-
-%check
-# Pass
-
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %files
-%doc README.rst LICENSE docs/_build/html
-%{python_sitelib}/%{pkgname}
-%{python_sitelib}/%{pkgname}-*.egg-info
-
+%defattr(-,root,root,-)
+%doc docs AUTHORS LICENSE README.rst
+# For noarch packages: sitelib
+ %{python_sitelib}/*
+# For arch-specific packages: sitearch
+# %{python_sitearch}/*
 
 %changelog
-* Mon Oct 13 2014 Chris Duryee <cduryee@redhat.com> 0.7.10-2
-- new package built with tito
+* Thu Jun 18 2015 Brian Bouterse <bbouters@redhat.com> - 0.9.0-1
+- Updated to mongoengine to 0.9.0
+- Created new patch to remove Pillow as a test requirement
 
-* Tue Oct 08 2013 Yohan Graterol <yohangraterol92@gmail.com> - 0.7.10-2
-- Fix BR
-* Fri Sep 13 2013 Tim Flink <tflink@fedoraproject.org> - 0.7.10-1
-- adding conditional dep and makefile change for epel6 sphinx
-- updating to 0.7.10
+* Wed Feb 18 2015 Yohan Graterol <yohangraterol92@gmail.com> - 0.8.4-3
+- Built for EPEL7
+* Sat Jun 07 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.8.4-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
 
+* Mon Aug 26 2013 Yohan Graterol <yohangraterol92@gmail.com> - 0.8.4-1
+- New Version
+* Mon Aug 12 2013 Yohan Graterol <yohangraterol92@gmail.com> - 0.8.3-1
+- New version
 * Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 0.7.9-6
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
 

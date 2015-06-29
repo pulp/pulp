@@ -1144,7 +1144,7 @@ class TaskStatusTests(base.PulpServerTests):
         state = 'waiting'
         ts = TaskStatus(task_id, worker_name, tags, state)
         ts.save()
-        self.assertRaises(NotImplementedError, TaskStatus.objects(task_id=task_id).update_one,
+        self.assertRaises(TypeError, TaskStatus.objects(task_id=task_id).update_one,
                           multi=True)
 
     @mock.patch('pulp.server.db.querysets.CriteriaQuerySet.find_by_criteria')
