@@ -64,7 +64,8 @@ Developer
    branch (master, release branch, etc.). It's appreciated by the reviewer if a link to the bug
    is included in the merge request, as well as a brief description of what the change is. It is
    not required to find and assign someone to do the review.
-#. When the pull request is submitted, the developer changes the status of the bug to ``POST``.
+#. When the pull request is submitted, the developer changes the status of the bug to ``POST`` and
+   sets the appropriate target release.
 #. Wait for someone to review the pull request. The reviewer will assign the pull request back to
    the developer when done and should also ping them through other means. The developer may take
    the reviewer's comments as they see fit and merge the pull request when satisfied. Once merged,
@@ -91,8 +92,9 @@ week's new bugs. Bugs that need additional information will have notes put onto
 the issue asking for input. Unless a Redmine user specifically disabled e-mail
 support, adding a note will e-mail the reporter. Bugs with enough information
 will have their severity and priority set, as well as a component if appropriate.
-Once triaged, the bug is included in the `Prioritized Bugs query`_ and awaits a
-developer to pick it up.
+Also, a target release can be set during triage. An issue that has target release
+set during triage should block a release. Once triaged, the bug is included in the
+`Prioritized Bugs query`_ and awaits a developer to pick it up.
 
 The Pulp team uses some additional Tags to help keep track of bugs.
 
