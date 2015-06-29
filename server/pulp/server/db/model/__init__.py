@@ -245,7 +245,7 @@ class TaskStatus(Document, ReaperMixin):
     :type traceback:   None
     """
 
-    task_id = StringField(unique=True, required=True)
+    task_id = StringField(required=True)
     worker_name = StringField()
     tags = ListField(StringField())
     state = StringField(choices=constants.CALL_STATES, default=constants.CALL_WAITING_STATE)
@@ -265,7 +265,7 @@ class TaskStatus(Document, ReaperMixin):
     _ns = StringField(default='task_status')
 
     meta = {'collection': 'task_status',
-            'indexes': ['-task_id', '-tags', '-state'],
+            'indexes': ['-tags', '-state', {'fields': ['-task_id'], 'unique': True}],
             'allow_inheritance': False,
             'queryset_class': CriteriaQuerySet}
 
