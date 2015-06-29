@@ -30,7 +30,7 @@ def pulp_json_encoder(obj):
 
 
 def generate_json_response(content=None, response_class=HttpResponse, default=None,
-                           content_type='application/json'):
+                           content_type='application/json; charset=utf-8'):
     """
     Serialize an object and return a djagno response
 
