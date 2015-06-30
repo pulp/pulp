@@ -294,8 +294,10 @@ class RepoSyncManager(object):
 
         # Retrieve the entries
         cursor = RepoSyncResult.get_collection().find(search_params)
-        # Sort the results on the 'started' field. By default, descending order is used
-        cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
+        # Sort the results by the ObjectId field, which will effectively sort based on the start
+        # time of the event. This way of sorting is preferred because for a sufficiently large data
+        # set, the sort field must be an indexed field.
+        cursor.sort('_id', direction=constants.SORT_DIRECTION[sort])
         if limit is not None:
             cursor.limit(limit)
 
