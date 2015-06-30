@@ -1,19 +1,21 @@
+import isodate
+
 from django.core.urlresolvers import reverse
 from django.views.generic import View
 
 from pulp.common import constants, dateutils, tags
 from pulp.server import exceptions as pulp_exceptions
 from pulp.server.auth import authorization
+from pulp.server.controllers import repository as repo_controller
+from pulp.server.controllers import distributor as dist_controller
+from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria, UnitAssociationCriteria
-from pulp.server.db.model.repository import Repo as RepoModel
 from pulp.server.managers import factory as manager_factory
 from pulp.server.managers.consumer.applicability import regenerate_applicability_for_repos
 from pulp.server.managers.content.upload import import_uploaded_unit
-from pulp.server.managers.repo import query as repo_query
 from pulp.server.managers.repo import importer as repo_importer_manager
 from pulp.server.managers.repo.distributor import RepoDistributorManager
 from pulp.server.managers.repo.unit_association import associate_from_repo, unassociate_by_criteria
-from pulp.server.tasks import repository as repo_tasks
 from pulp.server.webservices.views import search, serializers
 from pulp.server.webservices.views.decorators import auth_required
 from pulp.server.webservices.views.schedule import ScheduleResource
@@ -26,27 +28,21 @@ from pulp.server.webservices.views.util import (generate_json_response,
 
 def _merge_related_objects(name, manager, repos):
     """
-    Takes a list of Repo objects and adds their corresponding related objects
-    in a list under the attribute given in 'name'. Uses the given manager to
-    access the related objects by passing the list of IDs for the given repos.
-    This is most commonly used for RepoImporter or RepoDistributor objects in
-    lists under the 'importers' and 'distributors' attributes.
+    Modifies in place a list of Repo dicts and adds their corresponding related objects in a list
+    under the attribute given in 'name'. Uses the given manager to access the related objects by
+    passing the list of IDs for the given repos. This is most commonly used for RepoImporter or
+    RepoDistributor objects in lists under the 'importers' and 'distributors' attributes.
 
-    :param name: name of the field, such as 'importers' or 'distributors'.
+    :param name: name of the field, either 'importers' or 'distributors'.
     :type  name: str
     :param manager: manager class for the object type. must implement a method 'find_by_repo_list'
                     that takes a list of repo ids.
     :type  manager: class
-    :param repos: list of Repo instances that should have importers and distributors added.
-    :type  repos: list of Repo instances
-    :return: the same list that was passed in, just for convenience. The list itself is not
-             modified- only its members are modified in-place.
-    :rtype:  list of Repo instances
+    :param repos: list of repos that should have importers and distributors added.
+    :type  repos: list of dicts
     """
-
-    repo_ids = tuple(repo['id'] for repo in repos)
-
     # make it cheap to access each repo by id
+    repo_ids = tuple(repo['id'] for repo in repos)
     repo_dict = dict((repo['id'], repo) for repo in repos)
 
     # guarantee that at least an empty list will be present
@@ -60,37 +56,17 @@ def _merge_related_objects(name, manager, repos):
         else:
             repo_dict[item['repo_id']][name].append(item)
 
-    return repos
 
-
-def _convert_repo_dates_to_strings(repo):
+def _process_repos(repo_objs, details, importers, distributors):
     """
-    Convert the last_unit_added & last_unit_removed fields of a repository
-    This modifies the repository in place
+    Serialize a collection of repository objects and add related importers and distributors if
+    requested.
 
-    :param repo: database representation of a repo
-    :type  repo: dict
-    """
-
-    # convert the native datetime object to a string with timezone specified
-    last_unit_added = repo.get('last_unit_added')
-    if last_unit_added:
-        new_date = dateutils.to_utc_datetime(last_unit_added,
-                                             no_tz_equals_local_tz=False)
-        repo['last_unit_added'] = dateutils.format_iso8601_datetime(new_date)
-    last_unit_removed = repo.get('last_unit_removed')
-    if last_unit_removed:
-        new_date = dateutils.to_utc_datetime(last_unit_removed,
-                                             no_tz_equals_local_tz=False)
-        repo['last_unit_removed'] = dateutils.format_iso8601_datetime(new_date)
-
-
-def _process_repos(repos, details, importers, distributors):
-    """
     Apply standard processing to a collection of repositories being returned to a client. Adds
     the object link and optionally adds related importers and distributors.
 
-    :param repos: collection of repositories
+    :param repo_objs: collection of repository objects
+    :type  repo_objs: list or tuple of pulp.server.db.model.Repository objects
     :type  repos: list, tuple
     :param details: if True, sets both "importers" and "distributors" to True regardless of any
                     value that may have been passed in.
@@ -100,24 +76,17 @@ def _process_repos(repos, details, importers, distributors):
     :param distributors: if True, adds related distributors under the attribute "distributors"
     :type  distributors: bool
 
-    :return: the same list that was passed in, just for convenience. The list itself is not
-             modified- only its members are modified in-place.
-    :rtype:  list of Repo instances
+    :return: a list of serialized repositories with importer and distributor data optionally added
+    :rtype:  list of dicts
     """
+    repos = serializers.Repository(repo_objs, multiple=True).data
     if details:
         importers = distributors = True
     if importers:
-        _merge_related_objects(
-            'importers', manager_factory.repo_importer_manager(), repos)
+        _merge_related_objects('importers', manager_factory.repo_importer_manager(), repos)
     if distributors:
-        _merge_related_objects(
-            'distributors', manager_factory.repo_distributor_manager(), repos)
-    for repo in repos:
-        repo['_href'] = reverse('repo_resource', kwargs={'repo_id': repo['id']})
-        _convert_repo_dates_to_strings(repo)
-        # Remove internally used scratchpad from repo details
-        if 'scratchpad' in repo:
-            del repo['scratchpad']
+        _merge_related_objects('distributors', manager_factory.repo_distributor_manager(), repos)
+
     return repos
 
 
@@ -137,27 +106,19 @@ class ReposView(View):
         :return: Response containing a list of dicts, one for each repo
         :rtype : django.http.HttpResponse
         """
-
-        all_repos = list(RepoModel.get_collection().find(projection={'scratchpad': 0}))
-
         details = request.GET.get('details', 'false').lower() == 'true'
         include_importers = request.GET.get('importers', 'false').lower() == 'true'
         include_distributors = request.GET.get('distributors', 'false').lower() == 'true'
 
-        _process_repos(
-            all_repos,
-            details,
-            include_importers,
-            include_distributors
-        )
-
-        return generate_json_response_with_pulp_encoder(all_repos)
+        processed_repos = _process_repos(model.Repository.objects(), details, include_importers,
+                                         include_distributors)
+        return generate_json_response_with_pulp_encoder(processed_repos)
 
     @auth_required(authorization.CREATE)
     @json_body_required
     def post(self, request):
         """
-        Create a new repo. 'id' field in body is required.
+        Create a new repo. `id` field in body is required. `display_name` will default to `id`.
 
         :param request: WSGI request object
         :type  request: django.core.handlers.wsgi.WSGIRequest
@@ -165,27 +126,20 @@ class ReposView(View):
         :return: Response containing a serialized dict for the created repo.
         :rtype : django.http.HttpResponse
         """
-
-        # Pull the repo data out of the request body (validation will occur
-        # in the manager)
         repo_data = request.body_as_json
-        repo_id = repo_data.get('id', None)
-        display_name = repo_data.get('display_name', None)
-        description = repo_data.get('description', None)
-        notes = repo_data.get('notes', None)
+        repo_id = repo_data.get('id')
 
-        importer_type_id = repo_data.get('importer_type_id', None)
-        importer_repo_plugin_config = repo_data.get('importer_config', None)
-        distributors = repo_data.get('distributors', None)
+        repo_obj = repo_controller.create_repo(
+            repo_id,
+            display_name=repo_data.get('display_name', repo_id),
+            description=repo_data.get('description'),
+            notes=repo_data.get('notes'),
+            importer_type_id=repo_data.get('importer_type_id'),
+            importer_repo_plugin_config=repo_data.get('importer_config'),
+            distributor_list=repo_data.get('distributors')
+        )
 
-        # Creation
-        repo_manager = manager_factory.repo_manager()
-        args = [repo_id, display_name, description, notes]
-        kwargs = {'importer_type_id': importer_type_id,
-                  'importer_repo_plugin_config': importer_repo_plugin_config,
-                  'distributor_list': distributors}
-        repo = repo_manager.create_and_configure_repo(*args, **kwargs)
-        repo['_href'] = reverse('repo_resource', kwargs={'repo_id': repo_id})
+        repo = serializers.Repository(repo_obj).data
         response = generate_json_response_with_pulp_encoder(repo)
         return generate_redirect_response(response, repo['_href'])
 
@@ -212,22 +166,17 @@ class RepoResourceView(View):
         :raises pulp_exceptions.MissingResource: if repo cannot be found
         """
 
-        query_manager = manager_factory.repo_query_manager()
-        repo = query_manager.find_by_id(repo_id)
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        repo = serializers.Repository(repo_obj).data
 
-        if repo is None:
-            raise pulp_exceptions.MissingResource(repo=repo_id)
-
-        repo['_href'] = reverse('repo_resource', kwargs={'repo_id': repo_id})
-        _convert_repo_dates_to_strings(repo)
-
+        # Add importers and distributors to the dicts if requested.
         details = request.GET.get('details', 'false').lower() == 'true'
         if request.GET.get('importers', 'false').lower() == 'true' or details:
-            repo = _merge_related_objects(
-                'importers', manager_factory.repo_importer_manager(), (repo,))[0]
+            _merge_related_objects(
+                'importers', manager_factory.repo_importer_manager(), (repo,))
         if request.GET.get('distributors', 'false').lower() == 'true' or details:
-            repo = _merge_related_objects(
-                'distributors', manager_factory.repo_distributor_manager(), (repo,))[0]
+            _merge_related_objects(
+                'distributors', manager_factory.repo_distributor_manager(), (repo,))
 
         return generate_json_response_with_pulp_encoder(repo)
 
@@ -242,20 +191,11 @@ class RepoResourceView(View):
         :type  repo_id: str
 
         :rtype : django.http.HttpResponse
+        :raises pulp_exceptions.MissingResource: if repo does not exist
         :raises pulp_exceptions.OperationPostponed: dispatch a task to delete the provided repo
         """
-
-        # validate
-        manager_factory.repo_query_manager().get_repository(repo_id)
-
-        task_tags = [
-            tags.resource_tag(tags.RESOURCE_REPOSITORY_TYPE, repo_id),
-            tags.action_tag('delete')
-        ]
-        async_result = repo_tasks.delete.apply_async_with_reservation(
-            tags.RESOURCE_REPOSITORY_TYPE, repo_id,
-            [repo_id], tags=task_tags)
-
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        async_result = repo_controller.queue_delete(repo_id)
         raise pulp_exceptions.OperationPostponed(async_result)
 
     @auth_required(authorization.UPDATE)
@@ -271,32 +211,33 @@ class RepoResourceView(View):
 
         :return: Response containing a serialized dict for the updated repo.
         :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.OperationPostponed: if a distributor is updated, dispatch a task
+
+        :raises pulp_exceptions.OperationPostponed: if a task has been dispatched to update a
+                                                    distributor
         """
 
         delta = request.body_as_json.get('delta', None)
         importer_config = request.body_as_json.get('importer_config', None)
         distributor_configs = request.body_as_json.get('distributor_configs', None)
-        repo_manager = manager_factory.repo_manager()
-        task_result = repo_manager.update_repo_and_plugins(repo_id, delta, importer_config,
-                                                           distributor_configs)
-        repo = task_result.return_value
-        repo['_href'] = reverse('repo_resource', kwargs={'repo_id': repo_id})
-        _convert_repo_dates_to_strings(repo)
+
+        repo = model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        task_result = repo_controller.update_repo_and_plugins(repo, delta, importer_config,
+                                                              distributor_configs)
 
         # Tasks are spawned if a distributor is updated, raise that as a result
         if task_result.spawned_tasks:
             raise pulp_exceptions.OperationPostponed(task_result)
 
-        result = task_result.serialize()
-        return generate_json_response_with_pulp_encoder(result)
+        call_report = task_result.serialize()
+        call_report['result'] = serializers.Repository(call_report['result']).data
+        return generate_json_response_with_pulp_encoder(call_report)
 
 
 class RepoSearch(search.SearchView):
     """
     Adds GET and POST searching for repositories.
     """
-    manager = repo_query.RepoQueryManager()
+    model = model.Repository
     optional_bool_fields = ('details', 'importers', 'distributors')
     response_builder = staticmethod(generate_json_response_with_pulp_encoder)
 
@@ -345,11 +286,7 @@ class RepoUnitSearch(search.SearchView):
         :rtype:       django.http.HttpResponse
         """
         repo_id = kwargs.get('repo_id')
-        repo_query_manager = manager_factory.repo_query_manager()
-        repo = repo_query_manager.find_by_id(repo_id)
-        if repo is None:
-            raise pulp_exceptions.MissingResource(repo_id=repo_id)
-
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
         criteria = UnitAssociationCriteria.from_client_input(query)
         manager = manager_factory.repo_unit_association_query_manager()
         if criteria.type_ids is not None and len(criteria.type_ids) == 1:
@@ -790,7 +727,7 @@ class RepoDistributorResourceView(View):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag('remove_distributor')
         ]
-        async_result = repo_tasks.distributor_delete.apply_async_with_reservation(
+        async_result = dist_controller.delete.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id, [repo_id, distributor_id],
             tags=task_tags)
         raise pulp_exceptions.OperationPostponed(async_result)
@@ -831,7 +768,7 @@ class RepoDistributorResourceView(View):
             tags.resource_tag(tags.RESOURCE_REPOSITORY_DISTRIBUTOR_TYPE, distributor_id),
             tags.action_tag('update_distributor')
         ]
-        async_result = repo_tasks.distributor_update.apply_async_with_reservation(
+        async_result = dist_controller.update.apply_async_with_reservation(
             tags.RESOURCE_REPOSITORY_TYPE, repo_id,
             [repo_id, distributor_id, config, delta], tags=task_tags)
         raise pulp_exceptions.OperationPostponed(async_result)
@@ -1036,82 +973,110 @@ class ContentApplicabilityRegenerationView(View):
         raise pulp_exceptions.OperationPostponed(async_result)
 
 
-class RepoSyncHistory(View):
+class HistoryView(View):
+    """
+    Base class for viewing history of repository actions.
+    """
+
+    @auth_required(authorization.READ)
+    def get(self, request, **kwargs):
+        """
+        Field a http get request. Get and validate parameters, use the controller to retrieve the
+        data and process it based on the options passed.
+
+        :param request: WSGI request object
+        :type  request: django.core.handlers.wsgi.WSGIRequest
+        """
+        start_date, end_date, sort, limit = self._get_and_validate_params(request.GET)
+        sort = sort or constants.SORT_DESCENDING
+        cursor = self.get_history_func(start_date, end_date, **kwargs)
+        processed_entries = self._process_entries(cursor, sort, limit)
+        return generate_json_response_with_pulp_encoder(processed_entries)
+
+    @staticmethod
+    def _process_entries(cursor, sort, limit):
+        """
+        Sort and limit the entries. Cast the result to a list.
+
+        :param cursor: history entries
+        :type  cursor:  pymongo.cursor.Cursor
+
+        :return: sorted, limited list of entries
+        :rtype:  list
+        """
+        cursor.sort('started', direction=constants.SORT_DIRECTION[sort])
+        if limit is not None:
+            cursor.limit(limit)
+        return list(cursor)
+
+    @staticmethod
+    def _get_and_validate_params(get_params):
+        """
+        Retrieve and validiate parameters from passed in GET parameters.
+
+        :param get_params: the http request's GET parameters.
+        :type  get_params: dict
+
+        :return: start_date, end_date, sort, limit
+        :rtype:  tuple
+
+        :raises pulp_exceptions.InvalidValue: if one or more params are invalid
+        """
+        sort = get_params.get(constants.REPO_HISTORY_FILTER_SORT)
+        start_date = get_params.get(constants.REPO_HISTORY_FILTER_START_DATE)
+        end_date = get_params.get(constants.REPO_HISTORY_FILTER_END_DATE)
+        limit = get_params.get(constants.REPO_HISTORY_FILTER_LIMIT)
+
+        invalid_values = []
+        if limit is not None:
+            try:
+                limit = int(limit)
+                if limit < 1:
+                    invalid_values.append('limit')
+            except ValueError:
+                invalid_values.append('limit')
+
+        if sort and sort not in constants.SORT_DIRECTION:
+            invalid_values.append('sort')
+
+        if start_date is not None:
+            try:
+                dateutils.parse_iso8601_datetime(start_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('start_date')
+        if end_date is not None:
+            try:
+                dateutils.parse_iso8601_datetime(end_date)
+            except (ValueError, isodate.ISO8601Error):
+                invalid_values.append('end_date')
+
+        if invalid_values:
+            raise pulp_exceptions.InvalidValue(invalid_values)
+
+        return start_date, end_date, sort, limit
+
+    @staticmethod
+    def get_history_func():
+        """
+        Function to retrieve a cursor of history entries. Must be set by the subclass.
+        """
+        raise NotImplementedError
+
+
+class RepoSyncHistory(HistoryView):
     """
     View for sync history of a specified repository.
     """
 
-    @auth_required(authorization.READ)
-    def get(self, request, repo_id):
-        """
-        Retrieve sync history for a specified repository.
-
-        :param request: WSGI request object
-        :type  request: django.core.handlers.wsgi.WSGIRequest
-        :param repo_id: id of the repository
-        :type  repo_id: str
-
-        :return: Response containing a list of dicts, one for each sync event
-        :rtype : django.http.HttpResponse
-        :raises pulp_exceptions.InvalidValue: if limit is not an integer
-        """
-
-        sort = request.GET.get(constants.REPO_HISTORY_FILTER_SORT)
-        start_date = request.GET.get(constants.REPO_HISTORY_FILTER_START_DATE)
-        end_date = request.GET.get(constants.REPO_HISTORY_FILTER_END_DATE)
-        limit = request.GET.get(constants.REPO_HISTORY_FILTER_LIMIT)
-        if limit:
-            try:
-                limit = int(limit)
-            except ValueError:
-                raise pulp_exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
-        if not sort:
-            sort = constants.SORT_DESCENDING
-
-        sync_manager = manager_factory.repo_sync_manager()
-        # Error checking is done on these options in the sync manager before the database is queried
-        entries = sync_manager.sync_history(repo_id, limit=limit, sort=sort, start_date=start_date,
-                                            end_date=end_date)
-        return generate_json_response_with_pulp_encoder(entries)
+    get_history_func = staticmethod(repo_controller.sync_history)
 
 
-class RepoPublishHistory(View):
+class RepoPublishHistory(HistoryView):
     """
     View for publish history of a specified repository.
     """
 
-    @auth_required(authorization.READ)
-    def get(self, request, repo_id, distributor_id):
-        """
-        Retrieve publish history for a specified distributor.
-
-        :param request: WSGI request object
-        :type  request: django.core.handlers.wsgi.WSGIRequest
-        :param repo_id: id of the repository
-        :type  repo_id: str
-        :param repo_id: retrieve the publish history of this distributor
-        :type  repo_id: str
-
-        :return: Response containing a list of dicts, one for each publish event
-        :rtype : django.http.HttpResponse
-        """
-
-        sort = request.GET.get(constants.REPO_HISTORY_FILTER_SORT)
-        start_date = request.GET.get(constants.REPO_HISTORY_FILTER_START_DATE)
-        end_date = request.GET.get(constants.REPO_HISTORY_FILTER_END_DATE)
-        limit = request.GET.get(constants.REPO_HISTORY_FILTER_LIMIT)
-        if limit:
-            try:
-                limit = int(limit)
-            except ValueError:
-                raise pulp_exceptions.InvalidValue([constants.REPO_HISTORY_FILTER_LIMIT])
-        if not sort:
-            sort = constants.SORT_DESCENDING
-
-        publish_manager = manager_factory.repo_publish_manager()
-        entries = publish_manager.publish_history(repo_id, distributor_id, limit=limit, sort=sort,
-                                                  start_date=start_date, end_date=end_date)
-        return generate_json_response_with_pulp_encoder(entries)
+    get_history_func = staticmethod(repo_controller.publish_history)
 
 
 class RepoSync(View):
@@ -1134,10 +1099,8 @@ class RepoSync(View):
         """
 
         overrides = request.body_as_json.get('override_config', None)
-
-        # Check for repo existence and let the missing resource bubble up
-        manager_factory.repo_query_manager().get_repository(repo_id)
-        async_result = repo_tasks.sync_with_auto_publish(repo_id, overrides)
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
+        async_result = repo_controller.queue_sync_with_auto_publish(repo_id, overrides)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 
@@ -1157,19 +1120,16 @@ class RepoPublish(View):
         :param repo_id: id of the repository to publish
         :type  repo_id: str
 
+        :raises pulp_exceptions.MissingResource: if repo does not exist
         :raises pulp_exceptions.MissingValue: if required param id is not passed
         :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
         """
-
-        # validation
-        manager = manager_factory.repo_query_manager()
-        manager.get_repository(repo_id)
-
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
         distributor_id = request.body_as_json.get('id', None)
         if distributor_id is None:
             raise pulp_exceptions.MissingValue('id')
         overrides = request.body_as_json.get('override_config', None)
-        async_result = repo_tasks.publish(repo_id, distributor_id, overrides)
+        async_result = repo_controller.queue_publish(repo_id, distributor_id, overrides)
         raise pulp_exceptions.OperationPostponed(async_result)
 
 
@@ -1194,11 +1154,7 @@ class RepoAssociate(View):
                                               params cannot be parsed
         :raises pulp_exceptions.OperationPostponed: dispatch a publish repo task
         """
-
-        # Validate existence of dest_repo_id, can raise a MissingResource
-        repo_query_manager = manager_factory.repo_query_manager()
-        repo_query_manager.get_repository(dest_repo_id)
-
+        model.Repository.objects.get_repo_or_missing_resource(dest_repo_id)
         criteria_body = request.body_as_json.get('criteria', None)
         overrides = request.body_as_json.get('override_config', None)
         source_repo_id = request.body_as_json.get('source_repo_id', None)
@@ -1207,7 +1163,7 @@ class RepoAssociate(View):
 
         # Catch MissingResource because this is body data, raise 400 rather than 404
         try:
-            repo_query_manager.get_repository(source_repo_id)
+            model.Repository.objects.get_repo_or_missing_resource(source_repo_id)
         except pulp_exceptions.MissingResource:
             raise pulp_exceptions.InvalidValue(['source_repo_id'])
 

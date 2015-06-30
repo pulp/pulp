@@ -1,5 +1,7 @@
-from mongoengine.queryset import QuerySet
+from mongoengine.queryset import DoesNotExist, QuerySet
 from pymongo import ASCENDING
+
+from pulp.server import exceptions as pulp_exceptions
 
 
 class CriteriaQuerySet(QuerySet):
@@ -21,8 +23,12 @@ class CriteriaQuerySet(QuerySet):
         :rtype:  mongoengine.queryset.QuerySet
         """
         query_set = self
+        model = query_set._document
+        if hasattr(model, 'serializer'):
+            criteria = model.serializer().translate_criteria(model, criteria)
+
         if criteria.spec is not None:
-            query_set = query_set.filter(**criteria.spec)
+            query_set = query_set.filter(__raw__=criteria.spec)
 
         if criteria.fields is not None:
             query_set = query_set.only(*criteria.fields)
@@ -60,3 +66,26 @@ class CriteriaQuerySet(QuerySet):
             except AttributeError:
                 # if post_save() is not defined for this particular document, that's ok
                 pass
+
+
+class RepoQuerySet(CriteriaQuerySet):
+    """
+    Custom queryset for repositories.
+    """
+
+    def get_repo_or_missing_resource(self, repo_id):
+        """
+        Allows a django-like get or 404.
+
+        :param repo_id: identifies the repository to be returned
+        :type  repo_id: str
+
+        :return: repository object
+        :rtype:  pulp.server.db.model.Repository
+
+        :raises pulp_exceptions.MissingResource if repository is not found
+        """
+        try:
+            return self.get(repo_id=repo_id)
+        except DoesNotExist:
+            raise pulp_exceptions.MissingResource(repository=repo_id)

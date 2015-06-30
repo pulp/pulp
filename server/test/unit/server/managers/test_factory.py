@@ -16,10 +16,6 @@ from pulp.server.managers.content.cud import ContentManager
 from pulp.server.managers.content.query import ContentQueryManager
 from pulp.server.managers.content.upload import ContentUploadManager
 from pulp.server.managers.event.remote import TopicPublishManager
-from pulp.server.managers.repo.cud import RepoManager
-from pulp.server.managers.repo.publish import RepoPublishManager
-from pulp.server.managers.repo.query import RepoQueryManager
-from pulp.server.managers.repo.sync import RepoSyncManager
 from pulp.server.managers.repo.unit_association import RepoUnitAssociationManager
 
 
@@ -46,12 +42,8 @@ class FactoryTests(unittest.TestCase):
         self.assertTrue(isinstance(factory.role_query_manager(), RoleQueryManager))
         self.assertTrue(isinstance(factory.user_manager(), UserManager))
         self.assertTrue(isinstance(factory.user_query_manager(), UserQueryManager))
-        self.assertTrue(isinstance(factory.repo_manager(), RepoManager))
         self.assertTrue(isinstance(factory.repo_unit_association_manager(),
                                    RepoUnitAssociationManager))
-        self.assertTrue(isinstance(factory.repo_publish_manager(), RepoPublishManager))
-        self.assertTrue(isinstance(factory.repo_query_manager(), RepoQueryManager))
-        self.assertTrue(isinstance(factory.repo_sync_manager(), RepoSyncManager))
         self.assertTrue(isinstance(factory.content_manager(), ContentManager))
         self.assertTrue(isinstance(factory.content_query_manager(), ContentQueryManager))
         self.assertTrue(isinstance(factory.content_upload_manager(), ContentUploadManager))
@@ -67,11 +59,11 @@ class FactoryTests(unittest.TestCase):
         factory.initialize()
 
         # Test
-        manager = factory.get_manager(factory.TYPE_REPO)
+        manager = factory.get_manager(factory.TYPE_CONSUMER)
 
         # Verify
         self.assertTrue(manager is not None)
-        self.assertTrue(isinstance(manager, RepoManager))
+        self.assertTrue(isinstance(manager, ConsumerManager))
 
     def test_get_manager_invalid_type(self):
         """
@@ -96,13 +88,13 @@ class FactoryTests(unittest.TestCase):
         class FakeManager:
             pass
 
-        factory.register_manager(factory.TYPE_REPO, FakeManager)
+        factory.register_manager(factory.TYPE_CONSUMER, FakeManager)
 
         # Test Register
-        manager = factory.get_manager(factory.TYPE_REPO)
+        manager = factory.get_manager(factory.TYPE_CONSUMER)
         self.assertTrue(isinstance(manager, FakeManager))
 
         # Test Reset
         factory.reset()
-        manager = factory.get_manager(factory.TYPE_REPO)
-        self.assertTrue(isinstance(manager, RepoManager))
+        manager = factory.get_manager(factory.TYPE_CONSUMER)
+        self.assertTrue(isinstance(manager, ConsumerManager))

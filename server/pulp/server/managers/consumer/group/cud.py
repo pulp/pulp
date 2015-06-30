@@ -11,7 +11,7 @@ from pulp.server.async.tasks import Task, TaskResult
 from pulp.server.db.model.consumer import Consumer, ConsumerGroup
 from pulp.server.exceptions import PulpCodedException, PulpException
 from pulp.server.managers import factory as manager_factory
-from pulp.server.tasks.consumer import bind as bind_task, unbind as unbind_task
+from pulp.server.controllers.consumer import bind as bind_task, unbind as unbind_task
 
 
 _logger = logging.getLogger(__name__)

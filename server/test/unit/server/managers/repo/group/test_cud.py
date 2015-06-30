@@ -7,9 +7,10 @@ from .....base import PulpServerTests
 from pulp.common.plugins import distributor_constants
 from pulp.devel import mock_plugins
 from pulp.server import exceptions as pulp_exceptions
+from pulp.server.controllers import repository as repo_controller
+from pulp.server.db import model
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.db.model.repo_group import RepoGroup, RepoGroupDistributor
-from pulp.server.db.model.repository import Repo
 from pulp.server.managers import factory as managers_factory
 from pulp.server.managers.repo.group import cud
 
@@ -39,13 +40,12 @@ class RepoGroupTests(PulpServerTests):
     def tearDown(self):
         super(RepoGroupTests, self).tearDown()
         self.manager = None
-        Repo.get_collection().remove(safe=True)
+        model.Repository.drop_collection()
         RepoGroup.get_collection().remove(safe=True)
         RepoGroupDistributor.get_collection().remove(safe=True)
 
     def _create_repo(self, repo_id):
-        manager = managers_factory.repo_manager()
-        return manager.create_repo(repo_id)
+        return repo_controller.create_repo(repo_id)
 
 
 class RepoGroupCUDTests(RepoGroupTests):
@@ -297,19 +297,19 @@ class RepoGroupMembershipTests(RepoGroupTests):
         self.manager.create_repo_group(group_id)
 
         repo = self._create_repo('test_repo')
-        criteria = Criteria(filters={'id': repo['id']}, fields=['id'])
+        criteria = Criteria(filters={'repo_id': repo.repo_id}, fields=['repo_id'])
         self.manager.associate(group_id, criteria)
 
         group = self.collection.find_one({'id': group_id})
-        self.assertTrue(repo['id'] in group['repo_ids'])
+        self.assertTrue(repo.repo_id in group['repo_ids'])
 
     def test_remove_single(self):
         group_id = 'test_group'
         repo = self._create_repo('test_repo')
-        self.manager.create_repo_group(group_id, repo_ids=[repo['id']])
+        self.manager.create_repo_group(group_id, repo_ids=[repo['repo_id']])
 
         group = self.collection.find_one({'id': group_id})
-        self.assertTrue(repo['id'] in group['repo_ids'])
+        self.assertTrue(repo.repo_id in group['repo_ids'])
 
         criteria = Criteria(filters={'id': repo['id']}, fields=['id'])
         self.manager.unassociate(group_id, criteria)
@@ -320,16 +320,14 @@ class RepoGroupMembershipTests(RepoGroupTests):
     def test_delete_repo(self):
         group_id = 'delete_from_me'
         repo = self._create_repo('delete_me')
-        self.manager.create_repo_group(group_id, repo_ids=[repo['id']])
+        self.manager.create_repo_group(group_id, repo_ids=[repo.repo_id])
 
         group = self.collection.find_one({'id': group_id})
-        self.assertTrue(repo['id'] in group['repo_ids'])
+        self.assertTrue(repo.repo_id in group['repo_ids'])
 
-        repo_manager = managers_factory.repo_manager()
-        repo_manager.delete_repo(repo['id'])
-
+        repo_controller.delete(repo.repo_id)
         group = self.collection.find_one({'id': group_id})
-        self.assertFalse(repo['id'] in group['repo_ids'])
+        self.assertFalse(repo.repo_id in group['repo_ids'])
 
     def test_associate_id_regex(self):
         group_id = 'associate_by_regex'
@@ -337,9 +335,9 @@ class RepoGroupMembershipTests(RepoGroupTests):
 
         repo_1 = self._create_repo('repo_1')
         repo_2 = self._create_repo('repo_2')
-        criteria = Criteria(filters={'id': {'$regex': 'repo_[12]'}})
+        criteria = Criteria(filters={'repo_id': {'$regex': 'repo_[12]'}})
         self.manager.associate(group_id, criteria)
 
         group = self.collection.find_one({'id': group_id})
-        self.assertTrue(repo_1['id'] in group['repo_ids'])
-        self.assertTrue(repo_2['id'] in group['repo_ids'])
+        self.assertTrue(repo_1.repo_id in group['repo_ids'])
+        self.assertTrue(repo_2.repo_id in group['repo_ids'])

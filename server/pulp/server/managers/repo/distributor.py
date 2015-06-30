@@ -10,11 +10,11 @@ from pulp.plugins.conduits.repo_config import RepoConfigConduit
 from pulp.plugins.config import PluginCallConfiguration
 from pulp.plugins.loader import api as plugin_api
 from pulp.server.async.tasks import Task
-from pulp.server.db.model.repository import Repo, RepoDistributor
+from pulp.server.db import model
+from pulp.server.db.model.repository import RepoDistributor
 from pulp.server.exceptions import (MissingResource, InvalidValue, PulpExecutionException,
                                     PulpDataException)
 from pulp.server.managers.schedule.repo import RepoPublishScheduleManager
-import pulp.server.managers.repo._common as common_utils
 
 
 _DISTRIBUTOR_ID_REGEX = re.compile(r'^[\-_A-Za-z0-9]+$')  # letters, numbers, underscore, hyphen
@@ -64,10 +64,7 @@ class RepoDistributorManager(object):
         @raise MissingResource: if the given repo doesn't exist
         """
 
-        repo = Repo.get_collection().find_one({'id': repo_id})
-        if repo is None:
-            raise MissingResource(repository=repo_id)
-
+        model.Repository.objects.get_repo_or_missing_resource(repo_id)
         distributors = list(RepoDistributor.get_collection().find({'repo_id': repo_id}))
         return distributors
 
@@ -133,13 +130,8 @@ class RepoDistributorManager(object):
                                                 configuration
         """
 
-        repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
-
-        # Validation
-        repo = repo_coll.find_one({'id': repo_id})
-        if repo is None:
-            raise MissingResource(repository=repo_id)
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
 
         if not plugin_api.is_valid_distributor(distributor_type_id):
             raise InvalidValue(['distributor_type_id'])
@@ -164,10 +156,9 @@ class RepoDistributorManager(object):
 
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, clean_config)
-        transfer_repo = common_utils.to_transfer_repo(repo)
-
         config_conduit = RepoConfigConduit(distributor_type_id)
 
+        transfer_repo = repo_obj.to_transfer_repo()
         result = distributor_instance.validate_config(transfer_repo, call_config, config_conduit)
 
         # For backward compatibility with plugins that don't yet return the tuple
@@ -217,13 +208,8 @@ class RepoDistributorManager(object):
         @raise MissingResource: if there is no distributor with the given ID
         """
 
-        repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
-
-        # Validation
-        repo = repo_coll.find_one({'id': repo_id})
-        if repo is None:
-            raise MissingResource(repository=repo_id)
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
 
         repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
@@ -238,8 +224,7 @@ class RepoDistributorManager(object):
 
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
 
-        transfer_repo = common_utils.to_transfer_repo(repo)
-
+        transfer_repo = repo_obj.to_transfer_repo()
         distributor_instance.distributor_removed(transfer_repo, call_config)
 
         # Update the database to reflect the removal
@@ -272,14 +257,8 @@ class RepoDistributorManager(object):
         :raise PulpDataException: if the plugin rejects the given changes
         """
 
-        repo_coll = Repo.get_collection()
         distributor_coll = RepoDistributor.get_collection()
-
-        # Input Validation
-        repo = repo_coll.find_one({'id': repo_id})
-        if repo is None:
-            raise MissingResource(repository=repo_id)
-
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
         repo_distributor = distributor_coll.find_one({'repo_id': repo_id, 'id': distributor_id})
         if repo_distributor is None:
             raise MissingResource(distributor=distributor_id)
@@ -305,7 +284,7 @@ class RepoDistributorManager(object):
 
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, merged_config)
-        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo = repo_obj.to_transfer_repo()
         config_conduit = RepoConfigConduit(distributor_type_id)
 
         result = distributor_instance.validate_config(transfer_repo, call_config,
@@ -357,14 +336,14 @@ class RepoDistributorManager(object):
 
         # Input Validation
         repo_distributor = self.get_distributor(repo_id, distributor_id)
-        repo = Repo.get_collection().find_one({'id': repo_id})
+        repo_obj = model.Repository.objects.get_repo_or_missing_resource(repo_id)
 
         distributor_type_id = repo_distributor['distributor_type_id']
         distributor_instance, plugin_config = plugin_api.get_distributor_by_id(distributor_type_id)
 
         # Let the distributor plugin verify the configuration
         call_config = PluginCallConfiguration(plugin_config, repo_distributor['config'])
-        transfer_repo = common_utils.to_transfer_repo(repo)
+        transfer_repo = repo_obj.to_transfer_repo()
 
         try:
             payload = distributor_instance.create_consumer_payload(transfer_repo, call_config,
