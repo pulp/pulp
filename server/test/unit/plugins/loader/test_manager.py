@@ -1,13 +1,10 @@
 import pkg_resources
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
 
 import mock
 import mongoengine
 
 from pulp.common import error_codes
+from pulp.common.compat import unittest
 from pulp.plugins.loader import manager
 from pulp.server import exceptions
 from pulp.server.db.model import ContentUnit

@@ -1,10 +1,6 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 import mock
 
+from pulp.common.compat import unittest
 # The serializers module should not normally be an starting point for imports, so we need to import
 # the criteria module before serializers to prevent a circular import. This is only an issue when
 # running this test module by itself, and will be fixed when pulp.server.db.model becomes a true
