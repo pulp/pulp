@@ -5,8 +5,11 @@ pulp_puppet
 """
 
 import argparse
+import os
 import subprocess
 import sys
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'pulp.server.webservices.settings'
 
 
 def run_tests(packages, tests_all_platforms, tests_non_rhel5,
