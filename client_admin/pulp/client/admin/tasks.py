@@ -40,7 +40,6 @@ class BaseTasksSection(PulpCliSection):
                                    'Do not include spaces'), aliases=['-s'], required=False,
                                  parse_func=parsers.csv)
 
-
     def __init__(self, context, name, description):
         PulpCliSection.__init__(self, name, description)
         self.context = context
@@ -262,12 +261,35 @@ class AllTasksSection(BaseTasksSection):
         if kwargs.get(self.all_flag.keyword):
             tasks = self.context.server.tasks_search.search(fields=self.FIELDS)
         elif kwargs.get(self.state_option.keyword):
+            states = kwargs[self.state_option.keyword]
+            # This is a temorary fix(because of backward incompatible reasons)
+            # until #1028 and #1041 are fixed.
+            self.translate_state_discrepancy(states)
             tasks = self.context.server.tasks_search.search(
-                filters={'state': {'$in': kwargs[self.state_option.keyword]}}, fields=self.FIELDS)
+                filters={'state': {'$in': states}}, fields=self.FIELDS)
         else:
             tasks = self.context.server.tasks_search.search(
                 filters={'state': {'$in': ['running', 'waiting']}}, fields=self.FIELDS)
         return tasks
+
+    @staticmethod
+    def translate_state_discrepancy(states):
+        """
+        Translates task state names that have discrepancy in cli and server mode.
+
+        :param states: task state to parse
+        :type states: list
+
+        :return: translated task states
+        :rtype: list
+        """
+        states_map = {'successful': 'finished', 'failed': 'error'}
+        for state_name in states_map.keys():
+            if state_name in states:
+                del states[states.index(state_name)]
+                states.append(states_map[state_name])
+
+        return states
 
 
 class RepoTasksSection(BaseTasksSection):
