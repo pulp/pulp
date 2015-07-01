@@ -94,7 +94,8 @@ class TaskResourceView(View):
 
         task_dict = task_serializer(task)
         if 'worker_name' in task_dict:
-            queue_name = Worker(name=task_dict['worker_name'], last_heartbeat=datetime.now()).queue_name
+            queue_name = Worker(name=task_dict['worker_name'],
+                                last_heartbeat=datetime.now()).queue_name
             task_dict.update({'queue': queue_name})
         return generate_json_response_with_pulp_encoder(task_dict)
 
