@@ -1,5 +1,6 @@
 import random
 import string
+import mock
 
 from ..... import base
 from pulp.server.auth import authorization
@@ -191,6 +192,25 @@ class RoleManagerTests(base.PulpServerTests):
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
         self.role_manager.delete_role(r1['id'])
         self.assertTrue(self.user_query_manager.is_authorized(s, u['login'], o))
+
+    @mock.patch('pulp.server.managers.auth.role.cud.RoleManager.create_role')
+    @mock.patch('pulp.server.managers.auth.role.cud.RoleManager.get_role')
+    @mock.patch('pulp.server.db.model.auth.Role.get_collection')
+    def test_ensure_super_user_role(self, mock_role, mock_get_role, mock_create_role):
+        self.clean()
+        mock_get_role.return_value = None
+        mock_create_role.return_value = {
+            'display_name': 'Super Users',
+            'description': 'Role indicates users hols admin privileges',
+            '_ns': 'roles', 'id': 'super-users', 'permissions': {}
+        }
+
+        rm_instance = cud.RoleManager()
+        rm_instance.ensure_super_user_role()
+
+        self.assertEqual(mock_create_role.return_value['permissions'],
+                         [{'resource': '/', 'permission': [0, 1, 2, 3, 4]}])
+        mock_role.save.assert_called_once()
 
     def test_get_role(self):
         # Setup

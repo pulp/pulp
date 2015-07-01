@@ -314,7 +314,7 @@ class RoleManager(object):
             role = self.create_role(SUPER_USER_ROLE, 'Super Users',
                                     'Role indicates users with admin privileges')
             role['permissions'] = [{'resource': '/',
-                                    'permissions': [CREATE, READ, UPDATE, DELETE, EXECUTE]}]
+                                    'permission': [CREATE, READ, UPDATE, DELETE, EXECUTE]}]
             Role.get_collection().save(role, safe=True)
 
     @staticmethod
