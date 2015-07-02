@@ -66,8 +66,9 @@ class TestQueueReservedTask(ResourceReservationTests):
         self.mock_get_worker_for_reservation.return_value = Worker(
             name='worker1', last_heartbeat=datetime.utcnow())
         tasks._queue_reserved_task('task_name', 'my_task_id', 'my_resource_id', [1, 2], {'a': 2})
-        self.mock_reserved_resource.assert_called_once_with('my_task_id', 'worker1',
-                                                            'my_resource_id')
+        self.mock_reserved_resource.assert_called_once_with(task_id='my_task_id',
+                                                            worker_name='worker1',
+                                                            resource_id='my_resource_id')
         self.mock_reserved_resource.return_value.save.assert_called_once_with()
 
     def test_dispatches_inner_task(self):
