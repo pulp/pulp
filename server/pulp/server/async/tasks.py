@@ -70,7 +70,7 @@ def _queue_reserved_task(name, task_id, resource_id, inner_args, inner_kwargs):
         # No worker is ready for this work, so we need to wait
         time.sleep(0.25)
 
-    ReservedResource(task_id, worker['name'], resource_id).save()
+    ReservedResource(task_id=task_id, worker_name=worker['name'], resource_id=resource_id).save()
 
     inner_kwargs['routing_key'] = worker.name
     inner_kwargs['exchange'] = DEDICATED_QUEUE_EXCHANGE
