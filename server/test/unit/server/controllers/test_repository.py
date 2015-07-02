@@ -170,11 +170,8 @@ class UpdateRepoUnitCountsTests(unittest.TestCase):
         mock_get_db.return_value.command.assert_called_once_with(
             'aggregate', 'repo_content_units', pipeline=expected_pipeline
         )
-
-        mock_repo_objects.assert_called_once_with(__raw__={'id': 'foo'})
-        mock_repo_objects.return_value.update_one.assert_called_once_with(
-            set__content_unit_counts={'type_1': 5, 'type_2': 3}
-        )
+        self.assertDictEqual(repo.content_unit_counts, {'type_1': 5, 'type_2': 3})
+        repo.save.assert_called_once_with()
 
 
 class AssociateSingleUnitTests(unittest.TestCase):
