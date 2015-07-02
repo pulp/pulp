@@ -121,9 +121,8 @@ def rebuild_content_unit_counts(repository):
     for result in q['result']:
         counts[result['_id']] = result['sum']
 
-    # Use the raw query since there is currently a conflict with the id and the repo_id fields
-    model.Repository.objects(__raw__={'id': repository.repo_id}).update_one(
-        set__content_unit_counts=counts)
+    repository.content_unit_counts = counts
+    repository.save()
 
 
 def associate_single_unit(repository, unit):
