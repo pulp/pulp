@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-import datetime
 
 import mock
 
@@ -9,10 +8,8 @@ from .... import base
 from pulp.common.util import encode_unicode
 from pulp.devel import mock_plugins
 from pulp.plugins.loader import api as plugin_api
-from pulp.server.async.tasks import TaskResult
 from pulp.server.db.model.repository import Repo, RepoImporter, RepoDistributor
-from pulp.server.db.model import Worker, TaskStatus
-from pulp.server.tasks import repository
+from pulp.server.db.model import TaskStatus
 import pulp.server.exceptions as exceptions
 import pulp.server.managers.factory as manager_factory
 import pulp.server.managers.repo.cud as repo_manager
