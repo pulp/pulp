@@ -116,8 +116,9 @@ def update_settings():
     scheme = cfg.messaging.scheme
     host = cfg.messaging.host or cfg.server.host
     port = cfg.messaging.port
+    vhost = cfg.messaging.vhost
     adapter = cfg.messaging.transport
-    plugin.cfg.messaging.url = '%s+%s://%s:%s' % (adapter, scheme, host, port)
+    plugin.cfg.messaging.url = '%s+%s://%s:%s%s' % (adapter, scheme, host, port, vhost and '/%s' % vhost or '')
     plugin.cfg.messaging.uuid = get_agent_id()
     plugin.cfg.messaging.cacert = cfg.messaging.cacert
     plugin.cfg.messaging.clientcert = cfg.messaging.clientcert or \
