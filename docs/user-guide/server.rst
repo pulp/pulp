@@ -30,10 +30,11 @@ For a recap of Pulp components and the work they are responsible for, read :ref:
   available workers. If a worker with the same name is started again after being missing, it is
   added into the pool of workers as any worker starting up normally would.
 
-* If ``pulp_celerybeat`` dies, and in case then new workers start, they won't be given work. If
-  existing workers stop, Pulp will continue assigning them work. Once restarted, pulp_celerybeat
-  will synchronize with the current state of all workers. Scheduled tasks will not run while
-  pulp_celerybeat is down, but they will instead run when celerybeat is restarted.
+* If all instances of ``pulp_celerybeat`` die and new workers start, they won't
+  be given work or if existing workers stop, Pulp will continue assigning them work incorrectly.
+  Once restarted, ``pulp_celerybeat`` will synchronize with the current state of all workers.
+  Scheduled tasks will not run if there are no ``pulp_celerybeat`` processes running, but
+  they will run when the first ``pulp_celerybeat`` process is restarted.
 
 * If ``pulp_resource_manager`` dies, the Pulp tasking system will halt. Once restarted it will
   resume.
@@ -97,9 +98,9 @@ The service name is ``pulp_workers``.
 Celery Beat
 ^^^^^^^^^^^
 
-This is a singleton (there must only be one celery beat process per pulp deployment)
-that is responsible for queueing scheduled tasks. It also plays a role in
-monitoring the availability of workers.
+This process is responsible for queueing scheduled tasks and is responsible for
+monitoring the availability of workers. For fault tolerance, there can be multiple
+instances of this process running. If one of them fails, another will take over.
 
 The service name is ``pulp_celerybeat``.
 

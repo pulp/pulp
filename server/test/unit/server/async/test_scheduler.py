@@ -1,9 +1,11 @@
 from datetime import datetime
 import time
 import unittest
+import platform
 
 from celery.beat import ScheduleEntry
 import mock
+from mongoengine import NotUniqueError
 
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
@@ -255,7 +257,9 @@ class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
 class TestSchedulerTick(unittest.TestCase):
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('celery.beat.Scheduler.tick')
-    def test_calls_superclass(self, mock_tick):
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    def test_calls_superclass(self, mock_celerybeatlock, mock_worker_watcher, mock_tick):
         sched_instance = scheduler.Scheduler()
 
         sched_instance.tick()
@@ -265,7 +269,9 @@ class TestSchedulerTick(unittest.TestCase):
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch.object(scheduler.FailureWatcher, 'trim')
     @mock.patch('celery.beat.Scheduler.tick')
-    def test_calls_trim(self, mock_tick, mock_trim):
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    def test_calls_trim(self, mock_celerybeatlock, mock_worker_watcher, mock_tick, mock_trim):
         sched_instance = scheduler.Scheduler()
 
         sched_instance.tick()
@@ -274,13 +280,74 @@ class TestSchedulerTick(unittest.TestCase):
 
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('celery.beat.Scheduler.tick')
-    @mock.patch('pulp.server.async.scheduler.worker_watcher.handle_worker_heartbeat')
-    def test_calls_handle_heartbeat(self, mock_heartbeat, mock_tick):
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    def test_calls_handle_heartbeat(self, mock_celerybeatlock, mock_worker_watcher, mock_tick):
         sched_instance = scheduler.Scheduler()
 
         sched_instance.tick()
 
-        mock_heartbeat.assert_called_once()
+        mock_worker_watcher.assert_called_once()
+
+    @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
+    @mock.patch('pulp.server.async.scheduler.datetime')
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    @mock.patch('celery.beat.Scheduler.tick')
+    def test_heartbeat_lock_insert_success(self, mock_tick, mock_celerybeatlock,
+                                           mock_worker_watcher, mock_timestamp):
+
+        sched_instance = scheduler.Scheduler()
+        sched_instance.tick()
+
+        lock_timestamp = mock_timestamp.utcnow()
+        celerybeat_name = "scheduler" + "@" + platform.node()
+
+        mock_celerybeatlock.assert_called_once_with(
+            timestamp=lock_timestamp, celerybeat_name=celerybeat_name)
+        mock_celerybeatlock.objects().save().assert_called_once()
+
+    @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    @mock.patch('celery.beat.Scheduler.tick')
+    def test_heartbeat_lock_update(self, mock_tick, mock_celerybeatlock, mock_worker_watcher):
+
+        mock_celerybeatlock.objects.return_value.update.return_value = 1
+
+        sched_instance = scheduler.Scheduler()
+        sched_instance.tick()
+
+        mock_tick.assert_called_once_with()
+
+    @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    @mock.patch('celery.beat.Scheduler.tick')
+    def test_heartbeat_lock_delete(self, mock_tick, mock_celerybeatlock, mock_worker_watcher):
+
+        mock_celerybeatlock.objects.return_value.update.return_value = 0
+
+        sched_instance = scheduler.Scheduler()
+        sched_instance.tick()
+
+        mock_tick.assert_called_once_with()
+
+        mock_celerybeatlock.objects().delete().assert_called_once()
+
+    @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
+    @mock.patch('pulp.server.async.scheduler.worker_watcher')
+    @mock.patch('pulp.server.async.scheduler.CeleryBeatLock')
+    @mock.patch('celery.beat.Scheduler.tick')
+    def test_heartbeat_lock_exception(self, mock_tick, mock_celerybeatlock, mock_worker_watcher):
+
+        mock_celerybeatlock.objects.return_value.update.return_value = 0
+        mock_celerybeatlock.return_value.save.side_effect = NotUniqueError()
+
+        sched_instance = scheduler.Scheduler()
+        sched_instance.tick()
+
+        self.assertFalse(mock_tick.called)
 
 
 class TestSchedulerSetupSchedule(unittest.TestCase):

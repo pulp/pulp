@@ -279,17 +279,12 @@ Server
       ``PULP_CONCURRENCY - 1``. For example, you can use ``sudo systemctl status pulp_worker-1`` to
       see how the second worker is doing.
 
-#. There are two more services that need to be running, but it is important that these two only run
-   once each (i.e., do not enable either of these on any more than one Pulp server).
-
-   .. warning::
-
-      ``pulp_celerybeat`` and ``pulp_resource_manager`` must both be singletons, so be sure that you
-      only enable each of these on one host if you are Pulp's clustered deployment.
+#. There are two more services that need to be running.
 
    On some Pulp system, configure, start and enable the Celerybeat process. This process performs a
    job similar to a cron daemon for Pulp. Edit ``/etc/default/pulp_celerybeat`` to your liking, and
-   then enable and start it. Again, do not enable this on more than one host. For Upstart::
+   then enable and start it. Multiple instances of ``pulp_celerybeat`` may run concurrently, which
+   will make the Pulp installation more failure tolerant. For Upstart::
 
       $ sudo chkconfig pulp_celerybeat on
       $ sudo service pulp_celerybeat start
@@ -298,6 +293,11 @@ Server
 
       $ sudo systemctl enable pulp_celerybeat
       $ sudo systemctl start pulp_celerybeat
+
+   .. warning::
+
+      ``pulp_resource_manager`` must be singleton, so be sure that you
+      only enable this on one host if you are Pulp's clustered deployment.
 
    Lastly, one ``pulp_resource_manager`` process must be running in the installation. This process
    acts as a task router, deciding which worker should perform certain types of tasks. Apologies
