@@ -132,6 +132,10 @@ class ContentSource(object):
         _dir = conf_d or ContentSource.CONF_D
         for name in os.listdir(_dir):
             path = os.path.join(_dir, name)
+            if os.path.splitext(path)[1] != '.conf':
+                log.info("Not loading alternate content source configuration file, %s, because "
+                         ".conf file extension is missing.", path)
+                continue
             if not os.path.isfile(path):
                 continue
             cfg = ConfigParser()
