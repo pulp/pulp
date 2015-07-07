@@ -5,9 +5,9 @@ import unittest
 from celery.beat import ScheduleEntry
 import mock
 
+from pulp.common.constants import RESOURCE_MANAGER_WORKER_NAME, SCHEDULER_WORKER_NAME
 from pulp.server.async import scheduler
 from pulp.server.async.celery_instance import celery as app
-from pulp.server.async.celery_instance import RESOURCE_MANAGER_QUEUE
 from pulp.server.db.model import dispatch, resources
 from pulp.server.db.model.criteria import Criteria
 from pulp.server.managers.factory import initialize
@@ -234,10 +234,11 @@ class TestSchedulerInit(unittest.TestCase):
 
 
 class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
+
     @mock.patch('celery.beat.Scheduler.__init__', new=mock.Mock())
     @mock.patch('pulp.server.async.scheduler.EventMonitor')
-    @mock.patch('pulp.server.async.scheduler.WorkerTimeoutMonitor')
-    def test_spawn_pulp_monitor_threads(self, mock_worker_timeout_monitor, mock_event_monitor):
+    @mock.patch('pulp.server.async.scheduler.CeleryProcessTimeoutMonitor')
+    def test_spawn_pulp_monitor_threads(self, mock_celery_timeout_monitor, mock_event_monitor):
         my_scheduler = scheduler.Scheduler()
 
         my_scheduler.spawn_pulp_monitor_threads()
@@ -246,9 +247,9 @@ class TestSchedulerSpawnPulpMonitorThreads(unittest.TestCase):
         self.assertTrue(mock_event_monitor.return_value.daemon)
         mock_event_monitor.return_value.start.assert_called_once()
 
-        mock_worker_timeout_monitor.assert_called_once_with()
-        self.assertTrue(mock_worker_timeout_monitor.return_value.daemon)
-        mock_worker_timeout_monitor.return_value.start.assert_called_once()
+        mock_celery_timeout_monitor.assert_called_once_with()
+        self.assertTrue(mock_celery_timeout_monitor.return_value.daemon)
+        mock_celery_timeout_monitor.return_value.start.assert_called_once()
 
 
 class TestSchedulerTick(unittest.TestCase):
@@ -533,57 +534,62 @@ class TestEventMonitorRun(unittest.TestCase):
         self.assertEqual(mock_log_error.call_count, 1)
 
 
-class TestWorkerTimeoutMonitorRun(unittest.TestCase):
+class TestCeleryProcessTimeoutMonitorRun(unittest.TestCase):
+
     class SleepException(Exception):
         pass
 
-    @mock.patch.object(scheduler.WorkerTimeoutMonitor, 'check_workers', spec_set=True)
+    @mock.patch.object(scheduler.CeleryProcessTimeoutMonitor, 'check_celery_processes',
+                       spec_set=True)
     @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
-    def test_sleeps(self, mock_sleep, mock_check_workers):
+    def test_sleeps(self, mock_sleep, mock_check_celery_processes):
         # raising an exception is the only way we have to break out of the
         # infinite loop
         mock_sleep.side_effect = self.SleepException
 
-        self.assertRaises(self.SleepException, scheduler.WorkerTimeoutMonitor().run)
+        self.assertRaises(self.SleepException, scheduler.CeleryProcessTimeoutMonitor().run)
 
         # verify the frequency
         mock_sleep.assert_called_once_with(60)
 
     @mock.patch.object(scheduler._logger, 'error', spec_set=True)
-    @mock.patch.object(scheduler.WorkerTimeoutMonitor, 'check_workers', spec_set=True)
+    @mock.patch.object(scheduler.CeleryProcessTimeoutMonitor, 'check_celery_processes',
+                       spec_set=True)
     @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
-    def test_checks_workers(self, mock_sleep, mock_check_workers, mock_log_error):
+    def test_checks_workers(self, mock_sleep, mock_check_celery_processes, mock_log_error):
 
         # raising an exception is the only way we have to break out of the
         # infinite loop
-        mock_check_workers.side_effect = self.SleepException
+        mock_check_celery_processes.side_effect = self.SleepException
         mock_log_error.side_effect = self.SleepException
 
-        self.assertRaises(self.SleepException, scheduler.WorkerTimeoutMonitor().run)
+        self.assertRaises(self.SleepException, scheduler.CeleryProcessTimeoutMonitor().run)
 
-        mock_check_workers.assert_called_once_with()
+        mock_check_celery_processes.assert_called_once_with()
 
     @mock.patch.object(scheduler._logger, 'error', spec_set=True)
-    @mock.patch.object(scheduler.WorkerTimeoutMonitor, 'check_workers', spec_set=True)
+    @mock.patch.object(scheduler.CeleryProcessTimeoutMonitor, 'check_celery_processes',
+                       spec_set=True)
     @mock.patch.object(scheduler.time, 'sleep', spec_set=True)
-    def test_logs_exception(self, mock_sleep, mock_check_workers, mock_log_error):
+    def test_logs_exception(self, mock_sleep, mock_check_celery_processes, mock_log_error):
 
         # raising an exception is the only way we have to break out of the
         # infinite loop
-        mock_check_workers.side_effect = self.SleepException
+        mock_check_celery_processes.side_effect = self.SleepException
         mock_log_error.side_effect = self.SleepException
 
-        self.assertRaises(self.SleepException, scheduler.WorkerTimeoutMonitor().run)
+        self.assertRaises(self.SleepException, scheduler.CeleryProcessTimeoutMonitor().run)
 
         self.assertEqual(mock_log_error.call_count, 1)
 
 
-class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
-    @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
-    def test_calls_filter(self, mock_filter):
+class TestCeleryProcessTimeoutMonitorCheckCeleryProcesses(unittest.TestCase):
+
+    @mock.patch('pulp.server.async.scheduler.resources.filter_workers', spec_set=True)
+    def test_queries_all_workers(self, mock_filter):
         mock_filter.return_value = []
 
-        scheduler.WorkerTimeoutMonitor().check_workers()
+        scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
 
         # verify that filter was called with the right argument
         self.assertEqual(mock_filter.call_count, 1)
@@ -591,25 +597,70 @@ class TestWorkerTimeoutMonitorCheckWorkers(unittest.TestCase):
         call_arg = mock_filter.call_args[0][0]
         self.assertTrue(isinstance(call_arg, Criteria))
 
-        # make sure the timestamp being searched for is within the appropriate timeout,
-        # plus a 1-second grace period to account for execution time of test code.
-        timestamp = call_arg.filters['last_heartbeat']['$lt']
-        self.assertTrue(isinstance(timestamp, datetime))
-        self.assertTrue(datetime.utcnow() - timestamp <
-                        timedelta(scheduler.WorkerTimeoutMonitor.WORKER_TIMEOUT_SECONDS + 1))
+        self.assertEqual(call_arg.filters, {})
+        self.assertEqual(call_arg.fields, ('_id', 'last_heartbeat'))
 
     @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
-    @mock.patch('pulp.server.managers.resources.filter_workers', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.resources.filter_workers', spec_set=True)
     def test_deletes_workers(self, mock_filter, mock_delete_worker):
         mock_filter.return_value = [
-            resources.Worker('name1', datetime.utcnow()),
+            resources.Worker('name1', datetime.utcnow() - timedelta(seconds=400)),
             resources.Worker('name2', datetime.utcnow()),
         ]
 
-        scheduler.WorkerTimeoutMonitor().check_workers()
+        scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
 
-        # make sure _delete_worker is only called for the two expected calls
-        mock_delete_worker.assert_has_calls([mock.call('name1'), mock.call('name2')])
+        # make sure _delete_worker is only called for the old worker
+        mock_delete_worker.assert_has_calls([mock.call('name1')])
+
+    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.resources.filter_workers', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
+    def test_logs_scheduler_missing(self, mock__logger, mock_filter, mock_delete_worker):
+        mock_filter.return_value = [
+            resources.Worker(RESOURCE_MANAGER_WORKER_NAME, datetime.utcnow()),
+            resources.Worker('name2', datetime.utcnow()),
+        ]
+
+        scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
+
+        mock__logger.error.assert_called_once_with(
+            'There are 0 pulp_celerybeat processes running. Pulp will not operate '
+            'correctly without at least one pulp_celerybeat process running.')
+
+    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.resources.filter_workers', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
+    def test_logs_resource_manager_missing(self, mock__logger, mock_filter, mock_delete_worker):
+        mock_filter.return_value = [
+            resources.Worker(SCHEDULER_WORKER_NAME, datetime.utcnow()),
+            resources.Worker('name2', datetime.utcnow()),
+        ]
+
+        scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
+
+        mock__logger.error.assert_called_once_with(
+            'There are 0 pulp_resource_manager processes running. Pulp will not operate '
+            'correctly without at least one pulp_resource_mananger process running.')
+
+    @mock.patch('pulp.server.async.scheduler._delete_worker', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler.resources.filter_workers', spec_set=True)
+    @mock.patch('pulp.server.async.scheduler._logger', spec_set=True)
+    def test_debug_logging(self, mock__logger, mock_filter, mock_delete_worker):
+        mock_filter.return_value = [
+            resources.Worker('name1', datetime.utcnow() - timedelta(seconds=400)),
+            resources.Worker('name2', datetime.utcnow()),
+            resources.Worker(RESOURCE_MANAGER_WORKER_NAME, datetime.utcnow()),
+            resources.Worker(SCHEDULER_WORKER_NAME, datetime.utcnow()),
+        ]
+
+        scheduler.CeleryProcessTimeoutMonitor().check_celery_processes()
+        mock__logger.debug.assert_has_calls([
+            mock.call('Checking if pulp_workers, pulp_celerybeat, or '
+                      'pulp_resource_manager processes are missing for more than 300 seconds'),
+            mock.call('1 pulp_worker processes, 1 pulp_celerybeat processes, '
+                      'and 1 pulp_resource_manager processes')
+        ])
 
 
 SCHEDULES = [
