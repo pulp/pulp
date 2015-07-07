@@ -461,6 +461,7 @@ def update_last_unit_removed(repo_id):
     repo_obj.save()
 
 
+@celery.task()
 def queue_sync_with_auto_publish(repo_id, overrides=None):
     """
     Sync a repository and upon successful completion, publish any distributors that are configured
@@ -630,6 +631,7 @@ def sync_history(start_date, end_date, repo_id):
     return RepoSyncResult.get_collection().find(search_params)
 
 
+@celery.task()
 def queue_publish(repo_id, distributor_id, overrides=None):
     """
     Queue a repo publish task.
