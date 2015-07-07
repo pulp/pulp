@@ -39,7 +39,7 @@ class ExceptionHandlerMiddleware(object):
             response['error'] = exception.to_dict()
             logger.info(str(exception))
             response_obj = HttpResponse(json.dumps(response), status=status,
-                                        content_type="application/json")
+                                        content_type="application/json; charset=utf-8")
         else:
             status = httplib.INTERNAL_SERVER_ERROR
             response = error.http_error_obj(status, str(exception))
@@ -52,9 +52,8 @@ class ExceptionHandlerMiddleware(object):
             response['exception'] = traceback.format_exception_only(e_type, e_value)
             response['traceback'] = traceback.format_tb(trace)
             response_obj = HttpResponseServerError(json.dumps(response),
-                                                   content_type="application/json")
+                                                   content_type="application/json; charset=utf-8")
         else:
             logger.info(str(exception))
 
-        response_obj['Content-Encoding'] = 'utf-8'
         return response_obj

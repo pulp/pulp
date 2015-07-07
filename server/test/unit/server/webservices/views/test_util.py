@@ -25,7 +25,7 @@ class TestResponseGenerators(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponse))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
+                         ('Content-Type', 'application/json; charset=utf-8'))
         response_content = json.loads(response.content)
         self.assertEqual(response_content, test_content)
 
@@ -37,7 +37,7 @@ class TestResponseGenerators(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponseNotFound))
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
+                         ('Content-Type', 'application/json; charset=utf-8'))
 
     def test_generate_json_response_invalid_response_class(self):
         """

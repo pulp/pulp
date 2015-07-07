@@ -36,6 +36,6 @@ class TestLoginView(unittest.TestCase):
         self.assertTrue(isinstance(response, HttpResponse))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response._headers.get('content-type'),
-                         ('Content-Type', 'application/json'))
+                         ('Content-Type', 'application/json; charset=utf-8'))
         content = json.loads(response.content)
         self.assertEqual(content, key_cert)
