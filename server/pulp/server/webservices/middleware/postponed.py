@@ -46,6 +46,6 @@ class PostponedOperationMiddleware(object):
         if isinstance(exception, OperationPostponed):
             body = self._get_operation_postponed_body(exception)
             status = exception.http_status_code
-            response_obj = HttpResponse(body, status=status, content_type="application/json")
-            response_obj['Content-Encoding'] = 'utf-8'
+            response_obj = HttpResponse(body, status=status,
+                                        content_type="application/json; charset=utf-8")
             return response_obj
