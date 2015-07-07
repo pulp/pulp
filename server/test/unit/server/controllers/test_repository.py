@@ -1,12 +1,8 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 from mock import MagicMock, patch
 import mock
 import mongoengine
 
+from pulp.common.compat import unittest
 from pulp.plugins.loader import exceptions as plugin_exceptions
 from pulp.plugins.model import PublishReport
 from pulp.server.controllers import repository as repo_controller

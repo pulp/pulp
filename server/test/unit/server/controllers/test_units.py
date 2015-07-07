@@ -1,12 +1,7 @@
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
-
 from mock import MagicMock, patch
 import mongoengine
 
+from pulp.common.compat import unittest
 from pulp.server.controllers import units as units_controller
 from pulp.server.db import model
 

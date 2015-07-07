@@ -9,15 +9,11 @@ from tempfile import mkdtemp
 
 from mock import patch
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
-
 import mongoengine
 from mongoengine import DateTimeField, DictField, Document, IntField, StringField
 
 from pulp.common import error_codes, dateutils
+from pulp.common.compat import unittest
 from pulp.devel.unit.util import touch
 from pulp.server.exceptions import PulpCodedException
 from pulp.server.db import model

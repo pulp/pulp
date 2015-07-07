@@ -1,11 +1,8 @@
 from copy import deepcopy
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
 
 import mock
 
+from pulp.common.compat import unittest
 from pulp.server.async import celery_instance
 from pulp.server.db.model import TaskStatus, ReservedResource, Worker
 from pulp.server.managers import factory as manager_factory
